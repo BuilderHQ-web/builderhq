@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BuilderHQ
 
-## Getting Started
+Australian residential construction tendering & procurement marketplace.
+Project owners upload once. Suitable builders unlock projects, message owners, and submit tenders.
 
-First, run the development server:
+> Upload once. Tender smarter. Build better.
+
+## Stack
+
+- **Next.js 16** (App Router) · React 19 · TypeScript strict
+- **Tailwind CSS v4** + shadcn/ui (added in Phase 0 step 2)
+- **PostgreSQL** on Neon · **Drizzle** ORM
+- **Auth.js v5** with DB sessions
+- **Cloudflare R2** for documents (signed URLs only)
+- **Stripe Checkout** + webhooks
+- **Resend** + React Email
+- **Inngest** for background jobs / cron / event fan-out
+- **Sentry** + **PostHog** for monitoring & analytics
+- Hosting: **Vercel** + **Cloudflare** (DNS/WAF), domain: `builderhq.com.au`
+
+Architecture: modular monolith. See `docs/architecture.md` (added in Phase 0).
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# requires Node 22+ and pnpm 10+
+nvm use            # reads .nvmrc
+pnpm install
+cp .env.example .env.local   # fill in values
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| script | purpose |
+|---|---|
+| `pnpm dev` | start dev server |
+| `pnpm build` | production build |
+| `pnpm start` | run production build |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | `tsc --noEmit` |
 
-## Learn More
+## Folder layout (target — built up over Phase 0–1)
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/                Next.js routes (marketing | auth | app | api)
+src/
+  modules/          one folder per domain module (auth, projects, ...)
+  lib/              shared infra (db, auth, stripe, r2, ...)
+  jobs/             Inngest functions
+  emails/           React Email templates
+components/         ui/ (shadcn) + app/ + marketing/
+drizzle/            migrations
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Module boundaries are enforced via ESLint `no-restricted-imports`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+- Production: push `main` → Vercel.
+- DB: Neon (production branch).
+- Storage: R2 production bucket.
+- DNS / WAF: Cloudflare in front of Vercel.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Phase 0 — foundation scaffold. See `docs/roadmap.md`.
