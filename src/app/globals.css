@@ -3,17 +3,19 @@
 /* ==========================================================================
    BuilderHQ — design tokens (CSS source of truth).
    Mirrors src/lib/tokens.ts. Change both together.
-   We ship dark-first; light theme is intentionally deferred.
+   Brand-locked from reference/landing/index.html — dark-only.
    ========================================================================== */
 
 @theme {
   /* Fonts (loaded via next/font in layout.tsx) */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bebas-neue), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Backgrounds & surfaces */
   --color-bg: #03090f;
+  --color-bg-deep: #060f19;
   --color-bg-raised: oklch(0.165 0.015 240);
   --color-bg-elev: oklch(0.205 0.018 240);
   --color-bg-overlay: oklch(0.10 0.012 240 / 0.72);
@@ -23,38 +25,46 @@
   --color-surface-3: oklch(0.235 0.018 240);
   --color-surface-hover: oklch(0.255 0.020 240);
 
-  /* Borders */
-  --color-border-subtle: oklch(1 0 0 / 0.06);
-  --color-border: oklch(1 0 0 / 0.10);
-  --color-border-strong: oklch(1 0 0 / 0.18);
-  --color-border-accent: oklch(0.78 0.13 195 / 0.45);
+  /* Borders — blueprint-blue tinted, not neutral grey */
+  --color-border-subtle: rgba(100, 180, 255, 0.06);
+  --color-border: rgba(100, 180, 255, 0.10);
+  --color-border-strong: rgba(100, 180, 255, 0.18);
+  --color-border-accent: rgba(0, 212, 200, 0.30);
+  --color-border-accent-strong: rgba(0, 212, 200, 0.45);
 
-  /* Text */
-  --color-text: oklch(0.985 0 0);
-  --color-text-muted: oklch(0.78 0.01 240);
-  --color-text-subtle: oklch(0.62 0.012 240);
-  --color-text-faint: oklch(0.46 0.012 240);
-  --color-text-inverse: oklch(0.12 0.01 240);
+  /* Text — premium "screen white" with slight cool tint */
+  --color-text: #eef6ff;
+  --color-text-muted: #98b8d0;
+  --color-text-subtle: rgba(238, 246, 255, 0.62);
+  --color-text-faint: rgba(238, 246, 255, 0.42);
+  --color-text-dim: #567080;
+  --color-text-inverse: #031118;
 
-  /* Accent — BuilderHQ teal */
+  /* Accent — BuilderHQ teal (primary) + light teal for highlights */
   --color-accent: #00d4c8;
   --color-accent-hover: oklch(0.84 0.14 195);
   --color-accent-active: oklch(0.74 0.15 195);
-  --color-accent-muted: oklch(0.78 0.13 195 / 0.14);
-  --color-accent-glow: oklch(0.82 0.16 195 / 0.35);
-  --color-accent-contrast: oklch(0.12 0.02 195);
+  --color-accent-muted: rgba(0, 212, 200, 0.14);
+  --color-accent-glow: rgba(0, 212, 200, 0.35);
+  --color-accent-light: #7ef5ed;
+  --color-accent-contrast: #031118;
+
+  /* Secondary brand blue — used in gradients & visuals */
+  --color-blue: #1a5fd4;
+  --color-blue-glow: rgba(26, 95, 212, 0.30);
 
   /* Semantic */
   --color-success: oklch(0.78 0.16 155);
   --color-success-muted: oklch(0.78 0.16 155 / 0.14);
-  --color-warning: oklch(0.83 0.16 75);
-  --color-warning-muted: oklch(0.83 0.16 75 / 0.14);
+  --color-warning: #fbb840;
+  --color-warning-muted: rgba(255, 180, 0, 0.14);
   --color-danger: oklch(0.72 0.20 22);
   --color-danger-muted: oklch(0.72 0.20 22 / 0.14);
   --color-info: oklch(0.78 0.13 230);
   --color-info-muted: oklch(0.78 0.13 230 / 0.14);
 
-  /* Radii */
+  /* Radii — brand-tight 3px for chips/buttons, larger for content cards */
+  --radius-tight: 3px;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -67,13 +77,14 @@
   --container-prose: 68ch;
   --container-2xl: 1320px;
 
-  /* Motion */
+  /* Motion — brand "premium ease-out" */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --animate-fade-in: fadeIn 320ms var(--ease-out-soft);
-  --animate-rise-in: riseIn 480ms var(--ease-out-soft);
+  --animate-fade-in: fadeIn 320ms var(--ease-out);
+  --animate-rise-in: riseIn 480ms var(--ease-out);
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-pulse-glow: pulseGlow 3.2s ease-in-out infinite;
 }
@@ -95,23 +106,34 @@
 
 @utility ring-focus {
   box-shadow:
-    0 0 0 1px oklch(0.78 0.13 195 / 0.55),
-    0 0 0 4px oklch(0.78 0.13 195 / 0.18);
+    0 0 0 1px rgba(0, 212, 200, 0.55),
+    0 0 0 4px rgba(0, 212, 200, 0.18);
 }
 
 @utility glow-accent {
   box-shadow:
-    0 0 0 1px oklch(0.78 0.13 195 / 0.35),
-    0 8px 32px -8px oklch(0.78 0.16 195 / 0.45);
+    0 0 0 1px rgba(0, 212, 200, 0.35),
+    0 8px 32px -8px rgba(0, 212, 200, 0.45);
 }
 
 @utility glow-accent-soft {
   box-shadow:
-    0 0 0 1px oklch(0.78 0.13 195 / 0.18),
-    0 6px 24px -10px oklch(0.78 0.16 195 / 0.28);
+    0 0 0 1px rgba(0, 212, 200, 0.18),
+    0 6px 24px -10px rgba(0, 212, 200, 0.28);
 }
 
-/* Keyframes referenced by --animate-* tokens above. */
+/* Brand kicker — the small uppercase label used throughout the landing */
+@utility kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -125,12 +147,12 @@
   100% { background-position: 200% 0; }
 }
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.16 195 / 0.0); }
-  50%      { box-shadow: 0 0 32px 4px oklch(0.78 0.16 195 / 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+  50%      { box-shadow: 0 0 32px 4px rgba(0, 212, 200, 0.25); }
 }
 
 /* ==========================================================================
-   Base — dark-first, premium typography defaults.
+   Base — dark-first.
    ========================================================================== */
 
 :root {
@@ -141,7 +163,6 @@ html {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "ss02", "cv11", "cv01";
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -150,47 +171,45 @@ html {
 body {
   background:
     /* very subtle vignette so the canvas isn't dead flat */
-    radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.78 0.13 195 / 0.08), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.40 0.10 280 / 0.06), transparent 65%),
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0, 212, 200, 0.06), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(26, 95, 212, 0.05), transparent 65%),
     var(--color-bg);
   min-height: 100vh;
   min-height: 100dvh;
+  line-height: 1.5;
 }
 
-/* Premium selection */
 ::selection {
-  background: oklch(0.78 0.13 195 / 0.30);
-  color: var(--color-text);
+  background: rgba(126, 245, 237, 0.88);
+  color: var(--color-text-inverse);
+  text-shadow: none;
 }
 
-/* Focus rings — keyboard only, teal glow */
 :focus-visible {
   outline: none;
   box-shadow:
     0 0 0 1px var(--color-bg),
-    0 0 0 3px oklch(0.78 0.13 195 / 0.55);
+    0 0 0 3px rgba(0, 212, 200, 0.55);
   border-radius: var(--radius-md);
-  transition: box-shadow 120ms var(--ease-out-soft);
+  transition: box-shadow 120ms var(--ease-out);
 }
 
-/* Scrollbar — subtle, not screaming */
 @media (pointer: fine) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: oklch(1 0 0 / 0.10) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
   }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
-    background: oklch(1 0 0 / 0.08);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  *::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.16); background-clip: padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); background-clip: padding-box; }
 }
 
-/* Respect users who prefer less motion. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

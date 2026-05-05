@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BuilderHQ for Builders — Stop Chasing Leads. Start Picking Projects.</title>
+<meta name="description" content="BuilderHQ gives Australian residential builders direct access to verified projects with full plans, scope and specs upfront. Browse, unlock, tender — no middleman, no resold leads." />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #03090f;
+  --bg2: #060f19;
+  --teal: #00d4c8;
+  --teal2: #7ef5ed;
+  --blue: #1a5fd4;
+  --gold: #f4c266;
+  --gold2: #ffd98a;
+  --white: #eef6ff;
+  --soft: #98b8d0;
+  --dim: #567080;
+  --line: rgba(100,180,255,.08);
+  --line2: rgba(0,212,200,.12);
+  --shadow: 0 32px 80px rgba(0,0,0,.45);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --r: 3px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: none;
+  line-height: 1;
+}
+
+a, button { cursor: none; text-decoration: none; }
+::selection { background: rgba(126,245,237,.88); color: #031118; -webkit-text-fill-color: #031118; text-shadow: none; }
+
+/* ── CUSTOM CURSOR ── */
+.cursor-dot, .cursor-ring, .cursor-glow { position: fixed; border-radius: 50%; pointer-events: none; transform: translate(-50%,-50%); z-index: 9999; will-change: transform; }
+.cursor-dot { width: 8px; height: 8px; background: var(--teal); mix-blend-mode: screen; box-shadow: 0 0 18px rgba(0,212,200,.9); transition: width .2s, height .2s; }
+.cursor-ring { width: 40px; height: 40px; border: 1px solid rgba(0,212,200,.38); z-index: 9998; transition: width .4s cubic-bezier(.22,1,.36,1), height .4s cubic-bezier(.22,1,.36,1), border-color .3s; }
+.cursor-glow { width: 120px; height: 120px; background: radial-gradient(circle, rgba(0,212,200,.07) 0%, transparent 70%); z-index: 9997; transition: width .5s, height .5s; }
+body.hovering .cursor-dot { width: 5px; height: 5px; }
+body.hovering .cursor-ring { width: 70px; height: 70px; border-color: rgba(255,255,255,.5); }
+body.hovering .cursor-glow { width: 175px; height: 175px; }
+
+/* ── AMBIENT ── */
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.amb-orb { position: absolute; border-radius: 50%; filter: blur(50px); opacity: .2; }
+.amb-orb.a { width: 52vw; height: 52vw; right: -14vw; top: -18vw; background: radial-gradient(circle, rgba(26,95,212,.95), transparent 65%); animation: ambFloat 18s ease-in-out infinite; }
+.amb-orb.b { width: 40vw; height: 40vw; left: -12vw; bottom: -10vw; background: radial-gradient(circle, rgba(0,212,200,.85), transparent 65%); animation: ambFloat 14s ease-in-out infinite reverse; }
+
+/* ── GRID OVERLAY ── */
+.grid-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(100,180,255,.028) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,.028) 1px, transparent 1px); background-size: 72px 72px; mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 80%); }
+
+/* ── OPTIC FIBRE VERTICAL LINES ── */
+.fibre-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 1; }
+
+/* ── NOISE ── */
+.noise { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .022; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 220px 220px; }
+
+/* ── LOADER ── */
+#loader { position: fixed; inset: 0; z-index: 1000; background: #020710; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.l-rings { position: absolute; left: 50%; top: 50%; }
+.l-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,212,200,.1); transform: translate(-50%,-50%); animation: lRingPulse 3.5s ease-in-out infinite; }
+.l-ring:nth-child(1) { width: 280px; height: 280px; }
+.l-ring:nth-child(2) { width: 480px; height: 480px; animation-delay: .7s; }
+.l-ring:nth-child(3) { width: 680px; height: 680px; animation-delay: 1.4s; }
+.l-content { position: relative; z-index: 2; text-align: center; }
+.l-kicker { font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; opacity: 0; animation: fadeUp .6s .2s forwards; }
+.l-word { font-family: var(--font-display); font-size: clamp(72px,12vw,160px); letter-spacing: .06em; line-height: 1; position: relative; overflow: hidden; display: inline-block; }
+.l-word-outline { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.2); display: block; }
+.l-word-fill { position: absolute; inset: 0; color: var(--teal2); clip-path: inset(100% 0 0 0); display: block; }
+.l-bar-wrap { width: min(480px,72vw); height: 1px; background: rgba(255,255,255,.07); margin: 28px auto 0; overflow: hidden; }
+.l-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--teal2)); transition: width .05s linear; }
+.l-pct { font-size: 11px; letter-spacing: .2em; color: var(--soft); margin-top: 14px; opacity: 0; animation: fadeUp .6s .4s forwards; }
+
+/* ── NAV ── */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 28px 48px; border-bottom: 1px solid transparent; transition: background .5s, border-color .5s, backdrop-filter .5s, padding .4s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+nav.active { pointer-events: all; opacity: 1; }
+nav.scrolled { background: rgba(3,9,15,.82); backdrop-filter: blur(24px); border-color: var(--line); padding-top: 18px; padding-bottom: 18px; }
+.nav-logo { color: #fff; display: inline-flex; align-items: center; gap: 10px; }
+.nav-logo img { height: 34px; width: auto; display: block; }
+.nav-logo .for-tag { font-family: var(--font-ui); font-size: 9px; font-weight: 600; letter-spacing: .22em; padding: 4px 8px; border: 1px solid rgba(244,194,102,.4); color: var(--gold2); border-radius: 2px; background: rgba(244,194,102,.06); }
+.nav-links { display: flex; gap: 32px; list-style: none; position: absolute; left: 50%; transform: translateX(-50%); }
+.nav-links a { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(238,246,255,.42); transition: color .25s; white-space: nowrap; }
+.nav-links a:hover { color: #fff; }
+.nav-actions { display: flex; gap: 10px; align-items: center; }
+.btn-sm { padding: 10px 20px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s; border-radius: var(--r); }
+.btn-sm-outline { border: 1px solid rgba(0,212,200,.35); color: var(--teal2); background: rgba(0,212,200,.05); }
+.btn-sm-outline:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(0,212,200,.18); }
+.btn-sm-solid { background: linear-gradient(135deg, var(--teal2), var(--teal)); color: #031118; font-weight: 600; }
+.btn-sm-solid:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,212,200,.28); }
+
+/* ── LAYOUT ── */
+.section { position: relative; z-index: 5; }
+.wrap { width: min(1320px, calc(100vw - 80px)); margin: 0 auto; }
+.kicker { display: inline-flex; align-items: center; gap: 14px; font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--teal); }
+.kicker::before { content: ""; width: 30px; height: 1px; background: var(--teal); box-shadow: 0 0 10px rgba(0,212,200,.6); }
+.kicker.gold { color: var(--gold2); }
+.kicker.gold::before { background: var(--gold2); box-shadow: 0 0 10px rgba(244,194,102,.6); }
+
+/* ── HERO ── */
+#hero { min-height: 100vh; display: flex; align-items: flex-end; padding-bottom: 68px; overflow: hidden; }
+.hero-corner { position: absolute; width: 34px; height: 34px; pointer-events: none; }
+.hero-corner.tl { top: 28px; left: 28px; border-top: 1px solid rgba(0,212,200,.38); border-left: 1px solid rgba(0,212,200,.38); }
+.hero-corner.tr { top: 28px; right: 28px; border-top: 1px solid rgba(0,212,200,.38); border-right: 1px solid rgba(0,212,200,.38); }
+.hero-corner.bl { bottom: 28px; left: 28px; border-bottom: 1px solid rgba(0,212,200,.38); border-left: 1px solid rgba(0,212,200,.38); }
+.hero-corner.br { bottom: 28px; right: 28px; border-bottom: 1px solid rgba(0,212,200,.38); border-right: 1px solid rgba(0,212,200,.38); }
+
+.hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: end; padding-top: 140px; }
+.hero-kicker { margin-bottom: 22px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.hero-tag-pulse { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border: 1px solid rgba(244,194,102,.32); background: rgba(244,194,102,.06); border-radius: 2px; font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold2); }
+.hero-tag-pulse::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold2); box-shadow: 0 0 10px rgba(244,194,102,.7); animation: dotPulse 2s ease-in-out infinite; }
+
+.hero-title { font-family: var(--font-display); font-size: clamp(96px,14vw,218px); line-height: .83; letter-spacing: -.015em; }
+.h-row { display: block; overflow: hidden; }
+.h-row-inner { display: block; transform: translateY(105%); opacity: 0; }
+.h-row-inner.stroke { -webkit-text-stroke: 1.2px rgba(142,252,244,.72); color: transparent; }
+.h-row-inner.solid { color: #fff; }
+.h-row-inner.teal { color: var(--teal2); text-shadow: 0 0 50px rgba(0,212,200,.32), 0 0 100px rgba(0,212,200,.12); }
+
+.hero-body { margin-top: 30px; opacity: 0; transform: translateY(22px); }
+.hero-body p { font-size: 16px; line-height: 1.85; color: rgba(238,246,255,.62); max-width: 600px; margin-bottom: 34px; }
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+
+.btn-primary { display: inline-flex; align-items: center; gap: 12px; padding: 16px 32px; background: linear-gradient(135deg, var(--teal2), var(--teal)); color: #031118; font-weight: 600; font-size: 12px; letter-spacing: .08em; position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s; border-radius: var(--r); }
+.btn-primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); transform: translateX(-100%); transition: transform .75s; }
+.btn-primary:hover::after { transform: translateX(100%); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0,212,200,.3); }
+.btn-primary.gold { background: linear-gradient(135deg, var(--gold2), var(--gold)); color: #1c1304; }
+.btn-primary.gold:hover { box-shadow: 0 14px 40px rgba(244,194,102,.32); }
+.btn-ghost { display: inline-flex; align-items: center; gap: 12px; padding: 15px 30px; border: 1px solid rgba(100,180,255,.22); color: rgba(238,246,255,.7); font-size: 12px; letter-spacing: .08em; background: rgba(255,255,255,.02); transition: transform .35s cubic-bezier(.22,1,.36,1), border-color .3s, color .3s, box-shadow .3s; border-radius: var(--r); }
+.btn-ghost:hover { transform: translateY(-2px); border-color: var(--teal); color: var(--teal2); box-shadow: 0 0 24px rgba(0,212,200,.1); }
+
+.hero-proof { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.proof-card { padding: 16px 18px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01)); backdrop-filter: blur(10px); opacity: 0; transform: translateY(24px); transition: border-color .3s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .3s; border-radius: var(--r); }
+.proof-card:hover { border-color: rgba(0,212,200,.22); transform: translateY(-2px) !important; box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+.proof-label { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-bottom: 7px; }
+.proof-value { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--white); line-height: 1.35; }
+
+/* ── HERO CARDS (BUILDER DASHBOARD) ── */
+.hero-right { position: relative; }
+.hero-cards { position: relative; height: 660px; }
+.hcard { position: absolute; border: 1px solid rgba(100,180,255,.14); background: linear-gradient(160deg, rgba(10,30,48,.94), rgba(6,18,30,.97)); backdrop-filter: blur(20px); box-shadow: var(--shadow); overflow: hidden; opacity: 0; transition: border-color .35s, box-shadow .35s; border-radius: 6px; }
+.hcard:hover { border-color: rgba(0,212,200,.28); box-shadow: 0 28px 64px rgba(0,0,0,.4); }
+.hcard-sheen { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.07) 50%, transparent 65%); transform: translateX(-100%); transition: transform 1s ease; pointer-events: none; border-radius: 6px; }
+.hcard:hover .hcard-sheen { transform: translateX(100%); }
+.hcard-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 15px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.hcard-title { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--soft); }
+.hcard-badge { padding: 5px 9px; border: 1px solid rgba(0,212,200,.28); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); border-radius: 2px; }
+.hcard-badge.gold { border-color: rgba(244,194,102,.34); color: var(--gold2); }
+.hcard-body { padding: 15px; }
+
+/* Live Project Feed */
+.hcard-feed { top: 0; right: 0; width: 88%; }
+.feed-rows { display: flex; flex-direction: column; gap: 8px; }
+.feed-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 11px 13px; border: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.02); border-radius: 4px; transition: border-color .3s, transform .35s; }
+.feed-row:hover { border-color: rgba(0,212,200,.22); transform: translateX(2px); }
+.feed-row b { display: block; font-size: 12px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.feed-row small { display: block; font-size: 9px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+.feed-row .feed-tag { padding: 4px 8px; border: 1px solid rgba(0,212,200,.25); border-radius: 2px; font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); white-space: nowrap; }
+.feed-row .feed-tag.new { border-color: rgba(244,194,102,.35); color: var(--gold2); }
+
+/* Pipeline */
+.hcard-pipeline { left: 0; bottom: 96px; width: 60%; }
+.pipe-rows { display: flex; flex-direction: column; gap: 9px; }
+.pipe-row { display: grid; grid-template-columns: 78px 1fr 28px; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.04); background: rgba(255,255,255,.02); border-radius: 3px; }
+.pipe-row span { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.pipe-bar { height: 5px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+.pipe-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--teal)); }
+.pipe-row b { font-size: 11px; font-weight: 600; color: var(--white); text-align: right; }
+
+/* Profile Match */
+.hcard-match { right: 4%; bottom: 0; width: 56%; }
+.match-ring { width: 78px; height: 78px; margin: 6px auto 12px; position: relative; }
+.match-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.match-ring circle { fill: none; stroke-width: 5; }
+.match-ring .track { stroke: rgba(255,255,255,.07); }
+.match-ring .fill { stroke: url(#mGrad); stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 30; filter: drop-shadow(0 0 8px rgba(0,212,200,.5)); }
+.match-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 22px; color: var(--teal2); }
+.match-info { text-align: center; }
+.match-info b { display: block; font-size: 11px; color: var(--white); margin-bottom: 4px; }
+.match-info small { font-size: 9px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+
+/* ── MARQUEE ── */
+.marquee-section { position: relative; z-index: 6; border-top: 1px solid rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.04); background: rgba(6,15,25,.7); overflow: hidden; }
+.marquee-section::before, .marquee-section::after { content: ""; position: absolute; top: 0; bottom: 0; width: 140px; z-index: 2; pointer-events: none; }
+.marquee-section::before { left: 0; background: linear-gradient(90deg, #060f19, transparent); }
+.marquee-section::after { right: 0; background: linear-gradient(270deg, #060f19, transparent); }
+.marquee-track { display: flex; white-space: nowrap; animation: marqueeScroll 30s linear infinite; }
+.marquee-track:hover { animation-play-state: paused; }
+.m-item { display: inline-flex; align-items: center; gap: 16px; padding: 15px 36px; font-family: var(--font-display); font-size: 18px; letter-spacing: .1em; color: rgba(238,246,255,.22); transition: color .25s; }
+.m-item:hover { color: var(--teal2); }
+.m-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(0,212,200,.55); }
+
+/* ── PROBLEM ── */
+#problem { padding: 140px 0 100px; }
+.problem-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.problem-left { position: sticky; top: 120px; }
+.problem-kicker { margin-bottom: 20px; }
+.problem-title { font-family: var(--font-display); font-size: clamp(60px,7vw,104px); line-height: .88; letter-spacing: -.02em; margin-bottom: 28px; }
+.problem-title .teal { color: var(--teal2); }
+.problem-desc { font-size: 16px; line-height: 1.9; color: rgba(238,246,255,.52); max-width: 500px; }
+.problem-right { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+
+.pain-card { padding: 28px 30px; border: 1px solid rgba(255,255,255,.055); background: linear-gradient(180deg, rgba(8,25,40,.8), rgba(4,13,22,.94)); border-radius: 6px; transition: border-color .35s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .35s; }
+.pain-card:hover { border-color: rgba(0,212,200,.18); transform: translateX(6px); box-shadow: -4px 0 0 0 rgba(0,212,200,.3), 0 16px 40px rgba(0,0,0,.2); }
+.pain-card.solution { border-color: rgba(0,212,200,.14); background: linear-gradient(180deg, rgba(0,212,200,.055), rgba(4,13,22,.94)); }
+.pain-card.solution:hover { border-color: rgba(0,212,200,.35); box-shadow: -4px 0 0 0 rgba(0,212,200,.55), 0 16px 40px rgba(0,0,0,.2); }
+.pain-label { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 16px; }
+.pain-card .pain-label { color: var(--dim); }
+.pain-card.solution .pain-label { color: var(--teal); }
+.pain-row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 11px; }
+.pain-row:last-child { margin-bottom: 0; }
+.pain-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; font-size: 10px; }
+.pain-card .pain-icon { background: rgba(255,80,80,.1); border: 1px solid rgba(255,80,80,.18); color: rgba(255,120,120,.7); }
+.pain-card.solution .pain-icon { background: rgba(0,212,200,.1); border: 1px solid rgba(0,212,200,.22); color: var(--teal2); }
+.pain-text { font-size: 14px; line-height: 1.65; color: rgba(238,246,255,.65); }
+.pain-card.solution .pain-text { color: rgba(238,246,255,.8); }
+
+/* ── STATS ── */
+#stats { padding: 100px 0; }
+.stats-header { display: grid; grid-template-columns: 1fr .7fr; gap: 60px; align-items: end; margin-bottom: 52px; }
+.stats-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,90px); line-height: .88; letter-spacing: -.02em; }
+.stats-title .teal { color: var(--teal2); }
+.stats-sub { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); }
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.05); border-radius: 6px; overflow: hidden; }
+.stat-cell { background: linear-gradient(180deg, rgba(8,26,40,.94), rgba(5,16,26,.98)); padding: 48px 36px; position: relative; overflow: hidden; transition: background .4s; }
+.stat-cell::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, rgba(0,212,200,.09), transparent 55%); opacity: 0; transition: opacity .4s; }
+.stat-cell:hover::before { opacity: 1; }
+.stat-cell::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--teal2), transparent); transform: scaleX(0); transition: transform .55s cubic-bezier(.22,1,.36,1); }
+.stat-cell:hover::after { transform: scaleX(1); }
+.stat-num { font-family: var(--font-display); font-size: clamp(52px,5vw,78px); line-height: 1; letter-spacing: -.02em; }
+.stat-num .accent { color: var(--teal2); }
+.stat-label { font-size: 13px; color: var(--dim); margin-top: 12px; line-height: 1.55; }
+
+/* ── FEATURES ── */
+#features { padding: 120px 0; }
+.features-top { display: grid; grid-template-columns: 1fr .8fr; gap: 64px; align-items: end; margin-bottom: 52px; }
+.features-title { font-family: var(--font-display); font-size: clamp(54px,7vw,106px); line-height: .88; letter-spacing: -.02em; }
+.features-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.55); color: transparent; }
+.features-title .teal { color: var(--teal2); }
+.features-desc { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); max-width: 460px; }
+
+.features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.05); border-radius: 8px; overflow: hidden; }
+.feat-item { background: linear-gradient(160deg, rgba(9,27,42,.9), rgba(6,18,30,.97)); padding: 40px 36px; position: relative; overflow: hidden; transition: background .35s; }
+.feat-item::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--teal2), transparent); transform: scaleX(0); transition: transform .5s cubic-bezier(.22,1,.36,1); }
+.feat-item:hover::before { transform: scaleX(1); }
+.feat-item::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 80% 20%, rgba(0,212,200,.06), transparent 50%); opacity: 0; transition: opacity .4s; }
+.feat-item:hover::after { opacity: 1; }
+.feat-n { font-family: var(--font-display); font-size: 13px; letter-spacing: .18em; color: var(--teal); margin-bottom: 18px; display: block; }
+.feat-name { font-family: var(--font-ui); font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 12px; position: relative; z-index: 1; }
+.feat-copy { font-size: 14px; line-height: 1.8; color: rgba(238,246,255,.55); position: relative; z-index: 1; }
+.feat-ghost { position: absolute; right: 16px; bottom: 8px; font-family: var(--font-display); font-size: 80px; color: transparent; -webkit-text-stroke: 1px rgba(142,252,244,.06); line-height: 1; pointer-events: none; user-select: none; }
+
+/* ── HOW ── */
+#how { padding: 120px 0; background: linear-gradient(180deg, rgba(6,18,30,.5), rgba(3,9,15,.7)); }
+.how-header { display: grid; grid-template-columns: .9fr 1fr; gap: 60px; align-items: end; margin-bottom: 64px; }
+.how-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; letter-spacing: -.02em; }
+.how-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.45); color: transparent; }
+.how-title .teal { color: var(--teal2); }
+.how-copy { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); }
+
+.how-steps { display: grid; grid-template-columns: 1fr 60px 1fr 60px 1fr; align-items: stretch; gap: 0; }
+.step-card { position: relative; padding: 36px 32px; border: 1px solid rgba(255,255,255,.07); background: linear-gradient(180deg, rgba(9,27,42,.9), rgba(6,20,32,.97)); overflow: hidden; transition: border-color .4s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .4s; border-radius: 6px; }
+.step-card:hover { border-color: rgba(0,212,200,.22); transform: translateY(-6px); box-shadow: 0 24px 56px rgba(0,0,0,.35), 0 0 0 1px rgba(0,212,200,.1); }
+.step-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 90% 8%, rgba(0,212,200,.08), transparent 45%); opacity: 0; transition: opacity .4s; }
+.step-card:hover::before { opacity: 1; }
+.step-num { font-family: var(--font-display); font-size: 11px; letter-spacing: .22em; color: var(--teal); margin-bottom: 28px; display: block; }
+.step-icon { width: 48px; height: 48px; border: 1px solid rgba(0,212,200,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; background: rgba(0,212,200,.06); }
+.step-icon svg { width: 22px; height: 22px; color: var(--teal2); }
+.step-title { font-family: var(--font-ui); font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 14px; }
+.step-desc { font-size: 14px; line-height: 1.8; color: rgba(238,246,255,.6); margin-bottom: 24px; }
+.step-pts { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.step-pts li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.6; color: var(--dim); }
+.step-pts li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; background: linear-gradient(180deg, var(--teal2), var(--teal)); box-shadow: 0 0 8px rgba(0,212,200,.5); }
+
+.step-connector { display: flex; align-items: center; justify-content: center; position: relative; }
+.step-connector::before { content: ""; position: absolute; left: 4px; right: 4px; height: 1px; background: linear-gradient(90deg, rgba(0,212,200,.1), rgba(142,252,244,.5), rgba(0,212,200,.1)); }
+.step-conn-btn { position: relative; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(142,252,244,.22); background: rgba(6,18,30,.95); display: flex; align-items: center; justify-content: center; color: var(--teal2); font-size: 14px; animation: connPulse 3s ease-in-out infinite; box-shadow: 0 0 20px rgba(0,0,0,.3); }
+
+/* ── VALUE GRID (replaces audiences for builders) ── */
+#value { padding: 120px 0; }
+.val-header { display: flex; justify-content: space-between; gap: 40px; align-items: end; margin-bottom: 48px; }
+.val-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; }
+.val-title .teal { color: var(--teal2); }
+.val-sub { max-width: 440px; font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+.val-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.val-card { position: relative; padding: 38px 32px; border: 1px solid rgba(255,255,255,.07); background: linear-gradient(180deg, rgba(10,26,40,.92), rgba(6,18,28,.98)); overflow: hidden; transition: border-color .4s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .4s; border-radius: 8px; }
+.val-card:hover { border-color: rgba(0,212,200,.2); transform: translateY(-6px); box-shadow: 0 28px 60px rgba(0,0,0,.3); }
+.val-card::after { content: ""; position: absolute; bottom: -30%; right: -15%; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(0,212,200,.08), transparent 70%); pointer-events: none; }
+.val-icon { width: 42px; height: 42px; border-radius: 8px; border: 1px solid rgba(0,212,200,.22); background: rgba(0,212,200,.06); display: flex; align-items: center; justify-content: center; margin-bottom: 22px; color: var(--teal2); font-family: var(--font-display); font-size: 18px; }
+.val-card h3 { font-family: var(--font-ui); font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 12px; line-height: 1.2; position: relative; z-index: 1; }
+.val-card p { font-size: 13.5px; line-height: 1.8; color: rgba(238,246,255,.6); position: relative; z-index: 1; }
+
+/* ── SHOWCASE ── */
+#showcase { padding: 120px 0; }
+.show-header { display: grid; grid-template-columns: .9fr 1fr; gap: 60px; align-items: end; margin-bottom: 52px; }
+.show-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,94px); line-height: .88; }
+.show-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.45); color: transparent; }
+.show-title .teal { color: var(--teal2); }
+.show-copy { font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+
+.platform-tabs { display: flex; gap: 2px; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+.ptab { padding: 14px 22px; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); background: none; border: none; cursor: none; transition: color .25s; position: relative; }
+.ptab::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px; background: var(--teal2); transform: scaleX(0); transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.ptab.active { color: var(--teal2); }
+.ptab.active::after { transform: scaleX(1); }
+.ptab:hover { color: var(--white); }
+
+.platform-wrap { border: 1px solid rgba(255,255,255,.06); border-top: none; background: linear-gradient(180deg, rgba(8,25,40,.8), rgba(4,13,22,.94)); border-radius: 0 0 8px 8px; overflow: hidden; }
+.platform-panel { display: none; padding: 0; }
+.platform-panel.active { display: block; }
+
+.screen-layout { display: grid; grid-template-columns: 1fr 1.4fr; min-height: 420px; }
+.screen-info { padding: 44px 40px; border-right: 1px solid rgba(255,255,255,.05); display: flex; flex-direction: column; justify-content: center; }
+.screen-step { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); margin-bottom: 20px; }
+.screen-title { font-family: var(--font-ui); font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 16px; line-height: 1.15; }
+.screen-desc { font-size: 14px; line-height: 1.85; color: rgba(238,246,255,.58); margin-bottom: 32px; }
+.screen-points { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.screen-points li { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; line-height: 1.6; color: rgba(238,246,255,.7); }
+.screen-points li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; background: linear-gradient(180deg, var(--teal2), var(--teal)); box-shadow: 0 0 8px rgba(0,212,200,.5); }
+
+.screen-visual { position: relative; overflow: hidden; background: linear-gradient(135deg, #081a2a, #0d2236); }
+.screen-visual::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(142,252,244,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,.04) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; }
+.screen-visual-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 30px; }
+
+.real-screen-inner { padding: 34px; }
+.real-app-frame { position: relative; width: min(100%, 500px); max-height: 370px; display: flex; align-items: center; justify-content: center; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: radial-gradient(circle at 18% 10%, rgba(0,212,200,.08), transparent 38%), linear-gradient(180deg, rgba(10,28,44,.96), rgba(3,9,15,.98)); box-shadow: 0 28px 80px rgba(0,0,0,.52); overflow: hidden; }
+.real-app-frame::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.075) 50%, transparent 65%); transform: translateX(-120%); transition: transform 1.05s ease; pointer-events: none; }
+.real-app-frame:hover::before { transform: translateX(120%); }
+.real-app-screen { position: relative; z-index: 1; width: 100%; max-height: 340px; object-fit: contain; display: block; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 18px 50px rgba(0,0,0,.42); background: rgba(3,9,15,.72); }
+
+/* ── FOUNDING BUILDER ACCESS (PREMIUM) ── */
+#founding-access { padding: 120px 0; position: relative; }
+#founding-access::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(244,194,102,.06), transparent 65%); pointer-events: none; }
+.founding-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(244,194,102,.22);
+  background:
+    radial-gradient(circle at 12% 15%, rgba(244,194,102,.10), transparent 38%),
+    radial-gradient(circle at 88% 10%, rgba(0,212,200,.12), transparent 38%),
+    linear-gradient(180deg, rgba(14,28,38,.96), rgba(4,13,22,.98));
+  box-shadow: 0 32px 100px rgba(0,0,0,.46), 0 0 0 1px rgba(244,194,102,.08), inset 0 1px 0 rgba(255,217,138,.08);
+  border-radius: 12px;
+  padding: 56px 52px;
+}
+.founding-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(244,194,102,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(244,194,102,.04) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(ellipse at 45% 0%, black, transparent 76%);
+  pointer-events: none;
+}
+.founding-card::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,217,138,.85), transparent);
+  opacity: .85;
+}
+.founding-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 48px;
+  align-items: center;
+}
+.founding-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  border: 1px solid rgba(244,194,102,.32);
+  background: rgba(244,194,102,.08);
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--gold2);
+  margin-bottom: 26px;
+}
+.founding-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold2);
+  box-shadow: 0 0 12px rgba(244,194,102,.85);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+.founding-title {
+  font-family: var(--font-display);
+  font-size: clamp(52px,6.5vw,98px);
+  line-height: .88;
+  letter-spacing: -.02em;
+  margin-bottom: 22px;
+}
+.founding-title .gold { color: var(--gold2); text-shadow: 0 0 50px rgba(244,194,102,.32); }
+.founding-title .outline { -webkit-text-stroke: 1.4px rgba(255,217,138,.6); color: transparent; }
+.founding-copy {
+  font-size: 15px;
+  line-height: 1.9;
+  color: rgba(238,246,255,.68);
+  max-width: 580px;
+  margin-bottom: 28px;
+}
+.founding-meta { display: flex; gap: 22px; margin-bottom: 32px; flex-wrap: wrap; }
+.founding-meta-item { display: flex; flex-direction: column; gap: 6px; }
+.founding-meta-item span { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.founding-meta-item b { font-family: var(--font-display); font-size: 30px; line-height: 1; color: var(--gold2); letter-spacing: .02em; }
+.founding-meta-item.live b { color: var(--teal2); }
+.founding-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.founding-note { font-size: 11px; line-height: 1.7; color: rgba(152,184,208,.7); max-width: 280px; }
+
+.founding-terms {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.founding-term {
+  position: relative;
+  padding: 26px 26px;
+  border: 1px solid rgba(244,194,102,.14);
+  background: linear-gradient(180deg, rgba(20,32,42,.85), rgba(8,16,24,.95));
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color .4s, transform .4s, box-shadow .4s;
+}
+.founding-term:hover { transform: translateX(6px); border-color: rgba(244,194,102,.42); box-shadow: -4px 0 0 0 var(--gold2), 0 18px 40px rgba(0,0,0,.3); }
+.founding-term::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold2), transparent);
+  transform: scaleX(0);
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+.founding-term:hover::after { transform: scaleX(1); }
+.founding-term-num { font-family: var(--font-display); font-size: 12px; letter-spacing: .24em; color: var(--gold2); margin-bottom: 10px; display: block; }
+.founding-term strong { display: block; font-family: var(--font-ui); font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--white); margin-bottom: 8px; }
+.founding-term p { font-size: 12.5px; line-height: 1.7; color: rgba(238,246,255,.58); }
+.founding-term-icon { position: absolute; top: 24px; right: 24px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--gold2); opacity: .7; }
+.founding-term-icon svg { width: 100%; height: 100%; }
+
+/* ── TESTIMONIALS ── */
+#testi { padding: 120px 0; }
+.testi-header { display: grid; grid-template-columns: .9fr 1fr; gap: 50px; align-items: end; margin-bottom: 48px; }
+.testi-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; }
+.testi-title .teal { color: var(--teal2); }
+.testi-copy { font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+.testi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tcard { padding: 38px; border: 1px solid rgba(255,255,255,.05); background: linear-gradient(180deg, rgba(10,28,44,.92), rgba(6,18,30,.97)); position: relative; overflow: hidden; transition: transform .5s cubic-bezier(.22,1,.36,1), border-color .35s, box-shadow .35s; border-radius: 6px; }
+.tcard:hover { transform: translateY(-6px); border-color: rgba(0,212,200,.18); box-shadow: 0 20px 48px rgba(0,0,0,.25); }
+.tcard::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, rgba(0,212,200,.08), transparent 62%); opacity: 0; transition: opacity .4s; }
+.tcard:hover::before { opacity: 1; }
+.tcard-q { font-family: var(--font-display); font-size: 64px; color: rgba(142,252,244,.14); line-height: 1; display: block; margin-bottom: 2px; }
+.tcard-text { font-size: 14px; line-height: 1.9; color: rgba(238,246,255,.68); margin-bottom: 26px; font-style: italic; }
+.tcard-author { display: flex; align-items: center; gap: 12px; }
+.tcard-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,200,.22); background: linear-gradient(135deg, rgba(26,95,212,.3), rgba(0,212,200,.14)); font-family: var(--font-ui); font-weight: 700; font-size: 12px; color: var(--teal2); }
+.tcard-name { font-size: 13px; font-weight: 600; }
+.tcard-role { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+/* ── CTA ── */
+#cta { min-height: 84vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.cta-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 65% at 50% 46%, rgba(244,194,102,.18) 0%, transparent 65%); }
+.cta-rings { position: absolute; left: 50%; top: 50%; }
+.cta-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(244,194,102,.1); transform: translate(-50%,-50%); animation: ringPulse 4s ease-in-out infinite; }
+.cta-ring:nth-child(1) { width: min(480px,62vw); height: min(480px,62vw); }
+.cta-ring:nth-child(2) { width: min(700px,78vw); height: min(700px,78vw); animation-delay: .9s; }
+.cta-ring:nth-child(3) { width: min(920px,90vw); height: min(920px,90vw); animation-delay: 1.8s; }
+.cta-content { position: relative; z-index: 5; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; width: min(960px, calc(100vw - 80px)); }
+.cta-title { font-family: var(--font-display); font-size: clamp(64px,10vw,146px); line-height: .86; letter-spacing: -.02em; }
+.cta-title .outline { -webkit-text-stroke: 1.4px rgba(244,194,102,.85); color: transparent; }
+.cta-title .solid { color: #fff; }
+.cta-title .gold { color: var(--gold2); text-shadow: 0 0 50px rgba(244,194,102,.4); }
+.cta-sub { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); max-width: 620px; }
+.cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.cta-fineprint { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; margin-top: 18px; font-size: 11px; color: var(--dim); letter-spacing: .14em; text-transform: uppercase; }
+.cta-fineprint span { display: inline-flex; align-items: center; gap: 8px; }
+.cta-fineprint span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--gold2); box-shadow: 0 0 8px rgba(244,194,102,.7); }
+
+/* ── FOOTER ── */
+footer { padding: 30px 48px; border-top: 1px solid rgba(255,255,255,.05); display: flex; justify-content: space-between; align-items: center; gap: 20px; position: relative; z-index: 5; background: rgba(3,9,15,.7); }
+.f-logo { font-family: var(--font-display); font-size: 22px; letter-spacing: .08em; }
+.f-logo em { font-style: normal; color: var(--teal); }
+.f-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.f-links a { font-size: 11px; color: var(--dim); transition: color .25s; }
+.f-links a:hover { color: var(--teal2); }
+.f-copy { font-size: 10px; color: rgba(86,112,128,.6); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal.d1 { transition-delay: .12s; }
+.reveal.d2 { transition-delay: .24s; }
+.reveal.d3 { transition-delay: .36s; }
+.reveal.d4 { transition-delay: .48s; }
+
+/* ── ACCESSIBILITY ── */
+a:focus-visible, button:focus-visible { outline: 2px solid var(--teal2); outline-offset: 4px; }
+
+/* ── ANIMATIONS ── */
+@keyframes ambFloat { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(-16px,18px) scale(1.04); } 66% { transform: translate(12px,-16px) scale(.97); } }
+@keyframes lRingPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .9; } 50% { transform: translate(-50%,-50%) scale(1.05); opacity: .3; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dotPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.7); } }
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ringPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .85; } 50% { transform: translate(-50%,-50%) scale(1.04); opacity: .28; } }
+@keyframes connPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,212,200,0); } 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,212,200,.08); } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .hero-grid, .stats-header, .features-top, .how-header, .show-header, .testi-header, .problem-layout { grid-template-columns: 1fr; }
+  .val-grid, .testi-grid, .features-grid { grid-template-columns: 1fr; }
+  .hero-cards { height: 580px; }
+  .how-steps { grid-template-columns: 1fr; gap: 14px; }
+  .step-connector { min-height: 48px; flex-direction: column; }
+  .step-connector::before { left: 50%; width: 1px; height: 100%; top: 0; right: auto; background: linear-gradient(180deg, rgba(0,212,200,.12), rgba(142,252,244,.5), rgba(0,212,200,.12)); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .val-header, .founding-meta { flex-direction: column; align-items: flex-start; }
+  .nav-links { display: none; }
+  .problem-left { position: static; }
+  .screen-layout { grid-template-columns: 1fr; }
+  .screen-visual { min-height: 320px; }
+  .founding-inner { grid-template-columns: 1fr; gap: 32px; }
+  .founding-card { padding: 40px 32px; }
+}
+
+@media (max-width: 820px) {
+  body { cursor: auto; }
+  a, button { cursor: pointer; }
+  .cursor-dot, .cursor-ring, .cursor-glow { display: none; }
+  nav { padding: 18px 20px; }
+  .hero-corner { display: none; }
+  .wrap { width: calc(100vw - 30px); }
+  .hero-title { font-size: clamp(78px, 22vw, 132px); }
+  .hero-proof { grid-template-columns: 1fr; }
+  .hero-btns .btn-primary, .hero-btns .btn-ghost, .cta-btns .btn-primary, .cta-btns .btn-ghost { width: 100%; justify-content: center; }
+  .hcard-feed { width: 100%; }
+  .hcard-pipeline { width: 78%; bottom: 130px; }
+  .hcard-match { width: 60%; }
+  .hero-cards { height: 720px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .founding-card { padding: 30px 22px; }
+  .founding-actions .btn-primary { width: 100%; justify-content: center; }
+  footer { flex-direction: column; align-items: flex-start; padding: 22px 18px; }
+  .ptab { padding: 12px 14px; font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient">
+  <div class="amb-orb a"></div>
+  <div class="amb-orb b"></div>
+</div>
+<div class="grid-overlay"></div>
+<canvas class="fibre-canvas" id="fibreCanvas"></canvas>
+<div class="noise"></div>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+<div class="cursor-glow"></div>
+
+<div id="loader">
+  <div class="l-rings">
+    <div class="l-ring"></div>
+    <div class="l-ring"></div>
+    <div class="l-ring"></div>
+  </div>
+  <div class="l-content">
+    <div class="l-kicker">For residential builders · Australia</div>
+    <div class="l-word">
+      <span class="l-word-outline">BUILDERHQ</span>
+      <span class="l-word-fill" id="lFill">BUILDERHQ</span>
+    </div>
+    <div class="l-bar-wrap"><div class="l-bar" id="lBar"></div></div>
+    <div class="l-pct" id="lPct">0%</div>
+  </div>
+</div>
+
+<nav id="nav">
+  <a href="#hero" class="nav-logo"><img src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1772409842410x950937022470436400/Builder%20HQ%20%284%29.png?_gl=1*19n99ur*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0ODY4NSRqNjAkbDAkaDA." alt="BuilderHQ logo" loading="eager" referrerpolicy="no-referrer" /><span class="for-tag">For Builders</span></a>
+  <ul class="nav-links">
+    <li><a href="#problem">Why BuilderHQ</a></li>
+    <li><a href="#features">Platform</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#founding-access">Founding Access</a></li>
+  </ul>
+  <div class="nav-actions">
+    <a href="login" class="btn-sm btn-sm-outline">Log In</a>
+    <a href="#founding-access" class="btn-sm btn-sm-solid">Get Founding Access</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="section" id="hero">
+  <div class="hero-corner tl"></div>
+  <div class="hero-corner tr"></div>
+  <div class="hero-corner bl"></div>
+  <div class="hero-corner br"></div>
+
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="hero-kicker">
+        <span class="kicker">Built for Australian residential builders</span>
+        <span class="hero-tag-pulse">Founding Access · Limited</span>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="h-row"><span class="h-row-inner stroke">STOP</span></span>
+        <span class="h-row"><span class="h-row-inner solid">CHASING.</span></span>
+        <span class="h-row"><span class="h-row-inner teal">START PICKING.</span></span>
+      </h1>
+
+      <div class="hero-body">
+        <p>Real residential projects. Verified owners. Full plans, scope and specs visible upfront. Choose your pipeline — don't pay for resold leads, drive across town for ghost jobs, or compete on price alone.</p>
+
+        <div class="hero-btns">
+          <a href="#founding-access" class="btn-primary gold">
+            Get founding access
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </a>
+          <a href="#features" class="btn-ghost">See what you get</a>
+        </div>
+
+        <div class="hero-proof">
+          <div class="proof-card">
+            <div class="proof-label">No resold leads</div>
+            <div class="proof-value">Verified projects only. You tender direct.</div>
+          </div>
+          <div class="proof-card">
+            <div class="proof-label">Full docs upfront</div>
+            <div class="proof-value">Plans, scope and specs before you commit.</div>
+          </div>
+          <div class="proof-card">
+            <div class="proof-label">Browse with confidence</div>
+            <div class="proof-value">Filter by your trade, area and capacity.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-cards">
+
+        <!-- Live Project Feed -->
+        <div class="hcard hcard-feed">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Live project feed</span>
+            <span class="hcard-badge">3 new today</span>
+          </div>
+          <div class="hcard-body">
+            <div class="feed-rows">
+              <div class="feed-row">
+                <div>
+                  <b>Niddrie Townhouse</b>
+                  <small>Melbourne · Single dwelling · $1.4M</small>
+                </div>
+                <span class="feed-tag new">New</span>
+              </div>
+              <div class="feed-row">
+                <div>
+                  <b>Rear Extension &amp; Reno</b>
+                  <small>Brunswick · Renovation · $480K</small>
+                </div>
+                <span class="feed-tag">Open</span>
+              </div>
+              <div class="feed-row">
+                <div>
+                  <b>Coastal Duplex Build</b>
+                  <small>Geelong · Duplex · $2.1M</small>
+                </div>
+                <span class="feed-tag">Open</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="hcard hcard-pipeline">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Your pipeline</span>
+            <span class="hcard-badge">This month</span>
+          </div>
+          <div class="hcard-body">
+            <div class="pipe-rows">
+              <div class="pipe-row"><span>Unlocked</span><div class="pipe-bar"><i style="width:100%"></i></div><b>09</b></div>
+              <div class="pipe-row"><span>Tendering</span><div class="pipe-bar"><i style="width:62%"></i></div><b>05</b></div>
+              <div class="pipe-row"><span>Submitted</span><div class="pipe-bar"><i style="width:42%"></i></div><b>03</b></div>
+              <div class="pipe-row"><span>Won</span><div class="pipe-bar"><i style="width:22%"></i></div><b>02</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Match -->
+        <div class="hcard hcard-match">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Profile match</span>
+            <span class="hcard-badge gold">Founding</span>
+          </div>
+          <div class="hcard-body">
+            <div class="match-ring">
+              <svg viewBox="0 0 80 80">
+                <defs>
+                  <linearGradient id="mGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#7ef5ed"/>
+                    <stop offset="100%" stop-color="#1a5fd4"/>
+                  </linearGradient>
+                </defs>
+                <circle class="track" cx="40" cy="40" r="36"/>
+                <circle class="fill" cx="40" cy="40" r="36"/>
+              </svg>
+              <div class="match-pct">87%</div>
+            </div>
+            <div class="match-info">
+              <b>Niddrie Townhouse</b>
+              <small>Trade · area · scale align</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDING BUILDER ACCESS -->
+<section class="section" id="founding-access">
+  <div class="wrap">
+    <div class="founding-card">
+      <div class="founding-inner">
+
+        <div>
+          <div class="founding-eyebrow">Founding Builder Access · Limited-Time Offer</div>
+          <h2 class="founding-title">
+            BUILT WITH<br>
+            <span class="outline">THE FIRST 100</span><br>
+            <span class="gold">BUILDERS.</span>
+          </h2>
+          <p class="founding-copy">Founding Builder Access is built for residential builders ready to move faster on the right work. For the next 3 months, the one-time unlock fee is waived, with limited unlock allocations released monthly.</p>
+
+          <div class="founding-meta">
+            <div class="founding-meta-item">
+              <span>Total spots</span>
+              <b>100</b>
+            </div>
+            <div class="founding-meta-item live">
+              <span>Remaining</span>
+              <b>57</b>
+            </div>
+            <div class="founding-meta-item">
+              <span>Offer window</span>
+              <b>3 months</b>
+            </div>
+          </div>
+
+          <div class="founding-actions">
+            <a href="signup" class="btn-primary gold">
+              Get founding access
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </a>
+            <p class="founding-note">Verified residential builders only. Get started in minutes and unlock matching projects faster.</p>
+          </div>
+        </div>
+
+        <div class="founding-terms">
+          <div class="founding-term">
+            <span class="founding-term-num">01</span>
+            <div class="founding-term-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M12 1l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>
+              </svg>
+            </div>
+            <strong>Unlock fee waived (limited time)</strong>
+            <p>Builders receive a waiver of the one-time project unlock fee during the Founding Builder Access window. This limited-time offer runs for 3 months.</p>
+          </div>
+          <div class="founding-term">
+            <span class="founding-term-num">02</span>
+            <div class="founding-term-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </div>
+            <strong>Monthly unlock allocations</strong>
+            <p>A limited number of unlocks is released each month during the offer period to ensure quality participation and consistent project flow.</p>
+          </div>
+          <div class="founding-term">
+            <span class="founding-term-num">03</span>
+            <div class="founding-term-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/>
+              </svg>
+            </div>
+            <strong>Founding Builder Access status</strong>
+            <p>Founding Builder Access is available to eligible builders during this launch window, with monthly capacity limits to keep project quality high.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <span class="m-item"><span class="m-dot"></span>Verified Residential Projects</span>
+    <span class="m-item"><span class="m-dot"></span>No Resold Leads</span>
+    <span class="m-item"><span class="m-dot"></span>Full Plans Upfront</span>
+    <span class="m-item"><span class="m-dot"></span>Direct Tendering</span>
+    <span class="m-item"><span class="m-dot"></span>Owner-To-Builder</span>
+    <span class="m-item"><span class="m-dot"></span>Built For Australia</span>
+    <span class="m-item"><span class="m-dot"></span>Browse with Confidence</span>
+    <span class="m-item"><span class="m-dot"></span>Founding Builder Access</span>
+    <span class="m-item"><span class="m-dot"></span>Verified Residential Projects</span>
+    <span class="m-item"><span class="m-dot"></span>No Resold Leads</span>
+    <span class="m-item"><span class="m-dot"></span>Full Plans Upfront</span>
+    <span class="m-item"><span class="m-dot"></span>Direct Tendering</span>
+    <span class="m-item"><span class="m-dot"></span>Owner-To-Builder</span>
+    <span class="m-item"><span class="m-dot"></span>Built For Australia</span>
+    <span class="m-item"><span class="m-dot"></span>Browse with Confidence</span>
+    <span class="m-item"><span class="m-dot"></span>Founding Builder Access</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="section" id="problem">
+  <div class="wrap">
+    <div class="problem-layout">
+      <div class="problem-left reveal">
+        <div class="kicker problem-kicker">The builder reality</div>
+        <h2 class="problem-title">LEAD AGGREGATORS<br>ARE BROKEN.<br><span class="teal">YOU DESERVE BETTER.</span></h2>
+        <p class="problem-desc">Builders waste thousands every year on resold leads, ghost jobs and price-only races. The system is built for whoever owns the lead — not the builder who actually wins the work.</p>
+      </div>
+
+      <div class="problem-right">
+        <div class="pain-card reveal d1">
+          <div class="pain-label">What you're stuck with today</div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">You pay per lead — and the same lead has already been sold to 5+ other builders before you even call.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">You spend hours on quotes for owners who are "just getting an idea" — then never hear back.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">You drive across the city for a site visit on a job that turns out to be wrong scale, wrong area, wrong type.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">You compete on price alone with no profile, no track record, no chance to show your craft.</div>
+          </div>
+        </div>
+
+        <div class="pain-card solution reveal d2">
+          <div class="pain-label">How BuilderHQ flips it</div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Browse only verified residential projects with full context — no aggregator junk, no resold leads.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Filter by location, build type, scale and capacity — so the work you see is work you'd actually want.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Open complete plans, scope and specs before you commit a minute to estimating.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Tender directly to the owner with your profile, your craft, your reputation — not a price-only race.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section" id="stats">
+  <div class="wrap">
+    <div class="stats-header">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Why builders join</div>
+        <h2 class="stats-title">LESS NOISE.<br><span class="teal">MORE PIPELINE.</span></h2>
+      </div>
+      <p class="stats-sub reveal d1">BuilderHQ replaces lead aggregators with a structured platform built around the way residential builders actually decide to tender.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="100">0</span><span class="accent">%</span></div>
+        <div class="stat-label">Residential focus. No commercial fluff, no aggregator junk.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="50">0</span><span class="accent">+</span></div>
+        <div class="stat-label">Builders signed up and actively using the platform.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="60">0</span><span class="accent">+</span></div>
+        <div class="stat-label">Live residential projects accessed and progressed through the platform.</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="24">0</span><span class="accent">/7</span></div>
+        <div class="stat-label">Always-on access. Browse new opportunities the moment they go live.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="features-top">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Platform</div>
+        <h2 class="features-title">EVERYTHING<br><span class="outline">A BUILDER NEEDS</span><br><span class="teal">TO WIN MORE WORK.</span></h2>
+      </div>
+      <p class="features-desc reveal d1">Four pillars built around how you actually evaluate and pursue residential work — without the chase, the noise, or the middlemen.</p>
+    </div>
+
+    <div class="features-grid reveal d1">
+      <div class="feat-item">
+        <div class="feat-ghost">01</div>
+        <span class="feat-n">01 — PROJECT FEED</span>
+        <div class="feat-name">See what fits, instantly</div>
+        <div class="feat-copy">A live feed of verified residential projects filtered by your area, build type, scale and capacity. No more digging through irrelevant noise to find work that suits you.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">02</div>
+        <span class="feat-n">02 — UNLOCK &amp; ASSESS</span>
+        <div class="feat-name">Full docs before you commit</div>
+        <div class="feat-copy">Open complete plans, scope, specs and project context with one click — so you know whether to estimate before you spend a minute of your team's time.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">03</div>
+        <span class="feat-n">03 — TENDER DIRECT</span>
+        <div class="feat-name">Owner-to-builder, no middleman</div>
+        <div class="feat-copy">Submit professional tenders directly to the project owner. No reseller in between, no fee per lead, no scrambling against five other builders quoting the same job.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">04</div>
+        <span class="feat-n">04 — PROFILE &amp; PIPELINE</span>
+        <div class="feat-name">Build credibility that wins</div>
+        <div class="feat-copy">A verified builder profile that shows your licence, areas, capacity and track record — paired with a clean pipeline view of every tender, message and decision.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="how-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">Process</div>
+        <h2 class="how-title reveal">FROM PROFILE<br><span class="outline">TO WIN</span><br><span class="teal">IN 3 STEPS.</span></h2>
+      </div>
+      <p class="how-copy reveal d1">Set up once. Browse continuously. Tender on the work that actually fits. Built around the way residential builders already think — just without the wasted hours.</p>
+    </div>
+
+    <div class="how-steps">
+      <div class="step-card">
+        <span class="step-num">STEP 01</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M16 11a4 4 0 10-8 0 4 4 0 008 0z"/><path d="M3 20a9 9 0 0118 0"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Verify your profile</h3>
+        <p class="step-desc">Add your licence, capacity, build types, areas you cover and recent projects. Owners can see exactly who they're tendering with.</p>
+        <ul class="step-pts">
+          <li>Licence and credentials verified</li>
+          <li>Build types, area and scale defined</li>
+          <li>Profile that owners actually trust</li>
+        </ul>
+      </div>
+
+      <div class="step-connector"><div class="step-conn-btn">→</div></div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 02</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Browse and unlock</h3>
+        <p class="step-desc">Scan a live feed of verified residential projects. Unlock the full pack — plans, scope, specs — and decide if it's worth your tender effort.</p>
+        <ul class="step-pts">
+          <li>Filter by area, type, scale and capacity</li>
+          <li>Full documents before you commit</li>
+          <li>Save projects to review with your team</li>
+        </ul>
+      </div>
+
+      <div class="step-connector"><div class="step-conn-btn">→</div></div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 03</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Tender direct, win work</h3>
+        <p class="step-desc">Submit your tender directly to the owner — your numbers, your story, your reputation. Message inside the project, get clarity, close the job.</p>
+        <ul class="step-pts">
+          <li>Direct, structured tender submission</li>
+          <li>Project-level messaging with the owner</li>
+          <li>Track every opportunity in your pipeline</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUE GRID -->
+<section class="section" id="value">
+  <div class="wrap">
+    <div class="val-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">What you get</div>
+        <h2 class="val-title reveal">A FAIRER<br><span class="teal">WAY TO BUILD.</span></h2>
+      </div>
+      <p class="val-sub reveal d1">BuilderHQ replaces the cold-lead grind with a platform where builders compete on craft, fit and trust — not on who paid for the lead first.</p>
+    </div>
+
+    <div class="val-grid">
+      <div class="val-card reveal d1">
+        <div class="val-icon">$</div>
+        <h3>Stop paying per lead</h3>
+        <p>No paying $80–$150 for a lead that's already been sold to half-a-dozen other builders. Browse verified projects and tender direct.</p>
+      </div>
+      <div class="val-card reveal d2">
+        <div class="val-icon">⌖</div>
+        <h3>Only relevant work</h3>
+        <p>Filter the feed by your trade, area, scale and capacity. The projects you see are projects worth your team's time.</p>
+      </div>
+      <div class="val-card reveal d3">
+        <div class="val-icon">⎘</div>
+        <h3>Full info upfront</h3>
+        <p>Plans, scope, specs and context attached to every project. No more requesting docs three times before you can quote.</p>
+      </div>
+      <div class="val-card reveal d1">
+        <div class="val-icon">⇄</div>
+        <h3>Direct line to owners</h3>
+        <p>Project-level messaging means questions get answered, scope gets clarified, and decisions move faster — no email tag.</p>
+      </div>
+      <div class="val-card reveal d2">
+        <div class="val-icon">★</div>
+        <h3>Reputation that compounds</h3>
+        <p>A verified profile that owners trust, with track record visible — so good builders win work without competing on price alone.</p>
+      </div>
+      <div class="val-card reveal d3">
+        <div class="val-icon">⏱</div>
+        <h3>Hours back every week</h3>
+        <p>One platform. Project context, docs, messaging and tender history together. No more living in five inboxes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE / PLATFORM SCREENS -->
+<section class="section" id="showcase">
+  <div class="wrap">
+    <div class="show-header">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Experience</div>
+        <h2 class="show-title">THE BUILDER<br><span class="outline">WORKFLOW</span><br><span class="teal">IN ACTION</span></h2>
+      </div>
+      <p class="show-copy reveal d1">Here's exactly what your day on BuilderHQ looks like — from spotting a project that fits to submitting a tender that wins it.</p>
+    </div>
+
+    <div class="reveal d1">
+      <div class="platform-tabs">
+        <button class="ptab active" onclick="switchTab(0)">Project Feed</button>
+        <button class="ptab" onclick="switchTab(1)">Unlock Project</button>
+        <button class="ptab" onclick="switchTab(2)">Submit Tender</button>
+        <button class="ptab" onclick="switchTab(3)">Pipeline</button>
+      </div>
+
+      <div class="platform-wrap">
+
+        <div class="platform-panel active" id="panel-0">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">01 — Project Feed</div>
+              <h3 class="screen-title">A live feed of work that actually fits.</h3>
+              <p class="screen-desc">Verified residential projects, filtered to your trade, area, scale and capacity. No cold-call lists. No commercial. No noise. Just real opportunities, the moment they go live.</p>
+              <ul class="screen-points">
+                <li>Filter by location, build type and project size</li>
+                <li>See deadlines and competition level upfront</li>
+                <li>Save projects to review with your estimator</li>
+                <li>Get notified the moment a matching project posts</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345881652x982151788292952000/Screenshot%202026-04-28%20at%201.10.36%E2%80%AFpm.png?_gl=1*pbef0a*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ project feed for builders" loading="eager" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="platform-panel" id="panel-1">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">02 — Unlock Project</div>
+              <h3 class="screen-title">Full plans, scope and specs — before you commit.</h3>
+              <p class="screen-desc">One click unlocks the entire project pack. Read every plan, scope note and spec sheet right where the project lives — so you know whether to estimate before you spend a minute on it.</p>
+              <ul class="screen-points">
+                <li>Plans, specs and scope all in one place</li>
+                <li>Project context and owner intent visible</li>
+                <li>Decide to tender with full information</li>
+                <li>No back-and-forth begging for missing files</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345869661x145425732959085570/Screenshot%202026-04-28%20at%201.08.13%E2%80%AFpm.png?_gl=1*12k5eaz*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ unlocked project view" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="platform-panel" id="panel-2">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">03 — Submit Tender</div>
+              <h3 class="screen-title">Tender direct to the owner. No middleman.</h3>
+              <p class="screen-desc">Submit a structured tender — your numbers, your scope, your story — directly to the project owner. They review you alongside other shortlisted builders, in the same view as your full profile.</p>
+              <ul class="screen-points">
+                <li>Structured tender format owners can compare fairly</li>
+                <li>Your profile, licence and track record visible</li>
+                <li>Ask scope questions inside the project</li>
+                <li>No reseller, no shared lead, no fee per submission</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345865201x535386205450045100/Screenshot%202026-04-28%20at%201.07.36%E2%80%AFpm.png?_gl=1*11j9062*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ tender submission" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="platform-panel" id="panel-3">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">04 — Pipeline</div>
+              <h3 class="screen-title">Every opportunity, every conversation, in one place.</h3>
+              <p class="screen-desc">A clean pipeline view of every project you've unlocked, every tender you've sent and every conversation in flight. No more juggling email threads, spreadsheets and missed follow-ups.</p>
+              <ul class="screen-points">
+                <li>Pipeline status: unlocked · tendering · submitted · won</li>
+                <li>Owner messaging tied to each project</li>
+                <li>Full tender history searchable in one place</li>
+                <li>Notifications when an owner reviews or replies</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345875409x656409731200076900/Screenshot%202026-04-28%20at%201.08.48%E2%80%AFpm.png?_gl=1*11j9062*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ pipeline and messaging" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" id="testi">
+  <div class="wrap">
+    <div class="testi-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">Builder voices</div>
+        <h2 class="testi-title reveal">SHAPED BY BUILDERS.<br><span class="teal">FOR BUILDERS.</span></h2>
+      </div>
+      <p class="testi-copy reveal d1">Built alongside Australian residential builders who were sick of paying for resold leads, chasing ghost jobs, and quoting against the void. Here's what they're saying.</p>
+    </div>
+
+    <div class="testi-grid">
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">As a small builder, getting access to good projects has always been tough. BuilderHQ levels the playing field. I've already quoted on two jobs since signing up, and both were a perfect fit for my team. It's a game-changer for how we grow.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">N</div>
+          <div>
+            <div class="tcard-name">Nathan P., Boutique Builder</div>
+            <div class="tcard-role">Geelong, VIC</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">I used to burn $1,500 a month on lead aggregators just to compete against five other builders for the same job. BuilderHQ killed that overnight. I see real projects, full plans, and tender direct. Way more wins, way less time wasted.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">M</div>
+          <div>
+            <div class="tcard-name">Michael R., Director</div>
+            <div class="tcard-role">North Shore, NSW</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">The biggest thing for us is filtering. We only build single-dwelling premium in the inner east. BuilderHQ shows us exactly that — nothing else. No more sifting through commercial junk or jobs out of our area.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">D</div>
+          <div>
+            <div class="tcard-name">Daniel K., Custom Home Builder</div>
+            <div class="tcard-role">Hawthorn, VIC</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">Being able to see plans and scope before deciding to tender is a massive deal. I stopped wasting estimating hours on jobs that weren't right. Every tender I send now is on something that genuinely fits my crew.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">A</div>
+          <div>
+            <div class="tcard-name">Adrian T., Residential Builder</div>
+            <div class="tcard-role">Brisbane, QLD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" id="cta">
+  <div class="cta-bg"></div>
+  <div class="cta-rings">
+    <div class="cta-ring"></div>
+    <div class="cta-ring"></div>
+    <div class="cta-ring"></div>
+  </div>
+  <div class="cta-content">
+    <div class="kicker gold">Get founding access</div>
+    <h2 class="cta-title">
+      <span class="outline">DON'T CHASE.</span><br>
+      <span class="solid">PICK YOUR</span><br>
+      <span class="gold">PIPELINE.</span>
+    </h2>
+    <p class="cta-sub">Founding Builder Access is limited and available for 3 months. Builders receive a temporary waiver on the unlock fee, with monthly allocations available while spots remain.</p>
+    <div class="cta-btns">
+      <a href="signup" class="btn-primary gold">
+        Get founding access
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </a>
+      <a href="#features" class="btn-ghost">See the platform</a>
+    </div>
+    <div class="cta-fineprint">
+      <span>Verified builders only</span>
+      <span>100 founding spots</span>
+      <span>3-month limited offer</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">BUILDER<em>HQ</em></div>
+  <div class="f-links">
+    <a href="index">For Owners</a>
+    <a href="/about_us">About</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/termsofuse">Terms</a>
+    <a href="/faqs">FAQs</a>
+  </div>
+  <div class="f-copy">© 2026 BuilderHQ · Australia</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isFinePointer = window.matchMedia('(pointer:fine)').matches;
+
+/* ── OPTIC FIBRE LINES ── */
+(function initFibre() {
+  const canvas = document.getElementById('fibreCanvas');
+  if (!canvas || prefersReducedMotion) return;
+
+  const ctx = canvas.getContext('2d');
+  let W, H, lines = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  const LINE_COUNT = Math.floor(W / 60);
+
+  function createLine(forceX) {
+    const x = forceX !== undefined ? forceX : Math.random() * W;
+    return {
+      x,
+      segments: Array.from({ length: Math.floor(8 + Math.random() * 12) }, () => ({
+        y: Math.random() * H,
+        alpha: 0,
+        targetAlpha: 0,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.007 + Math.random() * 0.018
+      })),
+      nextFire: Math.random() * 4000
+    };
+  }
+
+  for (let i = 0; i < LINE_COUNT; i++) {
+    lines.push(createLine(Math.random() * W));
+  }
+
+  let last = 0;
+  function tick(ts) {
+    const dt = ts - last; last = ts;
+    ctx.clearRect(0, 0, W, H);
+
+    lines.forEach(line => {
+      line.nextFire -= dt;
+      if (line.nextFire < 0) {
+        const seg = line.segments[Math.floor(Math.random() * line.segments.length)];
+        seg.targetAlpha = 0.15 + Math.random() * 0.07;
+        line.nextFire = 1200 + Math.random() * 4800;
+      }
+
+      line.segments.forEach(seg => {
+        seg.phase += seg.speed;
+        const pulse = Math.sin(seg.phase);
+        seg.alpha += (seg.targetAlpha - seg.alpha) * 0.04;
+        if (seg.alpha > 0.002) {
+          const grd = ctx.createLinearGradient(line.x, seg.y - 60, line.x, seg.y + 60);
+          grd.addColorStop(0, `rgba(0,212,200,0)`);
+          grd.addColorStop(0.5, `rgba(0,212,200,${seg.alpha * (0.6 + pulse * 0.4)})`);
+          grd.addColorStop(1, `rgba(0,212,200,0)`);
+          ctx.beginPath();
+          ctx.moveTo(line.x, seg.y - 60);
+          ctx.lineTo(line.x, seg.y + 60);
+          ctx.strokeStyle = grd;
+          ctx.lineWidth = 0.95;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(line.x, seg.y, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(126,245,237,${seg.alpha * 1.65})`;
+          ctx.fill();
+        }
+        if (seg.targetAlpha > 0 && seg.alpha > seg.targetAlpha * 0.9) {
+          seg.targetAlpha *= 0.92;
+        }
+      });
+    });
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ── CUSTOM CURSOR ── */
+const dot  = document.querySelector('.cursor-dot');
+const ring = document.querySelector('.cursor-ring');
+const glow = document.querySelector('.cursor-glow');
+
+if (isFinePointer && !prefersReducedMotion) {
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let rx = mx, ry = my, gx = mx, gy = my;
+
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
+
+  (function cursorLoop() {
+    if (dot) { dot.style.left = mx + 'px'; dot.style.top = my + 'px'; }
+    rx += (mx - rx) * .14; ry += (my - ry) * .14;
+    if (ring) { ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; }
+    gx += (mx - gx) * .07; gy += (my - gy) * .07;
+    if (glow) { glow.style.left = gx + 'px'; glow.style.top = gy + 'px'; }
+    requestAnimationFrame(cursorLoop);
+  })();
+
+  const hoverEls = document.querySelectorAll('a, button, .hcard, .proof-card, .feat-item, .step-card, .val-card, .tcard, .real-app-frame, .stat-cell, .pain-card, .ptab, .feed-row, .founding-term');
+  hoverEls.forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+  });
+}
+
+/* ── LOADER ── */
+const loader  = document.getElementById('loader');
+const lBar    = document.querySelector('.l-bar');
+const lPct    = document.querySelector('.l-pct');
+const lFill   = document.querySelector('.l-word-fill');
+
+let progress = 0;
+const tickInterval = setInterval(() => {
+  progress += prefersReducedMotion ? 100 : Math.random() * 9 + 7;
+  if (progress >= 100) {
+    progress = 100;
+    clearInterval(tickInterval);
+    setTimeout(finishLoad, prefersReducedMotion ? 20 : 220);
+  }
+  if (lBar)  lBar.style.width  = progress + '%';
+  if (lPct)  lPct.textContent  = Math.floor(progress) + '%';
+  if (lFill) lFill.style.clipPath = `inset(${100 - progress}% 0 0 0)`;
+}, prefersReducedMotion ? 10 : 38);
+
+function finishLoad() {
+  if (!loader || typeof gsap === 'undefined') {
+    if (loader) loader.style.display = 'none';
+    document.querySelector('nav')?.classList.add('active');
+    revealHero();
+    return;
+  }
+  gsap.to(loader, {
+    opacity: 0, y: -10, duration: prefersReducedMotion ? 0 : .65,
+    ease: 'power2.inOut',
+    onComplete: () => { loader.style.display = 'none'; revealHero(); }
+  });
+  document.querySelector('nav')?.classList.add('active');
+}
+
+/* ── HERO ENTRANCE ── */
+function revealHero() {
+  if (typeof gsap === 'undefined') {
+    document.querySelectorAll('.h-row-inner').forEach(row => { row.style.transform = 'translateY(0)'; row.style.opacity = '1'; });
+    document.querySelector('.hero-body')?.classList.add('visible');
+    return;
+  }
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  tl.to('.hero-kicker', { opacity: 1, y: 0, duration: .65 }, 0);
+  document.querySelectorAll('.h-row-inner').forEach((row, i) => {
+    tl.to(row, { y: '0%', opacity: 1, duration: .95, ease: 'expo.out' }, i * .11 + .06);
+  });
+  tl.to('.hero-body', { opacity: 1, y: 0, duration: .8, ease: 'power3.out' }, .32);
+  document.querySelectorAll('.proof-card').forEach((card, i) => {
+    tl.to(card, { opacity: 1, y: 0, duration: .68, ease: 'power3.out' }, .5 + i * .075);
+  });
+  animHeroCards();
+}
+
+function animHeroCards() {
+  if (typeof gsap === 'undefined') return;
+  const feed     = document.querySelector('.hcard-feed');
+  const pipeline = document.querySelector('.hcard-pipeline');
+  const match    = document.querySelector('.hcard-match');
+  if (!feed) return;
+
+  const tl = gsap.timeline({ delay: .35 });
+  tl.fromTo(feed, { opacity: 0, x: 40, y: -20, rotationY: -18, rotationX: 8, transformPerspective: 1200 },
+    { opacity: 1, x: 0, y: 0, rotationY: -8, rotationX: 5, duration: 1.05, ease: 'expo.out' });
+  tl.fromTo(pipeline, { opacity: 0, x: -40, y: 20, rotationY: 18, rotationX: -5, transformPerspective: 1200 },
+    { opacity: 1, x: 0, y: 0, rotationY: 10, rotationX: -3, duration: 1.0, ease: 'expo.out' }, .12);
+  tl.fromTo(match, { opacity: 0, y: 30, x: 20, scale: .95, rotationY: -8, transformPerspective: 1200 },
+    { opacity: 1, y: 0, x: 0, scale: 1, rotationY: -7, rotationX: 4, duration: .9, ease: 'expo.out' }, .24);
+
+  if (!prefersReducedMotion) {
+    gsap.to(feed,     { y: -8, duration: 3.5, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.4 });
+    gsap.to(pipeline, { y: 6,  duration: 4.0, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 2 });
+    gsap.to(match,    { y: -5, duration: 3.2, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.8 });
+  }
+}
+
+/* ── PLATFORM TABS ── */
+function switchTab(index) {
+  const tabs = document.querySelectorAll('.ptab');
+  const panels = document.querySelectorAll('.platform-panel');
+  tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+  panels.forEach((p, i) => {
+    if (i === index) {
+      p.classList.add('active');
+      if (typeof gsap !== 'undefined') {
+        gsap.fromTo(p, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .55, ease: 'power3.out' });
+      }
+    } else {
+      p.classList.remove('active');
+    }
+  });
+}
+
+/* ── CARD TILT ── */
+function initCardTilt(selector, intensity = 5) {
+  if (!isFinePointer || prefersReducedMotion || typeof gsap === 'undefined' || window.innerWidth < 1100) return;
+  document.querySelectorAll(selector).forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - .5;
+      const y = (e.clientY - r.top)  / r.height - .5;
+      gsap.to(card, { rotationY: x * intensity, rotationX: -y * intensity * .7, transformPerspective: 1200, duration: .4, ease: 'power2.out' });
+    });
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { rotationY: 0, rotationX: 0, duration: .65, ease: 'elastic.out(1, .4)' });
+    });
+  });
+}
+initCardTilt('.proof-card', 6);
+initCardTilt('.step-card', 4);
+initCardTilt('.val-card', 4);
+initCardTilt('.tcard', 4);
+initCardTilt('.stat-cell', 5);
+initCardTilt('.pain-card', 3);
+initCardTilt('.feat-item', 3);
+
+/* ── MAGNETIC BUTTONS ── */
+function initMagnetic(selector, strength = .18) {
+  if (!isFinePointer || prefersReducedMotion || typeof gsap === 'undefined') return;
+  document.querySelectorAll(selector).forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width  / 2) * strength;
+      const y = (e.clientY - r.top  - r.height / 2) * strength;
+      gsap.to(el, { x, y, duration: .35, ease: 'power2.out' });
+    });
+    el.addEventListener('mouseleave', () => {
+      gsap.to(el, { x: 0, y: 0, duration: .55, ease: 'elastic.out(1, .4)' });
+    });
+  });
+}
+initMagnetic('.btn-primary, .btn-ghost, .btn-sm', .16);
+
+/* ── SMOOTH SCROLL REVEALS ── */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── COUNTER ANIMATION ── */
+const counterObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !entry.target.dataset.done) {
+      entry.target.dataset.done = '1';
+      animateCounter(entry.target);
+      counterObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: .3 });
+
+document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+function animateCounter(el) {
+  const target = parseFloat(el.dataset.target || 0);
+  const dec    = parseInt(el.dataset.dec || 0);
+  const dur    = prefersReducedMotion ? 1 : 1600;
+  const start  = performance.now();
+  function tick(now) {
+    const p    = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 4);
+    const val  = target * ease;
+    el.textContent = dec ? val.toFixed(dec) : Math.floor(val);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ── SCROLL PARALLAX ── */
+const heroOrbs = document.querySelectorAll('.amb-orb');
+let scrollTicking = false;
+
+window.addEventListener('scroll', () => {
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(() => {
+    const sy = window.scrollY;
+    document.querySelector('nav')?.classList.toggle('scrolled', sy > 60);
+    if (!prefersReducedMotion && window.innerWidth > 820) {
+      heroOrbs.forEach((orb, i) => {
+        const dir = i % 2 === 0 ? 1 : -1;
+        orb.style.transform = `translate(${dir * sy * .015}px, ${-dir * sy * .025}px) scale(${1 + sy * .00005})`;
+      });
+    }
+    scrollTicking = false;
+  });
+}, { passive: true });
+
+/* ── GSAP SCROLLTRIGGER ── */
+window.addEventListener('load', () => {
+  if (typeof ScrollTrigger !== 'undefined' && typeof gsap !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+
+    document.querySelectorAll('.problem-title, .stats-title, .features-title, .how-title, .val-title, .show-title, .testi-title, .cta-title, .founding-title').forEach(title => {
+      gsap.fromTo(title,
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 1.0, ease: 'expo.out',
+          scrollTrigger: { trigger: title, start: 'top 88%', once: true } }
+      );
+    });
+
+    gsap.fromTo('.pain-card', { opacity: 0, y: 28 }, {
+      opacity: 1, y: 0, duration: .8, stagger: .12, ease: 'power3.out',
+      scrollTrigger: { trigger: '.problem-right', start: 'top 84%', once: true }
+    });
+
+    gsap.fromTo('.stat-cell', { opacity: 0, y: 30 }, {
+      opacity: 1, y: 0, duration: .75, stagger: .09, ease: 'power3.out',
+      scrollTrigger: { trigger: '.stats-grid', start: 'top 82%', once: true }
+    });
+
+    gsap.fromTo('.feat-item', { opacity: 0, y: 24, scale: .98 }, {
+      opacity: 1, y: 0, scale: 1, duration: .7, stagger: .1, ease: 'power3.out',
+      scrollTrigger: { trigger: '.features-grid', start: 'top 82%', once: true }
+    });
+
+    document.querySelectorAll('.step-card').forEach((card, i) => {
+      const dir = i === 0 ? -1 : i === 2 ? 1 : 0;
+      gsap.fromTo(card,
+        { opacity: 0, x: dir * 36, y: 28 },
+        { opacity: 1, x: 0, y: 0, duration: .9, ease: 'expo.out',
+          scrollTrigger: { trigger: card, start: 'top 85%', once: true } }
+      );
+    });
+
+    gsap.fromTo('.val-card', { opacity: 0, y: 26, scale: .97 }, {
+      opacity: 1, y: 0, scale: 1, duration: .8, stagger: .1, ease: 'power3.out',
+      scrollTrigger: { trigger: '.val-grid', start: 'top 84%', once: true }
+    });
+
+    gsap.fromTo('.tcard', { opacity: 0, y: 30, scale: .97 }, {
+      opacity: 1, y: 0, scale: 1, duration: .8, stagger: .09, ease: 'power3.out',
+      scrollTrigger: { trigger: '.testi-grid', start: 'top 83%', once: true }
+    });
+
+    gsap.fromTo('.platform-tabs, .platform-wrap', { opacity: 0, y: 24 }, {
+      opacity: 1, y: 0, duration: .75, stagger: .1, ease: 'power3.out',
+      scrollTrigger: { trigger: '#showcase', start: 'top 82%', once: true }
+    });
+
+    gsap.fromTo('.founding-card', { opacity: 0, y: 40, scale: .98 }, {
+      opacity: 1, y: 0, scale: 1, duration: 1.0, ease: 'expo.out',
+      scrollTrigger: { trigger: '#founding-access', start: 'top 80%', once: true }
+    });
+
+    gsap.fromTo('.founding-term', { opacity: 0, x: 30 }, {
+      opacity: 1, x: 0, duration: .8, stagger: .12, ease: 'power3.out',
+      scrollTrigger: { trigger: '.founding-terms', start: 'top 85%', once: true }
+    });
+
+    const ctaTl = gsap.timeline({ scrollTrigger: { trigger: '#cta', start: 'top 75%', once: true } });
+    ctaTl.fromTo('.cta-title', { opacity: 0, y: 46, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: 1.0, ease: 'expo.out' })
+         .fromTo('.cta-sub',   { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, .25)
+         .fromTo('.cta-btns',  { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .65, ease: 'power3.out' }, .42)
+         .fromTo('.cta-fineprint', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out' }, .58);
+  }
+});
+</script>
+</body>
+</html>

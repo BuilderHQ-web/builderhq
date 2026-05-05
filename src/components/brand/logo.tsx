@@ -1,65 +1,80 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * BuilderHQ wordmark + glyph.
- * The glyph is an isometric "block" rendered with stacked rhombi —
- * a quiet nod to construction, not a literal house icon.
+ * BuilderHQ wordmark — brand-locked.
+ *
+ * Renders "BUILDER" + "HQ" in Bebas Neue with the HQ accented in teal,
+ * matching the nav and footer treatment in reference/landing/index.html.
+ *
+ * For most cases use <Logo />. Reach for <LogoMark /> only where the
+ * graphical 500x500 mark from /public/brand/ is needed (favicons, OG
+ * images, app icons, social avatars).
  */
 export function Logo({
   className,
-  showWordmark = true,
-  size = 28,
+  size = 26,
+  inverse = false,
+  href,
 }: {
   className?: string;
-  showWordmark?: boolean;
+  /** Wordmark height target in px — controls font-size. */
   size?: number;
+  /** Render in inverse (dark on light), e.g. on accent backgrounds. */
+  inverse?: boolean;
+  /** If provided, wraps in <a>. Otherwise renders as <span>. */
+  href?: string;
 }) {
+  const Tag = href ? "a" : "span";
   return (
-    <span className={cn("inline-flex items-center gap-2.5 leading-none", className)}>
-      <Glyph size={size} />
-      {showWordmark ? (
-        <span
-          className="font-display font-semibold tracking-tight text-text"
-          style={{ fontSize: Math.round(size * 0.72) }}
-        >
-          BuilderHQ
-        </span>
-      ) : null}
-    </span>
+    <Tag
+      {...(href ? { href } : {})}
+      aria-label="BuilderHQ"
+      className={cn(
+        "inline-flex items-baseline leading-none select-none",
+        "font-display tracking-[0.08em]",
+        inverse ? "text-bg" : "text-text",
+        className,
+      )}
+      style={{ fontSize: size }}
+    >
+      <span>BUILDER</span>
+      <em
+        className={cn(
+          "not-italic",
+          inverse ? "text-bg" : "text-accent",
+        )}
+      >
+        HQ
+      </em>
+    </Tag>
   );
 }
 
-export function Glyph({ size = 28, className }: { size?: number; className?: string }) {
-  const id = React.useId();
+/**
+ * LogoMark — the graphical brand mark. Use only where an image asset is
+ * required (favicons, OG images, app icons, social avatars). For UI use
+ * <Logo /> — it's vector-perfect at every size, recolours via CSS, and
+ * works across every breakpoint.
+ */
+export function LogoMark({
+  size = 48,
+  className,
+  alt = "BuilderHQ",
+}: {
+  size?: number;
+  className?: string;
+  alt?: string;
+}) {
   return (
-    <svg
+    <Image
+      src="/brand/BuilderHQ_White_Text.png"
+      alt={alt}
       width={size}
       height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn("shrink-0", className)}
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`${id}-a`} x1="4" y1="6" x2="28" y2="26" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="oklch(0.92 0.10 195)" />
-          <stop offset="1" stopColor="oklch(0.62 0.16 195)" />
-        </linearGradient>
-        <linearGradient id={`${id}-b`} x1="6" y1="14" x2="26" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="oklch(0.78 0.13 195)" />
-          <stop offset="1" stopColor="oklch(0.45 0.10 220)" />
-        </linearGradient>
-      </defs>
-      {/* back rhombus (top) */}
-      <path d="M16 2 L29 9 L16 16 L3 9 Z" fill={`url(#${id}-a)`} />
-      {/* front rhombus (right) */}
-      <path d="M16 16 L29 9 L29 23 L16 30 Z" fill={`url(#${id}-b)`} opacity="0.92" />
-      {/* front rhombus (left) — darker for depth */}
-      <path d="M16 16 L3 9 L3 23 L16 30 Z" fill="oklch(0.30 0.04 230)" opacity="0.85" />
-      {/* highlight edge */}
-      <path d="M16 2 L29 9 L16 16" stroke="oklch(1 0 0 / 0.35)" strokeWidth="0.5" fill="none" />
-    </svg>
+      priority={false}
+      className={cn("inline-block", className)}
+    />
   );
 }

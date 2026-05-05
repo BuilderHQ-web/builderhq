@@ -1,24 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Bebas_Neue, Space_Grotesk, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// UI workhorse — Inter Variable. ss01/ss02 alts enabled in globals.css.
-const inter = Inter({
-  variable: "--font-inter",
+// Display — Bebas Neue. Tall, condensed, dramatic. Brand-locked for hero
+// titles and section headlines (rendered ALL CAPS).
+const bebas = Bebas_Neue({
+  variable: "--font-bebas-neue",
+  subsets: ["latin"],
+  display: "swap",
+  weight: "400",
+});
+
+// UI — Space Grotesk. Geometric. Used for headings under display, button
+// text, labels, mid-size copy in cards.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Body — DM Sans. Optimized for long-form readability.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-// Display — Space Grotesk. Geometric, characterful, suits a construction-tech brand.
-const display = Space_Grotesk({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["500", "600", "700"],
-});
-
-// Mono — JetBrains. Used for tabular figures, ABNs, prices, IDs.
-const mono = JetBrains_Mono({
+// Mono — JetBrains. Tabular figures: ABNs, prices, IDs.
+const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   display: "swap",
@@ -27,11 +37,11 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://builderhq.com.au"),
   title: {
-    default: "BuilderHQ — Upload once. Tender smarter. Build better.",
+    default: "BuilderHQ — Australia's Residential Tender Platform",
     template: "%s · BuilderHQ",
   },
   description:
-    "Australia's residential construction tendering marketplace. Project owners upload once. Suitable builders unlock projects, communicate, and submit tenders.",
+    "Upload your project once. Reach builders ready to tender, compare responses with clarity, and keep every document and conversation in one place.",
   applicationName: "BuilderHQ",
   authors: [{ name: "BuilderHQ" }],
   keywords: [
@@ -44,10 +54,16 @@ export const metadata: Metadata = {
     "townhouse development",
     "project tendering",
   ],
+  icons: {
+    icon: [
+      { url: "/brand/BuilderHQ_White_Text.png", type: "image/png", sizes: "500x500" },
+    ],
+    apple: "/brand/BuilderHQ_White_Text.png",
+  },
   openGraph: {
     type: "website",
     siteName: "BuilderHQ",
-    title: "BuilderHQ — Upload once. Tender smarter. Build better.",
+    title: "BuilderHQ — Upload. Compare. Build.",
     description:
       "Stop chasing builders. Upload your project once and let suitable builders come to you.",
   },
@@ -68,7 +84,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${display.variable} ${mono.variable} antialiased`}
+      className={`${bebas.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${jetbrains.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans text-text">{children}</body>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Bell, Search, Upload, MessageSquare } from "lucide-react";
 import { Section, Eyebrow } from "@/components/brand/section";
-import { Logo, Glyph } from "@/components/brand/logo";
+import { Logo, LogoMark } from "@/components/brand/logo";
 import { GlowButton } from "@/components/brand/glow-button";
 import { GradientBorder } from "@/components/brand/gradient-border";
 import { GridBg, NoiseOverlay } from "@/components/brand/grid-bg";
@@ -17,12 +17,15 @@ export const metadata = { title: "Design system", robots: { index: false, follow
 
 const swatches = [
   { name: "bg", className: "bg-bg" },
+  { name: "bg-deep", className: "bg-bg-deep" },
   { name: "bg-raised", className: "bg-bg-raised" },
   { name: "bg-elev", className: "bg-bg-elev" },
   { name: "surface-1", className: "bg-surface-1" },
   { name: "surface-2", className: "bg-surface-2" },
   { name: "surface-3", className: "bg-surface-3" },
   { name: "accent", className: "bg-accent" },
+  { name: "accent-light", className: "bg-accent-light" },
+  { name: "blue", className: "bg-blue" },
   { name: "success", className: "bg-success" },
   { name: "warning", className: "bg-warning" },
   { name: "danger", className: "bg-danger" },
@@ -30,16 +33,17 @@ const swatches = [
 ];
 
 const types = [
-  { label: "Hero", className: "font-display font-semibold tracking-[-0.04em] text-[clamp(3.25rem,6vw+1rem,6.75rem)] leading-[1.02]" },
-  { label: "Display", className: "font-display font-semibold tracking-[-0.035em] text-[clamp(2.75rem,5vw+1rem,5rem)] leading-[1.04]" },
-  { label: "H1 · 44/52", className: "font-display font-semibold tracking-[-0.025em] text-[44px] leading-[52px]" },
-  { label: "H2 · 32/40", className: "font-display font-semibold tracking-[-0.02em] text-[32px] leading-[40px]" },
-  { label: "H3 · 24/32", className: "font-display font-semibold tracking-[-0.015em] text-[24px] leading-[32px]" },
-  { label: "H4 · 20/28", className: "font-sans font-semibold tracking-[-0.01em] text-[20px] leading-[28px]" },
-  { label: "Body LG · 17/28", className: "text-[17px] leading-[28px] text-text-muted" },
-  { label: "Body · 15/24", className: "text-[15px] leading-[24px] text-text-muted" },
+  { label: "Hero · Bebas", className: "font-display tracking-[-0.015em] uppercase text-[clamp(4.5rem,12vw+1rem,11rem)] leading-[0.83]" },
+  { label: "Display · Bebas", className: "font-display tracking-[-0.015em] uppercase text-[clamp(3.5rem,8vw+1rem,7.5rem)] leading-[0.88]" },
+  { label: "H1 · Bebas", className: "font-display tracking-[-0.02em] uppercase text-[clamp(3rem,5.5vw+1rem,5.5rem)] leading-[0.92]" },
+  { label: "H2 · Bebas", className: "font-display tracking-[-0.02em] uppercase text-[clamp(2.25rem,4vw+1rem,3.75rem)] leading-none" },
+  { label: "H3 · Space Grotesk", className: "font-ui font-bold tracking-[-0.02em] text-[26px] leading-8" },
+  { label: "H4 · Space Grotesk", className: "font-ui font-semibold tracking-[-0.02em] text-[20px] leading-7" },
+  { label: "Body LG · DM Sans · 17/30", className: "text-[17px] leading-[30px] text-text-muted" },
+  { label: "Body · DM Sans · 15/26", className: "text-[15px] leading-[26px] text-text-muted" },
   { label: "Body SM · 14/22", className: "text-[14px] leading-[22px] text-text-muted" },
-  { label: "Caption · 11/16, 0.04em", className: "text-[11px] leading-[16px] tracking-[0.04em] uppercase text-text-faint" },
+  { label: "Kicker · 10/14, 0.22em", className: "text-[10px] leading-[14px] tracking-[0.22em] uppercase text-accent" },
+  { label: "Label · 9/14, 0.18em", className: "text-[9px] leading-[14px] tracking-[0.18em] uppercase text-text-dim" },
   { label: "Mono · ABN 12 345 678 901", className: "font-mono text-[14px] text-text" },
 ];
 
@@ -307,18 +311,22 @@ export default function DesignSystem() {
 
       {/* LOGO */}
       <Section width="wide" spacing="sm">
-        <SectionTitle eyebrow="Brand" title="Logo & glyph" />
+        <SectionTitle eyebrow="Brand" title="Logo & mark" />
         <div className="mt-8 grid sm:grid-cols-3 gap-4">
           <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-1 p-8 flex items-center justify-center">
             <Logo size={36} />
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border-subtle bg-surface-1 p-8 flex items-center justify-center">
-            <Glyph size={48} />
+            <LogoMark size={64} />
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border-subtle p-8 flex items-center justify-center bg-accent">
-            <Logo size={32} className="text-accent-contrast" />
+            <Logo size={32} inverse />
           </div>
         </div>
+        <p className="mt-3 text-[12px] text-text-dim">
+          The wordmark (BUILDER + accent HQ) is the primary brand expression.
+          The graphical mark is reserved for favicons / OG / social avatars.
+        </p>
       </Section>
 
       <Divider />

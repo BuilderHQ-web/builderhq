@@ -45,6 +45,11 @@ export function Section({
   );
 }
 
+/**
+ * Eyebrow / kicker — brand-locked. Renders a small uppercase label preceded
+ * by a 30px glowing teal rule. Direct port of the `.kicker` style in
+ * reference/landing/index.html.
+ */
 export function Eyebrow({
   className,
   children,
@@ -55,12 +60,15 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em]",
-        "text-accent",
+        "inline-flex items-center gap-3.5 font-ui",
+        "text-[10px] tracking-[0.22em] uppercase text-accent",
         className,
       )}
     >
-      <span className="size-1.5 rounded-full bg-accent shadow-[0_0_12px_2px_oklch(0.78_0.16_195/0.6)]" />
+      <span
+        aria-hidden
+        className="block w-[30px] h-px bg-accent shadow-[0_0_10px_rgba(0,212,200,0.6)]"
+      />
       {children}
     </span>
   );

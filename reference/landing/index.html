@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BuilderHQ — Australia's Residential Tender Platform</title>
+<meta name="description" content="BuilderHQ helps project owners upload residential projects, reach builders, compare tenders, and manage builder conversations in one clean platform." />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #03090f;
+  --bg2: #060f19;
+  --teal: #00d4c8;
+  --teal2: #7ef5ed;
+  --blue: #1a5fd4;
+  --white: #eef6ff;
+  --soft: #98b8d0;
+  --dim: #567080;
+  --line: rgba(100,180,255,.08);
+  --line2: rgba(0,212,200,.12);
+  --shadow: 0 32px 80px rgba(0,0,0,.45);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --r: 3px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: none;
+  line-height: 1;
+}
+
+a, button { cursor: none; text-decoration: none; }
+::selection {
+  background: rgba(126,245,237,.88);
+  color: #031118;
+  -webkit-text-fill-color: #031118;
+  text-shadow: none;
+}
+
+/* ── CUSTOM CURSOR ── */
+.cursor-dot, .cursor-ring, .cursor-glow {
+  position: fixed; border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%,-50%);
+  z-index: 9999; will-change: transform;
+}
+.cursor-dot { width: 8px; height: 8px; background: var(--teal); mix-blend-mode: screen; box-shadow: 0 0 18px rgba(0,212,200,.9); transition: width .2s, height .2s; }
+.cursor-ring { width: 40px; height: 40px; border: 1px solid rgba(0,212,200,.38); z-index: 9998; transition: width .4s cubic-bezier(.22,1,.36,1), height .4s cubic-bezier(.22,1,.36,1), border-color .3s; }
+.cursor-glow { width: 120px; height: 120px; background: radial-gradient(circle, rgba(0,212,200,.07) 0%, transparent 70%); z-index: 9997; transition: width .5s, height .5s; }
+body.hovering .cursor-dot { width: 5px; height: 5px; }
+body.hovering .cursor-ring { width: 70px; height: 70px; border-color: rgba(255,255,255,.5); }
+body.hovering .cursor-glow { width: 175px; height: 175px; }
+
+/* ── AMBIENT ── */
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.amb-orb { position: absolute; border-radius: 50%; filter: blur(50px); opacity: .2; }
+.amb-orb.a { width: 52vw; height: 52vw; right: -14vw; top: -18vw; background: radial-gradient(circle, rgba(26,95,212,.95), transparent 65%); animation: ambFloat 18s ease-in-out infinite; }
+.amb-orb.b { width: 40vw; height: 40vw; left: -12vw; bottom: -10vw; background: radial-gradient(circle, rgba(0,212,200,.85), transparent 65%); animation: ambFloat 14s ease-in-out infinite reverse; }
+
+/* ── GRID OVERLAY ── */
+.grid-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(100,180,255,.028) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,.028) 1px, transparent 1px); background-size: 72px 72px; mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 80%); }
+
+/* ── OPTIC FIBRE VERTICAL LINES ── */
+.fibre-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 1; }
+
+/* ── NOISE ── */
+.noise { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .022; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 220px 220px; }
+
+/* ── LOADER ── */
+#loader { position: fixed; inset: 0; z-index: 1000; background: #020710; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.l-rings { position: absolute; left: 50%; top: 50%; }
+.l-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,212,200,.1); transform: translate(-50%,-50%); animation: lRingPulse 3.5s ease-in-out infinite; }
+.l-ring:nth-child(1) { width: 280px; height: 280px; }
+.l-ring:nth-child(2) { width: 480px; height: 480px; animation-delay: .7s; }
+.l-ring:nth-child(3) { width: 680px; height: 680px; animation-delay: 1.4s; }
+.l-content { position: relative; z-index: 2; text-align: center; }
+.l-kicker { font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; opacity: 0; animation: fadeUp .6s .2s forwards; }
+.l-word { font-family: var(--font-display); font-size: clamp(72px,12vw,160px); letter-spacing: .06em; line-height: 1; position: relative; overflow: hidden; display: inline-block; }
+.l-word-outline { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.2); display: block; }
+.l-word-fill { position: absolute; inset: 0; color: var(--teal2); clip-path: inset(100% 0 0 0); display: block; }
+.l-bar-wrap { width: min(480px,72vw); height: 1px; background: rgba(255,255,255,.07); margin: 28px auto 0; overflow: hidden; }
+.l-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--teal2)); transition: width .05s linear; }
+.l-pct { font-size: 11px; letter-spacing: .2em; color: var(--soft); margin-top: 14px; opacity: 0; animation: fadeUp .6s .4s forwards; }
+
+/* ── NAV ── */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 28px 48px; border-bottom: 1px solid transparent; transition: background .5s, border-color .5s, backdrop-filter .5s, padding .4s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+nav.active { pointer-events: all; opacity: 1; }
+nav.scrolled { background: rgba(3,9,15,.82); backdrop-filter: blur(24px); border-color: var(--line); padding-top: 18px; padding-bottom: 18px; }
+.nav-logo { font-family: var(--font-display); font-size: 26px; letter-spacing: .08em; color: #fff; }
+.nav-logo em { font-style: normal; color: var(--teal); }
+.nav-links { display: flex; gap: 32px; list-style: none; position: absolute; left: 50%; transform: translateX(-50%); }
+.nav-links a { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(238,246,255,.42); transition: color .25s; white-space: nowrap; }
+.nav-links a:hover { color: #fff; }
+.nav-actions { display: flex; gap: 10px; align-items: center; }
+.btn-sm { padding: 10px 20px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s; border-radius: var(--r); }
+.btn-sm-outline { border: 1px solid rgba(0,212,200,.35); color: var(--teal2); background: rgba(0,212,200,.05); }
+.btn-sm-outline:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(0,212,200,.18); }
+.btn-sm-solid { background: linear-gradient(135deg, var(--teal2), var(--teal)); color: #031118; font-weight: 600; }
+.btn-sm-solid:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,212,200,.28); }
+
+/* ── LAYOUT ── */
+.section { position: relative; z-index: 5; }
+.wrap { width: min(1320px, calc(100vw - 80px)); margin: 0 auto; }
+.kicker { display: inline-flex; align-items: center; gap: 14px; font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--teal); }
+.kicker::before { content: ""; width: 30px; height: 1px; background: var(--teal); box-shadow: 0 0 10px rgba(0,212,200,.6); }
+
+/* ── HERO ── */
+#hero { min-height: 100vh; display: flex; align-items: flex-end; padding-bottom: 68px; overflow: hidden; }
+.hero-corner { position: absolute; width: 34px; height: 34px; pointer-events: none; }
+.hero-corner.tl { top: 28px; left: 28px; border-top: 1px solid rgba(0,212,200,.38); border-left: 1px solid rgba(0,212,200,.38); }
+.hero-corner.tr { top: 28px; right: 28px; border-top: 1px solid rgba(0,212,200,.38); border-right: 1px solid rgba(0,212,200,.38); }
+.hero-corner.bl { bottom: 28px; left: 28px; border-bottom: 1px solid rgba(0,212,200,.38); border-left: 1px solid rgba(0,212,200,.38); }
+.hero-corner.br { bottom: 28px; right: 28px; border-bottom: 1px solid rgba(0,212,200,.38); border-right: 1px solid rgba(0,212,200,.38); }
+.hero-scan { display: none; }
+
+.hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: end; padding-top: 140px; }
+.hero-kicker { margin-bottom: 22px; }
+
+.hero-title { font-family: var(--font-display); font-size: clamp(96px,14vw,218px); line-height: .83; letter-spacing: -.015em; }
+.h-row { display: block; overflow: hidden; }
+.h-row-inner { display: block; transform: translateY(105%); opacity: 0; }
+.h-row-inner.stroke { -webkit-text-stroke: 1.2px rgba(142,252,244,.72); color: transparent; }
+.h-row-inner.solid { color: #fff; }
+.h-row-inner.teal { color: var(--teal2); text-shadow: 0 0 50px rgba(0,212,200,.32), 0 0 100px rgba(0,212,200,.12); }
+
+.hero-body { margin-top: 30px; opacity: 0; transform: translateY(22px); }
+.hero-body p { font-size: 16px; line-height: 1.85; color: rgba(238,246,255,.62); max-width: 600px; margin-bottom: 34px; }
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+
+.btn-primary { display: inline-flex; align-items: center; gap: 12px; padding: 16px 32px; background: linear-gradient(135deg, var(--teal2), var(--teal)); color: #031118; font-weight: 600; font-size: 12px; letter-spacing: .08em; position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s; border-radius: var(--r); }
+.btn-primary::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); transform: translateX(-100%); transition: transform .75s; }
+.btn-primary:hover::after { transform: translateX(100%); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0,212,200,.3); }
+.btn-ghost { display: inline-flex; align-items: center; gap: 12px; padding: 15px 30px; border: 1px solid rgba(100,180,255,.22); color: rgba(238,246,255,.7); font-size: 12px; letter-spacing: .08em; background: rgba(255,255,255,.02); transition: transform .35s cubic-bezier(.22,1,.36,1), border-color .3s, color .3s, box-shadow .3s; border-radius: var(--r); }
+.btn-ghost:hover { transform: translateY(-2px); border-color: var(--teal); color: var(--teal2); box-shadow: 0 0 24px rgba(0,212,200,.1); }
+
+.hero-proof { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.proof-card { padding: 16px 18px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01)); backdrop-filter: blur(10px); opacity: 0; transform: translateY(24px); transition: border-color .3s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .3s; border-radius: var(--r); }
+.proof-card:hover { border-color: rgba(0,212,200,.22); transform: translateY(-2px) !important; box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+.proof-label { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-bottom: 7px; }
+.proof-value { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--white); line-height: 1.35; }
+
+/* ── HERO CARDS ── */
+.hero-right { position: relative; }
+.hero-cards { position: relative; height: 640px; }
+.hcard { position: absolute; border: 1px solid rgba(100,180,255,.14); background: linear-gradient(160deg, rgba(10,30,48,.94), rgba(6,18,30,.97)); backdrop-filter: blur(20px); box-shadow: var(--shadow); overflow: hidden; opacity: 0; transition: border-color .35s, box-shadow .35s; border-radius: 6px; }
+.hcard:hover { border-color: rgba(0,212,200,.28); box-shadow: 0 28px 64px rgba(0,0,0,.4); }
+.hcard-sheen { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.07) 50%, transparent 65%); transform: translateX(-100%); transition: transform 1s ease; pointer-events: none; border-radius: 6px; }
+.hcard:hover .hcard-sheen { transform: translateX(100%); }
+.hcard-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 15px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.hcard-title { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--soft); }
+.hcard-badge { padding: 5px 9px; border: 1px solid rgba(0,212,200,.28); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); border-radius: 2px; }
+.hcard-body { padding: 15px; }
+
+.hcard-project { top: 0; right: 0; width: 84%; }
+.proj-visual { height: 115px; background: radial-gradient(circle at 20% 30%, rgba(0,212,200,.14), transparent 36%), radial-gradient(circle at 80% 10%, rgba(26,95,212,.36), transparent 30%), linear-gradient(135deg, #0a1f31, #10283b); border: 1px solid rgba(255,255,255,.05); position: relative; overflow: hidden; margin-bottom: 12px; border-radius: 3px; }
+.proj-grid-lines { position: absolute; inset: 0; background-image: linear-gradient(rgba(142,252,244,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,.07) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(180deg, black 30%, transparent 100%); }
+.proj-bars { position: absolute; bottom: 8%; left: 8%; right: 8%; height: 55%; display: flex; gap: 8px; align-items: flex-end; }
+.proj-bars span { flex: 1; border: 1px solid rgba(142,252,244,.18); background: linear-gradient(180deg, rgba(142,252,244,.18), rgba(0,212,200,.04)); transform-origin: bottom; animation: barRise 5s ease-in-out infinite; border-radius: 2px 2px 0 0; }
+.proj-bars span:nth-child(2) { animation-delay: .25s; }
+.proj-bars span:nth-child(3) { animation-delay: .55s; }
+.proj-bars span:nth-child(4) { animation-delay: .85s; }
+.proj-details { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.proj-detail { padding: 9px 11px; border: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.02); border-radius: 3px; }
+.proj-detail .dl { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; display: block; }
+.proj-detail strong { font-size: 12px; font-weight: 500; color: var(--white); }
+
+.hcard-pipeline { left: 0; bottom: 48px; width: 57%; }
+.pipe-rows { display: flex; flex-direction: column; gap: 9px; }
+.pipe-row { display: grid; grid-template-columns: 68px 1fr 24px; align-items: center; gap: 9px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.04); background: rgba(255,255,255,.02); border-radius: 3px; }
+.pipe-row span { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.pipe-bar { height: 5px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+.pipe-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--teal)); }
+.pipe-row b { font-size: 11px; font-weight: 600; color: var(--white); text-align: right; }
+
+.hcard-alerts { right: 4%; bottom: 0; width: 50%; }
+.alert-items { display: flex; flex-direction: column; gap: 7px; }
+.alert-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 11px; border: 1px solid rgba(255,255,255,.04); background: rgba(255,255,255,.02); border-radius: 3px; }
+.alert-item b { font-size: 12px; font-weight: 500; }
+.alert-item small { display: block; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-top: 3px; }
+.alert-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal2); box-shadow: 0 0 12px rgba(0,212,200,.7); flex-shrink: 0; animation: dotPulse 2.5s ease-in-out infinite; }
+
+/* ── MARQUEE ── */
+.marquee-section { position: relative; z-index: 6; border-top: 1px solid rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.04); background: rgba(6,15,25,.7); overflow: hidden; }
+.marquee-section::before, .marquee-section::after { content: ""; position: absolute; top: 0; bottom: 0; width: 140px; z-index: 2; pointer-events: none; }
+.marquee-section::before { left: 0; background: linear-gradient(90deg, #060f19, transparent); }
+.marquee-section::after { right: 0; background: linear-gradient(270deg, #060f19, transparent); }
+.marquee-track { display: flex; white-space: nowrap; animation: marqueeScroll 30s linear infinite; }
+.marquee-track:hover { animation-play-state: paused; }
+.m-item { display: inline-flex; align-items: center; gap: 16px; padding: 15px 36px; font-family: var(--font-display); font-size: 18px; letter-spacing: .1em; color: rgba(238,246,255,.22); transition: color .25s; }
+.m-item:hover { color: var(--teal2); }
+.m-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(0,212,200,.55); }
+
+
+/* ── PROBLEM ── */
+#problem { padding: 140px 0 100px; }
+.problem-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.problem-left { position: sticky; top: 120px; }
+.problem-kicker { margin-bottom: 20px; }
+.problem-title { font-family: var(--font-display); font-size: clamp(60px,7vw,104px); line-height: .88; letter-spacing: -.02em; margin-bottom: 28px; }
+.problem-title .teal { color: var(--teal2); }
+.problem-desc { font-size: 16px; line-height: 1.9; color: rgba(238,246,255,.52); max-width: 500px; }
+.problem-right { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+
+.pain-card { padding: 28px 30px; border: 1px solid rgba(255,255,255,.055); background: linear-gradient(180deg, rgba(8,25,40,.8), rgba(4,13,22,.94)); border-radius: 6px; transition: border-color .35s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .35s; }
+.pain-card:hover { border-color: rgba(0,212,200,.18); transform: translateX(6px); box-shadow: -4px 0 0 0 rgba(0,212,200,.3), 0 16px 40px rgba(0,0,0,.2); }
+.pain-card.solution { border-color: rgba(0,212,200,.14); background: linear-gradient(180deg, rgba(0,212,200,.055), rgba(4,13,22,.94)); }
+.pain-card.solution:hover { border-color: rgba(0,212,200,.35); box-shadow: -4px 0 0 0 rgba(0,212,200,.55), 0 16px 40px rgba(0,0,0,.2); }
+.pain-label { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 16px; }
+.pain-card .pain-label { color: var(--dim); }
+.pain-card.solution .pain-label { color: var(--teal); }
+.pain-row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 11px; }
+.pain-row:last-child { margin-bottom: 0; }
+.pain-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; font-size: 10px; }
+.pain-card .pain-icon { background: rgba(255,80,80,.1); border: 1px solid rgba(255,80,80,.18); color: rgba(255,120,120,.7); }
+.pain-card.solution .pain-icon { background: rgba(0,212,200,.1); border: 1px solid rgba(0,212,200,.22); color: var(--teal2); }
+.pain-text { font-size: 14px; line-height: 1.65; color: rgba(238,246,255,.65); }
+.pain-card.solution .pain-text { color: rgba(238,246,255,.8); }
+
+/* ── STATS ── */
+#stats { padding: 100px 0; }
+.stats-header { display: grid; grid-template-columns: 1fr .7fr; gap: 60px; align-items: end; margin-bottom: 52px; }
+.stats-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,90px); line-height: .88; letter-spacing: -.02em; }
+.stats-title .teal { color: var(--teal2); }
+.stats-sub { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); }
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.05); border-radius: 6px; overflow: hidden; }
+.stat-cell { background: linear-gradient(180deg, rgba(8,26,40,.94), rgba(5,16,26,.98)); padding: 48px 36px; position: relative; overflow: hidden; transition: background .4s; }
+.stat-cell::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, rgba(0,212,200,.09), transparent 55%); opacity: 0; transition: opacity .4s; }
+.stat-cell:hover::before { opacity: 1; }
+.stat-cell::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--teal2), transparent); transform: scaleX(0); transition: transform .55s cubic-bezier(.22,1,.36,1); }
+.stat-cell:hover::after { transform: scaleX(1); }
+.stat-num { font-family: var(--font-display); font-size: clamp(52px,5vw,78px); line-height: 1; letter-spacing: -.02em; }
+.stat-num .accent { color: var(--teal2); }
+.stat-label { font-size: 13px; color: var(--dim); margin-top: 12px; line-height: 1.55; }
+
+/* ── FEATURES ── */
+#features { padding: 120px 0; }
+.features-top { display: grid; grid-template-columns: 1fr .8fr; gap: 64px; align-items: end; margin-bottom: 52px; }
+.features-title { font-family: var(--font-display); font-size: clamp(54px,7vw,106px); line-height: .88; letter-spacing: -.02em; }
+.features-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.55); color: transparent; }
+.features-title .teal { color: var(--teal2); }
+.features-desc { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); max-width: 460px; }
+
+.features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.05); border-radius: 8px; overflow: hidden; }
+.feat-item { background: linear-gradient(160deg, rgba(9,27,42,.9), rgba(6,18,30,.97)); padding: 40px 36px; position: relative; overflow: hidden; transition: background .35s; }
+.feat-item::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--teal2), transparent); transform: scaleX(0); transition: transform .5s cubic-bezier(.22,1,.36,1); }
+.feat-item:hover::before { transform: scaleX(1); }
+.feat-item::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 80% 20%, rgba(0,212,200,.06), transparent 50%); opacity: 0; transition: opacity .4s; }
+.feat-item:hover::after { opacity: 1; }
+.feat-n { font-family: var(--font-display); font-size: 13px; letter-spacing: .18em; color: var(--teal); margin-bottom: 18px; display: block; }
+.feat-name { font-family: var(--font-ui); font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 12px; position: relative; z-index: 1; }
+.feat-copy { font-size: 14px; line-height: 1.8; color: rgba(238,246,255,.55); position: relative; z-index: 1; }
+.feat-ghost { position: absolute; right: 16px; bottom: 8px; font-family: var(--font-display); font-size: 80px; color: transparent; -webkit-text-stroke: 1px rgba(142,252,244,.06); line-height: 1; pointer-events: none; user-select: none; }
+
+/* ── HOW ── */
+#how { padding: 120px 0; background: linear-gradient(180deg, rgba(6,18,30,.5), rgba(3,9,15,.7)); }
+.how-header { display: grid; grid-template-columns: .9fr 1fr; gap: 60px; align-items: end; margin-bottom: 64px; }
+.how-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; letter-spacing: -.02em; }
+.how-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.45); color: transparent; }
+.how-title .teal { color: var(--teal2); }
+.how-copy { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); }
+
+.how-steps { display: grid; grid-template-columns: 1fr 60px 1fr 60px 1fr; align-items: stretch; gap: 0; }
+.step-card { position: relative; padding: 36px 32px; border: 1px solid rgba(255,255,255,.07); background: linear-gradient(180deg, rgba(9,27,42,.9), rgba(6,20,32,.97)); overflow: hidden; transition: border-color .4s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .4s; border-radius: 6px; }
+.step-card:hover { border-color: rgba(0,212,200,.22); transform: translateY(-6px); box-shadow: 0 24px 56px rgba(0,0,0,.35), 0 0 0 1px rgba(0,212,200,.1); }
+.step-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 90% 8%, rgba(0,212,200,.08), transparent 45%); opacity: 0; transition: opacity .4s; }
+.step-card:hover::before { opacity: 1; }
+.step-num { font-family: var(--font-display); font-size: 11px; letter-spacing: .22em; color: var(--teal); margin-bottom: 28px; display: block; }
+.step-icon { width: 48px; height: 48px; border: 1px solid rgba(0,212,200,.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; background: rgba(0,212,200,.06); }
+.step-icon svg { width: 22px; height: 22px; color: var(--teal2); }
+.step-title { font-family: var(--font-ui); font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 14px; }
+.step-desc { font-size: 14px; line-height: 1.8; color: rgba(238,246,255,.6); margin-bottom: 24px; }
+.step-pts { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.step-pts li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.6; color: var(--dim); }
+.step-pts li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; background: linear-gradient(180deg, var(--teal2), var(--teal)); box-shadow: 0 0 8px rgba(0,212,200,.5); }
+
+.step-connector { display: flex; align-items: center; justify-content: center; position: relative; }
+.step-connector::before { content: ""; position: absolute; left: 4px; right: 4px; height: 1px; background: linear-gradient(90deg, rgba(0,212,200,.1), rgba(142,252,244,.5), rgba(0,212,200,.1)); }
+.step-conn-btn { position: relative; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(142,252,244,.22); background: rgba(6,18,30,.95); display: flex; align-items: center; justify-content: center; color: var(--teal2); font-size: 14px; animation: connPulse 3s ease-in-out infinite; box-shadow: 0 0 20px rgba(0,0,0,.3); }
+
+/* ── AUDIENCES ── */
+#audiences { padding: 120px 0; }
+.aud-header { display: flex; justify-content: space-between; gap: 40px; align-items: end; margin-bottom: 48px; }
+.aud-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; }
+.aud-title .teal { color: var(--teal2); }
+.aud-sub { max-width: 440px; font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+.aud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.aud-card { position: relative; padding: 44px 40px; border: 1px solid rgba(255,255,255,.07); background: linear-gradient(180deg, rgba(10,26,40,.92), rgba(6,18,28,.98)); overflow: hidden; transition: border-color .4s, transform .5s cubic-bezier(.22,1,.36,1), box-shadow .4s; border-radius: 8px; }
+.aud-card:hover { border-color: rgba(0,212,200,.2); transform: translateY(-6px); box-shadow: 0 28px 60px rgba(0,0,0,.3); }
+.aud-card::after { content: ""; position: absolute; bottom: -30%; right: -15%; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(0,212,200,.08), transparent 70%); pointer-events: none; }
+.aud-card-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid rgba(0,212,200,.2); background: rgba(0,212,200,.06); border-radius: 2px; font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); margin-bottom: 24px; }
+.aud-card-tag-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 6px rgba(0,212,200,.7); }
+.aud-card h3 { font-family: var(--font-ui); font-size: 26px; font-weight: 800; letter-spacing: -.025em; margin-bottom: 14px; line-height: 1.15; }
+.aud-card > p { font-size: 14px; line-height: 1.85; color: rgba(238,246,255,.58); margin-bottom: 32px; max-width: 420px; }
+.aud-items { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
+.aud-item { padding: 16px 14px; border: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.025); border-radius: 4px; transition: border-color .3s; }
+.aud-card:hover .aud-item { border-color: rgba(0,212,200,.08); }
+.aud-item b { display: block; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+.aud-item span { font-size: 12px; line-height: 1.6; color: rgba(238,246,255,.6); }
+.aud-cta { display: inline-flex; align-items: center; gap: 10px; padding: 13px 20px; border: 1px solid rgba(0,212,200,.32); color: var(--teal2); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; background: rgba(0,212,200,.05); transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s, background .3s; border-radius: 3px; }
+.aud-cta:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(0,212,200,.14); background: rgba(0,212,200,.1); }
+.aud-cta svg { width: 11px; height: 11px; transition: transform .3s; }
+.aud-cta:hover svg { transform: translate(2px, -2px); }
+
+/* ── SHOWCASE / PLATFORM SCREENS ── */
+#showcase { padding: 120px 0; }
+.show-header { display: grid; grid-template-columns: .9fr 1fr; gap: 60px; align-items: end; margin-bottom: 52px; }
+.show-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,94px); line-height: .88; }
+.show-title .outline { -webkit-text-stroke: 1.2px rgba(142,252,244,.45); color: transparent; }
+.show-title .teal { color: var(--teal2); }
+.show-copy { font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+
+.platform-tabs { display: flex; gap: 2px; margin-bottom: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+.ptab { padding: 14px 22px; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); background: none; border: none; cursor: none; transition: color .25s; position: relative; }
+.ptab::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px; background: var(--teal2); transform: scaleX(0); transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.ptab.active { color: var(--teal2); }
+.ptab.active::after { transform: scaleX(1); }
+.ptab:hover { color: var(--white); }
+
+.platform-wrap { border: 1px solid rgba(255,255,255,.06); border-top: none; background: linear-gradient(180deg, rgba(8,25,40,.8), rgba(4,13,22,.94)); border-radius: 0 0 8px 8px; overflow: hidden; }
+.platform-panel { display: none; padding: 0; }
+.platform-panel.active { display: block; }
+
+.screen-layout { display: grid; grid-template-columns: 1fr 1.4fr; min-height: 420px; }
+.screen-info { padding: 44px 40px; border-right: 1px solid rgba(255,255,255,.05); display: flex; flex-direction: column; justify-content: center; }
+.screen-step { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); margin-bottom: 20px; }
+.screen-title { font-family: var(--font-ui); font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 16px; line-height: 1.15; }
+.screen-desc { font-size: 14px; line-height: 1.85; color: rgba(238,246,255,.58); margin-bottom: 32px; }
+.screen-points { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.screen-points li { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; line-height: 1.6; color: rgba(238,246,255,.7); }
+.screen-points li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; background: linear-gradient(180deg, var(--teal2), var(--teal)); box-shadow: 0 0 8px rgba(0,212,200,.5); }
+
+.screen-visual { position: relative; overflow: hidden; background: linear-gradient(135deg, #081a2a, #0d2236); }
+.screen-visual-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 30px; }
+
+/* Mock UI screens */
+.mock-screen { width: 100%; max-width: 420px; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: linear-gradient(180deg, rgba(10,28,44,.98), rgba(6,18,30,.99)); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.mock-header { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,.02); }
+.mock-title { font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+.mock-badge { padding: 4px 8px; border: 1px solid rgba(0,212,200,.3); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); border-radius: 2px; }
+.mock-body { padding: 16px; }
+
+.mock-field { margin-bottom: 10px; }
+.mock-field-label { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-bottom: 5px; }
+.mock-field-val { padding: 8px 11px; border: 1px solid rgba(255,255,255,.07); background: rgba(255,255,255,.03); border-radius: 3px; font-size: 11px; color: var(--white); }
+.mock-field-val.teal { color: var(--teal2); border-color: rgba(0,212,200,.2); }
+
+.mock-upload-zone { border: 1px dashed rgba(0,212,200,.25); border-radius: 4px; padding: 20px; text-align: center; margin-bottom: 10px; background: rgba(0,212,200,.03); }
+.mock-upload-icon { font-size: 22px; margin-bottom: 8px; }
+.mock-upload-text { font-size: 10px; color: var(--dim); line-height: 1.5; }
+.mock-upload-text span { color: var(--teal2); }
+
+.mock-doc-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border: 1px solid rgba(255,255,255,.05); background: rgba(255,255,255,.02); border-radius: 3px; margin-bottom: 6px; }
+.mock-doc-name { font-size: 10px; color: var(--soft); display: flex; gap: 7px; align-items: center; }
+.mock-doc-name::before { content: "📄"; font-size: 12px; }
+.mock-doc-size { font-size: 9px; color: var(--dim); }
+.mock-doc-status { font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+
+.mock-proj-list { display: flex; flex-direction: column; gap: 8px; }
+.mock-proj-row { padding: 11px 13px; border: 1px solid rgba(255,255,255,.06); border-radius: 4px; background: rgba(255,255,255,.02); display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; transition: border-color .25s; }
+.mock-proj-row:hover { border-color: rgba(0,212,200,.22); }
+.mock-proj-name { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+.mock-proj-meta { font-size: 9px; letter-spacing: .1em; color: var(--dim); }
+.mock-proj-tag { padding: 4px 8px; border: 1px solid rgba(0,212,200,.25); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); border-radius: 2px; white-space: nowrap; }
+.mock-proj-tag.pending { border-color: rgba(255,180,0,.25); color: #fbb840; }
+
+.mock-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mock-builder-card { padding: 12px; border: 1px solid rgba(255,255,255,.06); border-radius: 4px; background: rgba(255,255,255,.02); }
+.mock-builder-av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,212,200,.3), rgba(26,95,212,.3)); border: 1px solid rgba(0,212,200,.2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--teal2); margin-bottom: 8px; }
+.mock-builder-name { font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+.mock-builder-loc { font-size: 8px; color: var(--dim); margin-bottom: 8px; }
+.mock-builder-price { font-size: 12px; font-weight: 700; color: var(--teal2); margin-bottom: 5px; }
+.mock-builder-btn { width: 100%; padding: 5px; border: 1px solid rgba(0,212,200,.25); background: rgba(0,212,200,.05); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--teal2); text-align: center; border-radius: 2px; }
+
+.screen-visual::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(142,252,244,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,.04) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; }
+
+
+/* ── REAL APP SCREENSHOTS ── */
+.real-screen-inner {
+  padding: 34px;
+}
+
+.real-app-frame {
+  position: relative;
+  width: min(100%, 500px);
+  max-height: 370px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(0,212,200,.08), transparent 38%),
+    linear-gradient(180deg, rgba(10,28,44,.96), rgba(3,9,15,.98));
+  box-shadow: 0 28px 80px rgba(0,0,0,.52);
+  overflow: hidden;
+}
+
+.real-app-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.075) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 1.05s ease;
+  pointer-events: none;
+}
+
+.real-app-frame:hover::before {
+  transform: translateX(120%);
+}
+
+.real-app-screen {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 18px 50px rgba(0,0,0,.42);
+  background: rgba(3,9,15,.72);
+}
+
+/* ── TESTIMONIALS ── */
+#testi { padding: 120px 0; }
+.testi-header { display: grid; grid-template-columns: .9fr 1fr; gap: 50px; align-items: end; margin-bottom: 48px; }
+.testi-title { font-family: var(--font-display); font-size: clamp(52px,6.5vw,92px); line-height: .88; }
+.testi-title .teal { color: var(--teal2); }
+.testi-copy { font-size: 15px; line-height: 1.85; color: rgba(238,246,255,.55); }
+.testi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tcard { padding: 38px; border: 1px solid rgba(255,255,255,.05); background: linear-gradient(180deg, rgba(10,28,44,.92), rgba(6,18,30,.97)); position: relative; overflow: hidden; transition: transform .5s cubic-bezier(.22,1,.36,1), border-color .35s, box-shadow .35s; border-radius: 6px; }
+.tcard:hover { transform: translateY(-6px); border-color: rgba(0,212,200,.18); box-shadow: 0 20px 48px rgba(0,0,0,.25); }
+.tcard::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, rgba(0,212,200,.08), transparent 62%); opacity: 0; transition: opacity .4s; }
+.tcard:hover::before { opacity: 1; }
+.tcard-q { font-family: var(--font-display); font-size: 64px; color: rgba(142,252,244,.14); line-height: 1; display: block; margin-bottom: 2px; }
+.tcard-text { font-size: 14px; line-height: 1.9; color: rgba(238,246,255,.68); margin-bottom: 26px; font-style: italic; }
+.tcard-author { display: flex; align-items: center; gap: 12px; }
+.tcard-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,212,200,.22); background: linear-gradient(135deg, rgba(26,95,212,.3), rgba(0,212,200,.14)); font-family: var(--font-ui); font-weight: 700; font-size: 12px; color: var(--teal2); }
+.tcard-name { font-size: 13px; font-weight: 600; }
+.tcard-role { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+/* ── CTA ── */
+#cta { min-height: 84vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.cta-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 65% at 50% 46%, rgba(18,60,135,.38) 0%, transparent 65%); }
+.cta-rings { position: absolute; left: 50%; top: 50%; }
+.cta-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,212,200,.07); transform: translate(-50%,-50%); animation: ringPulse 4s ease-in-out infinite; }
+.cta-ring:nth-child(1) { width: min(480px,62vw); height: min(480px,62vw); }
+.cta-ring:nth-child(2) { width: min(700px,78vw); height: min(700px,78vw); animation-delay: .9s; }
+.cta-ring:nth-child(3) { width: min(920px,90vw); height: min(920px,90vw); animation-delay: 1.8s; }
+.cta-content { position: relative; z-index: 5; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; width: min(960px, calc(100vw - 80px)); }
+.cta-title { font-family: var(--font-display); font-size: clamp(64px,10vw,146px); line-height: .86; letter-spacing: -.02em; }
+.cta-title .outline { -webkit-text-stroke: 1.4px rgba(142,252,244,.82); color: transparent; }
+.cta-title .solid { color: #fff; }
+.cta-sub { font-size: 15px; line-height: 1.9; color: rgba(238,246,255,.55); max-width: 620px; }
+.cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ── FOOTER ── */
+footer { padding: 30px 48px; border-top: 1px solid rgba(255,255,255,.05); display: flex; justify-content: space-between; align-items: center; gap: 20px; position: relative; z-index: 5; background: rgba(3,9,15,.7); }
+.f-logo { font-family: var(--font-display); font-size: 22px; letter-spacing: .08em; }
+.f-logo em { font-style: normal; color: var(--teal); }
+.f-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.f-links a { font-size: 11px; color: var(--dim); transition: color .25s; }
+.f-links a:hover { color: var(--teal2); }
+.f-copy { font-size: 10px; color: rgba(86,112,128,.6); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal.d1 { transition-delay: .12s; }
+.reveal.d2 { transition-delay: .24s; }
+.reveal.d3 { transition-delay: .36s; }
+.reveal.d4 { transition-delay: .48s; }
+
+/* ── ACCESSIBILITY ── */
+a:focus-visible, button:focus-visible { outline: 2px solid var(--teal2); outline-offset: 4px; }
+
+/* ── ANIMATIONS ── */
+@keyframes ambFloat { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(-16px,18px) scale(1.04); } 66% { transform: translate(12px,-16px) scale(.97); } }
+@keyframes scanLine { 0% { background-position: 0 -100vh; } 100% { background-position: 0 100vh; } }
+@keyframes lRingPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .9; } 50% { transform: translate(-50%,-50%) scale(1.05); opacity: .3; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes barRise { 0%,100% { transform: scaleY(.6); } 40% { transform: scaleY(1); } 70% { transform: scaleY(.78); } }
+@keyframes dotPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.7); } }
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ringPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); opacity: .85; } 50% { transform: translate(-50%,-50%) scale(1.04); opacity: .28; } }
+@keyframes connPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,212,200,0); } 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,212,200,.08); } }
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .hero-grid, .stats-header, .features-top, .how-header, .show-header, .testi-header, .problem-layout { grid-template-columns: 1fr; }
+  .aud-grid, .testi-grid, .features-grid { grid-template-columns: 1fr; }
+  .hero-cards { height: 540px; }
+  .how-steps { grid-template-columns: 1fr; gap: 14px; }
+  .step-connector { min-height: 48px; flex-direction: column; }
+  .step-connector::before { left: 50%; width: 1px; height: 100%; top: 0; right: auto; background: linear-gradient(180deg, rgba(0,212,200,.12), rgba(142,252,244,.5), rgba(0,212,200,.12)); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .aud-header { flex-direction: column; align-items: flex-start; }
+  .nav-links { display: none; }
+  .problem-left { position: static; }
+  .screen-layout { grid-template-columns: 1fr; }
+  .screen-visual { min-height: 320px; }
+}
+
+@media (max-width: 820px) {
+  body { cursor: auto; }
+  a, button { cursor: pointer; }
+  .cursor-dot, .cursor-ring, .cursor-glow { display: none; }
+  nav { padding: 18px 20px; }
+  .hero-corner { display: none; }
+  .wrap { width: calc(100vw - 30px); }
+  .hero-title { font-size: clamp(78px, 22vw, 132px); }
+  .hero-proof { grid-template-columns: 1fr; }
+  .hero-btns .btn-primary, .hero-btns .btn-ghost, .cta-btns .btn-primary, .cta-btns .btn-ghost { width: 100%; justify-content: center; }
+  .hcard-project { width: 100%; }
+  .hcard-pipeline { width: 75%; bottom: 82px; }
+  .hcard-alerts { width: 58%; }
+  .hero-cards { height: 660px; }
+  .aud-items { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; align-items: flex-start; padding: 22px 18px; }
+  .ptab { padding: 12px 14px; font-size: 9px; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient">
+  <div class="amb-orb a"></div>
+  <div class="amb-orb b"></div>
+</div>
+<div class="grid-overlay"></div>
+<canvas class="fibre-canvas" id="fibreCanvas"></canvas>
+<div class="noise"></div>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+<div class="cursor-glow"></div>
+
+<div id="loader">
+  <div class="l-rings">
+    <div class="l-ring"></div>
+    <div class="l-ring"></div>
+    <div class="l-ring"></div>
+  </div>
+  <div class="l-content">
+    <div class="l-kicker">Residential tendering · Australia</div>
+    <div class="l-word">
+      <span class="l-word-outline">BUILDERHQ</span>
+      <span class="l-word-fill" id="lFill">BUILDERHQ</span>
+    </div>
+    <div class="l-bar-wrap"><div class="l-bar" id="lBar"></div></div>
+    <div class="l-pct" id="lPct">0%</div>
+  </div>
+</div>
+
+<nav id="nav">
+  <a href="#hero" class="nav-logo">BUILDER<em>HQ</em></a>
+  <ul class="nav-links">
+    <li><a href="#owners">For Owners</a></li>
+    <li><a href="#builders">For Builders</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Platform</a></li>
+  </ul>
+  <div class="nav-actions">
+    <a href="/login" class="btn-sm btn-sm-outline">Log In</a>
+    <a href="/signup" class="btn-sm btn-sm-solid">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="section" id="hero">
+  <div class="hero-corner tl"></div>
+  <div class="hero-corner tr"></div>
+  <div class="hero-corner bl"></div>
+  <div class="hero-corner br"></div>
+  <div class="hero-scan"></div>
+
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="hero-kicker">
+        <span class="kicker">Australia's residential tender platform</span>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="h-row"><span class="h-row-inner stroke">UPLOAD</span></span>
+        <span class="h-row"><span class="h-row-inner solid">COMPARE</span></span>
+        <span class="h-row"><span class="h-row-inner teal">BUILD.</span></span>
+      </h1>
+
+      <div class="hero-body">
+        <p>Upload your project once. Reach builders who are ready to tender, compare responses with clarity, and keep every document and conversation in one place.</p>
+
+        <div class="hero-btns">
+          <a href="/signup" class="btn-primary">
+            Upload a project
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </a>
+          <a href="/signup" class="btn-ghost">Browse projects as builder</a>
+        </div>
+
+        <div class="hero-proof">
+          <div class="proof-card">
+            <div class="proof-label">For project owners</div>
+            <div class="proof-value">Upload once. Let builders come to you.</div>
+          </div>
+          <div class="proof-card">
+            <div class="proof-label">For builders</div>
+            <div class="proof-value">Find tender-ready residential work faster.</div>
+          </div>
+          <div class="proof-card">
+            <div class="proof-label">One platform</div>
+            <div class="proof-value">Projects · docs · messages · tenders</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-cards">
+
+        <div class="hcard hcard-project">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Project uploaded</span>
+            <span class="hcard-badge">Tender open</span>
+          </div>
+          <div class="hcard-body">
+            <div class="proj-visual">
+              <div class="proj-grid-lines"></div>
+              <div class="proj-bars">
+                <span style="height:52%"></span>
+                <span style="height:78%"></span>
+                <span style="height:94%"></span>
+                <span style="height:64%"></span>
+              </div>
+            </div>
+            <div class="proj-details">
+              <div class="proj-detail"><span class="dl">Project</span><strong>Niddrie Townhouse</strong></div>
+              <div class="proj-detail"><span class="dl">Type</span><strong>Luxury single dwelling</strong></div>
+              <div class="proj-detail"><span class="dl">Location</span><strong>Melbourne, VIC</strong></div>
+              <div class="proj-detail"><span class="dl">Package</span><strong>Plans + specs + scope</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hcard hcard-pipeline">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Builder interest</span>
+            <span class="hcard-badge">Live</span>
+          </div>
+          <div class="hcard-body">
+            <div class="pipe-rows">
+              <div class="pipe-row"><span>Matched</span><div class="pipe-bar"><i style="width:100%"></i></div><b>18</b></div>
+              <div class="pipe-row"><span>Unlocked</span><div class="pipe-bar"><i style="width:76%"></i></div><b>12</b></div>
+              <div class="pipe-row"><span>Preparing</span><div class="pipe-bar"><i style="width:58%"></i></div><b>07</b></div>
+              <div class="pipe-row"><span>Submitted</span><div class="pipe-bar"><i style="width:32%"></i></div><b>03</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hcard hcard-alerts">
+          <div class="hcard-sheen"></div>
+          <div class="hcard-head">
+            <span class="hcard-title">Owner action</span>
+            <span class="hcard-badge">Now</span>
+          </div>
+          <div class="hcard-body">
+            <div class="alert-items">
+              <div class="alert-item">
+                <div><b>Compare builders</b><small>Profile · tender · message</small></div>
+                <div class="alert-dot"></div>
+              </div>
+              <div class="alert-item">
+                <div><b>Scope question</b><small>Attached to project</small></div>
+                <div class="alert-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <span class="m-item"><span class="m-dot"></span>Residential Tendering</span>
+    <span class="m-item"><span class="m-dot"></span>Project Upload</span>
+    <span class="m-item"><span class="m-dot"></span>Builder Discovery</span>
+    <span class="m-item"><span class="m-dot"></span>Quote Comparison</span>
+    <span class="m-item"><span class="m-dot"></span>Direct Messaging</span>
+    <span class="m-item"><span class="m-dot"></span>Verified Profiles</span>
+    <span class="m-item"><span class="m-dot"></span>Document Access</span>
+    <span class="m-item"><span class="m-dot"></span>Faster Decisions</span>
+    <span class="m-item"><span class="m-dot"></span>Residential Tendering</span>
+    <span class="m-item"><span class="m-dot"></span>Project Upload</span>
+    <span class="m-item"><span class="m-dot"></span>Builder Discovery</span>
+    <span class="m-item"><span class="m-dot"></span>Quote Comparison</span>
+    <span class="m-item"><span class="m-dot"></span>Direct Messaging</span>
+    <span class="m-item"><span class="m-dot"></span>Verified Profiles</span>
+    <span class="m-item"><span class="m-dot"></span>Document Access</span>
+    <span class="m-item"><span class="m-dot"></span>Faster Decisions</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="section" id="problem">
+  <div class="wrap">
+    <div class="problem-layout">
+      <div class="problem-left reveal">
+        <div class="kicker problem-kicker">The problem</div>
+        <h2 class="problem-title">RESIDENTIAL<br>TENDERING<br><span class="teal">IS TOO MESSY.</span></h2>
+        <p class="problem-desc">Owners chase builders. Builders chase leads. Documents get lost in email threads. Nobody knows who's serious — until too much time is already gone.</p>
+      </div>
+
+      <div class="problem-right">
+        <div class="pain-card reveal d1">
+          <div class="pain-label">Before BuilderHQ</div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">You manually chase builders one by one, with no idea who is actually interested or available.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">Plans and scope docs get emailed around, then lost, re-requested, and sent again.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">Quotes arrive in different formats — impossible to compare properly or fairly.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✕</div>
+            <div class="pain-text">Conversations are scattered across email, text and calls. Nothing connects back to the project.</div>
+          </div>
+        </div>
+
+        <div class="pain-card solution reveal d2">
+          <div class="pain-label">With BuilderHQ</div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Upload your project once. Builders come to you — matched, interested, and ready to tender.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Plans, scope and all documents live inside the project. No more hunting for what was sent when.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Compare builders and tenders side by side with real clarity — not a pile of spreadsheets.</div>
+          </div>
+          <div class="pain-row">
+            <div class="pain-icon">✓</div>
+            <div class="pain-text">Messaging stays connected to the project. One place. No gaps. No guessing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section" id="stats">
+  <div class="wrap">
+    <div class="stats-header">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Why it works</div>
+        <h2 class="stats-title">LESS CHASING.<br><span class="teal">MORE CLARITY.</span></h2>
+      </div>
+      <p class="stats-sub reveal d1">BuilderHQ turns the messy front-end of residential tendering into one structured path from project upload to builder response.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="50">0</span><span class="accent">+</span></div>
+        <div class="stat-label">Licensed builders on the platform and growing</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="24">0</span><span class="accent">/7</span></div>
+        <div class="stat-label">Always-on access to live residential opportunities</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="60">0</span><span class="accent">+</span></div>
+        <div class="stat-label">Projects accessed and progressed through the platform</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num"><span class="counter" data-target="100">0</span><span class="accent">%</span></div>
+        <div class="stat-label">Residential-focused, not generic procurement software</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="features-top">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Platform</div>
+        <h2 class="features-title">FROM PROJECT UPLOAD<br><span class="outline">TO BUILDER QUOTES</span><br><span class="teal">WITHOUT THE MESS.</span></h2>
+      </div>
+      <p class="features-desc reveal d1">Four pillars. One clean workflow. From the moment you upload a project to the moment you move forward with a builder.</p>
+    </div>
+
+    <div class="features-grid reveal d1">
+      <div class="feat-item">
+        <div class="feat-ghost">01</div>
+        <span class="feat-n">01 — PROJECT UPLOAD</span>
+        <div class="feat-name">One place for everything</div>
+        <div class="feat-copy">Upload your plans, scope, location and project context into a single, structured project page. No more sending the same files over and over.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">02</div>
+        <span class="feat-n">02 — BUILDER DISCOVERY</span>
+        <div class="feat-name">Find work that actually fits</div>
+        <div class="feat-copy">Builders browse real residential opportunities filtered by location, type and scale — no cold outreach, no guessing, no wasted effort on the wrong jobs.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">03</div>
+        <span class="feat-n">03 — TENDER ACCESS</span>
+        <div class="feat-name">Documents stay with the job</div>
+        <div class="feat-copy">Project docs, context and messages are all attached to the opportunity. Builders review what they need, right where the work lives.</div>
+      </div>
+
+      <div class="feat-item">
+        <div class="feat-ghost">04</div>
+        <span class="feat-n">04 — COMPARE AND DECIDE</span>
+        <div class="feat-name">Choose with confidence</div>
+        <div class="feat-copy">Review builders side by side, read tenders with full context, ask questions directly and move forward with clarity — not a gut feeling.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="how-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">Process</div>
+        <h2 class="how-title reveal">FROM UPLOAD<br><span class="outline">TO AWARD</span><br><span class="teal">IN 3 STEPS.</span></h2>
+      </div>
+      <p class="how-copy reveal d1">Simple enough to understand immediately. Strong enough to change how residential projects reach the right builders.</p>
+    </div>
+
+    <div class="how-steps">
+      <div class="step-card">
+        <span class="step-num">STEP 01</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 12l-4-4m0 0L8 12m4-4v12"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Upload the project</h3>
+        <p class="step-desc">Create a structured project page with your plans, scope, location, and all the context a builder needs to assess the job properly.</p>
+        <ul class="step-pts">
+          <li>Plans, specs and scope in one place</li>
+          <li>Present a cleaner first impression</li>
+          <li>Make the opportunity easy to assess</li>
+        </ul>
+      </div>
+
+      <div class="step-connector"><div class="step-conn-btn">→</div></div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 02</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Builders review and unlock</h3>
+        <p class="step-desc">Matched builders discover the project, assess fit, and unlock full documents to decide if it's worth pursuing — before committing to a tender.</p>
+        <ul class="step-pts">
+          <li>Relevant work found in one place</li>
+          <li>Documents reviewed in full context</li>
+          <li>Less wasted tender effort</li>
+        </ul>
+      </div>
+
+      <div class="step-connector"><div class="step-conn-btn">→</div></div>
+
+      <div class="step-card">
+        <span class="step-num">STEP 03</span>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="step-title">Compare and move forward</h3>
+        <p class="step-desc">Owners compare tenders, ask questions directly through the project, and make a considered decision — with everything they need in one view.</p>
+        <ul class="step-pts">
+          <li>Messaging tied to the project</li>
+          <li>Clearer, side-by-side comparison</li>
+          <li>A more modern tender journey</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUDIENCES -->
+<section class="section" id="audiences">
+  <div class="wrap">
+    <div class="aud-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">Who it's for</div>
+        <h2 class="aud-title reveal">OWNERS NEED CLARITY.<br><span class="teal">BUILDERS NEED PIPELINE.</span></h2>
+      </div>
+      <p class="aud-sub reveal d1">Two sides of the same problem. BuilderHQ solves both — without the friction.</p>
+    </div>
+
+    <div class="aud-grid">
+      <div class="aud-card" id="owners">
+        <div class="aud-card-tag"><span class="aud-card-tag-dot"></span>Project owners</div>
+        <h3>Stop chasing builders.<br>Upload once.</h3>
+        <p>Upload your residential project, present it properly, and let matched builders come to you — through a structured process, not a scattered email chain.</p>
+        <div class="aud-items">
+          <div class="aud-item"><b>Upload once</b><span>Your opportunity in a tender-ready format</span></div>
+          <div class="aud-item"><b>Look credible</b><span>Present scope and docs with real clarity</span></div>
+          <div class="aud-item"><b>Compare easily</b><span>Review builders and tenders side by side</span></div>
+          <div class="aud-item"><b>Stay connected</b><span>Messaging tied directly to your project</span></div>
+        </div>
+        <a href="/signup" class="aud-cta">
+          Upload a project
+          <svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+
+      <div class="aud-card" id="builders">
+        <div class="aud-card-tag"><span class="aud-card-tag-dot"></span>Builders</div>
+        <h3>Stop hunting.<br>Browse serious work.</h3>
+        <p>Browse residential jobs that match what you actually build, unlock project details, and tender with confidence — no cold outreach required.</p>
+        <div class="aud-items">
+          <div class="aud-item"><b>Discover faster</b><span>Relevant jobs without channel-hopping</span></div>
+          <div class="aud-item"><b>Access docs</b><span>Project info right where the opportunity lives</span></div>
+          <div class="aud-item"><b>Build trust</b><span>A profile that supports your credibility</span></div>
+          <div class="aud-item"><b>Stay efficient</b><span>Comms and review in the same flow</span></div>
+        </div>
+        <a href="/signup" class="aud-cta">
+          Browse projects
+          <svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE / PLATFORM SCREENS -->
+<section class="section" id="showcase">
+  <div class="wrap">
+    <div class="show-header">
+      <div class="reveal">
+        <div class="kicker" style="margin-bottom:14px">Experience</div>
+        <h2 class="show-title">THE PLATFORM<br><span class="outline">IN ACTION</span></h2>
+      </div>
+      <p class="show-copy reveal d1">Built for clarity at every step. Here's what it looks like when owners upload, builders discover, and decisions get made.</p>
+    </div>
+
+    <div class="reveal d1">
+      <div class="platform-tabs">
+        <button class="ptab active" onclick="switchTab(0)">Project Upload</button>
+        <button class="ptab" onclick="switchTab(1)">Builder Feed</button>
+        <button class="ptab" onclick="switchTab(2)">Compare &amp; Decide</button>
+        <button class="ptab" onclick="switchTab(3)">Messaging</button>
+      </div>
+
+      <div class="platform-wrap">
+
+        <!-- Panel 0: Project Upload -->
+        <div class="platform-panel active" id="panel-0">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">01 — Project Upload</div>
+              <h3 class="screen-title">One project page. Everything a builder needs.</h3>
+              <p class="screen-desc">Add your project name, type, location and package — then attach your plans, scope and specs. Done. No follow-up emails. No re-sending files.</p>
+              <ul class="screen-points">
+                <li>Structured project details in a single form</li>
+                <li>Drag-and-drop document upload</li>
+                <li>Your project goes live instantly to matched builders</li>
+                <li>Edit or update at any time</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345869661x145425732959085570/Screenshot%202026-04-28%20at%201.08.13%E2%80%AFpm.png?_gl=1*12k5eaz*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA."
+alt=BuilderHQ project upload app screenshot" loading="eager" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 1: Builder Feed -->
+        <div class="platform-panel" id="panel-1">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">02 — Builder Discovery</div>
+              <h3 class="screen-title">Real residential work. No chasing required.</h3>
+              <p class="screen-desc">Builders see a live feed of projects matched to their location, trade type and capacity. Every listing is a real opportunity — not a cold lead.</p>
+              <ul class="screen-points">
+                <li>Filtered by location, type and project size</li>
+                <li>Unlock full documents before committing to a tender</li>
+                <li>See tender deadline and competition level upfront</li>
+                <li>Save projects for later review</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345881652x982151788292952000/Screenshot%202026-04-28%20at%201.10.36%E2%80%AFpm.png?_gl=1*pbef0a*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ builder feed app screenshot" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Compare -->
+        <div class="platform-panel" id="panel-2">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">03 — Compare &amp; Decide</div>
+              <h3 class="screen-title">See every tender. Make a considered choice.</h3>
+              <p class="screen-desc">All builder responses land in one place. Review credentials, pricing and tender detail side by side — then move forward with the right builder, not just the first available one.</p>
+              <ul class="screen-points">
+                <li>Side-by-side builder and tender review</li>
+                <li>Full builder profiles and credentials visible</li>
+                <li>Ask questions directly from the comparison view</li>
+                <li>Mark builders as shortlisted or declined</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345865201x535386205450045100/Screenshot%202026-04-28%20at%201.07.36%E2%80%AFpm.png?_gl=1*11j9062*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ compare and decide app screenshot" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Messaging -->
+        <div class="platform-panel" id="panel-3">
+          <div class="screen-layout">
+            <div class="screen-info">
+              <div class="screen-step">04 — Messaging</div>
+              <h3 class="screen-title">Conversations stay close to the project.</h3>
+              <p class="screen-desc">Ask questions, clarify scope and progress discussions — all within the project itself. No separate email threads, no lost context, no miscommunication.</p>
+              <ul class="screen-points">
+                <li>Project-level messaging with any builder</li>
+                <li>Questions and answers visible to relevant parties</li>
+                <li>Full history tied to each project</li>
+                <li>Notifications when builders respond</li>
+              </ul>
+            </div>
+            <div class="screen-visual">
+              <div class="screen-visual-inner real-screen-inner">
+                <div class="real-app-frame">
+                  <img class="real-app-screen" src="https://d8817018a4afb87d9ad6b8c2e6517f22.cdn.bubble.io/f1777345875409x656409731200076900/Screenshot%202026-04-28%20at%201.08.48%E2%80%AFpm.png?_gl=1*11j9062*_gcl_au*NjAzODg4NjgxLjE3NzM2Mjc3Mjc.*_ga*MTEyODU0ODQ0OC4xNzU3Mjk2MzI3*_ga_BFPVR2DEE2*czE3NzczMzY4NTckbzEyOCRnMSR0MTc3NzM0NTg1MiRqNTYkbDAkaDA." alt="BuilderHQ messaging app screenshot" loading="lazy" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" id="testi">
+  <div class="wrap">
+    <div class="testi-header">
+      <div>
+        <div class="kicker reveal" style="margin-bottom:14px">Industry pain</div>
+        <h2 class="testi-title reveal">BUILT WITH INDUSTRY EXPERTS.<br><span class="teal">SHAPED BY REAL FEEDBACK .</span></h2>
+      </div>
+      <p class="testi-copy reveal d1">Built alongside people who understand residential construction, shaped by the real challenges project owners and builders face throughout the tender process.</p>
+    </div>
+
+    <div class="testi-grid">
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">We used BuilderHQ to tender our rear extension project. The process was simple, fast and incredibly effective. We received competitive quotes from quality builders who actually wanted the job. It took the stress out of finding the right team.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">B</div>
+          <div>
+            <div class="tcard-name">James M., Project Owner </div>
+            <div class="tcard-role">Brunswick, VIC</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">BuilderHQ has streamlined how we help our clients find reliable builders. Instead of chasing contacts and waiting on quotes, we upload the project once and let the platform handle the rest. It’s efficient, transparent, and aligns perfectly with how we deliver modern architecture.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">O</div>
+          <div>
+            <div class="tcard-name">Sophie L., Registered Architect </div>
+            <div class="tcard-role">Melbourne</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">Posting our duplex project on BuilderHQ was seamless. Within hours, we had access to multiple licensed builders interested in quoting. It saved us weeks of back-and-forth and gave us full control of the process. Highly recommend for any serious homeowner or developer.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">B</div>
+          <div>
+            <div class="tcard-name">Lisa D., Property Investor</div>
+            <div class="tcard-role">Sydney</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <span class="tcard-q">"</span>
+        <p class="tcard-text">As a small builder, getting access to good projects has always been tough. BuilderHQ levels the playing field. I’ve already quoted on two jobs since signing up, and both were a perfect fit for my team. It’s a game-changer for how we grow.</p>
+        <div class="tcard-author">
+          <div class="tcard-av">D</div>
+          <div>
+            <div class="tcard-name">Nathan P., Boutique Builder</div>
+            <div class="tcard-role">Geelong</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" id="cta">
+  <div class="cta-bg"></div>
+  <div class="cta-rings">
+    <div class="cta-ring"></div>
+    <div class="cta-ring"></div>
+    <div class="cta-ring"></div>
+  </div>
+  <div class="cta-content">
+    <div class="kicker">Get started free</div>
+    <h2 class="cta-title">
+      <span class="outline">READY TO</span><br>
+      <span class="solid">BUILD?</span><br>
+    </h2>
+    <p class="cta-sub">Project owners can upload a residential project. Builders can browse tender-ready opportunities. BuilderHQ gives both sides a cleaner way to move forward.</p>
+    <div class="cta-btns">
+      <a href="/signup" class="btn-primary">
+        Upload a project
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </a>
+      <a href="/signup" class="btn-ghost">Browse projects as builder</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">BUILDER<em>HQ</em></div>
+  <div class="f-links">
+    <a href="/about_us">About</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/termsofuse">Terms</a>
+    <a href="/faqs">FAQs</a>
+  </div>
+  <div class="f-copy">© 2026 BuilderHQ · Australia</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+/* ============================
+   BUILDERHQ MAIN JS
+   ============================ */
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isFinePointer = window.matchMedia('(pointer:fine)').matches;
+
+/* ── OPTIC FIBRE LINES ── */
+(function initFibre() {
+  const canvas = document.getElementById('fibreCanvas');
+  if (!canvas || prefersReducedMotion) return;
+
+  const ctx = canvas.getContext('2d');
+  let W, H, lines = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  const LINE_COUNT = Math.floor(W / 60);
+
+  function createLine(forceX) {
+    const x = forceX !== undefined ? forceX : Math.random() * W;
+    return {
+      x,
+      segments: Array.from({ length: Math.floor(8 + Math.random() * 12) }, () => ({
+        y: Math.random() * H,
+        alpha: 0,
+        targetAlpha: 0,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.007+ Math.random() * 0.018
+      })),
+      nextFire: Math.random() * 4000
+    };
+  }
+
+  for (let i = 0; i < LINE_COUNT; i++) {
+    lines.push(createLine(Math.random() * W));
+  }
+
+  let last = 0;
+  function tick(ts) {
+    const dt = ts - last; last = ts;
+    ctx.clearRect(0, 0, W, H);
+
+    lines.forEach(line => {
+      line.nextFire -= dt;
+      if (line.nextFire < 0) {
+        // Fire a random segment
+        const seg = line.segments[Math.floor(Math.random() * line.segments.length)];
+        seg.targetAlpha = 0.15 + Math.random() * 0.07;
+        line.nextFire = 1200 + Math.random() * 4800;
+      }
+
+      line.segments.forEach(seg => {
+        seg.phase += seg.speed;
+        const pulse = Math.sin(seg.phase);
+        // Fade toward target
+        seg.alpha += (seg.targetAlpha - seg.alpha) * 0.04;
+        if (seg.alpha > 0.002) {
+          const grd = ctx.createLinearGradient(line.x, seg.y - 60, line.x, seg.y + 60);
+          grd.addColorStop(0, `rgba(0,212,200,0)`);
+          grd.addColorStop(0.5, `rgba(0,212,200,${seg.alpha * (0.6 + pulse * 0.4)})`);
+          grd.addColorStop(1, `rgba(0,212,200,0)`);
+          ctx.beginPath();
+          ctx.moveTo(line.x, seg.y - 60);
+          ctx.lineTo(line.x, seg.y + 60);
+          ctx.strokeStyle = grd;
+          ctx.lineWidth = 0.95;
+          ctx.stroke();
+
+          // Dot at centre
+          ctx.beginPath();
+          ctx.arc(line.x, seg.y, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(126,245,237,${seg.alpha * 1.65})`;
+          ctx.fill();
+        }
+        // Decay
+        if (seg.targetAlpha > 0 && seg.alpha > seg.targetAlpha * 0.9) {
+          seg.targetAlpha *= 0.92;
+        }
+      });
+    });
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ── CUSTOM CURSOR ── */
+const dot  = document.querySelector('.cursor-dot');
+const ring = document.querySelector('.cursor-ring');
+const glow = document.querySelector('.cursor-glow');
+
+if (isFinePointer && !prefersReducedMotion) {
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let rx = mx, ry = my, gx = mx, gy = my;
+
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
+
+  (function cursorLoop() {
+    if (dot) { dot.style.left = mx + 'px'; dot.style.top = my + 'px'; }
+    rx += (mx - rx) * .14; ry += (my - ry) * .14;
+    if (ring) { ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; }
+    gx += (mx - gx) * .07; gy += (my - gy) * .07;
+    if (glow) { glow.style.left = gx + 'px'; glow.style.top = gy + 'px'; }
+    requestAnimationFrame(cursorLoop);
+  })();
+
+  const hoverEls = document.querySelectorAll('a, button, .hcard, .proof-card, .feat-item, .step-card, .aud-card, .tcard, .mock-screen, .real-app-frame, .stat-cell, .compare-card, .pain-card, .ptab, .mock-proj-row, .mock-builder-card');
+  hoverEls.forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+  });
+}
+
+/* ── LOADER ── */
+const loader  = document.getElementById('loader');
+const lBar    = document.querySelector('.l-bar');
+const lPct    = document.querySelector('.l-pct');
+const lFill   = document.querySelector('.l-word-fill');
+
+let progress = 0;
+const tickInterval = setInterval(() => {
+  progress += prefersReducedMotion ? 100 : Math.random() * 9 + 7;
+  if (progress >= 100) {
+    progress = 100;
+    clearInterval(tickInterval);
+    setTimeout(finishLoad, prefersReducedMotion ? 20 : 220);
+  }
+  if (lBar)  lBar.style.width  = progress + '%';
+  if (lPct)  lPct.textContent  = Math.floor(progress) + '%';
+  if (lFill) lFill.style.clipPath = `inset(${100 - progress}% 0 0 0)`;
+}, prefersReducedMotion ? 10 : 38);
+
+function finishLoad() {
+  if (!loader || typeof gsap === 'undefined') {
+    if (loader) loader.style.display = 'none';
+    document.querySelector('nav')?.classList.add('active');
+    revealHero();
+    return;
+  }
+  gsap.to(loader, {
+    opacity: 0, y: -10, duration: prefersReducedMotion ? 0 : .65,
+    ease: 'power2.inOut',
+    onComplete: () => { loader.style.display = 'none'; revealHero(); }
+  });
+  document.querySelector('nav')?.classList.add('active');
+}
+
+/* ── HERO ENTRANCE ── */
+function revealHero() {
+  if (typeof gsap === 'undefined') {
+    document.querySelectorAll('.h-row-inner').forEach(row => { row.style.transform = 'translateY(0)'; row.style.opacity = '1'; });
+    document.querySelector('.hero-body')?.classList.add('visible');
+    return;
+  }
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  tl.to('.hero-kicker', { opacity: 1, y: 0, duration: .65 }, 0);
+  document.querySelectorAll('.h-row-inner').forEach((row, i) => {
+    tl.to(row, { y: '0%', opacity: 1, duration: .95, ease: 'expo.out' }, i * .11 + .06);
+  });
+  tl.to('.hero-body', { opacity: 1, y: 0, duration: .8, ease: 'power3.out' }, .32);
+  document.querySelectorAll('.proof-card').forEach((card, i) => {
+    tl.to(card, { opacity: 1, y: 0, duration: .68, ease: 'power3.out' }, .5 + i * .075);
+  });
+  animHeroCards();
+}
+
+function animHeroCards() {
+  if (typeof gsap === 'undefined') return;
+  const project  = document.querySelector('.hcard-project');
+  const pipeline = document.querySelector('.hcard-pipeline');
+  const alerts   = document.querySelector('.hcard-alerts');
+  if (!project) return;
+
+  const tl = gsap.timeline({ delay: .35 });
+  tl.fromTo(project, { opacity: 0, x: 40, y: -20, rotationY: -18, rotationX: 8, transformPerspective: 1200 },
+    { opacity: 1, x: 0, y: 0, rotationY: -8, rotationX: 5, duration: 1.05, ease: 'expo.out' });
+  tl.fromTo(pipeline, { opacity: 0, x: -40, y: 20, rotationY: 18, rotationX: -5, transformPerspective: 1200 },
+    { opacity: 1, x: 0, y: 0, rotationY: 10, rotationX: -3, duration: 1.0, ease: 'expo.out' }, .12);
+  tl.fromTo(alerts, { opacity: 0, y: 30, x: 20, scale: .95, rotationY: -8, transformPerspective: 1200 },
+    { opacity: 1, y: 0, x: 0, scale: 1, rotationY: -7, rotationX: 4, duration: .9, ease: 'expo.out' }, .24);
+
+  if (!prefersReducedMotion) {
+    gsap.to(project, { y: -8, duration: 3.5, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.4 });
+    gsap.to(pipeline, { y: 6, duration: 4.0, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 2 });
+    gsap.to(alerts, { y: -5, duration: 3.2, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 1.8 });
+  }
+}
+
+/* ── PLATFORM TABS ── */
+function switchTab(index) {
+  const tabs = document.querySelectorAll('.ptab');
+  const panels = document.querySelectorAll('.platform-panel');
+  tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+  panels.forEach((p, i) => {
+    if (i === index) {
+      p.classList.add('active');
+      if (typeof gsap !== 'undefined') {
+        gsap.fromTo(p, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .55, ease: 'power3.out' });
+      }
+    } else {
+      p.classList.remove('active');
+    }
+  });
+}
+
+/* ── CARD TILT ── */
+function initCardTilt(selector, intensity = 5) {
+  if (!isFinePointer || prefersReducedMotion || typeof gsap === 'undefined' || window.innerWidth < 1100) return;
+  document.querySelectorAll(selector).forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - .5;
+      const y = (e.clientY - r.top)  / r.height - .5;
+      gsap.to(card, { rotationY: x * intensity, rotationX: -y * intensity * .7, transformPerspective: 1200, duration: .4, ease: 'power2.out' });
+    });
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { rotationY: 0, rotationX: 0, duration: .65, ease: 'elastic.out(1, .4)' });
+    });
+  });
+}
+initCardTilt('.proof-card', 6);
+initCardTilt('.step-card', 4);
+initCardTilt('.aud-card', 4);
+initCardTilt('.tcard', 4);
+initCardTilt('.stat-cell', 5);
+initCardTilt('.pain-card', 3);
+initCardTilt('.feat-item', 3);
+
+/* ── MAGNETIC BUTTONS ── */
+function initMagnetic(selector, strength = .18) {
+  if (!isFinePointer || prefersReducedMotion || typeof gsap === 'undefined') return;
+  document.querySelectorAll(selector).forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width  / 2) * strength;
+      const y = (e.clientY - r.top  - r.height / 2) * strength;
+      gsap.to(el, { x, y, duration: .35, ease: 'power2.out' });
+    });
+    el.addEventListener('mouseleave', () => {
+      gsap.to(el, { x: 0, y: 0, duration: .55, ease: 'elastic.out(1, .4)' });
+    });
+  });
+}
+initMagnetic('.btn-primary, .btn-ghost, .btn-sm, .aud-cta', .16);
+
+/* ── SMOOTH SCROLL REVEALS ── */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: .1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── COUNTER ANIMATION ── */
+const counterObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !entry.target.dataset.done) {
+      entry.target.dataset.done = '1';
+      animateCounter(entry.target);
+      counterObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: .3 });
+
+document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+function animateCounter(el) {
+  const target = parseFloat(el.dataset.target || 0);
+  const dec    = parseInt(el.dataset.dec || 0);
+  const dur    = prefersReducedMotion ? 1 : 1600;
+  const start  = performance.now();
+  function tick(now) {
+    const p    = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 4);
+    const val  = target * ease;
+    el.textContent = dec ? val.toFixed(dec) : Math.floor(val);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ── SCROLL PARALLAX ── */
+const heroOrbs = document.querySelectorAll('.amb-orb');
+let scrollTicking = false;
+
+window.addEventListener('scroll', () => {
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(() => {
+    const sy = window.scrollY;
+    document.querySelector('nav')?.classList.toggle('scrolled', sy > 60);
+    if (!prefersReducedMotion && window.innerWidth > 820) {
+      heroOrbs.forEach((orb, i) => {
+        const dir = i % 2 === 0 ? 1 : -1;
+        orb.style.transform = `translate(${dir * sy * .015}px, ${-dir * sy * .025}px) scale(${1 + sy * .00005})`;
+      });
+    }
+    scrollTicking = false;
+  });
+}, { passive: true });
+
+/* ── GSAP SCROLLTRIGGER ── */
+window.addEventListener('load', () => {
+  if (typeof ScrollTrigger !== 'undefined' && typeof gsap !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Smooth title reveals
+    document.querySelectorAll('.problem-title, .stats-title, .features-title, .how-title, .aud-title, .show-title, .testi-title, .cta-title').forEach(title => {
+      gsap.fromTo(title,
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 1.0, ease: 'expo.out',
+          scrollTrigger: { trigger: title, start: 'top 88%', once: true } }
+      );
+    });
+
+    gsap.fromTo('.pain-card', { opacity: 0, y: 28 }, {
+      opacity: 1, y: 0, duration: .8, stagger: .12, ease: 'power3.out',
+      scrollTrigger: { trigger: '.problem-right', start: 'top 84%', once: true }
+    });
+
+    gsap.fromTo('.stat-cell', { opacity: 0, y: 30 }, {
+      opacity: 1, y: 0, duration: .75, stagger: .09, ease: 'power3.out',
+      scrollTrigger: { trigger: '.stats-grid', start: 'top 82%', once: true }
+    });
+
+    gsap.fromTo('.feat-item', { opacity: 0, y: 24, scale: .98 }, {
+      opacity: 1, y: 0, scale: 1, duration: .7, stagger: .1, ease: 'power3.out',
+      scrollTrigger: { trigger: '.features-grid', start: 'top 82%', once: true }
+    });
+
+    document.querySelectorAll('.step-card').forEach((card, i) => {
+      const dir = i === 0 ? -1 : i === 2 ? 1 : 0;
+      gsap.fromTo(card,
+        { opacity: 0, x: dir * 36, y: 28 },
+        { opacity: 1, x: 0, y: 0, duration: .9, ease: 'expo.out',
+          scrollTrigger: { trigger: card, start: 'top 85%', once: true } }
+      );
+    });
+
+    document.querySelectorAll('.aud-card').forEach((card, i) => {
+      gsap.fromTo(card,
+        { opacity: 0, x: i % 2 === 0 ? -28 : 28, y: 18 },
+        { opacity: 1, x: 0, y: 0, duration: .9, ease: 'expo.out',
+          scrollTrigger: { trigger: card, start: 'top 86%', once: true } }
+      );
+    });
+
+    gsap.fromTo('.tcard', { opacity: 0, y: 30, scale: .97 }, {
+      opacity: 1, y: 0, scale: 1, duration: .8, stagger: .09, ease: 'power3.out',
+      scrollTrigger: { trigger: '.testi-grid', start: 'top 83%', once: true }
+    });
+
+    gsap.fromTo('.platform-tabs, .platform-wrap', { opacity: 0, y: 24 }, {
+      opacity: 1, y: 0, duration: .75, stagger: .1, ease: 'power3.out',
+      scrollTrigger: { trigger: '#showcase', start: 'top 82%', once: true }
+    });
+
+    const ctaTl = gsap.timeline({ scrollTrigger: { trigger: '#cta', start: 'top 75%', once: true } });
+    ctaTl.fromTo('.cta-title', { opacity: 0, y: 46, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: 1.0, ease: 'expo.out' })
+         .fromTo('.cta-sub',   { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, .25)
+         .fromTo('.cta-btns',  { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .65, ease: 'power3.out' }, .42);
+  }
+});
+</script>
+</body>
+</html>
