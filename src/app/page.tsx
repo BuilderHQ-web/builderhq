@@ -1,65 +1,97 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Section, Eyebrow } from "@/components/brand/section";
+import { Logo } from "@/components/brand/logo";
+import { GlowButton } from "@/components/brand/glow-button";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { GridBg, NoiseOverlay } from "@/components/brand/grid-bg";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      <NoiseOverlay />
+
+      {/* ── Top nav (placeholder — real nav comes in Phase 2) ───────────────── */}
+      <header className="sticky top-0 z-30">
+        <div className="glass">
+          <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-6 md:px-8">
+            <Logo />
+            <nav className="hidden md:flex items-center gap-1 text-[14px]">
+              <Link href="#" className="px-3 py-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface-1 transition-colors">How it works</Link>
+              <Link href="#" className="px-3 py-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface-1 transition-colors">For owners</Link>
+              <Link href="#" className="px-3 py-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface-1 transition-colors">For builders</Link>
+              <Link href="#" className="px-3 py-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface-1 transition-colors">Pricing</Link>
+            </nav>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm">Sign in</Button>
+              <Button variant="primary" size="sm">Get started</Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Hero ──────────────────────────────────────────────────────────── */}
+      <Section as="main" width="wide" spacing="xl" className="relative">
+        <GridBg />
+
+        <div className="relative max-w-3xl">
+          <Eyebrow>Australian residential construction</Eyebrow>
+
+          <h1 className="mt-5 font-display font-semibold tracking-[-0.035em] text-[clamp(2.75rem,5vw+1rem,5rem)] leading-[1.04]">
+            Upload once.{" "}
+            <span className="bg-[linear-gradient(120deg,oklch(0.92_0.10_195),oklch(0.62_0.18_195)_55%,oklch(0.50_0.20_280))] bg-clip-text text-transparent">
+              Tender smarter.
+            </span>{" "}
+            Build better.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-6 text-[17px] leading-[28px] text-text-muted max-w-xl">
+            Stop chasing builders. Upload your residential project once and let
+            suitable builders come to you — with serious tenders, not
+            cold-calls.
           </p>
+
+          <div className="mt-10 flex flex-wrap items-center gap-3">
+            <GlowButton>
+              Upload your project
+              <ArrowRight className="size-4" />
+            </GlowButton>
+            <Button variant="outline" size="lg">I&apos;m a builder</Button>
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-text-subtle">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="size-4 text-accent" />
+              Verified Australian builders
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Sparkles className="size-4 text-accent" />
+              Serious projects only
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Phase-0 badge — temporary, signals to internal viewers this is a scaffold */}
+        <div className="mt-16">
+          <Badge variant="accent">Phase 0 · Foundation scaffold</Badge>
         </div>
-      </main>
-    </div>
+      </Section>
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer className="border-t border-border-subtle">
+        <Section spacing="sm" width="wide" className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <Logo size={22} />
+          <p className="text-[13px] text-text-faint">
+            © {new Date().getFullYear()} BuilderHQ. Built in Australia.
+          </p>
+          <div className="flex items-center gap-4 text-[13px] text-text-muted">
+            <Link href="/dev/design-system" className="hover:text-text">Design system</Link>
+            <Link href="#" className="hover:text-text">Privacy</Link>
+            <Link href="#" className="hover:text-text">Terms</Link>
+          </div>
+        </Section>
+      </footer>
+    </>
   );
 }

@@ -1,26 +1,201 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   BuilderHQ — design tokens (CSS source of truth).
+   Mirrors src/lib/tokens.ts. Change both together.
+   We ship dark-first; light theme is intentionally deferred.
+   ========================================================================== */
+
+@theme {
+  /* Fonts (loaded via next/font in layout.tsx) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Backgrounds & surfaces */
+  --color-bg: #03090f;
+  --color-bg-raised: oklch(0.165 0.015 240);
+  --color-bg-elev: oklch(0.205 0.018 240);
+  --color-bg-overlay: oklch(0.10 0.012 240 / 0.72);
+
+  --color-surface-1: oklch(0.155 0.014 240);
+  --color-surface-2: oklch(0.195 0.016 240);
+  --color-surface-3: oklch(0.235 0.018 240);
+  --color-surface-hover: oklch(0.255 0.020 240);
+
+  /* Borders */
+  --color-border-subtle: oklch(1 0 0 / 0.06);
+  --color-border: oklch(1 0 0 / 0.10);
+  --color-border-strong: oklch(1 0 0 / 0.18);
+  --color-border-accent: oklch(0.78 0.13 195 / 0.45);
+
+  /* Text */
+  --color-text: oklch(0.985 0 0);
+  --color-text-muted: oklch(0.78 0.01 240);
+  --color-text-subtle: oklch(0.62 0.012 240);
+  --color-text-faint: oklch(0.46 0.012 240);
+  --color-text-inverse: oklch(0.12 0.01 240);
+
+  /* Accent — BuilderHQ teal */
+  --color-accent: #00d4c8;
+  --color-accent-hover: oklch(0.84 0.14 195);
+  --color-accent-active: oklch(0.74 0.15 195);
+  --color-accent-muted: oklch(0.78 0.13 195 / 0.14);
+  --color-accent-glow: oklch(0.82 0.16 195 / 0.35);
+  --color-accent-contrast: oklch(0.12 0.02 195);
+
+  /* Semantic */
+  --color-success: oklch(0.78 0.16 155);
+  --color-success-muted: oklch(0.78 0.16 155 / 0.14);
+  --color-warning: oklch(0.83 0.16 75);
+  --color-warning-muted: oklch(0.83 0.16 75 / 0.14);
+  --color-danger: oklch(0.72 0.20 22);
+  --color-danger-muted: oklch(0.72 0.20 22 / 0.14);
+  --color-info: oklch(0.78 0.13 230);
+  --color-info-muted: oklch(0.78 0.13 230 / 0.14);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
+
+  /* Containers */
+  --container-prose: 68ch;
+  --container-2xl: 1320px;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-fade-in: fadeIn 320ms var(--ease-out-soft);
+  --animate-rise-in: riseIn 480ms var(--ease-out-soft);
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-pulse-glow: pulseGlow 3.2s ease-in-out infinite;
+}
+
+/* Custom utilities not provided by core Tailwind */
+@utility glass {
+  background: oklch(1 0 0 / 0.025);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+@utility glass-strong {
+  background: oklch(1 0 0 / 0.04);
+  border: 1px solid var(--color-border-strong);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+}
+
+@utility ring-focus {
+  box-shadow:
+    0 0 0 1px oklch(0.78 0.13 195 / 0.55),
+    0 0 0 4px oklch(0.78 0.13 195 / 0.18);
+}
+
+@utility glow-accent {
+  box-shadow:
+    0 0 0 1px oklch(0.78 0.13 195 / 0.35),
+    0 8px 32px -8px oklch(0.78 0.16 195 / 0.45);
+}
+
+@utility glow-accent-soft {
+  box-shadow:
+    0 0 0 1px oklch(0.78 0.13 195 / 0.18),
+    0 6px 24px -10px oklch(0.78 0.16 195 / 0.28);
+}
+
+/* Keyframes referenced by --animate-* tokens above. */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.16 195 / 0.0); }
+  50%      { box-shadow: 0 0 32px 4px oklch(0.78 0.16 195 / 0.25); }
+}
+
+/* ==========================================================================
+   Base — dark-first, premium typography defaults.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "ss02", "cv11", "cv01";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    /* very subtle vignette so the canvas isn't dead flat */
+    radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.78 0.13 195 / 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.40 0.10 280 / 0.06), transparent 65%),
+    var(--color-bg);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Premium selection */
+::selection {
+  background: oklch(0.78 0.13 195 / 0.30);
+  color: var(--color-text);
+}
+
+/* Focus rings — keyboard only, teal glow */
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--color-bg),
+    0 0 0 3px oklch(0.78 0.13 195 / 0.55);
+  border-radius: var(--radius-md);
+  transition: box-shadow 120ms var(--ease-out-soft);
+}
+
+/* Scrollbar — subtle, not screaming */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(1 0 0 / 0.10) transparent;
+  }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: oklch(1 0 0 / 0.08);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.16); background-clip: padding-box; }
+}
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
