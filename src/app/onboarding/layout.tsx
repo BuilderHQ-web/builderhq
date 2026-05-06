@@ -59,7 +59,7 @@ export default async function OnboardingLayout({
         </header>
 
         <main className="relative z-10 flex flex-1 items-start justify-center px-6 py-8 md:py-16">
-          <div className="w-full max-w-[640px]">{children}</div>
+          <div className="w-full max-w-[800px]">{children}</div>
         </main>
 
         <footer className="relative z-10 px-6 md:px-8 py-6 text-[10px] tracking-[0.18em] uppercase text-text-dim">
