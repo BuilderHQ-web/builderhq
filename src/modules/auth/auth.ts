@@ -61,11 +61,14 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
 
         // Reasons to fail — all return the same null so an attacker can't
         // distinguish "no such user" from "wrong password" via timing or
-        // error message.
+        // error message. Unverified accounts also return null here as
+        // defense in depth; the login action front-runs that check and
+        // routes the user to /verify-email with a friendlier UX.
         if (!user) return null;
         if (!user.passwordHash) return null; // OAuth-only account
         if (user.deletedAt) return null;
         if (user.status === "banned" || user.status === "suspended") return null;
+        if (user.status === "pending_verification") return null;
 
         const ok = await verify(user.passwordHash, password);
         if (!ok) {
