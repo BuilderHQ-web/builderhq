@@ -45,17 +45,26 @@ export const users = pgTable(
     id: uuid().primaryKey().defaultRandom(),
 
     // Auth.js-compatible fields (snake_case in DB via drizzle.config casing).
+    // `name` stays for OAuth providers that hand us a single display string;
+    // app code prefers first_name + last_name and falls back to name.
     name: text(),
     email: text().notNull(),
     emailVerified: timestamp({ mode: "date", withTimezone: true }),
     image: text(),
 
-    // BuilderHQ extensions.
+    // BuilderHQ — identity.
+    firstName: text(),
+    lastName: text(),
     passwordHash: text(),
     role: userRoleEnum(),
     status: userStatusEnum().notNull().default("pending_verification"),
     phone: text(),
     stripeCustomerId: text(),
+
+    // Acquisition attribution — write-once at signup, never mutated.
+    // Useful for marketing analytics, not a privacy concern (no PII).
+    signupSource: text(),
+    signupCampaign: text(),
 
     // Activity & lifecycle.
     lastSeenAt: timestamp({ mode: "date", withTimezone: true }),

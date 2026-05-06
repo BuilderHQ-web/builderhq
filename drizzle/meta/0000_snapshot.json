@@ -1,5 +1,5 @@
 {
-  "id": "a1ecb42f-3778-49af-9e1d-5289e2fb7e7b",
+  "id": "4b212b95-f5c5-47f4-8990-c6f4ae5aa0da",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -275,6 +275,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "password_hash": {
           "name": "password_hash",
           "type": "text",
@@ -304,6 +316,18 @@
         },
         "stripe_customer_id": {
           "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signup_source": {
+          "name": "signup_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signup_campaign": {
+          "name": "signup_campaign",
           "type": "text",
           "primaryKey": false,
           "notNull": false
