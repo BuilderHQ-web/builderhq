@@ -122,6 +122,22 @@
     0 6px 24px -10px rgba(0, 212, 200, 0.28);
 }
 
+/* Tabular figures — premium tables / number columns / data dashboards */
+@utility tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+@utility slashed-zero {
+  font-variant-numeric: slashed-zero tabular-nums;
+}
+
+/* Hairline divider — used inside cards and rows for the absolute lightest
+   separation. Lighter than border-subtle, never visible enough to count. */
+@utility hairline {
+  background: linear-gradient(90deg, transparent, rgba(100, 180, 255, 0.10), transparent);
+  height: 1px;
+  width: 100%;
+}
+
 /* Brand kicker — the small uppercase label used throughout the landing */
 @utility kicker {
   display: inline-flex;

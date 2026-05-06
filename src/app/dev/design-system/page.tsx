@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Bell, Search, Upload, MessageSquare } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Bell, Search, Upload, MessageSquare } from "lucide-react";
 import { Section, Eyebrow } from "@/components/brand/section";
 import { Logo, LogoMark } from "@/components/brand/logo";
 import { GlowButton } from "@/components/brand/glow-button";
 import { GradientBorder } from "@/components/brand/gradient-border";
 import { GridBg, NoiseOverlay } from "@/components/brand/grid-bg";
+import { CornerBrackets } from "@/components/brand/corner-brackets";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
@@ -12,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusDot } from "@/components/ui/status-dot";
+import { Kbd } from "@/components/ui/kbd";
+import { DataValue, DataLabel } from "@/components/ui/data-value";
 
 export const metadata = { title: "Design system", robots: { index: false, follow: false } };
 
@@ -186,9 +190,13 @@ export default function DesignSystem() {
       {/* CARDS */}
       <Section width="wide" spacing="sm">
         <SectionTitle eyebrow="Component · card" title="Cards" />
+        <p className="mt-2 text-[13px] text-text-subtle max-w-xl">
+          Default cards are static. Add <code className="font-mono text-text">interactive</code>{" "}
+          for surfaces that respond on hover (lift + accent rim).
+        </p>
 
         <div className="mt-8 grid lg:grid-cols-3 gap-5">
-          <Card>
+          <Card interactive>
             <CardHeader>
               <CardTitle>Single-storey renovation</CardTitle>
               <CardDescription>Glen Iris VIC · Posted 2 days ago</CardDescription>
@@ -206,14 +214,14 @@ export default function DesignSystem() {
           <GradientBorder>
             <div className="p-6 flex flex-col gap-4">
               <Badge variant="accent">Founding builder</Badge>
-              <h3 className="font-display font-semibold text-[20px] leading-7 tracking-tight">
+              <h3 className="font-ui font-bold text-[22px] leading-7 tracking-[-0.02em]">
                 Free unlocks during launch
               </h3>
               <p className="text-[14px] leading-[22px] text-text-muted">
                 Founding builders get complimentary project unlocks for 90 days. Build a
                 tender history before paid plans roll in.
               </p>
-              <GlowButton>Apply for access</GlowButton>
+              <GlowButton size="md">Apply for access</GlowButton>
             </div>
           </GradientBorder>
 
@@ -231,6 +239,134 @@ export default function DesignSystem() {
               <Skeleton className="h-24 w-full" />
             </CardContent>
           </Card>
+        </div>
+      </Section>
+
+      <Divider />
+
+      {/* PREMIUM PRIMITIVES — new */}
+      <Section width="wide" spacing="sm">
+        <SectionTitle eyebrow="Component · premium" title="Premium primitives" />
+
+        <div className="mt-8 grid lg:grid-cols-2 gap-5">
+          {/* Status dots */}
+          <Card>
+            <CardHeader>
+              <CardTitle>StatusDot</CardTitle>
+              <CardDescription>Live indicators with gentle pulse.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 text-[13px] text-text-muted">
+                <Row2><StatusDot tone="accent" label="Live" /> Tender open · 18 builders watching</Row2>
+                <Row2><StatusDot tone="success" /> Builder verified · ABN matched</Row2>
+                <Row2><StatusDot tone="warning" /> Awaiting documents</Row2>
+                <Row2><StatusDot tone="danger" pulse={false} /> Suspended account</Row2>
+                <Row2><StatusDot tone="muted" pulse={false} /> Archived project</Row2>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Kbd shortcuts */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Kbd</CardTitle>
+              <CardDescription>Keyboard shortcuts for command palette and tooltips.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 text-[13px] text-text-muted">
+                <Row2>
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>⌘</Kbd><Kbd>K</Kbd>
+                  </span>
+                  Open command palette
+                </Row2>
+                <Row2>
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>G</Kbd> <span className="text-text-faint">then</span> <Kbd>P</Kbd>
+                  </span>
+                  Go to projects
+                </Row2>
+                <Row2>
+                  <Kbd>?</Kbd>
+                  Show keyboard shortcuts
+                </Row2>
+                <Row2>
+                  <Kbd>Esc</Kbd>
+                  Close dialog
+                </Row2>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* DataValue */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>DataValue</CardTitle>
+              <CardDescription>
+                Tabular figures · slashed zero · perfect alignment in tables and dashboards.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div>
+                  <DataLabel>Tender value</DataLabel>
+                  <DataValue size="xl" tone="accent">$284,500</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Active tenders</DataLabel>
+                  <DataValue size="xl">18</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Win rate</DataLabel>
+                  <DataValue size="xl">36%</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Avg response</DataLabel>
+                  <DataValue size="xl" tone="muted">4.2d</DataValue>
+                </div>
+                <div>
+                  <DataLabel>ABN</DataLabel>
+                  <DataValue mono>12 345 678 901</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Licence</DataLabel>
+                  <DataValue mono>VIC-DBU-08810</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Posted</DataLabel>
+                  <DataValue mono tone="muted">2026-04-28</DataValue>
+                </div>
+                <div>
+                  <DataLabel>Tender deadline</DataLabel>
+                  <DataValue mono>2026-06-12</DataValue>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+        </div>
+      </Section>
+
+      <Divider />
+
+      {/* CORNER BRACKETS demo */}
+      <Section width="wide" spacing="sm">
+        <SectionTitle eyebrow="Brand · framing" title="Corner brackets" />
+        <p className="mt-2 text-[13px] text-text-subtle max-w-xl">
+          Blueprint-style L-corners for hero sections, featured panels, tender comparison.
+          Used sparingly — never on every card.
+        </p>
+        <div className="mt-8 relative overflow-hidden rounded-[var(--radius-2xl)] border border-border-subtle bg-bg-deep p-16 min-h-[280px]">
+          <CornerBrackets />
+          <div className="relative max-w-md">
+            <Eyebrow>Featured</Eyebrow>
+            <h3 className="mt-4 font-display uppercase tracking-[-0.02em] text-[clamp(2rem,4vw+1rem,3.25rem)] leading-none">
+              Premium framing
+            </h3>
+            <p className="mt-3 text-[14px] leading-[22px] text-text-muted">
+              The four corners frame the content like a technical drawing — ideal for the
+              tender-comparison view or a featured project hero.
+            </p>
+          </div>
         </div>
       </Section>
 
@@ -331,56 +467,79 @@ export default function DesignSystem() {
 
       <Divider />
 
-      {/* MOCK PROJECT CARD — directional demo */}
+      {/* MOCK PROJECT CARD — directional demo using all new primitives */}
       <Section width="wide" spacing="sm">
         <SectionTitle eyebrow="Composition" title="Sample project card" />
         <p className="mt-2 text-[14px] text-text-muted max-w-xl">
-          A directional sketch of how a real project card may feel. Final design
-          comes in Phase 2 with real data.
+          A directional sketch using StatusDot, DataValue, and the upgraded Card.
+          Final design comes in Phase 2 with real data.
         </p>
 
         <div className="mt-8 max-w-md">
-          <Card className="overflow-hidden">
-            <div className="relative h-44 bg-[linear-gradient(135deg,oklch(0.30_0.04_230),oklch(0.18_0.02_240))] border-b border-border-subtle">
+          <Card interactive className="overflow-hidden">
+            {/* Visual header — tinted blueprint render */}
+            <div
+              className="relative h-44 border-b border-border-subtle"
+              style={{
+                background:
+                  "radial-gradient(circle at 20% 30%, rgba(0,212,200,0.18), transparent 38%), radial-gradient(circle at 80% 10%, rgba(26,95,212,0.40), transparent 35%), linear-gradient(135deg, #0a1f31, #10283b)",
+              }}
+            >
               <div
+                aria-hidden
                 className="absolute inset-0"
                 style={{
                   backgroundImage:
-                    "linear-gradient(to right, oklch(1 0 0 / 0.05) 1px, transparent 1px), linear-gradient(to bottom, oklch(1 0 0 / 0.05) 1px, transparent 1px)",
-                  backgroundSize: "32px 32px",
+                    "linear-gradient(rgba(142,252,244,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.08) 1px, transparent 1px)",
+                  backgroundSize: "28px 28px",
+                  maskImage: "linear-gradient(180deg, black 30%, transparent 100%)",
+                  WebkitMaskImage: "linear-gradient(180deg, black 30%, transparent 100%)",
                 }}
               />
               <div className="absolute top-3 left-3 flex gap-2">
                 <Badge variant="success">Published</Badge>
                 <Badge>Renovation</Badge>
               </div>
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center gap-1.5 rounded-tight border border-border-strong bg-bg/60 backdrop-blur px-2 py-1 text-[10px] tracking-[0.16em] uppercase text-accent-light">
+                  <StatusDot tone="accent" size={6} />
+                  Tender open
+                </span>
+              </div>
             </div>
+
             <CardHeader>
               <CardTitle>Single-storey rear extension</CardTitle>
               <CardDescription>Glen Iris, VIC 3146 · Posted 2 days ago</CardDescription>
             </CardHeader>
+
             <CardContent>
-              <dl className="grid grid-cols-3 gap-3 text-[12px]">
+              <dl className="grid grid-cols-3 gap-4">
                 <div>
-                  <dt className="text-text-faint uppercase tracking-wider">Budget</dt>
-                  <dd className="mt-1 font-mono text-text">$280–340k</dd>
+                  <DataLabel>Budget</DataLabel>
+                  <DataValue className="mt-1.5">$280–340k</DataValue>
                 </div>
                 <div>
-                  <dt className="text-text-faint uppercase tracking-wider">Timeline</dt>
-                  <dd className="mt-1 font-mono text-text">Q3 2026</dd>
+                  <DataLabel>Timeline</DataLabel>
+                  <DataValue className="mt-1.5">Q3 2026</DataValue>
                 </div>
                 <div>
-                  <dt className="text-text-faint uppercase tracking-wider">Tenders</dt>
-                  <dd className="mt-1 font-mono text-text">3 received</dd>
+                  <DataLabel>Tenders</DataLabel>
+                  <DataValue className="mt-1.5" tone="accent">3</DataValue>
                 </div>
               </dl>
             </CardContent>
-            <CardFooter className="justify-between border-t border-border-subtle pt-4">
+
+            <div className="mx-6 hairline" />
+
+            <CardFooter className="justify-between pt-4">
               <span className="inline-flex items-center gap-2 text-[12px] text-text-subtle">
                 <MessageSquare className="size-3.5" />
                 Owner online today
               </span>
-              <Button variant="primary" size="sm">Unlock <ArrowRight className="size-3.5" /></Button>
+              <Button variant="primary" size="sm">
+                Unlock <ArrowUpRight className="size-3.5" />
+              </Button>
             </CardFooter>
           </Card>
         </div>
@@ -400,7 +559,7 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
       <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-3 font-display font-semibold tracking-[-0.02em] text-[32px] leading-[40px]">
+      <h2 className="mt-4 font-display uppercase tracking-[-0.02em] text-[clamp(2.25rem,4vw+1rem,3.5rem)] leading-none">
         {title}
       </h2>
     </div>
@@ -410,16 +569,20 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid lg:grid-cols-[180px_1fr] gap-4 lg:gap-8 items-start">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-faint pt-2">{label}</span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-dim pt-2">{label}</span>
       <div>{children}</div>
     </div>
   );
 }
 
+function Row2({ children }: { children: React.ReactNode }) {
+  return <div className="flex items-center gap-3">{children}</div>;
+}
+
 function Divider() {
   return (
     <div className="mx-auto w-full max-w-[1320px] px-6 md:px-8">
-      <Separator />
+      <Separator variant="gradient" />
     </div>
   );
 }

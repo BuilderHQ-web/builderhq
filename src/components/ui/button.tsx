@@ -2,12 +2,22 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
+/**
+ * Button — premium-tuned.
+ *
+ * Premium moves baked in:
+ *   - Inset top highlight on filled variants (catching-light effect).
+ *   - Layered shadow on primary: tight contour + soft teal halo.
+ *   - Outline variant has a barely-visible inner gradient so it doesn't
+ *     read as a flat stroke against busy backgrounds.
+ *   - Active (mousedown) compresses 1.5%, never resizes.
+ *   - All hover transitions are slow (240ms) and easeOut — no flicker.
+ */
 const buttonVariants = cva(
-  // base — premium feel: subtle inset highlight, smooth easing, no default rounding-blowout
   [
     "relative inline-flex items-center justify-center gap-2 whitespace-nowrap select-none",
-    "font-medium tracking-tight",
-    "transition-[background,color,box-shadow,transform] duration-200 ease-[var(--ease-out-soft)]",
+    "font-ui font-medium tracking-[-0.005em]",
+    "transition-[background,color,box-shadow,transform,border-color] duration-[var(--duration-base,240ms)] ease-[var(--ease-out)]",
     "active:scale-[0.985] focus-visible:outline-none",
     "disabled:pointer-events-none disabled:opacity-40",
     "[&_svg]:size-4 [&_svg]:shrink-0",
@@ -16,61 +26,78 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: [
-          "bg-accent text-accent-contrast",
-          "shadow-[0_1px_0_0_oklch(1_0_0/0.25)_inset,0_8px_24px_-10px_oklch(0.78_0.16_195/0.55)]",
-          "hover:bg-accent-hover hover:shadow-[0_1px_0_0_oklch(1_0_0/0.30)_inset,0_10px_28px_-8px_oklch(0.78_0.16_195/0.65)]",
-          "active:bg-accent-active",
+          "text-accent-contrast",
+          "bg-[linear-gradient(180deg,#7ef5ed_0%,#00d4c8_55%,#00b8ad_100%)]",
+          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_-1px_0_0_rgba(0,0,0,0.20),0_1px_2px_0_rgba(0,0,0,0.30),0_8px_24px_-10px_rgba(0,212,200,0.55)]",
+          "hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.50),inset_0_-1px_0_0_rgba(0,0,0,0.20),0_1px_2px_0_rgba(0,0,0,0.30),0_12px_32px_-10px_rgba(0,212,200,0.70)]",
+          "hover:-translate-y-px",
         ],
         secondary: [
-          "bg-surface-2 text-text border border-border",
-          "hover:bg-surface-hover hover:border-border-strong",
+          "text-text border border-border",
+          "bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface-1))]",
+          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_1px_2px_0_rgba(0,0,0,0.3)]",
+          "hover:border-border-strong hover:bg-[linear-gradient(180deg,var(--color-surface-hover),var(--color-surface-2))]",
         ],
         outline: [
-          "bg-transparent text-text border border-border-strong",
-          "hover:bg-surface-1 hover:border-border-accent",
+          "text-text border border-border-strong",
+          "bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.005))]",
+          "hover:border-border-accent-strong hover:text-accent-light",
+          "hover:shadow-[0_0_24px_-4px_rgba(0,212,200,0.20)]",
+          "hover:-translate-y-px",
         ],
         ghost: [
           "bg-transparent text-text-muted",
           "hover:bg-surface-1 hover:text-text",
         ],
         subtle: [
-          "bg-accent-muted text-accent",
-          "hover:bg-[oklch(0.78_0.13_195/0.22)]",
+          "bg-accent-muted text-accent-light border border-[rgba(0,212,200,0.20)]",
+          "hover:bg-[rgba(0,212,200,0.18)] hover:border-border-accent-strong",
         ],
         danger: [
-          "bg-danger text-text",
-          "hover:bg-[oklch(0.76_0.20_22)]",
+          "text-text border border-[rgba(255,80,80,0.30)]",
+          "bg-[linear-gradient(180deg,oklch(0.74_0.20_22),oklch(0.66_0.20_22))]",
+          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20),0_1px_2px_0_rgba(0,0,0,0.3)]",
+          "hover:bg-[linear-gradient(180deg,oklch(0.78_0.20_22),oklch(0.70_0.20_22))]",
         ],
         link: [
-          "bg-transparent text-accent underline-offset-4 hover:underline px-0",
+          "bg-transparent text-accent-light underline-offset-[5px] decoration-[rgba(126,245,237,0.4)]",
+          "hover:underline px-0",
         ],
       },
       size: {
-        sm: "h-8 rounded-[var(--radius-md)] px-3 text-[13px]",
-        md: "h-10 rounded-[var(--radius-md)] px-4 text-[14px]",
-        lg: "h-12 rounded-[var(--radius-lg)] px-6 text-[15px]",
-        xl: "h-14 rounded-[var(--radius-lg)] px-7 text-[16px]",
-        icon: "h-10 w-10 rounded-[var(--radius-md)]",
-        "icon-sm": "h-8 w-8 rounded-[var(--radius-sm)]",
+        sm: "h-8 rounded-tight px-3 text-[12px] tracking-[0.04em]",
+        md: "h-10 rounded-tight px-4 text-[13px]",
+        lg: "h-12 rounded-tight px-6 text-[13px] tracking-[0.04em]",
+        xl: "h-14 rounded-tight px-7 text-[14px] tracking-[0.04em]",
+        icon: "h-10 w-10 rounded-tight",
+        "icon-sm": "h-8 w-8 rounded-tight",
+      },
+      uppercase: {
+        true: "uppercase",
+        false: "",
       },
     },
-    defaultVariants: { variant: "primary", size: "md" },
+    compoundVariants: [
+      // Pill CTAs (sm/lg/xl) on primary look more premium uppercased
+      // by default — opt-out via `uppercase={false}`.
+      { size: "lg", uppercase: undefined, class: "" },
+    ],
+    defaultVariants: { variant: "primary", size: "md", uppercase: false },
   },
 );
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  /** Show a spinner and disable. */
   loading?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, disabled, children, ...props }, ref) => {
+  ({ className, variant, size, uppercase, loading, disabled, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
-        className={cn(buttonVariants({ variant, size }), className)}
+        className={cn(buttonVariants({ variant, size, uppercase }), className)}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}

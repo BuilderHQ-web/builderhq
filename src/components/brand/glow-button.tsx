@@ -4,38 +4,48 @@ import { cn } from "@/lib/utils";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 /**
- * GlowButton — the premium primary CTA. Use *sparingly* (hero, top of pricing,
- * key conversion points). It carries an animated gradient ring + soft outer
- * glow + light-trail shimmer on hover. For everyday actions, use <Button>.
+ * GlowButton — the premium primary CTA. Use sparingly (hero, top of pricing,
+ * key conversion points). Carries:
+ *   - A slow idle pulse-glow so the button visibly "lives" on the page
+ *   - A conic-gradient halo that brightens on hover
+ *   - A diagonal sheen that sweeps left→right on hover
+ *
+ * For everyday actions, reach for <Button variant="primary" />.
  */
 export const GlowButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, size = "lg", ...props }, ref) => {
     return (
       <span className="relative inline-flex group">
-        {/* Outer animated glow */}
+        {/* Idle pulse glow — a soft halo that breathes (3.6s loop) */}
         <span
           aria-hidden
           className={cn(
-            "pointer-events-none absolute -inset-[2px] rounded-[calc(var(--radius-lg)+2px)]",
-            "bg-[conic-gradient(from_140deg,oklch(0.78_0.16_195/0.0),oklch(0.78_0.16_195/0.7),oklch(0.55_0.20_280/0.55),oklch(0.78_0.16_195/0.0))]",
-            "opacity-60 blur-[8px] transition-opacity duration-500",
+            "pointer-events-none absolute -inset-[3px] rounded-[5px]",
+            "bg-[radial-gradient(ellipse_at_center,rgba(0,212,200,0.45),transparent_70%)]",
+            "blur-[10px] opacity-50 animate-[pulseGlow_3.6s_ease-in-out_infinite]",
+          )}
+        />
+        {/* Conic ring — sharpens on hover */}
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute -inset-[2px] rounded-[5px]",
+            "bg-[conic-gradient(from_140deg,rgba(126,245,237,0),rgba(126,245,237,0.85),rgba(26,95,212,0.5),rgba(126,245,237,0))]",
+            "opacity-50 blur-[6px] transition-opacity duration-500",
             "group-hover:opacity-100",
           )}
         />
         <Button
           ref={ref}
           variant="primary"
-          size="lg"
+          size={size}
+          uppercase
           className={cn(
-            "relative overflow-hidden",
-            "bg-[linear-gradient(180deg,oklch(0.86_0.15_195),oklch(0.74_0.16_195))]",
-            "text-accent-contrast",
-            "shadow-[0_1px_0_0_oklch(1_0_0/0.45)_inset,0_10px_30px_-10px_oklch(0.78_0.16_195/0.65)]",
-            "hover:shadow-[0_1px_0_0_oklch(1_0_0/0.50)_inset,0_14px_36px_-10px_oklch(0.78_0.16_195/0.75)]",
-            // Shine sweep on hover
+            "relative overflow-hidden tracking-[0.08em] font-semibold",
+            // Diagonal shine sweep on hover
             "before:pointer-events-none before:absolute before:inset-0",
-            "before:bg-[linear-gradient(110deg,transparent_30%,oklch(1_0_0/0.35)_50%,transparent_70%)]",
-            "before:translate-x-[-120%] before:transition-transform before:duration-[900ms] before:ease-[var(--ease-out-soft)]",
+            "before:bg-[linear-gradient(110deg,transparent_30%,rgba(255,255,255,0.40)_50%,transparent_70%)]",
+            "before:translate-x-[-120%] before:transition-transform before:duration-[900ms] before:ease-[var(--ease-out)]",
             "group-hover:before:translate-x-[120%]",
             className,
           )}
