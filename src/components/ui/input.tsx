@@ -6,16 +6,21 @@ import { cn } from "@/lib/utils";
  * Subtle inner top-down gradient gives depth even when not focused.
  * Focus ring is a softly-feathered teal halo, not a hard 2px outline.
  */
+/**
+ * Quiet by default — flat surface, hairline border, no inner gradient.
+ * Focus state is a small teal halo only (no inner gradient swap, no
+ * outer glow) so the form feels precise rather than decorated.
+ */
 const baseField = [
-  "w-full rounded-tight border border-border px-3.5",
-  "bg-[linear-gradient(180deg,var(--color-surface-1),color-mix(in_oklch,var(--color-surface-1)_92%,var(--color-bg-deep)))]",
+  "w-full rounded-tight border border-border bg-surface-1 px-3.5",
   "text-[13px] text-text placeholder:text-text-faint",
-  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]",
-  "transition-[border-color,background,box-shadow] duration-[var(--duration-base,200ms)] ease-[var(--ease-out)]",
+  "transition-[border-color,box-shadow] duration-[160ms] ease-[var(--ease-out)]",
   "hover:border-border-strong",
-  "focus:outline-none focus:border-border-accent-strong focus:bg-surface-2",
-  "focus:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_0_3px_rgba(0,212,200,0.18),0_0_24px_-4px_rgba(0,212,200,0.20)]",
+  "focus:outline-none focus:border-border-accent-strong",
+  "focus:shadow-[0_0_0_3px_rgba(0,212,200,0.15)]",
   "disabled:cursor-not-allowed disabled:opacity-50",
+  "aria-invalid:border-[rgba(255,80,80,0.50)]",
+  "aria-invalid:focus:shadow-[0_0_0_3px_rgba(255,80,80,0.18)]",
 ] as const;
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(

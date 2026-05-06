@@ -23,14 +23,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        "relative isolate rounded-[var(--radius-xl)] border border-border",
-        "bg-[linear-gradient(180deg,var(--color-surface-1),color-mix(in_oklch,var(--color-surface-1)_75%,var(--color-bg-deep)))]",
-        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_1px_2px_0_rgba(0,0,0,0.4),0_8px_24px_-12px_rgba(0,0,0,0.55)]",
-        "transition-[transform,border-color,box-shadow] duration-[var(--duration-base,360ms)] ease-[var(--ease-out)]",
-        interactive && [
-          "hover:-translate-y-[1px] hover:border-border-strong",
-          "hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_1px_2px_0_rgba(0,0,0,0.5),0_18px_44px_-14px_rgba(0,0,0,0.65),0_0_0_1px_rgba(0,212,200,0.08)]",
-        ],
+        "relative isolate rounded-[var(--radius-xl)] border border-border bg-surface-1",
+        // One inset highlight + a quiet drop. No outer shadow halo.
+        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]",
+        "transition-[border-color,background] duration-[160ms] ease-[var(--ease-out)]",
+        interactive && "hover:border-border-strong hover:bg-surface-2",
         className,
       )}
       {...props}

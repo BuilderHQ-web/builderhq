@@ -127,10 +127,23 @@ export async function saveBuilderServiceAreasAction(
 }
 
 // Licences add/remove are simple per-row actions (not a save-and-continue).
+export interface AddLicenceState extends ActionState {
+  /** Returned on success so the client can sync state with the DB row. */
+  licence?: {
+    id: string;
+    state: string;
+    licenceType: string;
+    licenceNumber: string;
+    licenceHolderName: string | null;
+    issuedAt: Date | null;
+    expiresAt: Date | null;
+  };
+}
+
 export async function addLicenceAction(
-  _prev: ActionState,
+  _prev: AddLicenceState,
   formData: FormData,
-): Promise<ActionState> {
+): Promise<AddLicenceState> {
   const userId = await requireUserId();
 
   const issuedRaw = String(formData.get("issuedAt") ?? "");
@@ -152,7 +165,18 @@ export async function addLicenceAction(
     return { error: result.error.message };
   }
 
-  return { ok: true };
+  return {
+    ok: true,
+    licence: {
+      id: result.value.id,
+      state: result.value.state,
+      licenceType: result.value.licenceType,
+      licenceNumber: result.value.licenceNumber,
+      licenceHolderName: result.value.licenceHolderName,
+      issuedAt: result.value.issuedAt,
+      expiresAt: result.value.expiresAt,
+    },
+  };
 }
 
 export async function removeLicenceAction(licenceId: string): Promise<void> {

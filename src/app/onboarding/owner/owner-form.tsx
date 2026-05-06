@@ -256,25 +256,16 @@ function EntityCard({
       aria-pressed={active}
       className={cn(
         "group relative flex flex-col items-start gap-2 rounded-md border px-3.5 py-3.5 text-left",
-        "transition-[background,border-color,transform,box-shadow] duration-[200ms] ease-[var(--ease-out)]",
+        "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         active
-          ? [
-              "border-border-accent-strong",
-              "bg-accent-muted",
-              "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_0_1px_rgba(0,212,200,0.20),0_0_24px_-4px_rgba(0,212,200,0.25)]",
-            ]
-          : [
-              "border-border bg-surface-1",
-              "hover:border-border-strong hover:bg-surface-2 hover:-translate-y-px",
-            ],
+          ? "border-accent bg-accent-muted/60"
+          : "border-border bg-surface-1 hover:border-border-strong hover:bg-surface-2",
       )}
     >
       <span
         className={cn(
-          "size-7 rounded-full flex items-center justify-center transition-colors",
-          active
-            ? "bg-accent-muted border border-border-accent text-accent"
-            : "bg-surface-2 border border-border-subtle text-text-faint group-hover:text-text-muted",
+          "size-6 rounded-full flex items-center justify-center transition-colors",
+          active ? "text-accent" : "text-text-faint group-hover:text-text-muted",
         )}
       >
         <Icon className="size-3.5" />
@@ -314,18 +305,16 @@ function ContactCard({
       aria-pressed={active}
       className={cn(
         "flex items-start gap-3 rounded-md border px-4 py-3 text-left",
-        "transition-[background,border-color,transform,box-shadow] duration-[200ms] ease-[var(--ease-out)]",
+        "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         active
-          ? "border-border-accent-strong bg-accent-muted shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_0_1px_rgba(0,212,200,0.20),0_0_24px_-4px_rgba(0,212,200,0.25)]"
+          ? "border-accent bg-accent-muted/60"
           : "border-border bg-surface-1 hover:border-border-strong hover:bg-surface-2",
       )}
     >
       <span
         className={cn(
-          "mt-0.5 size-7 rounded-full flex items-center justify-center shrink-0",
-          active
-            ? "bg-accent-muted border border-border-accent text-accent"
-            : "bg-surface-2 border border-border-subtle text-text-faint",
+          "mt-0.5 size-6 flex items-center justify-center shrink-0 transition-colors",
+          active ? "text-accent" : "text-text-faint",
         )}
       >
         <Icon className="size-3.5" />

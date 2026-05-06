@@ -135,16 +135,6 @@ export function Sidebar({ role }: { role: Role }) {
         ))}
       </nav>
 
-      {/* Footer micro-meta */}
-      <div className="border-t border-border-subtle px-5 py-3">
-        <div className="flex items-center justify-between text-[10px] tracking-[0.16em] uppercase text-text-dim">
-          <span>v0.1 · Phase 1</span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-            Live
-          </span>
-        </div>
-      </div>
     </aside>
   );
 }
@@ -178,9 +168,9 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>
-      {item.soon ? (
-        <span className="text-[9px] tracking-[0.12em] uppercase text-text-dim">{item.soon.replace("Phase ", "P")}</span>
-      ) : null}
+      {/* Phase tags hidden for now — they cluttered the sidebar. The
+          "soon" metadata stays in the data so we can surface it later
+          (e.g. inside the page itself, or as a tooltip on hover). */}
     </Link>
   );
 }

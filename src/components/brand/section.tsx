@@ -46,9 +46,12 @@ export function Section({
 }
 
 /**
- * Eyebrow / kicker — brand-locked. Renders a small uppercase label preceded
- * by a 30px glowing teal rule. Direct port of the `.kicker` style in
- * reference/landing/index.html.
+ * Eyebrow / kicker — brand label for section headers. Quiet by default
+ * (uppercase teal text only); a small accent rule appears at the start
+ * to anchor it visually but without the heavy glow we used to ship.
+ *
+ * The Resend-tier move is restraint: typography does the work, decoration
+ * stays out of the way.
  */
 export function Eyebrow({
   className,
@@ -60,15 +63,12 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-3.5 font-ui",
+        "inline-flex items-center gap-2.5 font-ui",
         "text-[10px] tracking-[0.22em] uppercase text-accent",
         className,
       )}
     >
-      <span
-        aria-hidden
-        className="block w-[30px] h-px bg-accent shadow-[0_0_10px_rgba(0,212,200,0.6)]"
-      />
+      <span aria-hidden className="block w-4 h-px bg-accent/70" />
       {children}
     </span>
   );

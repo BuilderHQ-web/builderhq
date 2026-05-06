@@ -144,13 +144,19 @@ function RoleOption({
       type="button"
       onClick={() => onSelect(value)}
       className={cn(
-        "group flex flex-col items-start gap-1 rounded-tight border px-3 py-3 text-left transition-all duration-200 ease-[var(--ease-out)]",
+        "group flex flex-col items-start gap-1 rounded-tight border px-3 py-3 text-left",
+        "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         isActive
-          ? "border-border-accent-strong bg-accent-muted shadow-[0_0_0_1px_rgba(0,212,200,0.20),0_0_24px_-4px_rgba(0,212,200,0.20)]"
-          : "border-border bg-surface-1 hover:border-border-strong",
+          ? "border-accent bg-accent-muted/60"
+          : "border-border bg-surface-1 hover:border-border-strong hover:bg-surface-2",
       )}
     >
-      <span className={cn("inline-flex items-center gap-2 text-[12px] font-medium", isActive ? "text-accent-light" : "text-text-muted")}>
+      <span
+        className={cn(
+          "inline-flex items-center gap-2 text-[12px] font-medium",
+          isActive ? "text-text" : "text-text-muted",
+        )}
+      >
         {icon}
         {label}
       </span>

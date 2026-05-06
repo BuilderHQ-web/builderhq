@@ -186,10 +186,11 @@ html {
 }
 
 body {
+  /* A whisper of accent colour at the corners — keep the canvas alive
+     without competing with content. Tuned right at the edge of perception. */
   background:
-    /* very subtle vignette so the canvas isn't dead flat */
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0, 212, 200, 0.06), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(26, 95, 212, 0.05), transparent 65%),
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 212, 200, 0.035), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(26, 95, 212, 0.025), transparent 65%),
     var(--color-bg);
   min-height: 100vh;
   min-height: 100dvh;

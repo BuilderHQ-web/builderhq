@@ -207,59 +207,31 @@ export function BuilderWizard({ initial }: { initial: InitialBundle }) {
 // ── stepper ──────────────────────────────────────────────────────────────
 
 function Stepper({ current }: { current: number }) {
+  const next = STEPS[current];
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-mono text-[10px] tracking-[0.18em] text-accent">
-            STEP {String(current).padStart(2, "0")} / 07
+            STEP {String(current).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}
           </span>
-          <span className="text-[12px] text-text-dim hidden sm:inline">·</span>
-          <span className="text-[13px] font-medium text-text truncate">
+          <span className="text-text-dim/60 hidden sm:inline">·</span>
+          <span className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text truncate">
             {STEPS[current - 1]?.title}
           </span>
         </div>
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim shrink-0">
-          {STEPS.filter((s) => s.idx < current).length} of 7 done
-        </span>
+        {next ? (
+          <span className="text-[11px] text-text-dim shrink-0 hidden sm:inline">
+            Next · {next.title}
+          </span>
+        ) : null}
       </div>
 
-      <div className="relative h-px bg-border-subtle overflow-hidden rounded-full">
+      <div className="relative h-[2px] bg-border-subtle overflow-hidden rounded-full">
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-accent-light transition-[width] duration-[420ms] ease-[var(--ease-out)]"
+          className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-[420ms] ease-[var(--ease-out)]"
           style={{ width: `${((current - 1) / (STEPS.length - 1)) * 100}%` }}
         />
-      </div>
-
-      <div className="hidden md:flex items-center justify-between text-[10px] tracking-[0.16em] uppercase">
-        {STEPS.map((s) => {
-          const Icon = s.icon;
-          const done = s.idx < current;
-          const active = s.idx === current;
-          return (
-            <span
-              key={s.idx}
-              className={cn(
-                "flex items-center gap-1.5",
-                done ? "text-text-muted" : active ? "text-accent" : "text-text-dim",
-              )}
-            >
-              <span
-                className={cn(
-                  "size-4 rounded-full border flex items-center justify-center",
-                  done
-                    ? "border-border-accent bg-accent text-bg"
-                    : active
-                      ? "border-border-accent-strong bg-accent-muted text-accent"
-                      : "border-border-subtle bg-surface-1 text-text-dim",
-                )}
-              >
-                {done ? <Check className="size-2.5" strokeWidth={3} /> : <Icon className="size-2.5" />}
-              </span>
-              <span className="hidden lg:inline">{s.title}</span>
-            </span>
-          );
-        })}
       </div>
     </div>
   );
@@ -843,17 +815,19 @@ function LicencesStep({
       fd.set("expiresAt", draft.expiresAt);
       const res = await addLicenceAction({}, fd);
       setState(res);
-      if (res.ok) {
-        const newLicence: Licence = {
-          id: crypto.randomUUID(),
-          state: draft.state as AustralianState,
-          licenceType: draft.licenceType,
-          licenceNumber: draft.licenceNumber,
-          licenceHolderName: draft.licenceHolderName || null,
-          issuedAt: draft.issuedAt ? new Date(draft.issuedAt) : null,
-          expiresAt: draft.expiresAt ? new Date(draft.expiresAt) : null,
+      // Sync local state with the DB row so the trash button can find it.
+      // (Earlier we generated a client UUID — that didn't match the DB.)
+      if (res.ok && res.licence) {
+        const created: Licence = {
+          id: res.licence.id,
+          state: res.licence.state as AustralianState,
+          licenceType: res.licence.licenceType,
+          licenceNumber: res.licence.licenceNumber,
+          licenceHolderName: res.licence.licenceHolderName,
+          issuedAt: res.licence.issuedAt,
+          expiresAt: res.licence.expiresAt,
         };
-        onChange([...values, newLicence]);
+        onChange([...values, created]);
         setDraft({
           state: "",
           licenceType: "",
@@ -1312,18 +1286,16 @@ function CheckCard({
       aria-pressed={active}
       className={cn(
         "group relative flex items-start gap-3 rounded-md border px-4 py-3 text-left",
-        "transition-[background,border-color,transform,box-shadow] duration-[200ms] ease-[var(--ease-out)]",
+        "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         active
-          ? "border-border-accent-strong bg-accent-muted shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_0_1px_rgba(0,212,200,0.20),0_0_24px_-4px_rgba(0,212,200,0.25)]"
+          ? "border-accent bg-accent-muted/60"
           : "border-border bg-surface-1 hover:border-border-strong hover:bg-surface-2",
       )}
     >
       <span
         className={cn(
-          "mt-0.5 size-7 rounded-full flex items-center justify-center shrink-0 transition-colors",
-          active
-            ? "bg-accent-muted border border-border-accent text-accent"
-            : "bg-surface-2 border border-border-subtle text-text-faint",
+          "mt-0.5 size-6 flex items-center justify-center shrink-0 transition-colors",
+          active ? "text-accent" : "text-text-faint",
         )}
       >
         <Icon className="size-3.5" />
@@ -1336,7 +1308,7 @@ function CheckCard({
       </div>
       <span
         className={cn(
-          "size-4 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+          "size-4 rounded-sm border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
           active ? "bg-accent border-accent text-bg" : "border-border-strong",
         )}
       >

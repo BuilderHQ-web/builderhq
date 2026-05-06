@@ -244,14 +244,15 @@ export function PostcodeSuburb({
             ))}
           </select>
         ) : (
-          // Empty state placeholder so layout doesn't jump.
+          // Empty state — flat, hairline border, calm copy. No dashed border,
+          // no shouty placeholder.
           <div
             className={cn(
-              "h-10 rounded-tight border border-dashed border-border-subtle",
-              "flex items-center px-3.5 text-[12px] text-text-dim",
+              "h-10 rounded-tight border border-border-subtle bg-surface-1/40",
+              "flex items-center px-3.5 text-[12px] text-text-faint",
             )}
           >
-            Enter postcode first
+            Enter postcode to pick a suburb
           </div>
         )}
 

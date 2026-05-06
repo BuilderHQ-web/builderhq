@@ -25,25 +25,24 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Primary — flat teal, single subtle inset highlight, tiny contour
+        // shadow. No coloured glow halo, no lift on hover. Resend-style:
+        // the typography does the work; the button is quiet.
         primary: [
-          "text-accent-contrast",
-          "bg-[linear-gradient(180deg,#7ef5ed_0%,#00d4c8_55%,#00b8ad_100%)]",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.40),inset_0_-1px_0_0_rgba(0,0,0,0.20),0_1px_2px_0_rgba(0,0,0,0.30),0_8px_24px_-10px_rgba(0,212,200,0.55)]",
-          "hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.50),inset_0_-1px_0_0_rgba(0,0,0,0.20),0_1px_2px_0_rgba(0,0,0,0.30),0_12px_32px_-10px_rgba(0,212,200,0.70)]",
-          "hover:-translate-y-px",
+          "text-accent-contrast bg-accent",
+          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_1px_0_0_rgba(0,0,0,0.18)]",
+          "hover:bg-accent-hover",
         ],
+        // Secondary — surface card with hairline border. Hover swaps the
+        // surface tint, no border colour change, no shadow.
         secondary: [
-          "text-text border border-border",
-          "bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface-1))]",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_1px_2px_0_rgba(0,0,0,0.3)]",
-          "hover:border-border-strong hover:bg-[linear-gradient(180deg,var(--color-surface-hover),var(--color-surface-2))]",
+          "text-text border border-border bg-surface-2",
+          "hover:bg-surface-hover",
         ],
+        // Outline — pure border + transparent. No inner gradient, no glow.
         outline: [
-          "text-text border border-border-strong",
-          "bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.005))]",
-          "hover:border-border-accent-strong hover:text-accent-light",
-          "hover:shadow-[0_0_24px_-4px_rgba(0,212,200,0.20)]",
-          "hover:-translate-y-px",
+          "text-text border border-border-strong bg-transparent",
+          "hover:bg-surface-1 hover:border-border-strong",
         ],
         ghost: [
           "bg-transparent text-text-muted",
@@ -51,13 +50,13 @@ const buttonVariants = cva(
         ],
         subtle: [
           "bg-accent-muted text-accent-light border border-[rgba(0,212,200,0.20)]",
-          "hover:bg-[rgba(0,212,200,0.18)] hover:border-border-accent-strong",
+          "hover:bg-[rgba(0,212,200,0.18)]",
         ],
+        // Danger — solid red, mirrors primary's quiet treatment.
         danger: [
-          "text-text border border-[rgba(255,80,80,0.30)]",
-          "bg-[linear-gradient(180deg,oklch(0.74_0.20_22),oklch(0.66_0.20_22))]",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20),0_1px_2px_0_rgba(0,0,0,0.3)]",
-          "hover:bg-[linear-gradient(180deg,oklch(0.78_0.20_22),oklch(0.70_0.20_22))]",
+          "text-text bg-danger",
+          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16),0_1px_0_0_rgba(0,0,0,0.20)]",
+          "hover:bg-[oklch(0.78_0.20_22)]",
         ],
         link: [
           "bg-transparent text-accent-light underline-offset-[5px] decoration-[rgba(126,245,237,0.4)]",
