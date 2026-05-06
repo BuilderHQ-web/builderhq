@@ -37,3 +37,34 @@ export type {
   NewBuilderServiceArea,
   BuilderProjectCategory,
 } from "./schema";
+
+// Service functions
+export {
+  // Owner
+  getOwnerProfile,
+  upsertOwnerProfile,
+  completeOwnerOnboarding,
+  // Builder
+  getBuilderProfile,
+  upsertBuilderProfile,
+  addBuilderLicence,
+  removeBuilderLicence,
+  setBuilderServiceAreas,
+  setBuilderProjectCategories,
+  submitBuilderForApproval,
+  // Cross-cutting
+  hasCompletedOnboarding,
+  // Zod schemas (consumed by server actions)
+  ownerProfileSchema,
+  builderProfileSchema,
+  builderLicenceSchema,
+  setServiceAreasSchema,
+  setProjectCategoriesSchema,
+  type OwnerProfileInput,
+  type BuilderProfileInput,
+  type BuilderLicenceInput,
+  type BuilderProfileBundle,
+} from "./service";
+
+// Policies
+export { canEditProfile, canViewBuilderProfile } from "./policies";

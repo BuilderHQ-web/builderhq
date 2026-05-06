@@ -1,20 +1,20 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
+import { hasCompletedOnboarding } from "@/modules/profiles";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 
 /**
- * Authenticated app shell — owner / builder / admin all compose into here.
+ * Authenticated app shell — owner / builder / admin compose into here.
  *
- * Auth guard order:
- *   1. proxy.ts (Edge) blocks unauthenticated requests at the edge for /(app)/*
+ * Auth + onboarding guard order:
+ *   1. proxy.ts (Edge) blocks unauth'd requests at the edge for /(app)/*.
  *   2. This layout double-checks server-side. Belt + braces.
- *   3. Per-route role check happens via server-side session lookup in the
- *      page itself (e.g. /admin/* checks user.role === 'admin').
- *
- * This layout always runs Node-side because auth() reads from the DB-backed
- * session via Auth.js's adapter.
+ *   3. If the user hasn't finished onboarding, redirect to /onboarding.
+ *      Admins skip onboarding entirely.
+ *   4. Per-route role check happens via server-side session lookup in
+ *      the page itself (e.g. /admin/* asserts user.role === 'admin').
  */
 export default async function AppLayout({
   children,
@@ -22,19 +22,21 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login?next=/owner");
   }
 
-  // Suspended/banned: force back to /login. proxy will likely have already
-  // intercepted, but defense-in-depth.
   if (session.user.status === "suspended" || session.user.status === "banned") {
     redirect("/login?error=suspended");
   }
 
-  // role can be null for very new accounts that haven't picked a role —
-  // shouldn't happen via signup (we require role), but guard anyway.
+  // Onboarding gate. Settings is exempt — users may need to update their
+  // password mid-onboarding, and admins can settings without onboarding.
   const role = session.user.role ?? "project_owner";
+  const onboarded = await hasCompletedOnboarding(session.user.id, role);
+  if (!onboarded) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="flex min-h-dvh">
