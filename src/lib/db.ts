@@ -36,7 +36,12 @@ const schema = {
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
 
-export const db = drizzle({ client: pool, schema });
+// `casing: "snake_case"` is critical and must match drizzle.config.ts.
+// drizzle-kit reads its config at migration time; the runtime drizzle()
+// factory doesn't — they're separate code paths. Without this, runtime
+// queries spell column names in camelCase (firstName, passwordHash, ...)
+// while the actual DB columns are snake_case → every query fails.
+export const db = drizzle({ client: pool, schema, casing: "snake_case" });
 
 export type Database = typeof db;
 export type Schema = typeof schema;
