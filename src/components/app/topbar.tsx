@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, Settings, User as UserIcon, Search } from "lucide-react";
 
@@ -117,10 +118,11 @@ export function Topbar({ user }: TopbarProps) {
                 Profile
                 <DropdownMenuShortcut>Soon</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <Settings />
-                Settings
-                <DropdownMenuShortcut>Soon</DropdownMenuShortcut>
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="cursor-pointer w-full">
+                  <Settings />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <form action={signOutAction}>

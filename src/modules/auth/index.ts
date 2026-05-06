@@ -25,4 +25,14 @@ export { auth, signIn, signOut, handlers, unstable_update } from "./auth";
 
 // Service functions — sign-UP and email verification. Sign-IN goes through
 // Auth.js's `signIn` re-exported above (Credentials provider).
-export { signUp, verifyEmail, signUpSchema, type SignUpInput } from "./service";
+export {
+  signUp,
+  verifyEmail,
+  resendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
+  updateProfile,
+  signUpSchema,
+  type SignUpInput,
+} from "./service";

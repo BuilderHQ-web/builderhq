@@ -1,23 +1,29 @@
 import { Eyebrow } from "@/components/brand/section";
 import { Card, CardContent } from "@/components/ui/card";
-import { ForgotForm } from "./forgot-form";
+import { ResetForm } from "./reset-form";
 
-export const metadata = { title: "Forgot password" };
+export const metadata = { title: "Set new password" };
 
-export default function ForgotPage() {
+export default async function ResetPasswordPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+
   return (
     <Card>
       <CardContent className="p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <Eyebrow>Reset password</Eyebrow>
           <h1 className="font-display uppercase tracking-[-0.02em] text-[36px] leading-none">
-            Forgot password
+            Set new password
           </h1>
           <p className="text-[14px] leading-[22px] text-text-muted">
-            Enter the email you signed up with. We&apos;ll send you a link to set a new password.
+            Choose a new password. You&apos;ll be signed out of this device after — log in again with the new one.
           </p>
         </div>
-        <ForgotForm />
+        <ResetForm token={token} />
       </CardContent>
     </Card>
   );

@@ -4,4 +4,4 @@
  * Public surface for the email module. Outsiders MUST import from
  * `@/modules/email` — never reach into `./service` directly.
  */
-export { sendVerificationEmail } from "./service";
+export { sendVerificationEmail, sendPasswordResetEmail } from "./service";

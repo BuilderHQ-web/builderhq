@@ -48,7 +48,7 @@ const ownerNav: NavSection[] = [
   },
   {
     title: "Account",
-    items: [{ href: "/owner/settings", label: "Settings", icon: Settings, soon: "Phase 1" }],
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
   },
 ];
 
@@ -71,7 +71,7 @@ const builderNav: NavSection[] = [
   },
   {
     title: "Account",
-    items: [{ href: "/builder/settings", label: "Settings", icon: Settings, soon: "Phase 1" }],
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
   },
 ];
 
@@ -91,7 +91,7 @@ const adminNav: NavSection[] = [
     title: "Platform",
     items: [
       { href: "/admin/audit", label: "Audit log", icon: ShieldCheck, soon: "Phase 4" },
-      { href: "/admin/settings", label: "Settings", icon: Settings, soon: "Phase 4" },
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];

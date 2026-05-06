@@ -22,6 +22,7 @@ import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 
 import { VerificationEmail } from "@/emails/VerificationEmail";
+import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -65,6 +66,50 @@ export async function sendVerificationEmail(
   logger.info(
     { event: "email.verification.sent", to: input.to, resendId: data.id },
     "verification email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendPasswordResetEmailInput {
+  to: string;
+  resetUrl: string;
+  firstName: string | null;
+}
+
+export async function sendPasswordResetEmail(
+  input: SendPasswordResetEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "Reset your BuilderHQ password";
+  const props = { resetUrl: input.resetUrl, firstName: input.firstName };
+
+  const [html, text] = await Promise.all([
+    render(PasswordResetEmail(props)),
+    render(PasswordResetEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+
+  if (error) {
+    logger.error(
+      { event: "email.password_reset.failed", to: input.to, code: error.name, message: error.message },
+      "password reset email send failed",
+    );
+    return fail("external_error", "We couldn't send your reset email. Try again in a moment.");
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    { event: "email.password_reset.sent", to: input.to, resendId: data.id },
+    "password reset email sent",
   );
   return ok({ id: data.id });
 }
