@@ -1,3 +1,8 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+onlyBuiltDependencies:
+  # Approved native build scripts. Drizzle-kit ships prebuilt binaries via
+  # esbuild — running its install hook is safe and avoids a warning every
+  # time someone runs pnpm install.
+  - esbuild
