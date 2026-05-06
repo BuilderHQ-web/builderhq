@@ -14,8 +14,20 @@ import nextTs from "eslint-config-next/typescript";
  * That way these no-restricted-imports patterns only block cross-module
  * deep imports, not intra-module ones.
  */
+/**
+ * Override: src/lib/db.ts is allowed to import module schemas directly via
+ * `@/modules/<m>/schema`. It's the only consumer of those internals — Drizzle
+ * needs the table objects at adapter setup time. Going through the module
+ * index instead creates a circular import (db → module/index → service → db).
+ */
+const dbSchemaImportException = {
+  files: ["src/lib/db.ts"],
+  rules: { "no-restricted-imports": "off" },
+};
+
 const moduleDisciplineRule = {
   files: ["src/**/*.{ts,tsx}"],
+  ignores: ["src/lib/db.ts"],
   rules: {
     // Underscore-prefixed args are intentional placeholders (e.g. middleware
     // params reserved for Phase 1). Don't flag them.
@@ -55,6 +67,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   moduleDisciplineRule,
+  dbSchemaImportException,
   globalIgnores([
     ".next/**",
     "out/**",

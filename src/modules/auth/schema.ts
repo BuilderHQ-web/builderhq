@@ -29,6 +29,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "@/modules/users";
 
+// NOTE: TS property names match what @auth/drizzle-adapter expects
+// (snake_case for OAuth fields, camelCase for the few it spells that way).
+// The DB column names are unchanged — drizzle's casing config maps them.
 export const accounts = pgTable(
   "accounts",
   {
@@ -38,13 +41,13 @@ export const accounts = pgTable(
     type: text().notNull(), // "oauth" | "oidc" | "email" | "credentials"
     provider: text().notNull(),
     providerAccountId: text().notNull(),
-    refreshToken: text(),
-    accessToken: text(),
-    expiresAt: integer(),
-    tokenType: text(),
+    refresh_token: text(),
+    access_token: text(),
+    expires_at: integer(),
+    token_type: text(),
     scope: text(),
-    idToken: text(),
-    sessionState: text(),
+    id_token: text(),
+    session_state: text(),
   },
   (t) => [
     primaryKey({ columns: [t.provider, t.providerAccountId] }),

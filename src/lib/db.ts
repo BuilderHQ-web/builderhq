@@ -1,22 +1,19 @@
 /**
  * Drizzle client — wired to Neon over the serverless driver.
  *
- * Why @neondatabase/serverless:
- *   - Works in Node, Edge, and serverless functions identically. We don't
- *     have to maintain two clients for two runtimes.
- *   - WebSocket transport tunnels Postgres through HTTPS, which is what
- *     lets it work in environments that block raw TCP.
+ * Schemas are imported via the direct `@/modules/<m>/schema` path (not via
+ * the module index) — this is intentional and ESLint has an override for
+ * this one file. Going through the module index creates a circular import:
+ * db.ts → modules/auth/index → modules/auth/auth → lib/db. Direct schema
+ * imports pull in only the table definitions (no service code), which
+ * breaks the cycle.
  *
- * Connection-string convention (locked in this codebase):
- *   - DATABASE_URL          — pooled. Used by the app at runtime.
- *   - DATABASE_URL_UNPOOLED — direct. Used by drizzle-kit migrations only.
+ * Schemas remain "public for setup" — but the rule that no callsite outside
+ * a module may write a Drizzle query against another module's tables is
+ * still enforced (call service functions instead).
  *
  * NEVER instantiate a second `drizzle()` somewhere else. Always import
  * { db } from here. One client, one pool, one source of truth.
- *
- * Schema is composed from each module's index.ts (which re-exports its
- * tables). When a new module gains tables, add it to the schema spread
- * here and to drizzle.config.ts (already globs all modules).
  */
 
 import { drizzle } from "drizzle-orm/neon-serverless";
@@ -24,8 +21,8 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
 import { env } from "@/lib/env";
-import * as users from "@/modules/users";
-import * as auth from "@/modules/auth";
+import * as usersSchema from "@/modules/users/schema";
+import * as authSchema from "@/modules/auth/schema";
 
 // Neon's WS transport needs a polyfill outside the browser.
 if (typeof WebSocket === "undefined") {
@@ -33,10 +30,8 @@ if (typeof WebSocket === "undefined") {
 }
 
 const schema = {
-  // Re-namespacing keeps relation names stable in Drizzle's relational query
-  // API even when modules grow more tables.
-  ...users,
-  ...auth,
+  ...usersSchema,
+  ...authSchema,
 };
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
