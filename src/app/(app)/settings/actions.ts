@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth, changePassword, signOut, updateProfile } from "@/modules/auth";
+import {
+  auth,
+  changePassword,
+  signOut,
+  unstable_update,
+  updateProfile,
+} from "@/modules/auth";
 
 export interface SettingsActionState {
   ok?: true;
@@ -22,10 +28,10 @@ export async function updateProfileAction(
   const userId = await requireUserId();
   if (!userId) return { error: "Not authenticated." };
 
-  const result = await updateProfile(userId, {
-    firstName: String(formData.get("firstName") ?? ""),
-    lastName: String(formData.get("lastName") ?? ""),
-  });
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+
+  const result = await updateProfile(userId, { firstName, lastName });
 
   if (!result.ok) {
     if (result.error.code === "validation" && result.error.details?.issues) {
@@ -39,7 +45,15 @@ export async function updateProfileAction(
     return { error: result.error.message };
   }
 
-  // Refresh the layout so the topbar's name updates.
+  // The topbar reads from the JWT, not the DB — so we must rewrite the
+  // session token in place. unstable_update() triggers the jwt() callback
+  // with trigger:'update' and our payload as `session`, where it copies
+  // `name` into the token. Without this, the user has to log out/in to
+  // see the new name.
+  await unstable_update({ user: { name: `${firstName} ${lastName}` } });
+
+  // Re-render server components so any code that pulled session/DB data
+  // sees the fresh values on the next paint.
   revalidatePath("/", "layout");
   return { ok: true };
 }

@@ -60,11 +60,22 @@ export const authConfig = {
         token.role = user.role;
         token.status = user.status;
       }
-      // Allow updateSession() calls from server actions to re-write the JWT
-      // (e.g. after the user picks their role during onboarding).
+      // Allow unstable_update() calls from server actions to re-write the
+      // JWT in place (e.g. after profile name change, role switch). The
+      // value passed to unstable_update() lands here as `session`; we
+      // accept either the flat shape or `{ user: { ... } }` since both
+      // are valid Auth.js v5 inputs. Whitelist exactly the fields we want
+      // propagated — never blindly merge a client-controlled object.
       if (trigger === "update" && session) {
-        if (session.role !== undefined) token.role = session.role;
-        if (session.status !== undefined) token.status = session.status;
+        const next = (session as { user?: Record<string, unknown> }).user ?? session;
+        const name = (next as Record<string, unknown>).name;
+        const image = (next as Record<string, unknown>).image;
+        const role = (next as Record<string, unknown>).role;
+        const status = (next as Record<string, unknown>).status;
+        if (typeof name === "string") token.name = name;
+        if (typeof image === "string") token.picture = image;
+        if (role !== undefined) token.role = role as typeof token.role;
+        if (status !== undefined) token.status = status as typeof token.status;
       }
       return token;
     },
