@@ -27,6 +27,19 @@ interface PostcodeSuburbProps {
   postcodeLabel?: string;
   postcodeError?: string;
   suburbError?: string;
+
+  /**
+   * Optional callback fired whenever the resolved (postcode, suburb, state)
+   * tuple changes. Hidden inputs alone aren't enough for parents that need
+   * to react to selection without a form submit (e.g. enabling an "Add"
+   * button) — DOM input events don't fire when React writes hidden input
+   * values, so reading the form mid-interaction misses updates.
+   */
+  onChange?: (next: {
+    postcode: string;
+    suburb: string | null;
+    state: State | null;
+  }) => void;
 }
 
 /**
@@ -54,7 +67,25 @@ export function PostcodeSuburb({
   postcodeLabel = "Postcode",
   postcodeError,
   suburbError,
+  onChange,
 }: PostcodeSuburbProps) {
+  // Track latest onChange in a ref so we can call it from inside async
+  // callbacks without retriggering the lookup effect when the parent
+  // re-renders with a new closure.
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+  const emit = React.useCallback(
+    (postcode: string, sel: Suburb | null) => {
+      onChangeRef.current?.({
+        postcode,
+        suburb: sel?.suburb ?? null,
+        state: sel?.state ?? null,
+      });
+    },
+    [],
+  );
   const [postcode, setPostcode] = React.useState(defaultPostcode ?? "");
   const [suburbs, setSuburbs] = React.useState<Suburb[]>(
     defaultSuburb && defaultState
@@ -82,16 +113,21 @@ export function PostcodeSuburb({
         if (!alive) return;
         setSuburbs(res.suburbs);
         if (res.suburbs.length === 1) {
-          setSelected(res.suburbs[0] ?? null);
+          const next = res.suburbs[0] ?? null;
+          setSelected(next);
+          emit(trimmed, next);
         } else if (res.suburbs.length > 1) {
-          // If the user previously picked a suburb that still appears, keep it.
-          setSelected((prev) =>
-            prev && res.suburbs.find((s) => s.suburb === prev.suburb && s.state === prev.state)
-              ? prev
-              : null,
-          );
+          setSelected((prev) => {
+            const keep =
+              prev && res.suburbs.find((s) => s.suburb === prev.suburb && s.state === prev.state)
+                ? prev
+                : null;
+            emit(trimmed, keep);
+            return keep;
+          });
         } else {
           setSelected(null);
+          emit(trimmed, null);
         }
       })
       .finally(() => {
@@ -101,20 +137,21 @@ export function PostcodeSuburb({
     return () => {
       alive = false;
     };
-  }, [postcode]);
+  }, [postcode, emit]);
 
   function handlePostcodeChange(raw: string) {
     const cleaned = raw.replace(/\D/g, "").slice(0, 4);
     setTouched(true);
     setPostcode(cleaned);
     if (/^\d{4}$/.test(cleaned)) {
-      // Pre-set the spinner here so it shows immediately; the effect's
-      // async .then() will turn it off when the lookup resolves.
       setLoading(true);
+      // Suburb hasn't resolved yet — emit cleared selection while we wait.
+      emit(cleaned, null);
     } else {
       setSuburbs([]);
       setSelected(null);
       setLoading(false);
+      emit(cleaned, null);
     }
   }
 
@@ -178,10 +215,15 @@ export function PostcodeSuburb({
               const v = e.target.value;
               if (!v) {
                 setSelected(null);
+                emit(postcode, null);
                 return;
               }
               const [s, st] = v.split("|");
-              if (s && st) setSelected({ suburb: s, state: st as State });
+              if (s && st) {
+                const next = { suburb: s, state: st as State };
+                setSelected(next);
+                emit(postcode, next);
+              }
             }}
             required={required}
             className={cn(

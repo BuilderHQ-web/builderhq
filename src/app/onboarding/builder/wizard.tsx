@@ -314,8 +314,18 @@ function CompanyStep({
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!values.companyName.trim()) {
-      setState({ fieldErrors: { companyName: "Company name is required" } });
+    const errors: Record<string, string> = {};
+    if (!values.companyName.trim()) errors.companyName = "Company name is required";
+    if (!values.abn) {
+      errors.abn = "ABN is required";
+    } else if (!/^\d{11}$/.test(values.abn)) {
+      errors.abn = "ABN must be exactly 11 digits";
+    }
+    if (values.acn && !/^\d{9}$/.test(values.acn)) {
+      errors.acn = "ACN must be exactly 9 digits";
+    }
+    if (Object.keys(errors).length) {
+      setState({ fieldErrors: errors });
       return;
     }
     startTransition(async () => {
@@ -326,6 +336,12 @@ function CompanyStep({
     });
   }
 
+  // Digit-only inputs with strict caps; provide feedback as the user types.
+  const abnDigits = values.abn.length;
+  const acnDigits = values.acn.length;
+  const abnLooksWrong = values.abn !== "" && abnDigits !== 11;
+  const acnLooksWrong = values.acn !== "" && acnDigits !== 9;
+
   return (
     <form onSubmit={submit}>
       <StepShell
@@ -333,8 +349,18 @@ function CompanyStep({
         description="Just the basics. ABN unlocks faster admin approval — but it's not required to start."
         footer={
           <>
-            <span className="text-[12px] text-text-dim">Required: company name</span>
-            <Button type="submit" size="lg" disabled={pending} className="gap-2">
+            <span className="text-[12px] text-text-dim">Required: company name &amp; ABN</span>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={
+                pending ||
+                !values.companyName.trim() ||
+                !/^\d{11}$/.test(values.abn) ||
+                (values.acn !== "" && !/^\d{9}$/.test(values.acn))
+              }
+              className="gap-2"
+            >
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
               {!pending ? <ArrowRight className="size-4" /> : null}
@@ -363,23 +389,41 @@ function CompanyStep({
             <Input
               id="abn"
               value={values.abn}
-              onChange={(e) => onChange({ ...values, abn: e.target.value })}
+              onChange={(e) =>
+                onChange({ ...values, abn: e.target.value.replace(/\D/g, "").slice(0, 11) })
+              }
               inputMode="numeric"
               placeholder="11 digits"
-              maxLength={14}
+              maxLength={11}
+              required
+              aria-invalid={abnLooksWrong || Boolean(state.fieldErrors?.abn) || undefined}
             />
-            {state.fieldErrors?.abn ? <p className="text-[11px] text-danger">{state.fieldErrors.abn}</p> : null}
+            <div className="flex items-center justify-between text-[11px]">
+              <span className={cn(abnLooksWrong ? "text-warning" : "text-text-dim")}>
+                {state.fieldErrors?.abn ?? (abnLooksWrong ? "ABN must be 11 digits" : "Required · 11 digits")}
+              </span>
+              <span className="font-mono text-text-dim tabular-nums">{abnDigits}/11</span>
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="acn">ACN <span className="text-text-dim font-normal">· optional</span></Label>
             <Input
               id="acn"
               value={values.acn}
-              onChange={(e) => onChange({ ...values, acn: e.target.value })}
+              onChange={(e) =>
+                onChange({ ...values, acn: e.target.value.replace(/\D/g, "").slice(0, 9) })
+              }
               inputMode="numeric"
               placeholder="9 digits"
-              maxLength={11}
+              maxLength={9}
+              aria-invalid={acnLooksWrong || Boolean(state.fieldErrors?.acn) || undefined}
             />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className={cn(acnLooksWrong ? "text-warning" : "text-text-dim")}>
+                {state.fieldErrors?.acn ?? (acnLooksWrong ? "ACN must be 9 digits" : "Optional · 9 digits if entered")}
+              </span>
+              <span className="font-mono text-text-dim tabular-nums">{acnDigits}/9</span>
+            </div>
           </div>
         </div>
 
@@ -726,12 +770,16 @@ function ServiceAreasStep({
             Add a service area
           </span>
 
-          {/* Wrap PostcodeSuburb in a hidden-input bridge — read postcode/suburb/state via form. */}
-          <PostcodeSuburbBridge
+          <PostcodeSuburb
             key={pickerKey}
-            onPostcodeChange={setDraftPostcode}
-            onSuburbChange={setDraftSuburb}
-            onStateChange={setDraftState}
+            postcodeName="draftPostcode"
+            suburbName="draftSuburb"
+            stateName="draftState"
+            onChange={({ postcode, suburb, state: st }) => {
+              setDraftPostcode(postcode);
+              setDraftSuburb(suburb ?? "");
+              setDraftState(st ?? "");
+            }}
           />
 
           <div>
@@ -752,40 +800,6 @@ function ServiceAreasStep({
         {state.error ? <ErrorBanner>{state.error}</ErrorBanner> : null}
       </StepShell>
     </form>
-  );
-}
-
-/**
- * Bridges the PostcodeSuburb (which renders hidden inputs) into the React
- * state of the parent step. We read the values from the rendered hidden
- * inputs by attaching refs / events. Simpler: a wrapper that listens for
- * form input events.
- */
-function PostcodeSuburbBridge({
-  onPostcodeChange,
-  onSuburbChange,
-  onStateChange,
-}: {
-  onPostcodeChange: (v: string) => void;
-  onSuburbChange: (v: string) => void;
-  onStateChange: (v: string) => void;
-}) {
-  return (
-    <div
-      onInput={(e) => {
-        const tgt = e.target as HTMLInputElement | HTMLSelectElement;
-        if (!tgt.name) return;
-        if (tgt.name === "draftPostcode") onPostcodeChange(tgt.value);
-        if (tgt.name === "draftSuburb") onSuburbChange(tgt.value);
-        if (tgt.name === "draftState") onStateChange(tgt.value);
-      }}
-    >
-      <PostcodeSuburb
-        postcodeName="draftPostcode"
-        suburbName="draftSuburb"
-        stateName="draftState"
-      />
-    </div>
   );
 }
 
