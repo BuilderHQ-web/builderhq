@@ -22,3 +22,7 @@ export { accounts, sessions, verificationTokens } from "./schema";
 export type { Account, Session, VerificationToken } from "./schema";
 
 export { auth, signIn, signOut, handlers, unstable_update } from "./auth";
+
+// Service functions — sign-UP and email verification. Sign-IN goes through
+// Auth.js's `signIn` re-exported above (Credentials provider).
+export { signUp, verifyEmail, signUpSchema, type SignUpInput } from "./service";

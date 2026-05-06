@@ -1,8 +1,7 @@
 /**
  * @module email
  *
- * Public surface for the email module. Anything outside this folder
- * MUST import from `@/modules/email` (this file) — never reach into
- * `./service`, `./schema`, or `./policies` directly. ESLint enforces it.
+ * Public surface for the email module. Outsiders MUST import from
+ * `@/modules/email` — never reach into `./service` directly.
  */
-export {};
+export { sendVerificationEmail } from "./service";
