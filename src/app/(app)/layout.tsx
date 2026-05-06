@@ -1,42 +1,56 @@
-import * as React from "react";
-import Link from "next/link";
-import { Logo } from "@/components/brand/logo";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/modules/auth";
+import { Sidebar } from "@/components/app/sidebar";
+import { Topbar } from "@/components/app/topbar";
 
 /**
- * Authenticated app shell — owner, builder, and admin dashboards all
- * compose into this layout.
+ * Authenticated app shell — owner / builder / admin all compose into here.
  *
- * Phase 0 (now): minimal top-bar so placeholder pages can be navigated.
- * Phase 1: this is where session enforcement, role-based redirects,
- * sidebar navigation, and the command-palette get wired up.
+ * Auth guard order:
+ *   1. proxy.ts (Edge) blocks unauthenticated requests at the edge for /(app)/*
+ *   2. This layout double-checks server-side. Belt + braces.
+ *   3. Per-route role check happens via server-side session lookup in the
+ *      page itself (e.g. /admin/* checks user.role === 'admin').
  *
- * Auth gating moves to src/middleware.ts before this layout runs — never
- * rely on this component to enforce access.
+ * This layout always runs Node-side because auth() reads from the DB-backed
+ * session via Auth.js's adapter.
  */
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-dvh flex flex-col">
-      <header className="sticky top-0 z-30">
-        <div className="glass">
-          <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between px-6">
-            <div className="flex items-center gap-6">
-              <Link href="/" aria-label="BuilderHQ home" className="inline-flex">
-                <Logo size={20} />
-              </Link>
-              <nav className="hidden md:flex items-center gap-1 text-[10px] tracking-[0.2em] uppercase text-text-faint">
-                <Link href="/owner" className="px-3 py-1.5 rounded-tight hover:text-text hover:bg-surface-1 transition-colors">Owner</Link>
-                <Link href="/builder" className="px-3 py-1.5 rounded-tight hover:text-text hover:bg-surface-1 transition-colors">Builder</Link>
-                <Link href="/admin" className="px-3 py-1.5 rounded-tight hover:text-text hover:bg-surface-1 transition-colors">Admin</Link>
-              </nav>
-            </div>
-            <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim">
-              Phase 0 · placeholder shell
-            </span>
-          </div>
-        </div>
-      </header>
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login?next=/owner");
+  }
 
-      <main className="flex-1">{children}</main>
+  // Suspended/banned: force back to /login. proxy will likely have already
+  // intercepted, but defense-in-depth.
+  if (session.user.status === "suspended" || session.user.status === "banned") {
+    redirect("/login?error=suspended");
+  }
+
+  // role can be null for very new accounts that haven't picked a role —
+  // shouldn't happen via signup (we require role), but guard anyway.
+  const role = session.user.role ?? "project_owner";
+
+  return (
+    <div className="flex min-h-dvh">
+      <Sidebar role={role} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Topbar
+          user={{
+            id: session.user.id,
+            name: session.user.name ?? null,
+            email: session.user.email,
+            image: session.user.image,
+            role: session.user.role,
+          }}
+        />
+        <main className="flex-1">{children}</main>
+      </div>
     </div>
   );
 }
