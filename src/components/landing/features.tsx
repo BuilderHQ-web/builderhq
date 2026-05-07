@@ -258,7 +258,7 @@ function ThreadVisual() {
     <div className="w-full max-w-[260px] space-y-2">
       <div className="px-3 py-2 rounded-sm rounded-bl-none border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[11px] text-text-muted leading-snug max-w-[88%]">
         <span className="block text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
-          Aryan · owner
+          Owner
         </span>
         Beam over the kitchen — laminated or steel?
       </div>
@@ -273,22 +273,30 @@ function ThreadVisual() {
 }
 
 function BadgeVisual() {
-  // Concentric tick badge.
+  // Concentric tick badge. ringPulse keyframe applies translate(-50%,-50%)
+  // for centering, so the rings need to be anchored at left:50%/top:50%
+  // for the keyframe's translate to land them in the centre.
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative w-full h-[150px]">
       <span
-        className="absolute size-[120px] rounded-full border border-border-accent/30"
+        className="absolute left-1/2 top-1/2 size-[120px] rounded-full border border-border-accent/30"
         style={{ animation: "ringPulse 4s ease-in-out infinite" }}
       />
       <span
-        className="absolute size-[80px] rounded-full border border-border-accent/50"
+        className="absolute left-1/2 top-1/2 size-[80px] rounded-full border border-border-accent/50"
         style={{ animation: "ringPulse 4s ease-in-out 1s infinite" }}
       />
       <span
-        className="relative size-12 rounded-full border border-border-accent bg-accent-muted flex items-center justify-center text-accent-light"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-12 rounded-full border border-border-accent bg-accent-muted flex items-center justify-center text-accent-light"
         style={{ boxShadow: "0 0 32px rgba(0,212,200,0.25)" }}
       >
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
@@ -298,13 +306,14 @@ function BadgeVisual() {
 
 function RingsVisual() {
   // Big concentric rings + counter — for "founding access" pillar.
+  // ringPulse uses translate(-50%,-50%) so the rings anchor at 50%/50%.
   return (
-    <div className="relative w-full h-[150px] flex items-center justify-center">
+    <div className="relative w-full h-[170px]">
       {[200, 150, 100].map((s, i) => (
         <span
           key={s}
           aria-hidden
-          className="absolute rounded-full border border-border-accent/30"
+          className="absolute left-1/2 top-1/2 rounded-full border border-border-accent/30"
           style={{
             width: s,
             height: s,
@@ -312,7 +321,7 @@ function RingsVisual() {
           }}
         />
       ))}
-      <div className="relative text-center">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
         <div className="font-display text-[44px] leading-none text-accent-light tabular-nums">
           50
         </div>

@@ -9,12 +9,15 @@ import { Logo } from "@/components/brand/logo";
 export function Footer() {
   return (
     <footer className="relative border-t border-border-subtle bg-bg-deep/70 px-6 md:px-10 py-7">
-      <div className="mx-auto max-w-[1320px] flex flex-col md:flex-row gap-5 md:items-center md:justify-between">
-        <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
+      {/* 3-col grid keeps the link block dead-centre on the page width
+          regardless of how wide the logo or copyright become. Stacks
+          to single column on mobile. */}
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+        <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center md:justify-self-start">
           <Logo height={24} />
         </Link>
 
-        <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[12px] tracking-[0.04em] text-text-dim">
+        <nav className="flex flex-wrap justify-center gap-x-7 gap-y-2 text-[12px] tracking-[0.04em] text-text-dim">
           <Link href="/about" className="hover:text-accent-light transition-colors">
             About
           </Link>
@@ -27,12 +30,9 @@ export function Footer() {
           <Link href="/faqs" className="hover:text-accent-light transition-colors">
             FAQs
           </Link>
-          <a href="mailto:hello@builderhq.com.au" className="hover:text-accent-light transition-colors">
-            hello@builderhq.com.au
-          </a>
         </nav>
 
-        <p className="text-[11px] tracking-[0.18em] uppercase text-text-dim/70">
+        <p className="text-[11px] tracking-[0.18em] uppercase text-text-dim/70 md:justify-self-end">
           © {new Date().getFullYear()} BuilderHQ · Australia
         </p>
       </div>
