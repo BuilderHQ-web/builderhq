@@ -53,13 +53,13 @@ export type UpdateProjectInput = Partial<{
   bedrooms: number | null;
   bathrooms: number | null;
   floors: number | null;
-  landSizeSqm: number | null;
-  buildSizeSqm: number | null;
+  landSizeBand: ProjectRow["landSizeBand"] | null;
+  buildSizeBand: ProjectRow["buildSizeBand"] | null;
   dwellingCount: number | null;
   renovationScope: ProjectRow["renovationScope"] | null;
-  existingAgeYears: number | null;
+  existingAgeBand: ProjectRow["existingAgeBand"] | null;
   extensionType: ProjectRow["extensionType"] | null;
-  extensionSizeSqm: number | null;
+  extensionSizeBand: ProjectRow["extensionSizeBand"] | null;
   budgetBand: ProjectRow["budgetBand"] | null;
   targetStartMonth: string | null;
   targetCompletionMonth: string | null;

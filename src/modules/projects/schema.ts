@@ -105,6 +105,47 @@ export const extensionTypeEnum = pgEnum("extension_type", [
   "side",
 ]);
 
+/** Land-size bands (m²). Bands instead of exact figures so the form
+ *  stays a couple of clicks. */
+export const landSizeBandEnum = pgEnum("land_size_band", [
+  "under_200",
+  "200_400",
+  "400_600",
+  "600_800",
+  "800_1000",
+  "over_1000",
+]);
+
+/** Build-size bands (m²). */
+export const buildSizeBandEnum = pgEnum("build_size_band", [
+  "under_100",
+  "100_150",
+  "150_200",
+  "200_250",
+  "250_300",
+  "300_400",
+  "over_400",
+]);
+
+/** Extension-size bands (m²). */
+export const extensionSizeBandEnum = pgEnum("extension_size_band", [
+  "under_20",
+  "20_40",
+  "40_60",
+  "60_80",
+  "80_100",
+  "over_100",
+]);
+
+/** Age bands for renovation projects (years since built). */
+export const existingAgeBandEnum = pgEnum("existing_age_band", [
+  "under_10",
+  "10_25",
+  "25_50",
+  "50_75",
+  "over_75",
+]);
+
 // ── table ────────────────────────────────────────────────────────────────
 
 export const projects = pgTable(
@@ -133,19 +174,19 @@ export const projects = pgTable(
     bedrooms: integer(),
     bathrooms: integer(),
     floors: integer(),
-    landSizeSqm: integer(),
-    buildSizeSqm: integer(),
+    landSizeBand: landSizeBandEnum(),
+    buildSizeBand: buildSizeBandEnum(),
 
     // Multi-dwelling specific.
     dwellingCount: integer(),
 
     // Renovation specific.
     renovationScope: renovationScopeEnum(),
-    existingAgeYears: integer(),
+    existingAgeBand: existingAgeBandEnum(),
 
     // Extension specific.
     extensionType: extensionTypeEnum(),
-    extensionSizeSqm: integer(),
+    extensionSizeBand: extensionSizeBandEnum(),
 
     // Budget + timeline.
     budgetBand: projectBudgetBandEnum(),

@@ -19,6 +19,10 @@ export {
   projectBudgetBandEnum,
   renovationScopeEnum,
   extensionTypeEnum,
+  landSizeBandEnum,
+  buildSizeBandEnum,
+  extensionSizeBandEnum,
+  existingAgeBandEnum,
 } from "./schema";
 export type { ProjectRow, ProjectInsert } from "./schema";
 

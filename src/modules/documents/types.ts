@@ -27,11 +27,13 @@ export type Document = Pick<
 /** Document category, re-exported for callers that need to set it. */
 export type DocumentCategory =
   | "architectural"
+  | "structural_engineering"
+  | "civil_engineering"
   | "specifications"
-  | "scope"
-  | "engineering"
-  | "site_survey"
-  | "contract"
+  | "land_report"
+  | "soil_report"
+  | "energy_rating"
+  | "town_planning"
   | "other";
 
 /** Inputs to start a new upload. The bytes haven't moved yet. */

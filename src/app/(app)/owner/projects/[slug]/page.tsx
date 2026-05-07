@@ -62,6 +62,39 @@ const EXT_LABEL: Record<NonNullable<Project["extensionType"]>, string> = {
   side: "Side",
 };
 
+const LAND_LABEL: Record<NonNullable<Project["landSizeBand"]>, string> = {
+  under_200: "Under 200 m²",
+  "200_400": "200 – 400 m²",
+  "400_600": "400 – 600 m²",
+  "600_800": "600 – 800 m²",
+  "800_1000": "800 – 1000 m²",
+  over_1000: "1000 m²+",
+};
+const BUILD_LBL: Record<NonNullable<Project["buildSizeBand"]>, string> = {
+  under_100: "Under 100 m²",
+  "100_150": "100 – 150 m²",
+  "150_200": "150 – 200 m²",
+  "200_250": "200 – 250 m²",
+  "250_300": "250 – 300 m²",
+  "300_400": "300 – 400 m²",
+  over_400: "400 m²+",
+};
+const EXT_SIZE_LBL: Record<NonNullable<Project["extensionSizeBand"]>, string> = {
+  under_20: "Under 20 m²",
+  "20_40": "20 – 40 m²",
+  "40_60": "40 – 60 m²",
+  "60_80": "60 – 80 m²",
+  "80_100": "80 – 100 m²",
+  over_100: "100 m²+",
+};
+const AGE_LBL: Record<NonNullable<Project["existingAgeBand"]>, string> = {
+  under_10: "Under 10 yrs",
+  "10_25": "10 – 25 yrs",
+  "25_50": "25 – 50 yrs",
+  "50_75": "50 – 75 yrs",
+  over_75: "Over 75 yrs",
+};
+
 export default async function ProjectDetailPage({
   params,
 }: {
@@ -130,8 +163,14 @@ export default async function ProjectDetailPage({
                 {project.type !== "multi_dwelling" ? (
                   <Kv label="Floors" value={project.floors} />
                 ) : null}
-                <Kv label="Land size" value={project.landSizeSqm ? `${project.landSizeSqm} m²` : null} />
-                <Kv label="Build size" value={project.buildSizeSqm ? `${project.buildSizeSqm} m²` : null} />
+                <Kv
+                  label="Land size"
+                  value={project.landSizeBand ? LAND_LABEL[project.landSizeBand] : null}
+                />
+                <Kv
+                  label="Build size"
+                  value={project.buildSizeBand ? BUILD_LBL[project.buildSizeBand] : null}
+                />
                 {project.type === "renovation" ? (
                   <>
                     <Kv
@@ -142,7 +181,9 @@ export default async function ProjectDetailPage({
                     />
                     <Kv
                       label="Existing age"
-                      value={project.existingAgeYears ? `${project.existingAgeYears} yrs` : null}
+                      value={
+                        project.existingAgeBand ? AGE_LBL[project.existingAgeBand] : null
+                      }
                     />
                   </>
                 ) : null}
@@ -157,9 +198,7 @@ export default async function ProjectDetailPage({
                     <Kv
                       label="Size"
                       value={
-                        project.extensionSizeSqm
-                          ? `${project.extensionSizeSqm} m²`
-                          : null
+                        project.extensionSizeBand ? EXT_SIZE_LBL[project.extensionSizeBand] : null
                       }
                     />
                   </>

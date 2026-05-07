@@ -55,17 +55,22 @@ export const documentStatusEnum = pgEnum("document_status", [
 ]);
 
 /**
- * Category tags for documents. Used by the publish-gate check on
+ * Category tags for documents. Aligned to the doc set Australian
+ * residential builds typically generate. Used by the publish-gate on
  * projects: a project can't go from draft → published unless it has
  * at least one active "architectural" document.
+ *
+ * Order here is the order the wizard renders the tiles in.
  */
 export const documentCategoryEnum = pgEnum("document_category", [
-  "architectural",
+  "architectural",          // mandatory
+  "structural_engineering",
+  "civil_engineering",
   "specifications",
-  "scope",
-  "engineering",
-  "site_survey",
-  "contract",
+  "land_report",
+  "soil_report",
+  "energy_rating",
+  "town_planning",
   "other",
 ]);
 

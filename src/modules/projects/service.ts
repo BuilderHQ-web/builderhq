@@ -333,7 +333,7 @@ function validateTypeRequired(p: ProjectRow): string[] {
       break;
     case "extension":
       if (!p.extensionType) out.push("Pick the extension type.");
-      if (!p.extensionSizeSqm) out.push("Set the extension size in m².");
+      if (!p.extensionSizeBand) out.push("Pick the extension size.");
       break;
   }
   return out;
@@ -380,7 +380,7 @@ function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   if (nextType !== "extension" && patch.extensionType != null) {
     out.push("Extension type only applies to extensions.");
   }
-  if (nextType !== "extension" && patch.extensionSizeSqm != null) {
+  if (nextType !== "extension" && patch.extensionSizeBand != null) {
     out.push("Extension size only applies to extensions.");
   }
 

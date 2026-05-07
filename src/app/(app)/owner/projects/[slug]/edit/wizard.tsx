@@ -19,6 +19,18 @@ import {
   Download,
   Upload,
   Sparkles,
+  ArrowLeft,
+  ArrowRight,
+  Compass,
+  Hammer,
+  Folder,
+  Drill,
+  TreePine,
+  Mountain,
+  Zap,
+  Landmark,
+  FileQuestion,
+  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -43,7 +55,7 @@ import type {
 } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
 
-// ── helpers/constants ────────────────────────────────────────────────────
+// ── meta ─────────────────────────────────────────────────────────────────
 
 const TYPE_META: Record<
   Project["type"],
@@ -54,8 +66,6 @@ const TYPE_META: Record<
   renovation: { label: "Renovation", icon: <Wrench className="size-4" /> },
   extension: { label: "Extension", icon: <Layers className="size-4" /> },
 };
-
-const STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"] as const;
 
 const BUDGET_BANDS: Array<{ id: NonNullable<Project["budgetBand"]>; label: string }> = [
   { id: "under_500k", label: "Under $500k" },
@@ -84,27 +94,158 @@ const EXTENSION_TYPES: Array<{ id: NonNullable<Project["extensionType"]>; label:
   { id: "side", label: "Side" },
 ];
 
-const DOC_CATEGORIES: Array<{ id: DocumentCategory; label: string; required?: boolean }> = [
-  { id: "architectural", label: "Architectural plans", required: true },
-  { id: "specifications", label: "Specifications" },
-  { id: "scope", label: "Scope of works" },
-  { id: "engineering", label: "Engineering" },
-  { id: "site_survey", label: "Site survey" },
-  { id: "contract", label: "Contract" },
-  { id: "other", label: "Other" },
+const LAND_BANDS: Array<{ id: NonNullable<Project["landSizeBand"]>; label: string }> = [
+  { id: "under_200", label: "Under 200 m²" },
+  { id: "200_400", label: "200 – 400 m²" },
+  { id: "400_600", label: "400 – 600 m²" },
+  { id: "600_800", label: "600 – 800 m²" },
+  { id: "800_1000", label: "800 – 1000 m²" },
+  { id: "over_1000", label: "1000 m²+" },
+];
+
+const BUILD_BANDS: Array<{ id: NonNullable<Project["buildSizeBand"]>; label: string }> = [
+  { id: "under_100", label: "Under 100 m²" },
+  { id: "100_150", label: "100 – 150 m²" },
+  { id: "150_200", label: "150 – 200 m²" },
+  { id: "200_250", label: "200 – 250 m²" },
+  { id: "250_300", label: "250 – 300 m²" },
+  { id: "300_400", label: "300 – 400 m²" },
+  { id: "over_400", label: "400 m²+" },
+];
+
+const EXTENSION_BANDS: Array<{ id: NonNullable<Project["extensionSizeBand"]>; label: string }> = [
+  { id: "under_20", label: "Under 20 m²" },
+  { id: "20_40", label: "20 – 40 m²" },
+  { id: "40_60", label: "40 – 60 m²" },
+  { id: "60_80", label: "60 – 80 m²" },
+  { id: "80_100", label: "80 – 100 m²" },
+  { id: "over_100", label: "100 m²+" },
+];
+
+const AGE_BANDS: Array<{ id: NonNullable<Project["existingAgeBand"]>; label: string }> = [
+  { id: "under_10", label: "Under 10 yrs" },
+  { id: "10_25", label: "10 – 25 yrs" },
+  { id: "25_50", label: "25 – 50 yrs" },
+  { id: "50_75", label: "50 – 75 yrs" },
+  { id: "over_75", label: "Over 75 yrs" },
+];
+
+const COUNT_OPTIONS = [
+  { id: 1, label: "1" },
+  { id: 2, label: "2" },
+  { id: 3, label: "3" },
+  { id: 4, label: "4" },
+  { id: 5, label: "5" },
+  { id: 6, label: "6" },
+  { id: 7, label: "7" },
+  { id: 8, label: "8+" },
+];
+
+const FLOOR_OPTIONS = [
+  { id: 1, label: "1 storey" },
+  { id: 2, label: "2 storeys" },
+  { id: 3, label: "3 storeys" },
+  { id: 4, label: "4+ storeys" },
+];
+
+const DWELLING_OPTIONS = [
+  { id: 2, label: "2" },
+  { id: 3, label: "3" },
+  { id: 4, label: "4" },
+  { id: 5, label: "5" },
+  { id: 6, label: "6" },
+  { id: 7, label: "7" },
+  { id: 8, label: "8+" },
+];
+
+type DocCatMeta = {
+  id: DocumentCategory;
+  label: string;
+  shortLabel: string;
+  icon: LucideIcon;
+  required?: boolean;
+  hint: string;
+};
+
+const DOC_CATEGORIES: DocCatMeta[] = [
+  {
+    id: "architectural",
+    label: "Architectural plans",
+    shortLabel: "Architectural",
+    icon: Compass,
+    required: true,
+    hint: "Floor plans, elevations, sections.",
+  },
+  {
+    id: "structural_engineering",
+    label: "Structural engineering",
+    shortLabel: "Structural",
+    icon: Hammer,
+    hint: "Beams, footings, slab, framing.",
+  },
+  {
+    id: "civil_engineering",
+    label: "Civil engineering",
+    shortLabel: "Civil",
+    icon: Drill,
+    hint: "Stormwater, sewerage, retaining.",
+  },
+  {
+    id: "specifications",
+    label: "Project specifications",
+    shortLabel: "Specs",
+    icon: FileText,
+    hint: "Materials, finishes, inclusions.",
+  },
+  {
+    id: "land_report",
+    label: "Land report",
+    shortLabel: "Land",
+    icon: TreePine,
+    hint: "Title, boundaries, easements.",
+  },
+  {
+    id: "soil_report",
+    label: "Soil report",
+    shortLabel: "Soil",
+    icon: Mountain,
+    hint: "Geotech, classification, bores.",
+  },
+  {
+    id: "energy_rating",
+    label: "Energy efficiency",
+    shortLabel: "Energy",
+    icon: Zap,
+    hint: "NatHERS, BASIX, thermal.",
+  },
+  {
+    id: "town_planning",
+    label: "Town planning",
+    shortLabel: "Planning",
+    icon: Landmark,
+    hint: "Permits, DA, council reports.",
+  },
+  {
+    id: "other",
+    label: "Other docs",
+    shortLabel: "Other",
+    icon: FileQuestion,
+    hint: "Anything else useful.",
+  },
 ];
 
 const MISSING_LABEL: Record<PublishabilityReport["missing"][number], string> = {
   title: "Project title",
   type: "Project type",
   address: "Address",
-  type_specific_fields: "Type-specific details",
+  type_specific_fields: "Build details",
   architectural_plan: "Architectural plan",
 };
 
 // ── component ────────────────────────────────────────────────────────────
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type Step = 1 | 2 | 3;
 
 export function ProjectWizard({
   initialProject,
@@ -122,6 +263,7 @@ export function ProjectWizard({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [step, setStep] = useState<Step>(1);
 
   const isPublished = project.status !== "draft";
 
@@ -144,52 +286,41 @@ export function ProjectWizard({
       if (!r.ok) {
         setSaveState("error");
         setSaveError(r.error.message);
-        // Re-merge so changes aren't lost — user can fix and trigger again.
         pendingPatch.current = { ...patch, ...pendingPatch.current };
         return;
       }
       setProject(r.value);
       setSaveState("saved");
-      // Refresh publishability after each save.
       const rep = await checkPublishabilityAction(r.value.id);
       if (rep.ok) setReport(rep.value);
     } finally {
       inflight.current = false;
-      // If more changes accumulated while we were inflight, schedule another flush.
-      if (Object.keys(pendingPatch.current).length > 0) {
-        scheduleFlush();
-      }
+      if (Object.keys(pendingPatch.current).length > 0) scheduleFlush();
     }
   }, [project.id]);
 
   const scheduleFlush = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(flush, 700);
+    saveTimer.current = setTimeout(flush, 500);
   }, [flush]);
 
   const setField = useCallback(
     <K extends keyof UpdateProjectInput>(key: K, value: UpdateProjectInput[K]) => {
       pendingPatch.current = { ...pendingPatch.current, [key]: value };
-      // Optimistic local update so the UI feels instant.
       setProject((p) => ({ ...p, [key]: value as never }));
       scheduleFlush();
     },
     [scheduleFlush],
   );
 
-  // Flush on unload to avoid losing trailing edits.
   useEffect(() => {
     const onBeforeUnload = () => {
-      if (Object.keys(pendingPatch.current).length > 0) {
-        // Best effort — sendBeacon is overkill for a server action; just fire.
-        flush();
-      }
+      if (Object.keys(pendingPatch.current).length > 0) flush();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [flush]);
 
-  // Refresh docs after upload/delete via this single helper.
   const refreshDocs = useCallback(async () => {
     const r = await listProjectDocumentsAction(project.id);
     if (r.ok) setDocs(r.value);
@@ -197,12 +328,30 @@ export function ProjectWizard({
     if (rep.ok) setReport(rep.value);
   }, [project.id]);
 
+  // ── checkpoint logic ─────────────────────────────────────────────────
+
+  const checkpoints = useMemo(() => {
+    const step1Done =
+      !!project.title?.trim() &&
+      !!project.addressLine1 &&
+      !!project.suburb &&
+      !!project.state &&
+      !!project.postcode;
+    const step2Done = checkBuildStepDone(project);
+    const archCount = docs.filter(
+      (d) => d.category === "architectural" && d.status === "active",
+    ).length;
+    const step3Done = archCount > 0;
+    return { 1: step1Done, 2: step2Done, 3: step3Done };
+  }, [project, docs]);
+
+  const allDone = checkpoints[1] && checkpoints[2] && checkpoints[3];
+
   // ── publish ──────────────────────────────────────────────────────────
 
   const onPublish = useCallback(async () => {
     setPublishing(true);
     try {
-      // Flush any pending patch first.
       if (saveTimer.current) clearTimeout(saveTimer.current);
       await flush();
       const r = await publishProjectAction(project.id);
@@ -218,10 +367,8 @@ export function ProjectWizard({
     }
   }, [flush, project.id, router]);
 
-  // ── delete ───────────────────────────────────────────────────────────
-
   const onDelete = useCallback(async () => {
-    if (!confirm("Delete this project? This can be undone by an admin.")) return;
+    if (!confirm("Delete this draft? This can be undone by an admin.")) return;
     const r = await softDeleteProjectAction(project.id);
     if (!r.ok) {
       alert(r.error.message);
@@ -230,98 +377,931 @@ export function ProjectWizard({
     router.push("/owner/projects");
   }, [project.id, router]);
 
-  const archCount = useMemo(
-    () => docs.filter((d) => d.category === "architectural" && d.status === "active").length,
-    [docs],
-  );
+  // ── render ───────────────────────────────────────────────────────────
 
   return (
-    <div className="px-6 lg:px-10 py-8 lg:py-10 pb-32">
-      <div className="mx-auto max-w-[760px]">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+    <div className="min-h-dvh pb-32">
+      {/* Header — type, title, save state */}
+      <header className="border-b border-border-subtle bg-bg-deep/30">
+        <div className="px-6 lg:px-10 py-6 lg:py-7 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
-              <span className="text-text-dim/60">·</span>
+              <span className="text-text-dim/60 mx-1">·</span>
               <StatusPill status={project.status} />
             </span>
-            <h1 className="mt-2 font-display uppercase tracking-[-0.02em] text-[36px] sm:text-[40px] leading-[0.95] text-text">
+            <h1 className="mt-1.5 font-display uppercase tracking-[-0.018em] text-[32px] sm:text-[40px] leading-[0.95] text-text truncate">
               {project.title}
             </h1>
           </div>
           <SaveIndicator state={saveState} error={saveError} />
         </div>
 
-        {/* Sections */}
-        <div className="space-y-8">
-          <BasicsSection
-            project={project}
-            setField={setField}
-            disabled={isPublished}
-          />
+        {/* Progress tracker */}
+        <ProgressTracker
+          step={step}
+          checkpoints={checkpoints}
+          onJump={(s) => setStep(s)}
+          locked={isPublished}
+        />
+      </header>
 
-          <AddressSection
-            project={project}
-            setField={setField}
-            disabled={isPublished}
-          />
+      {/* Step content */}
+      <div className="px-6 lg:px-10 py-10">
+        <div className="mx-auto max-w-[820px]">
+          {step === 1 ? (
+            <Step1Basics
+              project={project}
+              setField={setField}
+              disabled={isPublished}
+            />
+          ) : step === 2 ? (
+            <Step2Build
+              project={project}
+              setField={setField}
+              disabled={isPublished}
+            />
+          ) : (
+            <Step3Documents
+              projectId={project.id}
+              docs={docs}
+              onRefresh={refreshDocs}
+            />
+          )}
 
-          <TypeSpecificSection
-            project={project}
-            setField={setField}
-            disabled={isPublished}
-          />
-
-          <BudgetTimelineSection
-            project={project}
-            setField={setField}
-            disabled={isPublished}
-          />
-
-          <DescriptionSection
-            project={project}
-            setField={setField}
-            disabled={isPublished}
-          />
-
-          <DocumentsSection
-            projectId={project.id}
-            docs={docs}
-            archCount={archCount}
-            onRefresh={refreshDocs}
-            disabled={false /* documents always editable */}
-          />
-        </div>
-
-        {/* Danger zone (drafts only) */}
-        {project.status === "draft" ? (
-          <div className="mt-12 pt-8 border-t border-border-subtle/60">
+          {/* Step navigation */}
+          <div className="mt-10 flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={onDelete}
-              className="text-[12px] text-text-dim hover:text-danger transition-colors inline-flex items-center gap-2"
+              onClick={() => setStep((s) => (s > 1 ? ((s - 1) as Step) : s))}
+              disabled={step === 1}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-10 px-4 rounded-full border text-[12px] tracking-[0.04em] transition-colors",
+                step === 1
+                  ? "opacity-40 cursor-not-allowed border-border-subtle text-text-dim"
+                  : "border-border-strong text-text hover:bg-surface-1",
+              )}
             >
-              <Trash2 className="size-3.5" />
-              Delete this draft
+              <ArrowLeft className="size-3.5" />
+              Back
             </button>
+
+            {step === 1 && project.status === "draft" ? (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="text-[12px] text-text-dim hover:text-danger transition-colors inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="size-3.5" />
+                Delete draft
+              </button>
+            ) : <span />}
+
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={() => setStep((s) => Math.min(3, s + 1) as Step)}
+                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent-muted border border-border-accent text-accent-light text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-muted/70 transition-colors"
+              >
+                Next
+                <ArrowRight className="size-3.5" />
+              </button>
+            ) : (
+              <span />
+            )}
           </div>
-        ) : null}
+        </div>
       </div>
 
-      {/* Sticky publish bar */}
       <PublishBar
         project={project}
         report={report}
         publishing={publishing}
+        allDone={allDone}
         onPublish={onPublish}
       />
     </div>
   );
 }
 
-// ── pieces ───────────────────────────────────────────────────────────────
+// ── progress tracker ─────────────────────────────────────────────────────
+
+function ProgressTracker({
+  step,
+  checkpoints,
+  onJump,
+  locked,
+}: {
+  step: Step;
+  checkpoints: Record<Step, boolean>;
+  onJump: (s: Step) => void;
+  locked: boolean;
+}) {
+  const STEPS: Array<{ id: Step; title: string; sub: string; icon: LucideIcon }> = [
+    { id: 1, title: "About", sub: "Title + address", icon: Sparkles },
+    { id: 2, title: "Build", sub: "Details + budget", icon: Hammer },
+    { id: 3, title: "Documents", sub: "Plans + specs", icon: FileText },
+  ];
+
+  return (
+    <div className="px-6 lg:px-10 pb-6">
+      <div className="mx-auto max-w-[820px] grid grid-cols-3 gap-3 relative">
+        {/* connecting line */}
+        <span
+          aria-hidden
+          className="absolute top-5 left-[16.6%] right-[16.6%] h-px bg-border-subtle"
+        />
+        {STEPS.map((s) => {
+          const isActive = step === s.id;
+          const isDone = checkpoints[s.id];
+          return (
+            <button
+              key={s.id}
+              type="button"
+              disabled={locked}
+              onClick={() => onJump(s.id)}
+              className="relative group flex flex-col items-center text-center"
+            >
+              <span
+                className={cn(
+                  "relative size-10 rounded-full border flex items-center justify-center transition-all duration-[300ms]",
+                  isActive
+                    ? "border-border-accent bg-accent-muted text-accent-light shadow-[0_0_0_4px_rgba(0,212,200,0.10),_0_0_24px_rgba(0,212,200,0.25)]"
+                    : isDone
+                    ? "border-border-accent/60 bg-accent-muted/40 text-accent-light"
+                    : "border-border-subtle bg-bg-deep text-text-dim",
+                  !locked && "group-hover:border-border-accent",
+                )}
+              >
+                {isDone && !isActive ? (
+                  <Check className="size-4" />
+                ) : (
+                  <s.icon className="size-4" />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "mt-2.5 text-[11.5px] font-semibold tracking-[0.04em]",
+                  isActive ? "text-text" : "text-text-muted",
+                )}
+              >
+                {s.title}
+              </span>
+              <span className="text-[10px] text-text-dim">{s.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── step 1: basics ───────────────────────────────────────────────────────
+
+function Step1Basics({
+  project,
+  setField,
+  disabled,
+}: {
+  project: Project;
+  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="space-y-5">
+      <SectionTitle title="About the project" sub="A clear title and address — that's it for this step." />
+
+      <Card>
+        <Field label="Project title" required>
+          <input
+            type="text"
+            defaultValue={project.title}
+            disabled={disabled}
+            onChange={(e) => setField("title", e.target.value)}
+            placeholder="e.g. Niddrie townhouse"
+            className={inputCls}
+          />
+        </Field>
+      </Card>
+
+      <Card icon={<MapPin className="size-4" />} title="Where is it?" sub="Australian addresses only.">
+        <AddressFields project={project} setField={setField} disabled={disabled} />
+      </Card>
+    </div>
+  );
+}
+
+function AddressFields({
+  project,
+  setField,
+  disabled,
+}: {
+  project: Project;
+  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
+  disabled: boolean;
+}) {
+  const [postcode, setPostcode] = useState(project.postcode ?? "");
+  const [suburbOptions, setSuburbOptions] = useState<
+    Array<{ suburb: string; state: string }>
+  >([]);
+  const [lookupNote, setLookupNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!/^\d{4}$/.test(postcode)) {
+      setSuburbOptions([]);
+      setLookupNote(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const r = await lookupPostcodeAction(postcode);
+      if (cancelled) return;
+      if (r.suburbs.length === 0) {
+        setSuburbOptions([]);
+        setLookupNote("Postcode not recognised.");
+        return;
+      }
+      setSuburbOptions(r.suburbs);
+      if (r.suburbs.length === 1) {
+        const only = r.suburbs[0]!;
+        setField("postcode", postcode);
+        setField("suburb", only.suburb);
+        setField("state", only.state as Project["state"]);
+        setLookupNote(null);
+      } else if (
+        project.suburb &&
+        r.suburbs.some((s) => s.suburb === project.suburb)
+      ) {
+        setLookupNote(null);
+      } else {
+        setLookupNote(`${r.suburbs.length} suburbs match — pick one.`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [postcode, project.suburb, setField]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Street address" required>
+        <input
+          type="text"
+          defaultValue={project.addressLine1 ?? ""}
+          disabled={disabled}
+          onChange={(e) => setField("addressLine1", e.target.value || null)}
+          placeholder="14 Treadwell Road"
+          className={inputCls}
+        />
+      </Field>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_120px] gap-3">
+        <Field label="Postcode" required>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={4}
+            value={postcode}
+            disabled={disabled}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+              setPostcode(v);
+              setField("postcode", v || null);
+            }}
+            placeholder="3042"
+            className={cn(inputCls, "font-mono tabular-nums")}
+          />
+        </Field>
+        <Field label="Suburb" required>
+          {suburbOptions.length > 1 ? (
+            <select
+              value={project.suburb ?? ""}
+              disabled={disabled}
+              onChange={(e) => {
+                const sel = suburbOptions.find((s) => s.suburb === e.target.value);
+                if (!sel) return;
+                setField("suburb", sel.suburb);
+                setField("state", sel.state as Project["state"]);
+              }}
+              className={inputCls}
+            >
+              <option value="">Pick a suburb…</option>
+              {suburbOptions.map((s) => (
+                <option key={s.suburb} value={s.suburb}>
+                  {s.suburb}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={project.suburb ?? ""}
+              disabled
+              placeholder={lookupNote ?? "Enter postcode first"}
+              className={cn(inputCls, "opacity-80")}
+            />
+          )}
+        </Field>
+        <Field label="State" required>
+          <input
+            type="text"
+            value={project.state ?? ""}
+            disabled
+            placeholder="Auto"
+            className={cn(inputCls, "opacity-80 text-center font-semibold")}
+          />
+        </Field>
+      </div>
+
+      {lookupNote ? (
+        <div className="text-[12px] text-text-dim">{lookupNote}</div>
+      ) : null}
+    </div>
+  );
+}
+
+// ── step 2: build details + budget + brief ───────────────────────────────
+
+function Step2Build({
+  project,
+  setField,
+  disabled,
+}: {
+  project: Project;
+  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
+  disabled: boolean;
+}) {
+  const t = project.type;
+
+  return (
+    <div className="space-y-5">
+      <SectionTitle
+        title="The build"
+        sub="Just the bits that matter for this project type."
+      />
+
+      <Card icon={TYPE_META[t].icon} title="Build details">
+        <div className="space-y-4">
+          {(t === "single_dwelling" ||
+            t === "multi_dwelling" ||
+            t === "extension") && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <DropdownField
+                label={t === "multi_dwelling" ? "Total bedrooms" : "Bedrooms"}
+                required
+                options={COUNT_OPTIONS}
+                value={project.bedrooms}
+                onChange={(v) => setField("bedrooms", v)}
+                disabled={disabled}
+              />
+              <DropdownField
+                label={t === "multi_dwelling" ? "Total bathrooms" : "Bathrooms"}
+                required
+                options={COUNT_OPTIONS}
+                value={project.bathrooms}
+                onChange={(v) => setField("bathrooms", v)}
+                disabled={disabled}
+              />
+              {t !== "multi_dwelling" ? (
+                <DropdownField
+                  label="Storeys"
+                  required={t === "single_dwelling"}
+                  options={FLOOR_OPTIONS}
+                  value={project.floors}
+                  onChange={(v) => setField("floors", v)}
+                  disabled={disabled}
+                />
+              ) : null}
+            </div>
+          )}
+
+          {(t === "single_dwelling" || t === "multi_dwelling") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <DropdownField
+                label="Land size"
+                options={LAND_BANDS}
+                value={project.landSizeBand}
+                onChange={(v) => setField("landSizeBand", v)}
+                disabled={disabled}
+              />
+              <DropdownField
+                label="Build size"
+                options={BUILD_BANDS}
+                value={project.buildSizeBand}
+                onChange={(v) => setField("buildSizeBand", v)}
+                disabled={disabled}
+              />
+            </div>
+          )}
+
+          {t === "multi_dwelling" && (
+            <DropdownField
+              label="Number of dwellings"
+              required
+              options={DWELLING_OPTIONS}
+              value={project.dwellingCount}
+              onChange={(v) => setField("dwellingCount", v)}
+              disabled={disabled}
+            />
+          )}
+
+          {t === "renovation" && (
+            <>
+              <DropdownField
+                label="Renovation scope"
+                required
+                options={RENO_SCOPES}
+                value={project.renovationScope}
+                onChange={(v) => setField("renovationScope", v)}
+                disabled={disabled}
+              />
+              <DropdownField
+                label="Existing house age"
+                options={AGE_BANDS}
+                value={project.existingAgeBand}
+                onChange={(v) => setField("existingAgeBand", v)}
+                disabled={disabled}
+              />
+            </>
+          )}
+
+          {t === "extension" && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <DropdownField
+                  label="Extension type"
+                  required
+                  options={EXTENSION_TYPES}
+                  value={project.extensionType}
+                  onChange={(v) => setField("extensionType", v)}
+                  disabled={disabled}
+                />
+                <DropdownField
+                  label="Extension size"
+                  required
+                  options={EXTENSION_BANDS}
+                  value={project.extensionSizeBand}
+                  onChange={(v) => setField("extensionSizeBand", v)}
+                  disabled={disabled}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+
+      <Card
+        icon={<DollarSign className="size-4" />}
+        title="Budget & timeline"
+        sub="Banded — no need to commit to exact numbers."
+      >
+        <div className="space-y-4">
+          <DropdownField
+            label="Budget band"
+            options={BUDGET_BANDS}
+            value={project.budgetBand}
+            onChange={(v) => setField("budgetBand", v)}
+            disabled={disabled}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Target start (month)">
+              <input
+                type="month"
+                defaultValue={project.targetStartMonth ?? ""}
+                disabled={disabled}
+                onChange={(e) =>
+                  setField("targetStartMonth", e.target.value || null)
+                }
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Target completion (month)">
+              <input
+                type="month"
+                defaultValue={project.targetCompletionMonth ?? ""}
+                disabled={disabled}
+                onChange={(e) =>
+                  setField("targetCompletionMonth", e.target.value || null)
+                }
+                className={inputCls}
+              />
+            </Field>
+          </div>
+        </div>
+      </Card>
+
+      <Card
+        icon={<FileText className="size-4" />}
+        title="Anything else?"
+        sub="Optional. A few sentences about the brief, style, or constraints."
+      >
+        <textarea
+          defaultValue={project.description ?? ""}
+          disabled={disabled}
+          onChange={(e) => setField("description", e.target.value || null)}
+          rows={5}
+          placeholder="e.g. Modern 4-bed family home, contemporary build, ground + first floor, double garage. Looking for a builder who can manage the council DA process."
+          className={cn(inputCls, "min-h-[120px] py-3 leading-[1.6]")}
+        />
+      </Card>
+    </div>
+  );
+}
+
+// ── step 3: documents (9 visible category tiles) ─────────────────────────
+
+function Step3Documents({
+  projectId,
+  docs,
+  onRefresh,
+}: {
+  projectId: string;
+  docs: Document[];
+  onRefresh: () => void | Promise<void>;
+}) {
+  const [active, setActive] = useState<LocalUpload[]>([]);
+
+  const grouped = useMemo(() => {
+    const groups: Record<DocumentCategory, Document[]> = {
+      architectural: [],
+      structural_engineering: [],
+      civil_engineering: [],
+      specifications: [],
+      land_report: [],
+      soil_report: [],
+      energy_rating: [],
+      town_planning: [],
+      other: [],
+    };
+    for (const d of docs) groups[d.category]?.push(d);
+    return groups;
+  }, [docs]);
+
+  const archCount = grouped.architectural.filter((d) => d.status === "active").length;
+
+  return (
+    <div className="space-y-5">
+      <SectionTitle
+        title="Documents"
+        sub="Architectural plans are required to publish. The more you share, the better-fit the tenders."
+      />
+
+      {/* Compulsory note */}
+      <div
+        className={cn(
+          "rounded-md border px-5 py-4 flex items-start gap-3 transition-colors",
+          archCount > 0
+            ? "border-border-accent/60 bg-[rgba(0,212,200,0.04)]"
+            : "border-warning/30 bg-warning/[0.04]",
+        )}
+      >
+        <span
+          className={cn(
+            "size-8 rounded-md flex items-center justify-center shrink-0 mt-0.5",
+            archCount > 0
+              ? "border border-border-accent bg-accent-muted text-accent-light"
+              : "border border-warning/40 bg-warning/[0.08] text-warning",
+          )}
+        >
+          {archCount > 0 ? <Check className="size-4" /> : <AlertTriangle className="size-4" />}
+        </span>
+        <div className="text-[13px] leading-[1.55]">
+          <div className={cn("font-semibold", archCount > 0 ? "text-accent-light" : "text-warning")}>
+            {archCount > 0
+              ? `Architectural plans uploaded · ${archCount} file${archCount === 1 ? "" : "s"}`
+              : "Architectural plans required"}
+          </div>
+          <div className="text-text-muted mt-0.5">
+            {archCount > 0
+              ? "You can publish whenever the rest of the project is ready."
+              : "At least one architectural plan must be uploaded before this project can go live to builders."}
+          </div>
+        </div>
+      </div>
+
+      {/* 9 category tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {DOC_CATEGORIES.map((c) => (
+          <CategoryTile
+            key={c.id}
+            meta={c}
+            projectId={projectId}
+            files={grouped[c.id] ?? []}
+            inflight={active.filter((u) => u.category === c.id)}
+            setActive={setActive}
+            onRefresh={onRefresh}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CategoryTile({
+  meta,
+  projectId,
+  files,
+  inflight,
+  setActive,
+  onRefresh,
+}: {
+  meta: DocCatMeta;
+  projectId: string;
+  files: Document[];
+  inflight: LocalUpload[];
+  setActive: React.Dispatch<React.SetStateAction<LocalUpload[]>>;
+  onRefresh: () => void | Promise<void>;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const Icon = meta.icon;
+
+  const onDrop = useCallback(
+    async (list: FileList | File[]) => {
+      const items = Array.from(list);
+      for (const f of items) {
+        await uploadOne({
+          file: f,
+          projectId,
+          category: meta.id,
+          setActive,
+          onDone: onRefresh,
+        });
+      }
+    },
+    [meta.id, projectId, onRefresh, setActive],
+  );
+
+  const activeFiles = files.filter((d) => d.status === "active");
+  const hasFiles = activeFiles.length > 0 || inflight.length > 0;
+
+  return (
+    <article
+      className={cn(
+        "relative rounded-md border overflow-hidden transition-[border-color,background] duration-[300ms]",
+        "shadow-[0_18px_44px_-22px_rgba(0,0,0,0.55)]",
+        meta.required && activeFiles.length === 0
+          ? "border-warning/40 bg-[linear-gradient(180deg,rgba(251,184,64,0.05),rgba(6,18,30,0.6))]"
+          : hasFiles
+          ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(6,18,30,0.6))]"
+          : dragOver
+          ? "border-border-accent bg-[rgba(0,212,200,0.05)]"
+          : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] hover:border-border",
+      )}
+    >
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          onDrop(e.dataTransfer.files);
+        }}
+        className="block cursor-pointer p-5"
+      >
+        <input
+          type="file"
+          multiple
+          className="sr-only"
+          onChange={(e) => e.target.files && onDrop(e.target.files)}
+        />
+
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <span
+            className={cn(
+              "size-10 rounded-md border flex items-center justify-center",
+              meta.required && activeFiles.length === 0
+                ? "border-warning/40 bg-warning/[0.08] text-warning"
+                : hasFiles
+                ? "border-border-accent bg-accent-muted text-accent-light"
+                : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
+          {meta.required ? (
+            <span
+              className={cn(
+                "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
+                activeFiles.length > 0
+                  ? "border-border-accent text-accent-light bg-accent-muted/40"
+                  : "border-warning/40 text-warning bg-warning/[0.08]",
+              )}
+            >
+              {activeFiles.length > 0 ? "Done" : "Required"}
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 border border-border-subtle rounded-sm text-[8.5px] tracking-[0.16em] uppercase text-text-dim">
+              Optional
+            </span>
+          )}
+        </div>
+
+        <h3 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
+          {meta.label}
+        </h3>
+        <p className="mt-1 text-[11.5px] text-text-dim leading-[1.5]">
+          {meta.hint}
+        </p>
+
+        <div className="mt-4 pt-4 border-t border-border-subtle/50 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-text-muted">
+            {activeFiles.length > 0
+              ? `${activeFiles.length} file${activeFiles.length === 1 ? "" : "s"} uploaded`
+              : "Drop files or click to browse"}
+          </span>
+          <Upload className="size-3.5 text-text-faint" />
+        </div>
+      </label>
+
+      {/* in-flight uploads (compact rows) */}
+      {inflight.length > 0 ? (
+        <div className="px-5 pb-3 -mt-1 space-y-1.5">
+          {inflight.map((u) => (
+            <div key={u.id} className="text-[10.5px]">
+              <div className="flex justify-between text-text-muted">
+                <span className="truncate mr-2">{u.filename}</span>
+                <span
+                  className={cn(
+                    "shrink-0 tracking-[0.1em] uppercase",
+                    u.status === "error" ? "text-danger" : "text-accent-light",
+                  )}
+                >
+                  {u.status === "uploading" && `${u.progress}%`}
+                  {u.status === "confirming" && "…"}
+                  {u.status === "done" && "✓"}
+                  {u.status === "error" && (u.error ?? "Err")}
+                </span>
+              </div>
+              <div className="h-[2px] mt-1 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+                <span
+                  className={cn(
+                    "block h-full rounded-full transition-[width] duration-300",
+                    u.status === "error" ? "bg-danger" : "bg-accent",
+                  )}
+                  style={{
+                    width: `${u.status === "done" ? 100 : u.status === "confirming" ? 95 : u.progress}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {/* uploaded files (collapsible if > 2) */}
+      {activeFiles.length > 0 ? (
+        <div className="px-5 pb-5 -mt-1">
+          <ul className="space-y-1">
+            {(expanded ? activeFiles : activeFiles.slice(0, 2)).map((d) => (
+              <FileChip key={d.id} doc={d} onDeleted={onRefresh} />
+            ))}
+          </ul>
+          {activeFiles.length > 2 ? (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1.5 text-[10.5px] text-text-dim hover:text-accent-light transition-colors"
+            >
+              {expanded
+                ? "Show fewer"
+                : `+ ${activeFiles.length - 2} more`}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function FileChip({
+  doc,
+  onDeleted,
+}: {
+  doc: Document;
+  onDeleted: () => void | Promise<void>;
+}) {
+  const [busy, setBusy] = useState<"download" | "delete" | null>(null);
+  return (
+    <li className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1.5 rounded-sm bg-[rgba(255,255,255,0.022)] border border-border-subtle/60">
+      <span className="truncate text-text-muted flex-1">{doc.filename}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={async () => {
+            setBusy("download");
+            const r = await getDownloadUrlAction(doc.id);
+            setBusy(null);
+            if (!r.ok) {
+              alert(r.error.message);
+              return;
+            }
+            window.open(r.value.url, "_blank", "noopener");
+          }}
+          className="size-5 rounded text-text-dim hover:text-accent-light transition-colors flex items-center justify-center"
+          title="Download"
+        >
+          {busy === "download" ? <Loader2 className="size-3 animate-spin" /> : <Download className="size-3" />}
+        </button>
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={async () => {
+            if (!confirm("Delete this document?")) return;
+            setBusy("delete");
+            const r = await softDeleteDocAction(doc.id);
+            setBusy(null);
+            if (!r.ok) {
+              alert(r.error.message);
+              return;
+            }
+            await onDeleted();
+          }}
+          className="size-5 rounded text-text-dim hover:text-danger transition-colors flex items-center justify-center"
+          title="Delete"
+        >
+          {busy === "delete" ? <Loader2 className="size-3 animate-spin" /> : <Trash2 className="size-3" />}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// ── publish bar ──────────────────────────────────────────────────────────
+
+function PublishBar({
+  project,
+  report,
+  publishing,
+  allDone,
+  onPublish,
+}: {
+  project: Project;
+  report: PublishabilityReport | null;
+  publishing: boolean;
+  allDone: boolean;
+  onPublish: () => void | Promise<void>;
+}) {
+  const isPublished = project.status !== "draft";
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/95 backdrop-blur-xl">
+      <div className="mx-auto max-w-[820px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          {isPublished ? (
+            <div className="text-[13px] text-accent-light flex items-center gap-2">
+              <Check className="size-4" />
+              Published — visible to matched builders
+            </div>
+          ) : allDone ? (
+            <div className="text-[13px] text-accent-light flex items-center gap-2">
+              <Check className="size-4" />
+              Ready to publish
+            </div>
+          ) : (
+            <div className="text-[12.5px] text-text-dim flex items-start gap-2">
+              <AlertTriangle className="size-3.5 text-warning shrink-0 mt-0.5" />
+              <span className="truncate">
+                Still missing:{" "}
+                {report?.missing.map((m) => MISSING_LABEL[m]).join(" · ")}
+              </span>
+            </div>
+          )}
+        </div>
+        {isPublished ? (
+          <a
+            href={`/owner/projects/${project.slug}`}
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+          >
+            View project
+            <ArrowUpRight className="size-3.5" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onPublish}
+            disabled={!allDone || publishing}
+            className={cn(
+              "inline-flex items-center gap-2 h-10 px-5 rounded-full text-[12.5px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              allDone && !publishing
+                ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_28px_-8px_rgba(0,212,200,0.55)]"
+                : "bg-surface-2 text-text-dim cursor-not-allowed",
+            )}
+          >
+            {publishing ? <Loader2 className="size-4 animate-spin" /> : null}
+            {publishing ? "Publishing…" : "Publish"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── small atoms ──────────────────────────────────────────────────────────
 
 function SaveIndicator({
   state,
@@ -340,7 +1320,7 @@ function SaveIndicator({
       ) : state === "saved" ? (
         <>
           <Check className="size-3 text-accent-light" />
-          <span className="text-text-dim">All changes saved</span>
+          <span className="text-text-dim">Saved</span>
         </>
       ) : state === "error" ? (
         <>
@@ -375,763 +1355,60 @@ function StatusPill({ status }: { status: Project["status"] }) {
   );
 }
 
-function Section({
+function SectionTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div>
+      <h2 className="font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[32px] leading-[0.95] text-text">
+        {title}
+      </h2>
+      {sub ? (
+        <p className="mt-2 text-[13.5px] leading-[1.6] text-text-muted">
+          {sub}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Card({
   icon,
   title,
-  description,
+  sub,
   children,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  description?: string;
+  icon?: React.ReactNode;
+  title?: string;
+  sub?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-      <header className="px-6 py-5 border-b border-border-subtle/60 flex items-start gap-3">
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-            {title}
-          </h2>
-          {description ? (
-            <p className="text-[12.5px] text-text-dim mt-0.5">{description}</p>
+    <section
+      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_18px_44px_-22px_rgba(0,0,0,0.55)]"
+    >
+      {title ? (
+        <header className="px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
+          {icon ? (
+            <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
+              {icon}
+            </span>
           ) : null}
-        </div>
-      </header>
+          <div className="min-w-0">
+            <h3 className="font-ui font-semibold text-[13.5px] text-text">
+              {title}
+            </h3>
+            {sub ? (
+              <p className="text-[11.5px] text-text-dim mt-0.5">{sub}</p>
+            ) : null}
+          </div>
+        </header>
+      ) : null}
       <div className="p-6">{children}</div>
     </section>
   );
 }
 
-// ── sections ─────────────────────────────────────────────────────────────
-
-function BasicsSection({
-  project,
-  setField,
-  disabled,
-}: {
-  project: Project;
-  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
-  disabled: boolean;
-}) {
-  return (
-    <Section
-      icon={<Sparkles className="size-4" />}
-      title="The basics"
-      description="A clear title helps builders identify the project."
-    >
-      <Field label="Project title" required>
-        <input
-          type="text"
-          defaultValue={project.title}
-          disabled={disabled}
-          onChange={(e) => setField("title", e.target.value)}
-          placeholder="e.g. Niddrie townhouse"
-          className={inputCls}
-        />
-      </Field>
-    </Section>
-  );
-}
-
-function AddressSection({
-  project,
-  setField,
-  disabled,
-}: {
-  project: Project;
-  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
-  disabled: boolean;
-}) {
-  const [postcode, setPostcode] = useState(project.postcode ?? "");
-  const [suburbOptions, setSuburbOptions] = useState<
-    Array<{ suburb: string; state: string }>
-  >([]);
-  const [lookupNote, setLookupNote] = useState<string | null>(null);
-
-  // Postcode lookup whenever 4 digits.
-  useEffect(() => {
-    if (!/^\d{4}$/.test(postcode)) {
-      setSuburbOptions([]);
-      setLookupNote(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const r = await lookupPostcodeAction(postcode);
-      if (cancelled) return;
-      if (r.suburbs.length === 0) {
-        setSuburbOptions([]);
-        setLookupNote("Postcode not recognised.");
-        return;
-      }
-      setSuburbOptions(r.suburbs);
-      // Auto-resolve when there's exactly one suburb.
-      if (r.suburbs.length === 1) {
-        const only = r.suburbs[0]!;
-        setField("postcode", postcode);
-        setField("suburb", only.suburb);
-        setField("state", only.state as Project["state"]);
-        setLookupNote(null);
-      } else if (
-        project.suburb &&
-        r.suburbs.some((s) => s.suburb === project.suburb)
-      ) {
-        // Keep current selection.
-        setLookupNote(null);
-      } else {
-        setLookupNote(`${r.suburbs.length} suburbs match — pick one.`);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [postcode, project.suburb, setField]);
-
-  return (
-    <Section
-      icon={<MapPin className="size-4" />}
-      title="Where is it?"
-      description="Australian addresses only. We use postcode to filter matched builders."
-    >
-      <div className="space-y-4">
-        <Field label="Street address" required>
-          <input
-            type="text"
-            defaultValue={project.addressLine1 ?? ""}
-            disabled={disabled}
-            onChange={(e) =>
-              setField("addressLine1", e.target.value || null)
-            }
-            placeholder="14 Treadwell Road"
-            className={inputCls}
-          />
-        </Field>
-
-        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_120px] gap-3">
-          <Field label="Postcode" required>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              value={postcode}
-              disabled={disabled}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setPostcode(v);
-                setField("postcode", v || null);
-              }}
-              placeholder="3042"
-              className={cn(inputCls, "font-mono tabular-nums")}
-            />
-          </Field>
-          <Field label="Suburb" required>
-            {suburbOptions.length > 1 ? (
-              <select
-                value={project.suburb ?? ""}
-                disabled={disabled}
-                onChange={(e) => {
-                  const sel = suburbOptions.find((s) => s.suburb === e.target.value);
-                  if (!sel) return;
-                  setField("suburb", sel.suburb);
-                  setField("state", sel.state as Project["state"]);
-                }}
-                className={inputCls}
-              >
-                <option value="">Pick a suburb…</option>
-                {suburbOptions.map((s) => (
-                  <option key={s.suburb} value={s.suburb}>
-                    {s.suburb}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={project.suburb ?? ""}
-                disabled
-                placeholder={lookupNote ?? "Enter a postcode first"}
-                className={cn(inputCls, "opacity-80")}
-              />
-            )}
-          </Field>
-          <Field label="State" required>
-            <input
-              type="text"
-              value={project.state ?? ""}
-              disabled
-              placeholder="Auto"
-              className={cn(inputCls, "opacity-80 text-center font-semibold")}
-            />
-          </Field>
-        </div>
-
-        {lookupNote ? (
-          <div className="text-[12px] text-text-dim">{lookupNote}</div>
-        ) : null}
-      </div>
-    </Section>
-  );
-}
-
-function TypeSpecificSection({
-  project,
-  setField,
-  disabled,
-}: {
-  project: Project;
-  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
-  disabled: boolean;
-}) {
-  const t = project.type;
-
-  return (
-    <Section
-      icon={TYPE_META[t].icon}
-      title="The build"
-      description="Just the fields that matter for this type."
-    >
-      <div className="space-y-4">
-        {/* common across single, multi, extension */}
-        {(t === "single_dwelling" || t === "multi_dwelling" || t === "extension") && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <NumberField
-              label={t === "multi_dwelling" ? "Total bedrooms" : "Bedrooms"}
-              required
-              value={project.bedrooms}
-              onChange={(v) => setField("bedrooms", v)}
-              disabled={disabled}
-              min={1}
-            />
-            <NumberField
-              label={t === "multi_dwelling" ? "Total bathrooms" : "Bathrooms"}
-              required
-              value={project.bathrooms}
-              onChange={(v) => setField("bathrooms", v)}
-              disabled={disabled}
-              min={1}
-            />
-            {t !== "multi_dwelling" ? (
-              <NumberField
-                label="Floors"
-                required={t === "single_dwelling"}
-                value={project.floors}
-                onChange={(v) => setField("floors", v)}
-                disabled={disabled}
-                min={1}
-              />
-            ) : null}
-          </div>
-        )}
-
-        {(t === "single_dwelling" || t === "multi_dwelling") && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <NumberField
-              label="Land size (m²)"
-              value={project.landSizeSqm}
-              onChange={(v) => setField("landSizeSqm", v)}
-              disabled={disabled}
-            />
-            <NumberField
-              label="Build size (m²)"
-              value={project.buildSizeSqm}
-              onChange={(v) => setField("buildSizeSqm", v)}
-              disabled={disabled}
-            />
-          </div>
-        )}
-
-        {/* multi only */}
-        {t === "multi_dwelling" && (
-          <NumberField
-            label="Number of dwellings"
-            required
-            value={project.dwellingCount}
-            onChange={(v) => setField("dwellingCount", v)}
-            disabled={disabled}
-            min={2}
-          />
-        )}
-
-        {/* renovation */}
-        {t === "renovation" && (
-          <>
-            <Field label="Renovation scope" required>
-              <PillGroup
-                options={RENO_SCOPES}
-                value={project.renovationScope}
-                onChange={(v) => setField("renovationScope", v)}
-                disabled={disabled}
-              />
-            </Field>
-            <NumberField
-              label="Existing house age (years)"
-              value={project.existingAgeYears}
-              onChange={(v) => setField("existingAgeYears", v)}
-              disabled={disabled}
-            />
-          </>
-        )}
-
-        {/* extension */}
-        {t === "extension" && (
-          <>
-            <Field label="Extension type" required>
-              <PillGroup
-                options={EXTENSION_TYPES}
-                value={project.extensionType}
-                onChange={(v) => setField("extensionType", v)}
-                disabled={disabled}
-              />
-            </Field>
-            <NumberField
-              label="Extension size (m²)"
-              required
-              value={project.extensionSizeSqm}
-              onChange={(v) => setField("extensionSizeSqm", v)}
-              disabled={disabled}
-              min={1}
-            />
-          </>
-        )}
-      </div>
-    </Section>
-  );
-}
-
-function BudgetTimelineSection({
-  project,
-  setField,
-  disabled,
-}: {
-  project: Project;
-  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
-  disabled: boolean;
-}) {
-  return (
-    <Section
-      icon={<DollarSign className="size-4" />}
-      title="Budget & timeline"
-      description="Banded — no need to commit to exact numbers."
-    >
-      <div className="space-y-5">
-        <Field label="Budget band">
-          <PillGroup
-            options={BUDGET_BANDS}
-            value={project.budgetBand}
-            onChange={(v) => setField("budgetBand", v)}
-            disabled={disabled}
-          />
-        </Field>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Target start (month)">
-            <input
-              type="month"
-              defaultValue={project.targetStartMonth ?? ""}
-              disabled={disabled}
-              onChange={(e) =>
-                setField("targetStartMonth", e.target.value || null)
-              }
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Target completion (month)">
-            <input
-              type="month"
-              defaultValue={project.targetCompletionMonth ?? ""}
-              disabled={disabled}
-              onChange={(e) =>
-                setField("targetCompletionMonth", e.target.value || null)
-              }
-              className={inputCls}
-            />
-          </Field>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-function DescriptionSection({
-  project,
-  setField,
-  disabled,
-}: {
-  project: Project;
-  setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
-  disabled: boolean;
-}) {
-  return (
-    <Section
-      icon={<FileText className="size-4" />}
-      title="Anything else?"
-      description="Optional. A few sentences about the brief, style, or constraints."
-    >
-      <textarea
-        defaultValue={project.description ?? ""}
-        disabled={disabled}
-        onChange={(e) => setField("description", e.target.value || null)}
-        rows={5}
-        placeholder="e.g. Modern 4-bed family home, contemporary build, ground + first floor, double garage. Looking for a builder who can manage council DA process."
-        className={cn(inputCls, "min-h-[120px] py-3 leading-[1.6]")}
-      />
-    </Section>
-  );
-}
-
-// ── documents ────────────────────────────────────────────────────────────
-
-function DocumentsSection({
-  projectId,
-  docs,
-  archCount,
-  onRefresh,
-  disabled,
-}: {
-  projectId: string;
-  docs: Document[];
-  archCount: number;
-  onRefresh: () => Promise<void>;
-  disabled: boolean;
-}) {
-  const [category, setCategory] = useState<DocumentCategory>("architectural");
-  const [active, setActive] = useState<LocalUpload[]>([]);
-  const [dragOver, setDragOver] = useState(false);
-
-  const onDrop = useCallback(
-    async (files: FileList | File[]) => {
-      const list = Array.from(files);
-      for (const f of list) {
-        await uploadOne({
-          file: f,
-          projectId,
-          category,
-          setActive,
-          onDone: onRefresh,
-        });
-      }
-    },
-    [category, projectId, onRefresh],
-  );
-
-  const groupedDocs = useMemo(() => {
-    const groups: Record<DocumentCategory, Document[]> = {
-      architectural: [],
-      specifications: [],
-      scope: [],
-      engineering: [],
-      site_survey: [],
-      contract: [],
-      other: [],
-    };
-    for (const d of docs) groups[d.category].push(d);
-    return groups;
-  }, [docs]);
-
-  return (
-    <Section
-      icon={<FileText className="size-4" />}
-      title="Documents"
-      description="Architectural plans are required to publish. Everything else is optional."
-    >
-      {/* category tabs */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {DOC_CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => setCategory(c.id)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-[11px] tracking-[0.04em] border transition-colors",
-              category === c.id
-                ? "bg-accent-muted/40 border-border-accent text-accent-light"
-                : "bg-[rgba(255,255,255,0.012)] border-border-subtle text-text-muted hover:text-text",
-            )}
-          >
-            {c.label}
-            {c.required ? (
-              <span className={cn("ml-1.5", category === c.id ? "text-accent" : "text-text-dim")}>
-                *
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
-
-      {/* drop zone */}
-      <label
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          onDrop(e.dataTransfer.files);
-        }}
-        className={cn(
-          "block cursor-pointer rounded-md border-2 border-dashed p-8 text-center transition-colors",
-          dragOver
-            ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
-            : "border-border-subtle hover:border-border bg-[rgba(255,255,255,0.012)]",
-          disabled && "opacity-50 pointer-events-none",
-        )}
-      >
-        <input
-          type="file"
-          multiple
-          disabled={disabled}
-          className="sr-only"
-          onChange={(e) => e.target.files && onDrop(e.target.files)}
-        />
-        <Upload className="mx-auto size-5 text-accent-light mb-2" />
-        <div className="text-[13px] text-text">
-          Drop {DOC_CATEGORIES.find((c) => c.id === category)?.label.toLowerCase()} here, or{" "}
-          <span className="text-accent-light underline underline-offset-4">browse</span>
-        </div>
-        <div className="mt-1 text-[11px] text-text-dim">
-          PDF · DOCX · DWG · images, up to 100 MB each
-        </div>
-      </label>
-
-      {/* in-flight */}
-      {active.length > 0 ? (
-        <div className="mt-4 space-y-2">
-          {active.map((u) => (
-            <div
-              key={u.id}
-              className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] px-3 py-2"
-            >
-              <div className="flex items-center justify-between gap-3 mb-1.5">
-                <span className="text-[12px] text-text truncate">{u.filename}</span>
-                <span
-                  className={cn(
-                    "text-[10px] tracking-[0.14em] uppercase shrink-0",
-                    u.status === "error" ? "text-danger" : "text-accent-light",
-                  )}
-                >
-                  {u.status === "uploading" && `${u.progress}%`}
-                  {u.status === "confirming" && "Confirming…"}
-                  {u.status === "done" && "Done"}
-                  {u.status === "error" && (u.error ?? "Failed")}
-                </span>
-              </div>
-              <div className="h-[3px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
-                <span
-                  className={cn(
-                    "block h-full rounded-full transition-[width] duration-300",
-                    u.status === "error" ? "bg-danger" : "bg-accent",
-                  )}
-                  style={{
-                    width: `${
-                      u.status === "done"
-                        ? 100
-                        : u.status === "confirming"
-                        ? 95
-                        : u.progress
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {/* saved docs grouped by category */}
-      <div className="mt-6 space-y-4">
-        {DOC_CATEGORIES.map((c) => {
-          const list = groupedDocs[c.id];
-          if (list.length === 0) return null;
-          return (
-            <div key={c.id}>
-              <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-2 flex items-center gap-2">
-                {c.label}
-                {c.id === "architectural" && archCount > 0 ? (
-                  <span className="text-accent-light normal-case tracking-normal text-[11px]">
-                    ✓ Required uploaded
-                  </span>
-                ) : null}
-              </div>
-              <div className="rounded-md border border-border-subtle overflow-hidden">
-                {list.map((d, i) => (
-                  <DocRow
-                    key={d.id}
-                    doc={d}
-                    last={i === list.length - 1}
-                    onDeleted={onRefresh}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Section>
-  );
-}
-
-function DocRow({
-  doc,
-  last,
-  onDeleted,
-}: {
-  doc: Document;
-  last: boolean;
-  onDeleted: () => void | Promise<void>;
-}) {
-  const [busy, setBusy] = useState<"download" | "delete" | null>(null);
-  return (
-    <div
-      className={cn(
-        "grid grid-cols-[1fr_auto_auto] gap-3 items-center px-4 py-2.5 transition-colors hover:bg-[rgba(255,255,255,0.022)]",
-        last ? "" : "border-b border-border-subtle",
-      )}
-    >
-      <div className="min-w-0">
-        <div className="text-[12.5px] font-medium text-text truncate">{doc.filename}</div>
-        <div className="text-[10px] text-text-dim">
-          {prettyBytes(doc.sizeBytes)} · v{doc.version} ·{" "}
-          <span
-            className={cn(
-              doc.status === "active"
-                ? "text-accent-light"
-                : doc.status === "pending"
-                ? "text-warning"
-                : "text-danger",
-            )}
-          >
-            {doc.status}
-          </span>
-        </div>
-      </div>
-      <button
-        type="button"
-        disabled={busy !== null || doc.status !== "active"}
-        onClick={async () => {
-          setBusy("download");
-          const r = await getDownloadUrlAction(doc.id);
-          setBusy(null);
-          if (!r.ok) {
-            alert(r.error.message);
-            return;
-          }
-          window.open(r.value.url, "_blank", "noopener");
-        }}
-        title="Download"
-        className={cn(
-          "size-7 rounded-sm border border-border-subtle text-text-muted hover:text-accent-light hover:border-border-accent transition-colors flex items-center justify-center",
-          (busy !== null || doc.status !== "active") && "opacity-40 cursor-not-allowed",
-        )}
-      >
-        {busy === "download" ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-      </button>
-      <button
-        type="button"
-        disabled={busy !== null}
-        onClick={async () => {
-          if (!confirm("Delete this document?")) return;
-          setBusy("delete");
-          const r = await softDeleteDocAction(doc.id);
-          setBusy(null);
-          if (!r.ok) {
-            alert(r.error.message);
-            return;
-          }
-          await onDeleted();
-        }}
-        title="Delete"
-        className={cn(
-          "size-7 rounded-sm border border-border-subtle text-text-muted hover:text-danger hover:border-danger/50 transition-colors flex items-center justify-center",
-          busy !== null && "opacity-40 cursor-not-allowed",
-        )}
-      >
-        {busy === "delete" ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-      </button>
-    </div>
-  );
-}
-
-// ── publish bar ──────────────────────────────────────────────────────────
-
-function PublishBar({
-  project,
-  report,
-  publishing,
-  onPublish,
-}: {
-  project: Project;
-  report: PublishabilityReport | null;
-  publishing: boolean;
-  onPublish: () => void | Promise<void>;
-}) {
-  const isPublished = project.status !== "draft";
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/95 backdrop-blur-xl">
-      <div className="mx-auto max-w-[760px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          {isPublished ? (
-            <div className="text-[13px] text-accent-light flex items-center gap-2">
-              <Check className="size-4" />
-              Published — visible to matched builders
-            </div>
-          ) : report?.canPublish ? (
-            <div className="text-[13px] text-accent-light flex items-center gap-2">
-              <Check className="size-4" />
-              Ready to publish
-            </div>
-          ) : (
-            <div className="text-[12.5px] text-text-dim flex items-start gap-2">
-              <AlertTriangle className="size-3.5 text-warning shrink-0 mt-0.5" />
-              <span className="truncate">
-                Still missing:{" "}
-                {report?.missing
-                  .map((m) => MISSING_LABEL[m])
-                  .join(" · ")}
-              </span>
-            </div>
-          )}
-        </div>
-        {isPublished ? (
-          <a
-            href={`/owner/projects/${project.slug}`}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
-          >
-            View project
-            <ArrowUpRight className="size-3.5" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onPublish}
-            disabled={!report?.canPublish || publishing}
-            className={cn(
-              "inline-flex items-center gap-2 h-10 px-5 rounded-full text-[12.5px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
-              report?.canPublish && !publishing
-                ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_28px_-8px_rgba(0,212,200,0.55)]"
-                : "bg-surface-2 text-text-dim cursor-not-allowed",
-            )}
-          >
-            {publishing ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : null}
-            {publishing ? "Publishing…" : "Publish"}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── form atoms ───────────────────────────────────────────────────────────
-
 const inputCls =
-  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
+  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
 
 function Field({
   label,
@@ -1153,71 +1430,48 @@ function Field({
   );
 }
 
-function NumberField({
+function DropdownField<T extends string | number>({
   label,
-  value,
-  onChange,
-  disabled,
   required,
-  min,
-}: {
-  label: string;
-  value: number | null | undefined;
-  onChange: (v: number | null) => void;
-  disabled?: boolean;
-  required?: boolean;
-  min?: number;
-}) {
-  return (
-    <Field label={label} required={required}>
-      <input
-        type="number"
-        inputMode="numeric"
-        defaultValue={value ?? ""}
-        disabled={disabled}
-        min={min}
-        onChange={(e) => {
-          const n = e.target.value === "" ? null : Number(e.target.value);
-          onChange(Number.isFinite(n) ? n : null);
-        }}
-        className={cn(inputCls, "tabular-nums")}
-      />
-    </Field>
-  );
-}
-
-function PillGroup<T extends string>({
   options,
   value,
   onChange,
   disabled,
 }: {
+  label: string;
+  required?: boolean;
   options: Array<{ id: T; label: string }>;
   value: T | null | undefined;
-  onChange: (v: T) => void;
+  onChange: (v: T | null) => void;
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          disabled={disabled}
-          onClick={() => onChange(o.id)}
-          aria-pressed={value === o.id}
-          className={cn(
-            "px-3 py-1.5 rounded-full text-[11.5px] tracking-[0.02em] border transition-colors",
-            value === o.id
-              ? "bg-accent-muted/40 border-border-accent text-accent-light"
-              : "bg-[rgba(255,255,255,0.012)] border-border-subtle text-text-muted hover:text-text",
-            disabled && "opacity-60 cursor-not-allowed",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <Field label={label} required={required}>
+      <select
+        value={value ?? ""}
+        disabled={disabled}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === "") {
+            onChange(null);
+            return;
+          }
+          // If the option's id is numeric, coerce.
+          const num = Number(raw);
+          onChange(
+            (Number.isFinite(num) && String(num) === raw ? num : raw) as T,
+          );
+        }}
+        className={inputCls}
+      >
+        <option value="">Select…</option>
+        {options.map((o) => (
+          <option key={String(o.id)} value={String(o.id)}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </Field>
   );
 }
 
@@ -1226,6 +1480,7 @@ function PillGroup<T extends string>({
 type LocalUpload = {
   id: string;
   filename: string;
+  category: DocumentCategory;
   status: "uploading" | "confirming" | "done" | "error";
   progress: number;
   error?: string;
@@ -1242,9 +1497,14 @@ async function uploadOne(args: {
   const { file, projectId, category, setActive, onDone } = args;
   setActive((s) => [
     ...s,
-    { id: localId, filename: file.name, status: "uploading", progress: 0 },
+    {
+      id: localId,
+      filename: file.name,
+      category,
+      status: "uploading",
+      progress: 0,
+    },
   ]);
-
   const patch = (p: Partial<LocalUpload>) =>
     setActive((s) => s.map((u) => (u.id === localId ? { ...u, ...p } : u)));
 
@@ -1276,7 +1536,7 @@ async function uploadOne(args: {
     await onDone();
     setTimeout(() => {
       setActive((s) => s.filter((u) => u.id !== localId));
-    }, 1000);
+    }, 800);
   } catch (err) {
     patch({
       status: "error",
@@ -1294,7 +1554,9 @@ function putWithProgress(args: {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", args.url);
-    for (const [k, v] of Object.entries(args.headers)) xhr.setRequestHeader(k, v);
+    for (const [k, v] of Object.entries(args.headers)) {
+      xhr.setRequestHeader(k, v);
+    }
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && args.onProgress) {
         args.onProgress(e.loaded / e.total);
@@ -1309,9 +1571,19 @@ function putWithProgress(args: {
   });
 }
 
-function prettyBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
-  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+// ── helpers ──────────────────────────────────────────────────────────────
+
+function checkBuildStepDone(p: Project): boolean {
+  switch (p.type) {
+    case "single_dwelling":
+      return !!p.bedrooms && !!p.bathrooms && !!p.floors;
+    case "multi_dwelling":
+      return !!p.dwellingCount && p.dwellingCount >= 2 && !!p.bedrooms && !!p.bathrooms;
+    case "renovation":
+      return !!p.renovationScope;
+    case "extension":
+      return !!p.extensionType && !!p.extensionSizeBand;
+    default:
+      return false;
+  }
 }

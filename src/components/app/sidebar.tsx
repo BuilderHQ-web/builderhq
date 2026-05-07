@@ -107,7 +107,7 @@ export function Sidebar({ role }: { role: Role }) {
   const sections = navByRole[role];
 
   return (
-    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40">
+    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40 sticky top-0 h-dvh self-start">
       {/* Brand row — sits flush with the topbar height. */}
       <div className="flex items-center h-14 px-6">
         <Link href="/" aria-label="BuilderHQ home">
