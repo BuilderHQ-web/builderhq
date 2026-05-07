@@ -4,16 +4,14 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { CtaLinks } from "./cta-links";
 
 /**
- * Hero — Resend-clean. One clear headline, concise tagline, two CTAs,
- * and a single refined visual on the right.
- *
- * No fibre canvas, no corner brackets, no proof grid. The point of the
- * hero is to tell a first-time visitor what BuilderHQ is in one read,
- * then get out of the way.
+ * Hero — Resend-clean. One headline, one tagline, two CTAs, one
+ * refined visual. The point is to land what BuilderHQ is in a single
+ * read, then get out of the way.
  */
-export function Hero() {
+export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
@@ -56,8 +54,8 @@ export function Hero() {
             transition={{ delay: 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="mt-8 max-w-[34rem] text-[16px] leading-[1.7] text-text-subtle"
           >
-            Upload your project once. Get matched with verified builders ready
-            to tender, and compare responses side-by-side — all in one place.
+            Upload your project once. Get matched with verified builders,
+            compare tenders side-by-side — all in one place.
           </motion.p>
 
           <motion.div
@@ -67,7 +65,7 @@ export function Hero() {
             className="mt-10 flex flex-wrap items-center gap-4"
           >
             <Link
-              href="/signup"
+              href={cta.primary.href}
               className={cn(
                 "group inline-flex items-center gap-2 h-12 px-7 rounded-full",
                 "bg-accent text-accent-contrast",
@@ -75,14 +73,14 @@ export function Hero() {
                 "transition-colors duration-[160ms] hover:bg-accent-hover",
               )}
             >
-              Upload a project
+              {cta.primary.label}
               <ArrowUpRight className="size-4 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
             <Link
-              href="/signup"
+              href={cta.secondary.href}
               className="group inline-flex items-center gap-1.5 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
             >
-              I&apos;m a builder
+              {cta.secondary.label}
               <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
             </Link>
           </motion.div>
@@ -113,7 +111,6 @@ function ProjectCard() {
           "linear-gradient(160deg, rgba(10,30,48,0.92), rgba(6,18,30,0.96))",
       }}
     >
-      {/* top edge accent */}
       <span
         aria-hidden
         className="absolute top-0 left-0 right-0 h-px"
@@ -123,7 +120,6 @@ function ProjectCard() {
         }}
       />
 
-      {/* header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.05)]">
         <div className="flex items-center gap-2">
           <span className="size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
@@ -136,7 +132,6 @@ function ProjectCard() {
         </span>
       </div>
 
-      {/* visual band */}
       <div
         className="relative h-[180px] border-b border-[rgba(255,255,255,0.05)]"
         style={{
@@ -170,7 +165,6 @@ function ProjectCard() {
         </div>
       </div>
 
-      {/* body */}
       <div className="p-5">
         <div className="flex items-baseline justify-between mb-4">
           <h3 className="font-ui font-semibold text-[16px] tracking-[-0.01em] text-text">
@@ -200,7 +194,6 @@ function ProjectCard() {
           ))}
         </div>
 
-        {/* mini pipeline */}
         <div className="space-y-2 pt-3 border-t border-[rgba(255,255,255,0.05)]">
           {[
             ["Unlocked", 76, "12"],

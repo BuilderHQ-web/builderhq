@@ -456,7 +456,7 @@ export default function DesignSystem() {
             <LogoMark size={64} />
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border-subtle p-8 flex items-center justify-center bg-accent">
-            <Logo size={32} inverse />
+            <Logo size={32} />
           </div>
         </div>
         <p className="mt-3 text-[12px] text-text-dim">

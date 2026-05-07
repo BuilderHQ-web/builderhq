@@ -1,367 +1,306 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Reveal } from "./reveal";
 import { cn } from "@/lib/utils";
+import { LineChart, Folder, FileSpreadsheet } from "lucide-react";
 
-type TabId = "upload" | "browse" | "compare";
-
-const tabs: Array<{ id: TabId; label: string }> = [
-  { id: "upload", label: "Upload" },
-  { id: "browse", label: "Browse" },
-  { id: "compare", label: "Compare" },
-];
-
-const content: Record<
-  TabId,
-  {
-    step: string;
-    title: string;
-    description: string;
-    points: string[];
-  }
-> = {
-  upload: {
-    step: "Owner — step 01",
-    title: "A project page that does the work",
-    description:
-      "Smart fields show only what's relevant for your project type. Drawings, specs, and scope upload to a private, signed-URL workspace.",
-    points: [
-      "Per-type forms (single, multi, reno, extension)",
-      "Drag-and-drop docs to private R2 storage",
-      "Autosave drafts; publish when ready",
-    ],
-  },
-  browse: {
-    step: "Builder — step 02",
-    title: "Filter to fit, unlock with confidence",
-    description:
-      "Filter by suburb, postcode, project type, and budget band. Preview enough detail to commit; unlock the full package when you're ready to tender.",
-    points: [
-      "Postcode + suburb-precision filters",
-      "ABN, licence, and project-type matching",
-      "Founding access during launch — no charge",
-    ],
-  },
-  compare: {
-    step: "Owner — step 03",
-    title: "Decide in one screen, not twelve emails",
-    description:
-      "Tenders compare side-by-side: price, inclusions, exclusions, timeline, validity. Threaded messaging per project keeps every clarification on record.",
-    points: [
-      "Structured tender form, not freeform PDFs",
-      "One thread per project, every message stored",
-      "Shortlist · award · reject in one click",
-    ],
-  },
-};
-
+/**
+ * Showcase — Resend-style. Three feature pills sit above one big,
+ * realistic-looking dashboard. The dashboard is the single visual
+ * focal point of the section.
+ */
 export function Showcase() {
-  const [active, setActive] = useState<TabId>("upload");
-
   return (
     <section id="showcase" className="relative px-6 md:px-10 py-24 lg:py-32">
       <div className="mx-auto max-w-[1320px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1fr] gap-12 lg:gap-16 items-end mb-12 lg:mb-16">
+        <div className="text-center mb-12 lg:mb-16">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              The platform
+              See it in motion
             </span>
             <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
               <span
                 className="text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.45)" }}
+                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
               >
-                See it in
+                The actual
               </span>{" "}
-              <span className="text-accent-light">motion</span>.
+              <span className="text-accent-light">interface</span>.
             </h2>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <p className="text-[15px] leading-[1.85] text-text-subtle">
-              The actual interfaces, not stylised mockups. Every screen is
-              functional, every interaction matches what you&apos;ll see when
-              you sign up.
+            <p className="mt-7 mx-auto max-w-[60ch] text-[15px] leading-[1.7] text-text-subtle">
+              Not stylised mockups. The screens you see here are the screens
+              you sign in to.
             </p>
           </Reveal>
         </div>
 
-        <Reveal>
-          <div className="relative rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(8,25,40,0.5),rgba(4,13,22,0.7))]">
-            {/* tab bar */}
-            <div role="tablist" className="flex border-b border-border-subtle">
-              {tabs.map((t) => {
-                const on = t.id === active;
-                return (
-                  <button
-                    key={t.id}
-                    role="tab"
-                    aria-selected={on}
-                    onClick={() => setActive(t.id)}
-                    className={cn(
-                      "relative px-5 py-3.5 text-[10px] tracking-[0.18em] uppercase",
-                      "transition-colors duration-[200ms]",
-                      on ? "text-accent-light" : "text-text-dim hover:text-text",
-                    )}
-                  >
-                    {t.label}
-                    {on ? (
-                      <motion.span
-                        layoutId="showcase-underline"
-                        className="absolute left-0 right-0 -bottom-px h-px bg-accent-light"
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* content */}
-            <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[420px]">
-              <div className="p-9 lg:p-11 border-b lg:border-b-0 lg:border-r border-border-subtle flex flex-col justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={active}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <span className="text-[9px] tracking-[0.22em] uppercase text-accent">
-                      {content[active].step}
-                    </span>
-                    <h3 className="mt-4 font-ui font-bold tracking-[-0.02em] text-[24px] leading-[1.15] text-text">
-                      {content[active].title}
-                    </h3>
-                    <p className="mt-4 text-[14px] leading-[1.85] text-text-subtle">
-                      {content[active].description}
-                    </p>
-                    <ul className="mt-6 flex flex-col gap-3">
-                      {content[active].points.map((p) => (
-                        <li key={p} className="flex gap-3 items-start text-[13px] leading-[1.55] text-text-muted">
-                          <span
-                            className="size-1 rounded-full shrink-0 mt-[7px]"
-                            style={{
-                              background: "linear-gradient(180deg, #7ef5ed, #00d4c8)",
-                              boxShadow: "0 0 8px rgba(0,212,200,0.5)",
-                            }}
-                          />
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              <div className="relative overflow-hidden bg-[linear-gradient(135deg,#081a2a,#0d2236)] flex items-center justify-center p-7 min-h-[320px]">
-                <div
-                  aria-hidden
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(rgba(142,252,244,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.04) 1px, transparent 1px)",
-                    backgroundSize: "28px 28px",
-                  }}
-                />
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={active}
-                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative z-[1] w-full max-w-[420px]"
-                  >
-                    {active === "upload" && <UploadMock />}
-                    {active === "browse" && <BrowseMock />}
-                    {active === "compare" && <CompareMock />}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
+        {/* Feature pills */}
+        <Reveal delay={0.05}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <Pill icon={<LineChart className="size-4" />} title="Live tender tracking" active />
+            <Pill icon={<Folder className="size-4" />} title="One workspace per project" />
+            <Pill icon={<FileSpreadsheet className="size-4" />} title="Side-by-side compare" />
           </div>
+        </Reveal>
+
+        {/* The dashboard */}
+        <Reveal delay={0.1}>
+          <Dashboard />
         </Reveal>
       </div>
     </section>
   );
 }
 
-// ── mock screens ─────────────────────────────────────────────────────────
-
-function MockShell({
+function Pill({
+  icon,
   title,
-  badge,
-  children,
+  active,
 }: {
+  icon: React.ReactNode;
   title: string;
-  badge: string;
-  children: React.ReactNode;
+  active?: boolean;
 }) {
   return (
     <div
-      className="rounded-md border border-border-subtle overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
-      style={{ background: "linear-gradient(180deg, rgba(10,28,44,0.98), rgba(6,18,30,0.99))" }}
+      className={cn(
+        "flex items-center gap-3 px-5 py-4 rounded-md border transition-colors duration-[400ms]",
+        active
+          ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.012)] hover:border-border",
+      )}
     >
-      <div className="flex justify-between items-center px-3.5 py-2.5 border-b border-border-subtle bg-[rgba(255,255,255,0.02)]">
-        <span className="text-[10px] font-semibold tracking-[0.04em] text-text">{title}</span>
-        <span className="px-2 py-1 border border-border-accent rounded-sm text-[8px] tracking-[0.14em] uppercase text-accent">
-          {badge}
-        </span>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
-
-function UploadMock() {
-  return (
-    <MockShell title="Upload project" badge="Step 1 of 6">
-      <div className="flex flex-col gap-2.5">
-        <Field label="Project type" value="Single dwelling" />
-        <Field label="Address" value="14 Treadwell Rd, Niddrie VIC 3042" />
-        <div className="grid grid-cols-2 gap-2.5">
-          <Field label="Bedrooms" value="4" />
-          <Field label="Budget band" value="$1.5M – $2M" highlight />
-        </div>
-        <DropZone />
-        <DocRow name="Architectural plans v3.pdf" size="2.4 MB" />
-        <DocRow name="Specifications.pdf" size="1.1 MB" />
-      </div>
-    </MockShell>
-  );
-}
-
-function BrowseMock() {
-  return (
-    <MockShell title="Browse projects" badge="3 matched">
-      <div className="flex flex-col gap-2">
-        {[
-          ["Niddrie Townhouse", "VIC · Single dwelling", "$1.5–2M", "open"],
-          ["Brunswick Reno", "VIC · Renovation", "$500k–1M", "open"],
-          ["Glen Iris Duplex", "VIC · Multi-dwelling", "$2–3M", "pending"],
-        ].map(([name, meta, band, status]) => (
-          <div
-            key={name as string}
-            className="px-3.5 py-3 grid grid-cols-[1fr_auto] gap-2.5 items-center rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.02)] transition-colors hover:border-border-accent"
-          >
-            <div>
-              <div className="text-[11.5px] font-semibold text-text">{name}</div>
-              <div className="text-[9.5px] tracking-[0.05em] text-text-dim mt-0.5">{meta}</div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10.5px] font-medium text-text-muted">{band}</span>
-              <span
-                className={cn(
-                  "px-2 py-0.5 rounded-sm text-[8px] tracking-[0.12em] uppercase border",
-                  status === "open"
-                    ? "border-border-accent bg-accent-muted/40 text-accent"
-                    : "border-[rgba(255,180,0,0.25)] bg-[rgba(255,180,0,0.06)] text-warning",
-                )}
-              >
-                {status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </MockShell>
-  );
-}
-
-function CompareMock() {
-  return (
-    <MockShell title="Compare tenders" badge="2 received">
-      <div className="grid grid-cols-2 gap-2.5">
-        {[
-          { initials: "JS", name: "Jordan Smith", company: "Smith Builders", price: "$1.78M", primary: true },
-          { initials: "AC", name: "Alex Chen", company: "Chen Construction", price: "$1.91M" },
-        ].map((b) => (
-          <div
-            key={b.initials}
-            className={cn(
-              "p-3 rounded-sm border bg-[rgba(255,255,255,0.02)]",
-              b.primary ? "border-border-accent" : "border-border-subtle",
-            )}
-          >
-            <div
-              className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold mb-2 border border-border-accent"
-              style={{
-                background: "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-                color: "var(--color-accent-light)",
-              }}
-            >
-              {b.initials}
-            </div>
-            <div className="text-[10.5px] font-semibold text-text">{b.name}</div>
-            <div className="text-[8.5px] tracking-[0.06em] text-text-dim mt-0.5">{b.company}</div>
-            <div className="mt-2 font-display text-[20px] leading-none text-accent-light tabular-nums">
-              {b.price}
-            </div>
-            <button
-              type="button"
-              className="mt-3 w-full py-1.5 text-center rounded-sm border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.14em] uppercase text-accent-light hover:bg-accent-muted/70 transition-colors"
-            >
-              View tender
-            </button>
-          </div>
-        ))}
-      </div>
-    </MockShell>
-  );
-}
-
-function Field({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <div className="text-[8px] tracking-[0.18em] uppercase text-text-dim mb-1">{label}</div>
       <div
         className={cn(
-          "px-3 py-2 rounded-sm border text-[11px] text-text",
-          highlight
-            ? "border-border-accent text-accent-light"
-            : "border-border-subtle bg-[rgba(255,255,255,0.025)]",
+          "size-9 rounded-md flex items-center justify-center border",
+          active
+            ? "border-border-accent bg-accent-muted text-accent-light"
+            : "border-border-subtle bg-[rgba(255,255,255,0.02)] text-text-muted",
         )}
       >
-        {value}
+        {icon}
+      </div>
+      <span className={cn("text-[13.5px] font-medium", active ? "text-text" : "text-text-muted")}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+// ── the dashboard mock ───────────────────────────────────────────────────
+
+function Dashboard() {
+  return (
+    <div
+      className="relative rounded-lg border border-border-subtle overflow-hidden shadow-[0_50px_140px_rgba(0,0,0,0.55)]"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(8,22,36,0.95), rgba(4,14,24,0.98))",
+      }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr]">
+        {/* Sidebar */}
+        <aside className="border-b lg:border-b-0 lg:border-r border-border-subtle bg-[rgba(255,255,255,0.012)] p-4">
+          <div className="flex items-center gap-2 mb-6 px-2 py-2">
+            <span className="size-6 rounded-sm bg-accent-muted border border-border-accent flex items-center justify-center text-[10px] font-bold text-accent-light">
+              b
+            </span>
+            <span className="text-[12px] font-semibold text-text">BuilderHQ</span>
+            <span className="ml-auto text-[8.5px] tracking-[0.16em] uppercase text-accent border border-border-accent px-1.5 py-0.5 rounded-sm">
+              Owner
+            </span>
+          </div>
+          <nav className="flex flex-col gap-1">
+            {[
+              ["Dashboard", true],
+              ["Projects", false],
+              ["Tenders", false],
+              ["Messages", false],
+              ["Builders", false],
+              ["Settings", false],
+            ].map(([label, active]) => (
+              <a
+                key={label as string}
+                className={cn(
+                  "px-3 py-2 rounded-sm text-[12px] transition-colors",
+                  active
+                    ? "bg-[rgba(0,212,200,0.06)] text-accent-light"
+                    : "text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.02)]",
+                )}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main */}
+        <div className="p-5 lg:p-7">
+          <div className="flex items-baseline justify-between mb-5">
+            <div>
+              <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1">
+                Niddrie Townhouse · VIC 3042
+              </div>
+              <h3 className="font-ui font-bold text-[18px] tracking-[-0.01em] text-text">
+                Tender activity
+              </h3>
+            </div>
+            <span className="px-2.5 py-1 border border-border-accent rounded-sm text-[9px] tracking-[0.16em] uppercase text-accent">
+              Live
+            </span>
+          </div>
+
+          {/* KPI cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-5">
+            {[
+              { label: "Builders matched", value: "18", trend: "+4 this week", up: true },
+              { label: "Unlocked", value: "12", trend: "67% of matched", up: true },
+              { label: "Tenders received", value: "03", trend: "Awaiting 9", up: true },
+              { label: "Avg. price", value: "$1.86M", trend: "Range $1.78–1.91M", up: false },
+            ].map((k) => (
+              <div
+                key={k.label}
+                className="px-4 py-3.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)]"
+              >
+                <div className="text-[9px] tracking-[0.16em] uppercase text-text-dim mb-1.5">
+                  {k.label}
+                </div>
+                <div className="font-display tracking-[-0.01em] text-[28px] leading-none text-text tabular-nums">
+                  {k.value}
+                </div>
+                <div className={cn("mt-1.5 text-[10px]", k.up ? "text-accent-light" : "text-text-muted")}>
+                  {k.trend}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart strip */}
+          <div className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.012)] p-4 mb-5">
+            <div className="flex items-baseline justify-between mb-3">
+              <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim">
+                Builder interest, last 14 days
+              </span>
+              <span className="text-[10px] text-text-dim font-mono">114 events</span>
+            </div>
+            <Chart />
+          </div>
+
+          {/* Tender table */}
+          <div className="rounded-sm border border-border-subtle overflow-hidden">
+            <div className="grid grid-cols-[1.6fr_1fr_1fr_auto] gap-4 px-4 py-2.5 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle">
+              {["Builder", "Price", "Timeline", ""].map((h) => (
+                <span key={h} className="text-[9px] tracking-[0.16em] uppercase text-text-dim">
+                  {h}
+                </span>
+              ))}
+            </div>
+            {[
+              { initials: "JS", name: "Jordan Smith", company: "Smith Builders", price: "$1.78M", time: "26 weeks", primary: true },
+              { initials: "AC", name: "Alex Chen", company: "Chen Construction", price: "$1.91M", time: "30 weeks", primary: false },
+              { initials: "MR", name: "Mia Roberts", company: "Roberts & Co", price: "$1.88M", time: "28 weeks", primary: false },
+            ].map((b, i, arr) => (
+              <div
+                key={b.initials}
+                className={cn(
+                  "grid grid-cols-[1.6fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center transition-colors hover:bg-[rgba(255,255,255,0.022)]",
+                  i === arr.length - 1 ? "" : "border-b border-border-subtle",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold border border-border-accent text-accent-light shrink-0"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+                    }}
+                  >
+                    {b.initials}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-text truncate">{b.name}</div>
+                    <div className="text-[10px] text-text-dim truncate">{b.company}</div>
+                  </div>
+                </div>
+                <div className={cn("font-display text-[18px] tabular-nums", b.primary ? "text-accent-light" : "text-text")}>
+                  {b.price}
+                </div>
+                <div className="text-[12px] text-text-muted tabular-nums">{b.time}</div>
+                <button
+                  type="button"
+                  className={cn(
+                    "px-3 h-7 rounded-sm text-[10px] tracking-[0.12em] uppercase border transition-colors",
+                    b.primary
+                      ? "border-border-accent bg-accent-muted/40 text-accent-light hover:bg-accent-muted/70"
+                      : "border-border-subtle text-text-muted hover:text-text hover:border-border",
+                  )}
+                >
+                  View
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function DropZone() {
-  return (
-    <div className="px-4 py-5 text-center rounded-sm border border-dashed border-border-accent bg-[rgba(0,212,200,0.03)]">
-      <div className="text-[18px] mb-1 text-accent-light">↑</div>
-      <div className="text-[9.5px] text-text-dim">
-        Drop drawings, specs, scope —{" "}
-        <span className="text-accent-light">browse files</span>
-      </div>
-    </div>
-  );
-}
+function Chart() {
+  // Sparkline-style svg, animated dash-in.
+  const points = [22, 30, 28, 38, 34, 46, 50, 48, 58, 62, 58, 70, 76, 84];
+  const max = Math.max(...points);
+  const w = 100;
+  const h = 100;
+  const path = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * w;
+      const y = h - (p / max) * h;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+  const area = `${path} L ${w} ${h} L 0 ${h} Z`;
 
-function DocRow({ name, size }: { name: string; size: string }) {
   return (
-    <div className="flex justify-between items-center px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.02)]">
-      <div className="flex items-center gap-2 text-[10px] text-text-muted">
-        <span>📄</span>
-        <span className="truncate">{name}</span>
-      </div>
-      <div className="flex items-center gap-2.5">
-        <span className="text-[9px] text-text-dim">{size}</span>
-        <span className="text-[8px] tracking-[0.12em] uppercase text-accent">Uploaded</span>
-      </div>
+    <div className="relative h-[140px]">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+        <defs>
+          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(0,212,200,0.30)" />
+            <stop offset="100%" stopColor="rgba(0,212,200,0)" />
+          </linearGradient>
+        </defs>
+        <motion.path
+          d={area}
+          fill="url(#chartFill)"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        />
+        <motion.path
+          d={path}
+          fill="none"
+          stroke="#7ef5ed"
+          strokeWidth="0.6"
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </svg>
+      {/* baseline gridlines */}
+      {[0, 25, 50, 75].map((y) => (
+        <span
+          key={y}
+          aria-hidden
+          className="absolute left-0 right-0 h-px bg-[rgba(255,255,255,0.04)]"
+          style={{ top: `${y}%` }}
+        />
+      ))}
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { Ambient } from "@/components/landing/ambient";
-import { CustomCursor } from "@/components/landing/cursor";
 import { GridOverlay } from "@/components/landing/grid-overlay";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
@@ -12,28 +11,30 @@ import { Audiences } from "@/components/landing/audiences";
 import { Showcase } from "@/components/landing/showcase";
 import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
+import { resolveCtaLinks } from "@/components/landing/cta-links";
 
-export default function MarketingHome() {
+export default async function MarketingHome() {
+  const cta = await resolveCtaLinks();
+
   return (
     <>
       {/* Backdrop layers — fixed, behind everything (z-0). */}
       <Ambient />
       <GridOverlay />
       <NoiseLayer />
-      <CustomCursor />
 
       <LandingNav />
 
       <main className="relative z-10">
-        <Hero />
+        <Hero cta={cta} />
         <Marquee />
         <Problem />
         <Stats />
         <Features />
         <HowItWorks />
-        <Audiences />
+        <Audiences cta={cta} />
         <Showcase />
-        <CTA />
+        <CTA cta={cta} />
       </main>
 
       <Footer />

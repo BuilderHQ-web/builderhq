@@ -1,22 +1,118 @@
+"use client";
+
 import Link from "next/link";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { Logo } from "@/components/brand/logo";
 
+/**
+ * Footer — Resend-style scroll-reveal of the giant brand mark.
+ * The logo fades and rises into view as the footer scrolls into the
+ * viewport. On hover, a slow teal "sweep" passes across it.
+ */
 export function Footer() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end end"],
+  });
+
+  // Drive the giant logo opacity + lift from scroll position.
+  const opacity = useTransform(scrollYProgress, [0, 0.4, 1], [0, 0.6, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [40, 0]);
+
   return (
-    <footer className="relative border-t border-border-subtle bg-bg-deep/70 px-6 md:px-10 py-7">
-      <div className="mx-auto max-w-[1320px] flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-        <Logo size={20} />
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[11px] tracking-[0.04em] text-text-dim">
-          <Link href="/login" className="hover:text-accent-light transition-colors">Log in</Link>
-          <Link href="/signup" className="hover:text-accent-light transition-colors">Sign up</Link>
-          <a href="#owners" className="hover:text-accent-light transition-colors">For owners</a>
-          <a href="#builders" className="hover:text-accent-light transition-colors">For builders</a>
-          <a href="#how" className="hover:text-accent-light transition-colors">How it works</a>
+    <footer
+      ref={ref}
+      className="relative border-t border-border-subtle bg-bg-deep/70 px-6 md:px-10 pt-16 pb-10 overflow-hidden"
+    >
+      <div className="mx-auto max-w-[1320px]">
+        {/* Top row — links */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+          <FooterColumn title="Product">
+            <FooterLink href="#features">Platform</FooterLink>
+            <FooterLink href="#how">How it works</FooterLink>
+            <FooterLink href="#showcase">Showcase</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Owners">
+            <FooterLink href="#owners">For owners</FooterLink>
+            <FooterLink href="/signup?role=owner">Upload a project</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Builders">
+            <FooterLink href="#builders">For builders</FooterLink>
+            <FooterLink href="/signup?role=builder">Browse projects</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Account">
+            <FooterLink href="/login">Log in</FooterLink>
+            <FooterLink href="/signup">Sign up</FooterLink>
+          </FooterColumn>
         </div>
-        <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim/70">
-          © {new Date().getFullYear()} BuilderHQ
-        </p>
+
+        {/* Giant scroll-reveal mark */}
+        <motion.div
+          style={{ opacity, y }}
+          className="group relative my-8 flex justify-center cursor-default"
+        >
+          <Logo height={140} className="opacity-90 group-hover:opacity-100 transition-opacity duration-[600ms]" />
+          {/* hover sweep — a soft teal highlight that travels across the mark */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[800ms]"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 30%, rgba(126,245,237,0.18) 50%, transparent 70%)",
+              backgroundSize: "300% 100%",
+              animation: "shimmer 3s linear infinite",
+              mixBlendMode: "screen",
+            }}
+          />
+        </motion.div>
+
+        {/* Bottom row — fine print */}
+        <div className="mt-10 pt-6 border-t border-border-subtle/60 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim/70">
+            © {new Date().getFullYear()} BuilderHQ · Made in Australia
+          </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-text-dim">
+            <Link href="#" className="hover:text-accent-light transition-colors">Privacy</Link>
+            <Link href="#" className="hover:text-accent-light transition-colors">Terms</Link>
+            <Link href="mailto:hello@builderhq.com.au" className="hover:text-accent-light transition-colors">
+              hello@builderhq.com.au
+            </Link>
+          </div>
+        </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[9.5px] tracking-[0.22em] uppercase text-accent mb-4">
+        {title}
+      </div>
+      <ul className="flex flex-col gap-2.5">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  // External-style anchor for fragments, Link for routes.
+  const isFragment = href.startsWith("#");
+  const cls =
+    "text-[13px] text-text-muted hover:text-text transition-colors duration-[160ms]";
+  return (
+    <li>
+      {isFragment ? (
+        <a href={href} className={cls}>
+          {children}
+        </a>
+      ) : (
+        <Link href={href} className={cls}>
+          {children}
+        </Link>
+      )}
+    </li>
   );
 }

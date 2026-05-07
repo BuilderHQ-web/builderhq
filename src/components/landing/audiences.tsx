@@ -1,25 +1,25 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "./reveal";
+import type { CtaLinks } from "./cta-links";
 
-export function Audiences() {
+export function Audiences({ cta }: { cta: CtaLinks }) {
   return (
     <section className="relative px-6 md:px-10 py-24 lg:py-32">
       <div className="mx-auto max-w-[1320px]">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-14 lg:mb-20">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              Built for both sides
+              Both sides
             </span>
             <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
               Pick your <span className="text-accent-light">side</span>.
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-[440px] text-[15px] leading-[1.85] text-text-subtle">
-              The platform feels different depending on whether you&apos;re
-              uploading a project or tendering for one. Designed deliberately
-              for each.
+            <p className="max-w-[440px] text-[15px] leading-[1.7] text-text-subtle">
+              Owners and builders see different views of the same project.
+              Built deliberately for each.
             </p>
           </Reveal>
         </div>
@@ -28,31 +28,31 @@ export function Audiences() {
           <Reveal>
             <Card
               id="owners"
-              tag="For project owners"
-              title="Upload once. Let builders come to you."
-              body="A clear, structured project page replaces twelve emails and three Dropbox links. Get tenders back in days, decide in confidence."
+              tag="For owners"
+              title="Upload once. Builders come to you."
+              body="One project page replaces twelve emails. Tenders back in days, not weeks."
               items={[
-                ["Smart project form", "Per-type fields auto-show the right details."],
-                ["Document workspace", "Signed-URL downloads, version history."],
+                ["Smart project form", "Right fields for your build type."],
+                ["Document workspace", "Versioned, signed-URL downloads."],
                 ["Tender comparison", "Side-by-side, structured fields."],
-                ["Verified builders", "ABN, ACN, and licence visible upfront."],
+                ["Verified builders", "ABN, ACN, licence visible upfront."],
               ]}
-              cta={{ href: "/signup", label: "Upload a project" }}
+              cta={{ href: cta.primary.href, label: cta.primary.label }}
             />
           </Reveal>
           <Reveal delay={0.08}>
             <Card
               id="builders"
               tag="For builders"
-              title="Tender-ready residential work, faster."
-              body="Stop chasing leads on Hipages. See real residential projects with real drawings and decide before you commit."
+              title="Real residential work, faster."
+              body="See real drawings before you commit. Decide before you spend a credit."
               items={[
-                ["Filtered matches", "By suburb, project type, and budget band."],
-                ["Preview before unlock", "See enough to opt in only when there's fit."],
-                ["Founding access", "First 50 builders unlock free during launch."],
-                ["Public profile", "ABN-verified, score-ranked, slug-able."],
+                ["Filtered matches", "Suburb, type, and budget band."],
+                ["Preview before unlock", "Opt in only when there's fit."],
+                ["Founding access", "First 50 builders unlock free."],
+                ["Public profile", "ABN-verified, score-ranked."],
               ]}
-              cta={{ href: "/signup", label: "Browse projects" }}
+              cta={{ href: cta.secondary.href, label: cta.secondary.label }}
             />
           </Reveal>
         </div>
@@ -79,7 +79,7 @@ function Card({
   return (
     <div
       id={id}
-      className="group relative h-full p-9 lg:p-11 rounded-md border border-border bg-[linear-gradient(180deg,rgba(10,26,40,0.92),rgba(6,18,28,0.98))] transition-[border-color,transform] duration-[420ms] hover:border-border-accent hover:-translate-y-1 overflow-hidden"
+      className="group relative h-full p-9 lg:p-11 rounded-md border border-border bg-[linear-gradient(180deg,rgba(10,26,40,0.92),rgba(6,18,28,0.98))] transition-[border-color,transform] duration-[600ms] ease-[var(--ease-out)] hover:border-border-accent hover:-translate-y-1 overflow-hidden"
     >
       <span
         aria-hidden
@@ -96,18 +96,18 @@ function Card({
       <h3 className="mt-6 font-ui font-bold tracking-[-0.025em] text-[26px] leading-[1.15] text-text max-w-[24ch]">
         {title}
       </h3>
-      <p className="mt-4 max-w-[44ch] text-[14px] leading-[1.85] text-text-subtle">{body}</p>
+      <p className="mt-4 max-w-[44ch] text-[14px] leading-[1.75] text-text-subtle">{body}</p>
 
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {items.map(([label, sub]) => (
           <div
             key={label}
-            className="px-4 py-3 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.025)] transition-colors duration-[200ms] group-hover:border-border-accent/50"
+            className="px-4 py-3 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.025)] transition-colors duration-[400ms] group-hover:border-border-accent/50"
           >
             <span className="block text-[9px] tracking-[0.18em] uppercase text-accent mb-1.5">
               {label}
             </span>
-            <span className="block text-[12.5px] leading-[1.6] text-text-muted">{sub}</span>
+            <span className="block text-[12.5px] leading-[1.55] text-text-muted">{sub}</span>
           </div>
         ))}
       </div>

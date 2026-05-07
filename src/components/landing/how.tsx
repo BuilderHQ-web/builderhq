@@ -14,11 +14,11 @@ const steps: Array<{
     icon: Upload,
     title: "Upload your project",
     description:
-      "Drawings, specs, scope, timeline, address. One form, autosaved, takes about ten minutes.",
+      "Drawings, specs, scope, address. One form. Ten minutes.",
     points: [
-      "Per-type smart fields (single, multi, reno, extension)",
-      "Document upload with signed access",
-      "Visibility controls — preview vs full",
+      "Smart fields by build type",
+      "Drag & drop docs, autosaved",
+      "Preview vs full visibility controls",
     ],
   },
   {
@@ -26,11 +26,11 @@ const steps: Array<{
     icon: Users,
     title: "Builders unlock",
     description:
-      "Matched builders see preview details, unlock the full project (free credits during launch), and sign the NDA-style terms.",
+      "Matched builders preview, then unlock the full package to tender.",
     points: [
-      "Filtered by suburb, project type, licence",
-      "Founding access for first 50 builders",
-      "Stripe-secured paid unlocks after launch",
+      "Filtered by suburb, type, licence",
+      "Founding access — first 50 builders free",
+      "Paid unlocks after launch",
     ],
   },
   {
@@ -38,11 +38,11 @@ const steps: Array<{
     icon: FileSpreadsheet,
     title: "Compare and decide",
     description:
-      "Tenders arrive structured. Compare price, inclusions, exclusions, timeline, validity. Message in-thread. Decide.",
+      "Structured tenders, side-by-side. Message in-thread. Decide.",
     points: [
-      "Side-by-side comparison view",
+      "Diff view across price, scope, timeline",
       "Threaded messaging per project",
-      "Award, shortlist, or reject in one click",
+      "Shortlist · award · reject in one click",
     ],
   },
 ];
@@ -74,10 +74,9 @@ export function HowItWorks() {
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="text-[15px] leading-[1.85] text-text-subtle">
-              The whole pipeline — from raw drawings to a signed builder —
-              modelled on the way Australian residential projects actually
-              tender, not a generic marketplace.
+            <p className="text-[15px] leading-[1.7] text-text-subtle">
+              From raw drawings to a signed builder. Modelled on how
+              Australian residential projects actually tender.
             </p>
           </Reveal>
         </div>
@@ -108,7 +107,7 @@ function Step({
   points: string[];
 }) {
   return (
-    <div className="group relative h-full p-9 rounded-md border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.7),rgba(6,20,32,0.85))] transition-[border-color,transform] duration-[420ms] hover:border-border-accent hover:-translate-y-1 overflow-hidden">
+    <div className="group relative h-full p-9 rounded-md border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.7),rgba(6,20,32,0.85))] transition-[border-color,transform] duration-[600ms] ease-[var(--ease-out)] hover:border-border-accent hover:-translate-y-1 overflow-hidden">
       <span className="font-display tracking-[0.22em] text-[11px] text-accent">{n}</span>
       <div className="mt-7 size-12 rounded-md border border-border-accent bg-accent-muted flex items-center justify-center">
         <Icon className="size-5 text-accent-light" />

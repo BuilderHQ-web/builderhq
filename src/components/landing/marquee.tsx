@@ -6,10 +6,8 @@ const items = [
   "Residential tendering",
   "Verified Australian builders",
   "Drawings · specs · scope",
-  "Compare tenders side-by-side",
-  "One platform",
-  "Faster decisions",
-  "Premium proptech",
+  "Side-by-side compare",
+  "Days, not weeks",
   "Built in Australia",
 ];
 

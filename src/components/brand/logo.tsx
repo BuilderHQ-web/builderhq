@@ -3,60 +3,45 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * BuilderHQ wordmark — brand-locked.
+ * BuilderHQ logo.
  *
- * Renders "BUILDER" + "HQ" in Bebas Neue with the HQ accented in teal,
- * matching the nav and footer treatment in reference/landing/index.html.
+ * Renders the official PNG asset (mark + wordmark) so the brand reads
+ * consistently everywhere. The PNG canvas is 500×500 with the visible
+ * logo centred — `w-auto` preserves the aspect ratio at any height.
  *
- * For most cases use <Logo />. Reach for <LogoMark /> only where the
- * graphical 500x500 mark from /public/brand/ is needed (favicons, OG
- * images, app icons, social avatars).
+ * Accepts `size` (legacy) or `height` (preferred). Both set the same
+ * rendered height in pixels; width auto-scales.
  */
 export function Logo({
   className,
-  size = 26,
-  inverse = false,
-  href,
+  size,
+  height,
+  alt = "BuilderHQ",
 }: {
   className?: string;
-  /** Wordmark height target in px — controls font-size. */
+  /** Legacy alias for `height`. Either prop works. */
   size?: number;
-  /** Render in inverse (dark on light), e.g. on accent backgrounds. */
-  inverse?: boolean;
-  /** If provided, wraps in <a>. Otherwise renders as <span>. */
-  href?: string;
+  /** Rendered height in px. Width auto-scales by aspect ratio. */
+  height?: number;
+  alt?: string;
 }) {
-  const Tag = href ? "a" : "span";
+  const h = height ?? size ?? 28;
   return (
-    <Tag
-      {...(href ? { href } : {})}
-      aria-label="BuilderHQ"
-      className={cn(
-        "inline-flex items-baseline leading-none select-none",
-        "font-display tracking-[0.08em]",
-        inverse ? "text-bg" : "text-text",
-        className,
-      )}
-      style={{ fontSize: size }}
-    >
-      <span>BUILDER</span>
-      <em
-        className={cn(
-          "not-italic",
-          inverse ? "text-bg" : "text-accent",
-        )}
-      >
-        HQ
-      </em>
-    </Tag>
+    <Image
+      src="/brand/BuilderHQ_White_Text.png"
+      alt={alt}
+      width={500}
+      height={500}
+      priority
+      className={cn("inline-block w-auto select-none", className)}
+      style={{ height: h }}
+    />
   );
 }
 
 /**
- * LogoMark — the graphical brand mark. Use only where an image asset is
- * required (favicons, OG images, app icons, social avatars). For UI use
- * <Logo /> — it's vector-perfect at every size, recolours via CSS, and
- * works across every breakpoint.
+ * LogoMark — kept for legacy callers that wanted a square graphical
+ * asset (favicons, OG images, app icons, social avatars).
  */
 export function LogoMark({
   size = 48,

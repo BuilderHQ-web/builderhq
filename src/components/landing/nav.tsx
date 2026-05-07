@@ -6,9 +6,13 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 
 /**
- * Sticky landing nav. Transparent at top of page; gains a glass blur +
- * subtle border once scrolled. Center menu shows section anchors; right
- * side has Log in + Get Started.
+ * Sticky landing nav. Transparent at top of page, glass blur once
+ * scrolled. Center menu shows section anchors; right side has
+ * Log in + Get started.
+ *
+ * `items-center` on the inner flex row + `flex items-center` on the
+ * absolutely-positioned <ul> guarantees the centre menu sits on the
+ * exact baseline as the logo and the right-side actions.
  */
 export function LandingNav() {
   const [scrolled, setScrolled] = React.useState(false);
@@ -30,22 +34,22 @@ export function LandingNav() {
           : "bg-transparent border-b border-transparent py-5",
       )}
     >
-      <div className="mx-auto max-w-[1320px] px-6 md:px-10 flex items-center justify-between">
-        <Link href="/" aria-label="BuilderHQ home" className="inline-flex">
-          <Logo size={22} />
+      <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 flex items-center justify-between">
+        <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
+          <Logo height={28} />
         </Link>
 
-        <ul className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+        <ul className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {[
-            { label: "For Owners", href: "#owners" },
-            { label: "For Builders", href: "#builders" },
-            { label: "How it Works", href: "#how" },
+            { label: "For owners", href: "#owners" },
+            { label: "For builders", href: "#builders" },
+            { label: "How it works", href: "#how" },
             { label: "Platform", href: "#features" },
           ].map((l) => (
-            <li key={l.href}>
+            <li key={l.href} className="flex items-center">
               <a
                 href={l.href}
-                className="text-[10px] tracking-[0.2em] uppercase text-text-faint hover:text-text px-3 py-2 rounded-md transition-colors duration-[160ms]"
+                className="inline-flex items-center text-[10px] tracking-[0.2em] uppercase text-text-faint hover:text-text px-3 py-2 rounded-md transition-colors duration-[160ms] leading-none"
               >
                 {l.label}
               </a>
@@ -56,14 +60,14 @@ export function LandingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="text-[11px] tracking-[0.16em] uppercase text-text-muted hover:text-text px-3 py-2 transition-colors"
+            className="inline-flex items-center text-[11px] tracking-[0.16em] uppercase text-text-muted hover:text-text px-3 h-9 transition-colors leading-none"
           >
             Log in
           </Link>
           <Link
             href="/signup"
             className={cn(
-              "inline-flex items-center justify-center px-4 h-9 rounded-full",
+              "inline-flex items-center justify-center px-4 h-9 rounded-full leading-none",
               "bg-accent text-accent-contrast text-[12px] font-medium tracking-[0.04em]",
               "hover:bg-accent-hover transition-colors duration-[160ms]",
             )}

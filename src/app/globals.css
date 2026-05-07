@@ -218,6 +218,12 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
@@ -272,22 +278,3 @@ body {
   }
 }
 
-/* Custom cursor — applied when CustomCursor mounts on the landing page.
-   Tailwind's preflight + many specific selectors set `cursor` on various
-   elements; we have to override every single one. Wildcard with
-   !important is the only reliable way. */
-html.custom-cursor,
-html.custom-cursor *,
-html.custom-cursor *::before,
-html.custom-cursor *::after {
-  cursor: none !important;
-}
-html.custom-cursor body.cursor-hovering .cursor-dot {
-  width: 4px;
-  height: 4px;
-}
-html.custom-cursor body.cursor-hovering .cursor-ring {
-  width: 56px;
-  height: 56px;
-  border-color: rgba(255, 255, 255, 0.55);
-}

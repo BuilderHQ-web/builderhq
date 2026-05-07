@@ -15,10 +15,14 @@ type Role = "project_owner" | "builder";
 
 const initialState: SignupActionState = {};
 
-export function SignupForm() {
+export function SignupForm({
+  initialRole = "project_owner",
+}: {
+  initialRole?: Role;
+} = {}) {
   const [state, formAction] = useActionState(signupAction, initialState);
   const [isPending, startTransition] = useTransition();
-  const [role, setRole] = useState<Role>("project_owner");
+  const [role, setRole] = useState<Role>(initialRole);
 
   const fieldError = (key: string) => state.fieldErrors?.[key];
 

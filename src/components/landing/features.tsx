@@ -14,42 +14,42 @@ const features: Array<{
     n: "01",
     name: "Project workspace",
     description:
-      "Drawings, specs, and scope live on a single shareable project page. Versioned, downloadable, audit-trailed.",
-    detail: "Private R2 storage · signed-URL downloads · per-file version history",
+      "Drawings, specs, and scope on one shareable page. Versioned and audit-trailed.",
+    detail: "Private R2 storage · signed-URL downloads · per-file versioning",
   },
   {
     n: "02",
     name: "Matched builders",
     description:
-      "Builders are filtered by service area, project type, ABN status, and licence — only fit-for-purpose unlocks reach you.",
+      "Filtered by service area, project type, ABN, and licence. Only fit-for-purpose unlocks reach you.",
     detail: "Postcode-precision · ABN + licence checks · category match",
   },
   {
     n: "03",
     name: "Tender comparison",
     description:
-      "Side-by-side: price, inclusions, exclusions, timeline, validity, and notes. Decide in minutes, not weeks.",
+      "Side-by-side: price, inclusions, exclusions, timeline. Decide in minutes.",
     detail: "Versioned tenders · diff view · structured fields",
   },
   {
     n: "04",
-    name: "Owner ↔ builder messaging",
+    name: "Project messaging",
     description:
-      "One thread per project. Threaded, project-scoped, search-able. RFIs and variations have somewhere to live.",
-    detail: "Project-scoped threads · attachment support · read receipts",
+      "One thread per project. Threaded, scoped, searchable. RFIs and variations have a home.",
+    detail: "Project-scoped threads · attachments · read receipts",
   },
   {
     n: "05",
     name: "Verified profiles",
     description:
-      "ABN, ACN, state-by-state licence, insurance documents, and scoring — all in the open.",
-    detail: "ABN lookup · VBA / state register checks · admin moderated",
+      "ABN, ACN, state licence, insurance, and scoring — all in the open.",
+    detail: "ABN lookup · state register checks · admin moderated",
   },
   {
     n: "06",
     name: "Founding access",
     description:
-      "Hand-picked builders unlock projects with complimentary credits during launch. Earn the platform, no Stripe charge.",
+      "Hand-picked builders unlock projects on the house during launch. Earn the platform.",
     detail: "First 50 builders · monthly credit refresh · admin granted",
   },
 ];
@@ -74,9 +74,9 @@ export function Features() {
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-prose text-[15px] leading-[1.85] text-text-subtle">
+            <p className="max-w-prose text-[15px] leading-[1.7] text-text-subtle">
               Every feature is sized to the rhythm of an Australian residential
-              build — not the generic &ldquo;marketplace&rdquo; template.
+              build — not a generic marketplace.
             </p>
           </Reveal>
         </div>
@@ -109,11 +109,11 @@ function FeatureCell({
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="group relative bg-[linear-gradient(160deg,rgba(9,27,42,0.5),rgba(6,18,30,0.7))] p-9 lg:p-10 transition-colors duration-[260ms] hover:bg-[rgba(0,212,200,0.035)] overflow-hidden"
+      className="group relative bg-[linear-gradient(160deg,rgba(9,27,42,0.5),rgba(6,18,30,0.7))] p-9 lg:p-10 transition-colors duration-[600ms] ease-[var(--ease-out)] hover:bg-[rgba(0,212,200,0.035)] overflow-hidden"
     >
       <span
         aria-hidden
-        className="absolute top-0 left-0 right-0 h-px scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-[420ms] ease-[var(--ease-out)]"
+        className="absolute top-0 left-0 right-0 h-px scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-[700ms] ease-[var(--ease-out)]"
         style={{
           background:
             "linear-gradient(90deg, transparent, rgba(126,245,237,0.7), transparent)",
@@ -125,7 +125,7 @@ function FeatureCell({
       <h3 className="mt-5 font-ui font-bold tracking-[-0.02em] text-[22px] leading-[1.2] text-text">
         {name}
       </h3>
-      <p className="mt-3 text-[14px] leading-[1.8] text-text-subtle">{description}</p>
+      <p className="mt-3 text-[14px] leading-[1.7] text-text-subtle">{description}</p>
       <AnimatePresence initial={false}>
         {hover ? (
           <motion.div
@@ -133,7 +133,10 @@ function FeatureCell({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              height: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+              opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.05 },
+            }}
             className="overflow-hidden"
           >
             <div className="mt-5 pt-4 border-t border-border-subtle text-[11.5px] tracking-[0.04em] text-accent-light/80 font-mono">
@@ -144,7 +147,7 @@ function FeatureCell({
       </AnimatePresence>
       <span
         aria-hidden
-        className="absolute right-3 -bottom-2 font-display text-[110px] leading-none text-transparent select-none pointer-events-none"
+        className="absolute right-3 -bottom-2 font-display text-[110px] leading-none text-transparent select-none pointer-events-none transition-opacity duration-[700ms] opacity-100 group-hover:opacity-[1.6]"
         style={{ WebkitTextStroke: "1px rgba(142,252,244,0.045)" }}
       >
         {n}
