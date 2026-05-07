@@ -36,7 +36,7 @@ export function LandingNav() {
     >
       <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 flex items-center justify-between">
         <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
-          <Logo height={28} />
+          <Logo height={26} />
         </Link>
 
         <ul className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

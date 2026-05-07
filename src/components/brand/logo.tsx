@@ -5,13 +5,24 @@ import { cn } from "@/lib/utils";
 /**
  * BuilderHQ logo.
  *
- * Renders the official PNG asset (mark + wordmark) so the brand reads
- * consistently everywhere. The PNG canvas is 500×500 with the visible
- * logo centred — `w-auto` preserves the aspect ratio at any height.
+ * The source PNG is 500×500 with the visible mark+wordmark occupying
+ * roughly a 260×80 strip in the centre. Rendering it as a normal image
+ * and setting `height` makes the *padding* big and the logo itself
+ * tiny. So we render it as a `background-image` and scale the bitmap
+ * up so the visible glyph sits at exactly `height` pixels tall, then
+ * crop the surrounding empty pixels via the box dimensions.
  *
- * Accepts `size` (legacy) or `height` (preferred). Both set the same
- * rendered height in pixels; width auto-scales.
+ * Accepts `size` (legacy) or `height` (preferred). Both control the
+ * height of the *visible* logo, not the full canvas.
  */
+
+// Empirical measurements of the visible glyph inside the 500×500 PNG.
+const SOURCE_PX = 500;
+const VISIBLE_HEIGHT_PX = 95;
+const VISIBLE_WIDTH_PX = 290;
+const VISIBLE_ASPECT = VISIBLE_WIDTH_PX / VISIBLE_HEIGHT_PX; // ~3.05
+const SCALE_FACTOR = SOURCE_PX / VISIBLE_HEIGHT_PX; // ~5.26
+
 export function Logo({
   className,
   size,
@@ -19,29 +30,36 @@ export function Logo({
   alt = "BuilderHQ",
 }: {
   className?: string;
-  /** Legacy alias for `height`. Either prop works. */
+  /** Legacy alias for `height`. */
   size?: number;
-  /** Rendered height in px. Width auto-scales by aspect ratio. */
+  /** Visible logo height in px (not the full canvas). */
   height?: number;
   alt?: string;
 }) {
   const h = height ?? size ?? 28;
+  const w = h * VISIBLE_ASPECT;
+  const bgSize = h * SCALE_FACTOR;
+
   return (
-    <Image
-      src="/brand/BuilderHQ_White_Text.png"
-      alt={alt}
-      width={500}
-      height={500}
-      priority
-      className={cn("inline-block w-auto select-none", className)}
-      style={{ height: h }}
+    <span
+      role="img"
+      aria-label={alt}
+      className={cn("inline-block select-none align-middle", className)}
+      style={{
+        height: h,
+        width: w,
+        backgroundImage: 'url("/brand/BuilderHQ_White_Text.png")',
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundSize: `${bgSize}px ${bgSize}px`,
+      }}
     />
   );
 }
 
 /**
- * LogoMark — kept for legacy callers that wanted a square graphical
- * asset (favicons, OG images, app icons, social avatars).
+ * LogoMark — kept for legacy callers that wanted the raw square asset
+ * (favicons, OG, social avatars). Same source as <Logo />.
  */
 export function LogoMark({
   size = 48,

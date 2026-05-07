@@ -53,7 +53,7 @@ export function Footer() {
           style={{ opacity, y }}
           className="group relative my-8 flex justify-center cursor-default"
         >
-          <Logo height={140} className="opacity-90 group-hover:opacity-100 transition-opacity duration-[600ms]" />
+          <Logo height={120} className="opacity-90 group-hover:opacity-100 transition-opacity duration-[600ms]" />
           {/* hover sweep — a soft teal highlight that travels across the mark */}
           <span
             aria-hidden
