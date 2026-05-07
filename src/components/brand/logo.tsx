@@ -5,23 +5,26 @@ import { cn } from "@/lib/utils";
 /**
  * BuilderHQ logo.
  *
- * The source PNG is 500×500 with the visible mark+wordmark occupying
- * roughly a 260×80 strip in the centre. Rendering it as a normal image
- * and setting `height` makes the *padding* big and the logo itself
- * tiny. So we render it as a `background-image` and scale the bitmap
- * up so the visible glyph sits at exactly `height` pixels tall, then
- * crop the surrounding empty pixels via the box dimensions.
+ * The source PNG is 500×500 with the visible mark+wordmark in a
+ * 327×80 strip centred at (221.5, 245) — i.e. *not* centred in the
+ * canvas (it's offset 28.5px left of horizontal centre). Rendering
+ * the raw image and setting `height` makes the empty padding huge
+ * and the glyph tiny, so we render it as a `background-image` and
+ * scale + offset the bitmap so the visible glyph sits exactly inside
+ * the box at the requested height.
  *
- * Accepts `size` (legacy) or `height` (preferred). Both control the
- * height of the *visible* logo, not the full canvas.
+ * Accepts `size` (legacy alias) or `height`. Both control the height
+ * of the *visible* logo, not the full canvas.
  */
 
-// Empirical measurements of the visible glyph inside the 500×500 PNG.
-const SOURCE_PX = 500;
-const VISIBLE_HEIGHT_PX = 95;
-const VISIBLE_WIDTH_PX = 290;
-const VISIBLE_ASPECT = VISIBLE_WIDTH_PX / VISIBLE_HEIGHT_PX; // ~3.05
-const SCALE_FACTOR = SOURCE_PX / VISIBLE_HEIGHT_PX; // ~5.26
+// Measured directly from the source PNG (Pillow getbbox).
+const SRC_PX = 500;
+const GLYPH_W = 327;
+const GLYPH_H = 80;
+const GLYPH_CX = 221.5;
+const GLYPH_CY = 245;
+const GLYPH_ASPECT = GLYPH_W / GLYPH_H; // ~4.09
+const SCALE = SRC_PX / GLYPH_H; // ~6.25
 
 export function Logo({
   className,
@@ -37,8 +40,22 @@ export function Logo({
   alt?: string;
 }) {
   const h = height ?? size ?? 28;
-  const w = h * VISIBLE_ASPECT;
-  const bgSize = h * SCALE_FACTOR;
+  const w = h * GLYPH_ASPECT;
+
+  // Scaled bitmap dimensions (square, since source is square).
+  const bgSize = h * SCALE;
+
+  // Per-pixel scale from source space to rendered space.
+  const px = h / GLYPH_H;
+
+  // We want the glyph centre to sit at the box centre. With
+  // background-position (x, y), we offset the background image so
+  // that the *glyph centre* aligns with (w/2, h/2).
+  // Required: positionX - GLYPH_CX*px = w/2 - bgSize/2 (when glyph
+  // would have been at canvas centre). Simpler: top-left of bg goes
+  // to (w/2 - GLYPH_CX*px, h/2 - GLYPH_CY*px).
+  const bgX = w / 2 - GLYPH_CX * px;
+  const bgY = h / 2 - GLYPH_CY * px;
 
   return (
     <span
@@ -50,7 +67,7 @@ export function Logo({
         width: w,
         backgroundImage: 'url("/brand/BuilderHQ_White_Text.png")',
         backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
+        backgroundPosition: `${bgX}px ${bgY}px`,
         backgroundSize: `${bgSize}px ${bgSize}px`,
       }}
     />
@@ -59,7 +76,7 @@ export function Logo({
 
 /**
  * LogoMark — kept for legacy callers that wanted the raw square asset
- * (favicons, OG, social avatars). Same source as <Logo />.
+ * (favicons, OG images, social avatars). Same source as <Logo />.
  */
 export function LogoMark({
   size = 48,
