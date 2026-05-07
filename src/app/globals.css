@@ -177,6 +177,28 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
   50%      { box-shadow: 0 0 32px 4px rgba(0, 212, 200, 0.25); }
 }
+@keyframes ambFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-16px, 18px) scale(1.04); }
+  66%      { transform: translate(12px, -16px) scale(0.97); }
+}
+@keyframes ringPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+  50%      { transform: translate(-50%, -50%) scale(1.04); opacity: 0.28; }
+}
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes barRise {
+  0%, 100% { transform: scaleY(0.6); }
+  40%      { transform: scaleY(1); }
+  70%      { transform: scaleY(0.78); }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.7); }
+}
 
 /* ==========================================================================
    Base — dark-first.
@@ -245,4 +267,30 @@ body {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Custom cursor — applied when CustomCursor mounts on the landing page.
+   Hides the OS cursor and adjusts the visual cursor when hovering
+   interactive elements. */
+html.custom-cursor,
+html.custom-cursor a,
+html.custom-cursor button,
+html.custom-cursor input,
+html.custom-cursor select,
+html.custom-cursor textarea,
+html.custom-cursor [role="button"] {
+  cursor: none;
+}
+html.custom-cursor body.cursor-hovering .cursor-dot {
+  width: 5px;
+  height: 5px;
+}
+html.custom-cursor body.cursor-hovering .cursor-ring {
+  width: 64px;
+  height: 64px;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+html.custom-cursor body.cursor-hovering .cursor-glow {
+  width: 160px;
+  height: 160px;
 }
