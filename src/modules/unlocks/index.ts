@@ -1,8 +1,36 @@
 /**
  * @module unlocks
  *
- * Public surface for the unlocks module. Anything outside this folder
- * MUST import from `@/modules/unlocks` (this file) — never reach into
- * `./service`, `./schema`, or `./policies` directly. ESLint enforces it.
+ * Public surface for the unlocks module. Outsiders MUST import from
+ * `@/modules/unlocks` — never reach into `./service`, `./schema`, or
+ * `./policies` directly.
  */
-export {};
+
+export {
+  unlocks,
+  savedProjects,
+  unlockSourceEnum,
+} from "./schema";
+export type {
+  UnlockRow,
+  UnlockInsert,
+  SavedProjectRow,
+  SavedProjectInsert,
+} from "./schema";
+
+export type { Unlock, SavedProject } from "./types";
+
+export {
+  unlockProject,
+  isUnlocked,
+  listMyUnlockedProjectIds,
+  countMyUnlocks,
+  saveProject,
+  unsaveProject,
+  isSaved,
+  listMySavedProjectIds,
+  countMySaved,
+} from "./service";
+
+export { canUnlock, canSave } from "./policies";
+export type { ActorContext } from "./policies";

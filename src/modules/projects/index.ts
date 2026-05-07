@@ -32,6 +32,8 @@ export type {
   CreateProjectInput,
   UpdateProjectInput,
   PublishabilityReport,
+  MarketplacePreview,
+  MarketplaceFilters,
 } from "./types";
 
 // Service.
@@ -44,6 +46,11 @@ export {
   getBySlugForOwner,
   getByIdForOwner,
   softDelete,
+  // Marketplace
+  listForMarketplace,
+  getMarketplacePreview,
+  getFullForUnlockedBuilder,
+  listByIds,
 } from "./service";
 
 // Policies.

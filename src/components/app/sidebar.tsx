@@ -56,8 +56,8 @@ const builderNav: NavSection[] = [
   {
     items: [
       { href: "/builder", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/builder/browse", label: "Browse projects", icon: Compass, soon: "Phase 2" },
-      { href: "/builder/unlocked", label: "Unlocked", icon: ClipboardList, soon: "Phase 2" },
+      { href: "/builder/browse", label: "Browse projects", icon: Compass },
+      { href: "/builder/saved", label: "Saved", icon: ClipboardList },
       { href: "/builder/tenders", label: "My tenders", icon: FileSpreadsheet, soon: "Phase 3" },
       { href: "/builder/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
     ],
@@ -107,7 +107,7 @@ export function Sidebar({ role }: { role: Role }) {
   const sections = navByRole[role];
 
   return (
-    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40 sticky top-0 h-dvh self-start">
+    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40 sticky top-0 h-screen self-start">
       {/* Brand row — sits flush with the topbar height. */}
       <div className="flex items-center h-14 px-6">
         <Link href="/" aria-label="BuilderHQ home">

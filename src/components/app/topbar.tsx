@@ -47,7 +47,7 @@ export function Topbar({ user }: TopbarProps) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 h-14 border-b border-border-subtle bg-bg/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 h-14 border-b border-border-subtle bg-bg/95 backdrop-blur-md">
       <div className="h-full flex items-center justify-between px-5 lg:px-6 gap-4">
         {/* Mobile: brand. Desktop: breadcrumbs. */}
         <div className="flex items-center gap-3 min-w-0">

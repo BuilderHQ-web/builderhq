@@ -380,7 +380,7 @@ export function ProjectWizard({
   // ── render ───────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-dvh pb-32">
+    <div className="min-h-screen pb-32">
       {/* Header — type, title, save state */}
       <header className="border-b border-border-subtle bg-bg-deep/30">
         <div className="px-6 lg:px-10 py-6 lg:py-7 flex items-center justify-between gap-4">
@@ -1249,7 +1249,7 @@ function PublishBar({
 }) {
   const isPublished = project.status !== "draft";
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/95 backdrop-blur-xl">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
       <div className="mx-auto max-w-[820px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
         <div className="min-w-0">
           {isPublished ? (

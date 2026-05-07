@@ -50,37 +50,23 @@ export default async function OwnerDashboard() {
   const isFirstTime = projects.length === 0;
 
   return (
-    <div className="min-h-dvh">
+    <div>
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">
-        {/* Ambient gradient backdrop */}
+        {/* Ambient gradient backdrop — single layer for paint perf */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,200,0.10), transparent 60%), radial-gradient(ellipse 60% 50% at 50% 100%, rgba(26,95,212,0.06), transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(120,200,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(120,200,255,0.04) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-            maskImage:
-              "radial-gradient(ellipse 80% 70% at 50% 50%, black, transparent 80%)",
+              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
 
         <div className="relative px-6 lg:px-10 pt-16 lg:pt-20 pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
             <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              <span className="relative flex size-1.5">
-                <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
-                <span className="relative size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
-              </span>
+              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
               {isFirstTime ? "Welcome to BuilderHQ" : "Project hub"}
             </span>
 
@@ -110,7 +96,7 @@ export default async function OwnerDashboard() {
                 "group mt-9 inline-flex items-center gap-2.5 h-12 px-7 rounded-full",
                 "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
                 "transition-colors duration-[160ms] hover:bg-accent-hover",
-                "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_12px_36px_-8px_rgba(0,212,200,0.55)]",
+                "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
               )}
             >
               <Plus className="size-4" />
@@ -356,8 +342,8 @@ function Panel({
   return (
     <section
       className={cn(
-        "rounded-md border overflow-hidden",
-        "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]",
+        "rounded-md border overflow-hidden transform-gpu",
+        "shadow-[0_12px_32px_-18px_rgba(0,0,0,0.55)]",
         toneCls,
         className,
       )}
@@ -425,8 +411,8 @@ function Kpi({
   return (
     <div
       className={cn(
-        "relative rounded-md border p-5 overflow-hidden",
-        "shadow-[0_20px_48px_-24px_rgba(0,0,0,0.55)]",
+        "relative rounded-md border p-5 overflow-hidden transform-gpu",
+        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
         t.ring,
       )}
       style={{ background: t.bg }}

@@ -1,0 +1,645 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Home,
+  Building,
+  Wrench,
+  Layers,
+  MapPin,
+  DollarSign,
+  Calendar,
+  FileText,
+  Bookmark,
+  BookmarkCheck,
+  Lock,
+  Unlock,
+  ArrowLeft,
+  ArrowUpRight,
+  Loader2,
+  Download,
+  Sparkles,
+  Check,
+} from "lucide-react";
+
+import {
+  unlockProjectAction,
+  saveProjectAction,
+  unsaveProjectAction,
+  getBuilderDownloadUrlAction,
+} from "@/app/(app)/_actions/marketplace";
+import type { MarketplacePreview, Project } from "@/modules/projects";
+import type { Document, DocumentCategory } from "@/modules/documents";
+import { cn } from "@/lib/utils";
+
+// ── lookup labels ────────────────────────────────────────────────────────
+
+const TYPE_META: Record<MarketplacePreview["type"], { label: string; icon: React.ReactNode }> = {
+  single_dwelling: { label: "Single dwelling", icon: <Home className="size-4" /> },
+  multi_dwelling: { label: "Multi-dwelling", icon: <Building className="size-4" /> },
+  renovation: { label: "Renovation", icon: <Wrench className="size-4" /> },
+  extension: { label: "Extension", icon: <Layers className="size-4" /> },
+};
+
+const BUDGET_LABEL: Record<NonNullable<MarketplacePreview["budgetBand"]>, string> = {
+  under_500k: "Under $500k",
+  "500k_1m": "$500k – $1M",
+  "1m_1_5m": "$1M – $1.5M",
+  "1_5m_2m": "$1.5M – $2M",
+  "2m_3m": "$2M – $3M",
+  "3m_5m": "$3M – $5M",
+  over_5m: "Over $5M",
+};
+
+const LAND_LBL: Record<NonNullable<MarketplacePreview["landSizeBand"]>, string> = {
+  under_200: "Under 200 m²",
+  "200_400": "200 – 400 m²",
+  "400_600": "400 – 600 m²",
+  "600_800": "600 – 800 m²",
+  "800_1000": "800 – 1000 m²",
+  over_1000: "1000 m²+",
+};
+
+const BUILD_LBL: Record<NonNullable<MarketplacePreview["buildSizeBand"]>, string> = {
+  under_100: "Under 100 m²",
+  "100_150": "100 – 150 m²",
+  "150_200": "150 – 200 m²",
+  "200_250": "200 – 250 m²",
+  "250_300": "250 – 300 m²",
+  "300_400": "300 – 400 m²",
+  over_400: "400 m²+",
+};
+
+const RENO_LBL: Record<NonNullable<MarketplacePreview["renovationScope"]>, string> = {
+  kitchen: "Kitchen",
+  bathroom: "Bathroom",
+  kitchen_and_bathroom: "Kitchen + bathroom",
+  full_internal: "Full internal",
+  full_internal_and_external: "Internal + external",
+  structural: "Structural",
+};
+
+const EXT_TYPE_LBL: Record<NonNullable<MarketplacePreview["extensionType"]>, string> = {
+  ground_floor: "Ground floor",
+  first_floor: "First floor",
+  ground_and_first: "Ground + first",
+  rear: "Rear",
+  side: "Side",
+};
+
+const EXT_SIZE_LBL: Record<NonNullable<MarketplacePreview["extensionSizeBand"]>, string> = {
+  under_20: "Under 20 m²",
+  "20_40": "20 – 40 m²",
+  "40_60": "40 – 60 m²",
+  "60_80": "60 – 80 m²",
+  "80_100": "80 – 100 m²",
+  over_100: "100 m²+",
+};
+
+const AGE_LBL: Record<NonNullable<MarketplacePreview["existingAgeBand"]>, string> = {
+  under_10: "Under 10 yrs",
+  "10_25": "10 – 25 yrs",
+  "25_50": "25 – 50 yrs",
+  "50_75": "50 – 75 yrs",
+  over_75: "Over 75 yrs",
+};
+
+const DOC_CAT_LABEL: Record<DocumentCategory, string> = {
+  architectural: "Architectural plans",
+  structural_engineering: "Structural engineering",
+  civil_engineering: "Civil engineering",
+  specifications: "Project specifications",
+  land_report: "Land report",
+  soil_report: "Soil report",
+  energy_rating: "Energy efficiency",
+  town_planning: "Town planning",
+  other: "Other",
+};
+
+// ── component ────────────────────────────────────────────────────────────
+
+export function ProjectDetail({
+  preview,
+  full,
+  unlocked: unlockedInitial,
+  saved: savedInitial,
+  documents,
+}: {
+  preview: MarketplacePreview;
+  full: Project | null;
+  unlocked: boolean;
+  saved: boolean;
+  documents: Document[];
+}) {
+  const router = useRouter();
+  const [unlocked, setUnlocked] = useState(unlockedInitial);
+  const [saved, setSaved] = useState(savedInitial);
+  const [unlocking, startUnlock] = useTransition();
+  const [savingPending, startSave] = useTransition();
+  const meta = TYPE_META[preview.type];
+
+  const onToggleSave = () => {
+    startSave(async () => {
+      if (saved) {
+        const r = await unsaveProjectAction(preview.id);
+        if (r.ok) setSaved(false);
+      } else {
+        const r = await saveProjectAction(preview.id);
+        if (r.ok) setSaved(true);
+      }
+    });
+  };
+
+  const onUnlock = () => {
+    startUnlock(async () => {
+      const r = await unlockProjectAction(preview.id);
+      if (!r.ok) {
+        alert(r.error.message);
+        return;
+      }
+      setUnlocked(true);
+      router.refresh();
+    });
+  };
+
+  // Group docs by category for display.
+  const docsByCategory = documents.reduce<Record<string, Document[]>>(
+    (acc, d) => {
+      (acc[d.category] ??= []).push(d);
+      return acc;
+    },
+    {},
+  );
+
+  return (
+    <div className="pb-32">
+      {/* Header */}
+      <div className="border-b border-border-subtle bg-bg-deep/30">
+        <div className="px-6 lg:px-10 py-6 lg:py-8 mx-auto max-w-[1200px]">
+          <Link
+            href="/builder/browse"
+            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-5"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to browse
+          </Link>
+
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+                {meta.icon}
+                {meta.label}
+                <span className="text-text-dim/60 mx-1">·</span>
+                {unlocked ? (
+                  <span className="inline-flex items-center gap-1 text-accent-light">
+                    <Unlock className="size-3" />
+                    Unlocked
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-text-dim">
+                    <Lock className="size-3" />
+                    Preview
+                  </span>
+                )}
+              </span>
+              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+                {preview.title}
+              </h1>
+              <div className="mt-2 flex items-center gap-2 text-[13px] text-text-muted">
+                <MapPin className="size-3.5" />
+                {preview.suburb && preview.state ? (
+                  <>
+                    {preview.suburb}, {preview.state}
+                    {preview.postcode ? ` ${preview.postcode}` : ""}
+                  </>
+                ) : (
+                  "Location pending"
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onToggleSave}
+                disabled={savingPending}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-full border text-[12px] tracking-[0.04em] transition-colors",
+                  saved
+                    ? "border-border-accent bg-accent-muted/40 text-accent-light"
+                    : "border-border-strong text-text hover:bg-surface-1",
+                )}
+              >
+                {savingPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : saved ? (
+                  <BookmarkCheck className="size-3.5" />
+                ) : (
+                  <Bookmark className="size-3.5" />
+                )}
+                {saved ? "Saved" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1200px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+          {/* Left — public details */}
+          <div className="space-y-5">
+            <Card title="The build" icon={meta.icon}>
+              <KvGrid>
+                {preview.type === "multi_dwelling" ? (
+                  <Kv label="Dwellings" value={preview.dwellingCount} />
+                ) : null}
+                <Kv label="Bedrooms" value={preview.bedrooms} />
+                <Kv label="Bathrooms" value={preview.bathrooms} />
+                {preview.type !== "multi_dwelling" ? (
+                  <Kv label="Storeys" value={preview.floors} />
+                ) : null}
+                <Kv
+                  label="Land size"
+                  value={preview.landSizeBand ? LAND_LBL[preview.landSizeBand] : null}
+                />
+                <Kv
+                  label="Build size"
+                  value={preview.buildSizeBand ? BUILD_LBL[preview.buildSizeBand] : null}
+                />
+                {preview.type === "renovation" ? (
+                  <>
+                    <Kv
+                      label="Scope"
+                      value={
+                        preview.renovationScope
+                          ? RENO_LBL[preview.renovationScope]
+                          : null
+                      }
+                    />
+                    <Kv
+                      label="Existing age"
+                      value={
+                        preview.existingAgeBand
+                          ? AGE_LBL[preview.existingAgeBand]
+                          : null
+                      }
+                    />
+                  </>
+                ) : null}
+                {preview.type === "extension" ? (
+                  <>
+                    <Kv
+                      label="Type"
+                      value={
+                        preview.extensionType
+                          ? EXT_TYPE_LBL[preview.extensionType]
+                          : null
+                      }
+                    />
+                    <Kv
+                      label="Size"
+                      value={
+                        preview.extensionSizeBand
+                          ? EXT_SIZE_LBL[preview.extensionSizeBand]
+                          : null
+                      }
+                    />
+                  </>
+                ) : null}
+              </KvGrid>
+            </Card>
+
+            <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
+              <KvGrid>
+                <Kv
+                  label="Budget"
+                  value={preview.budgetBand ? BUDGET_LABEL[preview.budgetBand] : null}
+                />
+                <Kv label="Target start" value={preview.targetStartMonth} />
+                <Kv label="Target completion" value={preview.targetCompletionMonth} />
+              </KvGrid>
+            </Card>
+
+            {preview.description ? (
+              <Card title="Brief" icon={<FileText className="size-4" />}>
+                <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
+                  {preview.description}
+                </p>
+              </Card>
+            ) : null}
+
+            {/* Documents — blurred + locked overlay if not unlocked */}
+            <Card
+              title={`Documents · ${documents.length}`}
+              icon={<FileText className="size-4" />}
+            >
+              <div className="relative">
+                <div
+                  className={cn(
+                    "transition-[filter] duration-[300ms]",
+                    unlocked ? "" : "blur-md select-none pointer-events-none",
+                  )}
+                >
+                  {documents.length === 0 ? (
+                    <p className="text-[12.5px] text-text-dim">
+                      No documents attached.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {Object.entries(docsByCategory).map(([cat, docs]) => (
+                        <li key={cat}>
+                          <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1.5">
+                            {DOC_CAT_LABEL[cat as DocumentCategory]}
+                          </div>
+                          <ul className="space-y-1.5">
+                            {docs.map((d) => (
+                              <DocRow key={d.id} doc={d} unlocked={unlocked} />
+                            ))}
+                          </ul>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                {!unlocked ? (
+                  <BlurOverlay
+                    icon={<FileText className="size-4" />}
+                    title="Unlock to download documents"
+                    sub={`${documents.length} file${documents.length === 1 ? "" : "s"} attached across ${Object.keys(docsByCategory).length} categor${Object.keys(docsByCategory).length === 1 ? "y" : "ies"}.`}
+                  />
+                ) : null}
+              </div>
+            </Card>
+          </div>
+
+          {/* Right — sticky summary + private fields */}
+          <div className="space-y-5">
+            <Card title="Address" icon={<MapPin className="size-4" />}>
+              <div className="relative">
+                <div
+                  className={cn(
+                    "transition-[filter] duration-[300ms]",
+                    unlocked ? "" : "blur-md select-none pointer-events-none",
+                  )}
+                >
+                  <p className="text-[13.5px] leading-[1.6] text-text-muted">
+                    {full?.addressLine1 ?? "14 Treadwell Road"}
+                    <br />
+                    {preview.suburb} {preview.state} {preview.postcode}
+                  </p>
+                </div>
+                {!unlocked ? (
+                  <BlurOverlay
+                    icon={<Lock className="size-3.5" />}
+                    title="Exact street address"
+                    sub={`Suburb · ${preview.suburb ?? "—"}`}
+                    compact
+                  />
+                ) : null}
+              </div>
+            </Card>
+
+            <Card title="Project owner" icon={<Sparkles className="size-4" />}>
+              <div className="relative">
+                <div
+                  className={cn(
+                    "transition-[filter] duration-[300ms]",
+                    unlocked ? "" : "blur-md select-none pointer-events-none",
+                  )}
+                >
+                  <p className="text-[13.5px] leading-[1.6] text-text-muted">
+                    Owner contact unlocks here.
+                    <br />
+                    Reply directly to the project thread.
+                  </p>
+                </div>
+                {!unlocked ? (
+                  <BlurOverlay
+                    icon={<Lock className="size-3.5" />}
+                    title="Owner contact + thread"
+                    compact
+                  />
+                ) : null}
+              </div>
+            </Card>
+
+            <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
+              <KvGrid>
+                <Kv
+                  label="Published"
+                  value={
+                    preview.publishedAt
+                      ? new Date(preview.publishedAt).toLocaleDateString("en-AU", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"
+                  }
+                />
+                <Kv
+                  label="Documents"
+                  value={`${preview.documentCount} file${preview.documentCount === 1 ? "" : "s"}`}
+                />
+              </KvGrid>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky unlock bar at the bottom (hidden if already unlocked) */}
+      {!unlocked ? (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
+          <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+            <div className="min-w-0 flex items-start gap-3">
+              <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
+                <Lock className="size-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[13px] font-semibold text-text">
+                  Unlock to access full details
+                </div>
+                <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
+                  Address · owner contact · {documents.length} document
+                  {documents.length === 1 ? "" : "s"} · ready to tender. Free during launch.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onUnlock}
+              disabled={unlocking}
+              className={cn(
+                "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+                "bg-accent text-accent-contrast hover:bg-accent-hover",
+                "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+                unlocking && "opacity-70 cursor-not-allowed",
+              )}
+            >
+              {unlocking ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Unlock className="size-4" />
+              )}
+              {unlocking ? "Unlocking…" : "Unlock project"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md">
+          <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+            <div className="text-[13px] text-accent-light flex items-center gap-2">
+              <Check className="size-4" />
+              Unlocked — full project visible. Tender flow lands in Phase 3.
+            </div>
+            <Link
+              href="/builder/browse"
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+            >
+              Back to browse
+              <ArrowUpRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── pieces ───────────────────────────────────────────────────────────────
+
+function Card({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]">
+      <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center">
+          {icon}
+        </span>
+        <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>
+      </header>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function KvGrid({ children }: { children: React.ReactNode }) {
+  return <dl className="grid grid-cols-2 gap-x-5 gap-y-3">{children}</dl>;
+}
+
+function Kv({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
+  return (
+    <div>
+      <dt className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+        {label}
+      </dt>
+      <dd className="text-[13.5px] text-text font-medium">
+        {value === null || value === undefined || value === "" ? "—" : value}
+      </dd>
+    </div>
+  );
+}
+
+function BlurOverlay({
+  icon,
+  title,
+  sub,
+  compact,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  sub?: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 flex items-center justify-center text-center",
+        "bg-bg-deep/40 backdrop-blur-[2px] rounded-md",
+      )}
+    >
+      <div
+        className={cn(
+          "rounded-md border border-border-accent/40 bg-bg-deep/85 backdrop-blur-md",
+          compact ? "px-3 py-2" : "px-5 py-4",
+          "flex items-center gap-2.5",
+        )}
+      >
+        <span className="size-7 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
+          {icon}
+        </span>
+        <div className="text-left min-w-0">
+          <div className={cn("font-semibold text-text", compact ? "text-[12px]" : "text-[13px]")}>
+            {title}
+          </div>
+          {sub ? (
+            <div className="text-[11px] text-text-dim mt-0.5 truncate">{sub}</div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocRow({
+  doc,
+  unlocked,
+}: {
+  doc: Document;
+  unlocked: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <li className="flex items-center justify-between gap-3 px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]">
+      <div className="min-w-0">
+        <div className="text-[12.5px] font-medium text-text truncate">{doc.filename}</div>
+        <div className="text-[10px] text-text-dim">{prettyBytes(doc.sizeBytes)}</div>
+      </div>
+      <button
+        type="button"
+        disabled={!unlocked || busy}
+        onClick={async () => {
+          setBusy(true);
+          const r = await getBuilderDownloadUrlAction(doc.id);
+          setBusy(false);
+          if (!r.ok) {
+            alert(r.error.message);
+            return;
+          }
+          window.open(r.value.url, "_blank", "noopener");
+        }}
+        className={cn(
+          "inline-flex items-center justify-center size-8 rounded-sm border border-border-subtle text-text-muted transition-colors",
+          unlocked
+            ? "hover:text-accent-light hover:border-border-accent"
+            : "opacity-40 cursor-not-allowed",
+        )}
+        title="Download"
+      >
+        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+      </button>
+    </li>
+  );
+}
+
+function prettyBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}

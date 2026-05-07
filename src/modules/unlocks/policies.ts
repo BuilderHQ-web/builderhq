@@ -1,10 +1,22 @@
 /**
  * unlocks · policies.
  *
- * Per-action authorization checks. Every server action calls a policy
- * BEFORE invoking a service function — never rely on UI hiding to
- * enforce access.
- *
- * Signature shape (Phase 1+): can<Action>(user, resource): boolean
+ * Builder-only actions. Owners and admins are excluded from the unlock
+ * mechanic entirely (owners see their own projects; admins use the
+ * admin console).
  */
-export {};
+
+export type ActorContext = {
+  id: string;
+  role: "project_owner" | "builder" | "admin";
+};
+
+/** Only builders can unlock projects. */
+export function canUnlock(actor: ActorContext): boolean {
+  return actor.role === "builder";
+}
+
+/** Only builders can save / unsave. */
+export function canSave(actor: ActorContext): boolean {
+  return actor.role === "builder";
+}

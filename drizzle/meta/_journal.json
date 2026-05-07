@@ -36,6 +36,13 @@
       "when": 1778200000000,
       "tag": "0004_band_enums_and_doc_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778300000000,
+      "tag": "0005_unlocks_and_saved_projects",
+      "breakpoints": true
     }
   ]
 }

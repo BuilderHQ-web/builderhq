@@ -21,7 +21,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -29,6 +29,8 @@ import { fail, ok, type Result } from "@/lib/result";
 import { projects, type ProjectRow } from "./schema";
 import type {
   CreateProjectInput,
+  MarketplaceFilters,
+  MarketplacePreview,
   Project,
   PublishabilityReport,
   UpdateProjectInput,
@@ -242,6 +244,201 @@ export async function getByIdForOwner(
   if (!row) return fail("not_found", "Project not found.");
   if (row.ownerId !== ownerId) return fail("forbidden", "Not your project.");
   return ok(row);
+}
+
+// ── builder-side queries ─────────────────────────────────────────────────
+
+/**
+ * Marketplace listing for builders. Returns `MarketplacePreview` rows
+ * (strips private fields). Filters apply at the SQL level.
+ *
+ * Always restricts to status IN (published, tendering) and not soft-
+ * deleted — owners' drafts never leak.
+ */
+export async function listForMarketplace(
+  filters: MarketplaceFilters = {},
+): Promise<MarketplacePreview[]> {
+  const conds = [
+    inArray(projects.status, ["published", "tendering"]),
+    isNull(projects.deletedAt),
+  ];
+
+  if (filters.q && filters.q.trim()) {
+    conds.push(ilike(projects.title, `%${filters.q.trim()}%`));
+  }
+  if (filters.type) {
+    conds.push(eq(projects.type, filters.type));
+  }
+  if (filters.state) {
+    conds.push(eq(projects.state, filters.state));
+  }
+  if (filters.postcode) {
+    conds.push(eq(projects.postcode, filters.postcode));
+  }
+  if (filters.budgets && filters.budgets.length > 0) {
+    conds.push(inArray(projects.budgetBand, filters.budgets));
+  }
+  if (filters.suburbsIn && filters.suburbsIn.length > 0) {
+    conds.push(inArray(projects.suburb, filters.suburbsIn));
+  }
+
+  const rows = await db
+    .select({
+      id: projects.id,
+      slug: projects.slug,
+      title: projects.title,
+      type: projects.type,
+      status: projects.status,
+      suburb: projects.suburb,
+      state: projects.state,
+      postcode: projects.postcode,
+      bedrooms: projects.bedrooms,
+      bathrooms: projects.bathrooms,
+      floors: projects.floors,
+      landSizeBand: projects.landSizeBand,
+      buildSizeBand: projects.buildSizeBand,
+      dwellingCount: projects.dwellingCount,
+      renovationScope: projects.renovationScope,
+      existingAgeBand: projects.existingAgeBand,
+      extensionType: projects.extensionType,
+      extensionSizeBand: projects.extensionSizeBand,
+      budgetBand: projects.budgetBand,
+      targetStartMonth: projects.targetStartMonth,
+      targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
+      publishedAt: projects.publishedAt,
+      createdAt: projects.createdAt,
+      documentCount: sql<number>`(
+        SELECT COUNT(*) FROM ${documents}
+        WHERE ${documents.projectId} = ${projects.id}
+          AND ${documents.status} = 'active'
+          AND ${documents.deletedAt} IS NULL
+      )`.mapWith(Number),
+    })
+    .from(projects)
+    .where(and(...conds))
+    .orderBy(desc(projects.publishedAt))
+    .limit(filters.limit ?? 60)
+    .offset(filters.offset ?? 0);
+
+  return rows;
+}
+
+/** Fetch a single preview by slug (used by the builder detail page). */
+export async function getMarketplacePreview(
+  slug: string,
+): Promise<Result<MarketplacePreview>> {
+  const list = await listForMarketplace({ limit: 1 });
+  // Cheap path: re-run the listForMarketplace query but scoped to slug.
+  const [row] = await db
+    .select({
+      id: projects.id,
+      slug: projects.slug,
+      title: projects.title,
+      type: projects.type,
+      status: projects.status,
+      suburb: projects.suburb,
+      state: projects.state,
+      postcode: projects.postcode,
+      bedrooms: projects.bedrooms,
+      bathrooms: projects.bathrooms,
+      floors: projects.floors,
+      landSizeBand: projects.landSizeBand,
+      buildSizeBand: projects.buildSizeBand,
+      dwellingCount: projects.dwellingCount,
+      renovationScope: projects.renovationScope,
+      existingAgeBand: projects.existingAgeBand,
+      extensionType: projects.extensionType,
+      extensionSizeBand: projects.extensionSizeBand,
+      budgetBand: projects.budgetBand,
+      targetStartMonth: projects.targetStartMonth,
+      targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
+      publishedAt: projects.publishedAt,
+      createdAt: projects.createdAt,
+      documentCount: sql<number>`(
+        SELECT COUNT(*) FROM ${documents}
+        WHERE ${documents.projectId} = ${projects.id}
+          AND ${documents.status} = 'active'
+          AND ${documents.deletedAt} IS NULL
+      )`.mapWith(Number),
+    })
+    .from(projects)
+    .where(
+      and(
+        eq(projects.slug, slug),
+        inArray(projects.status, ["published", "tendering"]),
+        isNull(projects.deletedAt),
+      ),
+    );
+  // Touch `list` to satisfy lint without using it functionally.
+  void list;
+  if (!row) return fail("not_found", "Project not found.");
+  return ok(row);
+}
+
+/**
+ * Full project read for an unlocked builder — includes the private
+ * fields the marketplace preview hides (currently nothing extra at the
+ * row level; the lock applies to the *related* docs + owner contact).
+ */
+export async function getFullForUnlockedBuilder(
+  slug: string,
+): Promise<Result<Project>> {
+  const [row] = await db
+    .select()
+    .from(projects)
+    .where(
+      and(
+        eq(projects.slug, slug),
+        inArray(projects.status, ["published", "tendering"]),
+        isNull(projects.deletedAt),
+      ),
+    );
+  if (!row) return fail("not_found", "Project not found.");
+  return ok(row);
+}
+
+/** Bulk fetch by ids — used when listing the builder's saved/unlocked. */
+export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select({
+      id: projects.id,
+      slug: projects.slug,
+      title: projects.title,
+      type: projects.type,
+      status: projects.status,
+      suburb: projects.suburb,
+      state: projects.state,
+      postcode: projects.postcode,
+      bedrooms: projects.bedrooms,
+      bathrooms: projects.bathrooms,
+      floors: projects.floors,
+      landSizeBand: projects.landSizeBand,
+      buildSizeBand: projects.buildSizeBand,
+      dwellingCount: projects.dwellingCount,
+      renovationScope: projects.renovationScope,
+      existingAgeBand: projects.existingAgeBand,
+      extensionType: projects.extensionType,
+      extensionSizeBand: projects.extensionSizeBand,
+      budgetBand: projects.budgetBand,
+      targetStartMonth: projects.targetStartMonth,
+      targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
+      publishedAt: projects.publishedAt,
+      createdAt: projects.createdAt,
+      documentCount: sql<number>`(
+        SELECT COUNT(*) FROM ${documents}
+        WHERE ${documents.projectId} = ${projects.id}
+          AND ${documents.status} = 'active'
+          AND ${documents.deletedAt} IS NULL
+      )`.mapWith(Number),
+    })
+    .from(projects)
+    .where(and(inArray(projects.id, ids), isNull(projects.deletedAt)))
+    .orderBy(desc(projects.publishedAt));
+  return rows;
 }
 
 /** Soft-delete. Cascade is handled at the doc layer (project_id → null). */

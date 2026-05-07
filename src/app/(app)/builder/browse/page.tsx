@@ -1,0 +1,224 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Compass, Filter, X } from "lucide-react";
+
+import { auth } from "@/modules/auth";
+import {
+  listForMarketplace,
+  type MarketplacePreview,
+} from "@/modules/projects";
+import {
+  listMyUnlockedProjectIds,
+  listMySavedProjectIds,
+} from "@/modules/unlocks";
+import { ProjectCard } from "@/components/builder/project-card";
+import { cn } from "@/lib/utils";
+
+export const metadata = { title: "Browse projects" };
+
+const TYPE_OPTIONS: Array<{ id: MarketplacePreview["type"]; label: string }> = [
+  { id: "single_dwelling", label: "Single dwelling" },
+  { id: "multi_dwelling", label: "Multi-dwelling" },
+  { id: "renovation", label: "Renovation" },
+  { id: "extension", label: "Extension" },
+];
+
+const STATE_OPTIONS = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"] as const;
+
+const BUDGET_OPTIONS: Array<{ id: NonNullable<MarketplacePreview["budgetBand"]>; label: string }> = [
+  { id: "under_500k", label: "Under $500k" },
+  { id: "500k_1m", label: "$500k–$1M" },
+  { id: "1m_1_5m", label: "$1M–$1.5M" },
+  { id: "1_5m_2m", label: "$1.5M–$2M" },
+  { id: "2m_3m", label: "$2M–$3M" },
+  { id: "3m_5m", label: "$3M–$5M" },
+  { id: "over_5m", label: "Over $5M" },
+];
+
+type SearchParams = {
+  q?: string;
+  type?: string;
+  state?: string;
+  postcode?: string;
+  budget?: string;
+};
+
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const session = await auth();
+  if (!session?.user) redirect("/login?next=/builder/browse");
+
+  const filters = parseFilters(params);
+  const projects = await listForMarketplace(filters);
+
+  const userId = session.user.id!;
+  const [unlockedIds, savedIds] = await Promise.all([
+    listMyUnlockedProjectIds(userId),
+    listMySavedProjectIds(userId),
+  ]);
+  const unlockedSet = new Set(unlockedIds);
+  const savedSet = new Set(savedIds);
+
+  const activeFilterCount =
+    [filters.q, filters.type, filters.state, filters.postcode, filters.budgets?.[0]].filter(
+      Boolean,
+    ).length;
+
+  return (
+    <div className="px-6 lg:px-10 py-8 lg:py-10">
+      <div className="mx-auto max-w-[1320px]">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-7">
+          <div>
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+              <Compass className="size-3.5" />
+              Browse
+            </span>
+            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+              Find tender-ready work
+            </h1>
+            <p className="mt-2 text-[13px] text-text-muted">
+              {projects.length} project{projects.length === 1 ? "" : "s"} live across Australia.
+              {activeFilterCount > 0 ? ` ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} applied.` : ""}
+            </p>
+          </div>
+        </div>
+
+        {/* Filter bar — server form, GET-style */}
+        <FilterBar params={params} />
+
+        {/* Results */}
+        {projects.length === 0 ? (
+          <div className="mt-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
+            <Filter className="mx-auto size-6 text-text-dim mb-3" />
+            <h3 className="text-[15px] font-semibold text-text">
+              No projects match these filters
+            </h3>
+            <p className="mt-1 text-[12.5px] text-text-dim">
+              Try widening the search, or{" "}
+              <Link
+                href="/builder/browse"
+                className="text-accent-light underline underline-offset-4"
+              >
+                clear all filters
+              </Link>
+              .
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {projects.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                isSaved={savedSet.has(p.id)}
+                isUnlocked={unlockedSet.has(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function parseFilters(params: SearchParams) {
+  const out: Parameters<typeof listForMarketplace>[0] = {};
+  if (params.q?.trim()) out.q = params.q.trim();
+  if (params.type && TYPE_OPTIONS.some((t) => t.id === params.type)) {
+    out.type = params.type as MarketplacePreview["type"];
+  }
+  if (params.state && (STATE_OPTIONS as readonly string[]).includes(params.state)) {
+    out.state = params.state as (typeof STATE_OPTIONS)[number];
+  }
+  if (params.postcode && /^\d{4}$/.test(params.postcode)) {
+    out.postcode = params.postcode;
+  }
+  if (params.budget && BUDGET_OPTIONS.some((b) => b.id === params.budget)) {
+    out.budgets = [params.budget as NonNullable<MarketplacePreview["budgetBand"]>];
+  }
+  return out;
+}
+
+function FilterBar({ params }: { params: SearchParams }) {
+  const hasAny = Boolean(
+    params.q || params.type || params.state || params.postcode || params.budget,
+  );
+  return (
+    <form
+      method="get"
+      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-4 lg:p-5"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
+        <input
+          type="text"
+          name="q"
+          defaultValue={params.q ?? ""}
+          placeholder="Search by title…"
+          className={inputCls}
+        />
+        <select name="type" defaultValue={params.type ?? ""} className={inputCls}>
+          <option value="">Any type</option>
+          {TYPE_OPTIONS.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <select name="state" defaultValue={params.state ?? ""} className={inputCls}>
+          <option value="">Any state</option>
+          {STATE_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          name="postcode"
+          defaultValue={params.postcode ?? ""}
+          inputMode="numeric"
+          maxLength={4}
+          placeholder="Postcode"
+          className={cn(inputCls, "font-mono tabular-nums")}
+        />
+        <select
+          name="budget"
+          defaultValue={params.budget ?? ""}
+          className={inputCls}
+        >
+          <option value="">Any budget</option>
+          {BUDGET_OPTIONS.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-md bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors"
+          >
+            Apply
+          </button>
+          {hasAny ? (
+            <Link
+              href="/builder/browse"
+              className="inline-flex items-center justify-center gap-1 h-10 px-3 rounded-md border border-border-subtle text-[11px] text-text-dim hover:text-text hover:border-border transition-colors"
+            >
+              <X className="size-3" />
+              Clear
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    </form>
+  );
+}
+
+const inputCls =
+  "h-10 px-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[12.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] transition-colors";

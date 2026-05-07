@@ -277,6 +277,52 @@ export async function listForProject(
   return rows.map(toPublic);
 }
 
+/**
+ * List active documents on a project without an ownership check.
+ * Used by the builder side AFTER the caller has verified the requester
+ * unlocked the project (or is admin). Skipping the unlock check here
+ * means the caller MUST gate first.
+ */
+export async function listActiveForProjectUnchecked(
+  projectId: string,
+): Promise<Document[]> {
+  const rows = await db
+    .select()
+    .from(documents)
+    .where(
+      and(
+        eq(documents.projectId, projectId),
+        eq(documents.status, "active"),
+        isNull(documents.deletedAt),
+      ),
+    )
+    .orderBy(desc(documents.createdAt));
+  return rows.map(toPublic);
+}
+
+/**
+ * Mint a signed download URL without checking ownership. Caller MUST
+ * have already gated the request (e.g. confirmed unlock for the
+ * project this doc belongs to).
+ */
+export async function getDownloadUrlForUnlocked(
+  documentId: string,
+): Promise<Result<{ url: string; filename: string; projectId: string | null }>> {
+  const [row] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), isNull(documents.deletedAt)));
+  if (!row) return fail("not_found", "Document not found.");
+  if (row.status !== "active") {
+    return fail("conflict", "Document is not yet finalised.");
+  }
+  const url = await presignDownload({
+    key: row.objectKey,
+    filename: row.filename,
+  });
+  return ok({ url, filename: row.filename, projectId: row.projectId });
+}
+
 /** Soft-delete a document the caller owns. */
 export async function softDelete(
   ownerId: string,
