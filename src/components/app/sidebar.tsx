@@ -107,24 +107,24 @@ export function Sidebar({ role }: { role: Role }) {
   const sections = navByRole[role];
 
   return (
-    <aside className="hidden lg:flex w-[252px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/60">
-      {/* Brand row */}
-      <div className="flex items-center h-14 px-5 border-b border-border-subtle">
+    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40">
+      {/* Brand row — sits flush with the topbar height. */}
+      <div className="flex items-center h-14 px-6">
         <Link href="/" aria-label="BuilderHQ home">
           <Logo size={20} />
         </Link>
       </div>
 
-      {/* Nav body */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      {/* Nav body — generous breathing between sections. */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
         {sections.map((section, i) => (
-          <div key={i} className={cn("px-3", i > 0 && "mt-6")}>
+          <div key={i} className={cn(i > 0 && "mt-7")}>
             {section.title ? (
-              <div className="px-2 pb-1.5 text-[10px] font-medium tracking-[0.18em] uppercase text-text-dim">
+              <div className="px-3 pb-2 text-[10px] font-medium tracking-[0.18em] uppercase text-text-dim">
                 {section.title}
               </div>
             ) : null}
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col gap-px">
               {section.items.map((item) => (
                 <li key={item.href}>
                   <NavLink item={item} active={isActive(pathname, item.href)} />
@@ -134,7 +134,6 @@ export function Sidebar({ role }: { role: Role }) {
           </div>
         ))}
       </nav>
-
     </aside>
   );
 }
@@ -145,22 +144,14 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-tight px-2 py-1.5",
+        "group relative flex items-center gap-2.5 rounded-md px-3 py-2",
         "font-ui text-[13px] tracking-[-0.005em]",
         "transition-[background,color] duration-[120ms] ease-[var(--ease-out)]",
         active
-          ? "bg-surface-2 text-text shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+          ? "bg-surface-2 text-text"
           : "text-text-muted hover:bg-surface-1 hover:text-text",
       )}
     >
-      {/* active rail */}
-      <span
-        aria-hidden
-        className={cn(
-          "absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-r-full bg-accent transition-opacity duration-[120ms]",
-          active ? "opacity-100" : "opacity-0",
-        )}
-      />
       <Icon
         className={cn(
           "size-4 shrink-0 transition-colors",
