@@ -44,12 +44,19 @@ export function FibreCanvas({
 
     function resize() {
       if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      dpr = Math.max(1, window.devicePixelRatio || 1);
+      // Use viewport dimensions, NOT canvas.getBoundingClientRect().
+      // Observing the canvas itself caused a feedback loop: setting
+      // canvas.width updated the rect, which fired the observer, which
+      // multiplied by DPR again, eventually producing a 33M × 33M
+      // canvas that the browser couldn't allocate (rendered as white).
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
+      // Ensure CSS sizing is independent of the bitmap size.
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
       ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Lines per width — sparse on mobile, denser on wide screens.
@@ -127,12 +134,13 @@ export function FibreCanvas({
       draw(performance.now());
     }
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    // Listen on window — canvas is `fixed inset-0` so it always matches
+    // the viewport. No ResizeObserver, no feedback loop.
+    window.addEventListener("resize", resize);
 
     return () => {
       cancelAnimationFrame(raf);
-      ro.disconnect();
+      window.removeEventListener("resize", resize);
     };
   }, []);
 
