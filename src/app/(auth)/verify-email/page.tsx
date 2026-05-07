@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 
-import { Eyebrow } from "@/components/brand/section";
-import { Card, CardContent } from "@/components/ui/card";
 import { ResendButton } from "./resend-button";
 
 export const metadata = { title: "Verify your email" };
@@ -15,55 +13,58 @@ export default async function VerifyEmailPage({
   const { email } = await searchParams;
 
   return (
-    <Card>
-      <CardContent className="p-8 flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <div className="inline-flex size-12 items-center justify-center rounded-full bg-accent-muted border border-border-accent text-accent">
-            <Mail className="size-5" />
-          </div>
-          <Eyebrow>Almost there</Eyebrow>
-          <h1 className="font-display uppercase tracking-[-0.02em] text-[36px] leading-none">
-            Check your inbox
-          </h1>
-          <p className="text-[14px] leading-[22px] text-text-muted">
-            {email ? (
-              <>
-                We sent a verification link to{" "}
-                <span className="text-text">{email}</span>. Click it within
-                the next 24 hours to activate your account.
-              </>
-            ) : (
-              <>
-                We sent you a verification link. Click it within the next 24
-                hours to activate your account.
-              </>
-            )}
-          </p>
+    <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-3">
+        <div className="inline-flex size-10 items-center justify-center rounded-full border border-border-accent bg-accent-muted/40 text-accent mb-1">
+          <Mail className="size-4" />
         </div>
-
-        <div className="rounded-tight border border-border-subtle bg-surface-1 p-4 flex flex-col gap-2">
-          <p className="text-[12px] tracking-[0.04em] uppercase text-text-dim">Not seeing it?</p>
-          <ul className="text-[13px] leading-[22px] text-text-muted list-disc pl-5 space-y-1">
-            <li>Check your spam / junk folder.</li>
-            <li>Wait 60 seconds — first emails sometimes route slowly.</li>
-            <li>Make sure the address you signed up with is correct.</li>
-          </ul>
+        <h1 className="font-display uppercase tracking-[-0.02em] text-[40px] sm:text-[48px] leading-[0.92] text-text">
+          Check your inbox
+        </h1>
+        <p className="text-[15px] leading-[24px] text-text-muted">
           {email ? (
-            <div className="mt-2">
-              <ResendButton email={email} />
-            </div>
-          ) : null}
-        </div>
+            <>
+              We sent a verification link to{" "}
+              <span className="text-text">{email}</span>. Click it within
+              the next 24 hours to activate your account.
+            </>
+          ) : (
+            <>
+              We sent you a verification link. Click it within the next 24
+              hours to activate your account.
+            </>
+          )}
+        </p>
+      </div>
 
-        <div className="flex items-center justify-between text-[12px] text-text-dim">
-          <Link href="/signup" className="hover:text-accent-light underline-offset-4 hover:underline">
-            Wrong email? Sign up again
-          </Link>
-          <Link href="/login" className="hover:text-accent-light underline-offset-4 hover:underline">
-            Back to log in
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="flex flex-col gap-3 text-[13px] leading-[20px] text-text-muted">
+        <p className="text-[12px] tracking-[0.16em] uppercase text-text-dim">Not seeing it?</p>
+        <ul className="space-y-1.5 list-[disc] pl-5 marker:text-text-dim">
+          <li>Check your spam / junk folder.</li>
+          <li>Wait a minute — first emails sometimes route slowly.</li>
+          <li>Make sure the address you signed up with is correct.</li>
+        </ul>
+        {email ? (
+          <div className="mt-2">
+            <ResendButton email={email} />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex items-center justify-between text-[13px] text-text-dim">
+        <Link
+          href="/signup"
+          className="hover:text-accent-light transition-colors"
+        >
+          Wrong email? Sign up again
+        </Link>
+        <Link
+          href="/login"
+          className="hover:text-accent-light transition-colors"
+        >
+          Back to log in →
+        </Link>
+      </div>
+    </div>
   );
 }

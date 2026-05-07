@@ -1,36 +1,31 @@
 import * as React from "react";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { GridBg, NoiseOverlay } from "@/components/brand/grid-bg";
 
 /**
- * Auth route group layout — minimal centered shell used for signup, login,
- * email verification, forgot password, reset password.
+ * Auth shell — minimal centred composition.
  *
- * Real form logic lands in Phase 1 (Auth.js v5). For now this just gives
- * the right shape so the placeholders feel like the same product.
+ * Single column, generous whitespace, no decorative grid / noise. The
+ * first impression for new users; keeping it spare lets the typography
+ * carry the brand. Brand mark sits top-left at small scale so it doesn't
+ * compete with the page headline.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <NoiseOverlay />
-      <div className="relative min-h-dvh flex flex-col">
-        <GridBg />
+    <div className="relative min-h-dvh flex flex-col">
+      <header className="relative z-10 px-8 lg:px-12 py-8">
+        <Link href="/" aria-label="BuilderHQ home" className="inline-flex">
+          <Logo size={20} />
+        </Link>
+      </header>
 
-        <header className="relative z-10 px-6 md:px-8 py-6">
-          <Link href="/" aria-label="BuilderHQ home" className="inline-flex">
-            <Logo size={22} />
-          </Link>
-        </header>
+      <main className="relative z-10 flex flex-1 items-start sm:items-center justify-center px-6 sm:px-8 pb-16 sm:pb-24">
+        <div className="w-full max-w-[440px] reveal">{children}</div>
+      </main>
 
-        <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
-          <div className="w-full max-w-[420px]">{children}</div>
-        </main>
-
-        <footer className="relative z-10 px-6 md:px-8 py-6 text-[10px] tracking-[0.18em] uppercase text-text-dim">
-          © {new Date().getFullYear()} BuilderHQ
-        </footer>
-      </div>
-    </>
+      <footer className="relative z-10 px-8 lg:px-12 py-6 text-[11px] tracking-[0.16em] uppercase text-text-dim">
+        © {new Date().getFullYear()} BuilderHQ
+      </footer>
+    </div>
   );
 }

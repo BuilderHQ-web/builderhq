@@ -24,12 +24,12 @@ export function LoginForm() {
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
     >
       <input type="hidden" name="next" value={next} />
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -37,17 +37,18 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="you@builderhq.com.au"
           required
         />
         {fieldError("email") ? <FieldError msg={fieldError("email")!} /> : null}
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
           <Link
             href="/forgot"
-            className="text-[11px] text-text-dim hover:text-accent-light underline-offset-4 hover:underline"
+            className="text-[12px] text-text-dim hover:text-accent-light transition-colors"
           >
             Forgot?
           </Link>
@@ -65,27 +66,20 @@ export function LoginForm() {
       {state.error ? (
         <div
           role="alert"
-          className="rounded-tight border border-[rgba(255,80,80,0.30)] bg-[rgba(255,80,80,0.06)] px-3 py-2 text-[13px] text-danger"
+          className="rounded-md border border-[rgba(255,80,80,0.20)] bg-[rgba(255,80,80,0.04)] px-3.5 py-2.5 text-[13px] text-danger"
         >
           {state.error}
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 w-full">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Logging in…" : "Log in"}
       </Button>
-
-      <p className="text-center text-[12px] text-text-dim">
-        New to BuilderHQ?{" "}
-        <Link href="/signup" className="text-accent hover:text-accent-light underline underline-offset-4">
-          Create an account
-        </Link>
-      </p>
     </form>
   );
 }
 
 function FieldError({ msg }: { msg: string }) {
-  return <p className="text-[11px] text-danger">{msg}</p>;
+  return <p className="text-[12px] text-danger">{msg}</p>;
 }

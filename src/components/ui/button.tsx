@@ -25,24 +25,23 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary — flat teal, single subtle inset highlight, tiny contour
-        // shadow. No coloured glow halo, no lift on hover. Resend-style:
-        // the typography does the work; the button is quiet.
+        // Primary — flat accent. No inset, no shadow, no border. The button
+        // is a flat plate of brand colour; hover gently brightens. Maximum
+        // restraint, brand-true.
         primary: [
           "text-accent-contrast bg-accent",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_1px_0_0_rgba(0,0,0,0.18)]",
           "hover:bg-accent-hover",
         ],
-        // Secondary — surface card with hairline border. Hover swaps the
-        // surface tint, no border colour change, no shadow.
+        // Secondary — quiet surface chip with hairline border.
         secondary: [
-          "text-text border border-border bg-surface-2",
-          "hover:bg-surface-hover",
+          "text-text border border-border bg-surface-1",
+          "hover:bg-surface-2",
         ],
-        // Outline — pure border + transparent. No inner gradient, no glow.
+        // Outline — hairline border on transparent. Hover lifts the surface
+        // colour just enough to acknowledge intent.
         outline: [
           "text-text border border-border-strong bg-transparent",
-          "hover:bg-surface-1 hover:border-border-strong",
+          "hover:bg-surface-1",
         ],
         ghost: [
           "bg-transparent text-text-muted",
@@ -52,10 +51,8 @@ const buttonVariants = cva(
           "bg-accent-muted text-accent-light border border-[rgba(0,212,200,0.20)]",
           "hover:bg-[rgba(0,212,200,0.18)]",
         ],
-        // Danger — solid red, mirrors primary's quiet treatment.
         danger: [
           "text-text bg-danger",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16),0_1px_0_0_rgba(0,0,0,0.20)]",
           "hover:bg-[oklch(0.78_0.20_22)]",
         ],
         link: [
@@ -64,15 +61,19 @@ const buttonVariants = cva(
         ],
       },
       size: {
-        sm: "h-8 rounded-tight px-3 text-[12px] tracking-[0.04em]",
-        md: "h-10 rounded-tight px-4 text-[13px]",
-        lg: "h-12 rounded-tight px-6 text-[13px] tracking-[0.04em]",
-        xl: "h-14 rounded-tight px-7 text-[14px] tracking-[0.04em]",
-        icon: "h-10 w-10 rounded-tight",
-        "icon-sm": "h-8 w-8 rounded-tight",
+        // Sharp small/medium — inline buttons in tables, dropdowns, dense UIs.
+        sm: "h-8 rounded-md px-3.5 text-[12px]",
+        md: "h-10 rounded-md px-4 text-[13px]",
+        // Pill large/xl — hero CTAs, primary actions on focused screens
+        // (auth, onboarding, project upload). Pill radii read as confident
+        // and modern; matches the Resend / Base44 / Lando aesthetic.
+        lg: "h-11 rounded-full px-6 text-[13.5px]",
+        xl: "h-13 rounded-full px-8 text-[14px]",
+        icon: "h-10 w-10 rounded-md",
+        "icon-sm": "h-8 w-8 rounded-md",
       },
       uppercase: {
-        true: "uppercase",
+        true: "uppercase tracking-[0.04em]",
         false: "",
       },
     },

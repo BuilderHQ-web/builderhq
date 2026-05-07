@@ -2,7 +2,7 @@
 
 import { useActionState, useTransition } from "react";
 import Link from "next/link";
-import { Loader2, Mail } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,28 +18,33 @@ export function ForgotForm() {
 
   if (state.ok) {
     return (
-      <div className="flex flex-col gap-5">
-        <div className="inline-flex size-12 items-center justify-center rounded-full bg-accent-muted border border-border-accent text-accent">
-          <Mail className="size-5" />
+      <div className="flex flex-col gap-6 reveal">
+        <div className="inline-flex size-9 items-center justify-center rounded-full border border-border-accent bg-accent-muted/40 text-accent">
+          <CheckCircle2 className="size-4" />
         </div>
-        <p className="text-[14px] leading-[22px] text-text-muted">
+        <p className="text-[15px] leading-[24px] text-text">
           {state.email ? (
-            <>If an account exists for <span className="text-text">{state.email}</span>, we&apos;ve sent a reset link. It expires in 1 hour.</>
+            <>
+              If an account exists for <span className="text-text">{state.email}</span>, we&apos;ve
+              sent a reset link. It expires in 1 hour.
+            </>
           ) : (
             <>If an account exists for that email, we&apos;ve sent a reset link. It expires in 1 hour.</>
           )}
         </p>
-        <p className="text-[12px] text-text-dim">
+        <p className="text-[13px] text-text-dim">
           Don&apos;t see it? Check your spam folder, then{" "}
-          <Link href="/forgot" className="text-accent hover:text-accent-light underline-offset-4 hover:underline">
+          <Link href="/forgot" className="text-text hover:text-accent-light underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors">
             try again
-          </Link>.
-        </p>
-        <p className="text-center text-[12px] text-text-dim mt-2">
-          <Link href="/login" className="hover:text-accent-light underline-offset-4 hover:underline">
-            Back to log in
           </Link>
+          .
         </p>
+        <Link
+          href="/login"
+          className="text-[13px] text-text-dim hover:text-accent-light transition-colors w-fit"
+        >
+          ← Back to log in
+        </Link>
       </div>
     );
   }
@@ -47,10 +52,10 @@ export function ForgotForm() {
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
     >
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -58,30 +63,34 @@ export function ForgotForm() {
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="you@builderhq.com.au"
           required
         />
         {state.fieldErrors?.email ? (
-          <p className="text-[11px] text-danger">{state.fieldErrors.email}</p>
+          <p className="text-[12px] text-danger">{state.fieldErrors.email}</p>
         ) : null}
       </div>
 
       {state.error ? (
         <div
           role="alert"
-          className="rounded-tight border border-[rgba(255,80,80,0.30)] bg-[rgba(255,80,80,0.06)] px-3 py-2 text-[13px] text-danger"
+          className="rounded-md border border-[rgba(255,80,80,0.20)] bg-[rgba(255,80,80,0.04)] px-3.5 py-2.5 text-[13px] text-danger"
         >
           {state.error}
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 w-full">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Sending…" : "Send reset link"}
       </Button>
 
-      <p className="text-center text-[12px] text-text-dim">
+      <p className="text-[13px] text-text-dim">
         Remembered it?{" "}
-        <Link href="/login" className="text-accent hover:text-accent-light underline underline-offset-4">
+        <Link
+          href="/login"
+          className="text-text hover:text-accent-light underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors"
+        >
           Log in
         </Link>
       </p>

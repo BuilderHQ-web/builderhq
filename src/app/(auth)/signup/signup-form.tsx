@@ -25,10 +25,10 @@ export function SignupForm() {
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
     >
-      {/* role picker */}
+      {/* Role picker — minimal segmented control. */}
       <div className="flex flex-col gap-2">
         <Label>I&apos;m signing up as</Label>
         <div className="grid grid-cols-2 gap-2">
@@ -50,25 +50,23 @@ export function SignupForm() {
           />
         </div>
         <input type="hidden" name="role" value={role} />
-        {fieldError("role") ? <FieldError msg={fieldError("role")!} /> : null}
+        {fieldError("role") ? <p className="text-[12px] text-danger">{fieldError("role")!}</p> : null}
       </div>
 
-      {/* names */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <Label htmlFor="firstName">First name</Label>
           <Input id="firstName" name="firstName" autoComplete="given-name" required />
-          {fieldError("firstName") ? <FieldError msg={fieldError("firstName")!} /> : null}
+          {fieldError("firstName") ? <p className="text-[12px] text-danger">{fieldError("firstName")}</p> : null}
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <Label htmlFor="lastName">Last name</Label>
           <Input id="lastName" name="lastName" autoComplete="family-name" required />
-          {fieldError("lastName") ? <FieldError msg={fieldError("lastName")!} /> : null}
+          {fieldError("lastName") ? <p className="text-[12px] text-danger">{fieldError("lastName")}</p> : null}
         </div>
       </div>
 
-      {/* email */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -76,13 +74,13 @@ export function SignupForm() {
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="you@builderhq.com.au"
           required
         />
-        {fieldError("email") ? <FieldError msg={fieldError("email")!} /> : null}
+        {fieldError("email") ? <p className="text-[12px] text-danger">{fieldError("email")}</p> : null}
       </div>
 
-      {/* password */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
@@ -92,30 +90,30 @@ export function SignupForm() {
           minLength={10}
           required
         />
-        <p className="text-[11px] text-text-dim leading-relaxed">
-          Minimum 10 characters. We&apos;ll never display this anywhere.
-        </p>
-        {fieldError("password") ? <FieldError msg={fieldError("password")!} /> : null}
+        <p className="text-[12px] text-text-dim">Minimum 10 characters.</p>
+        {fieldError("password") ? <p className="text-[12px] text-danger">{fieldError("password")}</p> : null}
       </div>
 
-      {/* top-level error */}
       {state.error ? (
         <div
           role="alert"
-          className="rounded-tight border border-[rgba(255,80,80,0.30)] bg-[rgba(255,80,80,0.06)] px-3 py-2 text-[13px] text-danger"
+          className="rounded-md border border-[rgba(255,80,80,0.20)] bg-[rgba(255,80,80,0.04)] px-3.5 py-2.5 text-[13px] text-danger"
         >
           {state.error}
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 w-full">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Creating account…" : "Create account"}
       </Button>
 
-      <p className="text-center text-[12px] text-text-dim">
+      <p className="text-[13px] text-text-dim">
         Already have an account?{" "}
-        <Link href="/login" className="text-accent hover:text-accent-light underline underline-offset-4">
+        <Link
+          href="/login"
+          className="text-text hover:text-accent-light underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors"
+        >
           Log in
         </Link>
       </p>
@@ -143,28 +141,29 @@ function RoleOption({
     <button
       type="button"
       onClick={() => onSelect(value)}
+      aria-pressed={isActive}
       className={cn(
-        "group flex flex-col items-start gap-1 rounded-tight border px-3 py-3 text-left",
+        "group relative flex flex-col items-start gap-1.5 rounded-md border px-3.5 py-3 text-left",
         "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         isActive
-          ? "border-accent bg-accent-muted/60"
+          ? "border-accent bg-accent-muted/40"
           : "border-border bg-surface-1 hover:border-border-strong hover:bg-surface-2",
       )}
     >
-      <span
-        className={cn(
-          "inline-flex items-center gap-2 text-[12px] font-medium",
-          isActive ? "text-text" : "text-text-muted",
-        )}
-      >
+      <span className={cn("inline-flex items-center gap-2", isActive ? "text-accent" : "text-text-faint")}>
         {icon}
-        {label}
       </span>
-      <span className="text-[10px] tracking-[0.04em] text-text-dim">{sub}</span>
+      <div className="flex flex-col gap-0.5">
+        <span
+          className={cn(
+            "font-ui font-semibold text-[13px]",
+            isActive ? "text-text" : "text-text-muted",
+          )}
+        >
+          {label}
+        </span>
+        <span className="text-[11px] leading-[16px] text-text-dim">{sub}</span>
+      </div>
     </button>
   );
-}
-
-function FieldError({ msg }: { msg: string }) {
-  return <p className="text-[11px] text-danger">{msg}</p>;
 }
