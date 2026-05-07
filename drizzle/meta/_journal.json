@@ -15,6 +15,13 @@
       "when": 1778068643991,
       "tag": "0001_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778133071151,
+      "tag": "0002_crazy_phalanx",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,7 @@ import { env } from "@/lib/env";
 import * as usersSchema from "@/modules/users/schema";
 import * as authSchema from "@/modules/auth/schema";
 import * as profilesSchema from "@/modules/profiles/schema";
+import * as documentsSchema from "@/modules/documents/schema";
 
 // Neon's WS transport needs a polyfill outside the browser.
 if (typeof WebSocket === "undefined") {
@@ -34,6 +35,7 @@ const schema = {
   ...usersSchema,
   ...authSchema,
   ...profilesSchema,
+  ...documentsSchema,
 };
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
