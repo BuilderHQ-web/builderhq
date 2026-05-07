@@ -13,8 +13,7 @@ const steps: Array<{
     n: "Step 01",
     icon: Upload,
     title: "Upload your project",
-    description:
-      "Drawings, specs, scope, address. One form. Ten minutes.",
+    description: "Drawings, specs, scope, address. One form. Ten minutes.",
     points: [
       "Smart fields by build type",
       "Drag & drop docs, autosaved",
@@ -81,15 +80,60 @@ export function HowItWorks() {
           </Reveal>
         </div>
 
-        <div className="mt-14 lg:mt-20 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-3">
-          {steps.map((s, i) => (
-            <Reveal key={s.n} delay={i * 0.08}>
-              <Step {...s} />
-            </Reveal>
-          ))}
+        {/* 3 cards + 2 connectors. On large screens it's a row with
+            horizontal connectors between cards; on small screens it
+            stacks with vertical connectors. */}
+        <div className="mt-14 lg:mt-20 grid grid-cols-1 lg:grid-cols-[1fr_56px_1fr_56px_1fr] gap-y-4 gap-x-0 items-stretch">
+          <Reveal>
+            <Step {...steps[0]!} />
+          </Reveal>
+          <Connector />
+          <Reveal delay={0.08}>
+            <Step {...steps[1]!} />
+          </Reveal>
+          <Connector />
+          <Reveal delay={0.16}>
+            <Step {...steps[2]!} />
+          </Reveal>
         </div>
       </div>
     </section>
+  );
+}
+
+function Connector() {
+  return (
+    <div
+      aria-hidden
+      className="relative flex items-center justify-center min-h-[56px] lg:min-h-0"
+    >
+      {/* line */}
+      <span
+        className="absolute hidden lg:block left-2 right-2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(0,212,200,0.10), rgba(142,252,244,0.55), rgba(0,212,200,0.10))",
+        }}
+      />
+      <span
+        className="absolute lg:hidden top-2 bottom-2 w-px left-1/2 -translate-x-1/2"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,212,200,0.10), rgba(142,252,244,0.55), rgba(0,212,200,0.10))",
+        }}
+      />
+
+      {/* hub */}
+      <span
+        className="relative z-[2] size-9 rounded-full border border-[rgba(142,252,244,0.30)] bg-[rgba(6,18,30,0.95)] flex items-center justify-center text-accent-light shadow-[0_0_24px_rgba(0,212,200,0.18)]"
+        style={{
+          animation: "connPulse 3s ease-in-out infinite",
+        }}
+      >
+        <span aria-hidden className="lg:inline hidden">→</span>
+        <span aria-hidden className="lg:hidden inline">↓</span>
+      </span>
+    </div>
   );
 }
 
@@ -108,17 +152,24 @@ function Step({
 }) {
   return (
     <div className="group relative h-full p-9 rounded-md border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.7),rgba(6,20,32,0.85))] transition-[border-color,transform] duration-[600ms] ease-[var(--ease-out)] hover:border-border-accent hover:-translate-y-1 overflow-hidden">
-      <span className="font-display tracking-[0.22em] text-[11px] text-accent">{n}</span>
+      <span className="font-display tracking-[0.22em] text-[11px] text-accent">
+        {n}
+      </span>
       <div className="mt-7 size-12 rounded-md border border-border-accent bg-accent-muted flex items-center justify-center">
         <Icon className="size-5 text-accent-light" />
       </div>
       <h3 className="mt-7 font-ui font-bold tracking-[-0.02em] text-[20px] leading-[1.2] text-text">
         {title}
       </h3>
-      <p className="mt-3 text-[14px] leading-[1.8] text-text-subtle">{description}</p>
+      <p className="mt-3 text-[14px] leading-[1.7] text-text-subtle">
+        {description}
+      </p>
       <ul className="mt-6 flex flex-col gap-2.5">
         {points.map((p) => (
-          <li key={p} className="flex gap-2.5 items-start text-[13px] leading-[1.55] text-text-dim">
+          <li
+            key={p}
+            className="flex gap-2.5 items-start text-[13px] leading-[1.55] text-text-dim"
+          >
             <span
               className="size-1 rounded-full shrink-0 mt-[7px]"
               style={{

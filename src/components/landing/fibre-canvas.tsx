@@ -1,137 +1,156 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef } from "react";
 
 /**
- * Optic-fibre canvas — vertical lines of light that pulse top-to-bottom
- * at irregular intervals. Lives inside a positioned parent (typically
- * the hero) — sized to match the parent so it doesn't bleed through
- * other sections as the page scrolls.
+ * Fibre starfield — fixed-position canvas behind everything, runs the
+ * full viewport. Renders short vertical fibre segments that flicker
+ * on, breathe with a sine pulse, then decay. Density and opacity are
+ * deliberately low so the eye reads it as ambient sparkle, never as
+ * decoration to track.
  *
- * Implementation notes:
- * - Sized via ResizeObserver on a *wrapper* div, not the canvas itself
- *   (observing the canvas while writing to canvas.width creates a
- *   feedback loop that blows up dimensions to 33M × 33M).
- * - DPR capped at 2 to keep memory sane on retina phones.
- * - Bottom of the canvas masked off so the lines fade out at the
- *   section seam instead of cutting hard.
- * - Respects prefers-reduced-motion (single static frame, no RAF).
+ * Safety:
+ * - ResizeObserver watches the wrapper div (not the canvas) — observing
+ *   the canvas while writing to its width creates a feedback loop that
+ *   runs dimensions to infinity.
+ * - DPR capped at 2 to bound allocation on retina screens.
+ * - Respects prefers-reduced-motion: a single static frame, no RAF.
  */
-export function FibreCanvas({
-  className = "absolute inset-0 z-0 pointer-events-none",
-}: {
-  className?: string;
-}) {
-  const wrapRef = React.useRef<HTMLDivElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+export function FibreCanvas() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  React.useEffect(() => {
-    const wrap = wrapRef.current;
+  useEffect(() => {
     const canvas = canvasRef.current;
-    if (!wrap || !canvas) return;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    let width = 0;
-    let height = 0;
-    let dpr = 1;
-
-    interface Fibre {
+    type Segment = {
       x: number;
-      baseAlpha: number;
-      headY: number;
+      y: number;
+      length: number;
+      alpha: number;
+      targetAlpha: number;
+      phase: number;
       speed: number;
-      headLength: number;
-      hue: "teal" | "blue";
-    }
-    let fibres: Fibre[] = [];
+      nextFire: number;
+      hue: "teal" | "white";
+    };
 
-    function resize() {
-      if (!wrap || !canvas) return;
-      const rect = wrap.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+    let W = 0;
+    let H = 0;
+    let segments: Segment[] = [];
 
-      const count = Math.min(14, Math.max(5, Math.floor(width / 140)));
-      fibres = Array.from({ length: count }, () => ({
-        x: Math.random(),
-        baseAlpha: 0.04 + Math.random() * 0.05,
-        headY: Math.random(),
-        speed: 0.07 + Math.random() * 0.15,
-        headLength: 0.18 + Math.random() * 0.22,
-        hue: Math.random() > 0.7 ? "blue" : "teal",
+    const seedSegments = () => {
+      // Sparse — roughly one segment per 28k px². On a 1920×1080
+      // viewport that's ~74 segments; on mobile (375×800) that's ~10.
+      const target = Math.floor((W * H) / 28000);
+      segments = Array.from({ length: target }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        length: 28 + Math.random() * 36,
+        alpha: 0,
+        targetAlpha: 0,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.006 + Math.random() * 0.018,
+        nextFire: Math.random() * 5000,
+        hue: Math.random() > 0.85 ? "white" : "teal",
       }));
+    };
+
+    const setSize = () => {
+      const rect = wrap.getBoundingClientRect();
+      W = Math.max(1, rect.width);
+      H = Math.max(1, rect.height);
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seedSegments();
+    };
+    setSize();
+
+    if (reduce) {
+      // Single frame: a few static sparkles.
+      for (const s of segments) {
+        s.alpha = 0.12;
+      }
+      // fall through and let drawFrame run once
     }
 
-    let lastTime = performance.now();
-    let raf = 0;
+    const drawFrame = (dt: number) => {
+      ctx.clearRect(0, 0, W, H);
 
-    function draw(t: number) {
-      if (!ctx) return;
-      const dt = Math.min(0.05, (t - lastTime) / 1000);
-      lastTime = t;
+      for (const s of segments) {
+        if (!reduce) {
+          s.nextFire -= dt;
+          if (s.nextFire < 0) {
+            s.targetAlpha = 0.10 + Math.random() * 0.10;
+            s.nextFire = 1500 + Math.random() * 6500;
+          }
+          s.phase += s.speed;
+          s.alpha += (s.targetAlpha - s.alpha) * 0.04;
+          // Decay
+          if (s.targetAlpha > 0 && s.alpha > s.targetAlpha * 0.92) {
+            s.targetAlpha *= 0.94;
+          }
+        }
 
-      ctx.clearRect(0, 0, width, height);
+        if (s.alpha < 0.002) continue;
 
-      for (const f of fibres) {
-        const px = Math.floor(f.x * width) + 0.5;
+        const pulse = Math.sin(s.phase);
+        const a = s.alpha * (0.55 + pulse * 0.45);
+        const half = s.length / 2;
+        const colour = s.hue === "teal" ? "0,212,200" : "200,230,250";
 
-        ctx.strokeStyle = `rgba(126, 245, 237, ${f.baseAlpha})`;
-        ctx.lineWidth = 1;
+        const grd = ctx.createLinearGradient(
+          s.x,
+          s.y - half,
+          s.x,
+          s.y + half,
+        );
+        grd.addColorStop(0, `rgba(${colour},0)`);
+        grd.addColorStop(0.5, `rgba(${colour},${a.toFixed(3)})`);
+        grd.addColorStop(1, `rgba(${colour},0)`);
         ctx.beginPath();
-        ctx.moveTo(px, 0);
-        ctx.lineTo(px, height);
+        ctx.moveTo(s.x, s.y - half);
+        ctx.lineTo(s.x, s.y + half);
+        ctx.strokeStyle = grd;
+        ctx.lineWidth = 0.9;
         ctx.stroke();
 
-        if (reduce) continue;
-
-        f.headY += f.speed * dt;
-        if (f.headY > 1.1) f.headY = -0.15;
-
-        const headPx = f.headY * height;
-        const tailPx = headPx - f.headLength * height;
-
-        const grad = ctx.createLinearGradient(px, tailPx, px, headPx);
-        const colour = f.hue === "blue" ? "26, 95, 212" : "126, 245, 237";
-        grad.addColorStop(0, `rgba(${colour}, 0)`);
-        grad.addColorStop(0.7, `rgba(${colour}, 0.18)`);
-        grad.addColorStop(1, `rgba(${colour}, 0.6)`);
-
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.2;
+        // Tiny dot at the centre of the segment
         ctx.beginPath();
-        ctx.moveTo(px, Math.max(0, tailPx));
-        ctx.lineTo(px, Math.min(height, headPx));
-        ctx.stroke();
-
-        const headAlpha = headPx >= 0 && headPx <= height ? 0.85 : 0;
-        ctx.fillStyle = `rgba(${colour}, ${headAlpha})`;
-        ctx.beginPath();
-        ctx.arc(px, headPx, 1.2, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(126,245,237,${(s.alpha * 1.4).toFixed(3)})`;
         ctx.fill();
       }
+    };
 
-      raf = requestAnimationFrame(draw);
-    }
+    let lastTs = performance.now();
+    let raf = 0;
+    const tick = (ts: number) => {
+      const dt = ts - lastTs;
+      lastTs = ts;
+      drawFrame(dt);
+      raf = requestAnimationFrame(tick);
+    };
 
-    resize();
-    if (!reduce) {
-      raf = requestAnimationFrame(draw);
+    if (reduce) {
+      drawFrame(0);
     } else {
-      draw(performance.now());
+      raf = requestAnimationFrame(tick);
     }
 
-    // Observe the wrapper, NOT the canvas — observing the canvas while
-    // setting its width/height creates a feedback loop.
-    const ro = new ResizeObserver(resize);
+    const ro = new ResizeObserver(setSize);
     ro.observe(wrap);
 
     return () => {
@@ -141,18 +160,12 @@ export function FibreCanvas({
   }, []);
 
   return (
-    <div ref={wrapRef} aria-hidden className={className}>
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        className="absolute inset-0 block"
-        style={{
-          maskImage:
-            "linear-gradient(180deg, black 0%, black 60%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(180deg, black 0%, black 60%, transparent 100%)",
-        }}
-      />
+    <div
+      ref={wrapRef}
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    >
+      <canvas ref={canvasRef} className="block w-full h-full" />
     </div>
   );
 }

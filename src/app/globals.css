@@ -209,7 +209,7 @@
 }
 
 html, body {
-  background-color: #03090f;
+  background-color: #060f19;
 }
 
 html {
@@ -276,5 +276,45 @@ body {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   Custom cursor — applied while CustomCursor is mounted (landing only).
+   Tailwind's preflight + many specific element selectors set `cursor`
+   on various elements; only the wildcard !important reliably wins.
+   ========================================================================== */
+html.custom-cursor,
+html.custom-cursor *,
+html.custom-cursor *::before,
+html.custom-cursor *::after {
+  cursor: none !important;
+}
+html.custom-cursor body.cursor-hovering .cursor-dot {
+  width: 5px;
+  height: 5px;
+}
+html.custom-cursor body.cursor-hovering .cursor-ring {
+  width: 64px;
+  height: 64px;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+html.custom-cursor body.cursor-hovering .cursor-glow {
+  width: 180px;
+  height: 180px;
+}
+
+/* ==========================================================================
+   Beam-around-perimeter — used by the active Showcase pill. A single
+   linear-gradient runs around all four edges via background-size +
+   keyframed background-position. Implemented with a ::before mask so
+   the gradient is the *border*, not the fill.
+   ========================================================================== */
+@keyframes beamPerimeter {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+@keyframes connPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,212,200,0); }
+  50%      { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,212,200,0.10); }
 }
 

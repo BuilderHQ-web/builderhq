@@ -1,5 +1,7 @@
 import { Ambient } from "@/components/landing/ambient";
 import { GridOverlay } from "@/components/landing/grid-overlay";
+import { FibreCanvas } from "@/components/landing/fibre-canvas";
+import { CustomCursor } from "@/components/landing/cursor";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { Marquee } from "@/components/landing/marquee";
@@ -9,6 +11,7 @@ import { Features } from "@/components/landing/features";
 import { HowItWorks } from "@/components/landing/how";
 import { Audiences } from "@/components/landing/audiences";
 import { Showcase } from "@/components/landing/showcase";
+import { Testimonials } from "@/components/landing/testimonials";
 import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 import { resolveCtaLinks } from "@/components/landing/cta-links";
@@ -20,8 +23,10 @@ export default async function MarketingHome() {
     <>
       {/* Backdrop layers — fixed, behind everything (z-0). */}
       <Ambient />
+      <FibreCanvas />
       <GridOverlay />
       <NoiseLayer />
+      <CustomCursor />
 
       <LandingNav />
 
@@ -34,6 +39,7 @@ export default async function MarketingHome() {
         <HowItWorks />
         <Audiences cta={cta} />
         <Showcase />
+        <Testimonials />
         <CTA cta={cta} />
       </main>
 

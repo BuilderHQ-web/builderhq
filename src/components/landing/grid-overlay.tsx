@@ -13,12 +13,12 @@ export function GridOverlay() {
       className="pointer-events-none fixed inset-0 z-0"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(100,180,255,0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,0.028) 1px, transparent 1px)",
+          "linear-gradient(rgba(120,200,255,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(120,200,255,0.055) 1px, transparent 1px)",
         backgroundSize: "72px 72px",
         maskImage:
-          "radial-gradient(ellipse at 50% 0%, black 30%, transparent 80%)",
+          "radial-gradient(ellipse 75% 60% at 50% 30%, black 30%, transparent 90%)",
         WebkitMaskImage:
-          "radial-gradient(ellipse at 50% 0%, black 30%, transparent 80%)",
+          "radial-gradient(ellipse 75% 60% at 50% 30%, black 30%, transparent 90%)",
       }}
     />
   );
