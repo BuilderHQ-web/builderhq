@@ -55,12 +55,13 @@ export function FibreCanvas() {
       segments = Array.from({ length: target }, () => ({
         x: Math.random() * W,
         y: Math.random() * H,
-        length: 28 + Math.random() * 36,
+        // ~5% longer than v3 so the lines read as drawn, not as dots.
+        length: 30 + Math.random() * 38,
         alpha: 0,
         targetAlpha: 0,
         phase: Math.random() * Math.PI * 2,
-        speed: 0.006 + Math.random() * 0.018,
-        nextFire: Math.random() * 5000,
+        speed: 0.005 + Math.random() * 0.014,
+        nextFire: Math.random() * 6000,
         hue: Math.random() > 0.85 ? "white" : "teal",
       }));
     };
@@ -94,13 +95,14 @@ export function FibreCanvas() {
           s.nextFire -= dt;
           if (s.nextFire < 0) {
             s.targetAlpha = 0.10 + Math.random() * 0.10;
-            s.nextFire = 1500 + Math.random() * 6500;
+            s.nextFire = 2200 + Math.random() * 7800;
           }
           s.phase += s.speed;
-          s.alpha += (s.targetAlpha - s.alpha) * 0.04;
-          // Decay
-          if (s.targetAlpha > 0 && s.alpha > s.targetAlpha * 0.92) {
-            s.targetAlpha *= 0.94;
+          // Slower lerp: fade-in/out feels like breath, not blinking.
+          s.alpha += (s.targetAlpha - s.alpha) * 0.022;
+          // Slower decay so segments linger before disappearing.
+          if (s.targetAlpha > 0 && s.alpha > s.targetAlpha * 0.94) {
+            s.targetAlpha *= 0.974;
           }
         }
 

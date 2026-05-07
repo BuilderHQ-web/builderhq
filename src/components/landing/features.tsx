@@ -1,56 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Reveal } from "./reveal";
 
-const features: Array<{
+/**
+ * Features — bento grid with asymmetric tiles. Each tile carries a
+ * small purpose-built visual instead of a generic card chrome, so
+ * the section *shows* what BuilderHQ does instead of telling.
+ *
+ * Hover is intentionally subtle: a slow border-colour fade + a soft
+ * accent inner glow. No translation, no scale, no jumps.
+ */
+type Tile = {
   n: string;
   name: string;
   description: string;
-  detail: string;
-}> = [
+  span: "wide" | "tall" | "small";
+  visual: React.ReactNode;
+};
+
+const TILES: Tile[] = [
   {
     n: "01",
     name: "Project workspace",
     description:
-      "Drawings, specs, and scope on one shareable page. Versioned and audit-trailed.",
-    detail: "Private R2 storage · signed-URL downloads · per-file versioning",
+      "Drawings, specs, scope on one shareable page. Versioned, audit-trailed.",
+    span: "wide",
+    visual: <FilesVisual />,
   },
   {
     n: "02",
     name: "Matched builders",
     description:
       "Filtered by service area, project type, ABN, and licence. Only fit-for-purpose unlocks reach you.",
-    detail: "Postcode-precision · ABN + licence checks · category match",
+    span: "small",
+    visual: <AvatarsVisual />,
   },
   {
     n: "03",
     name: "Tender comparison",
     description:
       "Side-by-side: price, inclusions, exclusions, timeline. Decide in minutes.",
-    detail: "Versioned tenders · diff view · structured fields",
+    span: "small",
+    visual: <BarsVisual />,
   },
   {
     n: "04",
     name: "Project messaging",
     description:
       "One thread per project. Threaded, scoped, searchable. RFIs and variations have a home.",
-    detail: "Project-scoped threads · attachments · read receipts",
+    span: "small",
+    visual: <ThreadVisual />,
   },
   {
     n: "05",
     name: "Verified profiles",
     description:
       "ABN, ACN, state licence, insurance, and scoring — all in the open.",
-    detail: "ABN lookup · state register checks · admin moderated",
+    span: "small",
+    visual: <BadgeVisual />,
   },
   {
     n: "06",
     name: "Founding access",
     description:
       "Hand-picked builders unlock projects on the house during launch. Earn the platform.",
-    detail: "First 50 builders · monthly credit refresh · admin granted",
+    span: "wide",
+    visual: <RingsVisual />,
   },
 ];
 
@@ -82,9 +97,11 @@ export function Features() {
         </div>
 
         <Reveal delay={0.15}>
-          <div className="mt-12 lg:mt-16 grid grid-cols-1 md:grid-cols-2 gap-px bg-border-subtle border border-border-subtle rounded-md overflow-hidden">
-            {features.map((f) => (
-              <FeatureCell key={f.n} {...f} />
+          {/* 4-col bento. Wide tiles span 2 cols, small tiles span 1.
+              Mobile stacks single-column. */}
+          <div className="mt-14 lg:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {TILES.map((t) => (
+              <Tile key={t.n} tile={t} />
             ))}
           </div>
         </Reveal>
@@ -93,65 +110,216 @@ export function Features() {
   );
 }
 
-function FeatureCell({
-  n,
-  name,
-  description,
-  detail,
-}: {
-  n: string;
-  name: string;
-  description: string;
-  detail: string;
-}) {
-  const [hover, setHover] = useState(false);
+function Tile({ tile }: { tile: Tile }) {
+  const span =
+    tile.span === "wide"
+      ? "lg:col-span-2"
+      : tile.span === "tall"
+      ? "lg:row-span-2"
+      : "";
+
   return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="group relative bg-[linear-gradient(160deg,rgba(9,27,42,0.5),rgba(6,18,30,0.7))] p-9 lg:p-10 transition-colors duration-[600ms] ease-[var(--ease-out)] hover:bg-[rgba(0,212,200,0.035)] overflow-hidden"
+    <article
+      className={[
+        "group relative rounded-md overflow-hidden",
+        "border border-border-subtle bg-[linear-gradient(180deg,rgba(10,26,42,0.55),rgba(6,18,30,0.78))]",
+        "transition-[border-color,background] duration-[700ms] ease-[var(--ease-out)]",
+        "hover:border-border-accent/60 hover:bg-[linear-gradient(180deg,rgba(10,32,52,0.65),rgba(6,18,30,0.82))]",
+        "p-7 lg:p-8 min-h-[280px] flex flex-col",
+        span,
+      ].join(" ")}
     >
+      {/* Soft inner glow on hover — masked so it sits inside the border */}
       <span
         aria-hidden
-        className="absolute top-0 left-0 right-0 h-px scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-[700ms] ease-[var(--ease-out)]"
+        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[700ms]"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.7), transparent)",
+            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,200,0.08), transparent 70%)",
         }}
       />
-      <span className="font-display tracking-[0.18em] text-[12px] text-accent">
-        {n}
-      </span>
-      <h3 className="mt-5 font-ui font-bold tracking-[-0.02em] text-[22px] leading-[1.2] text-text">
-        {name}
+
+      <div className="relative flex items-start justify-between mb-6">
+        <span className="font-display tracking-[0.22em] text-[11px] text-accent">
+          {tile.n}
+        </span>
+        <span className="text-[9px] tracking-[0.2em] uppercase text-text-dim/70">
+          {tile.span === "wide" ? "Pillar" : "Feature"}
+        </span>
+      </div>
+
+      {/* Visual — flex-1 so it absorbs vertical space and doesn't collide
+          with the description below. */}
+      <div className="relative flex-1 mb-6 flex items-center justify-center min-h-[110px]">
+        {tile.visual}
+      </div>
+
+      <h3 className="relative font-ui font-bold tracking-[-0.02em] text-[20px] leading-[1.2] text-text">
+        {tile.name}
       </h3>
-      <p className="mt-3 text-[14px] leading-[1.7] text-text-subtle">{description}</p>
-      <AnimatePresence initial={false}>
-        {hover ? (
-          <motion.div
-            key="detail"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{
-              height: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-              opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.05 },
-            }}
-            className="overflow-hidden"
+      <p className="relative mt-2.5 text-[13.5px] leading-[1.65] text-text-subtle">
+        {tile.description}
+      </p>
+    </article>
+  );
+}
+
+// ── micro visuals ────────────────────────────────────────────────────────
+
+function FilesVisual() {
+  // Stacked file rows — slight rotation for depth, subtle breathing.
+  const rows = [
+    { name: "Architectural plans v3.pdf", size: "2.4 MB" },
+    { name: "Specifications.pdf", size: "1.1 MB" },
+    { name: "Scope of works.docx", size: "164 KB" },
+  ];
+  return (
+    <div className="w-full max-w-[420px] mx-auto space-y-1.5">
+      {rows.map((r, i) => (
+        <div
+          key={r.name}
+          className="px-3.5 py-2.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] flex items-center justify-between text-[11px] transition-colors duration-[600ms] group-hover:border-border-accent/40"
+          style={{ marginLeft: `${i * 8}px`, marginRight: `${i * 4}px` }}
+        >
+          <span className="flex items-center gap-2 text-text-muted truncate">
+            <span className="size-4 rounded-[2px] bg-[rgba(0,212,200,0.12)] border border-border-accent/40 inline-flex items-center justify-center text-[8px] text-accent-light">
+              ▣
+            </span>
+            <span className="truncate">{r.name}</span>
+          </span>
+          <span className="text-text-dim font-mono text-[10px] shrink-0 ml-3">
+            {r.size}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AvatarsVisual() {
+  // Avatar pile fanning right, subtle pulse on the lead.
+  const ppl = ["JS", "AC", "MR", "TB", "+9"];
+  return (
+    <div className="flex items-center -space-x-2">
+      {ppl.map((p, i) => (
+        <span
+          key={p}
+          className="size-9 rounded-full border-2 border-bg-deep flex items-center justify-center text-[10px] font-bold text-accent-light"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(0,212,200,0.22), rgba(26,95,212,0.30))",
+            zIndex: ppl.length - i,
+            boxShadow: i === 0 ? "0 0 18px rgba(0,212,200,0.35)" : undefined,
+          }}
+        >
+          {p}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function BarsVisual() {
+  // Two builder columns, mini price bar comparison.
+  return (
+    <div className="w-full max-w-[260px] flex items-end gap-3">
+      {[
+        { name: "Smith", price: "1.78", h: 64, lead: true },
+        { name: "Chen", price: "1.91", h: 78 },
+        { name: "Roberts", price: "1.88", h: 73 },
+      ].map((b) => (
+        <div key={b.name} className="flex-1 flex flex-col items-center gap-1.5">
+          <span
+            className={`text-[10px] font-mono tabular-nums ${b.lead ? "text-accent-light" : "text-text-dim"}`}
           >
-            <div className="mt-5 pt-4 border-t border-border-subtle text-[11.5px] tracking-[0.04em] text-accent-light/80 font-mono">
-              {detail}
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            ${b.price}M
+          </span>
+          <span
+            className="w-full rounded-t-sm border border-[rgba(142,252,244,0.18)]"
+            style={{
+              height: `${b.h}px`,
+              background: b.lead
+                ? "linear-gradient(180deg, rgba(126,245,237,0.45), rgba(0,212,200,0.08))"
+                : "linear-gradient(180deg, rgba(126,245,237,0.18), rgba(0,212,200,0.04))",
+            }}
+          />
+          <span className="text-[9px] tracking-[0.1em] uppercase text-text-dim">
+            {b.name}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ThreadVisual() {
+  // Two stacked message bubbles.
+  return (
+    <div className="w-full max-w-[260px] space-y-2">
+      <div className="px-3 py-2 rounded-sm rounded-bl-none border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[11px] text-text-muted leading-snug max-w-[88%]">
+        <span className="block text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
+          Aryan · owner
+        </span>
+        Beam over the kitchen — laminated or steel?
+      </div>
+      <div className="px-3 py-2 rounded-sm rounded-br-none border border-border-accent/50 bg-[rgba(0,212,200,0.04)] text-[11px] text-accent-light leading-snug max-w-[88%] ml-auto">
+        <span className="block text-[8.5px] tracking-[0.16em] uppercase text-accent mb-0.5">
+          Smith builders
+        </span>
+        Going steel. Will share calc tomorrow.
+      </div>
+    </div>
+  );
+}
+
+function BadgeVisual() {
+  // Concentric tick badge.
+  return (
+    <div className="relative flex items-center justify-center">
       <span
-        aria-hidden
-        className="absolute right-3 -bottom-2 font-display text-[110px] leading-none text-transparent select-none pointer-events-none transition-opacity duration-[700ms] opacity-100 group-hover:opacity-[1.6]"
-        style={{ WebkitTextStroke: "1px rgba(142,252,244,0.045)" }}
+        className="absolute size-[120px] rounded-full border border-border-accent/30"
+        style={{ animation: "ringPulse 4s ease-in-out infinite" }}
+      />
+      <span
+        className="absolute size-[80px] rounded-full border border-border-accent/50"
+        style={{ animation: "ringPulse 4s ease-in-out 1s infinite" }}
+      />
+      <span
+        className="relative size-12 rounded-full border border-border-accent bg-accent-muted flex items-center justify-center text-accent-light"
+        style={{ boxShadow: "0 0 32px rgba(0,212,200,0.25)" }}
       >
-        {n}
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </span>
+    </div>
+  );
+}
+
+function RingsVisual() {
+  // Big concentric rings + counter — for "founding access" pillar.
+  return (
+    <div className="relative w-full h-[150px] flex items-center justify-center">
+      {[200, 150, 100].map((s, i) => (
+        <span
+          key={s}
+          aria-hidden
+          className="absolute rounded-full border border-border-accent/30"
+          style={{
+            width: s,
+            height: s,
+            animation: `ringPulse 4.4s ease-in-out ${i * 0.9}s infinite`,
+          }}
+        />
+      ))}
+      <div className="relative text-center">
+        <div className="font-display text-[44px] leading-none text-accent-light tabular-nums">
+          50
+        </div>
+        <div className="text-[9px] tracking-[0.22em] uppercase text-text-dim mt-1">
+          Founding builders
+        </div>
+      </div>
     </div>
   );
 }
