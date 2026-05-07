@@ -4,18 +4,26 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FibreCanvas } from "./fibre-canvas";
 
 /**
  * Hero — staggered Bebas treatment, mock dashboard cards on the right.
  * Word-by-word entrance (UPLOAD → COMPARE → BUILD) sets the rhythm of
  * the whole page.
+ *
+ * The optic-fibre canvas is mounted HERE (not at the page level) so the
+ * lines live only behind the hero section, fading out into the seam
+ * with the next section via the canvas's bottom mask.
  */
 export function Hero() {
   return (
     <section
       id="hero"
-      className="relative pt-32 lg:pt-40 pb-20 lg:pb-28 px-6 md:px-10"
+      className="relative isolate pt-32 lg:pt-40 pb-20 lg:pb-28 px-6 md:px-10 overflow-hidden"
     >
+      {/* Fibre lines — local to the hero. */}
+      <FibreCanvas />
+
       {/* Hairline corner brackets — subtle blueprint motif. */}
       <CornerBrackets />
 

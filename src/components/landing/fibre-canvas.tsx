@@ -4,68 +4,68 @@ import * as React from "react";
 
 /**
  * Optic-fibre canvas — vertical lines of light that pulse top-to-bottom
- * at irregular intervals. Sits behind hero / sections on the landing.
+ * at irregular intervals. Lives inside a positioned parent (typically
+ * the hero) — sized to match the parent so it doesn't bleed through
+ * other sections as the page scrolls.
  *
- * Implementation: each "fibre" has an x position, a faint base line, and
- * a moving "head" with a glow trail. Heads loop. Counts and speeds are
- * tuned to feel ambient, not animated. Lines are sparse on mobile.
- *
- * Respects prefers-reduced-motion (no animation, just static faint lines).
+ * Implementation notes:
+ * - Sized via ResizeObserver on a *wrapper* div, not the canvas itself
+ *   (observing the canvas while writing to canvas.width creates a
+ *   feedback loop that blows up dimensions to 33M × 33M).
+ * - DPR capped at 2 to keep memory sane on retina phones.
+ * - Bottom of the canvas masked off so the lines fade out at the
+ *   section seam instead of cutting hard.
+ * - Respects prefers-reduced-motion (single static frame, no RAF).
  */
 export function FibreCanvas({
-  className,
+  className = "absolute inset-0 z-0 pointer-events-none",
 }: {
   className?: string;
 }) {
-  const ref = React.useRef<HTMLCanvasElement>(null);
+  const wrapRef = React.useRef<HTMLDivElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
+    const wrap = wrapRef.current;
+    const canvas = canvasRef.current;
+    if (!wrap || !canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-    let dpr = Math.max(1, window.devicePixelRatio || 1);
     let width = 0;
     let height = 0;
+    let dpr = 1;
 
     interface Fibre {
-      x: number;          // 0..1
-      baseAlpha: number;  // line alpha
-      headY: number;      // 0..1 (current head position)
-      speed: number;      // px/sec (proportional to height)
-      headLength: number; // 0..1 (head trail length as fraction of height)
+      x: number;
+      baseAlpha: number;
+      headY: number;
+      speed: number;
+      headLength: number;
       hue: "teal" | "blue";
     }
-
     let fibres: Fibre[] = [];
 
     function resize() {
-      if (!canvas) return;
-      // Use viewport dimensions, NOT canvas.getBoundingClientRect().
-      // Observing the canvas itself caused a feedback loop: setting
-      // canvas.width updated the rect, which fired the observer, which
-      // multiplied by DPR again, eventually producing a 33M × 33M
-      // canvas that the browser couldn't allocate (rendered as white).
-      width = window.innerWidth;
-      height = window.innerHeight;
+      if (!wrap || !canvas) return;
+      const rect = wrap.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
       dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
-      // Ensure CSS sizing is independent of the bitmap size.
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Lines per width — sparse on mobile, denser on wide screens.
-      const count = Math.min(18, Math.max(6, Math.floor(width / 110)));
+      const count = Math.min(14, Math.max(5, Math.floor(width / 140)));
       fibres = Array.from({ length: count }, () => ({
         x: Math.random(),
         baseAlpha: 0.04 + Math.random() * 0.05,
         headY: Math.random(),
-        speed: 0.08 + Math.random() * 0.18, // viewport-fractions per second
+        speed: 0.07 + Math.random() * 0.15,
         headLength: 0.18 + Math.random() * 0.22,
         hue: Math.random() > 0.7 ? "blue" : "teal",
       }));
@@ -84,7 +84,6 @@ export function FibreCanvas({
       for (const f of fibres) {
         const px = Math.floor(f.x * width) + 0.5;
 
-        // Base line — barely visible.
         ctx.strokeStyle = `rgba(126, 245, 237, ${f.baseAlpha})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -94,19 +93,17 @@ export function FibreCanvas({
 
         if (reduce) continue;
 
-        // Animate head.
         f.headY += f.speed * dt;
         if (f.headY > 1.1) f.headY = -0.15;
 
         const headPx = f.headY * height;
         const tailPx = headPx - f.headLength * height;
 
-        // Head: gradient from invisible at tail to bright at head.
         const grad = ctx.createLinearGradient(px, tailPx, px, headPx);
         const colour = f.hue === "blue" ? "26, 95, 212" : "126, 245, 237";
         grad.addColorStop(0, `rgba(${colour}, 0)`);
         grad.addColorStop(0.7, `rgba(${colour}, 0.18)`);
-        grad.addColorStop(1, `rgba(${colour}, 0.65)`);
+        grad.addColorStop(1, `rgba(${colour}, 0.6)`);
 
         ctx.strokeStyle = grad;
         ctx.lineWidth = 1.2;
@@ -115,8 +112,7 @@ export function FibreCanvas({
         ctx.lineTo(px, Math.min(height, headPx));
         ctx.stroke();
 
-        // Bright dot at head for a "moving particle" feel.
-        const headAlpha = headPx >= 0 && headPx <= height ? 0.9 : 0;
+        const headAlpha = headPx >= 0 && headPx <= height ? 0.85 : 0;
         ctx.fillStyle = `rgba(${colour}, ${headAlpha})`;
         ctx.beginPath();
         ctx.arc(px, headPx, 1.2, 0, Math.PI * 2);
@@ -130,25 +126,33 @@ export function FibreCanvas({
     if (!reduce) {
       raf = requestAnimationFrame(draw);
     } else {
-      // Single static frame.
       draw(performance.now());
     }
 
-    // Listen on window — canvas is `fixed inset-0` so it always matches
-    // the viewport. No ResizeObserver, no feedback loop.
-    window.addEventListener("resize", resize);
+    // Observe the wrapper, NOT the canvas — observing the canvas while
+    // setting its width/height creates a feedback loop.
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrap);
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
+      ro.disconnect();
     };
   }, []);
 
   return (
-    <canvas
-      ref={ref}
-      aria-hidden
-      className={className ?? "pointer-events-none fixed inset-0 z-[1] opacity-90"}
-    />
+    <div ref={wrapRef} aria-hidden className={className}>
+      <canvas
+        ref={canvasRef}
+        aria-hidden
+        className="absolute inset-0 block"
+        style={{
+          maskImage:
+            "linear-gradient(180deg, black 0%, black 60%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(180deg, black 0%, black 60%, transparent 100%)",
+        }}
+      />
+    </div>
   );
 }

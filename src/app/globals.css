@@ -273,27 +273,21 @@ body {
 }
 
 /* Custom cursor — applied when CustomCursor mounts on the landing page.
-   Hides the OS cursor and adjusts the visual cursor when hovering
-   interactive elements. */
+   Tailwind's preflight + many specific selectors set `cursor` on various
+   elements; we have to override every single one. Wildcard with
+   !important is the only reliable way. */
 html.custom-cursor,
-html.custom-cursor a,
-html.custom-cursor button,
-html.custom-cursor input,
-html.custom-cursor select,
-html.custom-cursor textarea,
-html.custom-cursor [role="button"] {
-  cursor: none;
+html.custom-cursor *,
+html.custom-cursor *::before,
+html.custom-cursor *::after {
+  cursor: none !important;
 }
 html.custom-cursor body.cursor-hovering .cursor-dot {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 html.custom-cursor body.cursor-hovering .cursor-ring {
-  width: 64px;
-  height: 64px;
-  border-color: rgba(255, 255, 255, 0.5);
-}
-html.custom-cursor body.cursor-hovering .cursor-glow {
-  width: 160px;
-  height: 160px;
+  width: 56px;
+  height: 56px;
+  border-color: rgba(255, 255, 255, 0.55);
 }

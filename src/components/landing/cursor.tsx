@@ -3,20 +3,18 @@
 import * as React from "react";
 
 /**
- * Custom cursor — a small teal dot, a softer ring that lags behind, and
- * an even softer glow. Mounted only on desktop pointer-fine devices, and
- * only when the user hasn't asked for reduced motion.
+ * Custom cursor — sharp teal dot + soft trailing ring. Two layers (no
+ * glow) for a clean Resend-tier feel; the third glow layer was busy.
  *
- * Implementation note: we drive position with `transform` on RAF rather
- * than React state. Updating React on every mousemove tanks frame rate.
+ * Mounted only on desktop pointer-fine devices, only when the user
+ * hasn't asked for reduced motion. Position is driven by RAF +
+ * transform; React state is never updated on mousemove.
  */
 export function CustomCursor() {
   const dotRef = React.useRef<HTMLDivElement>(null);
   const ringRef = React.useRef<HTMLDivElement>(null);
-  const glowRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // Touch devices and reduce-motion users skip the custom cursor entirely.
     const isFinePointer = window.matchMedia?.("(pointer: fine)").matches;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (!isFinePointer || reduce) return;
@@ -27,8 +25,6 @@ export function CustomCursor() {
     let mouseY = window.innerHeight / 2;
     let ringX = mouseX;
     let ringY = mouseY;
-    let glowX = mouseX;
-    let glowY = mouseY;
     let raf = 0;
 
     function onMove(e: MouseEvent) {
@@ -54,15 +50,19 @@ export function CustomCursor() {
     }
 
     function tick() {
-      // Dot: snap. Ring: 0.18 lerp. Glow: 0.10 lerp.
-      ringX += (mouseX - ringX) * 0.18;
-      ringY += (mouseY - ringY) * 0.18;
-      glowX += (mouseX - glowX) * 0.1;
-      glowY += (mouseY - glowY) * 0.1;
+      // Dot snaps to mouse exactly. Ring lags slightly (0.22 lerp) for a
+      // velvet-trail feel — too much lag (0.10–0.15) feels sluggish.
+      ringX += (mouseX - ringX) * 0.22;
+      ringY += (mouseY - ringY) * 0.22;
 
-      if (dotRef.current) dotRef.current.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
-      if (ringRef.current) ringRef.current.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
-      if (glowRef.current) glowRef.current.style.transform = `translate3d(${glowX}px, ${glowY}px, 0) translate(-50%, -50%)`;
+      if (dotRef.current) {
+        dotRef.current.style.transform =
+          `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform =
+          `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+      }
 
       raf = requestAnimationFrame(tick);
     }
@@ -85,30 +85,21 @@ export function CustomCursor() {
   return (
     <>
       <div
-        ref={glowRef}
-        aria-hidden
-        className="cursor-glow pointer-events-none fixed top-0 left-0 z-[9997] h-[120px] w-[120px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(0,212,200,0.07) 0%, transparent 70%)",
-          transition: "width 500ms ease, height 500ms ease",
-        }}
-      />
-      <div
         ref={ringRef}
         aria-hidden
-        className="cursor-ring pointer-events-none fixed top-0 left-0 z-[9998] h-10 w-10 rounded-full border border-[rgba(0,212,200,0.38)]"
+        className="cursor-ring pointer-events-none fixed top-0 left-0 z-[9998] h-9 w-9 rounded-full border border-[rgba(0,212,200,0.40)]"
         style={{
           transition:
-            "width 360ms cubic-bezier(0.22,1,0.36,1), height 360ms cubic-bezier(0.22,1,0.36,1), border-color 240ms ease",
+            "width 320ms cubic-bezier(0.22,1,0.36,1), height 320ms cubic-bezier(0.22,1,0.36,1), border-color 240ms ease",
         }}
       />
       <div
         ref={dotRef}
         aria-hidden
-        className="cursor-dot pointer-events-none fixed top-0 left-0 z-[9999] h-2 w-2 rounded-full bg-accent"
+        className="cursor-dot pointer-events-none fixed top-0 left-0 z-[9999] h-1.5 w-1.5 rounded-full bg-accent"
         style={{
           mixBlendMode: "screen",
-          boxShadow: "0 0 14px rgba(0,212,200,0.75)",
+          boxShadow: "0 0 12px rgba(0,212,200,0.7)",
           transition: "width 180ms ease, height 180ms ease",
         }}
       />

@@ -1,6 +1,6 @@
 import { Ambient } from "@/components/landing/ambient";
 import { CustomCursor } from "@/components/landing/cursor";
-import { FibreCanvas } from "@/components/landing/fibre-canvas";
+import { GridOverlay } from "@/components/landing/grid-overlay";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { Marquee } from "@/components/landing/marquee";
@@ -16,9 +16,9 @@ import { Footer } from "@/components/landing/footer";
 export default function MarketingHome() {
   return (
     <>
-      {/* Backdrop layers — fixed, behind everything. */}
+      {/* Backdrop layers — fixed, behind everything (z-0). */}
       <Ambient />
-      <FibreCanvas />
+      <GridOverlay />
       <NoiseLayer />
       <CustomCursor />
 
