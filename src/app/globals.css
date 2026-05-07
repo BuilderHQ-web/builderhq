@@ -208,8 +208,11 @@
   color-scheme: dark;
 }
 
+html, body {
+  background-color: #03090f;
+}
+
 html {
-  background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
@@ -218,12 +221,12 @@ html {
 }
 
 body {
-  /* A whisper of accent colour at the corners — keep the canvas alive
-     without competing with content. Tuned right at the edge of perception. */
-  background:
-    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 212, 200, 0.035), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(26, 95, 212, 0.025), transparent 65%),
-    var(--color-bg);
+  /* A whisper of accent colour at the corners — sits ON TOP of the
+     explicit dark colour set above so the canvas always reads dark
+     even if a gradient stop fails. */
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 212, 200, 0.04), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(26, 95, 212, 0.03), transparent 65%);
   min-height: 100vh;
   min-height: 100dvh;
   line-height: 1.5;
