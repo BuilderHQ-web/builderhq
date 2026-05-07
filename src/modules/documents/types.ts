@@ -13,6 +13,7 @@ export type Document = Pick<
   | "id"
   | "ownerId"
   | "projectId"
+  | "category"
   | "filename"
   | "contentType"
   | "sizeBytes"
@@ -23,12 +24,25 @@ export type Document = Pick<
   | "updatedAt"
 >;
 
+/** Document category, re-exported for callers that need to set it. */
+export type DocumentCategory =
+  | "architectural"
+  | "specifications"
+  | "scope"
+  | "engineering"
+  | "site_survey"
+  | "contract"
+  | "other";
+
 /** Inputs to start a new upload. The bytes haven't moved yet. */
 export type InitUploadInput = {
   projectId: string;
   filename: string;
   contentType: string;
   sizeBytes: number;
+  /** Tag the upload — drives the publish-gate on projects. Defaults to
+   *  "other" if omitted. */
+  category?: DocumentCategory;
   /** Optional version chain — if set, this upload bumps version of parent. */
   parentId?: string;
 };

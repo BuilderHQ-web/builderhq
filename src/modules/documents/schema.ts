@@ -37,6 +37,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { users } from "@/modules/users";
+import { projects } from "@/modules/projects/schema";
 
 // ── enums ────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,21 @@ export const documentStatusEnum = pgEnum("document_status", [
   "failed",
 ]);
 
+/**
+ * Category tags for documents. Used by the publish-gate check on
+ * projects: a project can't go from draft → published unless it has
+ * at least one active "architectural" document.
+ */
+export const documentCategoryEnum = pgEnum("document_category", [
+  "architectural",
+  "specifications",
+  "scope",
+  "engineering",
+  "site_survey",
+  "contract",
+  "other",
+]);
+
 // ── table ────────────────────────────────────────────────────────────────
 
 export const documents = pgTable(
@@ -64,10 +80,15 @@ export const documents = pgTable(
     ownerId: uuid()
       .references(() => users.id, { onDelete: "set null" }),
 
-    // The project this document belongs to. FK constraint added when
-    // modules/projects ships its schema; for now this is just a uuid
-    // the service layer validates.
-    projectId: uuid().notNull(),
+    // The project this document belongs to. FK to projects.id, set
+    // null on project deletion so audit trail isn't destroyed (the
+    // doc row stays around for moderation).
+    projectId: uuid()
+      .references(() => projects.id, { onDelete: "set null" }),
+
+    // What kind of document this is. Drives the architectural-plan
+    // publish-gate on projects (see projects.service → publish()).
+    category: documentCategoryEnum().notNull().default("other"),
 
     // R2 storage key (immutable once written).
     objectKey: text().notNull(),

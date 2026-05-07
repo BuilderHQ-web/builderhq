@@ -133,6 +133,7 @@ export async function initUpload(
     .values({
       ownerId,
       projectId: input.projectId,
+      category: input.category ?? "other",
       filename: input.filename.trim(),
       contentType: input.contentType,
       sizeBytes: input.sizeBytes,
@@ -257,6 +258,25 @@ export async function listMyDocuments(ownerId: string): Promise<Document[]> {
   return rows.map(toPublic);
 }
 
+/** List the documents attached to a project (caller must own the project). */
+export async function listForProject(
+  ownerId: string,
+  projectId: string,
+): Promise<Document[]> {
+  const rows = await db
+    .select()
+    .from(documents)
+    .where(
+      and(
+        eq(documents.projectId, projectId),
+        eq(documents.ownerId, ownerId),
+        isNull(documents.deletedAt),
+      ),
+    )
+    .orderBy(desc(documents.createdAt));
+  return rows.map(toPublic);
+}
+
 /** Soft-delete a document the caller owns. */
 export async function softDelete(
   ownerId: string,
@@ -283,6 +303,7 @@ function toPublic(row: DocumentRow): Document {
     id: row.id,
     ownerId: row.ownerId,
     projectId: row.projectId,
+    category: row.category,
     filename: row.filename,
     contentType: row.contentType,
     sizeBytes: row.sizeBytes,

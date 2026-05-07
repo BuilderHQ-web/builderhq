@@ -13,11 +13,16 @@
  */
 
 // Schema (DB-only consumers).
-export { documents, documentStatusEnum } from "./schema";
+export { documents, documentStatusEnum, documentCategoryEnum } from "./schema";
 export type { DocumentRow, DocumentInsert } from "./schema";
 
 // Public types.
-export type { Document, InitUploadInput, InitUploadResult } from "./types";
+export type {
+  Document,
+  DocumentCategory,
+  InitUploadInput,
+  InitUploadResult,
+} from "./types";
 
 // Service.
 export {
@@ -25,6 +30,7 @@ export {
   completeUpload,
   getDownloadUrl,
   listMyDocuments,
+  listForProject,
   softDelete,
 } from "./service";
 

@@ -14,6 +14,7 @@ import {
   completeUpload,
   getDownloadUrl,
   listMyDocuments,
+  listForProject,
   softDelete,
   canUpload,
   type ActorContext,
@@ -63,6 +64,15 @@ export async function listMyDocumentsAction(): Promise<Result<Document[]>> {
   const a = await requireActor();
   if (!a.ok) return a;
   const docs = await listMyDocuments(a.value.id);
+  return { ok: true, value: docs };
+}
+
+export async function listProjectDocumentsAction(
+  projectId: string,
+): Promise<Result<Document[]>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const docs = await listForProject(a.value.id, projectId);
   return { ok: true, value: docs };
 }
 

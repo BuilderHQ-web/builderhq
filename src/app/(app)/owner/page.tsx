@@ -10,15 +10,32 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
+import { listMine, type Project } from "@/modules/projects";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader, StatCard, EmptyState } from "@/components/app/page-header";
 
 export const metadata = { title: "Dashboard" };
 
+const TYPE_LABEL: Record<Project["type"], string> = {
+  single_dwelling: "Single dwelling",
+  multi_dwelling: "Multi-dwelling",
+  renovation: "Renovation",
+  extension: "Extension",
+};
+
 export default async function OwnerDashboard() {
   const session = await auth();
   const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
+  const projects = session?.user
+    ? await listMine(session.user.id!)
+    : [];
+
+  const activeCount = projects.filter(
+    (p) => p.status === "published" || p.status === "tendering",
+  ).length;
+  const draftCount = projects.filter((p) => p.status === "draft").length;
+  const recent = projects.slice(0, 5);
 
   return (
     <>
@@ -30,7 +47,6 @@ export default async function OwnerDashboard() {
           <Link
             href="/owner/projects/new"
             className={cn(buttonVariants({ size: "lg" }), "gap-2")}
-            aria-disabled
           >
             <Plus className="size-4" />
             Upload project
@@ -43,8 +59,18 @@ export default async function OwnerDashboard() {
         <section>
           <SectionLabel>At a glance</SectionLabel>
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard label="Active projects" value="0" hint="No projects yet" />
-            <StatCard label="Builder unlocks" value="0" hint="Awaiting first upload" />
+            <StatCard
+              label="Active projects"
+              value={String(activeCount)}
+              hint={
+                activeCount === 0
+                  ? draftCount > 0
+                    ? `${draftCount} draft${draftCount === 1 ? "" : "s"} in progress`
+                    : "No projects yet"
+                  : "Visible to builders"
+              }
+            />
+            <StatCard label="Builder unlocks" value="0" hint="Coming in step 4" />
             <StatCard label="Tenders received" value="0" hint="Compare side-by-side" />
             <StatCard label="Unread messages" value="0" hint="From builders" />
           </div>
@@ -57,29 +83,70 @@ export default async function OwnerDashboard() {
               title="Recent projects"
               description="Drafts and published work in your account."
               action={
-                <Link
-                  href="/owner/projects"
-                  className="text-[11px] tracking-[0.16em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                >
-                  View all
-                </Link>
+                projects.length > 0 ? (
+                  <Link
+                    href="/owner/projects"
+                    className="text-[11px] tracking-[0.16em] uppercase text-text-dim hover:text-accent-light transition-colors"
+                  >
+                    View all
+                  </Link>
+                ) : null
               }
             />
-            <EmptyState
-              icon={<Folders className="size-4" />}
-              title="No projects yet"
-              description="Upload your first project — drawings, scope, timeline. Suitable builders unlock and tender."
-              action={
-                <Link
-                  href="/owner/projects/new"
-                  className={cn(buttonVariants({ size: "lg" }), "gap-2")}
-                  aria-disabled
-                >
-                  <Plus className="size-4" />
-                  Upload your first project
-                </Link>
-              }
-            />
+            {projects.length === 0 ? (
+              <EmptyState
+                icon={<Folders className="size-4" />}
+                title="No projects yet"
+                description="Upload your first project — drawings, scope, timeline. Suitable builders unlock and tender."
+                action={
+                  <Link
+                    href="/owner/projects/new"
+                    className={cn(buttonVariants({ size: "lg" }), "gap-2")}
+                  >
+                    <Plus className="size-4" />
+                    Upload your first project
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="border-t border-border-subtle/60">
+                {recent.map((p, i, arr) => (
+                  <Link
+                    key={p.id}
+                    href={
+                      p.status === "draft"
+                        ? `/owner/projects/${p.slug}/edit`
+                        : `/owner/projects/${p.slug}`
+                    }
+                    className={cn(
+                      "grid grid-cols-[1fr_auto_auto] gap-4 items-center px-7 py-4 transition-colors hover:bg-[rgba(0,212,200,0.025)]",
+                      i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[13.5px] font-semibold text-text truncate">
+                        {p.title}
+                      </div>
+                      <div className="text-[11px] text-text-dim truncate">
+                        {TYPE_LABEL[p.type]}
+                        {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
+                        p.status === "draft"
+                          ? "border-border-subtle text-text-dim"
+                          : "border-border-accent text-accent-light",
+                      )}
+                    >
+                      {p.status}
+                    </span>
+                    <ArrowUpRight className="size-3.5 text-text-faint" />
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-md border border-border-subtle bg-surface-1/40 flex flex-col">
