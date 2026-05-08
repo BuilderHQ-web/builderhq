@@ -16,9 +16,25 @@ export type ActorContext = {
   role: "project_owner" | "builder" | "admin";
 };
 
-/** Owner can upload to their own project; admin always can. */
+/**
+ * Owners upload to their projects; builders upload to their tenders;
+ * admins always can. Project-vs-tender targeting is decided by which
+ * id the action passes — the documents service stores both, and the
+ * downstream listing functions (listForProject excludes tenderId,
+ * listForTender requires it) keep the surfaces separate.
+ *
+ * Cross-tenancy abuse (builder attaching to a project they don't own
+ * a tender on) is prevented by the form-level UX — builders only
+ * reach the upload action via the tender form, which sets tenderId
+ * to a tender they own. We could double-gate at service level if
+ * tenders ever became inferable from public urls.
+ */
 export function canUpload(actor: ActorContext): boolean {
-  return actor.role === "project_owner" || actor.role === "admin";
+  return (
+    actor.role === "project_owner" ||
+    actor.role === "builder" ||
+    actor.role === "admin"
+  );
 }
 
 /** Owner reads their own docs; admin reads anything. Builders later. */

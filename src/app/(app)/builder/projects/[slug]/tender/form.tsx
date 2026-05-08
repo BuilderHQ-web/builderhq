@@ -246,8 +246,31 @@ export function TenderForm({
 
   // ── line operations ───────────────────────────────────────────────
 
+  /**
+   * Upsert by id. The first time the user types into a row that
+   * doesn't yet exist in `lines`, the TradeRow handler dispatches
+   * with a freshly-minted id + the row's trade — this branch creates
+   * the row. Subsequent edits hit the map branch and patch in place.
+   * Without the upsert, new rows were silently dropped → the
+   * breakdown sum stayed 0 and "Hide empty rows" hid everything.
+   */
   const updateLine = (id: string, patch: Partial<LineState>) => {
-    setLines((arr) => arr.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setLines((arr) => {
+      const idx = arr.findIndex((l) => l.id === id);
+      if (idx === -1) {
+        return [
+          ...arr,
+          {
+            id,
+            trade: patch.trade ?? "other",
+            amount: patch.amount ?? null,
+            label: patch.label ?? "",
+            ...patch,
+          },
+        ];
+      }
+      return arr.map((l) => (l.id === id ? { ...l, ...patch } : l));
+    });
     scheduleLineSave();
   };
 
@@ -366,7 +389,7 @@ export function TenderForm({
     <div className="pb-32">
       {/* Header */}
       <div className="border-b border-border-subtle bg-bg-deep/30">
-        <div className="px-6 lg:px-10 py-6 lg:py-8 mx-auto max-w-[1100px]">
+        <div className="px-6 lg:px-10 py-6 lg:py-8 mx-auto max-w-[1500px]">
           <Link
             href={`/builder/projects/${preview.slug}`}
             className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-5"
@@ -400,7 +423,7 @@ export function TenderForm({
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1100px] grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-8">
+      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6">
         {/* Main column */}
         <div className="space-y-5 min-w-0">
           {/* SECTION 1 — The number */}
@@ -538,184 +561,28 @@ export function TenderForm({
             </div>
           </Collapsible>
 
-          {/* SECTION 4 — Pitch + docs */}
+          {/* SECTION 4 — Your pitch */}
           <Collapsible
             open={open.pitch}
             onToggle={() => setOpen((o) => ({ ...o, pitch: !o.pitch }))}
             icon={<Sparkles className="size-4" />}
             title="Your pitch"
-            sub="Optional. Why you, plus supporting docs."
-            badge={pitch.trim() || docs.length > 0 ? "Filled" : "Optional"}
+            sub="Optional. Why you — track record, similar projects, your approach."
+            badge={pitch.trim() ? "Filled" : "Optional"}
           >
-            <div className="space-y-5">
-              <Field label="Why you" hint="track record, similar projects, what makes you a fit">
-                <textarea
-                  defaultValue={pitch}
-                  disabled={isLocked}
-                  onChange={(e) => {
-                    setPitch(e.target.value);
-                    setHeadlineField("pitch", e.target.value || null);
-                  }}
-                  rows={5}
-                  placeholder="A few paragraphs about your team, similar builds, and how you'd approach this project."
-                  className={cn(inputCls, "min-h-[120px] py-3 leading-[1.6]")}
-                />
-              </Field>
-
-              <Field
-                label="Supporting documents"
-                hint="optional · max 100 MB per file"
-              >
-                <label
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOver(true);
-                  }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOver(false);
-                    onDropFiles(e.dataTransfer.files);
-                  }}
-                  className={cn(
-                    "block cursor-pointer rounded-md border-2 border-dashed p-6 text-center transition-colors",
-                    dragOver
-                      ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
-                      : "border-border-subtle hover:border-border bg-[rgba(255,255,255,0.012)]",
-                    isLocked && "opacity-50 pointer-events-none",
-                  )}
-                >
-                  <input
-                    type="file"
-                    multiple
-                    disabled={isLocked || !tender}
-                    className="sr-only"
-                    onChange={(e) =>
-                      e.target.files && onDropFiles(e.target.files)
-                    }
-                  />
-                  <Upload className="mx-auto size-5 text-accent-light mb-2" />
-                  <div className="text-[13px] text-text">
-                    Drop tender documents here, or{" "}
-                    <span className="text-accent-light underline underline-offset-4">
-                      browse
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[11px] text-text-dim">
-                    BoQ PDF · insurance · past projects · company profile
-                  </div>
-                </label>
-
-                {/* In-flight uploads */}
-                {activeUploads.length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    {activeUploads.map((u) => (
-                      <div
-                        key={u.id}
-                        className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] px-3 py-2 text-[11px]"
-                      >
-                        <div className="flex justify-between text-text-muted mb-1">
-                          <span className="truncate mr-2">{u.filename}</span>
-                          <span
-                            className={cn(
-                              "shrink-0 tracking-[0.1em] uppercase",
-                              u.status === "error"
-                                ? "text-danger"
-                                : "text-accent-light",
-                            )}
-                          >
-                            {u.status === "uploading" && `${u.progress}%`}
-                            {u.status === "confirming" && "…"}
-                            {u.status === "done" && "✓"}
-                            {u.status === "error" && (u.error ?? "Err")}
-                          </span>
-                        </div>
-                        <div className="h-[2px] rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
-                          <span
-                            className={cn(
-                              "block h-full rounded-full transition-[width] duration-300",
-                              u.status === "error" ? "bg-danger" : "bg-accent",
-                            )}
-                            style={{
-                              width: `${
-                                u.status === "done"
-                                  ? 100
-                                  : u.status === "confirming"
-                                  ? 95
-                                  : u.progress
-                              }%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {/* Saved docs */}
-                {docs.length > 0 ? (
-                  <ul className="mt-3 space-y-1.5">
-                    {docs.map((d) => (
-                      <li
-                        key={d.id}
-                        className="flex items-center justify-between gap-3 px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-[12.5px] font-medium text-text truncate">
-                            {d.filename}
-                          </div>
-                          <div className="text-[10px] text-text-dim">
-                            {prettyBytes(d.sizeBytes)} ·{" "}
-                            <span
-                              className={cn(
-                                d.status === "active"
-                                  ? "text-accent-light"
-                                  : d.status === "pending"
-                                  ? "text-warning"
-                                  : "text-danger",
-                              )}
-                            >
-                              {d.status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <DocActionButton
-                            disabled={d.status !== "active"}
-                            label="Download"
-                            icon={<Download className="size-3.5" />}
-                            onAction={async () => {
-                              const r = await getDownloadUrlAction(d.id);
-                              if (!r.ok) {
-                                alert(r.error.message);
-                                return;
-                              }
-                              window.open(r.value.url, "_blank", "noopener");
-                            }}
-                          />
-                          {!isLocked ? (
-                            <DocActionButton
-                              label="Delete"
-                              danger
-                              icon={<Trash2 className="size-3.5" />}
-                              onAction={async () => {
-                                if (!confirm("Delete this document?")) return;
-                                const r = await softDeleteDocAction(d.id);
-                                if (!r.ok) {
-                                  alert(r.error.message);
-                                  return;
-                                }
-                                await refreshDocs();
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </Field>
-            </div>
+            <Field label="Why you" hint="track record, similar projects, what makes you a fit">
+              <textarea
+                defaultValue={pitch}
+                disabled={isLocked}
+                onChange={(e) => {
+                  setPitch(e.target.value);
+                  setHeadlineField("pitch", e.target.value || null);
+                }}
+                rows={5}
+                placeholder="A few paragraphs about your team, similar builds, and how you'd approach this project."
+                className={cn(inputCls, "min-h-[120px] py-3 leading-[1.6]")}
+              />
+            </Field>
           </Collapsible>
 
           {/* Withdraw (if submitted/shortlisted) */}
@@ -738,23 +605,63 @@ export function TenderForm({
           ) : null}
         </div>
 
-        {/* Sticky right rail TOC */}
+        {/* Sticky right rail — live summary + prominent docs upload + TOC */}
         <aside className="hidden lg:block">
-          <div className="sticky top-20 space-y-2">
-            <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-3">
-              Sections
+          <div className="sticky top-20 space-y-4">
+            <LiveSummaryCard
+              totalPrice={totalPrice}
+              duration={duration}
+              validity={validity}
+              startMonth={startMonth}
+              breakdownSum={breakdownSum}
+              variance={variance}
+              docCount={docs.length}
+              ready={ready}
+            />
+
+            <DocsRailCard
+              docs={docs}
+              activeUploads={activeUploads}
+              dragOver={dragOver}
+              isLocked={isLocked}
+              hasDraft={!!tender}
+              onDragOverSet={(v) => setDragOver(v)}
+              onDropFiles={onDropFiles}
+              onDownload={async (id) => {
+                const r = await getDownloadUrlAction(id);
+                if (!r.ok) {
+                  alert(r.error.message);
+                  return;
+                }
+                window.open(r.value.url, "_blank", "noopener");
+              }}
+              onDelete={async (id) => {
+                if (!confirm("Delete this document?")) return;
+                const r = await softDeleteDocAction(id);
+                if (!r.ok) {
+                  alert(r.error.message);
+                  return;
+                }
+                await refreshDocs();
+              }}
+            />
+
+            <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-3">
+              <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-2 px-1">
+                Jump to section
+              </div>
+              <TocLink href="#section-the-number" label="The number" />
+              <TocLink href="#section-cost-breakdown" label="Cost breakdown" />
+              <TocLink href="#section-scope" label="Scope" />
+              <TocLink href="#section-your-pitch" label="Your pitch" />
             </div>
-            <TocLink href="#section-number" label="The number" />
-            <TocLink href="#section-breakdown" label="Cost breakdown" />
-            <TocLink href="#section-scope" label="Scope" />
-            <TocLink href="#section-pitch" label="Pitch + docs" />
           </div>
         </aside>
       </div>
 
       {/* Sticky footer */}
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
-        <div className="mx-auto max-w-[1100px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+        <div className="mx-auto max-w-[1500px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
           <div className="min-w-0 flex items-center gap-3">
             {tender?.status === "draft" || !tender ? (
               ready ? (
@@ -1171,6 +1078,344 @@ function Stat({
   );
 }
 
+// ── Right-rail cards ─────────────────────────────────────────────────────
+
+function LiveSummaryCard({
+  totalPrice,
+  duration,
+  validity,
+  startMonth,
+  breakdownSum,
+  variance,
+  docCount,
+  ready,
+}: {
+  totalPrice: number | null;
+  duration: number | null;
+  validity: number | null;
+  startMonth: string;
+  breakdownSum: number;
+  variance: number | null;
+  docCount: number;
+  ready: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border p-5",
+        ready
+          ? "border-border-accent/45 bg-[linear-gradient(160deg,rgba(0,212,200,0.06),rgba(6,18,30,0.78))]"
+          : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+      )}
+    >
+      {/* corner glow when ready */}
+      {ready ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-12 -right-12 size-44 rounded-full opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(0,212,200,0.30), transparent 70%)",
+          }}
+        />
+      ) : null}
+
+      <div className="relative">
+        <div className="text-[10px] tracking-[0.2em] uppercase text-accent flex items-center gap-2">
+          <Sparkles className="size-3" />
+          Live summary
+        </div>
+
+        <div className="mt-4">
+          <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1">
+            Tender total
+          </div>
+          <div
+            className={cn(
+              "font-display tabular-nums leading-none",
+              totalPrice ? "text-accent-light" : "text-text-dim/60",
+            )}
+            style={{ fontSize: 30 }}
+          >
+            {totalPrice ? formatAud(totalPrice) : "—"}
+          </div>
+          <div className="mt-1.5 text-[10.5px] text-text-dim">
+            {duration ? `${duration} weeks` : "Duration —"} ·{" "}
+            {validity ? `${validity}d valid` : "Validity —"}
+            {startMonth ? ` · starts ${formatMonthShort(startMonth)}` : ""}
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-border-subtle/60 grid grid-cols-2 gap-3">
+          <div>
+            <div className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim mb-1">
+              Breakdown
+            </div>
+            <div className="font-mono tabular-nums text-[13px] text-text">
+              {breakdownSum > 0 ? formatAud(breakdownSum) : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim mb-1">
+              Variance
+            </div>
+            <div
+              className={cn(
+                "font-mono tabular-nums text-[13px]",
+                variance == null
+                  ? "text-text-dim/60"
+                  : variance === 0
+                  ? "text-accent-light"
+                  : "text-warning",
+              )}
+            >
+              {variance == null
+                ? "—"
+                : variance === 0
+                ? "Balanced"
+                : `${variance > 0 ? "+" : ""}${formatAud(variance)}`}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-border-subtle/60">
+          <div className="flex items-center justify-between text-[11.5px]">
+            <span className="text-text-dim">Documents attached</span>
+            <span
+              className={cn(
+                "font-mono tabular-nums",
+                docCount > 0 ? "text-text" : "text-text-dim/60",
+              )}
+            >
+              {docCount}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "mt-4 px-3 py-2 rounded-sm border text-[11.5px] flex items-center gap-2",
+            ready
+              ? "border-border-accent/40 bg-[rgba(0,212,200,0.04)] text-accent-light"
+              : "border-warning/30 bg-warning/[0.04] text-warning",
+          )}
+        >
+          {ready ? (
+            <>
+              <Check className="size-3.5" />
+              Ready to submit
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="size-3.5" />
+              {!totalPrice && !duration && !validity
+                ? "Fill the required fields above"
+                : `Still missing: ${[
+                    !totalPrice && "price",
+                    !duration && "duration",
+                    !validity && "validity",
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}`}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocsRailCard({
+  docs,
+  activeUploads,
+  dragOver,
+  isLocked,
+  hasDraft,
+  onDragOverSet,
+  onDropFiles,
+  onDownload,
+  onDelete,
+}: {
+  docs: Document[];
+  activeUploads: LocalUpload[];
+  dragOver: boolean;
+  isLocked: boolean;
+  hasDraft: boolean;
+  onDragOverSet: (v: boolean) => void;
+  onDropFiles: (files: FileList | File[]) => void | Promise<void>;
+  onDownload: (id: string) => void | Promise<void>;
+  onDelete: (id: string) => void | Promise<void>;
+}) {
+  return (
+    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]">
+      <div className="px-4 py-3 border-b border-border-subtle/60 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center">
+            <Upload className="size-3.5" />
+          </span>
+          <div>
+            <div className="text-[12.5px] font-semibold text-text">
+              Tender documents
+            </div>
+            <div className="text-[10.5px] text-text-dim">
+              {docs.length === 0
+                ? "Optional, but powerful — owners read these"
+                : `${docs.length} attached`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* AI-extract teaser */}
+        <div className="rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)] px-3 py-2 flex items-start gap-2">
+          <Sparkles className="size-3.5 text-accent-light shrink-0 mt-0.5" />
+          <div className="text-[11px] leading-[1.5]">
+            <div className="text-accent-light font-semibold">
+              AI auto-fill — coming soon
+            </div>
+            <div className="text-text-dim">
+              Drop a tender PDF and we&apos;ll populate the form for your review.
+            </div>
+          </div>
+        </div>
+
+        {/* Drop zone */}
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            onDragOverSet(true);
+          }}
+          onDragLeave={() => onDragOverSet(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            onDragOverSet(false);
+            onDropFiles(e.dataTransfer.files);
+          }}
+          className={cn(
+            "block cursor-pointer rounded-md border-2 border-dashed p-5 text-center transition-colors",
+            dragOver
+              ? "border-border-accent bg-[rgba(0,212,200,0.06)]"
+              : "border-border-subtle hover:border-border bg-[rgba(255,255,255,0.012)]",
+            (isLocked || !hasDraft) && "opacity-50 pointer-events-none",
+          )}
+        >
+          <input
+            type="file"
+            multiple
+            disabled={isLocked || !hasDraft}
+            className="sr-only"
+            onChange={(e) => e.target.files && onDropFiles(e.target.files)}
+          />
+          <Upload className="mx-auto size-5 text-accent-light mb-2" />
+          <div className="text-[12.5px] text-text">
+            Drop files, or{" "}
+            <span className="text-accent-light underline underline-offset-4">
+              browse
+            </span>
+          </div>
+          <div className="mt-1 text-[10px] text-text-dim">
+            BoQ PDF · insurance · past projects · max 100 MB
+          </div>
+        </label>
+
+        {/* In-flight */}
+        {activeUploads.length > 0 ? (
+          <div className="space-y-2">
+            {activeUploads.map((u) => (
+              <div
+                key={u.id}
+                className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] px-3 py-2 text-[11px]"
+              >
+                <div className="flex justify-between text-text-muted mb-1">
+                  <span className="truncate mr-2">{u.filename}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 tracking-[0.1em] uppercase",
+                      u.status === "error" ? "text-danger" : "text-accent-light",
+                    )}
+                  >
+                    {u.status === "uploading" && `${u.progress}%`}
+                    {u.status === "confirming" && "…"}
+                    {u.status === "done" && "✓"}
+                    {u.status === "error" && (u.error ?? "Err")}
+                  </span>
+                </div>
+                <div className="h-[2px] rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                  <span
+                    className={cn(
+                      "block h-full rounded-full transition-[width] duration-300",
+                      u.status === "error" ? "bg-danger" : "bg-accent",
+                    )}
+                    style={{
+                      width: `${
+                        u.status === "done"
+                          ? 100
+                          : u.status === "confirming"
+                          ? 95
+                          : u.progress
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Saved docs */}
+        {docs.length > 0 ? (
+          <ul className="space-y-1.5">
+            {docs.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
+              >
+                <div className="min-w-0">
+                  <div className="text-[12px] font-medium text-text truncate">
+                    {d.filename}
+                  </div>
+                  <div className="text-[9.5px] text-text-dim">
+                    {prettyBytes(d.sizeBytes)} ·{" "}
+                    <span
+                      className={cn(
+                        d.status === "active"
+                          ? "text-accent-light"
+                          : d.status === "pending"
+                          ? "text-warning"
+                          : "text-danger",
+                      )}
+                    >
+                      {d.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <DocActionButton
+                    disabled={d.status !== "active"}
+                    label="Download"
+                    icon={<Download className="size-3.5" />}
+                    onAction={() => onDownload(d.id)}
+                  />
+                  {!isLocked ? (
+                    <DocActionButton
+                      label="Delete"
+                      danger
+                      icon={<Trash2 className="size-3.5" />}
+                      onAction={() => onDelete(d.id)}
+                    />
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 // ── Form atoms ───────────────────────────────────────────────────────────
 
 const inputCls =
@@ -1251,6 +1496,10 @@ function PriceInput({
         placeholder="0"
         className={cn(
           "flex-1 bg-transparent border-0 outline-none text-text tabular-nums",
+          // The global :focus-visible rule applies a 3px outer shadow
+          // ring that bleeds beyond the wrapper border on inset inputs.
+          // Suppress it here — the wrapper handles focus styling.
+          "focus-visible:shadow-none",
           size === "sm" ? "text-[13px]" : "text-[14.5px] font-display",
           "pr-3",
         )}
@@ -1298,7 +1547,7 @@ function NumberInput({
           onChange(Number.isFinite(v) ? v : null);
         }}
         placeholder="0"
-        className="flex-1 px-3.5 bg-transparent border-0 outline-none text-text font-display text-[14.5px] tabular-nums"
+        className="flex-1 px-3.5 bg-transparent border-0 outline-none focus-visible:shadow-none text-text font-display text-[14.5px] tabular-nums"
       />
       {suffix ? (
         <span className="px-3 text-[10.5px] tracking-[0.18em] uppercase text-text-dim shrink-0">
@@ -1518,6 +1767,14 @@ function formatAud(n: number): string {
     currency: "AUD",
     maximumFractionDigits: 0,
   }).format(n);
+}
+
+function formatMonthShort(s: string): string {
+  if (!s) return "";
+  const [y, m] = s.split("-");
+  if (!y || !m) return s;
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
 }
 
 function prettyBytes(n: number): string {
