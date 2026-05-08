@@ -12,7 +12,23 @@ import {
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { listTendersForBuilder } from "@/modules/tenders";
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+
+/** Best-effort wrapper — logs failures and returns the fallback so a
+ *  single flaky query doesn't crash the dashboard. */
+async function safe<T>(label: string, p: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await p;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "builder_dashboard.query_failed", label, msg },
+      "builder dashboard query failed — using fallback",
+    );
+    return fallback;
+  }
+}
 import { SectionKicker } from "@/components/app/section-kicker";
 import { EmptyState } from "@/components/app/empty-state";
 import { ProjectCard } from "@/components/builder/project-card";
@@ -28,7 +44,9 @@ export default async function BuilderDashboard() {
   const firstName =
     (session?.user?.name ?? "").split(" ")[0] || "there";
 
-  const profile = userId ? await getBuilderProfile(userId) : null;
+  const profile = userId
+    ? await safe("builder_profile", getBuilderProfile(userId), null)
+    : null;
   const matchedSuburbs =
     profile?.serviceAreas
       .map((s) => s.suburb)
@@ -37,6 +55,9 @@ export default async function BuilderDashboard() {
     profile?.categories.map((c) => c.category) ?? [];
 
   // ── parallel data load ────────────────────────────────────────────
+  // Each leg wrapped in safe() so a single failing query degrades
+  // gracefully (KPI shows 0, list empty) instead of 500-ing the
+  // whole dashboard.
   const [
     unlockedCount,
     savedCount,
@@ -45,24 +66,32 @@ export default async function BuilderDashboard() {
     suggested,
     fbaStatus,
   ] = await Promise.all([
-    userId ? countMyUnlocks(userId) : 0,
-    userId ? countMySaved(userId) : 0,
-    userId ? listMyUnlockedProjectIds(userId) : [],
-    userId ? listMySavedProjectIds(userId) : [],
-    listForMarketplace({
-      ...(matchedCategories.length === 1
-        ? { type: matchedCategories[0]! }
-        : {}),
-      ...(matchedSuburbs.length > 0
-        ? { suburbsIn: matchedSuburbs }
-        : {}),
-      limit: 6,
-    }),
+    userId ? safe("count_unlocks", countMyUnlocks(userId), 0) : 0,
+    userId ? safe("count_saved", countMySaved(userId), 0) : 0,
+    userId ? safe("list_unlocked_ids", listMyUnlockedProjectIds(userId), []) : [],
+    userId ? safe("list_saved_ids", listMySavedProjectIds(userId), []) : [],
+    safe(
+      "list_marketplace",
+      listForMarketplace({
+        ...(matchedCategories.length === 1
+          ? { type: matchedCategories[0]! }
+          : {}),
+        ...(matchedSuburbs.length > 0 ? { suburbsIn: matchedSuburbs } : {}),
+        limit: 6,
+      }),
+      [],
+    ),
     userId
-      ? getFbaStatus(userId)
+      ? safe(
+          "fba_status",
+          getFbaStatus(userId),
+          { active: false, reason: "no_grant" } as const,
+        )
       : Promise.resolve({ active: false, reason: "no_grant" } as const),
   ]);
-  const myTenders = userId ? await listTendersForBuilder(userId) : [];
+  const myTenders = userId
+    ? await safe("list_tenders", listTendersForBuilder(userId), [])
+    : [];
   const submittedTenderCount = myTenders.filter(
     (t) =>
       t.status === "submitted" ||
@@ -70,8 +99,16 @@ export default async function BuilderDashboard() {
       t.status === "awarded",
   ).length;
 
-  const recentUnlocks = await listByIds(unlockedIds.slice(0, 3));
-  const savedRecent = await listByIds(savedIds.slice(0, 3));
+  const recentUnlocks = await safe(
+    "list_recent_unlocks",
+    listByIds(unlockedIds.slice(0, 3)),
+    [],
+  );
+  const savedRecent = await safe(
+    "list_saved_recent",
+    listByIds(savedIds.slice(0, 3)),
+    [],
+  );
 
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
