@@ -19,10 +19,51 @@ import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { checkCreditAvailable } from "@/modules/credits";
+import {
+  getOrCreateConversation,
+  postUnlockSystemMessage,
+} from "@/modules/messaging";
 
 import { unlocks, savedProjects, type UnlockRow } from "./schema";
+
+/**
+ * On a fresh unlock, get-or-create the (project × builder) conversation
+ * and drop a system message announcing the unlock. Failures here are
+ * non-fatal — the unlock has already been written to the DB at this
+ * point, and a missing system message is recoverable (the conversation
+ * still appears in both inboxes the moment either side sends a real
+ * message).
+ */
+async function ensureConversationOnUnlock(
+  builderId: string,
+  projectId: string,
+): Promise<void> {
+  try {
+    const conv = await getOrCreateConversation(projectId, builderId);
+    if (!conv.ok) {
+      logger.warn(
+        {
+          event: "unlock.conversation.create_failed",
+          projectId,
+          builderId,
+          err: conv.error,
+        },
+        "couldn't auto-create conversation on unlock",
+      );
+      return;
+    }
+    await postUnlockSystemMessage(conv.value.id, builderId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "unlock.conversation.threw", projectId, builderId, msg },
+      "ensureConversationOnUnlock threw — continuing",
+    );
+  }
+}
 
 // ── unlocks ──────────────────────────────────────────────────────────────
 
@@ -63,6 +104,7 @@ export async function unlockProject(
       .values({ builderId, projectId, source: options.source })
       .returning();
     if (!row) return fail("internal", "Failed to record unlock.");
+    await ensureConversationOnUnlock(builderId, projectId);
     return ok(row);
   }
 
@@ -85,6 +127,7 @@ export async function unlockProject(
     .values({ builderId, projectId, source: "founding" })
     .returning();
   if (!row) return fail("internal", "Failed to record unlock.");
+  await ensureConversationOnUnlock(builderId, projectId);
   return ok(row);
 }
 

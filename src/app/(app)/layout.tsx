@@ -4,6 +4,7 @@ import { auth } from "@/modules/auth";
 import { hasCompletedOnboarding } from "@/modules/profiles";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { countUnread as countUnreadNotifications } from "@/modules/notifications";
+import { countUnreadForUser as countUnreadMessages } from "@/modules/messaging";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 
@@ -44,16 +45,18 @@ export default async function AppLayout({
   // surface that to the topbar so it can render the badge.
   // Run alongside the unread-count fetch so we don't double up the
   // round-trip latency before render.
-  const [isFounding, initialUnreadCount] = await Promise.all([
-    role === "builder"
-      ? getFbaStatus(session.user.id).then((s) => s.active)
-      : Promise.resolve(false),
-    countUnreadNotifications(session.user.id),
-  ]);
+  const [isFounding, initialUnreadCount, initialUnreadMessages] =
+    await Promise.all([
+      role === "builder"
+        ? getFbaStatus(session.user.id).then((s) => s.active)
+        : Promise.resolve(false),
+      countUnreadNotifications(session.user.id),
+      countUnreadMessages(session.user.id),
+    ]);
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar role={role} />
+      <Sidebar role={role} initialUnreadMessages={initialUnreadMessages} />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar
           user={{

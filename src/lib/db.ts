@@ -30,6 +30,7 @@ import * as unlocksSchema from "@/modules/unlocks/schema";
 import * as creditsSchema from "@/modules/credits/schema";
 import * as tendersSchema from "@/modules/tenders/schema";
 import * as notificationsSchema from "@/modules/notifications/schema";
+import * as messagingSchema from "@/modules/messaging/schema";
 
 // Neon's WS transport needs a polyfill outside the browser.
 if (typeof WebSocket === "undefined") {
@@ -46,6 +47,7 @@ const schema = {
   ...creditsSchema,
   ...tendersSchema,
   ...notificationsSchema,
+  ...messagingSchema,
 };
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });

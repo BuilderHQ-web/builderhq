@@ -39,6 +39,10 @@ import { builderProfiles } from "@/modules/profiles/schema";
 import { documents } from "@/modules/documents/schema";
 
 import { dispatchTenderEvent } from "./dispatch";
+import {
+  getOrCreateConversation,
+  postTenderSubmittedSystemMessage,
+} from "@/modules/messaging";
 
 // ── reads ────────────────────────────────────────────────────────────────
 
@@ -527,10 +531,30 @@ export async function submit(
     return ok({ ...updated!, costLines: finalLines });
   });
 
-  // Dispatch outside the transaction so a flaky email send can't roll
-  // back the submit. dispatchTenderEvent swallows + logs its own errors.
+  // Side effects outside the transaction so flaky external calls can't
+  // roll back the submit. Both dispatch + chat-message helpers swallow
+  // and log their own errors.
   if (result.ok) {
     await dispatchTenderEvent("submitted", tenderId);
+
+    // Drop a system message into the (project × builder) conversation
+    // so the owner sees the activity inline in chat. The conversation
+    // already exists from the unlock hook — get-or-create is idempotent.
+    try {
+      const conv = await getOrCreateConversation(
+        result.value.projectId,
+        builderId,
+      );
+      if (conv.ok) {
+        await postTenderSubmittedSystemMessage(
+          conv.value.id,
+          builderId,
+          tenderId,
+        );
+      }
+    } catch {
+      /* swallowed — chat is best-effort */
+    }
   }
   return result;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -21,6 +22,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
+import { countMyUnreadMessagesAction } from "@/app/(app)/_actions/messaging";
 
 type Role = "project_owner" | "builder" | "admin";
 
@@ -30,6 +32,8 @@ interface NavItem {
   icon: LucideIcon;
   /** Phase the route ships in. Items without it are live now. */
   soon?: string;
+  /** Symbolic badge key — sidebar resolves to a live number. */
+  badgeKey?: "messages";
 }
 
 interface NavSection {
@@ -43,7 +47,7 @@ const ownerNav: NavSection[] = [
       { href: "/owner", label: "Dashboard", icon: LayoutDashboard },
       { href: "/owner/projects", label: "Projects", icon: Folders },
       { href: "/owner/tenders", label: "Tenders", icon: FileSpreadsheet },
-      { href: "/owner/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
+      { href: "/owner/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {
@@ -60,7 +64,7 @@ const builderNav: NavSection[] = [
       { href: "/builder/saved", label: "Saved", icon: ClipboardList },
       { href: "/builder/unlocked", label: "Unlocked", icon: ShieldCheck },
       { href: "/builder/tenders", label: "My tenders", icon: FileSpreadsheet },
-      { href: "/builder/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
+      { href: "/builder/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {
@@ -103,9 +107,33 @@ const navByRole: Record<Role, NavSection[]> = {
   admin: adminNav,
 };
 
-export function Sidebar({ role }: { role: Role }) {
+interface SidebarProps {
+  role: Role;
+  /** Server-rendered unread message count so the badge is correct
+   *  on first paint. The component soft-polls from there. */
+  initialUnreadMessages?: number;
+}
+
+const SIDEBAR_POLL_MS = 30_000;
+
+export function Sidebar({ role, initialUnreadMessages = 0 }: SidebarProps) {
   const pathname = usePathname();
   const sections = navByRole[role];
+
+  // Live message-unread count — initialised from server, polled gently.
+  const [unreadMessages, setUnreadMessages] = useState(initialUnreadMessages);
+  useEffect(() => {
+    const tick = async () => {
+      const r = await countMyUnreadMessagesAction();
+      if (r.ok) setUnreadMessages(r.value);
+    };
+    const id = setInterval(tick, SIDEBAR_POLL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const badges: Record<NonNullable<NavItem["badgeKey"]>, number> = {
+    messages: unreadMessages,
+  };
 
   return (
     <aside className="hidden lg:flex w-[240px] shrink-0 flex-col border-r border-border-subtle bg-bg-deep/40 sticky top-0 h-screen self-start">
@@ -128,7 +156,11 @@ export function Sidebar({ role }: { role: Role }) {
             <ul className="flex flex-col gap-px">
               {section.items.map((item) => (
                 <li key={item.href}>
-                  <NavLink item={item} active={isActive(pathname, item.href)} />
+                  <NavLink
+                    item={item}
+                    active={isActive(pathname, item.href)}
+                    badge={item.badgeKey ? badges[item.badgeKey] : 0}
+                  />
                 </li>
               ))}
             </ul>
@@ -139,7 +171,15 @@ export function Sidebar({ role }: { role: Role }) {
   );
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({
+  item,
+  active,
+  badge,
+}: {
+  item: NavItem;
+  active: boolean;
+  badge: number;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -160,9 +200,14 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>
-      {/* Phase tags hidden for now — they cluttered the sidebar. The
-          "soon" metadata stays in the data so we can surface it later
-          (e.g. inside the page itself, or as a tooltip on hover). */}
+      {badge > 0 ? (
+        <span
+          className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-accent-contrast text-[10px] font-semibold tabular-nums shadow-[0_0_8px_rgba(0,212,200,0.35)]"
+          aria-label={`${badge} unread`}
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      ) : null}
     </Link>
   );
 }
