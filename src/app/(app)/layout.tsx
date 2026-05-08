@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/modules/auth";
 import { hasCompletedOnboarding } from "@/modules/profiles";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import { countUnread as countUnreadNotifications } from "@/modules/notifications";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 
@@ -41,10 +42,14 @@ export default async function AppLayout({
 
   // Builders may have an active Founding Builder Access grant —
   // surface that to the topbar so it can render the badge.
-  const isFounding =
+  // Run alongside the unread-count fetch so we don't double up the
+  // round-trip latency before render.
+  const [isFounding, initialUnreadCount] = await Promise.all([
     role === "builder"
-      ? (await getFbaStatus(session.user.id)).active
-      : false;
+      ? getFbaStatus(session.user.id).then((s) => s.active)
+      : Promise.resolve(false),
+    countUnreadNotifications(session.user.id),
+  ]);
 
   return (
     <div className="flex min-h-dvh">
@@ -59,6 +64,7 @@ export default async function AppLayout({
             role: session.user.role,
           }}
           isFounding={isFounding}
+          initialUnreadCount={initialUnreadCount}
         />
         <main className="flex-1">{children}</main>
       </div>

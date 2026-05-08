@@ -38,6 +38,8 @@ import { users } from "@/modules/users";
 import { builderProfiles } from "@/modules/profiles/schema";
 import { documents } from "@/modules/documents/schema";
 
+import { dispatchTenderEvent } from "./dispatch";
+
 // ── reads ────────────────────────────────────────────────────────────────
 
 /**
@@ -440,7 +442,7 @@ export async function submit(
   builderId: string,
   tenderId: string,
 ): Promise<Result<TenderWithLines>> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [row] = await tx
       .select()
       .from(tenders)
@@ -524,6 +526,13 @@ export async function submit(
 
     return ok({ ...updated!, costLines: finalLines });
   });
+
+  // Dispatch outside the transaction so a flaky email send can't roll
+  // back the submit. dispatchTenderEvent swallows + logs its own errors.
+  if (result.ok) {
+    await dispatchTenderEvent("submitted", tenderId);
+  }
+  return result;
 }
 
 /** Builder pulls a submitted/shortlisted tender back. Terminal. */
@@ -555,6 +564,8 @@ export async function withdraw(
     })
     .where(eq(tenders.id, tenderId))
     .returning();
+
+  await dispatchTenderEvent("withdrawn", tenderId);
   return ok(updated!);
 }
 
@@ -636,6 +647,14 @@ async function decisionTransition(
     })
     .where(eq(tenders.id, tenderId))
     .returning();
+
+  // Only the forward-going transitions notify. Roll-backs to "submitted"
+  // are silent — the original "submitted" notification was already sent
+  // and a second one would just be confusing.
+  if (to === "shortlisted" || to === "awarded" || to === "rejected") {
+    await dispatchTenderEvent(to, tenderId);
+  }
+
   return ok(updated!);
 }
 

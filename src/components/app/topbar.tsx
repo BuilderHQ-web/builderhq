@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/brand/logo";
+import { NotificationBell } from "@/components/app/notification-bell";
 
 import { signOutAction } from "@/app/(app)/_actions/sign-out";
 
@@ -29,6 +30,9 @@ interface TopbarProps {
   };
   /** True when the builder has an active Founding Builder Access grant. */
   isFounding?: boolean;
+  /** Server-side unread count, used to render the bell badge before the
+   *  client polling kicks in. */
+  initialUnreadCount?: number;
 }
 
 const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
@@ -37,7 +41,11 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
   admin: "Admin",
 };
 
-export function Topbar({ user, isFounding = false }: TopbarProps) {
+export function Topbar({
+  user,
+  isFounding = false,
+  initialUnreadCount = 0,
+}: TopbarProps) {
   const pathname = usePathname();
   const crumbs = pathToCrumbs(pathname);
   const initials = (user.name ?? user.email ?? "U")
@@ -95,6 +103,9 @@ export function Topbar({ user, isFounding = false }: TopbarProps) {
             <span className="font-ui">Search</span>
             <span className="font-mono text-[10px] tracking-[0.04em] text-text-dim">⌘K</span>
           </button>
+
+          {/* Notifications */}
+          <NotificationBell initialUnreadCount={initialUnreadCount} />
 
           {/* Account chip */}
           <DropdownMenu>

@@ -6,7 +6,11 @@ import {
   unlockPriceFor,
 } from "@/modules/projects";
 import { isUnlocked } from "@/modules/unlocks";
-import { getActiveTenderForBuilder } from "@/modules/tenders";
+import {
+  getActiveTenderForBuilder,
+  getProjectOwnerForTender,
+} from "@/modules/tenders";
+import { getOwnerContactPublic } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import { TenderForm } from "./form";
 
@@ -42,12 +46,25 @@ export default async function TenderRoute({
     ? await listForTenderUnchecked(existing.id)
     : [];
 
+  // Award-handoff: when the builder has won this tender, surface
+  // owner contact + name so they can reach out directly. Skip the
+  // lookup otherwise to keep the page fast in the common case.
+  const ownerContact =
+    existing?.status === "awarded"
+      ? await (async () => {
+          const ownerId = await getProjectOwnerForTender(existing.id);
+          if (!ownerId) return null;
+          return getOwnerContactPublic(ownerId);
+        })()
+      : null;
+
   return (
     <TenderForm
       preview={preview}
       priceAud={unlockPriceFor(preview.type)}
       initialTender={existing}
       initialDocs={docs}
+      ownerContact={ownerContact}
     />
   );
 }

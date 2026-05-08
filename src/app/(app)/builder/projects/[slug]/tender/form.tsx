@@ -48,6 +48,7 @@ import type {
   UpdateTenderInput,
 } from "@/modules/tenders";
 import type { Document } from "@/modules/documents";
+import type { OwnerContact } from "@/modules/profiles";
 import type { MarketplacePreview } from "@/modules/projects";
 
 // ── form types ───────────────────────────────────────────────────────────
@@ -97,11 +98,14 @@ export function TenderForm({
   priceAud,
   initialTender,
   initialDocs,
+  ownerContact,
 }: {
   preview: MarketplacePreview;
   priceAud: number;
   initialTender: TenderWithLines | null;
   initialDocs: Document[];
+  /** Set when the builder has won this tender — surfaces contact info. */
+  ownerContact: OwnerContact | null;
 }) {
   const router = useRouter();
   const [tender, setTender] = useState<TenderWithLines | null>(initialTender);
@@ -423,6 +427,14 @@ export function TenderForm({
         </div>
       </div>
 
+      {/* Award banner — only when this tender has been awarded. Surfaces
+          owner contact + a "next steps" line so the builder can follow
+          up off-platform. The award email already contains this info,
+          but reinforcing it in-app makes the win unmissable. */}
+      {tender?.status === "awarded" && ownerContact ? (
+        <AwardedBanner contact={ownerContact} projectTitle={preview.title} />
+      ) : null}
+
       <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6">
         {/* Main column */}
         <div className="space-y-5 min-w-0">
@@ -685,10 +697,7 @@ export function TenderForm({
                 </div>
               )
             ) : (
-              <div className="text-[13px] text-accent-light flex items-center gap-2">
-                <Check className="size-4" />
-                Submitted — locked. Owner is reviewing.
-              </div>
+              <FooterStatusLabel status={tender!.status} />
             )}
           </div>
 
@@ -1902,4 +1911,140 @@ function putWithProgress(args: {
     xhr.onerror = () => reject(new Error("Network error during upload."));
     xhr.send(args.body);
   });
+}
+
+// ── Awarded banner + footer-status label ────────────────────────────────
+
+function AwardedBanner({
+  contact,
+  projectTitle,
+}: {
+  contact: OwnerContact;
+  projectTitle: string;
+}) {
+  const displayName = contact.companyName ?? contact.name ?? "Project owner";
+  return (
+    <div className="border-b border-accent/30">
+      <div
+        className="px-6 lg:px-10 py-6 mx-auto max-w-[1500px]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,212,200,0.10), rgba(0,212,200,0.02))",
+        }}
+      >
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="size-10 rounded-md bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-[0_0_24px_rgba(0,212,200,0.45)]">
+            <Sparkles className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] tracking-[0.22em] uppercase text-accent font-semibold">
+              You won this tender
+            </div>
+            <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
+              Congratulations on {projectTitle}
+            </h2>
+            <p className="mt-1 text-[12.5px] text-text-muted leading-[1.55]">
+              The owner has shared their contact below. Reach out to confirm
+              scope, timing, and contract.
+            </p>
+          </div>
+        </div>
+
+        {/* Contact card */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <ContactTile label="Name" value={displayName} />
+          <ContactTile
+            label="Email"
+            value={contact.email}
+            href={`mailto:${contact.email}`}
+          />
+          {contact.phone ? (
+            <ContactTile
+              label="Phone"
+              value={contact.phone}
+              href={`tel:${contact.phone.replace(/\s+/g, "")}`}
+            />
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactTile({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const inner = (
+    <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] px-4 py-3 hover:bg-[rgba(0,212,200,0.06)] transition-colors duration-[140ms]">
+      <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+        {label}
+      </div>
+      <div className="text-[13.5px] text-text font-medium tabular-nums truncate">
+        {value}
+      </div>
+    </div>
+  );
+  if (href) {
+    return (
+      <a href={href} className="block">
+        {inner}
+      </a>
+    );
+  }
+  return inner;
+}
+
+function FooterStatusLabel({
+  status,
+}: {
+  status: TenderWithLines["status"];
+}) {
+  // Single source of truth for footer micro-copy across non-draft states.
+  // Awarded gets the celebratory tone; rejected the neutral closing-out
+  // tone; everything else stays factual.
+  switch (status) {
+    case "submitted":
+      return (
+        <div className="text-[13px] text-accent-light flex items-center gap-2">
+          <Check className="size-4" />
+          Submitted — locked. Owner is reviewing.
+        </div>
+      );
+    case "shortlisted":
+      return (
+        <div className="text-[13px] text-accent-light flex items-center gap-2">
+          <Check className="size-4" />
+          Shortlisted — you&apos;re a contender.
+        </div>
+      );
+    case "awarded":
+      return (
+        <div className="text-[13px] text-accent flex items-center gap-2 font-medium">
+          <Sparkles className="size-4" />
+          Awarded — owner contact is at the top of this page.
+        </div>
+      );
+    case "rejected":
+      return (
+        <div className="text-[13px] text-text-dim flex items-center gap-2">
+          <X className="size-4" />
+          Decision made — owner went with another builder.
+        </div>
+      );
+    case "withdrawn":
+      return (
+        <div className="text-[13px] text-text-dim flex items-center gap-2">
+          <X className="size-4" />
+          Withdrawn.
+        </div>
+      );
+    default:
+      return null;
+  }
 }
