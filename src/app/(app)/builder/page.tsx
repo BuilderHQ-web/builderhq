@@ -31,6 +31,7 @@ async function safe<T>(label: string, p: Promise<T>, fallback: T): Promise<T> {
 }
 import { SectionKicker } from "@/components/app/section-kicker";
 import { EmptyState } from "@/components/app/empty-state";
+import { Reveal } from "@/components/app/reveal";
 import { ProjectCard } from "@/components/builder/project-card";
 import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
@@ -201,26 +202,31 @@ export default async function BuilderDashboard() {
 
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
         {/* ── FBA panel — prominent when active ─────────────────────── */}
-        <section>
-          <SectionKicker>
-            {fbaStatus.active ? "Founding access" : "Access"}
-          </SectionKicker>
-          <div className="mt-5">
-            <FbaCard status={fbaStatus} />
-          </div>
-        </section>
+        <Reveal immediate delay={0.04}>
+          <section>
+            <SectionKicker>
+              {fbaStatus.active ? "Founding access" : "Access"}
+            </SectionKicker>
+            <div className="mt-5">
+              <FbaCard status={fbaStatus} />
+            </div>
+          </section>
+        </Reveal>
 
         {/* ── KPIs ──────────────────────────────────────────────────── */}
-        <section>
-          <SectionKicker>Pipeline</SectionKicker>
-          <div className="mt-5">
-            <AnimatedKpis items={kpis} />
-          </div>
-        </section>
+        <Reveal immediate delay={0.10}>
+          <section>
+            <SectionKicker>Pipeline</SectionKicker>
+            <div className="mt-5">
+              <AnimatedKpis items={kpis} />
+            </div>
+          </section>
+        </Reveal>
 
         {/* ── Suggested ───────────────────────────────────────────── */}
-        <section>
-          <SectionHeader
+        <Reveal>
+          <section>
+            <SectionHeader
             title="Suggested for you"
             description={
               matchedCategories.length > 0 || matchedSuburbs.length > 0
@@ -265,72 +271,77 @@ export default async function BuilderDashboard() {
               ))}
             </div>
           )}
-        </section>
+          </section>
+        </Reveal>
 
         {/* ── Recent unlocks ─────────────────────────────────────── */}
         {recentUnlocks.length > 0 ? (
-          <section>
-            <SectionHeader
-              title="Recently unlocked"
-              description="Projects you've committed to."
-              action={
-                unlockedCount > recentUnlocks.length ? (
-                  <Link
-                    href="/builder/browse"
-                    className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                  >
-                    See all {unlockedCount}
-                  </Link>
-                ) : null
-              }
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {recentUnlocks.map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  project={p}
-                  isSaved={savedSet.has(p.id)}
-                  isUnlocked={true}
-                  fbaActive={
-                    fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                  }
-                />
-              ))}
-            </div>
-          </section>
+          <Reveal>
+            <section>
+              <SectionHeader
+                title="Recently unlocked"
+                description="Projects you've committed to."
+                action={
+                  unlockedCount > recentUnlocks.length ? (
+                    <Link
+                      href="/builder/browse"
+                      className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
+                    >
+                      See all {unlockedCount}
+                    </Link>
+                  ) : null
+                }
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {recentUnlocks.map((p) => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    isSaved={savedSet.has(p.id)}
+                    isUnlocked={true}
+                    fbaActive={
+                      fbaStatus.active && fbaStatus.remainingThisCycle > 0
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          </Reveal>
         ) : null}
 
         {/* ── Saved ──────────────────────────────────────────────── */}
         {savedRecent.length > 0 ? (
-          <section>
-            <SectionHeader
-              title="Your saved list"
-              description="Projects you've bookmarked to revisit."
-              action={
-                savedCount > savedRecent.length ? (
-                  <Link
-                    href="/builder/saved"
-                    className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                  >
-                    See all {savedCount}
-                  </Link>
-                ) : null
-              }
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {savedRecent.map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  project={p}
-                  isSaved={true}
-                  isUnlocked={unlockedSet.has(p.id)}
-                  fbaActive={
-                    fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                  }
-                />
-              ))}
-            </div>
-          </section>
+          <Reveal>
+            <section>
+              <SectionHeader
+                title="Your saved list"
+                description="Projects you've bookmarked to revisit."
+                action={
+                  savedCount > savedRecent.length ? (
+                    <Link
+                      href="/builder/saved"
+                      className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
+                    >
+                      See all {savedCount}
+                    </Link>
+                  ) : null
+                }
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {savedRecent.map((p) => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    isSaved={true}
+                    isUnlocked={unlockedSet.has(p.id)}
+                    fbaActive={
+                      fbaStatus.active && fbaStatus.remainingThisCycle > 0
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          </Reveal>
         ) : null}
       </div>
     </div>

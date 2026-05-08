@@ -13,6 +13,7 @@ import { listMine, type Project } from "@/modules/projects";
 import { countTendersReceivedForOwner } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
 import { SectionKicker } from "@/components/app/section-kicker";
+import { Reveal } from "@/components/app/reveal";
 
 export const metadata = { title: "Dashboard" };
 
@@ -124,7 +125,8 @@ export default async function OwnerDashboard() {
 
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
         {/* ── KPI cards ─────────────────────────────────────────────── */}
-        <section>
+        <Reveal immediate delay={0.04}>
+          <section>
           <SectionKicker>At a glance</SectionKicker>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Kpi
@@ -162,10 +164,12 @@ export default async function OwnerDashboard() {
               hint="Builder conversations"
             />
           </div>
-        </section>
+          </section>
+        </Reveal>
 
         {/* ── Recent projects + Shortcuts ───────────────────────────── */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <Reveal immediate delay={0.10}>
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <Panel
             tone="default"
             title="Recent projects"
@@ -284,30 +288,33 @@ export default async function OwnerDashboard() {
               />
             </ul>
           </Panel>
-        </section>
+          </section>
+        </Reveal>
 
         {/* ── What's next ───────────────────────────────────────────── */}
-        <section>
-          <Panel
-            tone="muted"
-            title="What ships next"
-            description="Live roadmap from BuilderHQ."
-          >
-            <div className="px-6 pb-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-              <RoadmapItem
-                phase="Step 4"
-                title="Builder browse + match filtering"
-                imminent
-              />
-              <RoadmapItem
-                phase="Step 5"
-                title="Stripe unlocks + Founding Builder credits"
-              />
-              <RoadmapItem phase="Phase 3" title="Tender submission + comparison" />
-              <RoadmapItem phase="Phase 3" title="Owner ↔ builder messaging" />
-            </div>
-          </Panel>
-        </section>
+        <Reveal>
+          <section>
+            <Panel
+              tone="muted"
+              title="What ships next"
+              description="Live roadmap from BuilderHQ."
+            >
+              <div className="px-6 pb-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                <RoadmapItem
+                  phase="Step 4"
+                  title="Builder browse + match filtering"
+                  imminent
+                />
+                <RoadmapItem
+                  phase="Step 5"
+                  title="Stripe unlocks + Founding Builder credits"
+                />
+                <RoadmapItem phase="Phase 3" title="Tender submission + comparison" />
+                <RoadmapItem phase="Phase 3" title="Owner ↔ builder messaging" />
+              </div>
+            </Panel>
+          </section>
+        </Reveal>
       </div>
     </div>
   );

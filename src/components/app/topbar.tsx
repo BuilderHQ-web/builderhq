@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/brand/logo";
 import { NotificationBell } from "@/components/app/notification-bell";
+import { openCommandPalette } from "@/components/app/command-palette";
 
 import { signOutAction } from "@/app/(app)/_actions/sign-out";
 
@@ -87,17 +88,18 @@ export function Topbar({
             </Link>
           ) : null}
 
-          {/* Search trigger — Cmd+K palette ships in Phase 2; for now just visual */}
+          {/* Command palette trigger — opens the ⌘K spotlight. */}
           <button
             type="button"
+            onClick={() => openCommandPalette()}
             className={cn(
               "hidden md:inline-flex items-center gap-2.5 rounded-tight border border-border-subtle bg-surface-1 px-2.5 py-1.5",
               "text-[12px] text-text-faint",
-              "hover:border-border-strong hover:text-text-muted",
+              "hover:border-border-strong hover:text-text-muted hover:bg-surface-2",
               "transition-colors duration-[120ms] ease-[var(--ease-out)]",
+              "active:scale-[0.985] active:duration-[80ms]",
             )}
-            aria-label="Search (coming soon)"
-            disabled
+            aria-label="Open command palette"
           >
             <Search className="size-3.5" />
             <span className="font-ui">Search</span>

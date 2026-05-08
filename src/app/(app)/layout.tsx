@@ -8,6 +8,7 @@ import { countUnreadForUser as countUnreadMessages } from "@/modules/messaging";
 import { logger } from "@/lib/logger";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
+import { CommandPalette } from "@/components/app/command-palette";
 
 /**
  * Best-effort wrapper around an awaited query — if it throws (DB
@@ -103,6 +104,8 @@ export default async function AppLayout({
         />
         <main className="flex-1">{children}</main>
       </div>
+      {/* Mounted once — listens for ⌘K and the imperative open event. */}
+      <CommandPalette role={role} />
     </div>
   );
 }
