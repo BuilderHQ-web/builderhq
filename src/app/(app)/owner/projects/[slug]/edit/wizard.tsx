@@ -48,6 +48,7 @@ import {
 } from "@/app/(app)/_actions/documents";
 import { lookupPostcodeAction } from "@/lib/postcodes-action";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 import type {
   Project,
   PublishabilityReport,
@@ -357,10 +358,14 @@ export function ProjectWizard({
       const r = await publishProjectAction(project.id);
       if (!r.ok) {
         const reasons = (r.error.details?.reasons as string[]) ?? [r.error.message];
-        alert(reasons.join("\n"));
+        toast.error(
+          "Couldn't publish",
+          reasons.length > 1 ? reasons.join(" · ") : reasons[0],
+        );
         return;
       }
       setProject(r.value);
+      toast.success("Project published", "Builders can now find it in the marketplace.");
       router.push(`/owner/projects/${r.value.slug}`);
     } finally {
       setPublishing(false);
@@ -371,9 +376,10 @@ export function ProjectWizard({
     if (!confirm("Delete this draft? This can be undone by an admin.")) return;
     const r = await softDeleteProjectAction(project.id);
     if (!r.ok) {
-      alert(r.error.message);
+      toast.error("Couldn't delete", r.error.message);
       return;
     }
+    toast.message("Draft deleted");
     router.push("/owner/projects");
   }, [project.id, router]);
 
@@ -1198,7 +1204,7 @@ function FileChip({
             const r = await getDownloadUrlAction(doc.id);
             setBusy(null);
             if (!r.ok) {
-              alert(r.error.message);
+              toast.error("Download failed", r.error.message);
               return;
             }
             window.open(r.value.url, "_blank", "noopener");
@@ -1217,7 +1223,7 @@ function FileChip({
             const r = await softDeleteDocAction(doc.id);
             setBusy(null);
             if (!r.ok) {
-              alert(r.error.message);
+              toast.error("Couldn't delete", r.error.message);
               return;
             }
             await onDeleted();

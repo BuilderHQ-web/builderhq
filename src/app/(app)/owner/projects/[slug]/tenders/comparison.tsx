@@ -35,6 +35,7 @@ import { TRADES, tradeLabel, type TradeId } from "@/modules/tenders/trades";
 import type { TenderForOwner } from "@/modules/tenders";
 import type { Document } from "@/modules/documents";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 
 // ── meta ─────────────────────────────────────────────────────────────────
 
@@ -129,27 +130,39 @@ export function TendersComparison({
   const onShortlist = (id: string) =>
     startTransition(async () => {
       const r = await shortlistTenderAction(id);
-      if (r.ok) updateLocal(id, "shortlisted");
-      else alert(r.error.message);
+      if (r.ok) {
+        updateLocal(id, "shortlisted");
+        toast.success("Shortlisted", "Builder will be notified.");
+      } else {
+        toast.error("Couldn't shortlist", r.error.message);
+      }
     });
   const onAward = (id: string) =>
     startTransition(async () => {
       const r = await awardTenderAction(id);
-      if (r.ok) updateLocal(id, "awarded");
-      else alert(r.error.message);
+      if (r.ok) {
+        updateLocal(id, "awarded");
+        toast.success("Awarded", "Builder will get the contact details.");
+      } else {
+        toast.error("Couldn't award", r.error.message);
+      }
     });
   const onReject = (id: string) =>
     startTransition(async () => {
       if (!confirm("Reject this tender? The builder will be notified.")) return;
       const r = await rejectTenderAction(id);
-      if (r.ok) updateLocal(id, "rejected");
-      else alert(r.error.message);
+      if (r.ok) {
+        updateLocal(id, "rejected");
+        toast.message("Tender rejected", "Builder has been notified.");
+      } else {
+        toast.error("Couldn't reject", r.error.message);
+      }
     });
   const onMoveBack = (id: string) =>
     startTransition(async () => {
       const r = await moveTenderToSubmittedAction(id);
       if (r.ok) updateLocal(id, "submitted");
-      else alert(r.error.message);
+      else toast.error("Couldn't change status", r.error.message);
     });
 
   // ── render ───────────────────────────────────────────────────────
@@ -1375,7 +1388,7 @@ function DocDownload({ id }: { id: string }) {
         const r = await getBuilderDownloadUrlAction(id);
         setBusy(false);
         if (!r.ok) {
-          alert(r.error.message);
+          toast.error("Download failed", r.error.message);
           return;
         }
         window.open(r.value.url, "_blank", "noopener");

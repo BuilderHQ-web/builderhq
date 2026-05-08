@@ -39,6 +39,7 @@ import type { Document, DocumentCategory } from "@/modules/documents";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 
 // ── lookup labels ────────────────────────────────────────────────────────
 
@@ -177,10 +178,11 @@ export function ProjectDetail({
     startUnlock(async () => {
       const r = await unlockProjectAction(preview.id);
       if (!r.ok) {
-        alert(r.error.message);
+        toast.error("Couldn't unlock", r.error.message);
         return;
       }
       setUnlocked(true);
+      toast.success("Project unlocked", "You can now message the owner and submit a tender.");
       router.refresh();
     });
   };
@@ -974,7 +976,7 @@ function DocRow({
           const r = await getBuilderDownloadUrlAction(doc.id);
           setBusy(false);
           if (!r.ok) {
-            alert(r.error.message);
+            toast.error("Download failed", r.error.message);
             return;
           }
           window.open(r.value.url, "_blank", "noopener");

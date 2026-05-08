@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 import {
   getThreadAction,
   getMessagesAction,
@@ -251,8 +252,7 @@ export function MessagesShell({
           : prev,
       );
       setDraft(body);
-      // eslint-disable-next-line no-alert
-      alert(r.error.message);
+      toast.error("Couldn't send", r.error.message);
     }
     setSending(false);
   }, [activeId, draft, sending, meId]);
@@ -395,10 +395,11 @@ function ListItem({
       onClick={onClick}
       className={cn(
         "group w-full text-left flex items-stretch gap-3 px-4 py-3.5 border-b border-border-subtle/40",
-        "transition-colors duration-[140ms]",
+        "transition-[background-color,transform] duration-[160ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
+        "active:scale-[0.997] active:duration-[120ms]",
         active
           ? "bg-[rgba(0,212,200,0.07)]"
-          : "hover:bg-[rgba(255,255,255,0.022)]",
+          : "hover:bg-[rgba(255,255,255,0.025)]",
       )}
     >
       {/* Active accent bar */}
@@ -472,21 +473,29 @@ function ListEmpty({
     return (
       <div className="flex flex-col items-center text-center px-6 py-12 text-text-dim">
         <Search className="size-5 mb-2 text-text-faint" />
-        <p className="text-[13px]">No conversations match "{query}".</p>
+        <p className="text-[13px]">No conversations match &ldquo;{query}&rdquo;.</p>
       </div>
     );
   }
   const hint =
     scope === "builder"
       ? "Unlock a project and you'll automatically connect with the owner here."
-      : "Once a builder unlocks one of your projects, the conversation lands here.";
+      : "Once a builder unlocks one of your projects, the conversation will land here.";
   return (
     <div className="flex flex-col items-center text-center px-6 py-16">
-      <div className="size-12 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.018)] flex items-center justify-center mb-4">
-        <Inbox className="size-5 text-text-faint" />
+      <div
+        className="size-14 rounded-full border border-border-subtle flex items-center justify-center mb-4"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.16), rgba(255,255,255,0.018))",
+        }}
+      >
+        <Inbox className="size-5 text-accent-light" />
       </div>
-      <p className="text-[14px] text-text-muted">No conversations yet</p>
-      <p className="mt-1 text-[12px] text-text-dim leading-[1.55] max-w-[260px]">
+      <p className="font-display uppercase tracking-[-0.012em] text-[18px] leading-[1.05] text-text">
+        No conversations yet
+      </p>
+      <p className="mt-2 text-[12.5px] text-text-muted leading-[1.6] max-w-[280px]">
         {hint}
       </p>
     </div>

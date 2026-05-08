@@ -13,6 +13,8 @@ import {
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { listTendersForBuilder } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
+import { SectionKicker } from "@/components/app/section-kicker";
+import { EmptyState } from "@/components/app/empty-state";
 import { ProjectCard } from "@/components/builder/project-card";
 import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
@@ -163,9 +165,9 @@ export default async function BuilderDashboard() {
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
         {/* ── FBA panel — prominent when active ─────────────────────── */}
         <section>
-          <SectionLabel>
+          <SectionKicker>
             {fbaStatus.active ? "Founding access" : "Access"}
-          </SectionLabel>
+          </SectionKicker>
           <div className="mt-5">
             <FbaCard status={fbaStatus} />
           </div>
@@ -173,7 +175,7 @@ export default async function BuilderDashboard() {
 
         {/* ── KPIs ──────────────────────────────────────────────────── */}
         <section>
-          <SectionLabel>Pipeline</SectionLabel>
+          <SectionKicker>Pipeline</SectionKicker>
           <div className="mt-5">
             <AnimatedKpis items={kpis} />
           </div>
@@ -198,7 +200,19 @@ export default async function BuilderDashboard() {
             }
           />
           {suggested.length === 0 ? (
-            <EmptyHint message="No projects yet — check back soon, or tweak your service area in Settings." />
+            <div className="rounded-md border border-border-subtle">
+              <EmptyState
+                icon={Compass}
+                title="No matches yet"
+                description={
+                  matchedSuburbs.length > 0 || matchedCategories.length > 0
+                    ? "We're matching to your service area + categories — check back soon, or widen your scope in Settings."
+                    : "Set a service area in Settings to start seeing residential projects matched to where you build."
+                }
+                primary={{ label: "Browse all projects", href: "/builder/browse" }}
+                secondary={{ label: "Update service area", href: "/settings" }}
+              />
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {suggested.map((p) => (
@@ -288,15 +302,6 @@ export default async function BuilderDashboard() {
 
 // ── pieces ───────────────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
-      <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-      {children}
-    </span>
-  );
-}
-
 function SectionHeader({
   title,
   description,
@@ -321,11 +326,4 @@ function SectionHeader({
   );
 }
 
-function EmptyHint({ message }: { message: string }) {
-  return (
-    <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-10 text-center text-[13px] text-text-dim">
-      {message}
-    </div>
-  );
-}
 

@@ -88,8 +88,10 @@ export function StatCard({
 }
 
 /**
- * Empty state — characterful, single CTA, plenty of room. Sits inside a
- * card, doesn't wrap itself.
+ * Empty state — characterful, single CTA, plenty of room. Sits inside
+ * a card, doesn't wrap itself. Comes with a soft accent glow and a
+ * gradient orb around the icon — the same family as the FBA card so
+ * the visual language stays cohesive across the app.
  */
 export function EmptyState({
   icon,
@@ -103,17 +105,37 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 lg:py-20">
+    <div className="relative flex flex-col items-center text-center gap-4 px-6 py-16 lg:py-20 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-60"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 45% at 50% 0%, rgba(0,212,200,0.07), transparent 65%)",
+        }}
+      />
       {icon ? (
-        <div className="size-11 rounded-full border border-border bg-surface-2 flex items-center justify-center text-text-muted">
+        <div
+          className={cn(
+            "relative size-14 rounded-full border border-border-subtle flex items-center justify-center text-accent-light",
+          )}
+          style={{
+            background:
+              "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.18), rgba(255,255,255,0.018))",
+          }}
+        >
           {icon}
         </div>
       ) : null}
-      <h3 className="font-ui font-semibold text-[16px] tracking-[-0.01em] text-text">{title}</h3>
+      <h3 className="relative font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
+        {title}
+      </h3>
       {description ? (
-        <p className="text-[13.5px] leading-[22px] text-text-muted max-w-md">{description}</p>
+        <p className="relative text-[13px] leading-[22px] text-text-muted max-w-md">
+          {description}
+        </p>
       ) : null}
-      {action ? <div className="mt-2">{action}</div> : null}
+      {action ? <div className="relative mt-2">{action}</div> : null}
     </div>
   );
 }

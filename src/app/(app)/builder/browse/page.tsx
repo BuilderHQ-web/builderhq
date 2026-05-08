@@ -17,6 +17,7 @@ import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
+import { EmptyState } from "@/components/app/empty-state";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Browse projects" };
@@ -111,21 +112,13 @@ export default async function BrowsePage({
 
         {/* Results */}
         {projects.length === 0 ? (
-          <div className="mt-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
-            <Filter className="mx-auto size-6 text-text-dim mb-3" />
-            <h3 className="text-[15px] font-semibold text-text">
-              No projects match these filters
-            </h3>
-            <p className="mt-1 text-[12.5px] text-text-dim">
-              Try widening the search, or{" "}
-              <Link
-                href="/builder/browse"
-                className="text-accent-light underline underline-offset-4"
-              >
-                clear all filters
-              </Link>
-              .
-            </p>
+          <div className="mt-8">
+            <EmptyState
+              icon={Filter}
+              title="No projects match"
+              description="Try widening the filters, or jump back to all projects."
+              primary={{ label: "Clear all filters", href: "/builder/browse" }}
+            />
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

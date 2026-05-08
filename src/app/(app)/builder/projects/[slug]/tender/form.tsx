@@ -42,6 +42,7 @@ import {
 } from "@/app/(app)/_actions/documents";
 import { TRADES, type TradeId } from "@/modules/tenders/trades";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 import type {
   CostLineInput,
   TenderWithLines,
@@ -341,7 +342,8 @@ export function TenderForm({
       const r = await submitTenderAction(tender.id);
       if (!r.ok) {
         const reasons = (r.error.details?.missing as string[] | undefined) ?? [];
-        alert(
+        toast.error(
+          "Couldn't submit",
           reasons.length > 0
             ? `Still missing: ${reasons.join(", ")}`
             : r.error.message,
@@ -350,6 +352,7 @@ export function TenderForm({
       }
       setTender(r.value);
       setLines(initialiseLines(r.value.costLines));
+      toast.success("Tender submitted", "The owner has been notified.");
       router.refresh();
     } finally {
       setBusy(null);
@@ -368,9 +371,10 @@ export function TenderForm({
     try {
       const r = await withdrawTenderAction(tender.id);
       if (!r.ok) {
-        alert(r.error.message);
+        toast.error("Couldn't withdraw", r.error.message);
         return;
       }
+      toast.message("Tender withdrawn", "Start a new draft when you're ready.");
       router.push("/builder/tenders");
     } finally {
       setBusy(null);
@@ -642,7 +646,7 @@ export function TenderForm({
               onDownload={async (id) => {
                 const r = await getDownloadUrlAction(id);
                 if (!r.ok) {
-                  alert(r.error.message);
+                  toast.error("Download failed", r.error.message);
                   return;
                 }
                 window.open(r.value.url, "_blank", "noopener");
@@ -651,7 +655,7 @@ export function TenderForm({
                 if (!confirm("Delete this document?")) return;
                 const r = await softDeleteDocAction(id);
                 if (!r.ok) {
-                  alert(r.error.message);
+                  toast.error("Couldn't delete", r.error.message);
                   return;
                 }
                 await refreshDocs();

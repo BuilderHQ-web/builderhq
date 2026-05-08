@@ -111,10 +111,16 @@ export function ProjectCard({
     <Link
       href={`/builder/projects/${project.slug}`}
       className={cn(
-        "group relative flex flex-col rounded-md border overflow-hidden transition-all duration-[300ms]",
+        "group relative flex flex-col rounded-md border overflow-hidden",
+        "transition-[transform,border-color,box-shadow,background-color] duration-[260ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
         "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
-        "hover:border-border-accent/60 hover:-translate-y-0.5",
         "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        // Hover: lift + accent border + soft accent glow that hints
+        // toward the card's edge without taking over the content.
+        "hover:border-border-accent/60 hover:-translate-y-1",
+        "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30),0_8px_22px_-12px_rgba(0,0,0,0.7)]",
+        // Tactile press — subtle compression so click registers.
+        "active:translate-y-0 active:scale-[0.995] active:duration-[120ms]",
       )}
     >
       {/* Cover band — gradient + giant faded type-icon + blueprint grid */}

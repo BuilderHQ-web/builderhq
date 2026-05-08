@@ -12,6 +12,7 @@ import { auth } from "@/modules/auth";
 import { listMine, type Project } from "@/modules/projects";
 import { countTendersReceivedForOwner } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
+import { SectionKicker } from "@/components/app/section-kicker";
 
 export const metadata = { title: "Dashboard" };
 
@@ -124,7 +125,7 @@ export default async function OwnerDashboard() {
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
         {/* ── KPI cards ─────────────────────────────────────────────── */}
         <section>
-          <SectionLabel>At a glance</SectionLabel>
+          <SectionKicker>At a glance</SectionKicker>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Kpi
               tone="teal"
@@ -313,15 +314,6 @@ export default async function OwnerDashboard() {
 }
 
 // ── pieces ───────────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
-      <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-      {children}
-    </span>
-  );
-}
 
 type PanelTone = "default" | "accent" | "muted";
 

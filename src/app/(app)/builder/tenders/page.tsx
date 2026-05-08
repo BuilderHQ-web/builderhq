@@ -6,6 +6,7 @@ import { auth } from "@/modules/auth";
 import { listTendersForBuilder } from "@/modules/tenders";
 import { listByIds } from "@/modules/projects";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/app/empty-state";
 
 export const metadata = { title: "My tenders" };
 
@@ -93,27 +94,12 @@ export default async function MyTendersPage() {
         </div>
 
         {tenders.length === 0 ? (
-          <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
-            <FileText className="mx-auto size-6 text-text-dim mb-3" />
-            <h3 className="text-[15px] font-semibold text-text">
-              No tenders yet
-            </h3>
-            <p className="mt-1 text-[12.5px] text-text-dim mx-auto max-w-[44ch]">
-              Unlock a project and submit your first tender — autosaves as you
-              go, locks on submit, owner sees it side-by-side with others.
-            </p>
-            <Link
-              href="/builder/browse"
-              className={cn(
-                "mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-full",
-                "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
-                "transition-colors duration-[160ms] hover:bg-accent-hover",
-              )}
-            >
-              <Compass className="size-3.5" />
-              Browse projects
-            </Link>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No tenders yet"
+            description="Unlock a project and submit your first tender — autosaves as you go, locks on submit, owner sees it side-by-side with the others."
+            primary={{ label: "Browse projects", href: "/builder/browse" }}
+          />
         ) : (
           <div className="space-y-8">
             {buckets.draft.length > 0 ? (

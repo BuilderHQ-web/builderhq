@@ -1,6 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Space_Grotesk, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+import { ToastProvider } from "@/components/ui/toast";
+import { RouteProgress } from "@/components/app/route-progress";
 
 // Display — Bebas Neue. Tall, condensed, dramatic. Brand-locked for hero
 // titles and section headlines (rendered ALL CAPS).
@@ -87,7 +91,14 @@ export default function RootLayout({
       className={`${bebas.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${jetbrains.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-dvh font-sans text-text">{children}</body>
+      <body className="min-h-dvh font-sans text-text">
+        <ToastProvider>
+          <Suspense fallback={null}>
+            <RouteProgress />
+          </Suspense>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }
