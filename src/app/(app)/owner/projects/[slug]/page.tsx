@@ -16,6 +16,7 @@ import {
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner, type Project } from "@/modules/projects";
 import { listForProject } from "@/modules/documents";
+import { countTendersForProject } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -117,6 +118,7 @@ export default async function ProjectDetailPage({
   }
 
   const docs = await listForProject(session.user.id!, project.id);
+  const tenderCount = await countTendersForProject(project.id);
 
   return (
     <div className="px-6 lg:px-10 py-8 lg:py-10">
@@ -259,6 +261,27 @@ export default async function ProjectDetailPage({
                 className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
               >
                 Manage documents
+                <ArrowUpRight className="size-3" />
+              </Link>
+            </Card>
+
+            <Card title={`Tenders · ${tenderCount}`} icon={<FileText className="size-4" />}>
+              {tenderCount === 0 ? (
+                <p className="text-[12.5px] text-text-dim">
+                  No tenders yet. Builders who unlock this project can submit
+                  tenders, which appear side-by-side here for comparison.
+                </p>
+              ) : (
+                <p className="text-[12.5px] text-text-muted">
+                  {tenderCount} tender{tenderCount === 1 ? "" : "s"} received.
+                  Compare side-by-side and decide.
+                </p>
+              )}
+              <Link
+                href={`/owner/projects/${project.slug}/tenders`}
+                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
+              >
+                {tenderCount > 0 ? "Compare tenders" : "View tender stream"}
                 <ArrowUpRight className="size-3" />
               </Link>
             </Card>

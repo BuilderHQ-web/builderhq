@@ -13,6 +13,7 @@ export type Document = Pick<
   | "id"
   | "ownerId"
   | "projectId"
+  | "tenderId"
   | "category"
   | "filename"
   | "contentType"
@@ -39,6 +40,11 @@ export type DocumentCategory =
 /** Inputs to start a new upload. The bytes haven't moved yet. */
 export type InitUploadInput = {
   projectId: string;
+  /** Optional — set when this doc is attached to a tender (BoQ PDF,
+   *  insurance cert, etc.). Both projectId and tenderId can be set;
+   *  the tender's projectId is denormalised so existing project-side
+   *  queries don't have to JOIN through tenders. */
+  tenderId?: string;
   filename: string;
   contentType: string;
   sizeBytes: number;

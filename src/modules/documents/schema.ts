@@ -38,6 +38,7 @@ import {
 
 import { users } from "@/modules/users";
 import { projects } from "@/modules/projects/schema";
+import { tenders } from "@/modules/tenders/schema";
 
 // ── enums ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,14 @@ export const documents = pgTable(
     projectId: uuid()
       .references(() => projects.id, { onDelete: "set null" }),
 
+    // The tender this document is attached to (optional). Tender docs
+    // (BoQ PDFs, insurance certs, past projects, etc.) reuse the same
+    // upload pipeline but are scoped to a single tender. When set,
+    // project_id should also be set (the project this tender belongs
+    // to) for owner-side visibility queries.
+    tenderId: uuid()
+      .references(() => tenders.id, { onDelete: "set null" }),
+
     // What kind of document this is. Drives the architectural-plan
     // publish-gate on projects (see projects.service → publish()).
     category: documentCategoryEnum().notNull().default("other"),
@@ -131,6 +140,8 @@ export const documents = pgTable(
     index("documents_parent_idx").on(t.parentId),
     // Looking up a row by storage key during stat-confirm.
     index("documents_object_key_idx").on(t.objectKey),
+    // Listing tender-attached docs.
+    index("documents_tender_idx").on(t.tenderId, t.createdAt),
   ],
 );
 

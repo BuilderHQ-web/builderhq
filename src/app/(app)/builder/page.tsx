@@ -11,6 +11,7 @@ import {
   listMySavedProjectIds,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import { listTendersForBuilder } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/builder/project-card";
 import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
@@ -59,6 +60,13 @@ export default async function BuilderDashboard() {
       ? getFbaStatus(userId)
       : Promise.resolve({ active: false, reason: "no_grant" } as const),
   ]);
+  const myTenders = userId ? await listTendersForBuilder(userId) : [];
+  const submittedTenderCount = myTenders.filter(
+    (t) =>
+      t.status === "submitted" ||
+      t.status === "shortlisted" ||
+      t.status === "awarded",
+  ).length;
 
   const recentUnlocks = await listByIds(unlockedIds.slice(0, 3));
   const savedRecent = await listByIds(savedIds.slice(0, 3));
@@ -96,8 +104,11 @@ export default async function BuilderDashboard() {
       tone: "rose",
       icon: "trending",
       label: "Submitted tenders",
-      value: 0,
-      hint: "Coming in Phase 3",
+      value: submittedTenderCount,
+      hint:
+        submittedTenderCount === 0
+          ? "Submit your first tender from any unlocked project"
+          : "Active across the marketplace",
     },
   ];
 

@@ -41,8 +41,8 @@ const ownerNav: NavSection[] = [
   {
     items: [
       { href: "/owner", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/owner/projects", label: "Projects", icon: Folders, soon: "Phase 2" },
-      { href: "/owner/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Phase 3" },
+      { href: "/owner/projects", label: "Projects", icon: Folders },
+      { href: "/owner/tenders", label: "Tenders", icon: FileSpreadsheet },
       { href: "/owner/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
     ],
   },
@@ -59,7 +59,7 @@ const builderNav: NavSection[] = [
       { href: "/builder/browse", label: "Browse projects", icon: Compass },
       { href: "/builder/saved", label: "Saved", icon: ClipboardList },
       { href: "/builder/unlocked", label: "Unlocked", icon: ShieldCheck },
-      { href: "/builder/tenders", label: "My tenders", icon: FileSpreadsheet, soon: "Phase 3" },
+      { href: "/builder/tenders", label: "My tenders", icon: FileSpreadsheet },
       { href: "/builder/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
     ],
   },

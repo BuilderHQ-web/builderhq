@@ -135,6 +135,7 @@ export function ProjectDetail({
   ownerContact,
   fbaStatus,
   priceAud,
+  myTenderStatus,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -144,6 +145,14 @@ export function ProjectDetail({
   ownerContact: OwnerContact | null;
   fbaStatus: FbaStatus;
   priceAud: number;
+  myTenderStatus:
+    | "draft"
+    | "submitted"
+    | "withdrawn"
+    | "shortlisted"
+    | "awarded"
+    | "rejected"
+    | null;
 }) {
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(unlockedInitial);
@@ -463,23 +472,16 @@ export function ProjectDetail({
         </div>
       </div>
 
-      {/* Sticky unlock bar — three states: unlocked / FBA-active / paywall */}
+      {/* Sticky bar — four states:
+          - locked            → unlock paywall (FBA-aware)
+          - unlocked + no tender → primary "Submit a tender"
+          - unlocked + draft  → "Continue tender draft"
+          - unlocked + submitted/etc → "View / edit tender" */}
       {unlocked ? (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
-            <div className="text-[13px] text-accent-light flex items-center gap-2">
-              <Check className="size-4" />
-              Unlocked — full project visible. Tender flow lands in Phase 3.
-            </div>
-            <Link
-              href="/builder/browse"
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
-            >
-              Back to browse
-              <ArrowUpRight className="size-3.5" />
-            </Link>
-          </div>
-        </div>
+        <TenderCtaBar
+          slug={preview.slug}
+          tenderStatus={myTenderStatus}
+        />
       ) : (
         <UnlockBar
           priceAud={priceAud}
@@ -489,6 +491,88 @@ export function ProjectDetail({
           onUnlock={onUnlock}
         />
       )}
+    </div>
+  );
+}
+
+function TenderCtaBar({
+  slug,
+  tenderStatus,
+}: {
+  slug: string;
+  tenderStatus:
+    | "draft"
+    | "submitted"
+    | "withdrawn"
+    | "shortlisted"
+    | "awarded"
+    | "rejected"
+    | null;
+}) {
+  const variant: "none" | "draft" | "submitted" | "decided" =
+    tenderStatus === null || tenderStatus === "withdrawn"
+      ? "none"
+      : tenderStatus === "draft"
+      ? "draft"
+      : tenderStatus === "submitted" || tenderStatus === "shortlisted"
+      ? "submitted"
+      : "decided";
+
+  const headline =
+    variant === "none"
+      ? "Ready to tender on this project?"
+      : variant === "draft"
+      ? "Tender draft in progress"
+      : variant === "submitted"
+      ? "Tender submitted"
+      : tenderStatus === "awarded"
+      ? "You've been awarded this project"
+      : "Tender decided";
+
+  const sub =
+    variant === "none"
+      ? "Submit your price + scope. Owner sees it side-by-side with other tenders."
+      : variant === "draft"
+      ? "Pick up where you left off — autosaves as you fill it in."
+      : variant === "submitted"
+      ? "Owner is reviewing. You can withdraw to start over."
+      : tenderStatus === "awarded"
+      ? "The owner picked your tender. Sit tight — Phase 3 wires the next-step flow."
+      : "Owner has decided on this tender.";
+
+  const ctaLabel =
+    variant === "none"
+      ? "Submit a tender"
+      : variant === "draft"
+      ? "Continue draft"
+      : "View tender";
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md">
+      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+        <div className="min-w-0 flex items-start gap-3">
+          <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
+            <FileText className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-[13px] font-semibold text-text">{headline}</div>
+            <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
+              {sub}
+            </div>
+          </div>
+        </div>
+        <Link
+          href={`/builder/projects/${slug}/tender`}
+          className={cn(
+            "inline-flex items-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "bg-accent text-accent-contrast hover:bg-accent-hover",
+            "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+          )}
+        >
+          {ctaLabel}
+          <ArrowUpRight className="size-4" />
+        </Link>
+      </div>
     </div>
   );
 }

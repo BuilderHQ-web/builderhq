@@ -133,6 +133,7 @@ export async function initUpload(
     .values({
       ownerId,
       projectId: input.projectId,
+      tenderId: input.tenderId ?? null,
       category: input.category ?? "other",
       filename: input.filename.trim(),
       contentType: input.contentType,
@@ -258,7 +259,11 @@ export async function listMyDocuments(ownerId: string): Promise<Document[]> {
   return rows.map(toPublic);
 }
 
-/** List the documents attached to a project (caller must own the project). */
+/**
+ * List the documents attached to a project (caller must own the
+ * project). Tender-attached docs are excluded — they belong to a
+ * tender, not the project's workspace.
+ */
 export async function listForProject(
   ownerId: string,
   projectId: string,
@@ -270,6 +275,7 @@ export async function listForProject(
       and(
         eq(documents.projectId, projectId),
         eq(documents.ownerId, ownerId),
+        isNull(documents.tenderId),
         isNull(documents.deletedAt),
       ),
     )
@@ -281,7 +287,7 @@ export async function listForProject(
  * List active documents on a project without an ownership check.
  * Used by the builder side AFTER the caller has verified the requester
  * unlocked the project (or is admin). Skipping the unlock check here
- * means the caller MUST gate first.
+ * means the caller MUST gate first. Excludes tender docs.
  */
 export async function listActiveForProjectUnchecked(
   projectId: string,
@@ -293,9 +299,36 @@ export async function listActiveForProjectUnchecked(
       and(
         eq(documents.projectId, projectId),
         eq(documents.status, "active"),
+        isNull(documents.tenderId),
         isNull(documents.deletedAt),
       ),
     )
+    .orderBy(desc(documents.createdAt));
+  return rows.map(toPublic);
+}
+
+/**
+ * List the documents attached to a tender. Used by both:
+ *   - the builder editing the tender (sees pending + active), and
+ *   - the project owner viewing a submitted tender (active only).
+ * Caller MUST gate (builder owns the tender, or owner owns the
+ * project + tender is in a visible state).
+ */
+export async function listForTenderUnchecked(
+  tenderId: string,
+  opts: { activeOnly?: boolean } = {},
+): Promise<Document[]> {
+  const conds = [
+    eq(documents.tenderId, tenderId),
+    isNull(documents.deletedAt),
+  ];
+  if (opts.activeOnly) {
+    conds.push(eq(documents.status, "active"));
+  }
+  const rows = await db
+    .select()
+    .from(documents)
+    .where(and(...conds))
     .orderBy(desc(documents.createdAt));
   return rows.map(toPublic);
 }
@@ -349,6 +382,7 @@ function toPublic(row: DocumentRow): Document {
     id: row.id,
     ownerId: row.ownerId,
     projectId: row.projectId,
+    tenderId: row.tenderId,
     category: row.category,
     filename: row.filename,
     contentType: row.contentType,

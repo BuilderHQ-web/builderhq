@@ -32,6 +32,7 @@ export {
   listMyDocuments,
   listForProject,
   listActiveForProjectUnchecked,
+  listForTenderUnchecked,
   getDownloadUrlForUnlocked,
   softDelete,
 } from "./service";

@@ -10,6 +10,7 @@ import {
 
 import { auth } from "@/modules/auth";
 import { listMine, type Project } from "@/modules/projects";
+import { countTendersReceivedForOwner } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
@@ -41,6 +42,9 @@ export default async function OwnerDashboard() {
   const projects = session?.user
     ? await listMine(session.user.id!)
     : [];
+  const tendersReceived = session?.user
+    ? await countTendersReceivedForOwner(session.user.id!)
+    : 0;
 
   const activeCount = projects.filter(
     (p) => p.status === "published" || p.status === "tendering",
@@ -143,8 +147,12 @@ export default async function OwnerDashboard() {
             <Kpi
               tone="amber"
               label="Tenders received"
-              value={0}
-              hint="Compare side-by-side"
+              value={tendersReceived}
+              hint={
+                tendersReceived === 0
+                  ? "Compare side-by-side"
+                  : "Live across all projects"
+              }
             />
             <Kpi
               tone="rose"
