@@ -5,8 +5,33 @@ import { hasCompletedOnboarding } from "@/modules/profiles";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { countUnread as countUnreadNotifications } from "@/modules/notifications";
 import { countUnreadForUser as countUnreadMessages } from "@/modules/messaging";
+import { logger } from "@/lib/logger";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
+
+/**
+ * Best-effort wrapper around an awaited query — if it throws (DB
+ * blip, missing column, etc.) we log the failure and return a safe
+ * fallback rather than blowing up the entire layout for every route
+ * underneath. The layout is on the hot path for every authenticated
+ * page, so a 500 here cascades into a "site is down" experience.
+ */
+async function safe<T>(
+  label: string,
+  promise: Promise<T>,
+  fallback: T,
+): Promise<T> {
+  try {
+    return await promise;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "app_layout.query_failed", label, msg },
+      "app layout query failed — using fallback",
+    );
+    return fallback;
+  }
+}
 
 /**
  * Authenticated app shell — owner / builder / admin compose into here.
@@ -45,13 +70,20 @@ export default async function AppLayout({
   // surface that to the topbar so it can render the badge.
   // Run alongside the unread-count fetch so we don't double up the
   // round-trip latency before render.
+  // Each of these is wrapped in `safe(...)` so a single flaky query
+  // doesn't blow up the entire shell. The fallbacks render the UI in a
+  // "no badge / not founding" state rather than 500-ing the whole app.
   const [isFounding, initialUnreadCount, initialUnreadMessages] =
     await Promise.all([
       role === "builder"
-        ? getFbaStatus(session.user.id).then((s) => s.active)
+        ? safe(
+            "fba_status",
+            getFbaStatus(session.user.id).then((s) => s.active),
+            false,
+          )
         : Promise.resolve(false),
-      countUnreadNotifications(session.user.id),
-      countUnreadMessages(session.user.id),
+      safe("unread_notifications", countUnreadNotifications(session.user.id), 0),
+      safe("unread_messages", countUnreadMessages(session.user.id), 0),
     ]);
 
   return (
