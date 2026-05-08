@@ -51,3 +51,50 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
   ),
 );
 Textarea.displayName = "Textarea";
+
+/**
+ * Select — matches Input visually (same border, focus halo, invalid
+ * state) and gets a custom chevron via a wrapper. The native control
+ * stays underneath so platform a11y + keyboard nav comes for free.
+ *
+ * Usage:
+ *
+ *   <Select name="state" defaultValue={state}>
+ *     <option value="">All states</option>
+ *     <option value="VIC">VIC</option>
+ *   </Select>
+ */
+export const Select = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement>
+>(({ className, children, ...props }, ref) => (
+  <div className="relative">
+    <select
+      ref={ref}
+      className={cn(
+        ...baseField,
+        // Native chevron suppressed; we draw our own.
+        "appearance-none pr-10 cursor-pointer",
+        // Native select height matches Input.
+        "h-10 py-2",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </select>
+    <svg
+      aria-hidden
+      viewBox="0 0 12 8"
+      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-3 text-text-faint"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 1.5l5 5 5-5" />
+    </svg>
+  </div>
+));
+Select.displayName = "Select";

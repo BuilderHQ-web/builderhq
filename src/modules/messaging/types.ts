@@ -28,6 +28,11 @@ export interface ConversationListItem {
     initials: string;
     /** "owner" | "builder" — useful for sub-label rendering. */
     role: "project_owner" | "builder";
+    /** When the other side last opened this thread — used as a
+     *  best-effort presence signal (UI shows an "active" dot when
+     *  this falls inside a recent window). Null if they've never
+     *  read it. */
+    lastReadAt: Date | null;
   };
   lastMessageAt: Date | null;
   lastMessagePreview: string | null;

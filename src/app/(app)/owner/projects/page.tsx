@@ -7,6 +7,7 @@ import { listMine, type Project } from "@/modules/projects";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
+import { Reveal } from "@/components/app/reveal";
 
 export const metadata = { title: "My projects" };
 
@@ -57,48 +58,59 @@ export default async function ProjectsPage() {
             }
           />
         ) : (
-          <div className="rounded-md border border-border-subtle overflow-hidden">
-            <div className="hidden md:grid grid-cols-[1.6fr_1fr_120px_140px_120px] gap-4 px-5 py-3 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
-              <span>Project</span>
-              <span>Location</span>
-              <span>Type</span>
-              <span>Status</span>
-              <span className="text-right">Updated</span>
+          <Reveal immediate delay={0.04}>
+            <div className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]">
+              <div className="hidden md:grid grid-cols-[1.6fr_1fr_120px_140px_120px] gap-4 px-5 py-3 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+                <span>Project</span>
+                <span>Location</span>
+                <span>Type</span>
+                <span>Status</span>
+                <span className="text-right">Updated</span>
+              </div>
+              {projects.map((p, i, arr) => (
+                <Link
+                  key={p.id}
+                  href={
+                    p.status === "draft"
+                      ? `/owner/projects/${p.slug}/edit`
+                      : `/owner/projects/${p.slug}`
+                  }
+                  className={cn(
+                    "group grid grid-cols-1 md:grid-cols-[1.6fr_1fr_120px_140px_120px] gap-2 md:gap-4 px-5 py-4 items-center",
+                    "transition-[background-color,transform] duration-[160ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
+                    "hover:bg-[rgba(0,212,200,0.045)]",
+                    "active:scale-[0.997] active:duration-[100ms]",
+                    i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
+                  )}
+                >
+                  <div className="min-w-0 flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="size-1 shrink-0 rounded-full bg-transparent group-hover:bg-accent group-hover:shadow-[0_0_8px_rgba(0,212,200,0.6)] transition-all duration-[140ms]"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-semibold text-text truncate">
+                        {p.title}
+                      </div>
+                      <div className="text-[11px] text-text-dim truncate md:hidden">
+                        {p.suburb ? `${p.suburb}, ${p.state}` : "Address pending"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden md:block text-[12.5px] text-text-muted truncate">
+                    {p.suburb ? `${p.suburb}, ${p.state}` : "—"}
+                  </div>
+                  <div className="hidden md:block text-[12px] text-text-muted">
+                    {TYPE_LABEL[p.type]}
+                  </div>
+                  <StatusBadge status={p.status} />
+                  <div className="hidden md:block text-[11px] text-text-dim text-right tabular-nums">
+                    {formatRelative(p.updatedAt)}
+                  </div>
+                </Link>
+              ))}
             </div>
-            {projects.map((p, i, arr) => (
-              <Link
-                key={p.id}
-                href={
-                  p.status === "draft"
-                    ? `/owner/projects/${p.slug}/edit`
-                    : `/owner/projects/${p.slug}`
-                }
-                className={cn(
-                  "grid grid-cols-1 md:grid-cols-[1.6fr_1fr_120px_140px_120px] gap-2 md:gap-4 px-5 py-4 items-center transition-colors hover:bg-[rgba(0,212,200,0.025)]",
-                  i === arr.length - 1 ? "" : "border-b border-border-subtle",
-                )}
-              >
-                <div className="min-w-0">
-                  <div className="text-[14px] font-semibold text-text truncate">
-                    {p.title}
-                  </div>
-                  <div className="text-[11px] text-text-dim truncate md:hidden">
-                    {p.suburb ? `${p.suburb}, ${p.state}` : "Address pending"}
-                  </div>
-                </div>
-                <div className="hidden md:block text-[12.5px] text-text-muted truncate">
-                  {p.suburb ? `${p.suburb}, ${p.state}` : "—"}
-                </div>
-                <div className="hidden md:block text-[12px] text-text-muted">
-                  {TYPE_LABEL[p.type]}
-                </div>
-                <StatusBadge status={p.status} />
-                <div className="hidden md:block text-[11px] text-text-dim text-right tabular-nums">
-                  {formatRelative(p.updatedAt)}
-                </div>
-              </Link>
-            ))}
-          </div>
+          </Reveal>
         )}
       </div>
     </>

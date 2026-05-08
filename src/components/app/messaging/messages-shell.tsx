@@ -35,7 +35,9 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import {
+  ArrowDown,
   ArrowUpRight,
   Building2,
   CheckCheck,
@@ -47,10 +49,14 @@ import {
   Search,
   Send,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { isMsgSoundEnabled, playSendSound, setMsgSoundEnabled } from "@/lib/sound";
+import { isRecentlyActive } from "./presence";
 import {
   getThreadAction,
   getMessagesAction,
@@ -208,6 +214,9 @@ export function MessagesShell({
 
     const r = await postMessageAction(activeId, body);
     if (r.ok) {
+      // Audible feedback — no-ops if the user hasn't enabled the
+      // preference, so muted users get no sound.
+      playSendSound();
       // Reconcile: replace temp with real row
       setThread((prev) =>
         prev && prev.conversation.id === activeId
@@ -412,7 +421,11 @@ function ListItem({
             : "bg-transparent",
         )}
       />
-      <Avatar initials={item.other.initials} unread={unread} />
+      <Avatar
+        initials={item.other.initials}
+        unread={unread}
+        active={isRecentlyActive(item.other.lastReadAt)}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p
@@ -624,7 +637,11 @@ function ThreadHeader({
       >
         <ArrowUpRight className="size-4 -rotate-180" />
       </button>
-      <Avatar initials={conv.other.initials} size="md" />
+      <Avatar
+        initials={conv.other.initials}
+        size="md"
+        active={isRecentlyActive(conv.other.lastReadAt)}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-[14px] font-medium text-text">
@@ -641,7 +658,44 @@ function ThreadHeader({
           <ExternalLink className="size-3" />
         </Link>
       </div>
+      <SoundToggle />
     </header>
+  );
+}
+
+/**
+ * Mute / unmute send-sound toggle. Sits in the thread header so the
+ * preference is discoverable next to where it matters. Persists to
+ * localStorage via the lib/sound helpers; default off.
+ */
+function SoundToggle() {
+  const [enabled, setEnabled] = useState(false);
+  // Hydrate from localStorage after mount — server doesn't know.
+  useEffect(() => {
+    setEnabled(isMsgSoundEnabled());
+  }, []);
+  const toggle = () => {
+    const next = !enabled;
+    setMsgSoundEnabled(next);
+    setEnabled(next);
+    if (next) playSendSound(); // small feedback that it's on
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={enabled ? "Mute message sound" : "Enable message sound"}
+      title={enabled ? "Mute message sound" : "Enable message sound"}
+      className={cn(
+        "shrink-0 size-8 rounded-md flex items-center justify-center",
+        "transition-[background-color,color] duration-[140ms]",
+        enabled
+          ? "text-accent hover:bg-[rgba(0,212,200,0.10)]"
+          : "text-text-faint hover:text-text-muted hover:bg-surface-1",
+      )}
+    >
+      {enabled ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
+    </button>
   );
 }
 
@@ -656,6 +710,8 @@ function MessageScroll({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const lastCount = useRef(messages.length);
+  const [showJump, setShowJump] = useState(false);
+  const [newSinceScroll, setNewSinceScroll] = useState(0);
 
   // Stick to bottom when new messages arrive — but only if the user
   // wasn't scrolled up reading older messages. We detect "near
@@ -664,6 +720,7 @@ function MessageScroll({
     const el = ref.current;
     if (!el) return;
     const isFresh = messages.length > lastCount.current;
+    const arrivedCount = messages.length - lastCount.current;
     lastCount.current = messages.length;
     const distFromBottom =
       el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -672,27 +729,99 @@ function MessageScroll({
     } else if (!isFresh) {
       // Initial mount — jump to bottom with no smoothing.
       el.scrollTop = el.scrollHeight;
+      setShowJump(false);
+      setNewSinceScroll(0);
+    } else if (isFresh && arrivedCount > 0) {
+      // New messages arrived but user is scrolled up — accumulate a
+      // count so we can show "N new" on the jump-to-latest button.
+      setNewSinceScroll((n) => n + arrivedCount);
     }
   }, [messages]);
 
+  // Watch scroll position so the jump button appears whenever the user
+  // is more than ~120px above the bottom.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const farUp = dist > 120;
+        setShowJump(farUp);
+        if (!farUp) setNewSinceScroll(0);
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const jumpToLatest = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setNewSinceScroll(0);
+  };
+
   return (
-    <div
-      ref={ref}
-      className="flex-1 overflow-y-auto px-4 sm:px-8 py-6"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 50% 0%, rgba(0,212,200,0.025), transparent 55%)",
-      }}
-    >
-      <div className="mx-auto max-w-[760px] flex flex-col gap-1">
-        {messages.length === 0 ? (
-          <div className="text-center text-text-dim py-12">
-            <p className="text-[13px]">Send the first message.</p>
-          </div>
-        ) : (
-          renderMessages(messages, meId)
-        )}
+    <div className="relative flex-1 min-h-0">
+      <div
+        ref={ref}
+        className="absolute inset-0 overflow-y-auto px-4 sm:px-8 py-6"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 50% 0%, rgba(0,212,200,0.025), transparent 55%)",
+        }}
+      >
+        <div className="mx-auto max-w-[760px] flex flex-col gap-1">
+          {messages.length === 0 ? (
+            <div className="text-center text-text-dim py-12">
+              <p className="text-[13px]">Send the first message.</p>
+            </div>
+          ) : (
+            renderMessages(messages, meId)
+          )}
+        </div>
       </div>
+
+      {/* Floating "jump to latest" button — only when scrolled up */}
+      <AnimatePresence>
+        {showJump ? (
+          <motion.button
+            type="button"
+            onClick={jumpToLatest}
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            transition={{ duration: 0.16, ease: [0.2, 0.65, 0.3, 0.9] }}
+            className={cn(
+              "absolute bottom-4 left-1/2 -translate-x-1/2",
+              "inline-flex items-center gap-1.5 px-3 h-8 rounded-full",
+              "bg-accent text-accent-contrast text-[11.5px] font-semibold tracking-[0.04em]",
+              "hover:bg-accent-hover transition-colors duration-[140ms]",
+              "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+            )}
+            aria-label={
+              newSinceScroll > 0
+                ? `Jump to latest — ${newSinceScroll} new`
+                : "Jump to latest"
+            }
+          >
+            <ArrowDown className="size-3" />
+            {newSinceScroll > 0 ? (
+              <>
+                <span>{newSinceScroll} new</span>
+              </>
+            ) : (
+              <span>Latest</span>
+            )}
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -923,22 +1052,40 @@ function Avatar({
   initials,
   size = "sm",
   unread = false,
+  active = false,
 }: {
   initials: string;
   size?: "sm" | "md";
   unread?: boolean;
+  /** Presence dot — green pulse when the other party has read the
+   *  thread within the recent-active window. */
+  active?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "shrink-0 rounded-full font-ui font-semibold tracking-[0.02em] flex items-center justify-center",
-        size === "sm" ? "size-9 text-[12px]" : "size-10 text-[12.5px]",
-        unread
-          ? "bg-[linear-gradient(135deg,rgba(0,212,200,0.85),rgba(26,95,212,0.7))] text-accent-contrast shadow-[0_0_0_2px_rgba(0,212,200,0.3),_0_0_18px_rgba(0,212,200,0.35)]"
-          : "bg-surface-1 text-text-muted border border-border-subtle/80",
-      )}
-    >
-      <span>{initials}</span>
+    <div className="relative shrink-0">
+      <div
+        className={cn(
+          "rounded-full font-ui font-semibold tracking-[0.02em] flex items-center justify-center",
+          size === "sm" ? "size-9 text-[12px]" : "size-10 text-[12.5px]",
+          unread
+            ? "bg-[linear-gradient(135deg,rgba(0,212,200,0.85),rgba(26,95,212,0.7))] text-accent-contrast shadow-[0_0_0_2px_rgba(0,212,200,0.3),_0_0_18px_rgba(0,212,200,0.35)]"
+            : "bg-surface-1 text-text-muted border border-border-subtle/80",
+        )}
+      >
+        <span>{initials}</span>
+      </div>
+      {active ? (
+        <span
+          aria-label="Active recently"
+          className={cn(
+            "absolute bottom-0 right-0",
+            size === "sm" ? "size-2.5" : "size-3",
+            "rounded-full bg-[#3DDB7D] ring-2 ring-bg-deep",
+            "shadow-[0_0_0_1px_rgba(61,219,125,0.35),0_0_8px_rgba(61,219,125,0.55)]",
+            "animate-pulse",
+          )}
+        />
+      ) : null}
     </div>
   );
 }

@@ -18,6 +18,8 @@ import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { EmptyState } from "@/components/app/empty-state";
+import { Reveal } from "@/components/app/reveal";
+import { Input, Select } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Browse projects" };
@@ -122,14 +124,15 @@ export default async function BrowsePage({
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {projects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                isSaved={savedSet.has(p.id)}
-                isUnlocked={unlockedSet.has(p.id)}
-                fbaActive={fbaActive}
-              />
+            {projects.map((p, i) => (
+              <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.24)}>
+                <ProjectCard
+                  project={p}
+                  isSaved={savedSet.has(p.id)}
+                  isUnlocked={unlockedSet.has(p.id)}
+                  fbaActive={fbaActive}
+                />
+              </Reveal>
             ))}
           </div>
         )}
@@ -166,54 +169,55 @@ function FilterBar({ params }: { params: SearchParams }) {
       className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-4 lg:p-5"
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
-        <input
+        <Input
           type="text"
           name="q"
           defaultValue={params.q ?? ""}
           placeholder="Search by title…"
-          className={inputCls}
         />
-        <select name="type" defaultValue={params.type ?? ""} className={inputCls}>
+        <Select name="type" defaultValue={params.type ?? ""}>
           <option value="">Any type</option>
           {TYPE_OPTIONS.map((t) => (
             <option key={t.id} value={t.id}>
               {t.label}
             </option>
           ))}
-        </select>
-        <select name="state" defaultValue={params.state ?? ""} className={inputCls}>
+        </Select>
+        <Select name="state" defaultValue={params.state ?? ""}>
           <option value="">Any state</option>
           {STATE_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
           ))}
-        </select>
-        <input
+        </Select>
+        <Input
           type="text"
           name="postcode"
           defaultValue={params.postcode ?? ""}
           inputMode="numeric"
           maxLength={4}
           placeholder="Postcode"
-          className={cn(inputCls, "font-mono tabular-nums")}
+          className="font-mono tabular-nums"
         />
-        <select
-          name="budget"
-          defaultValue={params.budget ?? ""}
-          className={inputCls}
-        >
+        <Select name="budget" defaultValue={params.budget ?? ""}>
           <option value="">Any budget</option>
           {BUDGET_OPTIONS.map((b) => (
             <option key={b.id} value={b.id}>
               {b.label}
             </option>
           ))}
-        </select>
+        </Select>
         <div className="flex items-center gap-2">
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-md bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors"
+            className={cn(
+              "inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-md",
+              "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
+              "hover:bg-accent-hover transition-colors duration-[140ms]",
+              "active:scale-[0.985] active:duration-[80ms]",
+              "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_4px_14px_-6px_rgba(0,212,200,0.45)]",
+            )}
           >
             Apply
           </button>
@@ -231,6 +235,3 @@ function FilterBar({ params }: { params: SearchParams }) {
     </form>
   );
 }
-
-const inputCls =
-  "h-10 px-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[12.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] transition-colors";

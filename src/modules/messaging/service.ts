@@ -326,6 +326,9 @@ export async function listForUser(
     const otherDisplay = isOwnerSide
       ? r.builderCompany ?? r.builderName ?? "Builder"
       : r.ownerName ?? "Project owner";
+    const otherLastReadAt = isOwnerSide
+      ? r.builderLastReadAt
+      : r.ownerLastReadAt;
     return {
       id: r.id,
       projectId: r.projectId,
@@ -337,6 +340,7 @@ export async function listForUser(
         displayName: otherDisplay,
         initials: initialsOf(otherDisplay),
         role: isOwnerSide ? "builder" : "project_owner",
+        lastReadAt: otherLastReadAt,
       },
       lastMessageAt: r.lastMessageAt,
       lastMessagePreview: r.lastMessagePreview,

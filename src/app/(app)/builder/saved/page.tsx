@@ -14,6 +14,8 @@ import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
+import { EmptyState } from "@/components/app/empty-state";
+import { Reveal } from "@/components/app/reveal";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Saved projects" };
@@ -62,37 +64,23 @@ export default async function SavedPage() {
         </div>
 
         {projects.length === 0 ? (
-          <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
-            <Bookmark className="mx-auto size-6 text-text-dim mb-3" />
-            <h3 className="text-[15px] font-semibold text-text">
-              Nothing saved yet
-            </h3>
-            <p className="mt-1 text-[12.5px] text-text-dim mx-auto max-w-[44ch]">
-              Click the bookmark icon on any project to save it for later.
-              Saved projects sit here so you can compare without committing.
-            </p>
-            <Link
-              href="/builder/browse"
-              className={cn(
-                "mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-full",
-                "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
-                "transition-colors duration-[160ms] hover:bg-accent-hover",
-              )}
-            >
-              <Compass className="size-3.5" />
-              Browse projects
-            </Link>
-          </div>
+          <EmptyState
+            icon={<Bookmark className="size-5" />}
+            title="Nothing saved yet"
+            description="Click the bookmark icon on any project to keep it here. Saved projects sit close so you can compare without committing."
+            primary={{ label: "Browse projects", href: "/builder/browse" }}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {projects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                isSaved={true}
-                isUnlocked={unlockedSet.has(p.id)}
-                fbaActive={fbaActive}
-              />
+            {projects.map((p, i) => (
+              <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.2)}>
+                <ProjectCard
+                  project={p}
+                  isSaved={true}
+                  isUnlocked={unlockedSet.has(p.id)}
+                  fbaActive={fbaActive}
+                />
+              </Reveal>
             ))}
           </div>
         )}
