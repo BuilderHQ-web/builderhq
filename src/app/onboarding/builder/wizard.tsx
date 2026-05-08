@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useTransition, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -137,79 +138,105 @@ export function BuilderWizard({ initial }: { initial: InitialBundle }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <Stepper current={step} />
+      <Stepper current={step} onJump={setStep} />
 
-      {step === 1 && (
-        <CompanyStep
-          values={companyState}
-          onChange={setCompanyState}
-          onNext={() => setStep(2)}
-          getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
-        />
-      )}
-      {step === 2 && (
-        <AddressStep
-          values={addressState}
-          onChange={setAddressState}
-          onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
-          getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
-        />
-      )}
-      {step === 3 && (
-        <CategoriesStep
-          values={categories}
-          onChange={setCategories}
-          onBack={() => setStep(2)}
-          onNext={() => setStep(4)}
-        />
-      )}
-      {step === 4 && (
-        <ServiceAreasStep
-          values={serviceAreas}
-          onChange={setServiceAreas}
-          onBack={() => setStep(3)}
-          onNext={() => setStep(5)}
-        />
-      )}
-      {step === 5 && (
-        <LicencesStep
-          values={licences}
-          onChange={setLicences}
-          onBack={() => setStep(4)}
-          onNext={() => setStep(6)}
-        />
-      )}
-      {step === 6 && (
-        <AboutStep
-          values={aboutState}
-          onChange={setAboutState}
-          onBack={() => setStep(5)}
-          onNext={() => setStep(7)}
-          getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
-        />
-      )}
-      {step === 7 && (
-        <ReviewStep
-          company={companyState}
-          address={addressState}
-          categories={categories}
-          serviceAreas={serviceAreas}
-          licences={licences}
-          about={aboutState}
-          onBack={() => setStep(6)}
-        />
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.28, ease: [0.2, 0.65, 0.3, 0.9] }}
+        >
+          {step === 1 && (
+            <CompanyStep
+              values={companyState}
+              onChange={setCompanyState}
+              onNext={() => setStep(2)}
+              getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
+            />
+          )}
+          {step === 2 && (
+            <AddressStep
+              values={addressState}
+              onChange={setAddressState}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
+              getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
+            />
+          )}
+          {step === 3 && (
+            <CategoriesStep
+              values={categories}
+              onChange={setCategories}
+              onBack={() => setStep(2)}
+              onNext={() => setStep(4)}
+            />
+          )}
+          {step === 4 && (
+            <ServiceAreasStep
+              values={serviceAreas}
+              onChange={setServiceAreas}
+              onBack={() => setStep(3)}
+              onNext={() => setStep(5)}
+            />
+          )}
+          {step === 5 && (
+            <LicencesStep
+              values={licences}
+              onChange={setLicences}
+              onBack={() => setStep(4)}
+              onNext={() => setStep(6)}
+            />
+          )}
+          {step === 6 && (
+            <AboutStep
+              values={aboutState}
+              onChange={setAboutState}
+              onBack={() => setStep(5)}
+              onNext={() => setStep(7)}
+              getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
+            />
+          )}
+          {step === 7 && (
+            <ReviewStep
+              company={companyState}
+              address={addressState}
+              categories={categories}
+              serviceAreas={serviceAreas}
+              licences={licences}
+              about={aboutState}
+              onBack={() => setStep(6)}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
 
 // ── stepper ──────────────────────────────────────────────────────────────
 
-function Stepper({ current }: { current: number }) {
+/**
+ * Premium step indicator: numbered nodes connected by an animated
+ * accent line. Past steps fill in solid + show a check; the current
+ * step glows; upcoming steps stay dim.
+ *
+ * Past steps are clickable so users can jump back to revise without
+ * losing forward progress.
+ */
+function Stepper({
+  current,
+  onJump,
+}: {
+  current: number;
+  onJump: (step: number) => void;
+}) {
   const next = STEPS[current];
+  const progress = ((current - 1) / (STEPS.length - 1)) * 100;
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-5">
+      {/* Top label row */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-mono text-[10px] tracking-[0.18em] text-accent">
@@ -227,11 +254,73 @@ function Stepper({ current }: { current: number }) {
         ) : null}
       </div>
 
-      <div className="relative h-[2px] bg-border-subtle overflow-hidden rounded-full">
+      {/* Node row + connecting line */}
+      <div className="relative pt-1">
+        {/* Connector — sits behind the nodes */}
         <div
-          className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-[420ms] ease-[var(--ease-out)]"
-          style={{ width: `${((current - 1) / (STEPS.length - 1)) * 100}%` }}
+          aria-hidden
+          className="absolute left-3 right-3 top-1/2 -translate-y-1/2 h-px bg-border-subtle"
         />
+        <motion.div
+          aria-hidden
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-px bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]"
+          initial={false}
+          animate={{ width: `calc((100% - 1.5rem) * ${progress / 100})` }}
+          transition={{ duration: 0.4, ease: [0.2, 0.65, 0.3, 0.9] }}
+        />
+
+        <ol className="relative flex items-center justify-between">
+          {STEPS.map(({ idx, title, icon: Icon }) => {
+            const isPast = idx < current;
+            const isCurrent = idx === current;
+            const isClickable = isPast;
+            return (
+              <li key={idx} className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!isClickable}
+                  onClick={() => isClickable && onJump(idx)}
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={`Step ${idx} — ${title}${
+                    isPast ? " (completed)" : isCurrent ? " (current)" : " (upcoming)"
+                  }`}
+                  className={cn(
+                    "relative size-6 rounded-full flex items-center justify-center",
+                    "transition-[background-color,border-color,box-shadow,transform] duration-[200ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
+                    "border",
+                    isPast
+                      ? "bg-accent border-accent text-accent-contrast hover:scale-[1.08] cursor-pointer"
+                      : isCurrent
+                        ? "bg-bg-deep border-accent text-accent shadow-[0_0_0_4px_rgba(0,212,200,0.10),0_0_18px_rgba(0,212,200,0.45)]"
+                        : "bg-bg-deep border-border-subtle text-text-faint cursor-default",
+                  )}
+                >
+                  {isPast ? (
+                    <Check className="size-3" strokeWidth={3} />
+                  ) : isCurrent ? (
+                    <Icon className="size-3" />
+                  ) : (
+                    <span className="text-[10px] font-mono tabular-nums">
+                      {idx}
+                    </span>
+                  )}
+                </button>
+                <span
+                  className={cn(
+                    "hidden sm:block text-[10px] tracking-[0.10em] uppercase font-medium transition-colors",
+                    isCurrent
+                      ? "text-text"
+                      : isPast
+                        ? "text-text-muted"
+                        : "text-text-faint",
+                  )}
+                >
+                  {title}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </div>
   );

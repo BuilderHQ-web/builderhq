@@ -40,6 +40,7 @@ import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { Reveal } from "@/components/app/reveal";
 
 // ── lookup labels ────────────────────────────────────────────────────────
 
@@ -271,8 +272,9 @@ export function ProjectDetail({
 
       <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1200px]">
         <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
-          {/* Left — public details */}
+          {/* Left — public details (staggered entrance) */}
           <div className="space-y-5">
+            <Reveal immediate delay={0.04}>
             <Card title="The build" icon={meta.icon}>
               <KvGrid>
                 {preview.type === "multi_dwelling" ? (
@@ -333,7 +335,9 @@ export function ProjectDetail({
                 ) : null}
               </KvGrid>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.10}>
             <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
               <KvGrid>
                 <Kv
@@ -344,16 +348,20 @@ export function ProjectDetail({
                 <Kv label="Target completion" value={preview.targetCompletionMonth} />
               </KvGrid>
             </Card>
+            </Reveal>
 
             {preview.description ? (
-              <Card title="Brief" icon={<FileText className="size-4" />}>
-                <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                  {preview.description}
-                </p>
-              </Card>
+              <Reveal immediate delay={0.16}>
+                <Card title="Brief" icon={<FileText className="size-4" />}>
+                  <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
+                    {preview.description}
+                  </p>
+                </Card>
+              </Reveal>
             ) : null}
 
             {/* Documents — blurred + locked overlay if not unlocked */}
+            <Reveal immediate delay={0.22}>
             <Card
               title={`Documents · ${documents.length}`}
               icon={<FileText className="size-4" />}
@@ -395,10 +403,13 @@ export function ProjectDetail({
                 ) : null}
               </div>
             </Card>
+            </Reveal>
           </div>
 
-          {/* Right — sticky summary + private fields */}
+          {/* Right — sticky summary + private fields (staggered with the
+              left column so the page paints in synchronised waves) */}
           <div className="space-y-5">
+            <Reveal immediate delay={0.06}>
             <Card title="Address" icon={<MapPin className="size-4" />}>
               <div className="relative">
                 <div
@@ -425,7 +436,9 @@ export function ProjectDetail({
                 ) : null}
               </div>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.12}>
             <Card title="Project owner" icon={<Sparkles className="size-4" />}>
               <div className="relative">
                 <div
@@ -449,7 +462,9 @@ export function ProjectDetail({
                 ) : null}
               </div>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.18}>
             <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
               <KvGrid>
                 <Kv
@@ -470,6 +485,7 @@ export function ProjectDetail({
                 />
               </KvGrid>
             </Card>
+            </Reveal>
           </div>
         </div>
       </div>

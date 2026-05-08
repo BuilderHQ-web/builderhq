@@ -19,6 +19,7 @@ import { listForProject } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { Reveal } from "@/components/app/reveal";
 
 export async function generateMetadata({
   params,
@@ -153,8 +154,9 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
-          {/* Left — details */}
+          {/* Left — details (staggered entrance) */}
           <div className="space-y-5">
+            <Reveal immediate delay={0.04}>
             <Card title="The build" icon={TYPE_META[project.type].icon}>
               <KvGrid>
                 {project.type === "multi_dwelling" ? (
@@ -207,37 +209,45 @@ export default async function ProjectDetailPage({
                 ) : null}
               </KvGrid>
             </Card>
+            </Reveal>
 
-            <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
-              <KvGrid>
-                <Kv
-                  label="Budget"
-                  value={project.budgetBand ? BUDGET_LABEL[project.budgetBand] : null}
-                />
-                <Kv label="Target start" value={project.targetStartMonth} />
-                <Kv label="Target completion" value={project.targetCompletionMonth} />
-              </KvGrid>
-            </Card>
+            <Reveal immediate delay={0.10}>
+              <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
+                <KvGrid>
+                  <Kv
+                    label="Budget"
+                    value={project.budgetBand ? BUDGET_LABEL[project.budgetBand] : null}
+                  />
+                  <Kv label="Target start" value={project.targetStartMonth} />
+                  <Kv label="Target completion" value={project.targetCompletionMonth} />
+                </KvGrid>
+              </Card>
+            </Reveal>
 
             {project.description ? (
-              <Card title="Brief" icon={<FileText className="size-4" />}>
-                <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                  {project.description}
-                </p>
-              </Card>
+              <Reveal immediate delay={0.16}>
+                <Card title="Brief" icon={<FileText className="size-4" />}>
+                  <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
+                    {project.description}
+                  </p>
+                </Card>
+              </Reveal>
             ) : null}
           </div>
 
-          {/* Right — meta + docs */}
+          {/* Right — meta + docs (staggered alongside the left column) */}
           <div className="space-y-5">
-            <Card title="Address" icon={<MapPin className="size-4" />}>
+            <Reveal immediate delay={0.06}>
+              <Card title="Address" icon={<MapPin className="size-4" />}>
               <p className="text-[13.5px] leading-[1.6] text-text-muted">
                 {project.addressLine1 ?? "—"}
                 <br />
                 {project.suburb} {project.state} {project.postcode}
               </p>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.12}>
             <Card title={`Documents · ${docs.length}`} icon={<FileText className="size-4" />}>
               {docs.length === 0 ? (
                 <p className="text-[12.5px] text-text-dim">No documents.</p>
@@ -264,7 +274,9 @@ export default async function ProjectDetailPage({
                 <ArrowUpRight className="size-3" />
               </Link>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.18}>
             <Card title={`Tenders · ${tenderCount}`} icon={<FileText className="size-4" />}>
               {tenderCount === 0 ? (
                 <p className="text-[12.5px] text-text-dim">
@@ -285,7 +297,9 @@ export default async function ProjectDetailPage({
                 <ArrowUpRight className="size-3" />
               </Link>
             </Card>
+            </Reveal>
 
+            <Reveal immediate delay={0.24}>
             <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
               <KvGrid>
                 <Kv
@@ -310,6 +324,7 @@ export default async function ProjectDetailPage({
                 />
               </KvGrid>
             </Card>
+            </Reveal>
           </div>
         </div>
       </div>
