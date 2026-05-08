@@ -27,6 +27,7 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { users } from "@/modules/users";
+import { maybeAutoGrantFounding } from "@/modules/credits";
 
 import {
   builderLicences,
@@ -539,6 +540,24 @@ export async function submitBuilderForApproval(
       updatedAt: new Date(),
     })
     .where(eq(builderProfiles.userId, userId));
+
+  // If the builder qualifies for founding access (signed up before
+  // the cutoff + cap not yet reached), grant it now. No-op otherwise.
+  // Failure here is non-fatal — onboarding still succeeds.
+  try {
+    const grant = await maybeAutoGrantFounding(userId);
+    if (grant) {
+      logger.info(
+        { event: "credits.fba.auto_granted", userId, grantId: grant.id },
+        "auto-granted founding builder access",
+      );
+    }
+  } catch (err) {
+    logger.error(
+      { event: "credits.fba.auto_grant_failed", userId, err },
+      "auto-grant FBA threw — continuing onboarding",
+    );
+  }
 
   logger.info({ event: "profile.builder.onboarded", userId }, "builder submitted for approval");
   return ok({ ok: true });

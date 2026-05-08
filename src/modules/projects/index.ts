@@ -36,6 +36,13 @@ export type {
   MarketplaceFilters,
 } from "./types";
 
+// Pricing — single source of truth for per-type unlock cost (AUD).
+// Lives in ./pricing.ts (client-safe; no DB/server imports), re-
+// exported here for convenience. Client components are still expected
+// to import from `@/modules/projects/pricing` to avoid pulling the
+// service module into client bundles.
+export { UNLOCK_PRICE_AUD, unlockPriceFor } from "./pricing";
+
 // Service.
 export {
   create,

@@ -5,10 +5,12 @@ import { auth } from "@/modules/auth";
 import {
   getMarketplacePreview,
   getFullForUnlockedBuilder,
+  unlockPriceFor,
 } from "@/modules/projects";
 import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic } from "@/modules/profiles";
+import { getStatus } from "@/modules/credits";
 import { ProjectDetail } from "./detail";
 
 export async function generateMetadata({
@@ -46,8 +48,8 @@ export default async function BuilderProjectPage({
     unlocked && fullR?.ok
       ? await getOwnerContactPublic(fullR.value.ownerId)
       : null;
-  // Touch userId to satisfy lint — used implicitly via auth gate above.
-  void userId;
+  const fbaStatus = await getStatus(userId);
+  const priceAud = unlockPriceFor(preview.type);
 
   return (
     <ProjectDetail
@@ -57,6 +59,8 @@ export default async function BuilderProjectPage({
       saved={saved}
       documents={docs}
       ownerContact={ownerContact}
+      fbaStatus={fbaStatus}
+      priceAud={priceAud}
     />
   );
 }

@@ -37,6 +37,7 @@ import {
 import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
 import type { OwnerContact } from "@/modules/profiles";
+import type { FbaStatus } from "@/modules/credits";
 import { cn } from "@/lib/utils";
 
 // ── lookup labels ────────────────────────────────────────────────────────
@@ -132,6 +133,8 @@ export function ProjectDetail({
   saved: savedInitial,
   documents,
   ownerContact,
+  fbaStatus,
+  priceAud,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -139,6 +142,8 @@ export function ProjectDetail({
   saved: boolean;
   documents: Document[];
   ownerContact: OwnerContact | null;
+  fbaStatus: FbaStatus;
+  priceAud: number;
 }) {
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(unlockedInitial);
@@ -458,45 +463,8 @@ export function ProjectDetail({
         </div>
       </div>
 
-      {/* Sticky unlock bar at the bottom (hidden if already unlocked) */}
-      {!unlocked ? (
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
-            <div className="min-w-0 flex items-start gap-3">
-              <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
-                <Lock className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-text">
-                  Unlock to access full details
-                </div>
-                <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
-                  Address · owner contact · {documents.length} document
-                  {documents.length === 1 ? "" : "s"} · ready to tender. Free during launch.
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onUnlock}
-              disabled={unlocking}
-              className={cn(
-                "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
-                "bg-accent text-accent-contrast hover:bg-accent-hover",
-                "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
-                unlocking && "opacity-70 cursor-not-allowed",
-              )}
-            >
-              {unlocking ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Unlock className="size-4" />
-              )}
-              {unlocking ? "Unlocking…" : "Unlock project"}
-            </button>
-          </div>
-        </div>
-      ) : (
+      {/* Sticky unlock bar — three states: unlocked / FBA-active / paywall */}
+      {unlocked ? (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md">
           <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
             <div className="text-[13px] text-accent-light flex items-center gap-2">
@@ -512,7 +480,131 @@ export function ProjectDetail({
             </Link>
           </div>
         </div>
+      ) : (
+        <UnlockBar
+          priceAud={priceAud}
+          documents={documents.length}
+          fbaStatus={fbaStatus}
+          unlocking={unlocking}
+          onUnlock={onUnlock}
+        />
       )}
+    </div>
+  );
+}
+
+function UnlockBar({
+  priceAud,
+  documents,
+  fbaStatus,
+  unlocking,
+  onUnlock,
+}: {
+  priceAud: number;
+  documents: number;
+  fbaStatus: FbaStatus;
+  unlocking: boolean;
+  onUnlock: () => void;
+}) {
+  const fbaActive = fbaStatus.active;
+  const hasCredits = fbaActive && fbaStatus.remainingThisCycle > 0;
+
+  return (
+    <div
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-md",
+        hasCredits
+          ? "border-border-accent/40 bg-[rgba(0,212,200,0.05)]"
+          : "border-border-subtle bg-bg-deep/98",
+      )}
+    >
+      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Left — status / pricing */}
+        <div className="min-w-0 flex items-start gap-3">
+          <span
+            className={cn(
+              "size-10 rounded-md border flex items-center justify-center shrink-0",
+              hasCredits
+                ? "bg-accent-muted/60 border-border-accent text-accent-light"
+                : "bg-warning/[0.08] border-warning/30 text-warning",
+            )}
+          >
+            {hasCredits ? <Sparkles className="size-4" /> : <Lock className="size-4" />}
+          </span>
+          <div className="min-w-0">
+            {hasCredits ? (
+              <>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-[13px] font-semibold text-accent-light">
+                    Unlock free with FBA
+                  </span>
+                  <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
+                    <span className="line-through decoration-[rgba(255,255,255,0.35)] decoration-1">
+                      ${priceAud}
+                    </span>
+                    <span className="text-accent-light font-display text-[16px] leading-none">
+                      $0
+                    </span>
+                  </span>
+                </div>
+                <div className="text-[11.5px] text-text-dim mt-0.5">
+                  {fbaStatus.remainingThisCycle} of {fbaStatus.monthlyQuota} free
+                  unlocks left this cycle · address · owner contact ·{" "}
+                  {documents} document{documents === 1 ? "" : "s"}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-[13px] font-semibold text-text">
+                    Unlock this project
+                  </span>
+                  <span className="font-display text-[18px] leading-none text-text-muted">
+                    ${priceAud}
+                  </span>
+                </div>
+                <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
+                  {fbaActive
+                    ? "All free unlocks for this cycle have been used."
+                    : "Sign up for Founding Builder Access for free unlocks."}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Right — primary CTA */}
+        {hasCredits ? (
+          <button
+            type="button"
+            onClick={onUnlock}
+            disabled={unlocking}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              "bg-accent text-accent-contrast hover:bg-accent-hover",
+              "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+              unlocking && "opacity-70 cursor-not-allowed",
+            )}
+          >
+            {unlocking ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Unlock className="size-4" />
+            )}
+            {unlocking ? "Unlocking…" : "Unlock with FBA"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title="Stripe checkout coming soon"
+            className="shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] bg-surface-2 text-text-dim cursor-not-allowed border border-border-subtle"
+          >
+            <Lock className="size-3.5" />
+            Pay ${priceAud} · soon
+          </button>
+        )}
+      </div>
     </div>
   );
 }

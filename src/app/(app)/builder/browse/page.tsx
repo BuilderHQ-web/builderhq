@@ -13,8 +13,10 @@ import {
   countMyUnlocks,
   countMySaved,
 } from "@/modules/unlocks";
+import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
+import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Browse projects" };
@@ -59,14 +61,17 @@ export default async function BrowsePage({
   const projects = await listForMarketplace(filters);
 
   const userId = session.user.id!;
-  const [unlockedIds, savedIds, unlockedCount, savedCount] = await Promise.all([
-    listMyUnlockedProjectIds(userId),
-    listMySavedProjectIds(userId),
-    countMyUnlocks(userId),
-    countMySaved(userId),
-  ]);
+  const [unlockedIds, savedIds, unlockedCount, savedCount, fbaStatus] =
+    await Promise.all([
+      listMyUnlockedProjectIds(userId),
+      listMySavedProjectIds(userId),
+      countMyUnlocks(userId),
+      countMySaved(userId),
+      getFbaStatus(userId),
+    ]);
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   const activeFilterCount =
     [filters.q, filters.type, filters.state, filters.postcode, filters.budgets?.[0]].filter(
@@ -93,11 +98,12 @@ export default async function BrowsePage({
           </div>
         </div>
 
-        {/* Section tabs — Browse / Saved / Unlocked */}
-        <div className="mb-5">
+        {/* Section tabs — Browse / Saved / Unlocked + FBA quota pill */}
+        <div className="mb-5 flex flex-wrap items-center gap-3">
           <BuilderSectionTabs
             counts={{ saved: savedCount, unlocked: unlockedCount }}
           />
+          <FbaQuotaPill status={fbaStatus} />
         </div>
 
         {/* Filter bar — server form, GET-style */}
@@ -129,6 +135,7 @@ export default async function BrowsePage({
                 project={p}
                 isSaved={savedSet.has(p.id)}
                 isUnlocked={unlockedSet.has(p.id)}
+                fbaActive={fbaActive}
               />
             ))}
           </div>

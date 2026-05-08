@@ -26,6 +26,8 @@ import {
 } from "@/app/(app)/_actions/marketplace";
 import { cn } from "@/lib/utils";
 import type { MarketplacePreview } from "@/modules/projects";
+import { unlockPriceFor } from "@/modules/projects/pricing";
+import { Sparkles } from "lucide-react";
 
 const TYPE_META: Record<
   MarketplacePreview["type"],
@@ -69,19 +71,27 @@ const BUDGET_LABEL: Record<NonNullable<MarketplacePreview["budgetBand"]>, string
  * + blueprint-grid art so it reads as a "preview" instead of empty
  * space. The body leads with the budget (most-glanced number), then
  * an icon-based spec strip, address, and a footer with doc count + CTA.
+ *
+ * `fbaActive` swaps the "Locked" pill for a glowing "Free with FBA"
+ * badge — only when the builder both has an active grant AND has
+ * credits left this cycle (otherwise the pill stays "Locked" and the
+ * detail page handles the paywall messaging).
  */
 export function ProjectCard({
   project,
   isSaved,
   isUnlocked,
+  fbaActive = false,
 }: {
   project: MarketplacePreview;
   isSaved: boolean;
   isUnlocked: boolean;
+  fbaActive?: boolean;
 }) {
   const meta = TYPE_META[project.type];
   const [saved, setSaved] = useState(isSaved);
   const [pending, startTransition] = useTransition();
+  const priceAud = unlockPriceFor(project.type);
 
   const onToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -155,10 +165,18 @@ export function ProjectCard({
               <Unlock className="size-2.5" />
               Unlocked
             </span>
+          ) : fbaActive ? (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent bg-[linear-gradient(135deg,rgba(0,212,200,0.20),rgba(26,95,212,0.18))] text-[9px] tracking-[0.16em] uppercase text-accent-light font-semibold"
+              style={{ boxShadow: "0 0 10px rgba(0,212,200,0.22)" }}
+            >
+              <Sparkles className="size-2.5" />
+              Free · FBA
+            </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-subtle bg-bg-deep/60 backdrop-blur-sm text-[9px] tracking-[0.16em] uppercase text-text-muted">
               <Lock className="size-2.5" />
-              Locked
+              ${priceAud}
             </span>
           )}
           <button
@@ -183,14 +201,32 @@ export function ProjectCard({
           </button>
         </div>
 
-        {/* Budget — anchored bottom-left of the cover, prominent */}
+        {/* Budget — anchored bottom-left of the cover */}
         {project.budgetBand ? (
           <div className="absolute bottom-3 left-3">
             <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted/80 mb-0.5">
-              Budget
+              Project budget
             </div>
             <div className="font-display text-[20px] leading-none text-accent-light tabular-nums">
               {BUDGET_LABEL[project.budgetBand]}
+            </div>
+          </div>
+        ) : null}
+
+        {/* FBA-active price tag in the cover (slashed list price + $0)
+             — anchored bottom-right. Skipped if already unlocked. */}
+        {!isUnlocked && fbaActive ? (
+          <div className="absolute bottom-3 right-3 text-right">
+            <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted/80 mb-0.5">
+              Unlock cost
+            </div>
+            <div className="flex items-baseline justify-end gap-1.5">
+              <span className="text-[11px] text-text-dim line-through decoration-[rgba(255,255,255,0.35)] decoration-1 tabular-nums">
+                ${priceAud}
+              </span>
+              <span className="font-display text-[20px] leading-none text-accent-light tabular-nums">
+                $0
+              </span>
             </div>
           </div>
         ) : null}

@@ -10,8 +10,10 @@ import {
   countMyUnlocks,
   countMySaved,
 } from "@/modules/unlocks";
+import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
+import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Saved projects" };
@@ -21,14 +23,17 @@ export default async function SavedPage() {
   if (!session?.user) redirect("/login?next=/builder/saved");
   const userId = session.user.id!;
 
-  const [savedIds, unlockedIds, savedCount, unlockedCount] = await Promise.all([
-    listMySavedProjectIds(userId),
-    listMyUnlockedProjectIds(userId),
-    countMySaved(userId),
-    countMyUnlocks(userId),
-  ]);
+  const [savedIds, unlockedIds, savedCount, unlockedCount, fbaStatus] =
+    await Promise.all([
+      listMySavedProjectIds(userId),
+      listMyUnlockedProjectIds(userId),
+      countMySaved(userId),
+      countMyUnlocks(userId),
+      getFbaStatus(userId),
+    ]);
   const projects = await listByIds(savedIds);
   const unlockedSet = new Set(unlockedIds);
+  const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   return (
     <div className="px-6 lg:px-10 py-8 lg:py-10">
@@ -49,10 +54,11 @@ export default async function SavedPage() {
           </div>
         </div>
 
-        <div className="mb-7">
+        <div className="mb-7 flex flex-wrap items-center gap-3">
           <BuilderSectionTabs
             counts={{ saved: savedCount, unlocked: unlockedCount }}
           />
+          <FbaQuotaPill status={fbaStatus} />
         </div>
 
         {projects.length === 0 ? (
@@ -85,6 +91,7 @@ export default async function SavedPage() {
                 project={p}
                 isSaved={true}
                 isUnlocked={unlockedSet.has(p.id)}
+                fbaActive={fbaActive}
               />
             ))}
           </div>

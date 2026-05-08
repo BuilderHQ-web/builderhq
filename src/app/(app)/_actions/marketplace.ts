@@ -46,7 +46,10 @@ export async function unlockProjectAction(
     return fail("forbidden", "Only builders can unlock projects.");
   }
 
-  const r = await unlockProject(a.value.id, projectId, "free");
+  // Default path: the service gates on FBA + falls through to the
+  // paid CTA (returns rate_limited) when no credit is available. The
+  // client surfaces that error inline.
+  const r = await unlockProject(a.value.id, projectId);
   if (!r.ok) return r;
 
   // Caller will already have the slug; we don't re-resolve here.

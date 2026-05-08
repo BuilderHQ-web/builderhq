@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Settings, User as UserIcon, Search } from "lucide-react";
+import { ChevronDown, LogOut, Settings, User as UserIcon, Search, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +27,8 @@ interface TopbarProps {
     image: string | null | undefined;
     role: "project_owner" | "builder" | "admin" | null;
   };
+  /** True when the builder has an active Founding Builder Access grant. */
+  isFounding?: boolean;
 }
 
 const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
@@ -35,7 +37,7 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
   admin: "Admin",
 };
 
-export function Topbar({ user }: TopbarProps) {
+export function Topbar({ user, isFounding = false }: TopbarProps) {
   const pathname = usePathname();
   const crumbs = pathToCrumbs(pathname);
   const initials = (user.name ?? user.email ?? "U")
@@ -58,6 +60,25 @@ export function Topbar({ user }: TopbarProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Founding member badge — shown for builders with active FBA */}
+          {isFounding ? (
+            <Link
+              href="/builder"
+              title="Founding Builder Access — view details"
+              className={cn(
+                "hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-sm border border-border-accent",
+                "text-[10px] tracking-[0.18em] uppercase font-semibold text-accent-light",
+                "bg-[linear-gradient(135deg,rgba(0,212,200,0.18),rgba(26,95,212,0.18))]",
+                "hover:bg-[linear-gradient(135deg,rgba(0,212,200,0.26),rgba(26,95,212,0.26))]",
+                "transition-colors duration-[160ms]",
+              )}
+              style={{ boxShadow: "0 0 12px rgba(0,212,200,0.22)" }}
+            >
+              <Sparkles className="size-3" />
+              Founding member
+            </Link>
+          ) : null}
+
           {/* Search trigger — Cmd+K palette ships in Phase 2; for now just visual */}
           <button
             type="button"

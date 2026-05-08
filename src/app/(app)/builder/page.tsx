@@ -10,10 +10,12 @@ import {
   listMyUnlockedProjectIds,
   listMySavedProjectIds,
 } from "@/modules/unlocks";
+import { getStatus as getFbaStatus } from "@/modules/credits";
 import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/builder/project-card";
 import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
+import { FbaCard } from "@/components/builder/fba-card";
 
 export const metadata = { title: "Dashboard" };
 
@@ -38,6 +40,7 @@ export default async function BuilderDashboard() {
     unlockedIds,
     savedIds,
     suggested,
+    fbaStatus,
   ] = await Promise.all([
     userId ? countMyUnlocks(userId) : 0,
     userId ? countMySaved(userId) : 0,
@@ -52,6 +55,9 @@ export default async function BuilderDashboard() {
         : {}),
       limit: 6,
     }),
+    userId
+      ? getFbaStatus(userId)
+      : Promise.resolve({ active: false, reason: "no_grant" } as const),
   ]);
 
   const recentUnlocks = await listByIds(unlockedIds.slice(0, 3));
@@ -144,6 +150,16 @@ export default async function BuilderDashboard() {
       </section>
 
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
+        {/* ── FBA panel — prominent when active ─────────────────────── */}
+        <section>
+          <SectionLabel>
+            {fbaStatus.active ? "Founding access" : "Access"}
+          </SectionLabel>
+          <div className="mt-5">
+            <FbaCard status={fbaStatus} />
+          </div>
+        </section>
+
         {/* ── KPIs ──────────────────────────────────────────────────── */}
         <section>
           <SectionLabel>Pipeline</SectionLabel>
@@ -180,6 +196,9 @@ export default async function BuilderDashboard() {
                   project={p}
                   isSaved={savedSet.has(p.id)}
                   isUnlocked={unlockedSet.has(p.id)}
+                  fbaActive={
+                    fbaStatus.active && fbaStatus.remainingThisCycle > 0
+                  }
                 />
               ))}
             </div>
@@ -210,6 +229,9 @@ export default async function BuilderDashboard() {
                   project={p}
                   isSaved={savedSet.has(p.id)}
                   isUnlocked={true}
+                  fbaActive={
+                    fbaStatus.active && fbaStatus.remainingThisCycle > 0
+                  }
                 />
               ))}
             </div>
@@ -240,6 +262,9 @@ export default async function BuilderDashboard() {
                   project={p}
                   isSaved={true}
                   isUnlocked={unlockedSet.has(p.id)}
+                  fbaActive={
+                    fbaStatus.active && fbaStatus.remainingThisCycle > 0
+                  }
                 />
               ))}
             </div>

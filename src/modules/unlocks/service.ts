@@ -20,6 +20,7 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
+import { checkCreditAvailable } from "@/modules/credits";
 
 import { unlocks, savedProjects, type UnlockRow } from "./schema";
 
@@ -27,26 +28,61 @@ import { unlocks, savedProjects, type UnlockRow } from "./schema";
 
 /**
  * Idempotent: calling twice with the same builder+project is fine.
- * Returns the row either way.
+ * Returns the existing row in that case.
  *
- * Source defaults to "free" — step 5 will pass through founding /
- * paid / admin once Stripe + credits exist.
+ * The unlock flow now gates on Founding Builder Access (FBA):
+ *
+ *   - If the builder already has an unlock for this project → return
+ *     it. (Idempotent.)
+ *   - Else, if the caller passed a non-default source (e.g. "paid"
+ *     after Stripe success in step 5b, or "admin" via admin override),
+ *     trust that and write the row.
+ *   - Else, default path: check the builder's FBA. If a credit is
+ *     available, write the row with source="founding". If not, fail
+ *     with `code: "payment_required"` — the UI surfaces the paid-
+ *     unlock CTA (Stripe lands in step 5b).
  */
 export async function unlockProject(
   builderId: string,
   projectId: string,
-  source: UnlockRow["source"] = "free",
+  options: { source?: UnlockRow["source"] } = {},
 ): Promise<Result<UnlockRow>> {
-  // Already unlocked?
+  // Already unlocked? Return the existing row.
   const [existing] = await db
     .select()
     .from(unlocks)
-    .where(and(eq(unlocks.builderId, builderId), eq(unlocks.projectId, projectId)));
+    .where(
+      and(eq(unlocks.builderId, builderId), eq(unlocks.projectId, projectId)),
+    );
   if (existing) return ok(existing);
+
+  // Caller-forced source (e.g. Stripe webhook, admin override).
+  if (options.source && options.source !== "free") {
+    const [row] = await db
+      .insert(unlocks)
+      .values({ builderId, projectId, source: options.source })
+      .returning();
+    if (!row) return fail("internal", "Failed to record unlock.");
+    return ok(row);
+  }
+
+  // Default: gate on FBA.
+  const credit = await checkCreditAvailable(builderId);
+  if (!credit.ok) {
+    return fail(
+      "rate_limited",
+      credit.reason === "exhausted"
+        ? "All free unlocks for this cycle have been used."
+        : credit.reason === "expired"
+        ? "Your Founding Builder Access has expired."
+        : "You need Founding Builder Access (or a paid unlock) to view this project.",
+      { reason: credit.reason },
+    );
+  }
 
   const [row] = await db
     .insert(unlocks)
-    .values({ builderId, projectId, source })
+    .values({ builderId, projectId, source: "founding" })
     .returning();
   if (!row) return fail("internal", "Failed to record unlock.");
   return ok(row);

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
 import { hasCompletedOnboarding } from "@/modules/profiles";
+import { getStatus as getFbaStatus } from "@/modules/credits";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 
@@ -38,6 +39,13 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
+  // Builders may have an active Founding Builder Access grant —
+  // surface that to the topbar so it can render the badge.
+  const isFounding =
+    role === "builder"
+      ? (await getFbaStatus(session.user.id)).active
+      : false;
+
   return (
     <div className="flex min-h-dvh">
       <Sidebar role={role} />
@@ -50,6 +58,7 @@ export default async function AppLayout({
             image: session.user.image,
             role: session.user.role,
           }}
+          isFounding={isFounding}
         />
         <main className="flex-1">{children}</main>
       </div>

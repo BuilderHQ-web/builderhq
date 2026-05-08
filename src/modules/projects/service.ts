@@ -38,6 +38,10 @@ import type {
 
 import { documents } from "@/modules/documents/schema";
 
+// Pricing intentionally not imported here — service.ts only needs it
+// for non-existent monetary calculations right now. Pricing lives in
+// ./pricing.ts (client-safe).
+
 // ── public surface ───────────────────────────────────────────────────────
 
 /**
