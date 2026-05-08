@@ -712,13 +712,32 @@ export function TenderForm({
               {busy === "submit" ? "Submitting…" : "Submit tender"}
             </button>
           ) : (
-            <Link
-              href={`/builder/projects/${preview.slug}`}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
-            >
-              Back to project
-              <ArrowUpRight className="size-3.5" />
-            </Link>
+            <div className="flex items-center gap-2">
+              {tender &&
+              (tender.status === "submitted" ||
+                tender.status === "shortlisted") ? (
+                <button
+                  type="button"
+                  onClick={onWithdraw}
+                  disabled={busy === "withdraw"}
+                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-danger/40 text-danger text-[12.5px] tracking-[0.04em] hover:bg-danger/10 transition-colors disabled:opacity-60"
+                >
+                  {busy === "withdraw" ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <X className="size-3.5" />
+                  )}
+                  {busy === "withdraw" ? "Withdrawing…" : "Withdraw to edit"}
+                </button>
+              ) : null}
+              <Link
+                href={`/builder/projects/${preview.slug}`}
+                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+              >
+                Back to project
+                <ArrowUpRight className="size-3.5" />
+              </Link>
+            </div>
           )}
         </div>
       </div>
