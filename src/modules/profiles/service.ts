@@ -26,6 +26,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
+import { users } from "@/modules/users";
 
 import {
   builderLicences,
@@ -141,6 +142,60 @@ export async function getOwnerProfile(
     .where(eq(projectOwnerProfiles.userId, userId))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * Project-owner contact card returned to unlocked builders. Pulls
+ * name, email, phone (from users) + entity type, company, contact
+ * preference (from project_owner_profiles). Caller MUST gate on the
+ * unlock check before invoking.
+ */
+export type OwnerContact = {
+  ownerId: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  entityType: ProjectOwnerProfile["entityType"] | null;
+  companyName: string | null;
+  contactPref: ProjectOwnerProfile["contactPref"];
+};
+
+export async function getOwnerContactPublic(
+  ownerId: string,
+): Promise<OwnerContact | null> {
+  const [row] = await db
+    .select({
+      ownerId: users.id,
+      name: users.name,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      phone: users.phone,
+      entityType: projectOwnerProfiles.entityType,
+      companyName: projectOwnerProfiles.companyName,
+      contactPref: projectOwnerProfiles.contactPref,
+    })
+    .from(users)
+    .leftJoin(projectOwnerProfiles, eq(projectOwnerProfiles.userId, users.id))
+    .where(eq(users.id, ownerId))
+    .limit(1);
+  if (!row) return null;
+
+  // Prefer first+last when both are set, else `name`, else null.
+  const composedName =
+    row.firstName && row.lastName
+      ? `${row.firstName} ${row.lastName}`
+      : row.firstName ?? row.name ?? null;
+
+  return {
+    ownerId: row.ownerId,
+    name: composedName,
+    email: row.email,
+    phone: row.phone ?? null,
+    entityType: row.entityType,
+    companyName: row.companyName ?? null,
+    contactPref: row.contactPref ?? "email",
+  };
 }
 
 export async function upsertOwnerProfile(

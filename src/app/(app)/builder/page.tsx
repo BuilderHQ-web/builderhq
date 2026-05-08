@@ -1,18 +1,8 @@
 import Link from "next/link";
-import {
-  Compass,
-  ArrowUpRight,
-  Bookmark,
-  Sparkles,
-  TrendingUp,
-  Unlock as UnlockIcon,
-} from "lucide-react";
+import { Compass, ArrowUpRight, Bookmark } from "lucide-react";
 
 import { auth } from "@/modules/auth";
-import {
-  listForMarketplace,
-  listByIds,
-} from "@/modules/projects";
+import { listForMarketplace, listByIds } from "@/modules/projects";
 import { getBuilderProfile } from "@/modules/profiles";
 import {
   countMyUnlocks,
@@ -22,6 +12,8 @@ import {
 } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/builder/project-card";
+import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
+import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 
 export const metadata = { title: "Dashboard" };
 
@@ -68,6 +60,41 @@ export default async function BuilderDashboard() {
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
 
+  const kpis: AnimatedKpi[] = [
+    {
+      tone: "teal",
+      icon: "sparkles",
+      label: "Suggested for you",
+      value: suggested.length,
+      hint:
+        matchedSuburbs.length > 0 || matchedCategories.length > 0
+          ? "Based on your service area"
+          : "Set service area in Settings",
+    },
+    {
+      tone: "blue",
+      icon: "unlock",
+      label: "Unlocked",
+      value: unlockedCount,
+      hint: unlockedCount === 0 ? "None yet" : "Lifetime",
+    },
+    {
+      tone: "amber",
+      icon: "bookmark",
+      label: "Saved",
+      value: savedCount,
+      hint:
+        savedCount === 0 ? "Bookmark a project to compare later" : "Bookmarked",
+    },
+    {
+      tone: "rose",
+      icon: "trending",
+      label: "Submitted tenders",
+      value: 0,
+      hint: "Coming in Phase 3",
+    },
+  ];
+
   return (
     <div>
       {/* ── Hero ──────────────────────────────────────────────────────── */}
@@ -83,24 +110,7 @@ export default async function BuilderDashboard() {
 
         <div className="relative px-6 lg:px-10 pt-16 lg:pt-20 pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
-            <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
-              Builder console
-            </span>
-
-            <h1 className="mt-6 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,5vw+1rem,5rem)]">
-              Hi{" "}
-              <span
-                className="text-accent-light"
-                style={{
-                  textShadow:
-                    "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
-                }}
-              >
-                {firstName}
-              </span>
-              .
-            </h1>
+            <BuilderHeroIntro firstName={firstName} />
 
             <p className="mt-5 max-w-[52ch] text-[15px] leading-[1.7] text-text-subtle">
               Browse residential projects matched to your service area and
@@ -137,43 +147,8 @@ export default async function BuilderDashboard() {
         {/* ── KPIs ──────────────────────────────────────────────────── */}
         <section>
           <SectionLabel>Pipeline</SectionLabel>
-          <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Kpi
-              tone="teal"
-              icon={<Sparkles className="size-3.5" />}
-              label="Suggested for you"
-              value={suggested.length}
-              hint={
-                matchedSuburbs.length > 0 || matchedCategories.length > 0
-                  ? "Based on your service area"
-                  : "Set service area in onboarding"
-              }
-            />
-            <Kpi
-              tone="blue"
-              icon={<UnlockIcon className="size-3.5" />}
-              label="Unlocked"
-              value={unlockedCount}
-              hint={unlockedCount === 0 ? "None yet" : "Lifetime"}
-            />
-            <Kpi
-              tone="amber"
-              icon={<Bookmark className="size-3.5" />}
-              label="Saved"
-              value={savedCount}
-              hint={
-                savedCount === 0
-                  ? "Bookmark a project to compare later"
-                  : "Bookmarked"
-              }
-            />
-            <Kpi
-              tone="rose"
-              icon={<TrendingUp className="size-3.5" />}
-              label="Submitted tenders"
-              value={0}
-              hint="Coming in Phase 3"
-            />
+          <div className="mt-5">
+            <AnimatedKpis items={kpis} />
           </div>
         </section>
 
@@ -318,96 +293,3 @@ function EmptyHint({ message }: { message: string }) {
   );
 }
 
-type KpiTone = "teal" | "blue" | "amber" | "rose";
-
-function Kpi({
-  tone,
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  tone: KpiTone;
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  hint: string;
-}) {
-  const styles: Record<
-    KpiTone,
-    { bg: string; ring: string; num: string; iconBg: string; glow: string }
-  > = {
-    teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
-      ring: "border-border-accent/40",
-      num: "text-accent-light",
-      iconBg:
-        "border-border-accent bg-accent-muted text-accent-light",
-      glow: "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
-    },
-    blue: {
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(6,18,30,0.6))",
-      ring: "border-[rgba(120,180,255,0.20)]",
-      num: "text-[#bfd6ff]",
-      iconBg:
-        "border-[rgba(120,180,255,0.30)] bg-[rgba(26,95,212,0.18)] text-[#bfd6ff]",
-      glow: "radial-gradient(circle, rgba(26,95,212,0.20), transparent 70%)",
-    },
-    amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(6,18,30,0.6))",
-      ring: "border-[rgba(251,184,64,0.22)]",
-      num: "text-[#ffd887]",
-      iconBg:
-        "border-[rgba(251,184,64,0.30)] bg-[rgba(251,184,64,0.10)] text-[#ffd887]",
-      glow: "radial-gradient(circle, rgba(251,184,64,0.18), transparent 70%)",
-    },
-    rose: {
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(6,18,30,0.6))",
-      ring: "border-[rgba(255,120,150,0.20)]",
-      num: "text-[#ffc0cd]",
-      iconBg:
-        "border-[rgba(255,120,150,0.30)] bg-[rgba(255,120,150,0.10)] text-[#ffc0cd]",
-      glow: "radial-gradient(circle, rgba(255,120,150,0.16), transparent 70%)",
-    },
-  };
-  const s = styles[tone];
-
-  return (
-    <div
-      className={cn(
-        "relative rounded-md border p-5 overflow-hidden",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
-        s.ring,
-      )}
-      style={{ background: s.bg }}
-    >
-      <span
-        aria-hidden
-        className="absolute -top-12 -right-12 size-40 rounded-full opacity-40 pointer-events-none"
-        style={{ background: s.glow }}
-      />
-      <div className="relative flex items-start justify-between gap-3 mb-3">
-        <span
-          className={cn(
-            "size-7 rounded-md border flex items-center justify-center",
-            s.iconBg,
-          )}
-        >
-          {icon}
-        </span>
-        <span className="text-[9.5px] tracking-[0.2em] uppercase text-text-dim text-right">
-          {label}
-        </span>
-      </div>
-      <div
-        className={cn(
-          "relative font-display tracking-[-0.01em] text-[40px] leading-none tabular-nums",
-          s.num,
-        )}
-      >
-        {value}
-      </div>
-      <div className="relative mt-2 text-[11.5px] text-text-dim">{hint}</div>
-    </div>
-  );
-}

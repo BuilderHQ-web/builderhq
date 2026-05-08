@@ -58,6 +58,7 @@ const builderNav: NavSection[] = [
       { href: "/builder", label: "Dashboard", icon: LayoutDashboard },
       { href: "/builder/browse", label: "Browse projects", icon: Compass },
       { href: "/builder/saved", label: "Saved", icon: ClipboardList },
+      { href: "/builder/unlocked", label: "Unlocked", icon: ShieldCheck },
       { href: "/builder/tenders", label: "My tenders", icon: FileSpreadsheet, soon: "Phase 3" },
       { href: "/builder/messages", label: "Messages", icon: MessageSquare, soon: "Phase 3" },
     ],

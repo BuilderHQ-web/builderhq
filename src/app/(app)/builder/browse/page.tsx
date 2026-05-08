@@ -10,8 +10,11 @@ import {
 import {
   listMyUnlockedProjectIds,
   listMySavedProjectIds,
+  countMyUnlocks,
+  countMySaved,
 } from "@/modules/unlocks";
 import { ProjectCard } from "@/components/builder/project-card";
+import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Browse projects" };
@@ -56,9 +59,11 @@ export default async function BrowsePage({
   const projects = await listForMarketplace(filters);
 
   const userId = session.user.id!;
-  const [unlockedIds, savedIds] = await Promise.all([
+  const [unlockedIds, savedIds, unlockedCount, savedCount] = await Promise.all([
     listMyUnlockedProjectIds(userId),
     listMySavedProjectIds(userId),
+    countMyUnlocks(userId),
+    countMySaved(userId),
   ]);
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
@@ -86,6 +91,13 @@ export default async function BrowsePage({
               {activeFilterCount > 0 ? ` ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} applied.` : ""}
             </p>
           </div>
+        </div>
+
+        {/* Section tabs — Browse / Saved / Unlocked */}
+        <div className="mb-5">
+          <BuilderSectionTabs
+            counts={{ saved: savedCount, unlocked: unlockedCount }}
+          />
         </div>
 
         {/* Filter bar — server form, GET-style */}

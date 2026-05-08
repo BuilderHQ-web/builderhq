@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bookmark, Compass } from "lucide-react";
+import { Unlock as UnlockIcon, Compass } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { listByIds } from "@/modules/projects";
 import {
-  listMySavedProjectIds,
   listMyUnlockedProjectIds,
+  listMySavedProjectIds,
   countMyUnlocks,
   countMySaved,
 } from "@/modules/unlocks";
@@ -14,21 +14,21 @@ import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { cn } from "@/lib/utils";
 
-export const metadata = { title: "Saved projects" };
+export const metadata = { title: "Unlocked projects" };
 
-export default async function SavedPage() {
+export default async function UnlockedPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login?next=/builder/saved");
+  if (!session?.user) redirect("/login?next=/builder/unlocked");
   const userId = session.user.id!;
 
-  const [savedIds, unlockedIds, savedCount, unlockedCount] = await Promise.all([
-    listMySavedProjectIds(userId),
+  const [unlockedIds, savedIds, unlockedCount, savedCount] = await Promise.all([
     listMyUnlockedProjectIds(userId),
-    countMySaved(userId),
+    listMySavedProjectIds(userId),
     countMyUnlocks(userId),
+    countMySaved(userId),
   ]);
-  const projects = await listByIds(savedIds);
-  const unlockedSet = new Set(unlockedIds);
+  const projects = await listByIds(unlockedIds);
+  const savedSet = new Set(savedIds);
 
   return (
     <div className="px-6 lg:px-10 py-8 lg:py-10">
@@ -36,15 +36,15 @@ export default async function SavedPage() {
         <div className="flex items-start justify-between gap-4 mb-7">
           <div>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
-              <Bookmark className="size-3.5" />
-              Saved
+              <UnlockIcon className="size-3.5" />
+              Unlocked
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
-              Your saved projects
+              Your unlocked projects
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
-              {projects.length} bookmarked. Save the ones you&apos;re weighing
-              up — unlock when you&apos;re ready to commit.
+              {projects.length} project{projects.length === 1 ? "" : "s"} unlocked.
+              Full address, owner contact, and document downloads.
             </p>
           </div>
         </div>
@@ -57,13 +57,13 @@ export default async function SavedPage() {
 
         {projects.length === 0 ? (
           <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
-            <Bookmark className="mx-auto size-6 text-text-dim mb-3" />
+            <UnlockIcon className="mx-auto size-6 text-text-dim mb-3" />
             <h3 className="text-[15px] font-semibold text-text">
-              Nothing saved yet
+              No unlocks yet
             </h3>
             <p className="mt-1 text-[12.5px] text-text-dim mx-auto max-w-[44ch]">
-              Click the bookmark icon on any project to save it for later.
-              Saved projects sit here so you can compare without committing.
+              When you unlock a project, it appears here with full access — exact
+              address, owner contact, and downloadable documents.
             </p>
             <Link
               href="/builder/browse"
@@ -83,8 +83,8 @@ export default async function SavedPage() {
               <ProjectCard
                 key={p.id}
                 project={p}
-                isSaved={true}
-                isUnlocked={unlockedSet.has(p.id)}
+                isSaved={savedSet.has(p.id)}
+                isUnlocked={true}
               />
             ))}
           </div>

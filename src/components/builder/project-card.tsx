@@ -15,6 +15,9 @@ import {
   Unlock,
   ArrowUpRight,
   Loader2,
+  Bed,
+  Bath,
+  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -26,26 +29,26 @@ import type { MarketplacePreview } from "@/modules/projects";
 
 const TYPE_META: Record<
   MarketplacePreview["type"],
-  { label: string; icon: React.ReactNode; tone: string }
+  { label: string; Icon: LucideIcon; tone: string }
 > = {
   single_dwelling: {
     label: "Single dwelling",
-    icon: <Home className="size-3.5" />,
+    Icon: Home,
     tone: "from-[rgba(0,212,200,0.18)] to-[rgba(26,95,212,0.18)]",
   },
   multi_dwelling: {
     label: "Multi-dwelling",
-    icon: <Building className="size-3.5" />,
+    Icon: Building,
     tone: "from-[rgba(120,180,255,0.20)] to-[rgba(26,95,212,0.20)]",
   },
   renovation: {
     label: "Renovation",
-    icon: <Wrench className="size-3.5" />,
+    Icon: Wrench,
     tone: "from-[rgba(251,184,64,0.16)] to-[rgba(255,120,150,0.16)]",
   },
   extension: {
     label: "Extension",
-    icon: <Layers className="size-3.5" />,
+    Icon: Layers,
     tone: "from-[rgba(126,245,237,0.20)] to-[rgba(0,212,200,0.18)]",
   },
 };
@@ -62,7 +65,10 @@ const BUDGET_LABEL: Record<NonNullable<MarketplacePreview["budgetBand"]>, string
 
 /**
  * Project card used across the builder browse grid, dashboard suggested
- * row, and saved list. Compact, clickable, with save/unlock affordances.
+ * row, and saved list. The cover band carries a giant faded type-icon
+ * + blueprint-grid art so it reads as a "preview" instead of empty
+ * space. The body leads with the budget (most-glanced number), then
+ * an icon-based spec strip, address, and a footer with doc count + CTA.
  */
 export function ProjectCard({
   project,
@@ -101,30 +107,47 @@ export function ProjectCard({
         "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
       )}
     >
-      {/* Cover band — gradient by type */}
+      {/* Cover band — gradient + giant faded type-icon + blueprint grid */}
       <div
         className={cn(
-          "relative h-[120px] overflow-hidden bg-gradient-to-br",
+          "relative h-[140px] overflow-hidden bg-gradient-to-br",
           meta.tone,
         )}
       >
-        {/* grid pattern */}
+        {/* blueprint grid */}
         <div
           aria-hidden
           className="absolute inset-0 opacity-50"
           style={{
             backgroundImage:
               "linear-gradient(rgba(142,252,244,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.08) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
+            backgroundSize: "32px 32px",
             maskImage:
               "radial-gradient(ellipse 80% 70% at 50% 50%, black, transparent 80%)",
           }}
         />
+        {/* big faded type-icon — fills the band as visual signal */}
+        <meta.Icon
+          aria-hidden
+          className="absolute -right-4 -bottom-6 size-[150px] text-text-dim/20 opacity-40 transition-transform duration-[400ms] group-hover:-translate-y-1 group-hover:scale-[1.04]"
+          strokeWidth={0.9}
+        />
+        {/* gloss sheen on hover */}
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(126,245,237,0.45), transparent)",
+          }}
+        />
+
         {/* type pill */}
         <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-accent/40 bg-bg-deep/60 backdrop-blur-sm text-[9.5px] tracking-[0.16em] uppercase text-accent-light">
-          {meta.icon}
+          <meta.Icon className="size-3" />
           {meta.label}
         </span>
+
         {/* unlock + save badges */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
           {isUnlocked ? (
@@ -133,7 +156,7 @@ export function ProjectCard({
               Unlocked
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-subtle bg-bg-deep/60 backdrop-blur-sm text-[9px] tracking-[0.16em] uppercase text-text-dim">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-subtle bg-bg-deep/60 backdrop-blur-sm text-[9px] tracking-[0.16em] uppercase text-text-muted">
               <Lock className="size-2.5" />
               Locked
             </span>
@@ -159,29 +182,56 @@ export function ProjectCard({
             )}
           </button>
         </div>
+
+        {/* Budget — anchored bottom-left of the cover, prominent */}
+        {project.budgetBand ? (
+          <div className="absolute bottom-3 left-3">
+            <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted/80 mb-0.5">
+              Budget
+            </div>
+            <div className="font-display text-[20px] leading-none text-accent-light tabular-nums">
+              {BUDGET_LABEL[project.budgetBand]}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Body */}
       <div className="flex-1 flex flex-col p-5">
-        <h3 className="font-ui font-semibold text-[14.5px] tracking-[-0.005em] text-text line-clamp-2">
+        <h3 className="font-ui font-semibold text-[15px] tracking-[-0.005em] text-text line-clamp-2">
           {project.title}
         </h3>
 
-        <div className="mt-2 flex items-center gap-1.5 text-[11.5px] text-text-dim">
+        <div className="mt-2 flex items-center gap-1.5 text-[12px] text-text-muted">
           <MapPin className="size-3" />
           {project.suburb ? `${project.suburb}, ${project.state}` : "Location pending"}
         </div>
 
-        {/* Spec strip */}
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {project.bedrooms ? (
-            <Tag>{project.bedrooms} bed</Tag>
-          ) : null}
-          {project.bathrooms ? <Tag>{project.bathrooms} bath</Tag> : null}
-          {project.floors ? <Tag>{project.floors} storey</Tag> : null}
+        {/* Icon-based spec row — replaces "5 bed 3 bath 2 storey" pills */}
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <SpecCell
+            icon={<Bed className="size-3.5" />}
+            value={project.bedrooms}
+            label="bed"
+          />
+          <SpecCell
+            icon={<Bath className="size-3.5" />}
+            value={project.bathrooms}
+            label="bath"
+          />
           {project.dwellingCount ? (
-            <Tag>{project.dwellingCount} dwellings</Tag>
-          ) : null}
+            <SpecCell
+              icon={<Building className="size-3.5" />}
+              value={project.dwellingCount}
+              label="dwell"
+            />
+          ) : (
+            <SpecCell
+              icon={<Layers className="size-3.5" />}
+              value={project.floors}
+              label="storey"
+            />
+          )}
         </div>
 
         {project.description ? (
@@ -190,19 +240,12 @@ export function ProjectCard({
           </p>
         ) : null}
 
-        <div className="mt-auto pt-5 flex items-center justify-between gap-2 border-t border-border-subtle/50">
-          <div className="flex items-center gap-3 text-[11px] text-text-dim">
-            {project.budgetBand ? (
-              <span className="font-mono text-accent-light">
-                {BUDGET_LABEL[project.budgetBand]}
-              </span>
-            ) : null}
-            <span className="inline-flex items-center gap-1">
-              <Files className="size-3" />
-              {project.documentCount}
-            </span>
-          </div>
-          <span className="inline-flex items-center gap-1 text-[11px] text-accent-light opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="mt-auto pt-4 flex items-center justify-between gap-2 border-t border-border-subtle/50">
+          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-text-muted">
+            <Files className="size-3.5" />
+            {project.documentCount} document{project.documentCount === 1 ? "" : "s"}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11.5px] text-accent-light opacity-60 group-hover:opacity-100 transition-opacity">
             View
             <ArrowUpRight className="size-3" />
           </span>
@@ -212,10 +255,44 @@ export function ProjectCard({
   );
 }
 
-function Tag({ children }: { children: React.ReactNode }) {
+function SpecCell({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: number | null | undefined;
+  label: string;
+}) {
+  const isEmpty = !value;
   return (
-    <span className="px-2 py-0.5 border border-border-subtle bg-[rgba(255,255,255,0.022)] rounded-sm text-[10.5px] text-text-muted">
-      {children}
-    </span>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center rounded-sm border py-2 transition-colors",
+        isEmpty
+          ? "border-border-subtle/60 bg-[rgba(255,255,255,0.012)]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.022)]",
+      )}
+    >
+      <span
+        className={cn(
+          "flex items-center gap-1.5",
+          isEmpty ? "text-text-dim/50" : "text-accent-light",
+        )}
+      >
+        {icon}
+        <span
+          className={cn(
+            "font-display text-[18px] leading-none tabular-nums",
+            isEmpty ? "text-text-dim/50" : "text-text",
+          )}
+        >
+          {isEmpty ? "—" : value}
+        </span>
+      </span>
+      <span className="mt-1 text-[9px] tracking-[0.14em] uppercase text-text-dim">
+        {label}
+      </span>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "@/modules/projects";
 import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { isUnlocked, isSaved } from "@/modules/unlocks";
+import { getOwnerContactPublic } from "@/modules/profiles";
 import { ProjectDetail } from "./detail";
 
 export async function generateMetadata({
@@ -38,9 +39,13 @@ export default async function BuilderProjectPage({
     isSaved(userId, preview.id),
   ]);
 
-  // If unlocked, fetch the full row + docs for download.
+  // If unlocked, fetch the full row + docs for download + owner contact.
   const fullR = unlocked ? await getFullForUnlockedBuilder(slug) : null;
   const docs = await listActiveForProjectUnchecked(preview.id);
+  const ownerContact =
+    unlocked && fullR?.ok
+      ? await getOwnerContactPublic(fullR.value.ownerId)
+      : null;
   // Touch userId to satisfy lint — used implicitly via auth gate above.
   void userId;
 
@@ -51,6 +56,7 @@ export default async function BuilderProjectPage({
       unlocked={unlocked}
       saved={saved}
       documents={docs}
+      ownerContact={ownerContact}
     />
   );
 }

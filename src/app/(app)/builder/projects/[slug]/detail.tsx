@@ -22,6 +22,10 @@ import {
   Download,
   Sparkles,
   Check,
+  Mail,
+  Phone,
+  Briefcase,
+  MessageSquare,
 } from "lucide-react";
 
 import {
@@ -32,6 +36,7 @@ import {
 } from "@/app/(app)/_actions/marketplace";
 import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
+import type { OwnerContact } from "@/modules/profiles";
 import { cn } from "@/lib/utils";
 
 // ── lookup labels ────────────────────────────────────────────────────────
@@ -126,12 +131,14 @@ export function ProjectDetail({
   unlocked: unlockedInitial,
   saved: savedInitial,
   documents,
+  ownerContact,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
   unlocked: boolean;
   saved: boolean;
   documents: Document[];
+  ownerContact: OwnerContact | null;
 }) {
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(unlockedInitial);
@@ -384,10 +391,12 @@ export function ProjectDetail({
                     unlocked ? "" : "blur-md select-none pointer-events-none",
                   )}
                 >
-                  <p className="text-[13.5px] leading-[1.6] text-text-muted">
-                    {full?.addressLine1 ?? "14 Treadwell Road"}
+                  <p className="text-[14px] leading-[1.6] text-text">
+                    {unlocked ? full?.addressLine1 ?? "—" : "14 Example Street"}
                     <br />
-                    {preview.suburb} {preview.state} {preview.postcode}
+                    <span className="text-text-muted">
+                      {preview.suburb} {preview.state} {preview.postcode}
+                    </span>
                   </p>
                 </div>
                 {!unlocked ? (
@@ -409,11 +418,11 @@ export function ProjectDetail({
                     unlocked ? "" : "blur-md select-none pointer-events-none",
                   )}
                 >
-                  <p className="text-[13.5px] leading-[1.6] text-text-muted">
-                    Owner contact unlocks here.
-                    <br />
-                    Reply directly to the project thread.
-                  </p>
+                  {unlocked && ownerContact ? (
+                    <OwnerContactBlock contact={ownerContact} />
+                  ) : (
+                    <PlaceholderContactBlock />
+                  )}
                 </div>
                 {!unlocked ? (
                   <BlurOverlay
@@ -441,7 +450,7 @@ export function ProjectDetail({
                 />
                 <Kv
                   label="Documents"
-                  value={`${preview.documentCount} file${preview.documentCount === 1 ? "" : "s"}`}
+                  value={`${documents.length} file${documents.length === 1 ? "" : "s"}`}
                 />
               </KvGrid>
             </Card>
@@ -543,14 +552,185 @@ function Kv({
   label: string;
   value: string | number | null | undefined;
 }) {
+  const isEmpty = value === null || value === undefined || value === "";
   return (
     <div>
-      <dt className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+      <dt className="text-[10px] tracking-[0.18em] uppercase text-accent/85 mb-1">
         {label}
       </dt>
-      <dd className="text-[13.5px] text-text font-medium">
-        {value === null || value === undefined || value === "" ? "—" : value}
+      <dd
+        className={cn(
+          "text-[14.5px] font-medium tabular-nums",
+          isEmpty ? "text-text-dim/60" : "text-text",
+        )}
+      >
+        {isEmpty ? "—" : value}
       </dd>
+    </div>
+  );
+}
+
+const ENTITY_LABEL: Record<NonNullable<OwnerContact["entityType"]>, string> = {
+  homeowner: "Homeowner",
+  owner_builder: "Owner-builder",
+  developer: "Developer",
+  investor: "Investor",
+  architect: "Architect",
+  drafter: "Drafter",
+  project_manager: "Project manager",
+  other: "Other",
+};
+
+function OwnerContactBlock({ contact }: { contact: OwnerContact }) {
+  const initials = (contact.name ?? "??")
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span
+          className="size-10 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+          }}
+        >
+          {initials}
+        </span>
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold text-text truncate">
+            {contact.name ?? "Unnamed"}
+          </div>
+          <div className="text-[11.5px] text-text-muted truncate">
+            {contact.entityType ? ENTITY_LABEL[contact.entityType] : "Project owner"}
+            {contact.companyName ? ` · ${contact.companyName}` : ""}
+          </div>
+        </div>
+      </div>
+
+      <ul className="flex flex-col gap-1.5 pt-2 border-t border-border-subtle/60">
+        <ContactRow
+          icon={<Mail className="size-3.5" />}
+          label="Email"
+          value={contact.email}
+          href={`mailto:${contact.email}`}
+          highlighted={contact.contactPref === "email" || contact.contactPref === "both"}
+        />
+        {contact.phone ? (
+          <ContactRow
+            icon={<Phone className="size-3.5" />}
+            label="Phone"
+            value={contact.phone}
+            href={`tel:${contact.phone}`}
+            highlighted={contact.contactPref === "phone" || contact.contactPref === "both"}
+          />
+        ) : null}
+        <ContactRow
+          icon={<Briefcase className="size-3.5" />}
+          label="Preferred contact"
+          value={
+            contact.contactPref === "both"
+              ? "Email or phone"
+              : contact.contactPref === "phone"
+              ? "Phone"
+              : "Email"
+          }
+        />
+      </ul>
+
+      <div className="pt-2 flex items-center gap-2 text-[11px] text-text-dim">
+        <MessageSquare className="size-3" />
+        Project messaging lands in Phase 3.
+      </div>
+    </div>
+  );
+}
+
+function ContactRow({
+  icon,
+  label,
+  value,
+  href,
+  highlighted,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  href?: string;
+  highlighted?: boolean;
+}) {
+  const inner = (
+    <span
+      className={cn(
+        "flex items-center justify-between gap-3 px-3 py-2 rounded-sm border transition-colors",
+        highlighted
+          ? "border-border-accent/50 bg-[rgba(0,212,200,0.05)]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
+      )}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <span
+          className={cn(
+            "size-6 rounded-sm flex items-center justify-center shrink-0",
+            highlighted
+              ? "bg-accent-muted text-accent-light"
+              : "bg-[rgba(255,255,255,0.022)] text-text-muted",
+          )}
+        >
+          {icon}
+        </span>
+        <span className="flex flex-col min-w-0">
+          <span className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+            {label}
+          </span>
+          <span
+            className={cn(
+              "text-[12.5px] truncate",
+              highlighted ? "text-accent-light" : "text-text",
+            )}
+          >
+            {value}
+          </span>
+        </span>
+      </span>
+      {href ? (
+        <ArrowUpRight className="size-3 text-text-faint shrink-0" />
+      ) : null}
+    </span>
+  );
+
+  return (
+    <li>
+      {href ? (
+        <a href={href} className="block">
+          {inner}
+        </a>
+      ) : (
+        inner
+      )}
+    </li>
+  );
+}
+
+function PlaceholderContactBlock() {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="size-10 rounded-full bg-[rgba(255,255,255,0.04)] border border-border-subtle" />
+        <div className="space-y-1.5">
+          <div className="h-2.5 w-32 rounded bg-[rgba(255,255,255,0.06)]" />
+          <div className="h-2 w-24 rounded bg-[rgba(255,255,255,0.04)]" />
+        </div>
+      </div>
+      <div className="space-y-1.5 pt-2 border-t border-border-subtle/60">
+        <div className="h-9 rounded-sm bg-[rgba(255,255,255,0.022)]" />
+        <div className="h-9 rounded-sm bg-[rgba(255,255,255,0.022)]" />
+      </div>
     </div>
   );
 }

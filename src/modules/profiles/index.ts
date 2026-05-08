@@ -42,6 +42,7 @@ export type {
 export {
   // Owner
   getOwnerProfile,
+  getOwnerContactPublic,
   upsertOwnerProfile,
   completeOwnerOnboarding,
   // Builder
@@ -64,6 +65,7 @@ export {
   type BuilderProfileInput,
   type BuilderLicenceInput,
   type BuilderProfileBundle,
+  type OwnerContact,
 } from "./service";
 
 // Policies

@@ -308,12 +308,6 @@ export async function listForMarketplace(
       description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
-      documentCount: sql<number>`(
-        SELECT COUNT(*) FROM ${documents}
-        WHERE ${documents.projectId} = ${projects.id}
-          AND ${documents.status} = 'active'
-          AND ${documents.deletedAt} IS NULL
-      )`.mapWith(Number),
     })
     .from(projects)
     .where(and(...conds))
@@ -321,7 +315,7 @@ export async function listForMarketplace(
     .limit(filters.limit ?? 60)
     .offset(filters.offset ?? 0);
 
-  return rows;
+  return attachDocCounts(rows);
 }
 
 /** Fetch a single preview by slug (used by the builder detail page). */
@@ -356,12 +350,6 @@ export async function getMarketplacePreview(
       description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
-      documentCount: sql<number>`(
-        SELECT COUNT(*) FROM ${documents}
-        WHERE ${documents.projectId} = ${projects.id}
-          AND ${documents.status} = 'active'
-          AND ${documents.deletedAt} IS NULL
-      )`.mapWith(Number),
     })
     .from(projects)
     .where(
@@ -374,7 +362,8 @@ export async function getMarketplacePreview(
   // Touch `list` to satisfy lint without using it functionally.
   void list;
   if (!row) return fail("not_found", "Project not found.");
-  return ok(row);
+  const [withCount] = await attachDocCounts([row]);
+  return ok(withCount!);
 }
 
 /**
@@ -428,17 +417,45 @@ export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
       description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
-      documentCount: sql<number>`(
-        SELECT COUNT(*) FROM ${documents}
-        WHERE ${documents.projectId} = ${projects.id}
-          AND ${documents.status} = 'active'
-          AND ${documents.deletedAt} IS NULL
-      )`.mapWith(Number),
     })
     .from(projects)
     .where(and(inArray(projects.id, ids), isNull(projects.deletedAt)))
     .orderBy(desc(projects.publishedAt));
-  return rows;
+  return attachDocCounts(rows);
+}
+
+/**
+ * Take a batch of preview rows missing `documentCount` and merge in the
+ * per-project counts in a single query. Cheap enough for any reasonable
+ * page (≤60 rows). Replaces a flaky scalar-subquery select.
+ */
+async function attachDocCounts<
+  T extends { id: string },
+>(rows: T[]): Promise<Array<T & { documentCount: number }>> {
+  if (rows.length === 0) return [];
+  const counts = await db
+    .select({
+      projectId: documents.projectId,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(documents)
+    .where(
+      and(
+        inArray(
+          documents.projectId,
+          rows.map((r) => r.id),
+        ),
+        eq(documents.status, "active"),
+        isNull(documents.deletedAt),
+      ),
+    )
+    .groupBy(documents.projectId);
+
+  const map = new Map<string, number>();
+  for (const c of counts) {
+    if (c.projectId) map.set(c.projectId, c.count);
+  }
+  return rows.map((r) => ({ ...r, documentCount: map.get(r.id) ?? 0 }));
 }
 
 /** Soft-delete. Cascade is handled at the doc layer (project_id → null). */
