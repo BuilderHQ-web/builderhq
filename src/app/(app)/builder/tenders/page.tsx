@@ -95,7 +95,7 @@ export default async function MyTendersPage() {
 
         {tenders.length === 0 ? (
           <EmptyState
-            icon={FileText}
+            icon={<FileText className="size-5" />}
             title="No tenders yet"
             description="Unlock a project and submit your first tender — autosaves as you go, locks on submit, owner sees it side-by-side with the others."
             primary={{ label: "Browse projects", href: "/builder/browse" }}

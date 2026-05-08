@@ -114,7 +114,7 @@ export default async function BrowsePage({
         {projects.length === 0 ? (
           <div className="mt-8">
             <EmptyState
-              icon={Filter}
+              icon={<Filter className="size-5" />}
               title="No projects match"
               description="Try widening the filters, or jump back to all projects."
               primary={{ label: "Clear all filters", href: "/builder/browse" }}

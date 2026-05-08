@@ -239,7 +239,7 @@ export default async function BuilderDashboard() {
           {suggested.length === 0 ? (
             <div className="rounded-md border border-border-subtle">
               <EmptyState
-                icon={Compass}
+                icon={<Compass className="size-5" />}
                 title="No matches yet"
                 description={
                   matchedSuburbs.length > 0 || matchedCategories.length > 0

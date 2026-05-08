@@ -22,20 +22,23 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 type Tone = "default" | "primary";
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  /** Pre-rendered icon JSX. Pass `<Compass className="size-5" />`,
+   *  not the bare `Compass` component — passing a component reference
+   *  from a Server Component prop tries to serialise the function
+   *  across the RSC boundary and crashes the page. */
+  icon: React.ReactNode;
   title: string;
   description?: string;
-  /** Primary action — link or button. */
-  primary?:
-    | { label: string; href: string }
-    | { label: string; onClick: () => void };
+  /** Primary action — link only (rendered server-side via Next Link).
+   *  Click handlers live elsewhere because functions can't cross the
+   *  server→client component boundary. */
+  primary?: { label: string; href: string };
   /** Secondary action — usually a settings link or "learn more". */
   secondary?: { label: string; href: string };
   tone?: Tone;
@@ -43,7 +46,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon: Icon,
+  icon,
   title,
   description,
   primary,
@@ -85,12 +88,14 @@ export function EmptyState({
             tone === "primary" && "shadow-[0_0_24px_rgba(0,212,200,0.25)]",
           )}
         >
-          <Icon
+          <span
             className={cn(
-              "size-5",
+              "inline-flex items-center justify-center",
               tone === "primary" ? "text-accent" : "text-accent-light",
             )}
-          />
+          >
+            {icon}
+          </span>
         </div>
 
         <h3 className="font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
@@ -105,7 +110,19 @@ export function EmptyState({
 
         {primary || secondary ? (
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            {primary ? <PrimaryAction action={primary} /> : null}
+            {primary ? (
+              <Link
+                href={primary.href}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-9 px-5 rounded-full",
+                  "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
+                  "hover:bg-accent-hover transition-colors duration-[140ms]",
+                  "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_6px_18px_-8px_rgba(0,212,200,0.45)]",
+                )}
+              >
+                {primary.label}
+              </Link>
+            ) : null}
             {secondary ? (
               <Link
                 href={secondary.href}
@@ -123,32 +140,5 @@ export function EmptyState({
         ) : null}
       </div>
     </motion.div>
-  );
-}
-
-function PrimaryAction({
-  action,
-}: {
-  action:
-    | { label: string; href: string }
-    | { label: string; onClick: () => void };
-}) {
-  const cls = cn(
-    "inline-flex items-center gap-1.5 h-9 px-5 rounded-full",
-    "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
-    "hover:bg-accent-hover transition-colors duration-[140ms]",
-    "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_6px_18px_-8px_rgba(0,212,200,0.45)]",
-  );
-  if ("href" in action) {
-    return (
-      <Link href={action.href} className={cls}>
-        {action.label}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" onClick={action.onClick} className={cls}>
-      {action.label}
-    </button>
   );
 }
