@@ -386,14 +386,42 @@ export async function upsertBuilderProfile(
     if (!row) return fail("internal", "Could not save your builder profile.");
     return ok(row);
   } catch (err) {
+    // Postgres surfaces unique violations with code 23505 + the constraint
+    // name. Different drivers (neon-http vs node-postgres) expose them on
+    // slightly different fields, so we check all the usual suspects + the
+    // message text as a final fallback.
+    const e = err as {
+      code?: string;
+      constraint?: string;
+      constraint_name?: string;
+      cause?: { code?: string; constraint?: string; constraint_name?: string };
+    };
+    const code = e.code ?? e.cause?.code;
+    const constraint =
+      e.constraint ?? e.constraint_name ?? e.cause?.constraint ?? e.cause?.constraint_name ?? "";
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("builder_profiles_abn_unique")) {
-      return fail("conflict", "That ABN is already registered to another builder.");
+    const blob = `${constraint} ${msg}`;
+
+    if (code === "23505" || /duplicate key/i.test(msg)) {
+      if (blob.includes("builder_profiles_abn_unique") || blob.includes("abn")) {
+        return fail("conflict", "That ABN is already registered to another builder.");
+      }
+      if (blob.includes("builder_profiles_slug_unique") || blob.includes("slug")) {
+        return fail(
+          "conflict",
+          "Another builder is using that handle. Try a different company name.",
+        );
+      }
+      return fail(
+        "conflict",
+        "Looks like this profile already exists. Try refreshing the page.",
+      );
     }
-    if (msg.includes("builder_profiles_slug_unique")) {
-      return fail("conflict", "Another builder is using that handle. Try a different company name.");
-    }
-    logger.error({ event: "profile.builder.upsert_failed", userId, msg }, "builder upsert failed");
+
+    logger.error(
+      { event: "profile.builder.upsert_failed", userId, code, constraint, msg },
+      "builder upsert failed",
+    );
     return fail("internal", "Could not save your builder profile. Try again.");
   }
 }
