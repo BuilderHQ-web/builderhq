@@ -302,22 +302,21 @@ export async function getBuilderProfile(
  * Public lookup by slug. Used by `/b/[slug]` — anyone can hit it,
  * authenticated or not.
  *
- * Visibility rules (in priority order):
+ * Visibility rules:
  *
- *   1. Owner viewing their own profile         → always visible
- *      (preview mode for not-yet-approved profiles)
- *   2. Profile is suspended                    → 404 for everyone
- *   3. Authenticated viewer (has an account)   → visible regardless
- *      of approval status. Project owners viewing tender-card links
- *      need to see who they're considering even before admin tools
- *      flip approvals; signed-up builders looking each other up is
- *      the same low-trust-needed read.
- *   4. Unauthenticated viewer                  → only approved
- *      profiles visible. SEO + first-impression surface still
- *      respects the approval gate.
+ *   - approved              → visible to everyone
+ *   - any other status      → visible only to the owning user
+ *                             (preview mode so they can chase the
+ *                             review team / fix issues)
  *
- * Caller passes `viewerUserId` (or null when unauthenticated). Page
- * wraps the null return in notFound().
+ * The caller passes `viewerUserId` (or null when unauthenticated)
+ * and we apply the rule here. Returns null if the lookup fails the
+ * rule, NOT a thrown error — page wraps it in notFound().
+ *
+ * Note: this means the link from /owner/projects/.../tenders to a
+ * builder's `/b/[slug]` will 404 until that builder is approved. That
+ * is intentional — owners must not see unverified profiles. Once the
+ * admin approval surface ships (Phase 4) the link becomes real.
  *
  * The shape returned is intentionally identical to BuilderProfileBundle
  * so the client component can reuse the same typings the editor uses.
@@ -335,24 +334,10 @@ export async function getBuilderBySlug(
     .limit(1);
   if (!profile) return null;
 
+  // Approval gate. Owners always see their own — even if pending /
+  // rejected — so they can preview and chase the team.
   const isOwner = !!viewerUserId && profile.userId === viewerUserId;
-
-  // Suspended profiles are hidden from everyone except the builder
-  // themselves (so they still see "your profile is suspended" inside
-  // their own preview).
-  if (profile.approvalStatus === "suspended" && !isOwner) {
-    return null;
-  }
-
-  // Anonymous viewers only see fully-approved profiles. Sign-in
-  // unlocks every non-suspended profile (admin approval tooling
-  // hasn't shipped yet — gating tender comparisons on it would
-  // hide every builder).
-  if (
-    !viewerUserId &&
-    !isOwner &&
-    profile.approvalStatus !== "approved"
-  ) {
+  if (profile.approvalStatus !== "approved" && !isOwner) {
     return null;
   }
 
