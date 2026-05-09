@@ -175,7 +175,11 @@ export function currentCycleFor(
   const cycleEnd = new Date(
     Math.min(startMs + (index + 1) * CYCLE_MS, endMs),
   );
-  const total = Math.ceil((endMs - startMs) / CYCLE_MS);
+  // 3-month calendar grants span 89-92 days depending on which months
+  // they cross — using Math.ceil here would round 91/30 up to 4 even
+  // though the intent is 3 thirty-day cycles. Math.round handles the
+  // small calendar-vs-cycle slop and matches operator intent.
+  const total = Math.max(1, Math.round((endMs - startMs) / CYCLE_MS));
   return { index, total, start: cycleStart, end: cycleEnd };
 }
 
@@ -320,7 +324,9 @@ export async function recentCycleHistory(
 
   const startMs = grant.startAt.getTime();
   const endMs = grant.endAt.getTime();
-  const total = Math.ceil((endMs - startMs) / CYCLE_MS);
+  // Match the same rounding policy as currentCycleFor — see the note
+  // there for why round, not ceil.
+  const total = Math.max(1, Math.round((endMs - startMs) / CYCLE_MS));
 
   // Pull every founding-sourced unlock since the grant started so we
   // can bucket them by cycle without hammering the DB once per cycle.
