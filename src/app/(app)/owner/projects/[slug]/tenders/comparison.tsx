@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -21,6 +22,7 @@ import {
   Wallet,
   ListChecks,
   FileText,
+  ArrowUpRight,
 } from "lucide-react";
 
 import {
@@ -404,9 +406,21 @@ function TenderCard({
             {tender.builder.initials}
           </span>
           <div className="min-w-0 flex-1 mr-6">
-            <div className="text-[14px] font-semibold text-text truncate">
-              {tender.builder.name ?? "Unnamed"}
-            </div>
+            {tender.builder.slug ? (
+              <Link
+                href={`/b/${tender.builder.slug}`}
+                target="_blank"
+                rel="noopener"
+                className="group inline-flex items-center gap-1 text-[14px] font-semibold text-text hover:text-accent-light transition-colors max-w-full"
+              >
+                <span className="truncate">{tender.builder.name ?? "Unnamed"}</span>
+                <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity shrink-0" />
+              </Link>
+            ) : (
+              <div className="text-[14px] font-semibold text-text truncate">
+                {tender.builder.name ?? "Unnamed"}
+              </div>
+            )}
             <div className="text-[11.5px] text-text-dim truncate">
               {tender.builder.companyName ?? "Independent builder"}
             </div>

@@ -23,6 +23,8 @@ export type TenderForOwner = TenderWithLines & {
     name: string | null;
     companyName: string | null;
     initials: string;
+    /** Public profile slug — present once the builder finishes onboarding. */
+    slug: string | null;
   };
   documentCount: number;
 };

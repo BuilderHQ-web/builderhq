@@ -23,12 +23,14 @@
  * touch in this session.
  */
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import {
   AlertTriangle,
   Building2,
   Check,
   CheckCircle2,
+  ExternalLink,
   Eye,
   Hammer,
   House,
@@ -198,9 +200,22 @@ function ProfileHero({ profile }: { profile: ProfileShape }) {
             {statusMeta.label}
           </span>
           {profile.slug ? (
-            <span className="font-mono text-[11px] text-text-dim tabular-nums">
-              builderhq.com.au/b/{profile.slug}
-            </span>
+            <Link
+              href={`/b/${profile.slug}`}
+              target="_blank"
+              rel="noopener"
+              className={cn(
+                "group inline-flex items-center gap-1.5 h-9 px-4 rounded-full",
+                "border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
+                "text-[11.5px] font-medium tracking-[0.04em]",
+                "hover:bg-[rgba(0,212,200,0.10)] transition-colors duration-[140ms]",
+                "active:scale-[0.985] active:duration-[80ms]",
+              )}
+            >
+              <Eye className="size-3.5" />
+              View public profile
+              <ExternalLink className="size-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+            </Link>
           ) : null}
         </div>
       }

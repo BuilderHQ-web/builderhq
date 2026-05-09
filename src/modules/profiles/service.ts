@@ -299,6 +299,63 @@ export async function getBuilderProfile(
 }
 
 /**
+ * Public lookup by slug. Used by `/b/[slug]` — anyone can hit it,
+ * authenticated or not.
+ *
+ * Visibility rules:
+ *
+ *   - approved              → visible to everyone
+ *   - any other status      → visible only to the owning user
+ *                             (so they can preview their own page)
+ *
+ * The caller passes `viewerUserId` (or null when unauthenticated)
+ * and we apply the rule here. Returns null if the lookup fails the
+ * rule, NOT a thrown error — page wraps it in notFound().
+ *
+ * The shape returned is intentionally identical to BuilderProfileBundle
+ * so the client component can reuse the same typings the editor uses.
+ * Page-side code projects to a public-safe shape before sending to the
+ * client (we strip postal address etc. there).
+ */
+export async function getBuilderBySlug(
+  slug: string,
+  viewerUserId: string | null,
+): Promise<BuilderProfileBundle | null> {
+  const [profile] = await db
+    .select()
+    .from(builderProfiles)
+    .where(eq(builderProfiles.slug, slug))
+    .limit(1);
+  if (!profile) return null;
+
+  // Approval gate. Owners always see their own — even if pending /
+  // rejected — so they can preview and chase the team.
+  const isOwner = !!viewerUserId && profile.userId === viewerUserId;
+  if (profile.approvalStatus !== "approved" && !isOwner) {
+    return null;
+  }
+
+  const [licences, serviceAreas, categories] = await Promise.all([
+    db
+      .select()
+      .from(builderLicences)
+      .where(eq(builderLicences.builderId, profile.userId))
+      .orderBy(asc(builderLicences.state), asc(builderLicences.licenceNumber)),
+    db
+      .select()
+      .from(builderServiceAreas)
+      .where(eq(builderServiceAreas.builderId, profile.userId))
+      .orderBy(asc(builderServiceAreas.state), asc(builderServiceAreas.suburb)),
+    db
+      .select()
+      .from(builderProjectCategories)
+      .where(eq(builderProjectCategories.builderId, profile.userId)),
+  ]);
+
+  return { profile, licences, serviceAreas, categories };
+}
+
+/**
  * Builder slug — generated from company name. Suffixed with the first 6
  * chars of the user uuid to guarantee uniqueness without a lookup loop.
  */

@@ -47,6 +47,7 @@ export {
   completeOwnerOnboarding,
   // Builder
   getBuilderProfile,
+  getBuilderBySlug,
   upsertBuilderProfile,
   addBuilderLicence,
   removeBuilderLicence,

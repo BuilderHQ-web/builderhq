@@ -125,6 +125,7 @@ export async function listTendersForOwner(
       builderFirstName: users.firstName,
       builderLastName: users.lastName,
       builderCompanyName: builderProfiles.companyName,
+      builderSlug: builderProfiles.slug,
     })
     .from(tenders)
     .innerJoin(users, eq(users.id, tenders.builderId))
@@ -215,6 +216,7 @@ export async function listTendersForOwner(
         name: composed,
         companyName: r.builderCompanyName ?? null,
         initials,
+        slug: r.builderSlug ?? null,
       },
       documentCount: countsByTender.get(r.id) ?? 0,
     } satisfies TenderForOwner;
