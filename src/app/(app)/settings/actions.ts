@@ -9,6 +9,7 @@ import {
   unstable_update,
   updateProfile,
 } from "@/modules/auth";
+import { upsertOwnerProfile } from "@/modules/profiles";
 
 export interface SettingsActionState {
   ok?: true;
@@ -30,8 +31,11 @@ export async function updateProfileAction(
 
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
+  // Phone is optional. Empty string clears it.
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const phone = phoneRaw.length > 0 ? phoneRaw : "";
 
-  const result = await updateProfile(userId, { firstName, lastName });
+  const result = await updateProfile(userId, { firstName, lastName, phone });
 
   if (!result.ok) {
     if (result.error.code === "validation" && result.error.details?.issues) {
@@ -91,5 +95,50 @@ export async function changePasswordAction(
   // Sign out current device after password change. Other devices' JWTs
   // remain valid for up to 7d (architecture note in service.ts).
   await signOut({ redirectTo: "/login?password_changed=1" });
+  return { ok: true };
+}
+
+/**
+ * Owner-only — patch the project_owner_profiles row (entity type,
+ * company, contact preference, defaults). Mirrors the onboarding
+ * action's input shape so we can reuse `upsertOwnerProfile`.
+ */
+export async function updateOwnerSettingsAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const userId = await requireUserId();
+  if (!userId) return { error: "Not authenticated." };
+
+  const nullable = (v: FormDataEntryValue | null) => {
+    const s = typeof v === "string" ? v.trim() : "";
+    return s === "" ? null : s;
+  };
+
+  const result = await upsertOwnerProfile(userId, {
+    entityType: String(formData.get("entityType") ?? "homeowner"),
+    companyName: nullable(formData.get("companyName")),
+    defaultSuburb: nullable(formData.get("defaultSuburb")),
+    defaultState: nullable(formData.get("defaultState")),
+    defaultPostcode: nullable(formData.get("defaultPostcode")),
+    contactPref: String(formData.get("contactPref") ?? "email"),
+  });
+
+  if (!result.ok) {
+    if (result.error.code === "validation" && result.error.details?.issues) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.details.issues as Array<{
+        path: (string | number)[];
+        message: string;
+      }>) {
+        const k = issue.path.join(".");
+        if (!fieldErrors[k]) fieldErrors[k] = issue.message;
+      }
+      return { fieldErrors };
+    }
+    return { error: result.error.message };
+  }
+
+  revalidatePath("/", "layout");
   return { ok: true };
 }

@@ -52,6 +52,8 @@ export {
   removeBuilderLicence,
   setBuilderServiceAreas,
   setBuilderProjectCategories,
+  setBuilderLogo,
+  clearBuilderLogo,
   submitBuilderForApproval,
   // Cross-cutting
   hasCompletedOnboarding,

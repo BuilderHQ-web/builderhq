@@ -456,6 +456,18 @@ export async function changePassword(
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50).trim(),
   lastName: z.string().min(1, "Last name is required").max(50).trim(),
+  /** AU mobile / landline. Loose validator on purpose — we only want
+   *  to reject obvious junk (no digits at all, way-too-long input)
+   *  rather than fight format wars across landlines / mobiles /
+   *  international numbers. Empty string clears the field. */
+  phone: z
+    .union([z.string().max(40), z.literal("")])
+    .optional()
+    .transform((v) => (v && v.trim() ? v.trim() : null))
+    .refine(
+      (v) => v === null || /\d{4,}/.test(v),
+      "Phone needs at least 4 digits",
+    ),
 });
 
 export async function updateProfile(
@@ -468,7 +480,7 @@ export async function updateProfile(
       issues: parsed.error.issues,
     });
   }
-  const { firstName, lastName } = parsed.data;
+  const { firstName, lastName, phone } = parsed.data;
 
   await db
     .update(users)
@@ -476,6 +488,7 @@ export async function updateProfile(
       firstName,
       lastName,
       name: `${firstName} ${lastName}`,
+      phone: phone ?? null,
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));

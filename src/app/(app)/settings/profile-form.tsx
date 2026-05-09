@@ -5,7 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field } from "@/components/ui/field";
 
 import { updateProfileAction, type SettingsActionState } from "./actions";
 
@@ -14,10 +14,12 @@ const initialState: SettingsActionState = {};
 export function ProfileForm({
   defaultFirstName,
   defaultLastName,
+  defaultPhone,
   email,
 }: {
   defaultFirstName: string;
   defaultLastName: string;
+  defaultPhone: string;
   email: string;
 }) {
   const [state, formAction] = useActionState(updateProfileAction, initialState);
@@ -26,30 +28,58 @@ export function ProfileForm({
   const fieldError = (k: string) => state.fieldErrors?.[k];
 
   return (
-    <form action={(fd) => startTransition(() => formAction(fd))} className="flex flex-col gap-5" noValidate>
+    <form
+      action={(fd) => startTransition(() => formAction(fd))}
+      className="flex flex-col gap-5"
+      noValidate
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="firstName">First name</Label>
-          <Input id="firstName" name="firstName" defaultValue={defaultFirstName} required />
-          {fieldError("firstName") ? <p className="text-[11px] text-danger">{fieldError("firstName")}</p> : null}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="lastName">Last name</Label>
-          <Input id="lastName" name="lastName" defaultValue={defaultLastName} required />
-          {fieldError("lastName") ? <p className="text-[11px] text-danger">{fieldError("lastName")}</p> : null}
-        </div>
+        <Field label="First name" required error={fieldError("firstName")}>
+          <Input
+            name="firstName"
+            defaultValue={defaultFirstName}
+            required
+            autoComplete="given-name"
+          />
+        </Field>
+        <Field label="Last name" required error={fieldError("lastName")}>
+          <Input
+            name="lastName"
+            defaultValue={defaultLastName}
+            required
+            autoComplete="family-name"
+          />
+        </Field>
       </div>
 
-      <div className="flex flex-col gap-1.5 opacity-70">
-        <Label htmlFor="emailDisabled">Email</Label>
-        <Input id="emailDisabled" defaultValue={email} disabled />
-        <p className="text-[11px] text-text-dim">
-          Email change requires re-verification — coming in Phase 2.
-        </p>
-      </div>
+      <Field
+        label="Phone"
+        badge="Optional"
+        hint="Shared with the other party once a tender is awarded — never publicly listed."
+        error={fieldError("phone")}
+      >
+        <Input
+          name="phone"
+          defaultValue={defaultPhone}
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="+61 4 0000 0000"
+          className="font-mono tabular-nums"
+        />
+      </Field>
+
+      <Field
+        label="Email"
+        hint="Email change requires re-verification — coming in Phase 2."
+      >
+        <Input defaultValue={email} disabled autoComplete="email" />
+      </Field>
 
       {state.error ? (
-        <div role="alert" className="rounded-tight border border-[rgba(255,80,80,0.30)] bg-[rgba(255,80,80,0.06)] px-3 py-2 text-[13px] text-danger">
+        <div
+          role="alert"
+          className="rounded-tight border border-[rgba(255,80,80,0.30)] bg-[rgba(255,80,80,0.06)] px-3 py-2 text-[13px] text-danger"
+        >
           {state.error}
         </div>
       ) : null}

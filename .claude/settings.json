@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch *)",
+      "Bash(curl -I *)",
+      "Bash(curl -s -I *)",
+      "Bash(node -v)",
+      "Bash(node --version)"
+    ]
+  }
+}

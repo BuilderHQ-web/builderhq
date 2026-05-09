@@ -40,3 +40,10 @@ export {
 // Policies (for callers that want to gate UI before calling service).
 export { canUpload, canRead, canDelete } from "./policies";
 export type { ActorContext } from "./policies";
+
+// Storage primitives — R2 client + signed-URL helpers. Exported so
+// other modules (profiles for builder logos, future media) can do
+// direct uploads without re-instantiating an S3Client. Cross-module
+// reach is the whole point of these — they're infrastructure, not
+// document-specific behaviour.
+export { r2, presignDownload, presignUpload, statObject, deleteObject } from "./storage";

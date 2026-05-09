@@ -71,7 +71,7 @@ const builderNav: NavSection[] = [
     title: "Builder",
     items: [
       { href: "/builder/access", label: "Founding access", icon: Sparkles, soon: "Phase 3" },
-      { href: "/builder/profile", label: "Public profile", icon: Hammer, soon: "Phase 1" },
+      { href: "/builder/profile", label: "Public profile", icon: Hammer },
     ],
   },
   {

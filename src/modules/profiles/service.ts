@@ -593,6 +593,45 @@ export async function submitBuilderForApproval(
 
 // ── Cross-cutting: onboarding gate helper ───────────────────────────────
 
+// ── Logo (R2-backed) ─────────────────────────────────────────────────────
+
+/**
+ * Stash an R2 object key against the builder's profile. Caller (server
+ * action) is responsible for verifying the upload landed in R2 first.
+ *
+ * The key alone is stored — never the URL — so we can rotate signed
+ * URLs at read time. Reads go through `/api/files?key=...` (the same
+ * gateway used for project documents).
+ */
+export async function setBuilderLogo(
+  userId: string,
+  key: string,
+): Promise<Result<{ ok: true }>> {
+  await db
+    .update(builderProfiles)
+    .set({ logoR2Key: key, updatedAt: new Date() })
+    .where(eq(builderProfiles.userId, userId));
+  logger.info(
+    { event: "profile.builder.logo_set", userId, key },
+    "builder logo set",
+  );
+  return ok({ ok: true });
+}
+
+export async function clearBuilderLogo(
+  userId: string,
+): Promise<Result<{ ok: true }>> {
+  await db
+    .update(builderProfiles)
+    .set({ logoR2Key: null, updatedAt: new Date() })
+    .where(eq(builderProfiles.userId, userId));
+  logger.info(
+    { event: "profile.builder.logo_cleared", userId },
+    "builder logo cleared",
+  );
+  return ok({ ok: true });
+}
+
 /**
  * Used by (app)/layout.tsx to decide whether the user can see the
  * dashboard or must finish onboarding first.
