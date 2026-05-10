@@ -1,43 +1,59 @@
 "use client";
 
 /**
- * ByTheNumbers — a single confident row that replaces the older chart-y
- * Stats section. Four hard numbers, no animation gymnastics, no
- * scrolling reveals competing with the headline. The strip's job is
- * "five seconds of credibility," not "be looked at."
+ * ByTheNumbers — single confident row, animated count-up on first
+ * scroll into view. Each numeric tile counts from 0 → its target;
+ * the non-numeric tile ("Free") gets a soft glow reveal so it lands
+ * on the same beat as the others.
  *
- * Each number sits on its own column with a thin vertical divider so
- * the eye reads across as a continuous line. On mobile the columns
- * stack 2×2 with horizontal dividers.
+ * The motion is deliberately calm — duration 1.6s, ease-out, no
+ * spring overshoot. We're not selling drama; we're confirming
+ * credibility.
+ *
+ * Source-of-truth array sits in this file. When the figures move
+ * (real numbers from the database), edit them here — the consumer
+ * (the landing page) is unaware of the values.
  */
 
+import { useEffect, useRef, useState } from "react";
+import { useInView, animate } from "motion/react";
 import { Reveal } from "./reveal";
 
-// Real numbers from the Bubble export are wired in per-deploy. The
-// strings below are the source of truth for the marketing surface.
-// When the figures update, edit them here — no other consumers.
-const ITEMS = [
+type Item = {
+  value: string;
+  label: string;
+  sub: string;
+  /** Numeric counter target. When set, we count up from 0 and append
+   *  the suffix ("+", "M+", etc.) baked into the value string. */
+  numeric?: { to: number; prefix?: string; suffix?: string };
+};
+
+const ITEMS: Item[] = [
   {
     value: "50+",
     label: "Verified builders",
     sub: "ABR active + state-register checked.",
+    numeric: { to: 50, suffix: "+" },
   },
   {
     value: "45+",
     label: "Project unlocks",
     sub: "Real residential builds, tendered.",
+    numeric: { to: 45, suffix: "+" },
   },
   {
     value: "$50M+",
     label: "Tenders submitted",
     sub: "Total quoted value across the platform.",
+    numeric: { to: 50, prefix: "$", suffix: "M+" },
   },
   {
     value: "Free",
     label: "For owners — forever",
     sub: "No fees, no commission on awards.",
+    // No numeric target — uses the soft-reveal path.
   },
-] as const;
+];
 
 export function ByTheNumbers() {
   return (
@@ -66,32 +82,109 @@ export function ByTheNumbers() {
             />
             <div className="relative grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-subtle/60">
               {ITEMS.map((item) => (
-                <div
-                  key={item.label}
-                  className="px-6 lg:px-8 py-7 lg:py-8 flex flex-col gap-2"
-                >
-                  <span
-                    className="font-display tracking-[-0.005em] tabular-nums leading-none text-accent-light"
-                    style={{
-                      fontSize: "clamp(2.25rem, 2.4vw + 1rem, 3rem)",
-                      textShadow:
-                        "0 0 60px rgba(0,212,200,0.25), 0 0 120px rgba(0,212,200,0.08)",
-                    }}
-                  >
-                    {item.value}
-                  </span>
-                  <span className="text-[11px] tracking-[0.18em] uppercase text-text-muted font-ui font-medium mt-1">
-                    {item.label}
-                  </span>
-                  <span className="text-[12px] leading-[1.55] text-text-dim max-w-[28ch]">
-                    {item.sub}
-                  </span>
-                </div>
+                <Tile key={item.label} item={item} />
               ))}
             </div>
           </div>
         </Reveal>
       </div>
     </section>
+  );
+}
+
+function Tile({ item }: { item: Item }) {
+  return (
+    <div className="px-6 lg:px-8 py-7 lg:py-8 flex flex-col gap-2">
+      {item.numeric ? (
+        <CountUp
+          to={item.numeric.to}
+          prefix={item.numeric.prefix ?? ""}
+          suffix={item.numeric.suffix ?? ""}
+        />
+      ) : (
+        <SoftReveal>{item.value}</SoftReveal>
+      )}
+      <span className="text-[11px] tracking-[0.18em] uppercase text-text-muted font-ui font-medium mt-1">
+        {item.label}
+      </span>
+      <span className="text-[12px] leading-[1.55] text-text-dim max-w-[28ch]">
+        {item.sub}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * CountUp — fires once when the element scrolls into view. Counts
+ * from 0 to `to` over 1.6s with a calm ease-out, then locks. Re-fires
+ * on no schedule — ages well across re-renders.
+ */
+function CountUp({
+  to,
+  prefix,
+  suffix,
+}: {
+  to: number;
+  prefix: string;
+  suffix: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, to, {
+      duration: 1.6,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setDisplay(Math.round(latest)),
+    });
+    return () => controls.stop();
+  }, [inView, to]);
+
+  return (
+    <span
+      ref={ref}
+      className="font-display tracking-[-0.005em] tabular-nums leading-none text-accent-light"
+      style={{
+        fontSize: "clamp(2.25rem, 2.4vw + 1rem, 3rem)",
+        textShadow:
+          "0 0 60px rgba(0,212,200,0.25), 0 0 120px rgba(0,212,200,0.08)",
+      }}
+    >
+      {prefix}
+      {display}
+      {suffix}
+    </span>
+  );
+}
+
+/**
+ * SoftReveal — for the non-numeric tile ("Free"). Fades in + glows
+ * on the same scroll trigger as the count-ups so all four tiles feel
+ * synchronised. Uses opacity + a brief letter-spacing pulse for a
+ * subtle "settling into place" effect.
+ */
+function SoftReveal({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  return (
+    <span
+      ref={ref}
+      className={[
+        "font-display tracking-[-0.005em] leading-none text-accent-light",
+        "transition-[opacity,letter-spacing,filter] duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+        inView
+          ? "opacity-100 tracking-[-0.005em] [filter:blur(0px)]"
+          : "opacity-0 tracking-[0.06em] [filter:blur(6px)]",
+      ].join(" ")}
+      style={{
+        fontSize: "clamp(2.25rem, 2.4vw + 1rem, 3rem)",
+        textShadow:
+          "0 0 60px rgba(0,212,200,0.25), 0 0 120px rgba(0,212,200,0.08)",
+      }}
+    >
+      {children}
+    </span>
   );
 }

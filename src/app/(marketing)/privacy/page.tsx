@@ -339,12 +339,12 @@ const SECTIONS = [
   },
   {
     id: "contact",
-    title: "16. Contact us & complaints",
+    title: "16. Contact us",
     body: (
       <>
         <P>
-          If you have questions, wish to access or correct your information,
-          or want to make a privacy complaint, contact our Privacy Officer:
+          If you have questions or wish to access or correct the personal
+          information we hold about you, contact our Privacy Officer:
         </P>
         <P>
           Privacy Officer — BuilderHQ Technologies Pty Ltd
@@ -353,12 +353,6 @@ const SECTIONS = [
           <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>
           <br />
           Address: Melbourne, Victoria, Australia
-        </P>
-        <P>
-          If you&apos;re not satisfied with our response, you may complain
-          to the Office of the Australian Information Commissioner (OAIC)
-          at{" "}
-          <A href="https://www.oaic.gov.au">www.oaic.gov.au</A>.
         </P>
       </>
     ),

@@ -205,6 +205,11 @@ const HERO_CARDS = [
   { id: "tender", render: () => <TenderInProgressCard /> },
 ] as const;
 
+// Carousel timing — kept as named constants so it's obvious where to
+// dial up/down the rhythm. 3.6s feels alive without being twitchy.
+const CYCLE_MS = 3600;
+const TRANSITION_MS = 0.7; // 700ms — long enough to read as glass-smooth.
+
 function HeroCardCycler() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -213,7 +218,7 @@ function HeroCardCycler() {
     if (paused) return;
     const t = window.setInterval(() => {
       setActive((i) => (i + 1) % HERO_CARDS.length);
-    }, 5400);
+    }, CYCLE_MS);
     return () => window.clearInterval(t);
   }, [paused]);
 
@@ -224,44 +229,51 @@ function HeroCardCycler() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Stack of cards — each layer's transform is computed from its
-          slot offset (0 = active, 1 = next, 2 = behind). Older cards
-          fade fully so the deck never feels crowded. */}
+          slot offset (0 = active, 1 = next, 2 = behind). The previous
+          active card slides UP and fades away on top of the stack
+          (slot 3+) so the eye reads "card stepped forward, last one
+          peeled off the front" — much smoother than a horizontal
+          scroll. */}
       {HERO_CARDS.map((card, i) => {
         const slot = (i - active + HERO_CARDS.length) % HERO_CARDS.length;
         const isActive = slot === 0;
-        // Cards behind sit slightly lower + smaller. Cards farther
-        // back are invisible (slot >= 3 only matters when there are
-        // more than 3 layers; we cap z reasonably).
         const styles = (() => {
           if (slot === 0) {
             return {
               y: 0,
               scale: 1,
               opacity: 1,
+              filter: "blur(0px)",
               z: 30,
             };
           }
           if (slot === 1) {
             return {
-              y: 22,
-              scale: 0.96,
-              opacity: 0.42,
+              y: 24,
+              scale: 0.955,
+              opacity: 0.5,
+              filter: "blur(1px)",
               z: 20,
             };
           }
           if (slot === 2) {
             return {
-              y: 40,
-              scale: 0.92,
-              opacity: 0.18,
+              y: 44,
+              scale: 0.91,
+              opacity: 0.20,
+              filter: "blur(2px)",
               z: 10,
             };
           }
-          // slot 3+ — fully out of stack, fading away on top.
+          // slot 3+ — last-active card fading up off the top of the
+          // deck. The slight upward translate gives the "peeling away"
+          // direction; opacity 0 means it disappears before it could
+          // overlap the next one as that one transitions to active.
           return {
-            y: -28,
-            scale: 1.02,
+            y: -36,
+            scale: 1.03,
             opacity: 0,
+            filter: "blur(4px)",
             z: 5,
           };
         })();
@@ -275,15 +287,22 @@ function HeroCardCycler() {
               y: styles.y,
               scale: styles.scale,
               opacity: styles.opacity,
+              filter: styles.filter,
             }}
-            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              duration: TRANSITION_MS,
+              ease: [0.16, 1, 0.3, 1],
+            }}
           >
             {card.render()}
           </motion.div>
         );
       })}
 
-      {/* Dot indicators — subtle, at the bottom of the visible stack */}
+      {/* Dot indicators with progress fill — gives a subtle sense of
+          "next card in 1.2s" without being a loud loading bar. The
+          active dot's bar grows 0% → 100% across CYCLE_MS, then resets
+          when the card switches. Pauses with the carousel on hover. */}
       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
         {HERO_CARDS.map((card, i) => (
           <button
@@ -295,12 +314,25 @@ function HeroCardCycler() {
           >
             <span
               className={cn(
-                "block size-1.5 rounded-full transition-all duration-[400ms]",
+                "relative block h-1.5 rounded-full overflow-hidden transition-[width,background-color] duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                 i === active
-                  ? "w-6 bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]"
-                  : "bg-text-faint group-hover:bg-text-dim",
+                  ? "w-7 bg-[rgba(0,212,200,0.18)]"
+                  : "w-1.5 bg-text-faint group-hover:bg-text-dim",
               )}
-            />
+            >
+              {i === active ? (
+                <motion.span
+                  key={`${active}-${paused}`}
+                  className="absolute inset-y-0 left-0 bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]"
+                  initial={{ width: "0%" }}
+                  animate={{ width: paused ? "0%" : "100%" }}
+                  transition={{
+                    duration: paused ? 0 : CYCLE_MS / 1000,
+                    ease: "linear",
+                  }}
+                />
+              ) : null}
+            </span>
           </button>
         ))}
       </div>

@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowUpRight, ShieldCheck, Hammer, Map, Layers } from "lucide-react";
+import {
+  ArrowUpRight,
+  ShieldCheck,
+  Hammer,
+  Map,
+  Layers,
+  Users,
+} from "lucide-react";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
 
@@ -77,41 +84,54 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Founder note */}
-      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-7 lg:px-10 py-10 lg:py-12 mb-14 lg:mb-20">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
-          A note from the founder
-        </span>
-        <p className="mt-5 text-[15px] leading-[1.85] text-text-subtle">
-          BuilderHQ started after I watched friends and family go through
-          residential builds the way most Australians do — three quotes from
-          three trades-of-trades contacts, gut-feel decisions, and weeks of
-          back-and-forth on emails that should have been one comparison view.
-        </p>
-        <p className="mt-5 text-[15px] leading-[1.85] text-text-subtle">
-          The platform you&apos;re looking at is the version I wished existed
-          then: structured tenders, verified builders, and a single
-          comparison page that makes the decision obvious. We built it
-          alongside owners, architects, and builders who&apos;ve been around
-          residential building for decades, and we&apos;re still listening.
-        </p>
-        <div className="mt-6 flex items-center gap-3">
-          <span
-            className="size-10 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-            }}
-          >
-            AV
-          </span>
-          <div>
-            <div className="text-[13px] font-semibold text-text">
-              Aryan Vadera
-            </div>
-            <div className="text-[11px] text-text-dim">
-              Founder · BuilderHQ
-            </div>
+      {/* Built with industry experts */}
+      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-7 lg:px-10 py-10 lg:py-12 mb-14 lg:mb-20 relative overflow-hidden">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-24 -left-20 size-72 rounded-full opacity-50"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(26,95,212,0.16), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <div className="flex items-center gap-2.5">
+            <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0">
+              <Users className="size-4" />
+            </span>
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+              Built with industry experts
+            </span>
+          </div>
+          <h2 className="mt-5 font-display uppercase tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+            Shaped by the people who actually
+            <br />
+            <span className="text-accent-light">build, design, and own</span>.
+          </h2>
+          <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
+            BuilderHQ wasn&apos;t built in a vacuum. Every section, every
+            field, and every workflow was reviewed against decades of
+            residential build experience — registered builders running
+            real projects, registered architects who deliver them weekly,
+            owner-builders who&apos;ve been through it themselves, and
+            quantity surveyors who know where tenders quietly diverge.
+          </p>
+          <p className="mt-5 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
+            We&apos;re still listening. Real-world feedback shapes the
+            roadmap directly — if you&apos;ve been around an Australian
+            residential build and you have a sharper way of doing
+            something, we want to hear it.
+          </p>
+
+          {/* Three "shaped by" pills — keeps the prose from being a
+              wall of text and visualises the breadth of input. */}
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <ExpertPill role="Registered builders" detail="VIC · NSW · QLD · SA" />
+            <ExpertPill role="Registered architects" detail="Boutique to mid-size" />
+            <ExpertPill
+              role="Owner-builders"
+              detail="First-time + repeat developers"
+            />
           </div>
         </div>
       </section>
@@ -153,6 +173,15 @@ export default function AboutPage() {
         </div>
       </section>
     </MarketingPageShell>
+  );
+}
+
+function ExpertPill({ role, detail }: { role: string; detail: string }) {
+  return (
+    <div className="px-4 py-3 rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)]">
+      <div className="text-[12px] font-semibold text-text">{role}</div>
+      <div className="text-[10.5px] text-text-dim mt-0.5">{detail}</div>
+    </div>
   );
 }
 
