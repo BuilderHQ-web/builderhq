@@ -24,7 +24,7 @@
  */
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   AlertTriangle,
   Building2,
@@ -69,6 +69,17 @@ import {
   clearBuilderLogoAction,
   uploadBuilderLogoAction,
 } from "@/app/(app)/_actions/builder-profile";
+import {
+  applyAbrAutofillAction,
+  verifyAbnAction,
+  verifyLicenceAction,
+} from "@/app/(app)/_actions/verification";
+import type {
+  AbrAutofill,
+  BuilderLockState,
+  VerifyAbnResult,
+  VerifyLicenceResult,
+} from "@/modules/verification";
 
 // ── shared types ────────────────────────────────────────────────────────
 
@@ -87,6 +98,7 @@ type ApprovalStatus =
 
 interface ProfileShape {
   companyName: string;
+  tradingName: string;
   abn: string;
   acn: string;
   yearsInOperation: number | null;
@@ -124,11 +136,28 @@ interface Licence {
   expiresAt: Date | null;
 }
 
+/**
+ * Snapshot of a single verification — what the editor renders next to
+ * a field. Page-side projects from the full BuilderVerificationRow.
+ */
+interface VerificationSnapshot {
+  status: "pending" | "verified" | "mismatch" | "inactive" | "not_found" | "error";
+  provider: string;
+  matchedName: string | null;
+  expiresAt?: Date | null;
+  reason: string | null;
+  subjectValue?: string;
+}
+
 interface Props {
   initial: ProfileShape;
   categories: ProjectType[];
   serviceAreas: ServiceArea[];
   licences: Licence[];
+  lockState: BuilderLockState;
+  abnVerification: VerificationSnapshot | null;
+  /** Latest verification per licence id; null when none has run. */
+  licenceVerifications: Record<string, VerificationSnapshot | null>;
 }
 
 // ── public component ────────────────────────────────────────────────────
@@ -138,6 +167,9 @@ export function BuilderProfileEditor({
   categories: initialCategories,
   serviceAreas: initialAreas,
   licences: initialLicences,
+  lockState,
+  abnVerification,
+  licenceVerifications,
 }: Props) {
   // The full profile shape lives at the top so any section's save can
   // re-emit the whole thing (saveBuilderProfileAction is an upsert of
@@ -152,11 +184,20 @@ export function BuilderProfileEditor({
 
       <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1100px] flex flex-col gap-5">
         <Reveal immediate delay={0.04}>
-          <IdentitySection profile={profile} setField={setField} />
+          <IdentitySection
+            profile={profile}
+            setField={setField}
+            abnLocked={lockState.abn}
+          />
         </Reveal>
 
         <Reveal immediate delay={0.10}>
-          <BusinessSection profile={profile} setField={setField} />
+          <BusinessSection
+            profile={profile}
+            setField={setField}
+            abnLocked={lockState.abn}
+            abnVerification={abnVerification}
+          />
         </Reveal>
 
         <Reveal immediate delay={0.16}>
@@ -172,7 +213,11 @@ export function BuilderProfileEditor({
         </Reveal>
 
         <Reveal>
-          <LicencesSection initial={initialLicences} />
+          <LicencesSection
+            initial={initialLicences}
+            lockState={lockState}
+            verifications={licenceVerifications}
+          />
         </Reveal>
       </div>
     </>
@@ -337,9 +382,11 @@ function SaveRow({
 function IdentitySection({
   profile,
   setField,
+  abnLocked,
 }: {
   profile: ProfileShape;
   setField: <K extends keyof ProfileShape>(k: K, v: ProfileShape[K]) => void;
+  abnLocked: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -367,8 +414,8 @@ function IdentitySection({
     <SectionCard
       kicker="Identity"
       icon={Sparkles}
-      title="Logo & company name"
-      description="The logo is the first thing owners see when your card lands in their feed. Square works best — PNG, JPEG, WebP, or SVG, under 2 MB."
+      title="Logo & names"
+      description="Logo lands first when your card hits an owner's feed. Trading name is the marketing label they see; legal entity is the verified anchor from ABR."
       trailing={
         profile.approvalStatus === "approved" ? <FoundingBadge size="sm" /> : null
       }
@@ -377,21 +424,38 @@ function IdentitySection({
         <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6 items-start">
           <LogoUpload
             url={profile.logoUrl}
-            companyName={profile.companyName}
+            companyName={profile.tradingName || profile.companyName}
             onChange={(url) => setField("logoUrl", url)}
           />
           <div className="flex flex-col gap-5">
             <Field
-              label="Company name"
+              label="Trading name"
+              hint="What owners see most prominently. Defaults to your legal entity name."
+            >
+              <Input
+                value={profile.tradingName}
+                onChange={(e) => setField("tradingName", e.target.value)}
+                placeholder={profile.companyName || "e.g. Synergy Building"}
+                autoComplete="organization"
+              />
+            </Field>
+            <Field
+              label="Legal entity name"
               required
-              hint="Shown to owners across the marketplace and on every project card."
+              badge={abnLocked ? "Verified · ABR" : undefined}
+              hint={
+                abnLocked
+                  ? "Locked — verified against ABR. Contact support to change."
+                  : "We'll auto-fill this from ABR after you verify your ABN below."
+              }
             >
               <Input
                 value={profile.companyName}
                 onChange={(e) => setField("companyName", e.target.value)}
-                placeholder="e.g. Synergy Building"
+                placeholder="e.g. Synergy Building Pty Ltd"
                 autoComplete="organization"
                 required
+                disabled={abnLocked}
               />
             </Field>
             {profile.slug ? (
@@ -556,9 +620,13 @@ function LogoUpload({
 function BusinessSection({
   profile,
   setField,
+  abnLocked,
+  abnVerification,
 }: {
   profile: ProfileShape;
   setField: <K extends keyof ProfileShape>(k: K, v: ProfileShape[K]) => void;
+  abnLocked: boolean;
+  abnVerification: VerificationSnapshot | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -587,21 +655,25 @@ function BusinessSection({
       kicker="Business"
       icon={Building2}
       title="Credentials & address"
-      description="ABN unlocks faster admin approval. Address fields back the service-area match score and feed the contact card after a tender is awarded."
+      description="ABN is verified live against the Australian Business Register. Once verified it locks — no fakes, no typos, owners trust the badge."
     >
       <form onSubmit={submit} className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Field label="ABN" required hint="11 digits, no spaces">
-            <Input
-              value={profile.abn}
-              onChange={(e) => setField("abn", e.target.value.replace(/\D/g, "").slice(0, 11))}
-              inputMode="numeric"
-              maxLength={11}
-              placeholder="12345678901"
-              className="font-mono tabular-nums"
-            />
-          </Field>
-          <Field label="ACN" badge="Optional" hint="9 digits if registered">
+        <AbnVerifyPanel
+          profile={profile}
+          setField={setField}
+          locked={abnLocked}
+          verification={abnVerification}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="ACN"
+            badge={abnLocked ? "Verified · ABR" : "Optional"}
+            hint={
+              abnLocked
+                ? "Auto-filled from ABR — locked."
+                : "9 digits if registered"
+            }
+          >
             <Input
               value={profile.acn}
               onChange={(e) => setField("acn", e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -609,6 +681,7 @@ function BusinessSection({
               maxLength={9}
               placeholder="123456789"
               className="font-mono tabular-nums"
+              disabled={abnLocked}
             />
           </Field>
           <Field label="Years in operation" badge="Optional">
@@ -1066,7 +1139,15 @@ function ServiceAreasSection({ initial }: { initial: ServiceArea[] }) {
 
 // ── Licences ────────────────────────────────────────────────────────────
 
-function LicencesSection({ initial }: { initial: Licence[] }) {
+function LicencesSection({
+  initial,
+  lockState,
+  verifications,
+}: {
+  initial: Licence[];
+  lockState: BuilderLockState;
+  verifications: Record<string, VerificationSnapshot | null>;
+}) {
   const [licences, setLicences] = useState<Licence[]>(initial);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -1159,12 +1240,26 @@ function LicencesSection({ initial }: { initial: Licence[] }) {
                     <span>· Issued {fmtDate(l.issuedAt)}</span>
                     <span>· Expires {fmtDate(l.expiresAt)}</span>
                   </div>
+                  <div className="mt-2">
+                    <LicenceVerifyControl
+                      licenceId={l.id}
+                      licenceState={l.state}
+                      initialVerification={verifications[l.id] ?? null}
+                      locked={!!lockState.licences[l.id]}
+                    />
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => remove(l.id)}
                   aria-label="Remove licence"
-                  className="size-7 rounded-sm text-text-faint hover:text-danger transition-colors flex items-center justify-center shrink-0"
+                  className="size-7 rounded-sm text-text-faint hover:text-danger transition-colors flex items-center justify-center shrink-0 mt-0.5"
+                  disabled={!!lockState.licences[l.id]}
+                  title={
+                    lockState.licences[l.id]
+                      ? "Verified licences are locked. Contact support to remove."
+                      : undefined
+                  }
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -1257,6 +1352,7 @@ function LicencesSection({ initial }: { initial: Licence[] }) {
 function profileFormData(p: ProfileShape): FormData {
   const fd = new FormData();
   fd.set("companyName", p.companyName);
+  fd.set("tradingName", p.tradingName);
   fd.set("abn", p.abn);
   fd.set("acn", p.acn);
   fd.set("yearsInOperation", p.yearsInOperation == null ? "" : String(p.yearsInOperation));
@@ -1274,5 +1370,355 @@ function profileFormData(p: ProfileShape): FormData {
   fd.set("linkedinUrl", p.linkedinUrl);
   fd.set("instagramUrl", p.instagramUrl);
   return fd;
+}
+
+// ── ABN verify panel ────────────────────────────────────────────────────
+
+/**
+ * Sits inside BusinessSection — handles ABN entry + live ABR check +
+ * autofill apply. The lock decision flows from `locked` (server-side
+ * snapshot) — once verified, the ABN field is permanently disabled and
+ * shows the "Verified · ABR" chip with the ABR-matched entity name.
+ */
+function AbnVerifyPanel({
+  profile,
+  setField,
+  locked,
+  verification,
+}: {
+  profile: ProfileShape;
+  setField: <K extends keyof ProfileShape>(k: K, v: ProfileShape[K]) => void;
+  locked: boolean;
+  verification: VerificationSnapshot | null;
+}) {
+  const [verifying, startVerify] = useTransition();
+  const [applying, startApply] = useTransition();
+  const [result, setResult] = useState<VerifyAbnResult | null>(null);
+  const [pendingAutofill, setPendingAutofill] = useState<{
+    abn: string;
+    autofill: AbrAutofill;
+  } | null>(null);
+
+  const abnDigits = profile.abn.replace(/\D/g, "");
+  const canVerify = abnDigits.length === 11 && !locked && !verifying;
+
+  const onVerify = () => {
+    if (!canVerify) return;
+    setResult(null);
+    setPendingAutofill(null);
+    startVerify(async () => {
+      const r = await verifyAbnAction(abnDigits);
+      if (!r.ok) {
+        toast.error("Couldn't verify ABN", r.error.message);
+        return;
+      }
+      setResult(r.value);
+      if (r.value.status === "verified") {
+        toast.success(
+          "ABN verified",
+          `ABR matched "${r.value.matchedName}".`,
+        );
+        // If the autofill differs from current values, queue an apply prompt.
+        const a = r.value.autofill;
+        const current = {
+          companyName: profile.companyName.trim(),
+          acn: profile.acn,
+          state: profile.businessState,
+          postcode: profile.businessPostcode,
+        };
+        const differs =
+          (current.companyName.toLowerCase() !==
+            a.legalEntityName.trim().toLowerCase()) ||
+          (a.acn ?? "") !== (current.acn ?? "") ||
+          a.state !== current.state ||
+          (a.postcode ?? "") !== (current.postcode ?? "");
+        if (differs) {
+          setPendingAutofill({ abn: abnDigits, autofill: a });
+        } else {
+          // Already in sync — just write the lock-anchor field if missing.
+          if (!profile.companyName) setField("companyName", a.legalEntityName);
+        }
+      } else if (r.value.status === "inactive") {
+        toast.error("ABN inactive", r.value.reason);
+      } else if (r.value.status === "not_found") {
+        toast.error("ABN not found", r.value.reason);
+      } else {
+        toast.error("ABR check failed", r.value.reason);
+      }
+    });
+  };
+
+  const onApply = () => {
+    if (!pendingAutofill) return;
+    startApply(async () => {
+      const r = await applyAbrAutofillAction(
+        pendingAutofill.abn,
+        pendingAutofill.autofill,
+      );
+      if (!r.ok) {
+        toast.error("Couldn't apply", r.error.message);
+        return;
+      }
+      // Apply locally so the form reflects the change without a full reload.
+      setField("companyName", pendingAutofill.autofill.legalEntityName);
+      if (!profile.tradingName) {
+        setField("tradingName", pendingAutofill.autofill.legalEntityName);
+      }
+      setField("acn", pendingAutofill.autofill.acn ?? "");
+      setField("businessState", pendingAutofill.autofill.state);
+      setField("businessPostcode", pendingAutofill.autofill.postcode ?? "");
+      setPendingAutofill(null);
+      toast.success("Applied ABR details", "Field is now locked.");
+      // Reload so server-side lock state catches up.
+      if (typeof window !== "undefined") window.location.reload();
+    });
+  };
+
+  return (
+    <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] p-5">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:gap-4 items-end">
+        <Field
+          label="ABN"
+          required
+          badge={locked ? "Verified · ABR" : "11 digits"}
+          hint={
+            locked
+              ? `Locked — ${verification?.matchedName ?? "verified by ABR"}.`
+              : "We'll cross-check this against ABR live and auto-fill the rest."
+          }
+        >
+          <Input
+            value={profile.abn}
+            onChange={(e) =>
+              setField(
+                "abn",
+                e.target.value.replace(/\D/g, "").slice(0, 11),
+              )
+            }
+            inputMode="numeric"
+            maxLength={11}
+            placeholder="12345678901"
+            className="font-mono tabular-nums"
+            disabled={locked}
+          />
+        </Field>
+        {locked ? (
+          <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent">
+            <ShieldCheck className="size-3.5" />
+            Verified
+          </span>
+        ) : (
+          <Button
+            type="button"
+            size="md"
+            onClick={onVerify}
+            disabled={!canVerify}
+            className="gap-1.5"
+          >
+            {verifying ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <ShieldCheck className="size-3.5" />
+            )}
+            {verifying ? "Checking ABR…" : "Verify with ABR"}
+          </Button>
+        )}
+      </div>
+
+      {/* Result chip — last attempt's outcome */}
+      {result ? <AbnResultChip result={result} /> : null}
+
+      {/* Autofill apply prompt — visible after a successful verify if data differs */}
+      {pendingAutofill ? (
+        <div className="mt-4 rounded-sm border border-border-accent/35 bg-[rgba(0,212,200,0.04)] p-4">
+          <p className="text-[11.5px] tracking-[0.04em] text-accent uppercase font-medium mb-2">
+            ABR pulled the following — apply?
+          </p>
+          <ul className="space-y-1 text-[12.5px] text-text-muted">
+            <li>
+              <span className="text-text-dim mr-1.5">Legal entity:</span>
+              <span className="text-text font-medium">
+                {pendingAutofill.autofill.legalEntityName}
+              </span>
+            </li>
+            {pendingAutofill.autofill.acn ? (
+              <li>
+                <span className="text-text-dim mr-1.5">ACN:</span>
+                <span className="font-mono tabular-nums">
+                  {pendingAutofill.autofill.acn}
+                </span>
+              </li>
+            ) : null}
+            {pendingAutofill.autofill.state ? (
+              <li>
+                <span className="text-text-dim mr-1.5">State:</span>
+                {pendingAutofill.autofill.state}
+                {pendingAutofill.autofill.postcode
+                  ? ` · ${pendingAutofill.autofill.postcode}`
+                  : ""}
+              </li>
+            ) : null}
+            <li>
+              <span className="text-text-dim mr-1.5">Entity type:</span>
+              {pendingAutofill.autofill.entityTypeLabel}
+            </li>
+            {pendingAutofill.autofill.gstRegistered ? (
+              <li className="text-accent-light text-[11.5px] inline-flex items-center gap-1">
+                <Check className="size-3" />
+                Registered for GST
+              </li>
+            ) : null}
+          </ul>
+          <div className="mt-3 flex items-center gap-2">
+            <Button
+              type="button"
+              size="md"
+              onClick={onApply}
+              disabled={applying}
+              className="gap-1.5"
+            >
+              {applying ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Check className="size-3.5" />
+              )}
+              Apply &amp; lock
+            </Button>
+            <button
+              type="button"
+              onClick={() => setPendingAutofill(null)}
+              className="text-[11.5px] text-text-dim hover:text-text-muted"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AbnResultChip({ result }: { result: VerifyAbnResult }) {
+  if (result.status === "verified") {
+    return (
+      <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-accent">
+        <Check className="size-3" />
+        Verified — {result.matchedName}
+      </p>
+    );
+  }
+  return (
+    <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-warning">
+      <AlertTriangle className="size-3" />
+      {result.reason}
+    </p>
+  );
+}
+
+// ── Per-licence verify button ───────────────────────────────────────────
+
+function LicenceVerifyControl({
+  licenceId,
+  licenceState,
+  initialVerification,
+  locked,
+}: {
+  licenceId: string;
+  licenceState: AustralianState;
+  initialVerification: VerificationSnapshot | null;
+  locked: boolean;
+}) {
+  const [verifying, startVerify] = useTransition();
+  const [snapshot, setSnapshot] = useState<VerificationSnapshot | null>(
+    initialVerification,
+  );
+
+  // Re-fetch lock view if licence row was just verified during this session.
+  useEffect(() => {
+    setSnapshot(initialVerification);
+  }, [initialVerification]);
+
+  const onClick = () => {
+    if (locked || verifying) return;
+    startVerify(async () => {
+      const r = await verifyLicenceAction(licenceId);
+      if (!r.ok) {
+        toast.error("Couldn't verify licence", r.error.message);
+        return;
+      }
+      const v = r.value;
+      const next: VerificationSnapshot = {
+        status: v.status,
+        provider: v.provider,
+        matchedName: v.status === "verified" ? v.matchedName : null,
+        expiresAt: v.status === "verified" ? v.expiresAt : null,
+        reason: v.status === "verified" ? null : v.reason,
+      };
+      setSnapshot(next);
+      if (v.status === "verified") {
+        toast.success("Licence verified", v.matchedName);
+        // Force a reload so server-side lock state catches up.
+        if (typeof window !== "undefined") window.location.reload();
+      } else if (v.status === "inactive") {
+        toast.error("Licence inactive", v.reason);
+      } else if (v.status === "not_found") {
+        toast.error("Not found in register", v.reason);
+      } else if (v.status === "mismatch") {
+        toast.error("Holder name mismatch", v.reason);
+      } else {
+        toast.error("Verification failed", v.reason);
+      }
+    });
+  };
+
+  if (locked) {
+    const expires = snapshot?.expiresAt
+      ? new Date(snapshot.expiresAt).toLocaleDateString("en-AU", {
+          month: "short",
+          year: "numeric",
+        })
+      : null;
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10.5px] tracking-[0.16em] uppercase font-medium text-accent">
+        <ShieldCheck className="size-3" />
+        Verified
+        {expires ? (
+          <span className="text-text-dim">· exp {expires}</span>
+        ) : null}
+      </span>
+    );
+  }
+
+  if (licenceState !== "VIC") {
+    return (
+      <span className="text-[10.5px] tracking-[0.16em] uppercase font-medium text-text-dim inline-flex items-center gap-1.5">
+        <AlertTriangle className="size-3" />
+        Manual review
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={verifying}
+      className={cn(
+        "inline-flex items-center gap-1.5 h-7 px-3 rounded-full",
+        "border border-border-accent/45 bg-[rgba(0,212,200,0.06)]",
+        "text-[11px] font-medium tracking-[0.04em] text-accent-light",
+        "hover:bg-[rgba(0,212,200,0.12)] transition-colors duration-[140ms]",
+        "active:scale-[0.985] active:duration-[80ms]",
+        "disabled:opacity-60 disabled:cursor-not-allowed",
+      )}
+    >
+      {verifying ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : (
+        <ShieldCheck className="size-3" />
+      )}
+      {verifying ? "Checking VBA…" : "Verify with VBA"}
+    </button>
+  );
 }
 

@@ -69,6 +69,8 @@ export type OwnerProfileInput = z.infer<typeof ownerProfileSchema>;
 
 export const builderProfileSchema = z.object({
   companyName: z.string().min(2, "Company name is required").max(120).trim(),
+  /** Trading name — what shows publicly. Defaults to companyName when blank. */
+  tradingName: z.string().max(120).trim().nullish(),
   /** ABN: 11 digits, sometimes formatted with spaces — strip non-digits before storing. */
   abn: z
     .string()
@@ -391,12 +393,48 @@ export async function upsertBuilderProfile(
   // — public profile URLs would break. A separate "rename slug" tool ships
   // in admin (Phase 4).
   const [existing] = await db
-    .select({ slug: builderProfiles.slug })
+    .select({
+      slug: builderProfiles.slug,
+      abn: builderProfiles.abn,
+      companyName: builderProfiles.companyName,
+    })
     .from(builderProfiles)
     .where(eq(builderProfiles.userId, userId))
     .limit(1);
 
   const slug = existing?.slug ?? buildSlug(v.companyName, userId);
+
+  // Field-lock enforcement (defence in depth).
+  // If the ABN currently on file is verified, reject changes to ABN
+  // and to companyName (which is the legal entity name from ABR).
+  // The client UI already disables these inputs — this server-side
+  // check stops a malicious form post from bypassing the lock.
+  if (existing?.abn) {
+    // Lazy import to avoid a circular dep with the verification module.
+    const { getLatestForBuilder } = await import("@/modules/verification");
+    const latestAbn = await getLatestForBuilder(userId, "abn");
+    const isAbnVerified =
+      latestAbn?.status === "verified" &&
+      latestAbn.subjectValue === existing.abn;
+    if (isAbnVerified) {
+      const incomingAbn = v.abn ?? null;
+      if (incomingAbn !== null && incomingAbn !== existing.abn) {
+        return fail(
+          "conflict",
+          "ABN is locked — verified against ABR. Contact support to change.",
+        );
+      }
+      if (
+        existing.companyName &&
+        v.companyName.trim() !== existing.companyName.trim()
+      ) {
+        return fail(
+          "conflict",
+          "Legal entity name is locked — verified against ABR. Contact support to change.",
+        );
+      }
+    }
+  }
 
   try {
     const [row] = await db
@@ -404,6 +442,7 @@ export async function upsertBuilderProfile(
       .values({
         userId,
         companyName: v.companyName,
+        tradingName: v.tradingName ?? null,
         abn: v.abn ?? null,
         acn: v.acn ?? null,
         businessAddressLine1: v.businessAddressLine1 ?? null,
@@ -426,6 +465,7 @@ export async function upsertBuilderProfile(
         target: builderProfiles.userId,
         set: {
           companyName: v.companyName,
+          tradingName: v.tradingName ?? null,
           abn: v.abn ?? null,
           acn: v.acn ?? null,
           businessAddressLine1: v.businessAddressLine1 ?? null,
@@ -600,17 +640,20 @@ export async function setBuilderProjectCategories(
 // ── Onboarding completion ───────────────────────────────────────────────
 
 /**
- * Final builder onboarding step. Validates the profile graph is "complete
- * enough" for review, marks onboarding_completed_at, flips approval to
- * pending_review.
+ * Final builder onboarding step.
  *
- * "Complete enough" = profile row exists, ≥1 category, ≥1 service area,
- * ≥1 licence. (We allow ABN missing for non-licensed contractors during
- * launch; admin can still approve.)
+ *   1. Validate the profile graph is "complete enough" — profile row,
+ *      ≥1 category, ≥1 service area, ≥1 licence.
+ *   2. Auto-approve when ABN is verified active in ABR AND ≥1 licence
+ *      is verified active with the matching state register.
+ *   3. Otherwise → pending_review for manual admin handling.
+ *
+ * Returns a flag indicating which path it took so the UI can route
+ * (approved → "you're live", pending → "we'll review within 24h").
  */
 export async function submitBuilderForApproval(
   userId: string,
-): Promise<Result<{ ok: true }>> {
+): Promise<Result<{ ok: true; approved: boolean; reasons: string[] }>> {
   const bundle = await getBuilderProfile(userId);
   if (!bundle) return fail("not_found", "Save your builder profile first.");
   if (bundle.categories.length === 0) {
@@ -623,18 +666,31 @@ export async function submitBuilderForApproval(
     return fail("validation", "Add at least one builder licence.");
   }
 
+  // Auto-approve gate.
+  // Lazy-imported so the verification module's `import "server-only"`
+  // doesn't fight when tests / scripts touch profile code without a
+  // request context. The dynamic import only runs server-side so this
+  // is purely a build-graph affordance.
+  const { hasFullVerificationForApproval } = await import(
+    "@/modules/verification"
+  );
+  const v = await hasFullVerificationForApproval(userId);
+  const autoApprove = v.abnVerified && v.anyLicenceVerified;
+
   await db
     .update(builderProfiles)
     .set({
-      approvalStatus: "pending_review",
+      approvalStatus: autoApprove ? "approved" : "pending_review",
+      approvedAt: autoApprove ? new Date() : null,
+      approvedBy: null,
+      approvedVia: autoApprove ? "auto" : null,
       onboardingCompletedAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(builderProfiles.userId, userId));
 
-  // If the builder qualifies for founding access (signed up before
-  // the cutoff + cap not yet reached), grant it now. No-op otherwise.
-  // Failure here is non-fatal — onboarding still succeeds.
+  // FBA grant — runs whether they auto-approve or fall to manual.
+  // Failure is non-fatal.
   try {
     const grant = await maybeAutoGrantFounding(userId);
     if (grant) {
@@ -650,8 +706,19 @@ export async function submitBuilderForApproval(
     );
   }
 
-  logger.info({ event: "profile.builder.onboarded", userId }, "builder submitted for approval");
-  return ok({ ok: true });
+  logger.info(
+    {
+      event: autoApprove
+        ? "profile.builder.auto_approved"
+        : "profile.builder.pending_review",
+      userId,
+      reasons: v.reasons,
+    },
+    autoApprove
+      ? "builder auto-approved via ABR + state register"
+      : "builder submitted for manual review",
+  );
+  return ok({ ok: true, approved: autoApprove, reasons: v.reasons });
 }
 
 // ── Cross-cutting: onboarding gate helper ───────────────────────────────

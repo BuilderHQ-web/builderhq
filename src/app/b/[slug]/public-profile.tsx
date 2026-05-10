@@ -104,7 +104,11 @@ type ApprovalStatus =
 
 interface PublicProfile {
   slug: string;
+  /** Legal entity name from ABR. */
   companyName: string;
+  /** Marketing label — what owners see most prominently. Falls back
+   *  to legal entity name when blank. */
+  tradingName: string | null;
   abn: string | null;
   yearsInOperation: number | null;
   bio: string | null;
@@ -117,6 +121,8 @@ interface PublicProfile {
   logoUrl: string | null;
   isFounding: boolean;
   memberSince: Date;
+  /** True when ABN has been verified by ABR (and hasn't been changed since). */
+  abnVerified: boolean;
 }
 
 interface ServiceArea {
@@ -133,6 +139,9 @@ interface Licence {
   licenceHolderName: string | null;
   issuedAt: Date | null;
   expiresAt: Date | null;
+  /** True when this licence has been verified against the relevant
+   *  state register. Drives the green "Verified · VBA" chip. */
+  verified: boolean;
 }
 
 interface Props {
@@ -354,8 +363,42 @@ function Hero({ profile }: { profile: PublicProfile }) {
             </div>
 
             <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.4rem,5.5vw+1rem,5.5rem)] leading-[0.92] text-text">
-              {profile.companyName}
+              {profile.tradingName && profile.tradingName.trim().length > 0
+                ? profile.tradingName
+                : profile.companyName}
             </h1>
+
+            {/* Legal name + verified-ABN chip — only render if there's
+                actually a separate legal name to show, OR if it's verified
+                (in which case the trust chip earns its keep). */}
+            {(profile.tradingName &&
+              profile.tradingName.trim().toLowerCase() !==
+                profile.companyName.trim().toLowerCase()) ||
+            profile.abnVerified ? (
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                {profile.tradingName &&
+                profile.tradingName.trim().toLowerCase() !==
+                  profile.companyName.trim().toLowerCase() ? (
+                  <span className="text-[12px] tracking-[0.04em] text-text-dim">
+                    Trading as{" "}
+                    <span className="text-text-muted font-medium">
+                      {profile.companyName}
+                    </span>
+                  </span>
+                ) : null}
+                {profile.abnVerified ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-[10px] tracking-[0.16em] uppercase text-accent font-medium">
+                    <ShieldCheck className="size-3" />
+                    ABN verified
+                  </span>
+                ) : null}
+                {profile.abn ? (
+                  <span className="font-mono tabular-nums text-[10.5px] text-text-faint">
+                    ABN {formatAbn(profile.abn)}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
 
             {tagline ? (
               <p className="text-[14.5px] leading-[1.7] text-text-muted max-w-[58ch]">
@@ -757,6 +800,12 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
                   <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border border-border-subtle text-text-dim">
                     {l.state}
                   </span>
+                  {l.verified ? (
+                    <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center gap-1 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-accent font-medium">
+                      <CheckCircle2 className="size-2.5" />
+                      Verified · {l.state === "VIC" ? "VBA" : "register"}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums">
                   #{l.licenceNumber}
@@ -937,4 +986,11 @@ function composeTagline(p: PublicProfile): string | null {
   }
   if (p.isFounding) parts.push("Founding member of BuilderHQ");
   return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/** Format ABN with the canonical AU spacing: 00 000 000 000. */
+function formatAbn(abn: string): string {
+  const d = abn.replace(/\D/g, "");
+  if (d.length !== 11) return abn;
+  return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8, 11)}`;
 }

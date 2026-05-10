@@ -59,6 +59,14 @@ const serverSchema = z.object({
   ONESIGNAL_REST_API_KEY: z.string().optional(),
 
   ABR_GUID: z.string().optional(),
+
+  // Verification proxy — Cloudflare Worker fronting ABR + state licence
+  // registries. One base URL with two paths: `/?abn=...` for ABR,
+  // `/vic/bpc?...` for VBA. As more states come online, add more paths
+  // under the same worker rather than adding more env entries.
+  VERIFICATION_PROXY_URL: z
+    .url("Set the Cloudflare Worker URL fronting ABR + state registries")
+    .default("https://builderhq-abn-check.flat-unit-d769.workers.dev"),
 });
 
 /**

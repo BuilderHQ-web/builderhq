@@ -59,6 +59,7 @@ export async function saveBuilderProfileAction(
 
   const result = await upsertBuilderProfile(userId, {
     companyName: String(formData.get("companyName") ?? ""),
+    tradingName: nullable(formData.get("tradingName")),
     abn: nullable(formData.get("abn")),
     acn: nullable(formData.get("acn")),
     yearsInOperation: asInt(formData.get("yearsInOperation")),

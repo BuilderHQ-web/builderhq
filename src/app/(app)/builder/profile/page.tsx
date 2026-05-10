@@ -3,6 +3,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/modules/auth";
 import { getBuilderProfile } from "@/modules/profiles";
 import { presignDownload } from "@/modules/documents";
+import {
+  getLatestForBuilder,
+  getLatestForLicence,
+  getLockState,
+} from "@/modules/verification";
 import { logger } from "@/lib/logger";
 
 import { BuilderProfileEditor } from "./profile-editor";
@@ -49,10 +54,49 @@ export default async function BuilderProfileRoute() {
     }
   }
 
+  // Verification snapshots — lock state for the UI + the latest
+  // verification per licence (for chips with expiry / status).
+  const lockState = await getLockState(userId);
+  const abnVerification = await getLatestForBuilder(userId, "abn");
+  const licenceVerifications = await Promise.all(
+    bundle.licences.map(async (l) => {
+      const v = await getLatestForLicence(userId, l.id);
+      return [l.id, v] as const;
+    }),
+  );
+  const licenceVerificationMap = Object.fromEntries(
+    licenceVerifications.map(([id, v]) => [
+      id,
+      v
+        ? {
+            status: v.status,
+            provider: v.provider,
+            matchedName: v.matchedName,
+            expiresAt: v.expiresAt,
+            reason: v.reason,
+          }
+        : null,
+    ]),
+  );
+
   return (
     <BuilderProfileEditor
+      lockState={lockState}
+      abnVerification={
+        abnVerification
+          ? {
+              status: abnVerification.status,
+              provider: abnVerification.provider,
+              matchedName: abnVerification.matchedName,
+              reason: abnVerification.reason,
+              subjectValue: abnVerification.subjectValue,
+            }
+          : null
+      }
+      licenceVerifications={licenceVerificationMap}
       initial={{
         companyName: profile.companyName ?? "",
+        tradingName: profile.tradingName ?? "",
         abn: profile.abn ?? "",
         acn: profile.acn ?? "",
         yearsInOperation: profile.yearsInOperation,

@@ -154,7 +154,19 @@ export const builderProfiles = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
 
     // Identity
+    /**
+     * Legal entity name — verified against ABR. Locked once the
+     * builder's current ABN matches a `verified` row in
+     * builder_verifications. Treat this as the source of truth for
+     * identity claims. Owners see `tradingName` first if set, this
+     * second.
+     */
     companyName: text().notNull(),
+    /**
+     * Trading name — what the builder wants shown publicly. Defaults
+     * to the legal entity name on auto-fill, editable thereafter.
+     */
+    tradingName: text("trading_name"),
     /** ABN — 11 digits as text (preserves leading zeros, validated app-side). */
     abn: text(),
     acn: text(),
@@ -193,6 +205,12 @@ export const builderProfiles = pgTable(
       .default("incomplete"),
     approvedAt: timestamp({ mode: "date", withTimezone: true }),
     approvedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    /**
+     * How the approval happened — 'auto' (ABR + state register both
+     * passed) / 'manual' (admin clicked approve) / null (still
+     * pending). Operational signal, not user-visible.
+     */
+    approvedVia: text("approved_via"),
     rejectionReason: text(),
 
     /**

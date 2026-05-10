@@ -5,6 +5,7 @@ import { auth } from "@/modules/auth";
 import { getBuilderBySlug } from "@/modules/profiles";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { presignDownload } from "@/modules/documents";
+import { getLockState } from "@/modules/verification";
 import { logger } from "@/lib/logger";
 
 import { PublicBuilderProfile } from "./public-profile";
@@ -91,10 +92,16 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
     }
   }
 
+  // Verification snapshot for the public-facing trust signals. We
+  // resolve the lock state for the OWNING builder (not the viewer)
+  // so the chip shows up regardless of who's viewing.
+  const lockState = await getLockState(profile.userId);
+
   // Public-safe projection — strip everything we don't want exposed.
   const publicProfile = {
     slug: profile.slug ?? slug,
     companyName: profile.companyName,
+    tradingName: profile.tradingName,
     abn: profile.abn,
     yearsInOperation: profile.yearsInOperation,
     bio: profile.bio,
@@ -107,6 +114,7 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
     logoUrl,
     isFounding,
     memberSince: profile.createdAt,
+    abnVerified: lockState.abn,
   };
 
   return (
@@ -126,6 +134,7 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
         licenceHolderName: l.licenceHolderName,
         issuedAt: l.issuedAt,
         expiresAt: l.expiresAt,
+        verified: !!lockState.licences[l.id],
       }))}
       isOwnProfile={isOwnProfile}
       viewerSignedIn={!!viewerId}
