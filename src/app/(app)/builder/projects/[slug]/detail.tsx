@@ -26,6 +26,7 @@ import {
   Phone,
   Briefcase,
   MessageSquare,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -138,6 +139,7 @@ export function ProjectDetail({
   fbaStatus,
   priceAud,
   myTenderStatus,
+  viewerMode,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -155,6 +157,12 @@ export function ProjectDetail({
     | "awarded"
     | "rejected"
     | null;
+  /** Builder isn't approved yet — render the verify-to-unlock panel
+   *  instead of the FBA-aware unlock bar. null when approved. */
+  viewerMode: {
+    abnVerified: boolean;
+    anyLicenceVerified: boolean;
+  } | null;
 }) {
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(unlockedInitial);
@@ -179,6 +187,19 @@ export function ProjectDetail({
     startUnlock(async () => {
       const r = await unlockProjectAction(preview.id);
       if (!r.ok) {
+        // Defence-in-depth: if the server returns viewer_mode here
+        // (server state moved between page-load and click), nudge
+        // the user to the profile rather than showing a generic toast.
+        const reason = (r.error.details as { reason?: string } | undefined)
+          ?.reason;
+        if (reason === "viewer_mode") {
+          toast.error(
+            "Verify your business to unlock",
+            "We need to confirm your ABN + licence first. Opening your profile.",
+          );
+          router.push("/builder/profile");
+          return;
+        }
         toast.error("Couldn't unlock", r.error.message);
         return;
       }
@@ -490,7 +511,8 @@ export function ProjectDetail({
         </div>
       </div>
 
-      {/* Sticky bar — four states:
+      {/* Sticky bar — five states:
+          - locked + viewer-mode → "Verify to unlock" panel
           - locked            → unlock paywall (FBA-aware)
           - unlocked + no tender → primary "Submit a tender"
           - unlocked + draft  → "Continue tender draft"
@@ -499,6 +521,11 @@ export function ProjectDetail({
         <TenderCtaBar
           slug={preview.slug}
           tenderStatus={myTenderStatus}
+        />
+      ) : viewerMode ? (
+        <ViewerModeBar
+          abnVerified={viewerMode.abnVerified}
+          anyLicenceVerified={viewerMode.anyLicenceVerified}
         />
       ) : (
         <UnlockBar
@@ -706,6 +733,91 @@ function UnlockBar({
             Pay ${priceAud} · soon
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ViewerModeBar — sticky bottom CTA for builders who can browse but
+ * can't unlock yet (i.e. profile is not `approved`). Spells out which
+ * checks are still missing and routes them to the profile to fix.
+ *
+ * This is the *graceful* version of the unlock denial: instead of
+ * letting the user click an FBA unlock and then fail, we show them
+ * up-front what's gating it. The runtime fallback in `onUnlock`
+ * still handles the edge case where state moves between page-load
+ * and click.
+ */
+function ViewerModeBar({
+  abnVerified,
+  anyLicenceVerified,
+}: {
+  abnVerified: boolean;
+  anyLicenceVerified: boolean;
+}) {
+  const remaining =
+    (abnVerified ? 0 : 1) + (anyLicenceVerified ? 0 : 1);
+  const headline =
+    remaining === 2
+      ? "Verify your business to unlock"
+      : "One more check to unlock";
+  const sub =
+    remaining === 2
+      ? "Confirm your ABN and a builder licence — both verify live, no waiting."
+      : !abnVerified
+      ? "Verify your ABN against the ABR — takes a few seconds."
+      : "Verify a builder licence — VIC verifies live; other states get a manual review.";
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-[rgba(255,181,71,0.04)] backdrop-blur-md">
+      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="min-w-0 flex items-start gap-3">
+          <span className="size-10 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
+            <ShieldCheck className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-[13px] font-semibold text-text">
+                {headline}
+              </span>
+              <span className="text-[10px] tracking-[0.18em] uppercase text-warning font-ui font-medium">
+                Viewer mode
+              </span>
+            </div>
+            <div className="text-[11.5px] text-text-dim mt-0.5">{sub}</div>
+            <div className="mt-1.5 flex items-center gap-3 text-[10.5px] text-text-dim">
+              <span className="inline-flex items-center gap-1">
+                {abnVerified ? (
+                  <Check className="size-3 text-accent-light" />
+                ) : (
+                  <span className="size-1.5 rounded-full bg-warning/70" />
+                )}
+                ABN
+              </span>
+              <span className="inline-flex items-center gap-1">
+                {anyLicenceVerified ? (
+                  <Check className="size-3 text-accent-light" />
+                ) : (
+                  <span className="size-1.5 rounded-full bg-warning/70" />
+                )}
+                Builder licence
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <Link
+          href="/builder/profile"
+          className={cn(
+            "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "bg-accent text-accent-contrast hover:bg-accent-hover",
+            "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+          )}
+        >
+          {remaining === 2 ? "Open profile to verify" : "Finish verification"}
+          <ArrowUpRight className="size-4" />
+        </Link>
       </div>
     </div>
   );

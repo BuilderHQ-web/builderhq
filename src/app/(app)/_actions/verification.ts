@@ -9,6 +9,13 @@
  *                                        confirms
  *   verifyLicenceAction(licenceId)     → state-register check
  *   getLockStateAction()               → drives field-disabled UX
+ *
+ * After any successful verification, we re-evaluate auto-approve
+ * eligibility — if both ABN and ≥1 licence are now verified active
+ * AND the profile isn't already approved, we promote it. That's how
+ * a builder who landed in `pending_review` (e.g. they couldn't
+ * verify their licence at signup but later ran the check
+ * successfully) gets unlock capability without admin intervention.
  */
 
 import { revalidatePath } from "next/cache";
@@ -20,6 +27,7 @@ import { builderProfiles } from "@/modules/profiles/schema";
 import {
   canTriggerVerification,
   getLockState,
+  hasFullVerificationForApproval,
   verifyAbn,
   verifyLicence,
   type ActorContext,
@@ -28,6 +36,7 @@ import {
   type VerifyAbnResult,
   type VerifyLicenceResult,
 } from "@/modules/verification";
+import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireBuilder(): Promise<Result<ActorContext>> {
@@ -40,6 +49,49 @@ async function requireBuilder(): Promise<Result<ActorContext>> {
   return ok({ id: u.id, role: u.role });
 }
 
+/**
+ * Promote-on-verification. Runs after a successful verify result.
+ * When both ABN and ≥1 licence are verified active, flips a
+ * non-approved profile to `approved`. Logged + idempotent — calling
+ * twice when already approved is a no-op.
+ */
+async function maybePromoteToApproved(builderId: string): Promise<void> {
+  const v = await hasFullVerificationForApproval(builderId);
+  if (!v.abnVerified || !v.anyLicenceVerified) return;
+
+  // Only flip when not already approved/suspended/rejected. A
+  // suspended profile shouldn't auto-revive on re-verification.
+  const [profile] = await db
+    .select({ approvalStatus: builderProfiles.approvalStatus })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.userId, builderId))
+    .limit(1);
+  if (!profile) return;
+  if (
+    profile.approvalStatus === "approved" ||
+    profile.approvalStatus === "suspended" ||
+    profile.approvalStatus === "rejected"
+  ) {
+    return;
+  }
+
+  await db
+    .update(builderProfiles)
+    .set({
+      approvalStatus: "approved",
+      approvedAt: new Date(),
+      approvedBy: null,
+      approvedVia: "auto_post_onboarding",
+      updatedAt: new Date(),
+    })
+    .where(eq(builderProfiles.userId, builderId));
+
+  logger.info(
+    { event: "verification.promoted_to_approved", builderId },
+    "builder auto-approved after post-onboarding re-verification",
+  );
+}
+
 export async function verifyAbnAction(
   abnRaw: string,
 ): Promise<Result<VerifyAbnResult>> {
@@ -48,7 +100,11 @@ export async function verifyAbnAction(
   if (!canTriggerVerification(a.value, a.value.id)) {
     return fail("forbidden", "Not allowed.");
   }
-  return verifyAbn(a.value.id, abnRaw);
+  const r = await verifyAbn(a.value.id, abnRaw);
+  if (r.ok && r.value.status === "verified") {
+    await maybePromoteToApproved(a.value.id);
+  }
+  return r;
 }
 
 export async function verifyLicenceAction(
@@ -59,7 +115,11 @@ export async function verifyLicenceAction(
   if (!canTriggerVerification(a.value, a.value.id)) {
     return fail("forbidden", "Not allowed.");
   }
-  return verifyLicence(a.value.id, licenceId);
+  const r = await verifyLicence(a.value.id, licenceId);
+  if (r.ok && r.value.status === "verified") {
+    await maybePromoteToApproved(a.value.id);
+  }
+  return r;
 }
 
 /**

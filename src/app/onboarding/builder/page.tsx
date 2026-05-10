@@ -24,10 +24,12 @@ export default async function BuilderOnboardingPage() {
         <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.5rem,5vw+1rem,3.75rem)] leading-[0.95]">
           Welcome, {firstName}
         </h1>
-        <p className="text-[14px] leading-[22px] text-text-muted max-w-[52ch]">
-          Seven quick steps to get you set up — company, address, project
-          types, service areas, licences, and a short bio. We&apos;ll review
-          your profile within 1–2 business days. Editable later from settings.
+        <p className="text-[14px] leading-[22px] text-text-muted max-w-[58ch]">
+          Seven quick steps — company, address, project types, service areas,
+          licences, and a short bio. We verify your ABN against the ABR and
+          your builder licence against the state register live as you go, so
+          owners can trust every builder they meet here. Editable later from
+          settings.
         </p>
       </header>
 
@@ -36,6 +38,7 @@ export default async function BuilderOnboardingPage() {
           profile: bundle?.profile
             ? {
                 companyName: bundle.profile.companyName,
+                tradingName: bundle.profile.tradingName,
                 abn: bundle.profile.abn,
                 acn: bundle.profile.acn,
                 yearsInOperation: bundle.profile.yearsInOperation,

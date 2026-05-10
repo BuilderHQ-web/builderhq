@@ -26,8 +26,61 @@ import {
   getOrCreateConversation,
   postUnlockSystemMessage,
 } from "@/modules/messaging";
+import { builderProfiles } from "@/modules/profiles/schema";
 
 import { unlocks, savedProjects, type UnlockRow } from "./schema";
+
+/**
+ * Hard gate for unlock-capability. A builder can only spend FBA
+ * credits / pay for an unlock once their identity is fully verified
+ * (ABN + ≥1 licence) — i.e. their profile is `approved`.
+ *
+ * Returns a tagged result so the UI can render a tailored CTA:
+ *
+ *   - `ok: true`                       — proceed with the unlock
+ *   - error code 'forbidden' + reason  — show "viewer mode" panel
+ *
+ * This sits at the very top of unlockProject so it runs before any
+ * credit / payment logic. We don't burn an FBA credit on a builder
+ * who isn't allowed to unlock anyway.
+ */
+async function checkUnlockEligibility(
+  builderId: string,
+): Promise<Result<{ ok: true }>> {
+  const [profile] = await db
+    .select({ approvalStatus: builderProfiles.approvalStatus })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.userId, builderId))
+    .limit(1);
+
+  if (!profile) {
+    return fail(
+      "forbidden",
+      "Finish your builder profile before unlocking projects.",
+      { reason: "no_profile" },
+    );
+  }
+  if (profile.approvalStatus === "approved") return ok({ ok: true });
+
+  // viewer-mode messaging — what's specifically missing.
+  // Lazy import: verification module is server-only.
+  const { hasFullVerificationForApproval } = await import(
+    "@/modules/verification"
+  );
+  const v = await hasFullVerificationForApproval(builderId);
+
+  return fail(
+    "forbidden",
+    v.reasons[0] ??
+      "Verify your ABN and at least one builder licence to unlock projects.",
+    {
+      reason: "viewer_mode",
+      abnVerified: v.abnVerified,
+      anyLicenceVerified: v.anyLicenceVerified,
+      reasons: v.reasons,
+    },
+  );
+}
 
 /**
  * On a fresh unlock, get-or-create the (project × builder) conversation
@@ -96,6 +149,14 @@ export async function unlockProject(
       and(eq(unlocks.builderId, builderId), eq(unlocks.projectId, projectId)),
     );
   if (existing) return ok(existing);
+
+  // Verification gate. Admin-source unlocks bypass (admin tooling,
+  // Stripe webhooks, etc. — those callsites already know what
+  // they're doing). Self-service unlocks only proceed once approved.
+  if (!options.source || options.source === "free") {
+    const eligibility = await checkUnlockEligibility(builderId);
+    if (!eligibility.ok) return eligibility;
+  }
 
   // Caller-forced source (e.g. Stripe webhook, admin override).
   if (options.source && options.source !== "free") {

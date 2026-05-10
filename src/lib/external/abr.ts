@@ -41,8 +41,13 @@ import "server-only";
 import { env } from "@/lib/env";
 import { fail, ok, type Result } from "@/lib/result";
 import { logger } from "@/lib/logger";
+// Re-exported below so existing call sites that pull `isValidAbnFormat`
+// from this module keep working. New callers — especially client code —
+// should import directly from `@/lib/abn`.
+import { isValidAbnFormat as _isValidAbnFormat } from "@/lib/abn";
 
 export const ABR_PROVIDER = "abr" as const;
+export const isValidAbnFormat = _isValidAbnFormat;
 
 const TIMEOUT_MS = 8_000;
 
@@ -108,27 +113,6 @@ interface AbrSuccessBody {
   EntityTypeName?: string;
   Gst?: string;
   Message?: string;
-}
-
-/**
- * Validate ABN format + checksum. Free check before we burn an API
- * call. The algorithm is standard / public.
- *
- * Steps:
- *   1. Subtract 1 from the first digit
- *   2. Multiply each digit by its position weight [10,1,3,5,7,9,11,13,15,17,19]
- *   3. Sum, mod 89 → 0 means valid
- */
-export function isValidAbnFormat(input: string): boolean {
-  const digits = input.replace(/\s+/g, "");
-  if (!/^\d{11}$/.test(digits)) return false;
-  const weights = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
-  const adjusted = (parseInt(digits[0]!, 10) - 1).toString() + digits.slice(1);
-  let sum = 0;
-  for (let i = 0; i < 11; i++) {
-    sum += parseInt(adjusted[i]!, 10) * weights[i]!;
-  }
-  return sum % 89 === 0;
 }
 
 /**

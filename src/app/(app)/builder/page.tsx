@@ -36,6 +36,8 @@ import { ProjectCard } from "@/components/builder/project-card";
 import { AnimatedKpis, type AnimatedKpi } from "@/components/builder/animated-kpis";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { FbaCard } from "@/components/builder/fba-card";
+import { hasFullVerificationForApproval } from "@/modules/verification";
+import { VerificationCallout } from "@/components/builder/verification-callout";
 
 export const metadata = { title: "Dashboard" };
 
@@ -110,6 +112,18 @@ export default async function BuilderDashboard() {
     listByIds(savedIds.slice(0, 3)),
     [],
   );
+
+  // Verification status for the suggested-actions callout. Only
+  // shown when the builder isn't yet approved — the panel describes
+  // exactly what's blocking unlocks.
+  const isApproved = profile?.profile?.approvalStatus === "approved";
+  const verificationStatus = userId && !isApproved
+    ? await safe(
+        "verification_for_approval",
+        hasFullVerificationForApproval(userId),
+        { abnVerified: false, anyLicenceVerified: false, reasons: [] },
+      )
+    : null;
 
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
@@ -201,6 +215,21 @@ export default async function BuilderDashboard() {
       </section>
 
       <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
+        {/* ── Verification callout — sits above everything else when
+              the builder hasn't unlocked viewer-mode yet. Disappears
+              the moment they're approved. ─────────────────────────── */}
+        {verificationStatus &&
+        (!verificationStatus.abnVerified ||
+          !verificationStatus.anyLicenceVerified) ? (
+          <Reveal immediate delay={0.02}>
+            <VerificationCallout
+              abnVerified={verificationStatus.abnVerified}
+              anyLicenceVerified={verificationStatus.anyLicenceVerified}
+              approvalStatus={profile?.profile?.approvalStatus ?? "incomplete"}
+            />
+          </Reveal>
+        ) : null}
+
         {/* ── FBA panel — prominent when active ─────────────────────── */}
         <Reveal immediate delay={0.04}>
           <section>

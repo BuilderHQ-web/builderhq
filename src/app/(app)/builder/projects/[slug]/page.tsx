@@ -9,9 +9,10 @@ import {
 } from "@/modules/projects";
 import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { isUnlocked, isSaved } from "@/modules/unlocks";
-import { getOwnerContactPublic } from "@/modules/profiles";
+import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
+import { hasFullVerificationForApproval } from "@/modules/verification";
 import { ProjectDetail } from "./detail";
 
 export async function generateMetadata({
@@ -57,6 +58,30 @@ export default async function BuilderProjectPage({
     ? await getActiveTenderForBuilder(userId, preview.id)
     : null;
 
+  // Viewer-mode gate. We compute it server-side so the unlock CTA can
+  // render a clear "verification required" state up-front — no need to
+  // make the user click an unlock button just to discover they're
+  // blocked. Only relevant when the project isn't already unlocked
+  // (an existing unlock is unaffected by later approval changes).
+  // - viewerMode === null  → builder is approved, render the standard
+  //                          FBA-aware unlock bar
+  // - viewerMode != null   → render the "verify your business to unlock"
+  //                          panel with the specific gaps spelled out
+  let viewerMode: {
+    abnVerified: boolean;
+    anyLicenceVerified: boolean;
+  } | null = null;
+  if (!unlocked) {
+    const builder = await getBuilderProfile(userId);
+    if (builder?.profile?.approvalStatus !== "approved") {
+      const v = await hasFullVerificationForApproval(userId);
+      viewerMode = {
+        abnVerified: v.abnVerified,
+        anyLicenceVerified: v.anyLicenceVerified,
+      };
+    }
+  }
+
   return (
     <ProjectDetail
       preview={preview}
@@ -68,6 +93,7 @@ export default async function BuilderProjectPage({
       fbaStatus={fbaStatus}
       priceAud={priceAud}
       myTenderStatus={myTender?.status ?? null}
+      viewerMode={viewerMode}
     />
   );
 }

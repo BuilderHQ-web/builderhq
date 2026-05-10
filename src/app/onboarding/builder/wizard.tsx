@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Building2,
@@ -36,6 +37,11 @@ import {
   submitForApprovalAction,
   type ActionState,
 } from "./actions";
+import {
+  verifyAbnAction,
+  verifyLicenceAction,
+} from "@/app/(app)/_actions/verification";
+import { isValidAbnFormat } from "@/lib/abn";
 
 // ── types ────────────────────────────────────────────────────────────────
 
@@ -63,6 +69,7 @@ interface Licence {
 interface InitialBundle {
   profile: {
     companyName: string;
+    tradingName: string | null;
     abn: string | null;
     acn: string | null;
     yearsInOperation: number | null;
@@ -109,10 +116,37 @@ export function BuilderWizard({ initial }: { initial: InitialBundle }) {
 
   const [companyState, setCompanyState] = useState({
     companyName: initial.profile?.companyName ?? "",
+    tradingName: initial.profile?.tradingName ?? "",
     abn: initial.profile?.abn ?? "",
     acn: initial.profile?.acn ?? "",
     yearsInOperation: initial.profile?.yearsInOperation?.toString() ?? "",
   });
+
+  /**
+   * Apply ABR-derived autofill — writes to BOTH companyState (legal
+   * name + ACN) and addressState (business state + postcode), since
+   * those live in separate state buckets at the wizard level.
+   * Trading name defaults to the legal name only if the user hadn't
+   * already set their own.
+   */
+  function applyAbrAutofill(autofill: {
+    legalEntityName: string;
+    acn: string | null;
+    state: AustralianState | null;
+    postcode: string | null;
+  }) {
+    setCompanyState((s) => ({
+      ...s,
+      companyName: autofill.legalEntityName,
+      tradingName: s.tradingName || autofill.legalEntityName,
+      acn: autofill.acn ?? "",
+    }));
+    setAddressState((s) => ({
+      ...s,
+      businessState: autofill.state ?? s.businessState,
+      businessPostcode: autofill.postcode ?? s.businessPostcode,
+    }));
+  }
 
   const [addressState, setAddressState] = useState({
     businessAddressLine1: initial.profile?.businessAddressLine1 ?? "",
@@ -152,6 +186,7 @@ export function BuilderWizard({ initial }: { initial: InitialBundle }) {
             <CompanyStep
               values={companyState}
               onChange={setCompanyState}
+              onApplyAbrAutofill={applyAbrAutofill}
               onNext={() => setStep(2)}
               getProfileFormFields={() => ({ ...companyState, ...addressState, ...aboutState })}
             />
@@ -359,37 +394,93 @@ function StepShell({
 
 // ── Step 1: Company ──────────────────────────────────────────────────────
 
+type CompanyValues = {
+  companyName: string;
+  tradingName: string;
+  abn: string;
+  acn: string;
+  yearsInOperation: string;
+};
+
 function CompanyStep({
   values,
   onChange,
+  onApplyAbrAutofill,
   onNext,
   getProfileFormFields,
 }: {
-  values: { companyName: string; abn: string; acn: string; yearsInOperation: string };
-  onChange: (v: typeof values) => void;
+  values: CompanyValues;
+  onChange: (v: CompanyValues) => void;
+  onApplyAbrAutofill: (autofill: {
+    legalEntityName: string;
+    acn: string | null;
+    state: AustralianState | null;
+    postcode: string | null;
+  }) => void;
   onNext: () => void;
   getProfileFormFields: () => Record<string, string | boolean | null>;
 }) {
-  const [pending, startTransition] = useTransition();
+  const [savePending, startSave] = useTransition();
+  const [verifying, startVerify] = useTransition();
+  const [verifyResult, setVerifyResult] = useState<
+    | { kind: "verified"; matchedName: string }
+    | { kind: "inactive"; reason: string }
+    | { kind: "not_found"; reason: string }
+    | { kind: "error"; reason: string }
+    | null
+  >(null);
   const [state, setState] = React.useState<ActionState>({});
+
+  // The ABN field is "verified-locked" once we have a verified result
+  // for the current ABN value. Switching the ABN clears the result.
+  const isAbnVerified = verifyResult?.kind === "verified";
+
+  function abnValid(): boolean {
+    return /^\d{11}$/.test(values.abn) && isValidAbnFormat(values.abn);
+  }
+
+  function onVerify() {
+    if (!abnValid() || verifying) return;
+    setVerifyResult(null);
+    startVerify(async () => {
+      const r = await verifyAbnAction(values.abn);
+      if (!r.ok) {
+        setVerifyResult({ kind: "error", reason: r.error.message });
+        return;
+      }
+      const v = r.value;
+      if (v.status === "verified") {
+        setVerifyResult({ kind: "verified", matchedName: v.matchedName });
+        onApplyAbrAutofill({
+          legalEntityName: v.autofill.legalEntityName,
+          acn: v.autofill.acn,
+          state: v.autofill.state,
+          postcode: v.autofill.postcode,
+        });
+      } else if (v.status === "inactive") {
+        setVerifyResult({ kind: "inactive", reason: v.reason });
+      } else if (v.status === "not_found") {
+        setVerifyResult({ kind: "not_found", reason: v.reason });
+      } else {
+        setVerifyResult({ kind: "error", reason: v.reason });
+      }
+    });
+  }
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const errors: Record<string, string> = {};
-    if (!values.companyName.trim()) errors.companyName = "Company name is required";
+    if (!values.companyName.trim()) errors.companyName = "Legal entity name is required";
     if (!values.abn) {
       errors.abn = "ABN is required";
     } else if (!/^\d{11}$/.test(values.abn)) {
       errors.abn = "ABN must be exactly 11 digits";
     }
-    if (values.acn && !/^\d{9}$/.test(values.acn)) {
-      errors.acn = "ACN must be exactly 9 digits";
-    }
     if (Object.keys(errors).length) {
       setState({ fieldErrors: errors });
       return;
     }
-    startTransition(async () => {
+    startSave(async () => {
       const fd = profileFormData({ ...getProfileFormFields(), ...values });
       const res = await saveBuilderProfileAction({}, fd);
       setState(res);
@@ -397,114 +488,335 @@ function CompanyStep({
     });
   }
 
-  // Digit-only inputs with strict caps; provide feedback as the user types.
   const abnDigits = values.abn.length;
-  const acnDigits = values.acn.length;
   const abnLooksWrong = values.abn !== "" && abnDigits !== 11;
-  const acnLooksWrong = values.acn !== "" && acnDigits !== 9;
+  const canContinue =
+    !savePending &&
+    abnValid() &&
+    values.companyName.trim().length > 0 &&
+    verifyResult !== null;
+
+  // Continue-anyway available when verification ran but didn't pass —
+  // they go through with limited (viewer) access. We let the UI pass
+  // through but make the consequence very clear.
+  const verificationFailed =
+    verifyResult !== null && verifyResult.kind !== "verified";
 
   return (
     <form onSubmit={submit}>
       <StepShell
         title="Tell us about your business"
-        description="Just the basics. ABN unlocks faster admin approval — but it's not required to start."
+        description="We verify every builder's ABN against the Australian Business Register at sign-up. Owners trust the badge — that's how we keep the marketplace honest."
         footer={
           <>
-            <span className="text-[12px] text-text-dim">Required: company name &amp; ABN</span>
+            <span className="text-[12px] text-text-dim">
+              {!verifyResult ? (
+                "Verify your ABN to continue"
+              ) : verifyResult.kind === "verified" ? (
+                <span className="inline-flex items-center gap-1.5 text-accent">
+                  <ShieldCheck className="size-3.5" />
+                  Verified — ready to continue
+                </span>
+              ) : (
+                <span className="text-warning">
+                  Continuing in viewer mode — unlocks unlock when verified
+                </span>
+              )}
+            </span>
             <Button
               type="submit"
               size="lg"
-              disabled={
-                pending ||
-                !values.companyName.trim() ||
-                !/^\d{11}$/.test(values.abn) ||
-                (values.acn !== "" && !/^\d{9}$/.test(values.acn))
-              }
+              disabled={!canContinue}
               className="gap-2"
             >
-              {pending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {savePending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
-              {!pending ? <ArrowRight className="size-4" /> : null}
+              {!savePending ? <ArrowRight className="size-4" /> : null}
             </Button>
           </>
         }
       >
+        {/* ABN — primary verification anchor */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="companyName">Company name</Label>
-          <Input
-            id="companyName"
-            value={values.companyName}
-            onChange={(e) => onChange({ ...values, companyName: e.target.value })}
-            autoComplete="organization"
-            maxLength={120}
-            required
-          />
-          {state.fieldErrors?.companyName ? (
-            <p className="text-[11px] text-danger">{state.fieldErrors.companyName}</p>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="abn">ABN</Label>
+          <Label htmlFor="abn" className="flex items-center gap-2">
+            ABN
+            {isAbnVerified ? (
+              <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.16em] uppercase text-accent font-medium">
+                <ShieldCheck className="size-3" />
+                Verified · ABR
+              </span>
+            ) : null}
+          </Label>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
             <Input
               id="abn"
               value={values.abn}
-              onChange={(e) =>
-                onChange({ ...values, abn: e.target.value.replace(/\D/g, "").slice(0, 11) })
-              }
+              onChange={(e) => {
+                const next = e.target.value.replace(/\D/g, "").slice(0, 11);
+                onChange({ ...values, abn: next });
+                // Clear verification result if ABN changes after verification.
+                if (verifyResult) setVerifyResult(null);
+              }}
               inputMode="numeric"
               placeholder="11 digits"
               maxLength={11}
               required
-              aria-invalid={abnLooksWrong || Boolean(state.fieldErrors?.abn) || undefined}
-            />
-            <div className="flex items-center justify-between text-[11px]">
-              <span className={cn(abnLooksWrong ? "text-warning" : "text-text-dim")}>
-                {state.fieldErrors?.abn ?? (abnLooksWrong ? "ABN must be 11 digits" : "Required · 11 digits")}
-              </span>
-              <span className="font-mono text-text-dim tabular-nums">{abnDigits}/11</span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="acn">ACN <span className="text-text-dim font-normal">· optional</span></Label>
-            <Input
-              id="acn"
-              value={values.acn}
-              onChange={(e) =>
-                onChange({ ...values, acn: e.target.value.replace(/\D/g, "").slice(0, 9) })
+              disabled={isAbnVerified}
+              aria-invalid={
+                abnLooksWrong || Boolean(state.fieldErrors?.abn) || undefined
               }
-              inputMode="numeric"
-              placeholder="9 digits"
-              maxLength={9}
-              aria-invalid={acnLooksWrong || Boolean(state.fieldErrors?.acn) || undefined}
+              className="font-mono tabular-nums"
             />
-            <div className="flex items-center justify-between text-[11px]">
-              <span className={cn(acnLooksWrong ? "text-warning" : "text-text-dim")}>
-                {state.fieldErrors?.acn ?? (acnLooksWrong ? "ACN must be 9 digits" : "Optional · 9 digits if entered")}
+            {isAbnVerified ? (
+              <span className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent">
+                <ShieldCheck className="size-3.5" />
+                Verified
               </span>
-              <span className="font-mono text-text-dim tabular-nums">{acnDigits}/9</span>
-            </div>
+            ) : (
+              <Button
+                type="button"
+                size="md"
+                onClick={onVerify}
+                disabled={!abnValid() || verifying}
+                className="gap-1.5"
+              >
+                {verifying ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <ShieldCheck className="size-3.5" />
+                )}
+                {verifying ? "Checking ABR…" : "Verify with ABR"}
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center justify-between text-[11px]">
+            <span className={cn(abnLooksWrong ? "text-warning" : "text-text-dim")}>
+              {state.fieldErrors?.abn ??
+                (abnLooksWrong
+                  ? "ABN must be 11 digits"
+                  : isAbnVerified
+                    ? "Locked — verified by ABR. To change, contact support."
+                    : "11 digits, no spaces.")}
+            </span>
+            <span className="font-mono text-text-dim tabular-nums">{abnDigits}/11</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5 max-w-[200px]">
-          <Label htmlFor="yearsInOperation">Years in operation</Label>
-          <Input
-            id="yearsInOperation"
-            type="number"
-            min={0}
-            max={150}
-            value={values.yearsInOperation}
-            onChange={(e) => onChange({ ...values, yearsInOperation: e.target.value })}
+        {/* Verification result panels */}
+        {verifyResult?.kind === "verified" ? (
+          <VerifyResultPanel
+            tone="success"
+            title="ABN verified"
+            body={
+              <>
+                ABR matched{" "}
+                <span className="text-text font-medium">{verifyResult.matchedName}</span>
+                . We&apos;ve auto-filled your legal entity name, ACN, and registered
+                state below — adjust the trading name if you market under
+                something different.
+              </>
+            }
           />
-        </div>
-
-        {state.error ? (
-          <ErrorBanner>{state.error}</ErrorBanner>
         ) : null}
+        {verifyResult?.kind === "not_found" ? (
+          <VerifyResultPanel
+            tone="warning"
+            title="No record found in ABR"
+            body={
+              <>
+                Double-check the ABN above and try again. If you&apos;re sure it&apos;s
+                right (newly registered, perhaps), continue — your account
+                will sit in <strong>viewer mode</strong>: you can browse
+                projects but unlocks pause until verification clears.
+              </>
+            }
+          />
+        ) : null}
+        {verifyResult?.kind === "inactive" ? (
+          <VerifyResultPanel
+            tone="warning"
+            title="ABN is not active"
+            body={
+              <>
+                ABR shows this ABN as <em>not currently active</em>. Sort that
+                out with the ATO and verify here once it&apos;s active. You can
+                continue in <strong>viewer mode</strong> in the meantime —
+                browse only, no unlocks.
+              </>
+            }
+          />
+        ) : null}
+        {verifyResult?.kind === "error" ? (
+          <VerifyResultPanel
+            tone="warning"
+            title="Couldn't reach the ABR"
+            body={
+              <>
+                {verifyResult.reason} Try again in a moment. You can continue
+                in <strong>viewer mode</strong> and re-verify from your
+                profile later.
+              </>
+            }
+          />
+        ) : null}
+
+        {/* Trading name + legal name pair (revealed after first verification attempt) */}
+        {verifyResult ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tradingName">
+                Trading name{" "}
+                <span className="text-text-dim font-normal">· optional</span>
+              </Label>
+              <Input
+                id="tradingName"
+                value={values.tradingName}
+                onChange={(e) => onChange({ ...values, tradingName: e.target.value })}
+                placeholder={values.companyName || "How owners see you"}
+                autoComplete="organization"
+                maxLength={120}
+              />
+              <p className="text-[11px] text-text-dim">
+                Marketing label shown across the marketplace. Defaults to legal name.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="companyName" className="flex items-center gap-2">
+                Legal entity name
+                {isAbnVerified ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.16em] uppercase text-accent font-medium">
+                    <ShieldCheck className="size-3" />
+                    Verified · ABR
+                  </span>
+                ) : null}
+              </Label>
+              <Input
+                id="companyName"
+                value={values.companyName}
+                onChange={(e) => onChange({ ...values, companyName: e.target.value })}
+                autoComplete="organization"
+                maxLength={120}
+                required
+                disabled={isAbnVerified}
+              />
+              {state.fieldErrors?.companyName ? (
+                <p className="text-[11px] text-danger">{state.fieldErrors.companyName}</p>
+              ) : (
+                <p className="text-[11px] text-text-dim">
+                  {isAbnVerified
+                    ? "Locked — pulled from ABR."
+                    : "As registered with ABR."}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* ACN + years (visible once verification has been attempted, since they
+            need the ABR context to make sense) */}
+        {verifyResult ? (
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="acn">
+                ACN <span className="text-text-dim font-normal">· optional</span>
+              </Label>
+              <Input
+                id="acn"
+                value={values.acn}
+                onChange={(e) =>
+                  onChange({ ...values, acn: e.target.value.replace(/\D/g, "").slice(0, 9) })
+                }
+                inputMode="numeric"
+                placeholder="9 digits"
+                maxLength={9}
+                disabled={isAbnVerified && !!values.acn}
+                className="font-mono tabular-nums"
+              />
+              <p className="text-[11px] text-text-dim">
+                {isAbnVerified && values.acn
+                  ? "Locked — pulled from ABR."
+                  : "Auto-filled from ABR if your business has one."}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="yearsInOperation">Years in operation</Label>
+              <Input
+                id="yearsInOperation"
+                type="number"
+                min={0}
+                max={150}
+                value={values.yearsInOperation}
+                onChange={(e) => onChange({ ...values, yearsInOperation: e.target.value })}
+                placeholder="0"
+                className="tabular-nums"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Continue-anyway hint when verification has failed */}
+        {verificationFailed ? (
+          <div className="rounded-md border border-warning/35 bg-[rgba(255,181,71,0.05)] p-4">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="size-3.5 text-warning shrink-0 mt-0.5" />
+              <div className="text-[12px] leading-[1.6] text-text-muted">
+                <p>
+                  We couldn&apos;t verify your ABN. You can continue setup in
+                  viewer mode — sign in, browse projects, message owners — but{" "}
+                  <strong>unlocks stay paused</strong> until verification
+                  clears. Re-verify any time from your profile.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {state.error ? <ErrorBanner>{state.error}</ErrorBanner> : null}
       </StepShell>
     </form>
+  );
+}
+
+/**
+ * Result-of-last-verify panel — tone-aware, reused below for licences.
+ */
+function VerifyResultPanel({
+  tone,
+  title,
+  body,
+}: {
+  tone: "success" | "warning";
+  title: string;
+  body: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-md border p-4",
+        tone === "success"
+          ? "border-border-accent/45 bg-[rgba(0,212,200,0.06)]"
+          : "border-warning/35 bg-[rgba(255,181,71,0.05)]",
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        {tone === "success" ? (
+          <ShieldCheck className="size-3.5 text-accent shrink-0 mt-0.5" />
+        ) : (
+          <AlertTriangle className="size-3.5 text-warning shrink-0 mt-0.5" />
+        )}
+        <div className="min-w-0">
+          <p
+            className={cn(
+              "text-[11px] tracking-[0.16em] uppercase font-medium mb-1",
+              tone === "success" ? "text-accent" : "text-warning",
+            )}
+          >
+            {title}
+          </p>
+          <p className="text-[12.5px] leading-[1.6] text-text-muted">{body}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -866,6 +1178,19 @@ function ServiceAreasStep({
 
 // ── Step 5: Licences ─────────────────────────────────────────────────────
 
+/**
+ * Per-licence verification snapshot tracked in local wizard state.
+ * Distinct from the BuilderVerificationRow audit log — this is just
+ * "what did the latest verify call say for this row" for UI purposes.
+ */
+type LicenceVerifyState =
+  | { status: "verified"; classLabel: string; expiresAt: Date | null }
+  | { status: "inactive"; reason: string }
+  | { status: "not_found"; reason: string }
+  | { status: "mismatch"; reason: string }
+  | { status: "manual_review"; reason: string }
+  | { status: "error"; reason: string };
+
 function LicencesStep({
   values,
   onChange,
@@ -888,6 +1213,10 @@ function LicencesStep({
   });
   const [pending, startTransition] = useTransition();
   const [state, setState] = React.useState<ActionState>({});
+  /** Verification results keyed by licence id. */
+  const [verifications, setVerifications] = useState<
+    Record<string, LicenceVerifyState>
+  >({});
 
   function add() {
     if (!draft.state || !draft.licenceType.trim() || !draft.licenceNumber.trim()) {
@@ -904,28 +1233,76 @@ function LicencesStep({
       fd.set("expiresAt", draft.expiresAt);
       const res = await addLicenceAction({}, fd);
       setState(res);
-      // Sync local state with the DB row so the trash button can find it.
-      // (Earlier we generated a client UUID — that didn't match the DB.)
-      if (res.ok && res.licence) {
-        const created: Licence = {
-          id: res.licence.id,
-          state: res.licence.state as AustralianState,
-          licenceType: res.licence.licenceType,
-          licenceNumber: res.licence.licenceNumber,
-          licenceHolderName: res.licence.licenceHolderName,
-          issuedAt: res.licence.issuedAt,
-          expiresAt: res.licence.expiresAt,
-        };
-        onChange([...values, created]);
-        setDraft({
-          state: "",
-          licenceType: "",
-          licenceNumber: "",
-          licenceHolderName: "",
-          issuedAt: "",
-          expiresAt: "",
-        });
-        setAdding(false);
+      if (!res.ok || !res.licence) return;
+
+      const created: Licence = {
+        id: res.licence.id,
+        state: res.licence.state as AustralianState,
+        licenceType: res.licence.licenceType,
+        licenceNumber: res.licence.licenceNumber,
+        licenceHolderName: res.licence.licenceHolderName,
+        issuedAt: res.licence.issuedAt,
+        expiresAt: res.licence.expiresAt,
+      };
+      onChange([...values, created]);
+      setDraft({
+        state: "",
+        licenceType: "",
+        licenceNumber: "",
+        licenceHolderName: "",
+        issuedAt: "",
+        expiresAt: "",
+      });
+      setAdding(false);
+
+      // Auto-verify against the relevant register. VIC → VBA, others
+      // → "manual_review" sentinel from the action's error path.
+      const vr = await verifyLicenceAction(created.id);
+      if (!vr.ok) {
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: {
+            status: "error",
+            reason: vr.error.message,
+          },
+        }));
+        return;
+      }
+      const v = vr.value;
+      if (v.status === "verified") {
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: {
+            status: "verified",
+            classLabel: v.classLabel,
+            expiresAt: v.expiresAt,
+          },
+        }));
+      } else if (v.status === "inactive") {
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: { status: "inactive", reason: v.reason },
+        }));
+      } else if (v.status === "not_found") {
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: { status: "not_found", reason: v.reason },
+        }));
+      } else if (v.status === "mismatch") {
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: { status: "mismatch", reason: v.reason },
+        }));
+      } else {
+        // "error" — typically the no-adapter-yet path for non-VIC.
+        const isNonVic = v.provider.startsWith("state:");
+        setVerifications((m) => ({
+          ...m,
+          [created.id]: {
+            status: isNonVic ? "manual_review" : "error",
+            reason: v.reason,
+          },
+        }));
       }
     });
   }
@@ -969,41 +1346,78 @@ function LicencesStep({
       >
         {values.length > 0 ? (
           <ul className="flex flex-col gap-2">
-            {values.map((l) => (
-              <li
-                key={l.id}
-                className="rounded-md border border-border-subtle bg-surface-1 px-4 py-3"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-ui font-semibold text-[13px] text-text">
-                        {l.licenceType}
+            {values.map((l) => {
+              const v = verifications[l.id];
+              return (
+                <li
+                  key={l.id}
+                  className={cn(
+                    "rounded-md border px-4 py-3 transition-colors",
+                    v?.status === "verified"
+                      ? "border-border-accent/45 bg-[rgba(0,212,200,0.05)]"
+                      : v
+                        ? "border-warning/35 bg-[rgba(255,181,71,0.04)]"
+                        : "border-border-subtle bg-surface-1",
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-ui font-semibold text-[13px] text-text">
+                          {l.licenceType}
+                        </span>
+                        <Badge variant="default">{l.state}</Badge>
+                        <LicenceVerifyChip state={l.state} v={v} />
+                      </div>
+                      <span className="font-mono text-[12px] text-text-muted">
+                        {l.licenceNumber}
                       </span>
-                      <Badge variant="default">{l.state}</Badge>
+                      {l.licenceHolderName ? (
+                        <span className="text-[11px] text-text-dim">
+                          held by {l.licenceHolderName}
+                        </span>
+                      ) : null}
+                      {v?.status === "verified" && v.expiresAt ? (
+                        <span className="text-[11px] text-text-dim">
+                          expires{" "}
+                          {v.expiresAt.toLocaleDateString("en-AU", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      ) : l.expiresAt ? (
+                        <span className="text-[11px] text-text-dim">
+                          expires {l.expiresAt.toLocaleDateString("en-AU")}
+                        </span>
+                      ) : null}
+                      {v && v.status !== "verified" ? (
+                        <span className="text-[11px] text-warning mt-1 leading-[1.5]">
+                          {v.status === "manual_review"
+                            ? "Auto-verification for this state isn't live yet — our team will review manually."
+                            : v.status === "not_found"
+                              ? "No record found in the register. Edit & re-add if it's a typo, otherwise we'll review manually."
+                              : v.status === "inactive"
+                                ? `Register shows this as ${v.reason.toLowerCase()}.`
+                                : v.status === "mismatch"
+                                  ? v.reason
+                                  : v.reason}
+                        </span>
+                      ) : null}
                     </div>
-                    <span className="font-mono text-[12px] text-text-muted">{l.licenceNumber}</span>
-                    {l.licenceHolderName ? (
-                      <span className="text-[11px] text-text-dim">held by {l.licenceHolderName}</span>
-                    ) : null}
-                    {l.expiresAt ? (
-                      <span className="text-[11px] text-text-dim">
-                        expires {l.expiresAt.toLocaleDateString("en-AU")}
-                      </span>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => remove(l)}
+                      className="text-text-faint hover:text-danger transition-colors"
+                      disabled={pending}
+                      aria-label="Remove licence"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => remove(l)}
-                    className="text-text-faint hover:text-danger transition-colors"
-                    disabled={pending}
-                    aria-label="Remove licence"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         ) : null}
 
@@ -1107,6 +1521,57 @@ function LicencesStep({
         {state.error ? <ErrorBanner>{state.error}</ErrorBanner> : null}
       </StepShell>
     </form>
+  );
+}
+
+/**
+ * Inline chip for a licence row's verification state. Driven by the
+ * local LicenceVerifyState map; falls back to a soft "verifying…"
+ * label while the post-add VBA call is in flight.
+ */
+function LicenceVerifyChip({
+  state,
+  v,
+}: {
+  state: AustralianState;
+  v: LicenceVerifyState | undefined;
+}) {
+  if (!v) {
+    // No result yet (still in flight, or just added pre-verify)
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] text-[9.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
+        <Loader2 className="size-2.5 animate-spin" />
+        Verifying…
+      </span>
+    );
+  }
+  if (v.status === "verified") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-[9.5px] tracking-[0.16em] uppercase text-accent font-medium">
+        <ShieldCheck className="size-2.5" />
+        Verified · {state === "VIC" ? "VBA" : "register"}
+      </span>
+    );
+  }
+  if (v.status === "manual_review") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-warning/45 bg-[rgba(255,181,71,0.08)] text-[9.5px] tracking-[0.16em] uppercase text-warning font-medium">
+        <AlertTriangle className="size-2.5" />
+        Manual review
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-warning/45 bg-[rgba(255,181,71,0.08)] text-[9.5px] tracking-[0.16em] uppercase text-warning font-medium">
+      <AlertTriangle className="size-2.5" />
+      {v.status === "not_found"
+        ? "Not found"
+        : v.status === "inactive"
+          ? "Inactive"
+          : v.status === "mismatch"
+            ? "Mismatch"
+            : "Couldn't verify"}
+    </span>
   );
 }
 
