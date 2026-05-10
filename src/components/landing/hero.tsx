@@ -206,13 +206,18 @@ const HERO_CARDS = [
   { id: "tender", render: () => <TenderInProgressCard /> },
 ] as const;
 
-// Carousel timing — kept as named constants so it's obvious where to
-// dial up/down the rhythm. 3.6s cycle keeps the deck alive without
-// being twitchy. The flick animation runs ~900ms and overlaps the
-// new card's settle so the deck feels continuous.
-const CYCLE_MS = 3600;
-const FLICK_MS = 900;
-const SETTLE_MS = 700;
+// Carousel timing. The leaving card's animation needs to be SLOWER
+// than the standard slot-to-slot interpolation so the user can
+// actually track its path: card lifts off the front, hovers above
+// the deck for a beat, then descends slowly behind the others and
+// settles at the back. 1.6s gives each phase room to breathe.
+//
+// CYCLE_MS controls how long between auto-advances. We keep it
+// noticeably longer than FLICK_MS so the new active card has time
+// to settle before another flick begins.
+const CYCLE_MS = 4400;
+const FLICK_MS = 1600;
+const SETTLE_MS = 800;
 
 function HeroCardCycler() {
   const [active, setActive] = useState(0);
@@ -258,13 +263,17 @@ function HeroCardCycler() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Each card's animation comes from one of two paths:
-            - leavingIndex matches → keyframe arc that lifts the card,
-              tilts it, throws it back-right, then SETTLES it into its
-              destination slot (slot N) at low opacity. Reads as a real
-              "flick to the back of the deck" gesture.
+            - leavingIndex matches → 4-keyframe arc the user can
+              actually track: front (slot 0) → LIFT up above the deck
+              → HOLD above for a beat → DESCEND behind the others →
+              SETTLE at the back (slot N).
             - otherwise → standard interpolation to its slot styles.
-          Cards in slots 1+ get 3D depth via slight rotateX + a deeper
-          translate, so the deck feels physical instead of just stacked. */}
+          The leaving card stays VISIBLE for most of the journey
+          (opacity stays high until the descent's final third) so the
+          eye can follow the path. Z-index is animated through the
+          keyframes so the card visibly passes BEHIND each deck layer
+          on its way down — that's the bit that sells "it went to the
+          back," not just "it disappeared and reappeared." */}
       {HERO_CARDS.map((card, i) => {
         const slot = (i - active + HERO_CARDS.length) % HERO_CARDS.length;
         const isActive = slot === 0;
@@ -276,28 +285,46 @@ function HeroCardCycler() {
             key={card.id}
             className="absolute inset-x-0 top-0 [transform-style:preserve-3d] [will-change:transform,opacity,filter]"
             style={{
-              zIndex: isLeaving ? 4 : target.z,
               pointerEvents: isActive ? "auto" : "none",
               transformOrigin: "50% 80%",
             }}
             animate={
               isLeaving
                 ? {
-                    // Phase A — tiny anticipation pop forward
-                    // Phase B — flick: large rotate + translate up + right
-                    // Phase C — settle into back-of-deck slot (target)
-                    x: [0, 8, 90, target.x ?? 0],
-                    y: [0, -22, -54, target.y],
-                    rotate: [0, -3, 14, 0],
-                    rotateX: [0, 0, 18, target.rotateX ?? 14],
-                    scale: [1, 1.03, 0.86, target.scale],
-                    opacity: [1, 1, 0.35, target.opacity],
+                    // Lift → hover → descend behind → settle at back
+                    //
+                    // y arc: 0 (front) → -120 (high above the deck) →
+                    //        -120 (held — give the eye time to read it) →
+                    //         target.y (settled at back, below front)
+                    //
+                    // rotate: subtle 2D tilt during the journey, settles
+                    //         flat at rest.
+                    //
+                    // rotateX: deeper perspective tilt as the card
+                    //          leans away while descending.
+                    //
+                    // scale: shrinks slightly to suggest "going far"
+                    //        before settling.
+                    //
+                    // opacity: STAYS HIGH (0.85+) until the final
+                    //          descent so the user can track the path.
+                    //
+                    // zIndex: starts above all (40), then SINKS through
+                    //         the deck — 22 (passes the front), 12
+                    //         (passes the next), 5 (lands behind all).
+                    y: [0, -120, -120, 30, target.y],
+                    rotate: [0, -3, 4, 1, 0],
+                    rotateX: [0, -8, 0, 12, target.rotateX ?? 14],
+                    scale: [1, 0.96, 0.94, 0.90, target.scale],
+                    opacity: [1, 1, 1, 0.55, target.opacity],
                     filter: [
                       "blur(0px)",
                       "blur(0px)",
-                      "blur(5px)",
+                      "blur(0.5px)",
+                      "blur(2px)",
                       target.filter,
                     ],
+                    zIndex: [40, 40, 22, 12, target.z],
                   }
                 : {
                     x: target.x ?? 0,
@@ -307,14 +334,19 @@ function HeroCardCycler() {
                     scale: target.scale,
                     opacity: target.opacity,
                     filter: target.filter,
+                    zIndex: target.z,
                   }
             }
             transition={
               isLeaving
                 ? {
                     duration: FLICK_MS / 1000,
-                    times: [0, 0.16, 0.62, 1],
-                    ease: [0.32, 0.72, 0.34, 1],
+                    // Heavy bias on the descent: lift is fast (0–22%),
+                    // hover is short (22–42%), then descent gets 58%
+                    // of the duration so the user can clearly track
+                    // the card going behind the deck.
+                    times: [0, 0.22, 0.42, 0.78, 1],
+                    ease: [0.4, 0.05, 0.25, 1],
                   }
                 : {
                     duration: SETTLE_MS / 1000,
