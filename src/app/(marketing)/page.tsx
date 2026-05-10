@@ -49,20 +49,59 @@ export default async function MarketingHome() {
       <LandingNav />
 
       <main className="relative z-10">
-        <Hero cta={cta} />
+        {/* Each major section is wrapped in a min-h-screen container so
+              the page reads one-section-at-a-time. Marquee, ByTheNumbers,
+              Testimonials, and the closer don't need full viewport — they
+              read better as transitions / accents. The wrappers here are
+              only for sections that benefit from full-screen breathing. */}
+        <SectionFrame full>
+          <Hero cta={cta} />
+        </SectionFrame>
         <Marquee />
         <ByTheNumbers />
-        <Problem />
-        <Features />
-        <HowItWorks />
-        <Showcase />
+        <SectionFrame full>
+          <Problem />
+        </SectionFrame>
+        <SectionFrame full>
+          <Features />
+        </SectionFrame>
+        <SectionFrame full>
+          <HowItWorks />
+        </SectionFrame>
+        <SectionFrame full>
+          <Showcase />
+        </SectionFrame>
         <Testimonials />
-        <FAQ />
-        <CTA cta={cta} />
+        <SectionFrame full>
+          <FAQ />
+        </SectionFrame>
+        <SectionFrame>
+          <CTA cta={cta} />
+        </SectionFrame>
       </main>
 
       <Footer />
     </>
+  );
+}
+
+/**
+ * SectionFrame — pacing wrapper. `full` mode enforces a min-h-screen
+ * so each major section gets its own viewport, with flex centering
+ * so headlines + content sit pleasantly within rather than hugging
+ * the top edge. Without `full`, it's a noop wrapper used purely for
+ * grouping consistency at the orchestrator level.
+ */
+function SectionFrame({
+  children,
+  full = false,
+}: {
+  children: React.ReactNode;
+  full?: boolean;
+}) {
+  if (!full) return <>{children}</>;
+  return (
+    <div className="min-h-screen flex flex-col justify-center">{children}</div>
   );
 }
 

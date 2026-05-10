@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  ArrowUpRight,
+  ShieldCheck,
+  Trophy,
+  Activity,
+  Wallet,
+  Files,
+  CheckCircle2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CtaLinks } from "./cta-links";
 
@@ -129,14 +138,17 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           </motion.ul>
         </div>
 
-        {/* Right — single refined visual */}
+        {/* Right — dynamic stacked cycler. Four product views auto-rotate
+              with a smooth depth transition: front card slides up + fades,
+              back stack pushes forward. Pauses on hover, dot indicators
+              let users skip directly. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
           className="relative hidden lg:block"
         >
-          <ProjectCard />
+          <HeroCardCycler />
         </motion.div>
       </div>
     </section>
@@ -177,13 +189,476 @@ function ProofItem({ label }: { label: string }) {
   );
 }
 
+// ── HeroCardCycler ──────────────────────────────────────────────────────
+//
+// Stacked carousel of four product views. Auto-advances every 5s.
+// Visual model: a small "deck" of cards. The active card sits on
+// top in full focus; two cards behind are ghosted with a subtle
+// translate-down + scale-down to give depth. On advance, the front
+// card slides up + fades out, the next-in-line cards each step
+// forward one slot. Smooth, calm, premium.
+
+const HERO_CARDS = [
+  { id: "compare", render: () => <CompareCard /> },
+  { id: "pulse", render: () => <PulseCard /> },
+  { id: "verify", render: () => <BuilderVerifyCard /> },
+  { id: "tender", render: () => <TenderInProgressCard /> },
+] as const;
+
+function HeroCardCycler() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const t = window.setInterval(() => {
+      setActive((i) => (i + 1) % HERO_CARDS.length);
+    }, 5400);
+    return () => window.clearInterval(t);
+  }, [paused]);
+
+  return (
+    <div
+      className="relative h-[540px]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Stack of cards — each layer's transform is computed from its
+          slot offset (0 = active, 1 = next, 2 = behind). Older cards
+          fade fully so the deck never feels crowded. */}
+      {HERO_CARDS.map((card, i) => {
+        const slot = (i - active + HERO_CARDS.length) % HERO_CARDS.length;
+        const isActive = slot === 0;
+        // Cards behind sit slightly lower + smaller. Cards farther
+        // back are invisible (slot >= 3 only matters when there are
+        // more than 3 layers; we cap z reasonably).
+        const styles = (() => {
+          if (slot === 0) {
+            return {
+              y: 0,
+              scale: 1,
+              opacity: 1,
+              z: 30,
+            };
+          }
+          if (slot === 1) {
+            return {
+              y: 22,
+              scale: 0.96,
+              opacity: 0.42,
+              z: 20,
+            };
+          }
+          if (slot === 2) {
+            return {
+              y: 40,
+              scale: 0.92,
+              opacity: 0.18,
+              z: 10,
+            };
+          }
+          // slot 3+ — fully out of stack, fading away on top.
+          return {
+            y: -28,
+            scale: 1.02,
+            opacity: 0,
+            z: 5,
+          };
+        })();
+
+        return (
+          <motion.div
+            key={card.id}
+            className="absolute inset-x-0 top-0"
+            style={{ zIndex: styles.z, pointerEvents: isActive ? "auto" : "none" }}
+            animate={{
+              y: styles.y,
+              scale: styles.scale,
+              opacity: styles.opacity,
+            }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {card.render()}
+          </motion.div>
+        );
+      })}
+
+      {/* Dot indicators — subtle, at the bottom of the visible stack */}
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
+        {HERO_CARDS.map((card, i) => (
+          <button
+            key={card.id}
+            type="button"
+            onClick={() => setActive(i)}
+            aria-label={`Show ${card.id} card`}
+            className="group p-1.5"
+          >
+            <span
+              className={cn(
+                "block size-1.5 rounded-full transition-all duration-[400ms]",
+                i === active
+                  ? "w-6 bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]"
+                  : "bg-text-faint group-hover:bg-text-dim",
+              )}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Hero card 1 — the original tender comparison preview ────────────────
+// Same shape as the real comparison page so the hero shows what owners
+// land on. Keeps the ABN/Licence chips and Best value badge.
+
+function CompareCard() {
+  return <ProjectCard />;
+}
+
+// ── Hero card 2 — pulse / KPIs ──────────────────────────────────────────
+// Mirrors the ProjectPulseHeader on the comparison page: a 4-tile KPI
+// strip + a CSS sparkline of price distribution. Says "you'll see the
+// whole project's tender story at a glance."
+
+function PulseCard() {
+  return (
+    <CardShell>
+      <CardHeader
+        kicker="Project pulse"
+        title="At-a-glance signal"
+        badge="Live"
+      />
+      <div className="grid grid-cols-2 divide-x divide-y divide-[rgba(255,255,255,0.05)]">
+        <PulseTile
+          icon={<Activity className="size-3.5" />}
+          label="Tenders"
+          value="3"
+          sub="2 unique builders"
+        />
+        <PulseTile
+          icon={<Wallet className="size-3.5" />}
+          label="Median"
+          value="$1.86M"
+          sub="$1.78M – $1.91M"
+        />
+        <PulseTile
+          icon={<ShieldCheck className="size-3.5" />}
+          label="Verified"
+          value="100%"
+          sub="ABN + Licence"
+          tone="accent"
+        />
+        <PulseTile
+          icon={<Files className="size-3.5" />}
+          label="Spread"
+          value="7%"
+          sub="Tight — builders agree"
+          tone="accent"
+        />
+      </div>
+      <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.05)]">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-text-dim mb-2">
+          Price distribution
+        </div>
+        <PulseSparkline />
+      </div>
+    </CardShell>
+  );
+}
+
+function PulseTile({
+  icon,
+  label,
+  value,
+  sub,
+  tone = "muted",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  tone?: "muted" | "accent";
+}) {
+  return (
+    <div className="px-4 py-3.5">
+      <div className="flex items-center gap-1.5 text-text-dim mb-1.5">
+        <span className="size-5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted">
+          {icon}
+        </span>
+        <span className="text-[8.5px] tracking-[0.18em] uppercase">{label}</span>
+      </div>
+      <div
+        className={cn(
+          "font-display tabular-nums leading-none",
+          tone === "accent" ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 22 }}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] text-text-dim mt-1">{sub}</div>
+    </div>
+  );
+}
+
+function PulseSparkline() {
+  // Three ticks on a rail with the median marker centred — same
+  // language as the real ProjectPulseHeader sparkline.
+  return (
+    <div className="relative h-7">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-border-subtle -translate-y-1/2" />
+      <div
+        className="absolute top-1/2 h-px bg-accent/40 -translate-y-1/2"
+        style={{ left: 0, width: "50%" }}
+      />
+      <div
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-px h-3.5 bg-text"
+        style={{ left: "50%" }}
+      />
+      <span className="absolute left-0 -bottom-0.5 text-[8.5px] text-text-dim">
+        $1.78M
+      </span>
+      <span className="absolute right-0 -bottom-0.5 text-[8.5px] text-text-dim">
+        $1.91M
+      </span>
+      {[15, 50, 85].map((pct, idx) => (
+        <span
+          key={idx}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2 rounded-full bg-accent border border-border-accent shadow-[0_0_0_2px_rgba(0,212,200,0.20)]"
+          style={{ left: `${pct}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Hero card 3 — builder verification ──────────────────────────────────
+// Says "every builder is real, ABR-active, licence-active." Two big
+// tick badges + builder identity + a "trusted on platform" stat row.
+
+function BuilderVerifyCard() {
+  return (
+    <CardShell>
+      <CardHeader
+        kicker="Verified builder"
+        title="Trust, before tender"
+        badge="ABR ✓"
+      />
+      <div className="px-5 py-5">
+        <div className="flex items-center gap-3 mb-5">
+          <span
+            className="size-12 rounded-full flex items-center justify-center text-[14px] font-bold border border-border-accent text-accent-light shrink-0"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+            }}
+          >
+            JS
+          </span>
+          <div className="min-w-0">
+            <div className="text-[14px] font-semibold text-text">
+              Smith Builders
+            </div>
+            <div className="text-[11px] text-text-dim">
+              Registered VIC · 12 years
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <VerifyRow
+            label="Australian Business Register"
+            sub="ABN active · Smith Builders Pty Ltd"
+          />
+          <VerifyRow
+            label="Victorian Building Authority"
+            sub="Domestic Builder Unlimited · DB-U 1234"
+          />
+          <VerifyRow
+            label="Public Liability Insurance"
+            sub="$20M · CGU · valid through Mar 2027"
+          />
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.05)] grid grid-cols-3 gap-2">
+          <MiniStat label="Won on BHQ" value="3" />
+          <MiniStat label="Service area" value="Inner VIC" />
+          <MiniStat label="Match rate" value="94%" />
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function VerifyRow({ label, sub }: { label: string; sub: string }) {
+  return (
+    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-sm border border-border-accent/40 bg-[rgba(0,212,200,0.04)]">
+      <span className="size-5 rounded-sm border border-border-accent bg-accent-muted text-accent-light flex items-center justify-center shrink-0 mt-0.5">
+        <CheckCircle2 className="size-3" />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[11.5px] font-semibold text-text">{label}</div>
+        <div className="text-[10px] text-text-dim leading-[1.4]">{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-2.5 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)]">
+      <div className="text-[8px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
+        {label}
+      </div>
+      <div className="text-[12px] font-semibold text-text tabular-nums">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// ── Hero card 4 — tender in progress / activity ─────────────────────────
+// "You won't be staring at silence — here's the live activity feed."
+
+function TenderInProgressCard() {
+  const events = [
+    {
+      icon: <Trophy className="size-3" />,
+      title: "Smith Builders awarded",
+      sub: "Niddrie Townhouse · just now",
+      tone: "accent" as const,
+    },
+    {
+      icon: <Files className="size-3" />,
+      title: "Roberts & Co submitted",
+      sub: "Tender · $1.88M · 28w · 2h ago",
+      tone: "muted" as const,
+    },
+    {
+      icon: <ShieldCheck className="size-3" />,
+      title: "Chen Construction unlocked",
+      sub: "Address + docs revealed · 5h ago",
+      tone: "muted" as const,
+    },
+    {
+      icon: <Activity className="size-3" />,
+      title: "Project published",
+      sub: "Visible to 18 verified builders · 2d ago",
+      tone: "muted" as const,
+    },
+  ];
+  return (
+    <CardShell>
+      <CardHeader
+        kicker="Project activity"
+        title="What's happening, live"
+        badge="Stream"
+      />
+      <ul className="px-5 py-5 space-y-3">
+        {events.map((e, i) => (
+          <li
+            key={i}
+            className={cn(
+              "flex items-start gap-3 px-3 py-2.5 rounded-sm border",
+              e.tone === "accent"
+                ? "border-border-accent/55 bg-[rgba(0,212,200,0.04)]"
+                : "border-border-subtle bg-[rgba(255,255,255,0.012)]",
+            )}
+          >
+            <span
+              className={cn(
+                "size-6 rounded-sm flex items-center justify-center shrink-0 mt-0.5",
+                e.tone === "accent"
+                  ? "border border-border-accent bg-accent-muted text-accent-light"
+                  : "border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+              )}
+            >
+              {e.icon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div
+                className={cn(
+                  "text-[12.5px] font-semibold",
+                  e.tone === "accent" ? "text-accent-light" : "text-text",
+                )}
+              >
+                {e.title}
+              </div>
+              <div className="text-[10.5px] text-text-dim leading-[1.45]">
+                {e.sub}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </CardShell>
+  );
+}
+
+// ── card chrome — shared shell + header used by all 4 hero cards ────────
+
+function CardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="relative rounded-lg border border-[rgba(100,180,255,0.12)] backdrop-blur-xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.55)]"
+      style={{
+        background:
+          "linear-gradient(160deg, rgba(10,30,48,0.92), rgba(6,18,30,0.96))",
+      }}
+    >
+      <span
+        aria-hidden
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(126,245,237,0.6), transparent)",
+        }}
+      />
+      <span
+        aria-hidden
+        className="absolute -inset-px rounded-lg pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at top right, rgba(0,212,200,0.12), transparent 60%)",
+        }}
+      />
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+function CardHeader({
+  kicker,
+  title,
+  badge,
+}: {
+  kicker: string;
+  title: string;
+  badge: string;
+}) {
+  return (
+    <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.05)]">
+      <div className="flex items-center gap-2">
+        <span className="relative flex size-1.5">
+          <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
+          <span className="relative size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
+        </span>
+        <span className="text-[10px] tracking-[0.2em] uppercase text-text-muted font-ui">
+          {kicker} · {title}
+        </span>
+      </div>
+      <span className="px-2.5 py-1 border border-border-accent rounded-sm text-[9px] tracking-[0.16em] uppercase text-accent">
+        {badge}
+      </span>
+    </div>
+  );
+}
+
 // ── single product preview card ─────────────────────────────────────────
 //
-// This is the right-side "see what you'll be using" peek. Designed
-// to mirror the actual tender comparison page that owners land on
-// after publish — verification chips, recommendation badge, median-
-// delta pill — so the hero promise ("compare side-by-side") is
-// visualised, not just stated.
+// The original card — kept as <CompareCard/>, the first slide in the
+// cycler. The real visual that mirrors the comparison page UI.
 
 function ProjectCard() {
   return (

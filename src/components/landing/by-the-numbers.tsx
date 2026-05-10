@@ -13,21 +13,24 @@
 
 import { Reveal } from "./reveal";
 
+// Real numbers from the Bubble export are wired in per-deploy. The
+// strings below are the source of truth for the marketing surface.
+// When the figures update, edit them here — no other consumers.
 const ITEMS = [
   {
-    value: "100%",
-    label: "Australian residential",
-    sub: "Nothing else. No commercial bleed.",
+    value: "50+",
+    label: "Verified builders",
+    sub: "ABR active + state-register checked.",
   },
   {
-    value: "Live",
-    label: "ABR + state-register checks",
-    sub: "Every builder verified before they tender.",
+    value: "45+",
+    label: "Project unlocks",
+    sub: "Real residential builds, tendered.",
   },
   {
-    value: "1×",
-    label: "Upload your project",
-    sub: "Once. We do the rest of the chasing.",
+    value: "$50M+",
+    label: "Tenders submitted",
+    sub: "Total quoted value across the platform.",
   },
   {
     value: "Free",
