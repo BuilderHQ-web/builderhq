@@ -150,8 +150,71 @@ export async function shortlistTenderAction(
 
 export async function awardTenderAction(
   tenderId: string,
-): Promise<Result<Tender>> {
-  return ownerDecision(tenderId, award);
+  options: { rejectOthers?: boolean } = {},
+): Promise<
+  Result<{ awarded: Tender; rejectedIds: string[]; rejectedFailedIds: string[] }>
+> {
+  // Award the chosen tender first.
+  const awardResult = await ownerDecision(tenderId, award);
+  if (!awardResult.ok) return awardResult;
+
+  // No cascade requested — return early with empty bookkeeping.
+  if (!options.rejectOthers) {
+    return ok({
+      awarded: awardResult.value,
+      rejectedIds: [],
+      rejectedFailedIds: [],
+    });
+  }
+
+  // Cascade: reject every other still-live tender on this project. We
+  // re-resolve project ownership + walk siblings via the same policy
+  // that ownerDecision uses, so a stale tender id can't poke into
+  // someone else's project.
+  const a = await requireActor();
+  if (!a.ok) return a;
+
+  const { db } = await import("@/lib/db");
+  const { tenders } = await import("@/modules/tenders/schema");
+  const { projects } = await import("@/modules/projects/schema");
+  const { and, eq, ne, inArray, isNull } = await import("drizzle-orm");
+
+  const projectId = awardResult.value.projectId;
+  // Belt + braces — confirm caller owns this project before touching siblings.
+  const [proj] = await db
+    .select({ ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!proj || proj.ownerId !== a.value.id) {
+    // Award already landed; report success on award + empty cascade.
+    return ok({
+      awarded: awardResult.value,
+      rejectedIds: [],
+      rejectedFailedIds: [],
+    });
+  }
+
+  const siblings = await db
+    .select({ id: tenders.id })
+    .from(tenders)
+    .where(
+      and(
+        eq(tenders.projectId, projectId),
+        ne(tenders.id, tenderId),
+        inArray(tenders.status, ["submitted", "shortlisted"]),
+        isNull(tenders.deletedAt),
+      ),
+    );
+
+  const rejectedIds: string[] = [];
+  const rejectedFailedIds: string[] = [];
+  for (const s of siblings) {
+    const r = await reject(a.value.id, s.id);
+    if (r.ok) rejectedIds.push(s.id);
+    else rejectedFailedIds.push(s.id);
+  }
+  return ok({ awarded: awardResult.value, rejectedIds, rejectedFailedIds });
 }
 
 export async function rejectTenderAction(

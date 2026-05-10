@@ -26,6 +26,7 @@ export type {
 // Public types.
 export type {
   Tender,
+  TenderAnalytics,
   TenderCostLine,
   TenderWithLines,
   TenderForOwner,
@@ -60,6 +61,8 @@ export {
   // KPIs
   countTendersReceivedForOwner,
   countTendersForProject,
+  // Analytics roll-up helper
+  computeTenderAnalytics,
 } from "./service";
 
 // Policies.

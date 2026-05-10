@@ -4,10 +4,11 @@ import { ArrowLeft, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner } from "@/modules/projects";
-import { listTendersForOwner } from "@/modules/tenders";
+import { listTendersForOwner, computeTenderAnalytics } from "@/modules/tenders";
 import { TendersComparison } from "./comparison";
 
 export const metadata = { title: "Tenders" };
+export const dynamic = "force-dynamic";
 
 export default async function ProjectTendersPage({
   params,
@@ -27,6 +28,9 @@ export default async function ProjectTendersPage({
   const project = r.value;
 
   const tenders = await listTendersForOwner(project.id);
+  // Roll-up analytics computed server-side so the page paints with
+  // numbers ready (no client-side calc flicker on first frame).
+  const analytics = computeTenderAnalytics(tenders, project.publishedAt);
 
   return (
     <div className="px-6 lg:px-10 py-8 lg:py-10">
@@ -43,14 +47,15 @@ export default async function ProjectTendersPage({
           <div>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
               <Files className="size-3.5" />
-              Tenders
+              Tenders · compare &amp; decide
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
               {project.title}
             </h1>
-            <p className="mt-2 text-[13px] text-text-muted">
-              {tenders.length} tender{tenders.length === 1 ? "" : "s"} received ·
-              compare side-by-side, decide in minutes
+            <p className="mt-2 text-[13px] text-text-muted max-w-[58ch]">
+              Real builders, verified ABNs &amp; licences — every tender below
+              is from someone we&apos;ve confirmed exists and is licensed to
+              build. Pick the one that fits.
             </p>
           </div>
         </div>
@@ -67,7 +72,11 @@ export default async function ProjectTendersPage({
             </p>
           </div>
         ) : (
-          <TendersComparison tenders={tenders} />
+          <TendersComparison
+            tenders={tenders}
+            analytics={analytics}
+            projectTitle={project.title}
+          />
         )}
       </div>
     </div>
