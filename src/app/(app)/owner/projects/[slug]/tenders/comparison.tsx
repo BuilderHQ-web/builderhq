@@ -898,13 +898,17 @@ function TenderCard({
       ) : null}
 
       <div className="relative">
-        {/* Recommendation banner — only present when we have a strong take */}
-        {recommendation ? (
-          <RecommendationBanner label={recommendation} />
-        ) : null}
+        {/* Recommendation banner row — always rendered with reserved
+            height so adjacent cards line up at every following row.
+            Empty placeholder when this tender doesn't get a badge. */}
+        <div className="h-[26px] mb-2 flex items-center">
+          {recommendation ? (
+            <RecommendationBanner label={recommendation} />
+          ) : null}
+        </div>
 
         {/* Builder identity */}
-        <div className="flex items-start gap-3 mt-1 mb-3">
+        <div className="flex items-start gap-3 mb-3">
           <span
             className="size-11 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
             style={{
@@ -1023,7 +1027,10 @@ function TenderCard({
                 : "—"}
             </span>
           </div>
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
+          {/* Reserved-height row so cards align row-by-row regardless of
+              whether this card is the lowest, has a median-delta pill,
+              or neither. min-h matches the natural pill height. */}
+          <div className="mt-2 min-h-[20px] flex items-center gap-2 flex-wrap">
             {isLowestPrice ? (
               <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-accent-light">
                 <Sparkles className="size-3" />
@@ -1130,14 +1137,15 @@ function TenderCard({
           ) : null}
         </div>
 
-        {/* Doc count footer */}
-        {tender.documentCount > 0 ? (
-          <div className="mt-4 pt-3 border-t border-border-subtle/60 flex items-center gap-1.5 text-[11px] text-text-dim">
-            <Files className="size-3" />
-            {tender.documentCount} document
-            {tender.documentCount === 1 ? "" : "s"} attached
-          </div>
-        ) : null}
+        {/* Doc count footer — always rendered so the bottom edge of
+            every card aligns. "No documents" is a real signal and
+            worth showing instead of a blank space. */}
+        <div className="mt-4 pt-3 border-t border-border-subtle/60 flex items-center gap-1.5 text-[11px] text-text-dim">
+          <Files className="size-3" />
+          {tender.documentCount > 0
+            ? `${tender.documentCount} document${tender.documentCount === 1 ? "" : "s"} attached`
+            : "No documents attached"}
+        </div>
       </div>
     </motion.div>
   );
@@ -1245,11 +1253,12 @@ function ValidityStat({ expiry }: { expiry: ExpiryInfo }) {
       <div className={cn("text-[13px] tabular-nums font-semibold", cls)}>
         {expiry.label}
       </div>
-      {expiry.sub ? (
-        <div className={cn("text-[10px] mt-0.5", cls, "opacity-80")}>
-          {expiry.sub}
-        </div>
-      ) : null}
+      {/* Always reserve the sub slot — see <Stat> for the same trick. */}
+      <div
+        className={cn("text-[10px] mt-0.5 min-h-[14px]", cls, "opacity-80")}
+      >
+        {expiry.sub ?? " "}
+      </div>
     </div>
   );
 }
@@ -1293,11 +1302,15 @@ function CompletenessBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-      {completeness.missing.length > 0 && completeness.missing.length <= 4 ? (
-        <div className="mt-1.5 text-[10px] text-text-dim leading-[1.4]">
-          Missing: {completeness.missing.join(" · ")}
-        </div>
-      ) : null}
+      {/* Always reserve the missing-fields slot so cards align even
+          when one tender is fully complete and another has gaps. */}
+      <div className="mt-1.5 text-[10px] text-text-dim leading-[1.4] min-h-[14px]">
+        {completeness.missing.length > 0 && completeness.missing.length <= 4
+          ? `Missing: ${completeness.missing.join(" · ")}`
+          : completeness.missing.length === 0
+            ? "All sections complete"
+            : `${completeness.missing.length} sections missing`}
+      </div>
     </div>
   );
 }
@@ -1307,7 +1320,7 @@ function RecommendationBanner({ label }: { label: RecommendationLabel }) {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] tracking-[0.16em] uppercase font-semibold mb-2",
+        "inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] tracking-[0.16em] uppercase font-semibold",
         meta.cls,
       )}
     >
@@ -1341,16 +1354,16 @@ function Stat({
       >
         {value}
       </div>
-      {sub ? (
-        <div
-          className={cn(
-            "text-[10px] mt-0.5",
-            highlight ? "text-accent-light/80" : "text-text-dim",
-          )}
-        >
-          {sub}
-        </div>
-      ) : null}
+      {/* Always reserve the sub slot so adjacent cards align — empty
+          when this stat has no sub. */}
+      <div
+        className={cn(
+          "text-[10px] mt-0.5 min-h-[14px]",
+          highlight ? "text-accent-light/80" : "text-text-dim",
+        )}
+      >
+        {sub ?? " "}
+      </div>
     </div>
   );
 }

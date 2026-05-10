@@ -27,8 +27,16 @@ import { setMarketingEmailsEnabledAction } from "./actions";
 
 export function PreferencesForm({
   initialMarketingEmailsEnabled,
+  /**
+   * Whether to render the "New project emails" toggle. Only builders
+   * receive the bulk new-project blast — owners don't. Server passes
+   * `false` for owner accounts so they don't see a toggle for an email
+   * they'll never get.
+   */
+  showMarketingToggle = true,
 }: {
   initialMarketingEmailsEnabled: boolean;
+  showMarketingToggle?: boolean;
 }) {
   const [hydrated, setHydrated] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
@@ -77,15 +85,17 @@ export function PreferencesForm({
         onChange={onToggleSound}
         suffix={null}
       />
-      <PrefRow
-        icon={<Bell className="size-4" />}
-        title="New project emails"
-        description="Email me when a new project goes live on the marketplace. Account and tender outcome emails always come through — those aren't part of this toggle."
-        checked={digestOn}
-        disabled={digestPending}
-        onChange={onToggleDigest}
-        suffix={null}
-      />
+      {showMarketingToggle ? (
+        <PrefRow
+          icon={<Bell className="size-4" />}
+          title="New project emails"
+          description="Email me when a new project goes live on the marketplace. Account and tender outcome emails always come through — those aren't part of this toggle."
+          checked={digestOn}
+          disabled={digestPending}
+          onChange={onToggleDigest}
+          suffix={null}
+        />
+      ) : null}
       <li
         className={cn(
           "flex items-start gap-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] px-4 py-3.5",

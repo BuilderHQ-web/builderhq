@@ -228,6 +228,10 @@ export default async function SettingsPage() {
             >
               <PreferencesForm
                 initialMarketingEmailsEnabled={marketingEmailsEnabled}
+                // Marketing-class email is the bulk new-project blast,
+                // which only goes to builders. Hide the toggle for
+                // project owners — they'd never get the email anyway.
+                showMarketingToggle={role !== "project_owner"}
               />
             </SettingsSection>
           </Reveal>
