@@ -86,11 +86,15 @@ export default async function MarketingHome() {
 }
 
 /**
- * SectionFrame — pacing wrapper. `full` mode enforces a min-h-screen
- * so each major section gets its own viewport, with flex centering
- * so headlines + content sit pleasantly within rather than hugging
- * the top edge. Without `full`, it's a noop wrapper used purely for
- * grouping consistency at the orchestrator level.
+ * SectionFrame — pacing wrapper. `full` mode enforces a generous
+ * minimum height so each major section gets its own viewport on
+ * desktop, with flex centring so headlines + content sit pleasantly
+ * within. On mobile we drop to natural height — full-viewport
+ * pacing on a 640px phone often leaves ugly empty space when a
+ * section's content doesn't fill it.
+ *
+ * Without `full`, it's a noop wrapper used purely for grouping
+ * consistency at the orchestrator level.
  */
 function SectionFrame({
   children,
@@ -101,7 +105,9 @@ function SectionFrame({
 }) {
   if (!full) return <>{children}</>;
   return (
-    <div className="min-h-screen flex flex-col justify-center">{children}</div>
+    <div className="lg:min-h-screen lg:flex lg:flex-col lg:justify-center">
+      {children}
+    </div>
   );
 }
 

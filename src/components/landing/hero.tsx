@@ -25,7 +25,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-36 lg:pt-44 pb-24 lg:pb-32 px-6 md:px-10 overflow-hidden"
+      className="relative isolate pt-28 lg:pt-44 pb-16 lg:pb-32 px-6 md:px-10 overflow-hidden"
     >
       {/* Single scan-line sweep on mount — subtle premium signal */}
       <motion.span
@@ -45,7 +45,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-16 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
         {/* Left — copy */}
         <div>
           <motion.span
@@ -139,14 +139,15 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         </div>
 
         {/* Right — dynamic stacked cycler. Four product views auto-rotate
-              with a smooth depth transition: front card slides up + fades,
-              back stack pushes forward. Pauses on hover, dot indicators
-              let users skip directly. */}
+              with a real "flick to the back of the deck" arc on every
+              transition. Visible on every breakpoint now: full size on
+              lg+, scaled-down on mobile so the page still has a hero
+              visual on phones. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative hidden lg:block"
+          className="relative"
         >
           <HeroCardCycler />
         </motion.div>
@@ -206,109 +207,135 @@ const HERO_CARDS = [
 ] as const;
 
 // Carousel timing — kept as named constants so it's obvious where to
-// dial up/down the rhythm. 3.6s feels alive without being twitchy.
+// dial up/down the rhythm. 3.6s cycle keeps the deck alive without
+// being twitchy. The flick animation runs ~900ms and overlaps the
+// new card's settle so the deck feels continuous.
 const CYCLE_MS = 3600;
-const TRANSITION_MS = 0.7; // 700ms — long enough to read as glass-smooth.
+const FLICK_MS = 900;
+const SETTLE_MS = 700;
 
 function HeroCardCycler() {
   const [active, setActive] = useState(0);
+  // Index of the card that was JUST active (the one being flicked to
+  // the back). Clears once the flick animation completes so the card
+  // settles into its real back-of-deck slot for subsequent renders.
+  const [leavingIndex, setLeavingIndex] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
+
+  // Advance the deck. Captures the current active as "leaving" so its
+  // motion node animates the keyframe arc instead of the standard slot
+  // interpolation.
+  const advance = (next: number) => {
+    setActive((cur) => {
+      if (next === cur) return cur;
+      setLeavingIndex(cur);
+      window.setTimeout(
+        () => setLeavingIndex((v) => (v === cur ? null : v)),
+        FLICK_MS + 40,
+      );
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (paused) return;
     const t = window.setInterval(() => {
-      setActive((i) => (i + 1) % HERO_CARDS.length);
+      advance((active + 1) % HERO_CARDS.length);
     }, CYCLE_MS);
     return () => window.clearInterval(t);
-  }, [paused]);
+  }, [paused, active]);
 
   return (
     <div
-      className="relative h-[540px]"
+      // Responsive deck. Constrained to a sensible card width on phones
+      // so the deck doesn't blow past the viewport, and centred under
+      // the hero text on mobile (lg+ keeps the side-by-side layout).
+      // The flick arc translates +90px on the x axis at peak — we leave
+      // a little breathing room so the leaving card stays visible
+      // before fading out.
+      className="relative mx-auto max-w-[420px] sm:max-w-[460px] lg:max-w-none h-[460px] sm:h-[500px] lg:h-[540px] [perspective:1400px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Stack of cards — each layer's transform is computed from its
-          slot offset (0 = active, 1 = next, 2 = behind). The previous
-          active card slides UP and fades away on top of the stack
-          (slot 3+) so the eye reads "card stepped forward, last one
-          peeled off the front" — much smoother than a horizontal
-          scroll. */}
+      {/* Each card's animation comes from one of two paths:
+            - leavingIndex matches → keyframe arc that lifts the card,
+              tilts it, throws it back-right, then SETTLES it into its
+              destination slot (slot N) at low opacity. Reads as a real
+              "flick to the back of the deck" gesture.
+            - otherwise → standard interpolation to its slot styles.
+          Cards in slots 1+ get 3D depth via slight rotateX + a deeper
+          translate, so the deck feels physical instead of just stacked. */}
       {HERO_CARDS.map((card, i) => {
         const slot = (i - active + HERO_CARDS.length) % HERO_CARDS.length;
         const isActive = slot === 0;
-        const styles = (() => {
-          if (slot === 0) {
-            return {
-              y: 0,
-              scale: 1,
-              opacity: 1,
-              filter: "blur(0px)",
-              z: 30,
-            };
-          }
-          if (slot === 1) {
-            return {
-              y: 24,
-              scale: 0.955,
-              opacity: 0.5,
-              filter: "blur(1px)",
-              z: 20,
-            };
-          }
-          if (slot === 2) {
-            return {
-              y: 44,
-              scale: 0.91,
-              opacity: 0.20,
-              filter: "blur(2px)",
-              z: 10,
-            };
-          }
-          // slot 3+ — last-active card fading up off the top of the
-          // deck. The slight upward translate gives the "peeling away"
-          // direction; opacity 0 means it disappears before it could
-          // overlap the next one as that one transitions to active.
-          return {
-            y: -36,
-            scale: 1.03,
-            opacity: 0,
-            filter: "blur(4px)",
-            z: 5,
-          };
-        })();
+        const isLeaving = i === leavingIndex;
+        const target = slotTarget(slot);
 
         return (
           <motion.div
             key={card.id}
-            className="absolute inset-x-0 top-0"
-            style={{ zIndex: styles.z, pointerEvents: isActive ? "auto" : "none" }}
-            animate={{
-              y: styles.y,
-              scale: styles.scale,
-              opacity: styles.opacity,
-              filter: styles.filter,
+            className="absolute inset-x-0 top-0 [transform-style:preserve-3d] [will-change:transform,opacity,filter]"
+            style={{
+              zIndex: isLeaving ? 4 : target.z,
+              pointerEvents: isActive ? "auto" : "none",
+              transformOrigin: "50% 80%",
             }}
-            transition={{
-              duration: TRANSITION_MS,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            animate={
+              isLeaving
+                ? {
+                    // Phase A — tiny anticipation pop forward
+                    // Phase B — flick: large rotate + translate up + right
+                    // Phase C — settle into back-of-deck slot (target)
+                    x: [0, 8, 90, target.x ?? 0],
+                    y: [0, -22, -54, target.y],
+                    rotate: [0, -3, 14, 0],
+                    rotateX: [0, 0, 18, target.rotateX ?? 14],
+                    scale: [1, 1.03, 0.86, target.scale],
+                    opacity: [1, 1, 0.35, target.opacity],
+                    filter: [
+                      "blur(0px)",
+                      "blur(0px)",
+                      "blur(5px)",
+                      target.filter,
+                    ],
+                  }
+                : {
+                    x: target.x ?? 0,
+                    y: target.y,
+                    rotate: 0,
+                    rotateX: target.rotateX ?? 0,
+                    scale: target.scale,
+                    opacity: target.opacity,
+                    filter: target.filter,
+                  }
+            }
+            transition={
+              isLeaving
+                ? {
+                    duration: FLICK_MS / 1000,
+                    times: [0, 0.16, 0.62, 1],
+                    ease: [0.32, 0.72, 0.34, 1],
+                  }
+                : {
+                    duration: SETTLE_MS / 1000,
+                    ease: [0.16, 1, 0.3, 1],
+                  }
+            }
           >
             {card.render()}
           </motion.div>
         );
       })}
 
-      {/* Dot indicators with progress fill — gives a subtle sense of
-          "next card in 1.2s" without being a loud loading bar. The
-          active dot's bar grows 0% → 100% across CYCLE_MS, then resets
-          when the card switches. Pauses with the carousel on hover. */}
+      {/* Dot indicators with progress fill — calm sense of "next in
+          1.2s" without being a loading bar. Resets cleanly on
+          click + hover-pause. */}
       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
         {HERO_CARDS.map((card, i) => (
           <button
             key={card.id}
             type="button"
-            onClick={() => setActive(i)}
+            onClick={() => advance(i)}
             aria-label={`Show ${card.id} card`}
             className="group p-1.5"
           >
@@ -338,6 +365,64 @@ function HeroCardCycler() {
       </div>
     </div>
   );
+}
+
+/**
+ * Resting transform for a card based on its slot offset from active.
+ * Cards behind the front get a small rotateX (~6° / 12°) so the deck
+ * leans away from the viewer — that's the bit that makes the flick
+ * feel like a real card going back, not just shrinking.
+ */
+function slotTarget(slot: number): {
+  y: number;
+  x?: number;
+  scale: number;
+  opacity: number;
+  filter: string;
+  z: number;
+  rotateX?: number;
+} {
+  if (slot === 0) {
+    return {
+      y: 0,
+      scale: 1,
+      opacity: 1,
+      filter: "blur(0px)",
+      z: 30,
+      rotateX: 0,
+    };
+  }
+  if (slot === 1) {
+    return {
+      y: 28,
+      scale: 0.955,
+      opacity: 0.55,
+      filter: "blur(1px)",
+      z: 20,
+      rotateX: 6,
+    };
+  }
+  if (slot === 2) {
+    return {
+      y: 50,
+      scale: 0.91,
+      opacity: 0.24,
+      filter: "blur(2px)",
+      z: 10,
+      rotateX: 12,
+    };
+  }
+  // slot 3+ — full back-of-deck. Same direction as slot 2 but pushed
+  // further with even less opacity. Cards naturally land here at the
+  // end of the flick keyframe arc.
+  return {
+    y: 64,
+    scale: 0.88,
+    opacity: 0.10,
+    filter: "blur(3px)",
+    z: 5,
+    rotateX: 16,
+  };
 }
 
 // ── Hero card 1 — the original tender comparison preview ────────────────

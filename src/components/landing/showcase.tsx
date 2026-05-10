@@ -83,28 +83,38 @@ export function Showcase() {
           </div>
         </Reveal>
 
-        {/* The dashboard — content swaps on tab change */}
+        {/* The dashboard — content swaps on tab change. On mobile, the
+              inner tables (cost breakdown, tender comparison) carry
+              fixed column widths that would overflow a phone-width
+              container — we let the outer card scroll horizontally with
+              momentum so users can drag through dense screens. The
+              card itself stays edge-to-edge of the page section so the
+              scroll feels intentional, not accidental. */}
         <Reveal delay={0.1}>
           <div
-            className="relative rounded-lg border border-border-subtle overflow-hidden shadow-[0_50px_140px_rgba(0,0,0,0.55)]"
+            className="relative rounded-lg border border-border-subtle shadow-[0_50px_140px_rgba(0,0,0,0.55)] overflow-hidden"
             style={{
               background:
                 "linear-gradient(180deg, rgba(8,22,36,0.95), rgba(4,14,24,0.98))",
             }}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {active === "tracking" && <DashboardTracking />}
-                {active === "workspace" && <DashboardWorkspace />}
-                {active === "compare" && <DashboardCompare />}
-              </motion.div>
-            </AnimatePresence>
+            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+              <div className="min-w-[760px] lg:min-w-0">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={active}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    {active === "tracking" && <DashboardTracking />}
+                    {active === "workspace" && <DashboardWorkspace />}
+                    {active === "compare" && <DashboardCompare />}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
 
           {/* caption under the dashboard */}
