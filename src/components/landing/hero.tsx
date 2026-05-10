@@ -115,16 +115,17 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
           </motion.div>
 
-          {/* Trust strip — three small proof points under the CTAs */}
+          {/* Trust strip — short, confident proof points under the CTAs.
+              Each one's a real platform behaviour, not a slogan. */}
           <motion.ul
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.58, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="mt-12 flex flex-wrap gap-x-6 gap-y-3 text-[11px] tracking-[0.04em] text-text-dim"
           >
-            <ProofItem label="Free for owners" />
-            <ProofItem label="ABN-verified builders" />
-            <ProofItem label="Built in Australia" />
+            <ProofItem label="Free for project owners" />
+            <ProofItem label="ABR + state-register verified" />
+            <ProofItem label="Australian residential only" />
           </motion.ul>
         </div>
 
@@ -176,7 +177,13 @@ function ProofItem({ label }: { label: string }) {
   );
 }
 
-// ── single project card ──────────────────────────────────────────────────
+// ── single product preview card ─────────────────────────────────────────
+//
+// This is the right-side "see what you'll be using" peek. Designed
+// to mirror the actual tender comparison page that owners land on
+// after publish — verification chips, recommendation badge, median-
+// delta pill — so the hero promise ("compare side-by-side") is
+// visualised, not just stated.
 
 function ProjectCard() {
   return (
@@ -204,6 +211,7 @@ function ProjectCard() {
         }}
       />
 
+      {/* Top bar — mimics the tender comparison page header */}
       <div className="relative flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.05)]">
         <div className="flex items-center gap-2">
           <span className="relative flex size-1.5">
@@ -211,105 +219,148 @@ function ProjectCard() {
             <span className="relative size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
           </span>
           <span className="text-[10px] tracking-[0.2em] uppercase text-text-muted font-ui">
-            Project · Tender open
+            Niddrie Townhouse · 3 tenders
           </span>
         </div>
         <span className="px-2.5 py-1 border border-border-accent rounded-sm text-[9px] tracking-[0.16em] uppercase text-accent">
-          Live
+          Comparing
         </span>
       </div>
 
+      {/* Pulse strip — three KPI cells echoing the real ProjectPulseHeader */}
+      <div className="relative grid grid-cols-3 divide-x divide-[rgba(255,255,255,0.05)] border-b border-[rgba(255,255,255,0.05)]">
+        <PulseCell label="Median" value="$1.86M" />
+        <PulseCell label="Spread" value="7%" tone="accent" />
+        <PulseCell label="Verified" value="100%" tone="accent" />
+      </div>
+
+      {/* Two stacked tender rows — preview of the comparison cards.
+          Top row carries a "Best value" recommendation badge so the
+          card matches the actual product UI. */}
+      <div className="p-5 space-y-3">
+        <TenderRow
+          initials="JS"
+          name="Smith Builders"
+          price="$1.78M"
+          delta="-4% median"
+          recommendation="Best value"
+          highlight
+        />
+        <TenderRow
+          initials="AC"
+          name="Chen Construction"
+          price="$1.91M"
+          delta="+3% median"
+        />
+        <TenderRow
+          initials="MR"
+          name="Roberts &amp; Co"
+          price="$1.88M"
+          delta="+1% median"
+        />
+      </div>
+    </div>
+  );
+}
+
+function PulseCell({
+  label,
+  value,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  tone?: "muted" | "accent";
+}) {
+  return (
+    <div className="px-4 py-3.5">
+      <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+        {label}
+      </div>
       <div
-        className="relative h-[180px] border-b border-[rgba(255,255,255,0.05)]"
+        className={
+          tone === "accent"
+            ? "font-display tabular-nums leading-none text-accent-light"
+            : "font-display tabular-nums leading-none text-text"
+        }
+        style={{ fontSize: 18 }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function TenderRow({
+  initials,
+  name,
+  price,
+  delta,
+  recommendation,
+  highlight,
+}: {
+  initials: string;
+  name: string;
+  price: string;
+  delta: string;
+  recommendation?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "relative flex items-center gap-3 px-3.5 py-3 rounded-sm border",
+        highlight
+          ? "border-border-accent/55 bg-[rgba(0,212,200,0.05)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      ].join(" ")}
+    >
+      {/* Avatar */}
+      <span
+        className="size-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-border-accent text-accent-light shrink-0"
         style={{
           background:
-            "radial-gradient(circle at 20% 30%, rgba(0,212,200,0.12), transparent 40%), radial-gradient(circle at 80% 10%, rgba(26,95,212,0.32), transparent 35%), linear-gradient(135deg, #0a1f31, #10283b)",
+            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
         }}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(142,252,244,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.06) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-            maskImage: "linear-gradient(180deg, black 30%, transparent 100%)",
-          }}
-        />
-        <div className="absolute bottom-[12%] left-[8%] right-[8%] h-[60%] flex gap-2 items-end">
-          {[48, 72, 92, 64, 84].map((h, i) => (
-            <span
-              key={i}
-              className="flex-1 rounded-t-sm border border-[rgba(142,252,244,0.18)]"
-              style={{
-                height: `${h}%`,
-                background:
-                  "linear-gradient(180deg, rgba(142,252,244,0.20), rgba(0,212,200,0.04))",
-                animation: `barRise 5s ease-in-out ${i * 0.22}s infinite`,
-                transformOrigin: "bottom",
-              }}
-            />
-          ))}
+        {initials}
+      </span>
+
+      {/* Builder block */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[12px] font-semibold text-text truncate">
+            {name}
+          </span>
+          {recommendation ? (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.16em] uppercase text-accent-light font-semibold">
+              {recommendation}
+            </span>
+          ) : null}
+        </div>
+        <div className="text-[10px] text-text-dim">
+          ABN ✓ · Licence ✓
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="flex items-baseline justify-between mb-4">
-          <h3 className="font-ui font-semibold text-[16px] tracking-[-0.01em] text-text">
-            Niddrie Townhouse
-          </h3>
-          <span className="text-[11px] text-text-dim font-mono">
-            VIC · 3042
-          </span>
+      {/* Price + delta */}
+      <div className="text-right shrink-0">
+        <div
+          className={[
+            "font-display tabular-nums leading-none",
+            highlight ? "text-accent-light" : "text-text",
+          ].join(" ")}
+          style={{ fontSize: 18 }}
+        >
+          {price}
         </div>
-
-        <div className="grid grid-cols-2 gap-1.5 mb-4">
-          {[
-            ["Type", "Single dwelling"],
-            ["Package", "Plans + specs"],
-            ["Closes in", "9 days"],
-            ["Builders matched", "18"],
-          ].map(([dl, val]) => (
-            <div
-              key={dl}
-              className="px-3 py-2.5 border border-[rgba(255,255,255,0.05)] rounded-sm bg-[rgba(255,255,255,0.015)]"
-            >
-              <span className="block text-[9px] tracking-[0.16em] uppercase text-text-dim mb-1">
-                {dl}
-              </span>
-              <strong className="block text-[12.5px] font-medium text-text">
-                {val}
-              </strong>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-2 pt-3 border-t border-[rgba(255,255,255,0.05)]">
-          {[
-            ["Unlocked", 76, "12"],
-            ["Preparing", 52, "07"],
-            ["Submitted", 28, "03"],
-          ].map(([label, pct, value]) => (
-            <div
-              key={label as string}
-              className="grid grid-cols-[72px_1fr_28px] items-center gap-3"
-            >
-              <span className="text-[9px] tracking-[0.16em] uppercase text-text-dim">
-                {label}
-              </span>
-              <div className="h-[4px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
-                <span
-                  className="block h-full rounded-full"
-                  style={{
-                    width: `${pct}%`,
-                    background: "linear-gradient(90deg, #1a5fd4, #00d4c8)",
-                  }}
-                />
-              </div>
-              <b className="text-[11px] font-semibold text-text text-right tabular-nums">
-                {value}
-              </b>
-            </div>
-          ))}
+        <div
+          className={[
+            "text-[9.5px] mt-0.5 tabular-nums",
+            highlight ? "text-accent-light/80" : "text-text-dim",
+          ].join(" ")}
+        >
+          {delta}
         </div>
       </div>
     </div>

@@ -5,17 +5,35 @@ import { CustomCursor } from "@/components/landing/cursor";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { Marquee } from "@/components/landing/marquee";
+import { ByTheNumbers } from "@/components/landing/by-the-numbers";
 import { Problem } from "@/components/landing/problem";
-import { Stats } from "@/components/landing/stats";
 import { Features } from "@/components/landing/features";
 import { HowItWorks } from "@/components/landing/how";
-import { Audiences } from "@/components/landing/audiences";
 import { Showcase } from "@/components/landing/showcase";
 import { Testimonials } from "@/components/landing/testimonials";
+import { FAQ } from "@/components/landing/faq";
 import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 import { resolveCtaLinks } from "@/components/landing/cta-links";
 
+/**
+ * Marketing landing page section flow — sharpened from the original
+ * 11 sections to 9. Cut from the lineup:
+ *
+ *   - Stats (replaced by <ByTheNumbers/>: tighter, four hard facts in
+ *     one row, no animated counter drama competing with the headline).
+ *   - Audiences (the owner-vs-builder split was already implicit in
+ *     <Problem/>, <HowItWorks/>, and the dual CTAs everywhere; making
+ *     it a section repeated the same beat).
+ *
+ * Added:
+ *   - <FAQ/> — six honest answers to the questions every prospect
+ *     thinks but doesn't ask: cost, verification, control, etc.
+ *
+ * The narrative now reads: hook → marquee texture → quick proof →
+ * pain → product → flow → real screens → human proof → objection
+ * answers → close. Tight, calm, no filler.
+ */
 export default async function MarketingHome() {
   const cta = await resolveCtaLinks();
 
@@ -33,13 +51,13 @@ export default async function MarketingHome() {
       <main className="relative z-10">
         <Hero cta={cta} />
         <Marquee />
+        <ByTheNumbers />
         <Problem />
-        <Stats />
         <Features />
         <HowItWorks />
-        <Audiences cta={cta} />
         <Showcase />
         <Testimonials />
+        <FAQ />
         <CTA cta={cta} />
       </main>
 

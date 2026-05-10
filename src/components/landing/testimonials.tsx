@@ -10,49 +10,37 @@ type Review = {
   body: string;
 };
 
-// 4 originals from the reference landing + 2 new for variety.
+// Four sharpest testimonials only. Each one delivers a different
+// angle: owner trust, architect efficiency, owner-builder structure,
+// builder fit. Six was a marquee filler; four reads as conviction.
 const REVIEWS: Review[] = [
   {
     initials: "JM",
     name: "James M.",
     role: "Project owner",
     location: "Brunswick, VIC",
-    body: "We used BuilderHQ to tender our rear extension. The process was simple, fast and incredibly effective. We received competitive quotes from quality builders who actually wanted the job. It took the stress out of finding the right team.",
+    body: "We used BuilderHQ to tender our rear extension. The process was simple, fast and incredibly effective. We received competitive quotes from quality builders who actually wanted the job — not three PDFs in three different worlds.",
   },
   {
     initials: "SL",
     name: "Sophie L.",
     role: "Registered architect",
     location: "Melbourne, VIC",
-    body: "BuilderHQ has streamlined how we help clients find reliable builders. Instead of chasing contacts and waiting on quotes, we upload the project once and let the platform handle the rest. Efficient, transparent, aligned with how we deliver modern architecture.",
-  },
-  {
-    initials: "LD",
-    name: "Lisa D.",
-    role: "Property investor",
-    location: "Sydney, NSW",
-    body: "Posting our duplex project on BuilderHQ was seamless. Within hours, we had multiple licensed builders interested in quoting. It saved us weeks of back-and-forth and gave us full control of the process. Highly recommend for any serious homeowner or developer.",
-  },
-  {
-    initials: "NP",
-    name: "Nathan P.",
-    role: "Boutique builder",
-    location: "Geelong, VIC",
-    body: "As a small builder, getting access to good projects has always been tough. BuilderHQ levels the playing field. I've already quoted on two jobs since signing up, and both were a perfect fit for my team. Game-changer for how we grow.",
+    body: "BuilderHQ has streamlined how we help clients find reliable builders. Upload once, let the platform handle the matching. Efficient, transparent, and aligned with how we deliver modern architecture — minus the broker layer.",
   },
   {
     initials: "AK",
     name: "Aisha K.",
     role: "Owner-builder",
     location: "Canberra, ACT",
-    body: "I went in blind on my first build. BuilderHQ gave me a structured way to compare quotes — same scope, same format, real numbers — instead of three PDFs from three different worlds. I felt informed, not overwhelmed.",
+    body: "I went in blind on my first build. BuilderHQ gave me a structured way to compare quotes — same scope, same format, real numbers. I felt informed, not overwhelmed. The verified-builder chips meant I knew exactly who I was talking to.",
   },
   {
-    initials: "TB",
-    name: "Tom B.",
-    role: "Site supervisor → builder",
-    location: "Perth, WA",
-    body: "The preview-before-unlock model is the best part. I only spend time on projects where the scope fits what we actually do. No more chasing tyre-kickers, no more dead-end leads. Just real residential work.",
+    initials: "NP",
+    name: "Nathan P.",
+    role: "Boutique builder",
+    location: "Geelong, VIC",
+    body: "As a small builder, getting access to good projects has always been tough. BuilderHQ levels the playing field. I've already quoted on two jobs since signing up — both perfect fits for my team. Game-changer for how we grow.",
   },
 ];
 

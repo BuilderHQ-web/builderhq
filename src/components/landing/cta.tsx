@@ -4,8 +4,10 @@ import { Reveal } from "./reveal";
 import type { CtaLinks } from "./cta-links";
 
 /**
- * Final CTA. Calm, centred, no animated rings — they were drawing the
- * eye away from the actual call to action.
+ * Final CTA. The closer. Single calm radial halo behind the headline,
+ * no competing motion. The microcopy under the buttons promises the
+ * three things every prospect needs to hear before they click:
+ * fast to set up, free for owners, real verified builders.
  */
 export function CTA({ cta }: { cta: CtaLinks }) {
   return (
@@ -26,12 +28,12 @@ export function CTA({ cta }: { cta: CtaLinks }) {
         <Reveal>
           <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
             <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
-            Free during launch
+            Two minutes to publish
           </span>
         </Reveal>
         <Reveal delay={0.05}>
           <h2 className="font-display uppercase tracking-[-0.02em] text-[clamp(3rem,7vw+1rem,7rem)] leading-[0.9]">
-            Ready when{" "}
+            Your build is{" "}
             <span
               className="text-accent-light"
               style={{
@@ -39,22 +41,23 @@ export function CTA({ cta }: { cta: CtaLinks }) {
                   "0 0 60px rgba(0,212,200,0.28), 0 0 120px rgba(0,212,200,0.10)",
               }}
             >
-              you are
-            </span>
-            .
+              one upload
+            </span>{" "}
+            away.
           </h2>
         </Reveal>
         <Reveal delay={0.12}>
           <p className="max-w-[560px] text-[15.5px] leading-[1.75] text-text-subtle">
-            Free for project owners forever. Founding builders unlock
-            projects with complimentary credits — limited spots.
+            Upload your plans, scope, and address. Verified Australian
+            builders take it from there — comparable tenders land in
+            your inbox in days, not weeks.
           </p>
         </Reveal>
         <Reveal delay={0.18}>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
             <Link
               href={cta.primary.href}
-              className="group inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms]"
+              className="group inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms] shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_28px_-8px_rgba(0,212,200,0.55)]"
             >
               {cta.primary.label}
               <ArrowUpRight className="size-4 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -67,6 +70,36 @@ export function CTA({ cta }: { cta: CtaLinks }) {
               <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
             </Link>
           </div>
+        </Reveal>
+        {/* Trust microcopy below the buttons — every prospect's final
+            three "before I click" questions, answered inline. */}
+        <Reveal delay={0.24}>
+          <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] tracking-[0.04em] text-text-dim">
+            <li className="inline-flex items-center gap-2">
+              <span
+                aria-hidden
+                className="size-[5px] rounded-full bg-accent-light"
+                style={{ boxShadow: "0 0 8px rgba(0,212,200,0.55)" }}
+              />
+              Free for owners — forever
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span
+                aria-hidden
+                className="size-[5px] rounded-full bg-accent-light"
+                style={{ boxShadow: "0 0 8px rgba(0,212,200,0.55)" }}
+              />
+              Every builder ABR + licence verified
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span
+                aria-hidden
+                className="size-[5px] rounded-full bg-accent-light"
+                style={{ boxShadow: "0 0 8px rgba(0,212,200,0.55)" }}
+              />
+              No commission on awarded contracts
+            </li>
+          </ul>
         </Reveal>
       </div>
     </section>
