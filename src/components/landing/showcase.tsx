@@ -206,16 +206,27 @@ function PerimeterBeam() {
 
 // ── dashboards ───────────────────────────────────────────────────────────
 
-function DashboardShell({ children }: { children: React.ReactNode }) {
+function DashboardShell({
+  children,
+  active = "Tenders",
+}: {
+  children: React.ReactNode;
+  active?: string;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr]">
-      <Sidebar />
+      <Sidebar active={active} />
       <div className="p-5 lg:p-7">{children}</div>
     </div>
   );
 }
 
-function Sidebar() {
+/**
+ * Sidebar mock — mirrors the actual owner-side app shell. The active
+ * highlight matches whichever dashboard tab is being shown so the
+ * route context reads as honest.
+ */
+function Sidebar({ active = "Tenders" }: { active?: string }) {
   return (
     <aside className="border-b lg:border-b-0 lg:border-r border-border-subtle bg-[rgba(255,255,255,0.012)] p-4">
       <div className="flex items-center gap-2 mb-6 px-2 py-2">
@@ -228,26 +239,24 @@ function Sidebar() {
         </span>
       </div>
       <nav className="flex flex-col gap-1">
-        {[
-          ["Dashboard", true],
-          ["Projects", false],
-          ["Tenders", false],
-          ["Messages", false],
-          ["Builders", false],
-          ["Settings", false],
-        ].map(([label, isActive]) => (
-          <span
-            key={label as string}
-            className={cn(
-              "px-3 py-2 rounded-sm text-[12px] transition-colors",
-              isActive
-                ? "bg-[rgba(0,212,200,0.06)] text-accent-light"
-                : "text-text-muted",
-            )}
-          >
-            {label}
-          </span>
-        ))}
+        {["Dashboard", "Projects", "Tenders", "Messages", "Settings"].map(
+          (label) => {
+            const isActive = label === active;
+            return (
+              <span
+                key={label}
+                className={cn(
+                  "px-3 py-2 rounded-sm text-[12px] transition-colors",
+                  isActive
+                    ? "bg-[rgba(0,212,200,0.06)] text-accent-light"
+                    : "text-text-muted",
+                )}
+              >
+                {label}
+              </span>
+            );
+          },
+        )}
       </nav>
     </aside>
   );
@@ -279,63 +288,287 @@ function DashboardHeader({
   );
 }
 
-// 1. Live tender tracking
+// 1. Live tender tracking — mirrors /owner/projects/[slug]/tenders
+//
+// Two stacked surfaces from the real product:
+//   • ProjectPulseHeader (5-tile KPI strip + price-distribution
+//     sparkline) — the "what's happening with my project, in 5
+//     seconds" view that owners land on after publish.
+//   • A compact tender list with verification chips, recommendation
+//     badges, median-delta pills.
 function DashboardTracking() {
   return (
-    <DashboardShell>
+    <DashboardShell active="Tenders">
       <DashboardHeader
-        eyebrow="Niddrie Townhouse · VIC 3042"
-        title="Tender activity"
+        eyebrow="Niddrie Townhouse · 3 tenders received"
+        title="Compare & decide"
+        badge="Comparing"
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-5">
-        {[
-          { label: "Builders matched", value: "18", trend: "+4 this week", up: true },
-          { label: "Unlocked", value: "12", trend: "67% of matched", up: true },
-          { label: "Tenders received", value: "03", trend: "Awaiting 9", up: true },
-          { label: "Avg. price", value: "$1.86M", trend: "Range $1.78–1.91M", up: false },
-        ].map((k) => (
-          <div
-            key={k.label}
-            className="px-4 py-3.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)]"
-          >
-            <div className="text-[9px] tracking-[0.16em] uppercase text-text-dim mb-1.5">
-              {k.label}
-            </div>
-            <div className="font-display tracking-[-0.01em] text-[28px] leading-none text-text tabular-nums">
-              {k.value}
-            </div>
-            <div
-              className={cn(
-                "mt-1.5 text-[10px]",
-                k.up ? "text-accent-light" : "text-text-muted",
-              )}
-            >
-              {k.trend}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.012)] p-4 mb-5">
-        <div className="flex items-baseline justify-between mb-3">
-          <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim">
-            Builder interest, last 14 days
+      {/* Project pulse — same five tiles + sparkline as the real page. */}
+      <div className="rounded-sm border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden mb-5">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle/60">
+          <span className="size-5 rounded-sm border border-border-accent/35 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </span>
-          <span className="text-[10px] text-text-dim font-mono">114 events</span>
+          <span className="text-[9px] tracking-[0.18em] uppercase text-accent font-medium">
+            Project pulse
+          </span>
         </div>
-        <Sparkline />
+        <div className="grid grid-cols-5 divide-x divide-border-subtle/60">
+          <PulseTile label="Tenders" value="3" sub="2 unique" />
+          <PulseTile label="Median" value="$1.86M" sub="$1.78M – $1.91M" />
+          <PulseTile
+            label="Spread"
+            value="7%"
+            sub="Tight — agreement"
+            tone="accent"
+          />
+          <PulseTile
+            label="Verified"
+            value="100%"
+            sub="ABN + Licence"
+            tone="accent"
+          />
+          <PulseTile label="Latest" value="2h ago" sub="Live 2d" />
+        </div>
+        <div className="px-4 py-3 border-t border-border-subtle/60">
+          <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim mb-2">
+            Price distribution
+          </div>
+          <PriceDistributionRail />
+        </div>
       </div>
 
-      <TenderTable />
+      {/* Compact tender list — same chips + recommendation badges as
+          the real comparison cards, rendered as rows for the showcase
+          (a 3-col grid here would be too cramped). */}
+      <div className="space-y-2">
+        <TenderRow
+          initials="JS"
+          builder="Smith Builders"
+          chips={["ABN ✓", "Licence ✓", "12y trading", "Won 3 on BHQ"]}
+          badge="Best value"
+          price="$1.78M"
+          medianDelta="-4% median"
+          duration="26w"
+          completeness={100}
+          highlight
+        />
+        <TenderRow
+          initials="AC"
+          builder="Chen Construction"
+          chips={["ABN ✓", "Licence ✓", "8y trading"]}
+          price="$1.91M"
+          medianDelta="+3% median"
+          duration="30w"
+          completeness={88}
+        />
+        <TenderRow
+          initials="MR"
+          builder="Roberts & Co"
+          chips={["ABN ✓", "Licence ✓", "15y trading"]}
+          price="$1.88M"
+          medianDelta="+1% median"
+          duration="28w"
+          completeness={75}
+        />
+      </div>
     </DashboardShell>
   );
 }
 
-// 2. One workspace per project
+// Pulse tile — single column on the strip up top.
+function PulseTile({
+  label,
+  value,
+  sub,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  tone?: "muted" | "accent";
+}) {
+  return (
+    <div className="px-3 py-3.5">
+      <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "font-display tabular-nums leading-none",
+          tone === "accent" ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 18 }}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] text-text-dim mt-1 truncate">{sub}</div>
+    </div>
+  );
+}
+
+// Mini price-distribution sparkline — three ticks on a rail with the
+// median marker centred. Same language as the real product.
+function PriceDistributionRail() {
+  return (
+    <div className="relative h-7">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-border-subtle -translate-y-1/2" />
+      <div
+        className="absolute top-1/2 h-px bg-accent/40 -translate-y-1/2"
+        style={{ left: 0, width: "50%" }}
+      />
+      <div
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-px h-3.5 bg-text"
+        style={{ left: "50%" }}
+      />
+      <span className="absolute left-0 -bottom-0.5 text-[8.5px] text-text-dim tabular-nums">
+        $1.78M
+      </span>
+      <span className="absolute right-0 -bottom-0.5 text-[8.5px] text-text-dim tabular-nums">
+        $1.91M
+      </span>
+      {[15, 50, 85].map((pct, idx) => (
+        <span
+          key={idx}
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2 rounded-full bg-accent border border-border-accent shadow-[0_0_0_2px_rgba(0,212,200,0.20)]"
+          style={{ left: `${pct}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Tender row — compact horizontal version of the real TenderCard.
+// All the same signals are present (verification chips, recommendation
+// badge, median delta, completeness) but laid out as a single line so
+// three rows fit naturally in the showcase frame.
+function TenderRow({
+  initials,
+  builder,
+  chips,
+  badge,
+  price,
+  medianDelta,
+  duration,
+  completeness,
+  highlight = false,
+}: {
+  initials: string;
+  builder: string;
+  chips: string[];
+  badge?: string;
+  price: string;
+  medianDelta: string;
+  duration: string;
+  completeness: number;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-sm border px-4 py-3 transition-colors",
+        highlight
+          ? "border-border-accent/55 bg-[rgba(0,212,200,0.05)]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+          }}
+        >
+          {initials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12.5px] font-semibold text-text truncate">
+              {builder}
+            </span>
+            {badge ? (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.16em] uppercase text-accent-light font-semibold">
+                {badge}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {chips.map((c) => (
+              <span
+                key={c}
+                className="text-[9px] tracking-[0.06em] uppercase px-1.5 py-0.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-dim"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div
+            className={cn(
+              "font-display tabular-nums leading-none",
+              highlight ? "text-accent-light" : "text-text",
+            )}
+            style={{ fontSize: 20 }}
+          >
+            {price}
+          </div>
+          <div
+            className={cn(
+              "mt-1 text-[9.5px] tabular-nums",
+              highlight ? "text-accent-light/80" : "text-text-dim",
+            )}
+          >
+            {medianDelta} · {duration}
+          </div>
+        </div>
+      </div>
+      {/* Completeness bar — same UX as the real TenderCard */}
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim">
+          Completeness
+        </span>
+        <div className="flex-1 h-[3px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+          <span
+            className={cn(
+              "block h-full rounded-full",
+              completeness >= 90
+                ? "bg-accent"
+                : completeness >= 60
+                  ? "bg-warning"
+                  : "bg-danger",
+            )}
+            style={{ width: `${completeness}%` }}
+          />
+        </div>
+        <span
+          className={cn(
+            "text-[10px] tabular-nums",
+            completeness >= 90
+              ? "text-accent-light"
+              : completeness >= 60
+                ? "text-warning"
+                : "text-danger",
+          )}
+        >
+          {completeness}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// 2. One workspace per project — same documents-list view owners
+// land on inside a project. Sidebar context is "Projects" since
+// they're inside the project workspace, not the tenders page.
 function DashboardWorkspace() {
   return (
-    <DashboardShell>
+    <DashboardShell active="Projects">
       <DashboardHeader
         eyebrow="Niddrie Townhouse · Documents"
         title="Project workspace"
@@ -415,138 +648,341 @@ function DashboardWorkspace() {
   );
 }
 
-// 3. Side-by-side compare
+// 3. Side-by-side compare — full TenderCard mock per column
+//
+// Mirrors the real TenderCard component on the comparison page:
+// recommendation banner, builder identity, trust chips, status pill,
+// big price + median-delta pill, stats grid (Duration / Start /
+// Expires), completeness bar, action buttons, doc-count footer.
+//
+// All three columns kept on the same vertical rhythm (every row
+// matches across cards — no jumpy alignment).
 function DashboardCompare() {
-  const builders = [
-    {
-      initials: "JS",
-      name: "Jordan Smith",
-      company: "Smith Builders",
-      price: "$1.78M",
-      timeline: "26 weeks",
-      inclusions: 14,
-      exclusions: 2,
-      primary: true,
-    },
-    {
-      initials: "AC",
-      name: "Alex Chen",
-      company: "Chen Construction",
-      price: "$1.91M",
-      timeline: "30 weeks",
-      inclusions: 16,
-      exclusions: 1,
-      primary: false,
-    },
-    {
-      initials: "MR",
-      name: "Mia Roberts",
-      company: "Roberts & Co",
-      price: "$1.88M",
-      timeline: "28 weeks",
-      inclusions: 13,
-      exclusions: 3,
-      primary: false,
-    },
-  ];
-
   return (
-    <DashboardShell>
+    <DashboardShell active="Tenders">
       <DashboardHeader
-        eyebrow="Niddrie Townhouse · 3 tenders"
-        title="Compare tenders"
-        badge="Open"
+        eyebrow="Niddrie Townhouse · 3 tenders · sorted by price"
+        title="Compare side-by-side"
+        badge="Comparing"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {builders.map((b) => (
-          <div
-            key={b.initials}
-            className={cn(
-              "rounded-sm border p-4 transition-colors",
-              b.primary
-                ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
-                : "border-border-subtle bg-[rgba(255,255,255,0.012)]",
-            )}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <span
-                className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-                }}
-              >
-                {b.initials}
-              </span>
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-text truncate">
-                  {b.name}
-                </div>
-                <div className="text-[10.5px] text-text-dim truncate">
-                  {b.company}
-                </div>
-              </div>
-              {b.primary ? (
-                <span className="ml-auto text-[8.5px] tracking-[0.16em] uppercase text-accent border border-border-accent px-1.5 py-0.5 rounded-sm">
-                  Lead
-                </span>
-              ) : null}
-            </div>
-
-            <div
-              className={cn(
-                "font-display text-[34px] leading-none tabular-nums mb-2",
-                b.primary ? "text-accent-light" : "text-text",
-              )}
-            >
-              {b.price}
-            </div>
-            <div className="text-[11px] text-text-dim mb-4">
-              Timeline · {b.timeline}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <Stat label="Inclusions" value={b.inclusions} good />
-              <Stat label="Exclusions" value={b.exclusions} good={false} />
-            </div>
-
-            <button
-              type="button"
-              className={cn(
-                "w-full px-3 h-8 rounded-sm text-[11px] tracking-[0.12em] uppercase border transition-colors",
-                b.primary
-                  ? "border-border-accent bg-accent-muted/40 text-accent-light hover:bg-accent-muted/70"
-                  : "border-border-subtle text-text-muted hover:text-text hover:border-border",
-              )}
-            >
-              View full tender
-            </button>
-          </div>
-        ))}
+        <TenderCardMock
+          initials="JS"
+          company="Smith Builders"
+          person="Jordan Smith"
+          recommendation="Best value"
+          status="Submitted"
+          chips={[
+            ["ABN verified", "ok"],
+            ["Licence verified", "ok"],
+            ["12y trading", "muted"],
+            ["Won 3 on BHQ", "accent"],
+          ]}
+          price="$1.78M"
+          priceTone="lowest"
+          medianDelta="-4% below median"
+          duration="26w"
+          start="Jul 2026"
+          expires="14d"
+          completeness={100}
+          missing="All sections complete"
+          docs={4}
+          highlight
+        />
+        <TenderCardMock
+          initials="AC"
+          company="Chen Construction"
+          person="Alex Chen"
+          status="Shortlisted"
+          chips={[
+            ["ABN verified", "ok"],
+            ["Licence verified", "ok"],
+            ["8y trading", "muted"],
+          ]}
+          price="$1.91M"
+          medianDelta="+3% above median"
+          duration="30w"
+          start="Jul 2026"
+          expires="9d"
+          completeness={88}
+          missing="Missing: Pitch"
+          docs={3}
+        />
+        <TenderCardMock
+          initials="MR"
+          company="Roberts & Co"
+          person="Mia Roberts"
+          status="Submitted"
+          chips={[
+            ["ABN verified", "ok"],
+            ["Licence verified", "ok"],
+            ["15y trading", "muted"],
+          ]}
+          price="$1.88M"
+          medianDelta="+1% above median"
+          duration="28w"
+          start="Aug 2026"
+          expires="11d"
+          completeness={75}
+          missing="Missing: Pitch · Documents"
+          docs={1}
+        />
       </div>
     </DashboardShell>
   );
 }
 
-function Stat({
+// Marketing-side mock of the real TenderCard. Visually identical to
+// what owners see on /owner/projects/[slug]/tenders so the showcase
+// promises what it delivers.
+function TenderCardMock({
+  initials,
+  company,
+  person,
+  recommendation,
+  status,
+  chips,
+  price,
+  priceTone = "default",
+  medianDelta,
+  duration,
+  start,
+  expires,
+  completeness,
+  missing,
+  docs,
+  highlight = false,
+}: {
+  initials: string;
+  company: string;
+  person: string;
+  recommendation?: string;
+  status: "Submitted" | "Shortlisted" | "Awarded" | "Rejected";
+  chips: Array<[string, "ok" | "muted" | "accent"]>;
+  price: string;
+  priceTone?: "default" | "lowest";
+  medianDelta: string;
+  duration: string;
+  start: string;
+  expires: string;
+  completeness: number;
+  missing: string;
+  docs: number;
+  highlight?: boolean;
+}) {
+  const statusCls = (() => {
+    switch (status) {
+      case "Shortlisted":
+        return "border-[rgba(126,245,237,0.55)] bg-[rgba(126,245,237,0.10)] text-accent-light";
+      case "Awarded":
+        return "border-[rgba(126,245,237,0.70)] bg-[rgba(126,245,237,0.18)] text-accent-light";
+      case "Rejected":
+        return "border-[rgba(255,120,120,0.40)] bg-[rgba(255,120,120,0.06)] text-[rgba(255,160,160,0.95)]";
+      default:
+        return "border-border-accent bg-accent-muted/40 text-accent-light";
+    }
+  })();
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border p-4 shadow-[0_14px_36px_-22px_rgba(0,0,0,0.55)]",
+        highlight
+          ? "border-border-accent/60 bg-[linear-gradient(160deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]"
+          : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+      )}
+    >
+      {highlight ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-12 -right-12 size-44 rounded-full opacity-50"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(0,212,200,0.30), transparent 70%)",
+          }}
+        />
+      ) : null}
+
+      <div className="relative">
+        {/* Reserved-height recommendation slot so card rows align */}
+        <div className="h-[24px] mb-2 flex items-center">
+          {recommendation ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-accent bg-accent-muted/40 text-[9px] tracking-[0.16em] uppercase text-accent-light font-semibold">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3"><path d="M6 9H4.5a2.5 2.5 0 010-5H6m12 5h1.5a2.5 2.5 0 000-5H18M6 4h12v8a6 6 0 11-12 0V4zm6 14v4m-3 0h6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              {recommendation}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Builder identity */}
+        <div className="flex items-start gap-2.5 mb-3">
+          <span
+            className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+            }}
+          >
+            {initials}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-semibold text-text truncate">
+              {company}
+            </div>
+            <div className="text-[10.5px] text-text-dim truncate">
+              {person}
+            </div>
+          </div>
+        </div>
+
+        {/* Trust chips */}
+        <div className="flex flex-wrap gap-1 mb-2.5">
+          {chips.map(([label, tone]) => (
+            <span
+              key={label}
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.06em] uppercase",
+                tone === "ok" &&
+                  "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
+                tone === "accent" &&
+                  "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
+                tone === "muted" &&
+                  "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-dim",
+              )}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+
+        {/* Status pill */}
+        <span
+          className={cn(
+            "inline-flex items-center px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
+            statusCls,
+          )}
+        >
+          {status}
+        </span>
+
+        {/* Price + median delta */}
+        <div className="mt-4">
+          <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+            Total price
+          </div>
+          <div
+            className={cn(
+              "font-display tabular-nums leading-none",
+              priceTone === "lowest" ? "text-accent-light" : "text-text",
+            )}
+            style={{ fontSize: 26 }}
+          >
+            {price}
+          </div>
+          <div className="mt-1.5 min-h-[18px] flex flex-wrap items-center gap-1.5">
+            {priceTone === "lowest" ? (
+              <span className="inline-flex items-center gap-1 text-[9.5px] tracking-[0.14em] uppercase text-accent-light">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3"><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8l3 3M5 19l3-3m8-8l3-3" strokeLinecap="round" /></svg>
+                Lowest of selected
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 rounded-sm border text-[9px] tracking-[0.06em] uppercase",
+                medianDelta.startsWith("-")
+                  ? "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light"
+                  : "border-warning/30 bg-[rgba(255,181,71,0.06)] text-warning",
+              )}
+            >
+              {medianDelta}
+            </span>
+          </div>
+        </div>
+
+        {/* Stats grid */}
+        <div className="mt-4 pt-3 grid grid-cols-3 gap-2 border-t border-border-subtle/60">
+          <MiniStat label="Duration" value={duration} />
+          <MiniStat label="Start" value={start} />
+          <MiniStat
+            label="Expires"
+            value={expires}
+            tone={expires.endsWith("d") && parseInt(expires) <= 7 ? "warn" : "default"}
+          />
+        </div>
+
+        {/* Completeness */}
+        <div className="mt-3 pt-3 border-t border-border-subtle/60">
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim">
+              Completeness
+            </span>
+            <span
+              className={cn(
+                "text-[10px] tabular-nums",
+                completeness >= 90
+                  ? "text-accent-light"
+                  : completeness >= 60
+                    ? "text-warning"
+                    : "text-danger",
+              )}
+            >
+              {completeness}%
+            </span>
+          </div>
+          <div className="h-1 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+            <span
+              className={cn(
+                "block h-full rounded-full",
+                completeness >= 90
+                  ? "bg-accent"
+                  : completeness >= 60
+                    ? "bg-warning"
+                    : "bg-danger",
+              )}
+              style={{ width: `${completeness}%` }}
+            />
+          </div>
+          <div className="mt-1 text-[9.5px] text-text-dim leading-[1.4]">
+            {missing}
+          </div>
+        </div>
+
+        {/* Action row */}
+        <div className="mt-3 pt-3 border-t border-border-subtle/60 flex flex-wrap gap-1.5">
+          <ActionPill label="Shortlist" />
+          <ActionPill label="Award" tone="primary" />
+          <ActionPill label="Reject" tone="danger" />
+        </div>
+
+        {/* Doc footer */}
+        <div className="mt-3 pt-2 border-t border-border-subtle/60 flex items-center gap-1.5 text-[10px] text-text-dim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-4 13l4 4-4-4z" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {docs} document{docs === 1 ? "" : "s"} attached
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({
   label,
   value,
-  good,
+  tone = "default",
 }: {
   label: string;
-  value: number;
-  good: boolean;
+  value: string;
+  tone?: "default" | "warn";
 }) {
   return (
-    <div className="px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)]">
+    <div>
       <div className="text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
         {label}
       </div>
       <div
         className={cn(
-          "font-display tracking-[-0.01em] text-[18px] leading-none tabular-nums",
-          good ? "text-accent-light" : "text-text-muted",
+          "text-[12px] tabular-nums font-semibold",
+          tone === "warn" ? "text-warning" : "text-text",
         )}
       >
         {value}
@@ -555,136 +991,26 @@ function Stat({
   );
 }
 
-// ── shared atoms ─────────────────────────────────────────────────────────
-
-function TenderTable() {
+function ActionPill({
+  label,
+  tone = "default",
+}: {
+  label: string;
+  tone?: "default" | "primary" | "danger";
+}) {
   return (
-    <div className="rounded-sm border border-border-subtle overflow-hidden">
-      <div className="grid grid-cols-[1.6fr_1fr_1fr_auto] gap-4 px-4 py-2.5 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle">
-        {["Builder", "Price", "Timeline", ""].map((h, i) => (
-          <span
-            key={i}
-            className="text-[9px] tracking-[0.16em] uppercase text-text-dim"
-          >
-            {h}
-          </span>
-        ))}
-      </div>
-      {[
-        { initials: "JS", name: "Jordan Smith", company: "Smith Builders", price: "$1.78M", time: "26 weeks", primary: true },
-        { initials: "AC", name: "Alex Chen", company: "Chen Construction", price: "$1.91M", time: "30 weeks", primary: false },
-        { initials: "MR", name: "Mia Roberts", company: "Roberts & Co", price: "$1.88M", time: "28 weeks", primary: false },
-      ].map((b, i, arr) => (
-        <div
-          key={b.initials}
-          className={cn(
-            "grid grid-cols-[1.6fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center transition-colors hover:bg-[rgba(255,255,255,0.022)]",
-            i === arr.length - 1 ? "" : "border-b border-border-subtle",
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold border border-border-accent text-accent-light shrink-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-              }}
-            >
-              {b.initials}
-            </span>
-            <div className="min-w-0">
-              <div className="text-[12px] font-semibold text-text truncate">
-                {b.name}
-              </div>
-              <div className="text-[10px] text-text-dim truncate">
-                {b.company}
-              </div>
-            </div>
-          </div>
-          <div
-            className={cn(
-              "font-display text-[18px] tabular-nums",
-              b.primary ? "text-accent-light" : "text-text",
-            )}
-          >
-            {b.price}
-          </div>
-          <div className="text-[12px] text-text-muted tabular-nums">
-            {b.time}
-          </div>
-          <button
-            type="button"
-            className={cn(
-              "px-3 h-7 rounded-sm text-[10px] tracking-[0.12em] uppercase border transition-colors",
-              b.primary
-                ? "border-border-accent bg-accent-muted/40 text-accent-light hover:bg-accent-muted/70"
-                : "border-border-subtle text-text-muted hover:text-text hover:border-border",
-            )}
-          >
-            View
-          </button>
-        </div>
-      ))}
-    </div>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 h-7 px-2.5 rounded-sm text-[9.5px] tracking-[0.10em] uppercase border",
+        tone === "primary"
+          ? "border-border-accent bg-accent-muted/60 text-accent-light"
+          : tone === "danger"
+            ? "border-[rgba(255,120,120,0.30)] text-[rgba(255,160,160,0.95)]"
+            : "border-border-subtle text-text-muted",
+      )}
+    >
+      {label}
+    </span>
   );
 }
 
-function Sparkline() {
-  const points = [22, 30, 28, 38, 34, 46, 50, 48, 58, 62, 58, 70, 76, 84];
-  const max = Math.max(...points);
-  const w = 100;
-  const h = 100;
-  const path = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * w;
-      const y = h - (p / max) * h;
-      return `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    })
-    .join(" ");
-  const area = `${path} L ${w} ${h} L 0 ${h} Z`;
-
-  return (
-    <div className="relative h-[140px]">
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        className="absolute inset-0 w-full h-full"
-      >
-        <defs>
-          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(0,212,200,0.30)" />
-            <stop offset="100%" stopColor="rgba(0,212,200,0)" />
-          </linearGradient>
-        </defs>
-        <motion.path
-          d={area}
-          fill="url(#chartFill)"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        />
-        <motion.path
-          d={path}
-          fill="none"
-          stroke="#7ef5ed"
-          strokeWidth="0.6"
-          vectorEffect="non-scaling-stroke"
-          strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          whileInView={{ pathLength: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </svg>
-      {[0, 25, 50, 75].map((y) => (
-        <span
-          key={y}
-          aria-hidden
-          className="absolute left-0 right-0 h-px bg-[rgba(255,255,255,0.04)]"
-          style={{ top: `${y}%` }}
-        />
-      ))}
-    </div>
-  );
-}
