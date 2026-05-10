@@ -63,6 +63,7 @@ export default async function BuilderOnboardingPage() {
               state: a.state,
               suburb: a.suburb,
               postcode: a.postcode,
+              radiusKm: a.radiusKm,
             })) ?? [],
           licences:
             bundle?.licences.map((l) => ({

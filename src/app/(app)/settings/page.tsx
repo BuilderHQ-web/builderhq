@@ -7,7 +7,7 @@ import {
   Briefcase,
   Hammer,
   Lock,
-  Settings as SettingsIcon,
+  Sliders,
   User,
 } from "lucide-react";
 
@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { OwnerSettingsForm } from "./owner-form";
+import { PreferencesForm } from "./preferences-form";
 
 export const metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
@@ -48,130 +49,198 @@ export default async function SettingsPage() {
   // Owner profile (entity type, contact pref, defaults) — only for owners.
   const ownerProfile = role === "project_owner" ? await getOwnerProfile(userId) : null;
 
+  // Quick-jump nav entries — built role-aware so builders / owners see
+  // only the sections that apply. The same hash anchors hang off each
+  // <SettingsSection> so the sticky list stays in sync.
+  const navItems: Array<{
+    id: string;
+    label: string;
+    icon: React.ReactNode;
+  }> = [
+    { id: "identity", label: "Identity", icon: <User className="size-3" /> },
+  ];
+  if (role === "project_owner") {
+    navItems.push({
+      id: "owner-prefs",
+      label: "You & your projects",
+      icon: <Briefcase className="size-3" />,
+    });
+  }
+  if (role === "builder") {
+    navItems.push({
+      id: "public-profile",
+      label: "Public profile",
+      icon: <Hammer className="size-3" />,
+    });
+  }
+  navItems.push(
+    { id: "password", label: "Password", icon: <Lock className="size-3" /> },
+    {
+      id: "preferences",
+      label: "Preferences",
+      icon: <Sliders className="size-3" />,
+    },
+    {
+      id: "danger",
+      label: "Danger zone",
+      icon: <AlertTriangle className="size-3" />,
+    },
+  );
+
   return (
     <>
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Update your profile, security, and preferences across BuilderHQ."
+        description={
+          role === "builder"
+            ? "Identity, password, and per-device preferences. Your public builder profile — company, licences, service areas — lives in its own editor."
+            : role === "project_owner"
+              ? "Identity, password, project defaults, and per-device preferences."
+              : "Update your profile, security, and preferences across BuilderHQ."
+        }
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-6 max-w-3xl">
-        {/* Account — name, phone, email */}
-        <Reveal immediate delay={0.04}>
-          <SettingsSection
-            kicker="Profile"
-            icon={<User className="size-3.5" />}
-            title="Identity"
-            description="Your name, contact phone, and email across BuilderHQ. Email change comes with re-verification — coming soon."
-          >
-            <ProfileForm
-              defaultFirstName={user.firstName ?? ""}
-              defaultLastName={user.lastName ?? ""}
-              defaultPhone={user.phone ?? ""}
-              email={user.email}
-            />
-          </SettingsSection>
-        </Reveal>
+      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1080px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-10">
+        {/* Sticky quick-jump nav — collapses to a horizontal scroller
+              on mobile via flex-wrap. Keeps long settings lists scannable. */}
+        <aside className="hidden lg:block">
+          <nav className="sticky top-20 flex flex-col gap-1 text-[12.5px]">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui font-medium mb-2 px-3">
+              Sections
+            </span>
+            {navItems.map((n) => (
+              <a
+                key={n.id}
+                href={`#${n.id}`}
+                className={cn(
+                  "group flex items-center gap-2.5 px-3 py-2 rounded-sm",
+                  "text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.03)]",
+                  "transition-colors duration-[140ms]",
+                )}
+              >
+                <span className="text-text-faint group-hover:text-accent-light transition-colors">
+                  {n.icon}
+                </span>
+                {n.label}
+              </a>
+            ))}
+          </nav>
+        </aside>
 
-        {/* Owner-only — entity type + defaults + contact preference */}
-        {role === "project_owner" ? (
-          <Reveal immediate delay={0.10}>
+        <div className="flex flex-col gap-5 min-w-0">
+          {/* Account — name, phone, email */}
+          <Reveal immediate delay={0.04}>
             <SettingsSection
-              kicker="Project preferences"
-              icon={<Briefcase className="size-3.5" />}
-              title="You & your projects"
-              description="How builders see you when they unlock a project, plus saved defaults so new project uploads don't start from a blank state."
+              id="identity"
+              kicker="Profile"
+              icon={<User className="size-3.5" />}
+              title="Identity"
+              description="Your name, contact phone, and email across BuilderHQ. Email change comes with re-verification — coming soon."
             >
-              <OwnerSettingsForm
-                defaults={{
-                  entityType: ownerProfile?.entityType ?? null,
-                  companyName: ownerProfile?.companyName ?? null,
-                  defaultSuburb: ownerProfile?.defaultSuburb ?? null,
-                  defaultState: ownerProfile?.defaultState ?? null,
-                  defaultPostcode: ownerProfile?.defaultPostcode ?? null,
-                  contactPref: ownerProfile?.contactPref ?? "email",
-                }}
+              <ProfileForm
+                defaultFirstName={user.firstName ?? ""}
+                defaultLastName={user.lastName ?? ""}
+                defaultPhone={user.phone ?? ""}
+                email={user.email}
               />
             </SettingsSection>
           </Reveal>
-        ) : null}
 
-        {/* Builder-only — pointer to public profile editor */}
-        {role === "builder" ? (
-          <Reveal immediate delay={0.10}>
-            <SettingsSection
-              kicker="Public profile"
-              icon={<Hammer className="size-3.5" />}
-              title="What owners see"
-              description="Your company identity, licences, service areas, and the rest of the public-facing profile lives in its own editor — built for the depth that page deserves."
-            >
-              <Link
-                href="/builder/profile"
-                className={cn(
-                  "group inline-flex items-center gap-2 h-10 px-4 rounded-full",
-                  "border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
-                  "text-[12.5px] font-semibold tracking-[0.04em]",
-                  "hover:bg-[rgba(0,212,200,0.10)] transition-colors duration-[140ms]",
-                  "active:scale-[0.985] active:duration-[80ms]",
-                )}
+          {/* Owner-only — entity type + defaults + contact preference */}
+          {role === "project_owner" ? (
+            <Reveal immediate delay={0.10}>
+              <SettingsSection
+                id="owner-prefs"
+                kicker="Project preferences"
+                icon={<Briefcase className="size-3.5" />}
+                title="You & your projects"
+                description="How builders see you when they unlock a project, plus saved defaults so new project uploads don't start from a blank state."
               >
-                Open public profile
-                <ArrowUpRight className="size-3.5 transition-transform duration-[140ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Link>
+                <OwnerSettingsForm
+                  defaults={{
+                    entityType: ownerProfile?.entityType ?? null,
+                    companyName: ownerProfile?.companyName ?? null,
+                    defaultSuburb: ownerProfile?.defaultSuburb ?? null,
+                    defaultState: ownerProfile?.defaultState ?? null,
+                    defaultPostcode: ownerProfile?.defaultPostcode ?? null,
+                    contactPref: ownerProfile?.contactPref ?? "email",
+                  }}
+                />
+              </SettingsSection>
+            </Reveal>
+          ) : null}
+
+          {/* Builder-only — pointer to public profile editor */}
+          {role === "builder" ? (
+            <Reveal immediate delay={0.10}>
+              <SettingsSection
+                id="public-profile"
+                kicker="Public profile"
+                icon={<Hammer className="size-3.5" />}
+                title="What owners see"
+                description="Your company identity, licences, service areas, and the rest of the public-facing profile lives in its own editor — built for the depth that page deserves."
+              >
+                <Link
+                  href="/builder/profile"
+                  className={cn(
+                    "group inline-flex items-center gap-2 h-10 px-4 rounded-full",
+                    "border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
+                    "text-[12.5px] font-semibold tracking-[0.04em]",
+                    "hover:bg-[rgba(0,212,200,0.10)] transition-colors duration-[140ms]",
+                    "active:scale-[0.985] active:duration-[80ms]",
+                  )}
+                >
+                  Open public profile
+                  <ArrowUpRight className="size-3.5 transition-transform duration-[140ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              </SettingsSection>
+            </Reveal>
+          ) : null}
+
+          {/* Security — password */}
+          <Reveal immediate delay={0.16}>
+            <SettingsSection
+              id="password"
+              kicker="Security"
+              icon={<Lock className="size-3.5" />}
+              title="Password"
+              description="Choose a strong password — minimum 10 characters. You'll be signed out of this device after changing."
+            >
+              <PasswordForm />
             </SettingsSection>
           </Reveal>
-        ) : null}
 
-        {/* Security — password */}
-        <Reveal immediate delay={0.16}>
-          <SettingsSection
-            kicker="Security"
-            icon={<Lock className="size-3.5" />}
-            title="Password"
-            description="Choose a strong password — minimum 10 characters. You'll be signed out of this device after changing."
-          >
-            <PasswordForm />
-          </SettingsSection>
-        </Reveal>
+          {/* Preferences — real toggles instead of placeholder bullets */}
+          <Reveal immediate delay={0.20}>
+            <SettingsSection
+              id="preferences"
+              kicker="Preferences"
+              icon={<Sliders className="size-3.5" />}
+              title="App behaviour"
+              description="Per-device settings that follow you on this browser. Toggle once and they stick."
+            >
+              <PreferencesForm />
+            </SettingsSection>
+          </Reveal>
 
-        {/* Preferences */}
-        <Reveal immediate delay={0.20}>
-          <SettingsSection
-            kicker="Preferences"
-            icon={<SettingsIcon className="size-3.5" />}
-            title="App behaviour"
-            description="Browser-side settings that live in this device. Sound on send for chat lives in the messaging thread header — toggle once and it sticks."
-          >
-            <ul className="text-[12.5px] text-text-muted space-y-2 leading-[1.65]">
-              <li className="flex items-start gap-2">
-                <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)] mt-2 shrink-0" />
-                Reduced motion follows your operating system preference automatically.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)] mt-2 shrink-0" />
-                Email notifications and digest frequency arrive with the
-                outbound email pass.
-              </li>
-            </ul>
-          </SettingsSection>
-        </Reveal>
-
-        {/* Danger zone */}
-        <Reveal immediate delay={0.24}>
-          <SettingsSection
-            tone="danger"
-            kicker="Danger zone"
-            icon={<AlertTriangle className="size-3.5" />}
-            title="Permanent actions"
-            description="Account deletion ships in Phase 2 alongside the data-export tool."
-          >
-            <div className="text-[13px] text-text-dim flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-warning shadow-[0_0_8px_rgba(255,181,71,0.5)]" />
-              Account deletion is intentionally locked off until export is in place.
-            </div>
-          </SettingsSection>
-        </Reveal>
+          {/* Danger zone */}
+          <Reveal immediate delay={0.24}>
+            <SettingsSection
+              id="danger"
+              tone="danger"
+              kicker="Danger zone"
+              icon={<AlertTriangle className="size-3.5" />}
+              title="Permanent actions"
+              description="Account deletion ships in Phase 2 alongside the data-export tool."
+            >
+              <div className="text-[13px] text-text-dim flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-warning shadow-[0_0_8px_rgba(255,181,71,0.5)]" />
+                Account deletion is intentionally locked off until export is in place.
+              </div>
+            </SettingsSection>
+          </Reveal>
+        </div>
       </div>
     </>
   );
@@ -180,6 +249,7 @@ export default async function SettingsPage() {
 type SectionTone = "default" | "danger";
 
 function SettingsSection({
+  id,
   kicker,
   icon,
   title,
@@ -187,6 +257,8 @@ function SettingsSection({
   children,
   tone = "default",
 }: {
+  /** Anchor id used by the sidebar quick-jump nav. */
+  id?: string;
   kicker: string;
   icon: React.ReactNode;
   title: string;
@@ -196,8 +268,11 @@ function SettingsSection({
 }) {
   return (
     <section
+      id={id}
+      // scroll-mt accounts for the sticky app header so the section
+      // header isn't hidden when the user clicks a quick-jump link.
       className={cn(
-        "rounded-md border overflow-hidden",
+        "scroll-mt-24 rounded-md border overflow-hidden",
         "bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]",
         tone === "danger" ? "border-danger/25" : "border-border-subtle",
       )}

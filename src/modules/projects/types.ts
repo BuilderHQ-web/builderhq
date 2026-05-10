@@ -87,6 +87,23 @@ export type MarketplaceFilters = {
   budgets?: Array<NonNullable<ProjectRow["budgetBand"]>>;
   /** Restrict to projects whose suburb is in this list (matched feed). */
   suburbsIn?: string[];
+  /**
+   * Builder service-area scoping. Each entry is one of the builder's
+   * service areas, already collapsed by radius:
+   *
+   *   - `statewide: true`  → match any project in `state`
+   *   - `statewide: false` → match only projects whose state+suburb
+   *                          equal `state`+`suburb`
+   *
+   * Multiple entries OR together. Used by the dashboard's "suggested"
+   * feed so a builder with one tight Essendon area + one statewide WA
+   * area gets both kinds of project in the feed.
+   */
+  serviceAreaMatch?: Array<{
+    state: NonNullable<ProjectRow["state"]>;
+    suburb: string | null;
+    statewide: boolean;
+  }>;
   /** Pagination. */
   limit?: number;
   offset?: number;

@@ -50,10 +50,20 @@ export default async function BuilderDashboard() {
   const profile = userId
     ? await safe("builder_profile", getBuilderProfile(userId), null)
     : null;
-  const matchedSuburbs =
+  // Build a per-area match list that respects each area's radius.
+  // radius >= 50km flips that area to a state-wide predicate; smaller
+  // radii keep it locked to the named suburb. The previous single
+  // suburbs-list approach couldn't express "tight here, wide there",
+  // which made the slider in onboarding meaningless.
+  const serviceAreaMatch =
     profile?.serviceAreas
-      .map((s) => s.suburb)
-      .filter((s): s is string => Boolean(s)) ?? [];
+      .map((s) => ({
+        state: s.state,
+        suburb: s.suburb ?? null,
+        statewide: s.radiusKm >= 50,
+      }))
+      // Drop entries that have no signal (suburb=null AND not statewide).
+      .filter((m) => m.statewide || m.suburb !== null) ?? [];
   const matchedCategories =
     profile?.categories.map((c) => c.category) ?? [];
 
@@ -79,7 +89,9 @@ export default async function BuilderDashboard() {
         ...(matchedCategories.length === 1
           ? { type: matchedCategories[0]! }
           : {}),
-        ...(matchedSuburbs.length > 0 ? { suburbsIn: matchedSuburbs } : {}),
+        ...(serviceAreaMatch.length > 0
+          ? { serviceAreaMatch }
+          : {}),
         limit: 6,
       }),
       [],
@@ -135,7 +147,7 @@ export default async function BuilderDashboard() {
       label: "Suggested for you",
       value: suggested.length,
       hint:
-        matchedSuburbs.length > 0 || matchedCategories.length > 0
+        serviceAreaMatch.length > 0 || matchedCategories.length > 0
           ? "Based on your service area"
           : "Set service area in Settings",
     },
@@ -258,7 +270,7 @@ export default async function BuilderDashboard() {
             <SectionHeader
             title="Suggested for you"
             description={
-              matchedCategories.length > 0 || matchedSuburbs.length > 0
+              matchedCategories.length > 0 || serviceAreaMatch.length > 0
                 ? "Projects in your service area + categories."
                 : "Recent published projects."
             }
@@ -277,7 +289,7 @@ export default async function BuilderDashboard() {
                 icon={<Compass className="size-5" />}
                 title="No matches yet"
                 description={
-                  matchedSuburbs.length > 0 || matchedCategories.length > 0
+                  serviceAreaMatch.length > 0 || matchedCategories.length > 0
                     ? "We're matching to your service area + categories — check back soon, or widen your scope in Settings."
                     : "Set a service area in Settings to start seeing residential projects matched to where you build."
                 }
@@ -286,7 +298,7 @@ export default async function BuilderDashboard() {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
               {suggested.map((p) => (
                 <ProjectCard
                   key={p.id}
@@ -321,7 +333,7 @@ export default async function BuilderDashboard() {
                   ) : null
                 }
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
                 {recentUnlocks.map((p) => (
                   <ProjectCard
                     key={p.id}
@@ -356,7 +368,7 @@ export default async function BuilderDashboard() {
                   ) : null
                 }
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
                 {savedRecent.map((p) => (
                   <ProjectCard
                     key={p.id}

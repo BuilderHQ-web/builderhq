@@ -119,6 +119,12 @@ const serviceAreaSchema = z.object({
   /** Null suburb = entire state coverage. */
   suburb: z.string().max(120).trim().nullish(),
   postcode: postcode.nullish(),
+  /**
+   * Willingness-to-travel from the named suburb in km. Bounded so the
+   * slider can't be coerced into nonsense values via a hand-crafted
+   * payload. Default 25 km matches the wizard slider's initial value.
+   */
+  radiusKm: z.number().int().min(5).max(150).default(25),
 });
 export const setServiceAreasSchema = z.object({
   areas: z
@@ -607,6 +613,7 @@ export async function setBuilderServiceAreas(
           state: a.state,
           suburb: a.suburb ?? null,
           postcode: a.postcode ?? null,
+          radiusKm: a.radiusKm,
         })),
       );
     }

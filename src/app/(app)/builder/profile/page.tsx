@@ -122,6 +122,7 @@ export default async function BuilderProfileRoute() {
         state: s.state,
         suburb: s.suburb ?? null,
         postcode: s.postcode ?? null,
+        radiusKm: s.radiusKm,
       }))}
       licences={bundle.licences.map((l) => ({
         id: l.id,

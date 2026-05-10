@@ -71,9 +71,14 @@ export default async function SavedPage() {
             primary={{ label: "Browse projects", href: "/builder/browse" }}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
             {projects.map((p, i) => (
-              <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.2)}>
+              <Reveal
+                key={p.id}
+                immediate
+                delay={Math.min(i * 0.04, 0.2)}
+                className="h-full"
+              >
                 <ProjectCard
                   project={p}
                   isSaved={true}

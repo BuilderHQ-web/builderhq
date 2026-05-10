@@ -442,6 +442,35 @@ export function TenderForm({
       <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6">
         {/* Main column */}
         <div className="space-y-5 min-w-0">
+          {/* SECTION 0 — Documents (promoted to first position so it
+                can't be missed; accent ring signals "important"). */}
+          <DocsRailCard
+            docs={docs}
+            activeUploads={activeUploads}
+            dragOver={dragOver}
+            isLocked={isLocked}
+            hasDraft={!!tender}
+            onDragOverSet={(v) => setDragOver(v)}
+            onDropFiles={onDropFiles}
+            onDownload={async (id) => {
+              const r = await getDownloadUrlAction(id);
+              if (!r.ok) {
+                toast.error("Download failed", r.error.message);
+                return;
+              }
+              window.open(r.value.url, "_blank", "noopener");
+            }}
+            onDelete={async (id) => {
+              if (!confirm("Delete this document?")) return;
+              const r = await softDeleteDocAction(id);
+              if (!r.ok) {
+                toast.error("Couldn't delete", r.error.message);
+                return;
+              }
+              await refreshDocs();
+            }}
+          />
+
           {/* SECTION 1 — The number */}
           <Section
             icon={<Wallet className="size-4" />}
@@ -621,7 +650,8 @@ export function TenderForm({
           ) : null}
         </div>
 
-        {/* Sticky right rail — live summary + prominent docs upload + TOC */}
+        {/* Sticky right rail — live summary + TOC. The docs upload now
+              lives at the top of the main column so it can't be missed. */}
         <aside className="hidden lg:block">
           <div className="sticky top-20 space-y-4">
             <LiveSummaryCard
@@ -635,37 +665,11 @@ export function TenderForm({
               ready={ready}
             />
 
-            <DocsRailCard
-              docs={docs}
-              activeUploads={activeUploads}
-              dragOver={dragOver}
-              isLocked={isLocked}
-              hasDraft={!!tender}
-              onDragOverSet={(v) => setDragOver(v)}
-              onDropFiles={onDropFiles}
-              onDownload={async (id) => {
-                const r = await getDownloadUrlAction(id);
-                if (!r.ok) {
-                  toast.error("Download failed", r.error.message);
-                  return;
-                }
-                window.open(r.value.url, "_blank", "noopener");
-              }}
-              onDelete={async (id) => {
-                if (!confirm("Delete this document?")) return;
-                const r = await softDeleteDocAction(id);
-                if (!r.ok) {
-                  toast.error("Couldn't delete", r.error.message);
-                  return;
-                }
-                await refreshDocs();
-              }}
-            />
-
             <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-3">
               <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-2 px-1">
                 Jump to section
               </div>
+              <TocLink href="#section-tender-documents" label="Documents" />
               <TocLink href="#section-the-number" label="The number" />
               <TocLink href="#section-cost-breakdown" label="Cost breakdown" />
               <TocLink href="#section-scope" label="Scope" />
@@ -1280,30 +1284,58 @@ function DocsRailCard({
   onDelete: (id: string) => void | Promise<void>;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]">
-      <div className="px-4 py-3 border-b border-border-subtle/60 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center">
-            <Upload className="size-3.5" />
-          </span>
-          <div>
-            <div className="text-[12.5px] font-semibold text-text">
-              Tender documents
-            </div>
-            <div className="text-[10.5px] text-text-dim">
-              {docs.length === 0
-                ? "Optional, but powerful — owners read these"
-                : `${docs.length} attached`}
-            </div>
-          </div>
-        </div>
-      </div>
+    <section
+      id="section-tender-documents"
+      className={cn(
+        "relative overflow-hidden rounded-md",
+        // Stronger visual weight than the other sections — accent border
+        // + glow so the eye lands here first.
+        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(10,28,44,0.55)_45%,rgba(6,18,30,0.78))]",
+        "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.30),0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+      )}
+    >
+      {/* Soft accent halo top-right */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-20 -right-16 size-64 rounded-full opacity-50"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.20), transparent 70%)",
+        }}
+      />
 
-      <div className="p-4 space-y-3">
+      <header className="relative px-6 py-5 border-b border-border-subtle/60 flex items-start gap-3">
+        <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center shrink-0">
+          <Upload className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+              Step 1
+            </span>
+            <span className="text-text-dim/60 text-[10px]">·</span>
+            <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">
+              {docs.length === 0
+                ? "Recommended for every tender"
+                : `${docs.length} attached`}
+            </span>
+          </div>
+          <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
+            Tender documents
+          </h2>
+          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-text-muted max-w-[58ch]">
+            Drop your BoQ PDF, insurance certificates, and past-project sheets
+            here. Owners read these before they read your number — strong
+            documents win tenders.
+          </p>
+        </div>
+      </header>
+
+      <div className="relative p-6 space-y-4">
         {/* AI-extract teaser */}
-        <div className="rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)] px-3 py-2 flex items-start gap-2">
-          <Sparkles className="size-3.5 text-accent-light shrink-0 mt-0.5" />
-          <div className="text-[11px] leading-[1.5]">
+        <div className="rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)] px-3.5 py-2.5 flex items-start gap-2.5">
+          <Sparkles className="size-4 text-accent-light shrink-0 mt-0.5" />
+          <div className="text-[12px] leading-[1.55]">
             <div className="text-accent-light font-semibold">
               AI auto-fill — coming soon
             </div>
@@ -1313,7 +1345,7 @@ function DocsRailCard({
           </div>
         </div>
 
-        {/* Drop zone */}
+        {/* Drop zone — promoted to a full-width, taller target */}
         <label
           onDragOver={(e) => {
             e.preventDefault();
@@ -1326,10 +1358,10 @@ function DocsRailCard({
             onDropFiles(e.dataTransfer.files);
           }}
           className={cn(
-            "block cursor-pointer rounded-md border-2 border-dashed p-5 text-center transition-colors",
+            "block cursor-pointer rounded-md border-2 border-dashed p-7 sm:p-9 text-center transition-colors",
             dragOver
-              ? "border-border-accent bg-[rgba(0,212,200,0.06)]"
-              : "border-border-subtle hover:border-border bg-[rgba(255,255,255,0.012)]",
+              ? "border-border-accent bg-[rgba(0,212,200,0.08)]"
+              : "border-border-subtle hover:border-border-accent/60 hover:bg-[rgba(0,212,200,0.03)] bg-[rgba(255,255,255,0.012)]",
             (isLocked || !hasDraft) && "opacity-50 pointer-events-none",
           )}
         >
@@ -1340,15 +1372,15 @@ function DocsRailCard({
             className="sr-only"
             onChange={(e) => e.target.files && onDropFiles(e.target.files)}
           />
-          <Upload className="mx-auto size-5 text-accent-light mb-2" />
-          <div className="text-[12.5px] text-text">
-            Drop files, or{" "}
-            <span className="text-accent-light underline underline-offset-4">
+          <Upload className="mx-auto size-7 text-accent-light mb-2.5" />
+          <div className="text-[15px] font-semibold text-text">
+            Drop files here, or{" "}
+            <span className="text-accent-light underline underline-offset-[6px] decoration-2">
               browse
             </span>
           </div>
-          <div className="mt-1 text-[10px] text-text-dim">
-            BoQ PDF · insurance · past projects · max 100 MB
+          <div className="mt-1.5 text-[11.5px] text-text-dim">
+            BoQ PDF · insurance · past projects · max 100 MB per file
           </div>
         </label>
 
@@ -1444,7 +1476,7 @@ function DocsRailCard({
           </ul>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }
 

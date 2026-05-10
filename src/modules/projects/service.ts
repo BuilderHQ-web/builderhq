@@ -286,6 +286,29 @@ export async function listForMarketplace(
     conds.push(inArray(projects.suburb, filters.suburbsIn));
   }
 
+  // Service-area scoped feed (used by the builder dashboard's "Suggested"
+  // row). Each entry is OR'd so a builder with multiple service areas
+  // sees the union of matching projects.
+  //
+  //   - statewide=true  → eq(state, X)
+  //   - statewide=false → and(eq(state, X), eq(suburb, Y))
+  //
+  // Entries with statewide=false but suburb=null are skipped (no signal
+  // to match on).
+  if (filters.serviceAreaMatch && filters.serviceAreaMatch.length > 0) {
+    const ors = filters.serviceAreaMatch
+      .map((m) => {
+        if (m.statewide) return eq(projects.state, m.state);
+        if (!m.suburb) return null;
+        return and(eq(projects.state, m.state), eq(projects.suburb, m.suburb));
+      })
+      .filter((c): c is NonNullable<typeof c> => c != null);
+    if (ors.length > 0) {
+      const combined = ors.length === 1 ? ors[0]! : or(...ors)!;
+      conds.push(combined);
+    }
+  }
+
   const rows = await db
     .select({
       id: projects.id,

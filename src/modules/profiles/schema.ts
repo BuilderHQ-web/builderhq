@@ -302,6 +302,15 @@ export const builderLicences = pgTable(
  * Project-to-builder matching joins on (state, suburb) with a fallback to
  * (state) for builders that just want statewide coverage (one row with
  * suburb = NULL).
+ *
+ * `radius_km` is a builder-set willingness-to-travel from the suburb.
+ * The marketplace matcher uses it as a tier toggle:
+ *
+ *   - radius < 50 km  → strict suburb match (the named suburb only)
+ *   - radius >= 50 km → state-wide match (any project in the same state)
+ *
+ * The slider lets builders dial up coverage per-area without us needing
+ * a postcode/lat-lng distance table.
  */
 export const builderServiceAreas = pgTable(
   "builder_service_areas",
@@ -314,6 +323,12 @@ export const builderServiceAreas = pgTable(
     /** Null suburb = entire state. */
     suburb: text(),
     postcode: text(),
+    /**
+     * Radius in km the builder is willing to travel from the named suburb.
+     * Default 25 km is a typical metro commute. >= 50 km flips matching
+     * to state-wide for that area.
+     */
+    radiusKm: integer("radius_km").notNull().default(25),
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),

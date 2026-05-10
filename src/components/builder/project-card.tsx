@@ -111,7 +111,10 @@ export function ProjectCard({
     <Link
       href={`/builder/projects/${project.slug}`}
       className={cn(
-        "group relative flex flex-col rounded-md border overflow-hidden",
+        // h-full + flex-col guarantees every card matches the tallest
+        // card in the row when the parent grid uses auto-rows-fr. The
+        // inner body uses flex-1 so its footer sticks to the bottom.
+        "group relative flex h-full flex-col rounded-md border overflow-hidden",
         "transition-[transform,border-color,box-shadow,background-color] duration-[260ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
         "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
         "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
@@ -210,27 +213,29 @@ export function ProjectCard({
         {/* Budget — anchored bottom-left of the cover */}
         {project.budgetBand ? (
           <div className="absolute bottom-3 left-3">
-            <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted/80 mb-0.5">
+            <div className="text-[9px] tracking-[0.18em] uppercase text-text-muted/80 mb-1">
               Project budget
             </div>
-            <div className="font-display text-[20px] leading-none text-accent-light tabular-nums">
+            <div className="font-display text-[22px] leading-none text-accent-light tabular-nums">
               {BUDGET_LABEL[project.budgetBand]}
             </div>
           </div>
         ) : null}
 
         {/* FBA-active price tag in the cover (slashed list price + $0)
-             — anchored bottom-right. Skipped if already unlocked. */}
+             — anchored bottom-right. Skipped if already unlocked. The
+             slashed price is visibly readable and the "$0" pops two
+             steps larger so the savings register at a glance. */}
         {!isUnlocked && fbaActive ? (
           <div className="absolute bottom-3 right-3 text-right">
-            <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted/80 mb-0.5">
+            <div className="text-[9px] tracking-[0.18em] uppercase text-text-muted/80 mb-1">
               Unlock cost
             </div>
             <div className="flex items-baseline justify-end gap-1.5">
-              <span className="text-[11px] text-text-dim line-through decoration-[rgba(255,255,255,0.35)] decoration-1 tabular-nums">
+              <span className="font-display text-[16px] leading-none text-text-dim line-through decoration-[rgba(255,255,255,0.4)] decoration-[1.5px] tabular-nums">
                 ${priceAud}
               </span>
-              <span className="font-display text-[20px] leading-none text-accent-light tabular-nums">
+              <span className="font-display text-[26px] leading-none text-accent-light tabular-nums">
                 $0
               </span>
             </div>

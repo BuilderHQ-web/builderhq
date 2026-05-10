@@ -124,6 +124,8 @@ interface ServiceArea {
   state: AustralianState;
   suburb: string | null;
   postcode: string | null;
+  /** km willing to travel; 5..150, default 25. >= 50 flips to statewide match. */
+  radiusKm: number;
 }
 
 interface Licence {
@@ -1009,6 +1011,7 @@ function ServiceAreasSection({ initial }: { initial: ServiceArea[] }) {
         state: state as AustralianState,
         suburb: suburb || null,
         postcode: postcode || null,
+        radiusKm: 25,
       },
     ]);
     setSaved(false);
@@ -1053,39 +1056,80 @@ function ServiceAreasSection({ initial }: { initial: ServiceArea[] }) {
       kicker="Where you build"
       icon={MapPin}
       title="Service areas"
-      description="Add the suburbs, postcodes, or whole states you'll travel to. State-only entries (no suburb) match every project in that state."
+      description="Add the suburbs, postcodes, or whole states you'll travel to, then set how far you'll travel from each. Bigger radii widen which projects we suggest on your dashboard."
     >
       <div className="flex flex-col gap-5">
         {/* Existing areas */}
         {areas.length > 0 ? (
-          <ul className="flex flex-col gap-1.5">
-            {areas.map((a, i) => (
-              <li
-                key={`${a.state}-${a.suburb ?? "all"}-${a.postcode ?? "any"}-${i}`}
-                className="flex items-center gap-3 px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
-              >
-                <MapPin className="size-3.5 text-text-faint shrink-0" />
-                <span className="text-[12.5px] text-text">
-                  {a.suburb ? a.suburb : "All of "}
-                  <span className="font-mono tabular-nums text-text-muted">
-                    {a.state}
-                  </span>
-                  {a.postcode ? (
-                    <span className="text-text-dim ml-1.5 font-mono tabular-nums">
-                      {a.postcode}
-                    </span>
-                  ) : null}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => remove(i)}
-                  aria-label={`Remove ${a.suburb ?? a.state}`}
-                  className="ml-auto size-6 rounded-sm text-text-faint hover:text-danger transition-colors flex items-center justify-center"
+          <ul className="flex flex-col gap-2">
+            {areas.map((a, i) => {
+              const isStatewide = a.radiusKm >= 50;
+              const setRadius = (km: number) => {
+                setAreas((arr) =>
+                  arr.map((row, idx) =>
+                    idx === i ? { ...row, radiusKm: km } : row,
+                  ),
+                );
+                setSaved(false);
+              };
+              return (
+                <li
+                  key={`${a.state}-${a.suburb ?? "all"}-${a.postcode ?? "any"}-${i}`}
+                  className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] px-3.5 py-3"
                 >
-                  <Trash2 className="size-3" />
-                </button>
-              </li>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <MapPin className="size-3.5 text-text-faint shrink-0" />
+                    <span className="text-[12.5px] text-text">
+                      {a.suburb ? a.suburb : "All of "}
+                      <span className="font-mono tabular-nums text-text-muted">
+                        {a.state}
+                      </span>
+                      {a.postcode ? (
+                        <span className="text-text-dim ml-1.5 font-mono tabular-nums">
+                          {a.postcode}
+                        </span>
+                      ) : null}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => remove(i)}
+                      aria-label={`Remove ${a.suburb ?? a.state}`}
+                      className="ml-auto size-6 rounded-sm text-text-faint hover:text-danger transition-colors flex items-center justify-center"
+                    >
+                      <Trash2 className="size-3" />
+                    </button>
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-3">
+                    <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui shrink-0">
+                      Radius
+                    </span>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      step={5}
+                      value={Math.min(a.radiusKm, 100)}
+                      onChange={(e) => setRadius(Number(e.target.value))}
+                      className="flex-1 accent-accent"
+                      aria-label={`Radius for ${a.suburb ?? a.state}`}
+                    />
+                    <span className="text-[12px] font-display tabular-nums text-accent-light shrink-0 w-[60px] text-right">
+                      {a.radiusKm >= 100 ? "100+ km" : `${a.radiusKm} km`}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "mt-1 text-[10.5px] leading-[1.5]",
+                      isStatewide ? "text-accent-light" : "text-text-dim",
+                    )}
+                  >
+                    {isStatewide
+                      ? `Statewide match — projects across all of ${a.state}`
+                      : `Suburb match — ${a.suburb ?? a.state} only`}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-[12px] text-text-dim">No service areas yet.</p>

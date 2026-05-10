@@ -54,6 +54,8 @@ interface ServiceArea {
   state: AustralianState;
   suburb: string | null;
   postcode: string | null;
+  /** km willing to travel — 5..150, default 25. >= 50 flips to statewide match. */
+  radiusKm: number;
 }
 
 interface Licence {
@@ -1053,6 +1055,7 @@ function ServiceAreasStep({
       state: draftState as AustralianState,
       suburb: draftSuburb,
       postcode: draftPostcode || null,
+      radiusKm: 25,
     };
     if (
       values.some(
@@ -1074,6 +1077,10 @@ function ServiceAreasStep({
     onChange(values.filter((_, idx) => idx !== i));
   }
 
+  function setRadius(i: number, radiusKm: number) {
+    onChange(values.map((a, idx) => (idx === i ? { ...a, radiusKm } : a)));
+  }
+
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (values.length === 0) {
@@ -1093,7 +1100,7 @@ function ServiceAreasStep({
     <form onSubmit={submit}>
       <StepShell
         title="Where do you cover?"
-        description="Add the suburbs you take projects in. We use this to match you to relevant uploads. Type a postcode and pick the suburb."
+        description="Add the suburbs you take projects in, then dial each radius for how far you'll travel. We use this to suggest projects on your dashboard — bigger radius = more suggestions."
         footer={
           <>
             <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
@@ -1108,28 +1115,14 @@ function ServiceAreasStep({
         }
       >
         {values.length > 0 ? (
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-2.5">
             {values.map((a, i) => (
-              <li
+              <ServiceAreaRow
                 key={`${a.state}-${a.suburb}-${i}`}
-                className="flex items-center gap-3 rounded-tight border border-border-subtle bg-surface-1 px-3.5 py-2"
-              >
-                <MapPin className="size-3.5 text-accent shrink-0" />
-                <span className="text-[13px] text-text">
-                  {a.suburb ?? "Statewide"}
-                </span>
-                <span className="ml-auto text-[10px] tracking-[0.18em] uppercase text-text-dim font-mono">
-                  {a.state}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => remove(i)}
-                  className="text-text-faint hover:text-danger transition-colors"
-                  aria-label="Remove area"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </li>
+                area={a}
+                onRadiusChange={(r) => setRadius(i, r)}
+                onRemove={() => remove(i)}
+              />
             ))}
           </ul>
         ) : (
@@ -1173,6 +1166,83 @@ function ServiceAreasStep({
         {state.error ? <ErrorBanner>{state.error}</ErrorBanner> : null}
       </StepShell>
     </form>
+  );
+}
+
+/**
+ * Service-area row with an inline radius slider. The slider's effective
+ * tier is shown as a sub-label so the builder understands what their
+ * radius value means for matching:
+ *
+ *   - < 50 km  → "matches projects in this suburb"
+ *   - >= 50 km → "matches projects across the whole state"
+ */
+function ServiceAreaRow({
+  area,
+  onRadiusChange,
+  onRemove,
+}: {
+  area: ServiceArea;
+  onRadiusChange: (km: number) => void;
+  onRemove: () => void;
+}) {
+  const isStatewide = area.radiusKm >= 50;
+  const tierLabel = isStatewide
+    ? `Statewide match · all of ${area.state}`
+    : `Suburb match · ${area.suburb ?? area.state} only`;
+
+  return (
+    <li className="rounded-md border border-border-subtle bg-surface-1 px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        <MapPin className="size-3.5 text-accent shrink-0" />
+        <span className="text-[13px] text-text font-medium">
+          {area.suburb ?? "Statewide"}
+        </span>
+        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-mono">
+          {area.state}
+        </span>
+        {area.postcode ? (
+          <span className="text-[11px] text-text-dim font-mono tabular-nums">
+            {area.postcode}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="ml-auto text-text-faint hover:text-danger transition-colors"
+          aria-label="Remove area"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center gap-3">
+        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui shrink-0">
+          Radius
+        </span>
+        <input
+          type="range"
+          min={5}
+          max={100}
+          step={5}
+          value={Math.min(area.radiusKm, 100)}
+          onChange={(e) => onRadiusChange(Number(e.target.value))}
+          className="flex-1 accent-accent"
+          aria-label={`Radius for ${area.suburb ?? area.state}`}
+        />
+        <span className="text-[12.5px] font-display tabular-nums text-accent-light shrink-0 w-[64px] text-right">
+          {area.radiusKm >= 100 ? "100+ km" : `${area.radiusKm} km`}
+        </span>
+      </div>
+      <div
+        className={cn(
+          "mt-1.5 text-[10.5px] leading-[1.5]",
+          isStatewide ? "text-accent-light" : "text-text-dim",
+        )}
+      >
+        {tierLabel}
+      </div>
+    </li>
   );
 }
 
@@ -1781,7 +1851,7 @@ function ReviewStep({
           <div className="flex flex-wrap gap-1.5">
             {serviceAreas.map((a, i) => (
               <Badge key={i} variant="default">
-                {a.suburb ?? "Statewide"} · {a.state}
+                {a.suburb ?? "Statewide"} · {a.state} · {a.radiusKm}km
               </Badge>
             ))}
           </div>
