@@ -85,6 +85,13 @@
       "when": 1778900000000,
       "tag": "0011_service_area_radius",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779000000000,
+      "tag": "0012_marketing_emails",
+      "breakpoints": true
     }
   ]
 }

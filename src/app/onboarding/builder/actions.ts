@@ -2,16 +2,23 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 import { auth, unstable_update } from "@/modules/auth";
 import {
   addBuilderLicence,
+  getBuilderProfile,
   removeBuilderLicence,
   setBuilderProjectCategories,
   setBuilderServiceAreas,
   submitBuilderForApproval,
   upsertBuilderProfile,
 } from "@/modules/profiles";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { users } from "@/modules/users/schema";
+import { sendBuilderSignupOpsEmail } from "@/modules/email";
+import { hasFullVerificationForApproval } from "@/modules/verification";
 
 export interface ActionState {
   ok?: true;
@@ -192,6 +199,45 @@ export async function submitForApprovalAction(): Promise<ActionState> {
   const userId = await requireUserId();
   const result = await submitBuilderForApproval(userId);
   if (!result.ok) return { error: result.error.message };
+
+  // Ops heads-up — fire-and-forget so the redirect isn't blocked on
+  // email latency. Includes verification chips so ops can see at a
+  // glance whether anything needs manual review.
+  void (async () => {
+    try {
+      const [u] = await db
+        .select({
+          email: users.email,
+          name: users.name,
+          phone: users.phone,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const bundle = await getBuilderProfile(userId);
+      const v = await hasFullVerificationForApproval(userId);
+      if (u) {
+        await sendBuilderSignupOpsEmail({
+          builderName: u.name,
+          builderEmail: u.email,
+          builderPhone: u.phone,
+          companyName: bundle?.profile?.companyName ?? null,
+          abn: bundle?.profile?.abn ?? null,
+          abnVerified: v.abnVerified,
+          anyLicenceVerified: v.anyLicenceVerified,
+          approvalStatus: bundle?.profile?.approvalStatus ?? "incomplete",
+          state: bundle?.profile?.businessState ?? null,
+          signedUpAt: new Date(),
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(
+        { event: "ops_email.builder_signup.threw", userId, msg },
+        "builder signup ops email threw — continuing",
+      );
+    }
+  })();
 
   await unstable_update({ user: {} });
   revalidatePath("/", "layout");

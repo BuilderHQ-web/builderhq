@@ -210,6 +210,19 @@ export async function publish(
     .returning();
   if (!row) return fail("internal", "Failed to publish project.");
 
+  // Fan-out: owner confirmation, ops heads-up, fan-out to builders.
+  // Fire-and-forget — the publish action returns immediately and the
+  // bulk send runs in the background. Lazy import keeps the module
+  // graph clean.
+  void (async () => {
+    try {
+      const { dispatchProjectPublishedEvent } = await import("./dispatch");
+      await dispatchProjectPublishedEvent(row.id);
+    } catch {
+      /* dispatch is internally try/catch'd; this is belt-and-braces */
+    }
+  })();
+
   return ok(row);
 }
 

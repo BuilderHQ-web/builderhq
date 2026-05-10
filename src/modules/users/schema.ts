@@ -19,6 +19,7 @@ import {
   pgEnum,
   uuid,
   text,
+  boolean,
   timestamp,
   uniqueIndex,
   index,
@@ -66,6 +67,21 @@ export const users = pgTable(
     signupSource: text(),
     signupCampaign: text(),
 
+    // Marketing-class email gate. Default true; flipped by the
+    // /unsubscribe/[token] one-click route or the settings toggle.
+    // Operational emails (welcome, receipts, tender outcomes) ignore
+    // this flag — only the bulk new-project blast respects it.
+    marketingEmailsEnabled: boolean("marketing_emails_enabled")
+      .notNull()
+      .default(true),
+    /**
+     * Per-user opaque token for the unsubscribe URL. Generated lazily
+     * on first marketing send and persisted thereafter — UNIQUE so the
+     * unsubscribe page can locate the user from the URL alone (no
+     * login needed, the token IS auth).
+     */
+    unsubscribeToken: uuid("unsubscribe_token"),
+
     // Activity & lifecycle.
     lastSeenAt: timestamp({ mode: "date", withTimezone: true }),
     createdAt: timestamp({ mode: "date", withTimezone: true })
@@ -82,6 +98,7 @@ export const users = pgTable(
   (t) => [
     uniqueIndex("users_email_unique").on(t.email),
     uniqueIndex("users_stripe_customer_unique").on(t.stripeCustomerId),
+    uniqueIndex("users_unsubscribe_token_unique").on(t.unsubscribeToken),
     index("users_role_idx").on(t.role),
     index("users_status_idx").on(t.status),
     index("users_created_at_idx").on(t.createdAt),

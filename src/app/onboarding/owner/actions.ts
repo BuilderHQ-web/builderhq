@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 import {
   auth,
@@ -9,8 +10,13 @@ import {
 } from "@/modules/auth";
 import {
   completeOwnerOnboarding,
+  getOwnerProfile,
   upsertOwnerProfile,
 } from "@/modules/profiles";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { users } from "@/modules/users/schema";
+import { sendOwnerSignupOpsEmail } from "@/modules/email";
 
 export interface OwnerOnboardingState {
   ok?: true;
@@ -63,6 +69,40 @@ export async function ownerOnboardingAction(
 
   const complete = await completeOwnerOnboarding(userId);
   if (!complete.ok) return { error: complete.error.message };
+
+  // Ops heads-up — fire-and-forget so the redirect isn't blocked on
+  // Resend latency. Failure is logged inside the send wrapper.
+  void (async () => {
+    try {
+      const [u] = await db
+        .select({
+          email: users.email,
+          name: users.name,
+          phone: users.phone,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const profile = await getOwnerProfile(userId);
+      if (u) {
+        await sendOwnerSignupOpsEmail({
+          ownerName: u.name,
+          ownerEmail: u.email,
+          ownerPhone: u.phone,
+          entityType: profile?.entityType ?? null,
+          companyName: profile?.companyName ?? null,
+          state: profile?.defaultState ?? null,
+          signedUpAt: new Date(),
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(
+        { event: "ops_email.owner_signup.threw", userId, msg },
+        "owner signup ops email threw — continuing",
+      );
+    }
+  })();
 
   // Trigger a JWT refresh so any in-token flags (role/status) sync — also
   // ensures the (app) layout re-renders sidebar with fresh role state.

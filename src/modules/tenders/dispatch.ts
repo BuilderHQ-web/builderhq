@@ -43,6 +43,8 @@ import { builderProfiles, projectOwnerProfiles } from "@/modules/profiles/schema
 import { create as createNotification } from "@/modules/notifications";
 import {
   sendTenderSubmittedEmail,
+  sendTenderSubmittedBuilderEmail,
+  sendTenderSubmittedOpsEmail,
   sendTenderShortlistedEmail,
   sendTenderAwardedEmail,
   sendTenderRejectedEmail,
@@ -202,6 +204,7 @@ export async function dispatchTenderEvent(
             ? formatAud(ctx.tender.totalPriceAud)
             : "Tender submitted";
         await Promise.allSettled([
+          // Owner — bell + email
           createNotification({
             userId: ctx.owner.id,
             kind: "tender_submitted",
@@ -220,6 +223,29 @@ export async function dispatchTenderEvent(
             durationWeeks: ctx.tender.durationWeeks ?? 0,
             validityDays: ctx.tender.validityDays ?? 0,
             reviewUrl,
+          }),
+          // Builder — confirmation
+          sendTenderSubmittedBuilderEmail({
+            to: ctx.builder.email,
+            builderFirstName: ctx.builder.firstName,
+            projectTitle: ctx.project.title,
+            totalPriceAud: ctx.tender.totalPriceAud ?? 0,
+            durationWeeks: ctx.tender.durationWeeks ?? 0,
+            validityDays: ctx.tender.validityDays ?? 0,
+            tenderUrl,
+          }),
+          // Ops — heads-up
+          sendTenderSubmittedOpsEmail({
+            projectTitle: ctx.project.title,
+            projectUrl: tenderUrl,
+            builderCompany: ctx.builder.company,
+            builderEmail: ctx.builder.email,
+            ownerName: ctx.owner.name,
+            ownerEmail: ctx.owner.email,
+            totalPriceAud: ctx.tender.totalPriceAud,
+            durationWeeks: ctx.tender.durationWeeks,
+            validityDays: ctx.tender.validityDays,
+            submittedAt: new Date(),
           }),
         ]);
         break;

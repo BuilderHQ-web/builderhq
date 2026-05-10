@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 import {
   auth,
@@ -10,6 +11,9 @@ import {
   updateProfile,
 } from "@/modules/auth";
 import { upsertOwnerProfile } from "@/modules/profiles";
+import { db } from "@/lib/db";
+import { users } from "@/modules/users/schema";
+import { fail, ok, type Result } from "@/lib/result";
 
 export interface SettingsActionState {
   ok?: true;
@@ -141,4 +145,41 @@ export async function updateOwnerSettingsAction(
 
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+// ── Preferences (per-user, server-side) ───────────────────────────────
+
+/**
+ * Per-user marketing email opt-in. Used by the Preferences card on the
+ * settings page. Returns the resulting flag value so the client can
+ * sync state without a refetch — and any error so we can surface a
+ * toast.
+ */
+export async function setMarketingEmailsEnabledAction(
+  enabled: boolean,
+): Promise<Result<{ enabled: boolean }>> {
+  const userId = await requireUserId();
+  if (!userId) return fail("forbidden", "Not authenticated.");
+
+  await db
+    .update(users)
+    .set({ marketingEmailsEnabled: enabled })
+    .where(eq(users.id, userId));
+
+  return ok({ enabled });
+}
+
+/**
+ * Read the current flag — used by the settings page's server load so
+ * the toggle hydrates with the right state on first render.
+ */
+export async function getMarketingEmailsEnabled(): Promise<boolean> {
+  const userId = await requireUserId();
+  if (!userId) return true;
+  const [row] = await db
+    .select({ enabled: users.marketingEmailsEnabled })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return row?.enabled ?? true;
 }

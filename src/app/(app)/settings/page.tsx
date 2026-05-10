@@ -23,6 +23,7 @@ import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { OwnerSettingsForm } from "./owner-form";
 import { PreferencesForm } from "./preferences-form";
+import { getMarketingEmailsEnabled } from "./actions";
 
 export const metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
@@ -48,6 +49,11 @@ export default async function SettingsPage() {
 
   // Owner profile (entity type, contact pref, defaults) — only for owners.
   const ownerProfile = role === "project_owner" ? await getOwnerProfile(userId) : null;
+
+  // Marketing-class email toggle state — same flag the unsubscribe
+  // route flips. Loaded server-side so the toggle hydrates with the
+  // right value on first render (no flash of wrong state).
+  const marketingEmailsEnabled = await getMarketingEmailsEnabled();
 
   // Quick-jump nav entries — built role-aware so builders / owners see
   // only the sections that apply. The same hash anchors hang off each
@@ -220,7 +226,9 @@ export default async function SettingsPage() {
               title="App behaviour"
               description="Per-device settings that follow you on this browser. Toggle once and they stick."
             >
-              <PreferencesForm />
+              <PreferencesForm
+                initialMarketingEmailsEnabled={marketingEmailsEnabled}
+              />
             </SettingsSection>
           </Reveal>
 

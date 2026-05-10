@@ -24,12 +24,29 @@ import { fail, ok, type Result } from "@/lib/result";
 import { VerificationEmail } from "@/emails/VerificationEmail";
 import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
+import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
+import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
 import { TenderShortlistedEmail } from "@/emails/TenderShortlistedEmail";
 import { TenderAwardedEmail } from "@/emails/TenderAwardedEmail";
 import { TenderRejectedEmail } from "@/emails/TenderRejectedEmail";
 import { TenderWithdrawnEmail } from "@/emails/TenderWithdrawnEmail";
+import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
+import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
+import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
+import { ProjectPublishedBuilderEmail } from "@/emails/ProjectPublishedBuilderEmail";
+import { ProjectPublishedOpsEmail } from "@/emails/ProjectPublishedOpsEmail";
+import { UnlockOwnerEmail } from "@/emails/UnlockOwnerEmail";
+import { UnlockBuilderEmail } from "@/emails/UnlockBuilderEmail";
+import { UnlockOpsEmail } from "@/emails/UnlockOpsEmail";
 
 const resend = new Resend(env.RESEND_API_KEY);
+
+/**
+ * Hardcoded ops inbox. The same address regardless of environment, so
+ * baking it in beats threading another env var. If we ever need a
+ * staging variant we'll lift it to env at that point.
+ */
+export const OPS_EMAIL = "info@builderhq.com.au";
 
 interface SendVerificationEmailInput {
   to: string;
@@ -351,6 +368,495 @@ export async function sendTenderWithdrawnEmail(
   logger.info(
     { event: "email.tender_withdrawn.sent", to: input.to, resendId: data.id },
     "tender_withdrawn email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Tender — builder-side submit confirmation ──────────────────────────
+
+interface SendTenderSubmittedBuilderEmailInput {
+  to: string;
+  builderFirstName: string | null;
+  projectTitle: string;
+  totalPriceAud: number;
+  durationWeeks: number;
+  validityDays: number;
+  tenderUrl: string;
+}
+
+export async function sendTenderSubmittedBuilderEmail(
+  input: SendTenderSubmittedBuilderEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Tender submitted — ${input.projectTitle}`;
+  const props = {
+    builderFirstName: input.builderFirstName,
+    projectTitle: input.projectTitle,
+    totalPriceAud: input.totalPriceAud,
+    durationWeeks: input.durationWeeks,
+    validityDays: input.validityDays,
+    tenderUrl: input.tenderUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(TenderSubmittedBuilderEmail(props)),
+    render(TenderSubmittedBuilderEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.tender_submitted_builder.failed", to: input.to, code: error.name, message: error.message },
+      "tender_submitted (builder) email send failed",
+    );
+    return fail("external_error", "Couldn't send tender confirmation email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.tender_submitted_builder.sent", to: input.to, resendId: data.id },
+    "tender_submitted (builder) email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Ops emails (info@) ─────────────────────────────────────────────────
+//
+// Internal heads-up emails sent on signup / publish / unlock / tender.
+// Volumes stay low through launch; we taper them off once dashboards
+// give ops the same signal in-product.
+
+interface SendOwnerSignupOpsEmailInput {
+  ownerName: string | null;
+  ownerEmail: string;
+  ownerPhone: string | null;
+  entityType: string | null;
+  companyName: string | null;
+  state: string | null;
+  signedUpAt: Date;
+}
+
+export async function sendOwnerSignupOpsEmail(
+  input: SendOwnerSignupOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] New owner: ${input.ownerName ?? input.ownerEmail}`;
+  const [html, text] = await Promise.all([
+    render(OwnerSignupOpsEmail(input)),
+    render(OwnerSignupOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_owner_signup.failed", code: error.name, message: error.message },
+      "owner signup ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_owner_signup.sent", resendId: data.id },
+    "owner signup ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendBuilderSignupOpsEmailInput {
+  builderName: string | null;
+  builderEmail: string;
+  builderPhone: string | null;
+  companyName: string | null;
+  abn: string | null;
+  abnVerified: boolean;
+  anyLicenceVerified: boolean;
+  approvalStatus: string;
+  state: string | null;
+  signedUpAt: Date;
+}
+
+export async function sendBuilderSignupOpsEmail(
+  input: SendBuilderSignupOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] New builder: ${input.companyName ?? input.builderName ?? input.builderEmail}`;
+  const [html, text] = await Promise.all([
+    render(BuilderSignupOpsEmail(input)),
+    render(BuilderSignupOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_builder_signup.failed", code: error.name, message: error.message },
+      "builder signup ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_builder_signup.sent", resendId: data.id },
+    "builder signup ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendProjectPublishedOpsEmailInput {
+  projectTitle: string;
+  projectType: string;
+  suburb: string | null;
+  state: string | null;
+  budgetBand: string | null;
+  ownerName: string | null;
+  ownerEmail: string;
+  documentCount: number;
+  projectUrl: string;
+}
+
+export async function sendProjectPublishedOpsEmail(
+  input: SendProjectPublishedOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] Project published: ${input.projectTitle}`;
+  const [html, text] = await Promise.all([
+    render(ProjectPublishedOpsEmail(input)),
+    render(ProjectPublishedOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_project_published.failed", code: error.name, message: error.message },
+      "project published ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_project_published.sent", resendId: data.id },
+    "project published ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendUnlockOpsEmailInput {
+  projectTitle: string;
+  projectUrl: string;
+  builderCompany: string;
+  builderEmail: string;
+  ownerName: string | null;
+  ownerEmail: string;
+  source: string;
+  unlockedAt: Date;
+}
+
+export async function sendUnlockOpsEmail(
+  input: SendUnlockOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] Unlock: ${input.builderCompany} → ${input.projectTitle}`;
+  const [html, text] = await Promise.all([
+    render(UnlockOpsEmail(input)),
+    render(UnlockOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_unlock.failed", code: error.name, message: error.message },
+      "unlock ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_unlock.sent", resendId: data.id },
+    "unlock ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendTenderSubmittedOpsEmailInput {
+  projectTitle: string;
+  projectUrl: string;
+  builderCompany: string;
+  builderEmail: string;
+  ownerName: string | null;
+  ownerEmail: string;
+  totalPriceAud: number | null;
+  durationWeeks: number | null;
+  validityDays: number | null;
+  submittedAt: Date;
+}
+
+export async function sendTenderSubmittedOpsEmail(
+  input: SendTenderSubmittedOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] Tender: ${input.builderCompany} → ${input.projectTitle}`;
+  const [html, text] = await Promise.all([
+    render(TenderSubmittedOpsEmail(input)),
+    render(TenderSubmittedOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_tender_submitted.failed", code: error.name, message: error.message },
+      "tender submitted ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_tender_submitted.sent", resendId: data.id },
+    "tender submitted ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Project published — owner confirmation + builder bulk ──────────────
+
+interface SendProjectPublishedOwnerEmailInput {
+  to: string;
+  ownerFirstName: string | null;
+  projectTitle: string;
+  projectType: string;
+  suburb: string | null;
+  state: string | null;
+  budgetBand: string | null;
+  manageUrl: string;
+}
+
+export async function sendProjectPublishedOwnerEmail(
+  input: SendProjectPublishedOwnerEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.projectTitle} is live on BuilderHQ`;
+  const props = {
+    ownerFirstName: input.ownerFirstName,
+    projectTitle: input.projectTitle,
+    projectType: input.projectType,
+    suburb: input.suburb,
+    state: input.state,
+    budgetBand: input.budgetBand,
+    manageUrl: input.manageUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ProjectPublishedOwnerEmail(props)),
+    render(ProjectPublishedOwnerEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.project_published_owner.failed", to: input.to, code: error.name, message: error.message },
+      "project published (owner) email failed",
+    );
+    return fail("external_error", "Couldn't send project-published email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.project_published_owner.sent", to: input.to, resendId: data.id },
+    "project published (owner) email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendProjectPublishedBuilderEmailInput {
+  to: string;
+  builderFirstName: string | null;
+  projectTitle: string;
+  projectType: string;
+  suburb: string | null;
+  state: string | null;
+  budgetBand: string | null;
+  isInServiceArea: boolean;
+  projectUrl: string;
+  unsubscribeUrl: string;
+}
+
+export async function sendProjectPublishedBuilderEmail(
+  input: SendProjectPublishedBuilderEmailInput,
+): Promise<Result<{ id: string }>> {
+  const location = [input.suburb, input.state].filter(Boolean).join(", ") || "—";
+  const subject = input.isInServiceArea
+    ? `New ${input.projectType} in your area — ${location}`
+    : `New project on BuilderHQ — ${input.projectTitle}`;
+  const props = {
+    builderFirstName: input.builderFirstName,
+    projectTitle: input.projectTitle,
+    projectType: input.projectType,
+    suburb: input.suburb,
+    state: input.state,
+    budgetBand: input.budgetBand,
+    isInServiceArea: input.isInServiceArea,
+    projectUrl: input.projectUrl,
+    unsubscribeUrl: input.unsubscribeUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ProjectPublishedBuilderEmail(props)),
+    render(ProjectPublishedBuilderEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    headers: {
+      // RFC 8058 + 2369 — one-click and list-style unsubscribe headers
+      // so Gmail / Outlook surface a built-in unsubscribe button.
+      // input.unsubscribeUrl points at /api/unsubscribe/[token] which
+      // handles both POST (one-click) and GET (302 to the friendly
+      // confirmation page).
+      "List-Unsubscribe": `<${input.unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  });
+  if (error) {
+    logger.error(
+      { event: "email.project_published_builder.failed", to: input.to, code: error.name, message: error.message },
+      "project published (builder) email failed",
+    );
+    return fail("external_error", "Couldn't send project-published email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.project_published_builder.sent", to: input.to, resendId: data.id },
+    "project published (builder) email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Unlocks — owner notify + builder receipt ───────────────────────────
+
+interface SendUnlockOwnerEmailInput {
+  to: string;
+  ownerFirstName: string | null;
+  builderCompany: string;
+  builderState: string | null;
+  abnVerified: boolean;
+  anyLicenceVerified: boolean;
+  projectTitle: string;
+  projectUrl: string;
+  builderProfileUrl: string | null;
+}
+
+export async function sendUnlockOwnerEmail(
+  input: SendUnlockOwnerEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.builderCompany} unlocked ${input.projectTitle}`;
+  const props = {
+    ownerFirstName: input.ownerFirstName,
+    builderCompany: input.builderCompany,
+    builderState: input.builderState,
+    abnVerified: input.abnVerified,
+    anyLicenceVerified: input.anyLicenceVerified,
+    projectTitle: input.projectTitle,
+    projectUrl: input.projectUrl,
+    builderProfileUrl: input.builderProfileUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(UnlockOwnerEmail(props)),
+    render(UnlockOwnerEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.unlock_owner.failed", to: input.to, code: error.name, message: error.message },
+      "unlock (owner) email failed",
+    );
+    return fail("external_error", "Couldn't send unlock email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.unlock_owner.sent", to: input.to, resendId: data.id },
+    "unlock (owner) email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendUnlockBuilderEmailInput {
+  to: string;
+  builderFirstName: string | null;
+  projectTitle: string;
+  projectAddress: string | null;
+  ownerName: string | null;
+  ownerEmail: string;
+  ownerPhone: string | null;
+  projectUrl: string;
+  unlockedViaFba: boolean;
+}
+
+export async function sendUnlockBuilderEmail(
+  input: SendUnlockBuilderEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Unlocked: ${input.projectTitle}`;
+  const props = {
+    builderFirstName: input.builderFirstName,
+    projectTitle: input.projectTitle,
+    projectAddress: input.projectAddress,
+    ownerName: input.ownerName,
+    ownerEmail: input.ownerEmail,
+    ownerPhone: input.ownerPhone,
+    projectUrl: input.projectUrl,
+    unlockedViaFba: input.unlockedViaFba,
+  };
+  const [html, text] = await Promise.all([
+    render(UnlockBuilderEmail(props)),
+    render(UnlockBuilderEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.unlock_builder.failed", to: input.to, code: error.name, message: error.message },
+      "unlock (builder) email failed",
+    );
+    return fail("external_error", "Couldn't send unlock receipt email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.unlock_builder.sent", to: input.to, resendId: data.id },
+    "unlock (builder) email sent",
   );
   return ok({ id: data.id });
 }

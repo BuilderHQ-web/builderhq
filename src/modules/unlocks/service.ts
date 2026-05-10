@@ -118,6 +118,26 @@ async function ensureConversationOnUnlock(
   }
 }
 
+/**
+ * Fan-out the unlock event — owner email + bell, builder receipt, ops
+ * heads-up. Fire-and-forget; emails never block the unlock action.
+ */
+async function dispatchUnlock(
+  builderId: string,
+  projectId: string,
+): Promise<void> {
+  try {
+    const { dispatchUnlockEvent } = await import("./dispatch");
+    await dispatchUnlockEvent({ builderId, projectId });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "unlock.dispatch.threw", projectId, builderId, msg },
+      "unlock dispatch threw — continuing",
+    );
+  }
+}
+
 // ── unlocks ──────────────────────────────────────────────────────────────
 
 /**
@@ -166,6 +186,7 @@ export async function unlockProject(
       .returning();
     if (!row) return fail("internal", "Failed to record unlock.");
     await ensureConversationOnUnlock(builderId, projectId);
+    void dispatchUnlock(builderId, projectId);
     return ok(row);
   }
 
@@ -189,6 +210,7 @@ export async function unlockProject(
     .returning();
   if (!row) return fail("internal", "Failed to record unlock.");
   await ensureConversationOnUnlock(builderId, projectId);
+  void dispatchUnlock(builderId, projectId);
   return ok(row);
 }
 

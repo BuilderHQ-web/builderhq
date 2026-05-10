@@ -16,6 +16,7 @@
  * in the dropdown.
  */
 
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   pgEnum,
@@ -23,6 +24,7 @@ import {
   text,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { users } from "@/modules/users";
@@ -41,6 +43,9 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   "tender_shortlisted", // → builder
   "tender_awarded", // → builder
   "tender_rejected", // → builder
+  // Project events
+  "project_published", // → builders (bulk fan-out, gated by marketing flag)
+  "project_unlocked", // → owner (a builder unlocked their project)
 ]);
 
 export const notifications = pgTable(
@@ -78,6 +83,12 @@ export const notifications = pgTable(
     index("notifications_user_created_idx").on(t.userId, t.createdAt),
     // Unread count: where userId = ? and read_at IS NULL.
     index("notifications_user_read_idx").on(t.userId, t.readAt),
+    // Idempotency for project_published / project_unlocked: at most one
+    // per (recipient, kind, project). Tender events dedup app-side
+    // because they key on project + tender pair instead.
+    uniqueIndex("notifications_publish_unlock_unique")
+      .on(t.userId, t.kind, t.projectId)
+      .where(sql`kind IN ('project_published', 'project_unlocked')`),
   ],
 );
 

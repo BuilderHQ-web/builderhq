@@ -1,60 +1,46 @@
 "use client";
 
 /**
- * PreferencesForm — device-side preferences (no server state).
+ * PreferencesForm — mix of device-side (localStorage) and account-side
+ * (server) preferences.
  *
  * Currently surfaces:
  *
- *   1. Message sounds — wired to `lib/sound`'s localStorage flag. The
+ *   1. Marketplace email digest — server-backed via setMarketing
+ *      EmailsEnabledAction. This is the gate the bulk new-project
+ *      blast respects. Same flag also flips when the user clicks the
+ *      one-click unsubscribe in an email.
+ *   2. Message sounds — wired to `lib/sound`'s localStorage flag. The
  *      same flag the messaging shell already reads, so toggling here
  *      affects the chat send tone immediately.
- *   2. Marketplace email digest — placeholder toggle stored in
- *      localStorage. Will be wired to the outbound-email module when
- *      that lands. Keeps the UX promise visible today; backend delivery
- *      ships in Phase 2.
  *   3. Reduced motion — read-only chip showing whether the OS is
  *      requesting reduced motion. Not a toggle, just a confirmation.
- *
- * Intentionally NOT a server form — these are per-device preferences,
- * not part of the user's account profile.
  */
 
-import { useEffect, useState } from "react";
-import { Bell, Music, Sparkles, Zap } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { Bell, Music, Zap } from "lucide-react";
 
 import { isMsgSoundEnabled, setMsgSoundEnabled } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-const DIGEST_KEY = "bhq:marketplace-digest";
+import { setMarketingEmailsEnabledAction } from "./actions";
 
-function isDigestOn(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(DIGEST_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function setDigestOn(on: boolean): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(DIGEST_KEY, on ? "1" : "0");
-  } catch {
-    /* ignore */
-  }
-}
-
-export function PreferencesForm() {
+export function PreferencesForm({
+  initialMarketingEmailsEnabled,
+}: {
+  initialMarketingEmailsEnabled: boolean;
+}) {
   const [hydrated, setHydrated] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
-  const [digestOn, setDigestOnState] = useState(false);
+  const [digestOn, setDigestOnState] = useState(initialMarketingEmailsEnabled);
+  const [digestPending, startDigestTransition] = useTransition();
   const [reducedMotion, setReducedMotion] = useState(false);
 
   // Hydrate from device + media query after mount — SSR can't see either.
+  // The digest flag is hydrated from the server prop, so it's accurate
+  // even before the useEffect runs.
   useEffect(() => {
     setSoundOn(isMsgSoundEnabled());
-    setDigestOnState(isDigestOn());
 
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mql.matches);
@@ -70,8 +56,14 @@ export function PreferencesForm() {
   };
 
   const onToggleDigest = (next: boolean) => {
+    // Optimistic — flip locally first, revert if the server says no.
     setDigestOnState(next);
-    setDigestOn(next);
+    startDigestTransition(async () => {
+      const r = await setMarketingEmailsEnabledAction(next);
+      if (!r.ok) {
+        setDigestOnState(!next);
+      }
+    });
   };
 
   return (
@@ -87,17 +79,12 @@ export function PreferencesForm() {
       />
       <PrefRow
         icon={<Bell className="size-4" />}
-        title="Marketplace email digest"
-        description="A weekly summary of new projects matching your service area + categories."
-        checked={hydrated ? digestOn : false}
-        disabled={!hydrated}
+        title="New project emails"
+        description="Email me when a new project goes live on the marketplace. Account and tender outcome emails always come through — those aren't part of this toggle."
+        checked={digestOn}
+        disabled={digestPending}
         onChange={onToggleDigest}
-        suffix={
-          <span className="inline-flex items-center gap-1 text-[9.5px] tracking-[0.18em] uppercase text-warning bg-[rgba(255,181,71,0.08)] border border-warning/25 rounded-sm px-1.5 py-0.5">
-            <Sparkles className="size-2.5" />
-            Rolling out
-          </span>
-        }
+        suffix={null}
       />
       <li
         className={cn(

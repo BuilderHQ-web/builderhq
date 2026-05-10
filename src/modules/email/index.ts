@@ -5,11 +5,22 @@
  * `@/modules/email` — never reach into `./service` directly.
  */
 export {
+  OPS_EMAIL,
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendTenderSubmittedEmail,
+  sendTenderSubmittedBuilderEmail,
+  sendTenderSubmittedOpsEmail,
   sendTenderShortlistedEmail,
   sendTenderAwardedEmail,
   sendTenderRejectedEmail,
   sendTenderWithdrawnEmail,
+  sendOwnerSignupOpsEmail,
+  sendBuilderSignupOpsEmail,
+  sendProjectPublishedOwnerEmail,
+  sendProjectPublishedBuilderEmail,
+  sendProjectPublishedOpsEmail,
+  sendUnlockOwnerEmail,
+  sendUnlockBuilderEmail,
+  sendUnlockOpsEmail,
 } from "./service";
