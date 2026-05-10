@@ -1,16 +1,24 @@
 /**
  * ProjectPublishedBuilderEmail — sent to every builder when a project
- * goes live. This is the only "marketing class" email — it respects
- * the user's marketing_emails_enabled flag and carries an unsubscribe
- * link in the fineprint per AU Spam Act 2003 requirements.
+ * goes live. The only "marketing class" email — respects each user's
+ * marketing_emails_enabled flag and carries an unsubscribe link in
+ * both the visible footer and the List-Unsubscribe header (set by the
+ * email send wrapper) per AU Spam Act 2003 + RFC 8058.
  *
  * Subject + headline are kept neutral; the body shows the suburb +
- * type + budget band (no exact address, no owner identity — that
- * unlocks for a fee).
+ * type + budget band — never the exact address or owner identity
+ * (those unlock for a fee).
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  InlineLink,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+} from "./_shell";
 
 interface ProjectPublishedBuilderEmailProps {
   builderFirstName: string | null;
@@ -42,14 +50,15 @@ export function ProjectPublishedBuilderEmail({
       preview={`New ${projectType.toLowerCase()} in ${location}`}
       kicker={isInServiceArea ? "In your service area" : "New project"}
       heading={projectTitle}
-      fineprint={
+      whyReceiving={
         <>
-          You&apos;re receiving this because you&apos;re a builder on BuilderHQ.{" "}
-          <a href={unsubscribeUrl} style={{ color: brand.accent }}>
-            Unsubscribe
-          </a>{" "}
-          from new-project alerts. Tender outcome and account emails will keep
-          coming — those are operational.
+          You&apos;re receiving this because you&apos;re a builder on
+          BuilderHQ. Tender outcome and account emails are operational
+          and always come through.{" "}
+          <InlineLink href={unsubscribeUrl}>
+            Unsubscribe from new-project alerts
+          </InlineLink>
+          .
         </>
       }
     >
@@ -59,33 +68,18 @@ export function ProjectPublishedBuilderEmail({
         {isInServiceArea ? " — and it sits inside your service area" : ""}.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Type" value={projectType} />
-        <StatRow label="Location" value={location} />
-        {budgetBand ? <StatRow label="Budget" value={budgetBand} /> : null}
-      </Section>
+      <MetaCard>
+        <MetaRow label="Type" value={projectType} />
+        <MetaRow label="Location" value={location} />
+        {budgetBand ? <MetaRow label="Budget" value={budgetBand} /> : null}
+      </MetaCard>
 
       <PrimaryButton href={projectUrl}>View project</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
+      <Caption>
         Address, owner contact, and downloadable documents are private until
         you unlock — free with your Founding Builder Access.
-      </Text>
+      </Caption>
     </EmailShell>
   );
 }

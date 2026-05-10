@@ -1,11 +1,18 @@
 /**
  * TenderSubmittedBuilderEmail — confirmation to the builder that
- * their tender is in. Owner now sees it. Pairs with TenderSubmittedEmail
- * (which goes to the owner).
+ * their tender is in. Pairs with TenderSubmittedEmail (which goes to
+ * the owner).
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface TenderSubmittedBuilderEmailProps {
   builderFirstName: string | null;
@@ -37,44 +44,26 @@ export function TenderSubmittedBuilderEmail({
       preview={`Tender submitted on ${projectTitle}.`}
       kicker="Tender submitted"
       heading="Your tender is in"
+      whyReceiving="You're receiving this because you submitted a tender on BuilderHQ. We confirm every submission so you have a written record."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        Your tender on{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>{" "}
-        is now in front of the owner. We&apos;ll email you the moment they
-        shortlist or decide.
+        Your tender on <Strong>{projectTitle}</Strong> is now in front of the
+        owner. We&apos;ll email you the moment they shortlist or decide.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Total price" value={formatAud(totalPriceAud)} />
-        <StatRow label="Build duration" value={`${durationWeeks} weeks`} />
-        <StatRow label="Tender valid for" value={`${validityDays} days`} />
-      </Section>
+      <MetaCard title="What you submitted">
+        <MetaRow label="Total price" value={formatAud(totalPriceAud)} />
+        <MetaRow label="Build duration" value={`${durationWeeks} weeks`} />
+        <MetaRow label="Tender valid for" value={`${validityDays} days`} />
+      </MetaCard>
 
       <PrimaryButton href={tenderUrl}>View your tender</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
+      <Caption>
         Need to change something? Withdraw to edit and re-submit any time
         before the owner decides.
-      </Text>
+      </Caption>
     </EmailShell>
   );
 }

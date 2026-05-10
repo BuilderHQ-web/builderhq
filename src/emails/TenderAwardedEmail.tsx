@@ -5,8 +5,15 @@
  * reach out directly to start contract conversations off-platform.
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface TenderAwardedEmailProps {
   builderFirstName: string | null;
@@ -28,44 +35,22 @@ export function TenderAwardedEmail({
   const greet = builderFirstName ? `Hi ${builderFirstName},` : "Hi,";
   return (
     <EmailShell
-      preview={`Congratulations — you've been awarded ${projectTitle}.`}
+      preview={`Awarded: ${projectTitle}.`}
       kicker="Awarded"
       heading="Congratulations — you won this one"
+      whyReceiving="You're receiving this because you've been awarded a project you tendered on. This is a contractual notification we always deliver."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        You've been awarded{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>
-        . The owner has chosen your tender — well done.
+        You&apos;ve been awarded <Strong>{projectTitle}</Strong>. The owner
+        chose your tender — well done.
       </BodyText>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: brand.accent,
-          margin: "0 0 8px 0",
-          fontWeight: 600,
-        }}
-      >
-        Owner contact
-      </Text>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        {ownerName ? <StatRow label="Name" value={ownerName} /> : null}
-        <StatRow label="Email" value={ownerEmail} />
-        {ownerPhone ? <StatRow label="Phone" value={ownerPhone} /> : null}
-      </Section>
+      <MetaCard title="Owner contact">
+        {ownerName ? <MetaRow label="Name" value={<Strong>{ownerName}</Strong>} /> : null}
+        <MetaRow label="Email" value={ownerEmail} />
+        {ownerPhone ? <MetaRow label="Phone" value={ownerPhone} /> : null}
+      </MetaCard>
 
       <BodyText>
         Reach out directly to confirm scope, timing, and contract. The project
@@ -73,6 +58,11 @@ export function TenderAwardedEmail({
       </BodyText>
 
       <PrimaryButton href={tenderUrl}>Open project</PrimaryButton>
+
+      <Caption>
+        BuilderHQ takes no commission on awarded projects — once you&apos;re
+        chosen, the relationship is between you and the owner.
+      </Caption>
     </EmailShell>
   );
 }

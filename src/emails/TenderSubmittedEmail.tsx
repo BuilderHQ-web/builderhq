@@ -1,12 +1,17 @@
 /**
- * TenderSubmittedEmail — to project owner when a builder submits a tender.
- *
- * Owner expects: who submitted, headline number, project context, and a
- * one-click route into the comparison view.
+ * TenderSubmittedEmail — to project owner when a builder submits a
+ * tender. The owner's "you got mail" moment.
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface TenderSubmittedEmailProps {
   ownerFirstName: string | null;
@@ -37,49 +42,31 @@ export function TenderSubmittedEmail({
   const greet = ownerFirstName ? `Hi ${ownerFirstName},` : "Hi,";
   return (
     <EmailShell
-      preview={`${builderCompany} submitted a tender on ${projectTitle}.`}
+      preview={`${builderCompany} sent a tender on ${projectTitle}.`}
       kicker="New tender"
       heading={`${builderCompany} sent you a tender`}
+      whyReceiving="You're receiving this because a builder submitted a tender on a project you own. Tender alerts are part of running an active project."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {builderCompany}
-        </strong>{" "}
-        just submitted a tender on{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>
-        . Open the comparison view to review the number, scope, and pitch.
+        <Strong>{builderCompany}</Strong> just submitted a tender on{" "}
+        <Strong>{projectTitle}</Strong>. Open the comparison view to read the
+        number, scope, and pitch — side by side with any other tenders you
+        receive.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Total price" value={formatAud(totalPriceAud)} />
-        <StatRow label="Build duration" value={`${durationWeeks} weeks`} />
-        <StatRow label="Tender valid for" value={`${validityDays} days`} />
-      </Section>
+      <MetaCard title="At a glance">
+        <MetaRow label="Total price" value={formatAud(totalPriceAud)} />
+        <MetaRow label="Build duration" value={`${durationWeeks} weeks`} />
+        <MetaRow label="Tender valid for" value={`${validityDays} days`} />
+      </MetaCard>
 
       <PrimaryButton href={reviewUrl}>Review tender</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
+      <Caption>
         You can shortlist multiple builders before deciding — comparing up to
-        three side-by-side gives you the clearest read.
-      </Text>
+        three side-by-side gives you the clearest read on value and fit.
+      </Caption>
     </EmailShell>
   );
 }

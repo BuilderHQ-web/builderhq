@@ -3,8 +3,14 @@
  * is submitted. Lets ops sanity-check tender quality during launch.
  */
 
-import { BodyText, EmailShell, StatRow, brand } from "./_shell";
-import { Section } from "@react-email/components";
+import {
+  BodyText,
+  EmailShell,
+  InlineLink,
+  MetaCard,
+  MetaRow,
+  Strong,
+} from "./_shell";
 
 interface TenderSubmittedOpsEmailProps {
   projectTitle: string;
@@ -43,37 +49,40 @@ export function TenderSubmittedOpsEmail({
       preview={`Tender: ${builderCompany} → ${projectTitle}`}
       kicker="Tender submitted"
       heading={`${builderCompany} → ${projectTitle}`}
+      tone="muted"
     >
       <BodyText>A tender just landed on the marketplace.</BodyText>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Project" value={projectTitle} />
-        <StatRow label="URL" value={projectUrl} />
-        <StatRow label="Builder" value={builderCompany} />
-        <StatRow label="Builder email" value={builderEmail} />
-        <StatRow label="Owner" value={ownerName ?? "—"} />
-        <StatRow label="Owner email" value={ownerEmail} />
-        <StatRow
+
+      <MetaCard title="Project">
+        <MetaRow label="Title" value={<Strong>{projectTitle}</Strong>} />
+        <MetaRow
+          label="URL"
+          value={<InlineLink href={projectUrl}>{projectUrl}</InlineLink>}
+        />
+      </MetaCard>
+
+      <MetaCard title="Parties">
+        <MetaRow label="Builder" value={<Strong>{builderCompany}</Strong>} />
+        <MetaRow label="Builder email" value={builderEmail} />
+        <MetaRow label="Owner" value={ownerName ?? "—"} />
+        <MetaRow label="Owner email" value={ownerEmail} />
+      </MetaCard>
+
+      <MetaCard title="Tender">
+        <MetaRow
           label="Total"
           value={totalPriceAud != null ? formatAud(totalPriceAud) : "—"}
         />
-        <StatRow
+        <MetaRow
           label="Duration"
           value={durationWeeks != null ? `${durationWeeks} weeks` : "—"}
         />
-        <StatRow
+        <MetaRow
           label="Validity"
           value={validityDays != null ? `${validityDays} days` : "—"}
         />
-        <StatRow label="When" value={submittedAt.toISOString()} />
-      </Section>
+        <MetaRow label="When" value={submittedAt.toISOString()} />
+      </MetaCard>
     </EmailShell>
   );
 }

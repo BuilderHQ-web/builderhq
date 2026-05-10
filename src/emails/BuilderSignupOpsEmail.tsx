@@ -4,8 +4,13 @@
  * eyeball whether anything needs manual review.
  */
 
-import { BodyText, EmailShell, StatRow, brand } from "./_shell";
-import { Section } from "@react-email/components";
+import {
+  BodyText,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  Strong,
+} from "./_shell";
 
 interface BuilderSignupOpsEmailProps {
   builderName: string | null;
@@ -37,33 +42,38 @@ export function BuilderSignupOpsEmail({
       preview={`New builder: ${companyName ?? builderName ?? builderEmail}`}
       kicker="New builder signup"
       heading="A builder joined BuilderHQ"
+      tone="muted"
     >
       <BodyText>
-        Heads-up — a new builder just finished onboarding. Verification chips below.
+        Heads-up — a new builder just finished onboarding. Verification chips
+        below; flag for manual review if anything looks off.
       </BodyText>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Company" value={companyName ?? "—"} />
-        <StatRow label="Name" value={builderName ?? "—"} />
-        <StatRow label="Email" value={builderEmail} />
-        {builderPhone ? <StatRow label="Phone" value={builderPhone} /> : null}
-        <StatRow label="ABN" value={abn ?? "—"} />
-        <StatRow label="ABN verified" value={abnVerified ? "✓ ABR active" : "✗ not verified"} />
-        <StatRow
-          label="Licence verified"
-          value={anyLicenceVerified ? "✓ register active" : "✗ none verified"}
+
+      <MetaCard title="Account">
+        <MetaRow label="Company" value={<Strong>{companyName ?? "—"}</Strong>} />
+        <MetaRow label="Name" value={builderName ?? "—"} />
+        <MetaRow label="Email" value={builderEmail} />
+        {builderPhone ? <MetaRow label="Phone" value={builderPhone} /> : null}
+        <MetaRow label="ABN" value={abn ?? "—"} />
+        {state ? <MetaRow label="State" value={state} /> : null}
+      </MetaCard>
+
+      <MetaCard title="Verification">
+        <MetaRow
+          label="ABN"
+          value={abnVerified ? "Verified active · ABR" : "Not verified"}
         />
-        <StatRow label="Approval status" value={approvalStatus} />
-        {state ? <StatRow label="State" value={state} /> : null}
-        <StatRow label="Signed up" value={signedUpAt.toISOString()} />
-      </Section>
+        <MetaRow
+          label="Licence"
+          value={
+            anyLicenceVerified
+              ? "Verified active · state register"
+              : "Pending / not verified"
+          }
+        />
+        <MetaRow label="Approval" value={approvalStatus} />
+        <MetaRow label="Signed up" value={signedUpAt.toISOString()} />
+      </MetaCard>
     </EmailShell>
   );
 }

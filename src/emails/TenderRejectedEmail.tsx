@@ -1,12 +1,16 @@
 /**
- * TenderRejectedEmail — to builder when owner rejects their tender.
- *
- * Keep it brief and respectful. Don't surface a reason — owners aren't
- * required to provide one and we won't pretend to.
+ * TenderRejectedEmail — to builder when owner moves forward with
+ * someone else. Short, kind, no detail. Keeps the door open for the
+ * next project.
  */
 
-import { Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface TenderRejectedEmailProps {
   builderFirstName: string | null;
@@ -22,36 +26,25 @@ export function TenderRejectedEmail({
   const greet = builderFirstName ? `Hi ${builderFirstName},` : "Hi,";
   return (
     <EmailShell
-      preview={`Update on your tender for ${projectTitle}.`}
-      kicker="Tender update"
-      heading="Decision made on this one"
+      preview={`Decision made on ${projectTitle}.`}
+      kicker="Decision made"
+      heading="Thanks for tendering"
+      tone="muted"
+      whyReceiving="You're receiving this because you tendered on a project that's now been decided."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        Thanks for tendering on{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>
-        . The owner has decided to move forward with another builder this time.
-      </BodyText>
-      <BodyText>
-        We know it stings. Plenty more residential projects come through
-        BuilderHQ each week — keep an eye on your matched feed.
+        The owner of <Strong>{projectTitle}</Strong> has moved forward with
+        another builder. Thanks for putting your tender in — we know how much
+        work goes into a good one.
       </BodyText>
 
-      <PrimaryButton href={browseUrl}>Browse new projects</PrimaryButton>
+      <PrimaryButton href={browseUrl}>Browse projects</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
-        Your unlock for this project remains valid — you can revisit the brief
-        any time.
-      </Text>
+      <Caption>
+        New residential projects go live on the marketplace every week. Keep an
+        eye on your dashboard for the next match in your service area.
+      </Caption>
     </EmailShell>
   );
 }

@@ -4,8 +4,13 @@
  * during early launch when volumes are low.
  */
 
-import { BodyText, EmailShell, StatRow, brand } from "./_shell";
-import { Section } from "@react-email/components";
+import {
+  BodyText,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  Strong,
+} from "./_shell";
 
 interface OwnerSignupOpsEmailProps {
   ownerName: string | null;
@@ -31,25 +36,21 @@ export function OwnerSignupOpsEmail({
       preview={`New project owner: ${ownerName ?? ownerEmail}`}
       kicker="New owner signup"
       heading="A project owner joined BuilderHQ"
+      tone="muted"
     >
-      <BodyText>Heads-up — a new project owner just finished onboarding.</BodyText>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Name" value={ownerName ?? "—"} />
-        <StatRow label="Email" value={ownerEmail} />
-        {ownerPhone ? <StatRow label="Phone" value={ownerPhone} /> : null}
-        {entityType ? <StatRow label="Entity type" value={entityType} /> : null}
-        {companyName ? <StatRow label="Company" value={companyName} /> : null}
-        {state ? <StatRow label="State" value={state} /> : null}
-        <StatRow label="Signed up" value={signedUpAt.toISOString()} />
-      </Section>
+      <BodyText>
+        Heads-up — a new project owner just finished onboarding.
+      </BodyText>
+
+      <MetaCard title="Account">
+        <MetaRow label="Name" value={<Strong>{ownerName ?? "—"}</Strong>} />
+        <MetaRow label="Email" value={ownerEmail} />
+        {ownerPhone ? <MetaRow label="Phone" value={ownerPhone} /> : null}
+        {entityType ? <MetaRow label="Entity" value={entityType} /> : null}
+        {companyName ? <MetaRow label="Company" value={companyName} /> : null}
+        {state ? <MetaRow label="State" value={state} /> : null}
+        <MetaRow label="Signed up" value={signedUpAt.toISOString()} />
+      </MetaCard>
     </EmailShell>
   );
 }

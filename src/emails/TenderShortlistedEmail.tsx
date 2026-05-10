@@ -1,12 +1,16 @@
 /**
- * TenderShortlistedEmail — to builder when owner shortlists their tender.
- *
- * Tone: encouraging without overpromising. Shortlisted ≠ awarded —
- * make sure the builder knows they're still in the running, not done.
+ * TenderShortlistedEmail — to builder when owner shortlists their
+ * tender. Tone: encouraging without overpromising. Shortlisted ≠
+ * awarded.
  */
 
-import { Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface TenderShortlistedEmailProps {
   builderFirstName: string | null;
@@ -22,39 +26,27 @@ export function TenderShortlistedEmail({
   tenderUrl,
 }: TenderShortlistedEmailProps) {
   const greet = builderFirstName ? `Hi ${builderFirstName},` : "Hi,";
-  const ownerLabel = ownerName ? ownerName : "The owner";
+  const ownerLabel = ownerName ?? "The owner";
   return (
     <EmailShell
-      preview={`Your tender on ${projectTitle} has been shortlisted.`}
+      preview={`You're on the shortlist for ${projectTitle}.`}
       kicker="Shortlisted"
-      heading="You're in the shortlist"
+      heading="You're on the shortlist"
+      whyReceiving="You're receiving this because the owner of a project you tendered on has updated their shortlist."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        Good news —{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {ownerLabel}
-        </strong>{" "}
-        has shortlisted your tender on{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>
-        . You're now one of the contenders being compared closely.
+        Good news — <Strong>{ownerLabel}</Strong> has shortlisted your tender
+        on <Strong>{projectTitle}</Strong>. You&apos;re now one of the
+        contenders being compared closely.
       </BodyText>
 
       <PrimaryButton href={tenderUrl}>View your tender</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
-        We'll let you know as soon as the owner makes their decision. Your
-        tender stays locked unless you withdraw it.
-      </Text>
+      <Caption>
+        We&apos;ll let you know as soon as the owner decides. Your tender stays
+        locked unless you withdraw it.
+      </Caption>
     </EmailShell>
   );
 }

@@ -3,8 +3,14 @@
  * a project. Useful early signal of marketplace activity.
  */
 
-import { BodyText, EmailShell, StatRow, brand } from "./_shell";
-import { Section } from "@react-email/components";
+import {
+  BodyText,
+  EmailShell,
+  InlineLink,
+  MetaCard,
+  MetaRow,
+  Strong,
+} from "./_shell";
 
 interface UnlockOpsEmailProps {
   projectTitle: string;
@@ -32,26 +38,29 @@ export function UnlockOpsEmail({
       preview={`Unlock: ${builderCompany} → ${projectTitle}`}
       kicker="Project unlocked"
       heading={`${builderCompany} unlocked a project`}
+      tone="muted"
     >
       <BodyText>A builder just unlocked a project on the marketplace.</BodyText>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Project" value={projectTitle} />
-        <StatRow label="URL" value={projectUrl} />
-        <StatRow label="Builder" value={builderCompany} />
-        <StatRow label="Builder email" value={builderEmail} />
-        <StatRow label="Owner" value={ownerName ?? "—"} />
-        <StatRow label="Owner email" value={ownerEmail} />
-        <StatRow label="Source" value={source} />
-        <StatRow label="When" value={unlockedAt.toISOString()} />
-      </Section>
+
+      <MetaCard title="Project">
+        <MetaRow label="Title" value={<Strong>{projectTitle}</Strong>} />
+        <MetaRow
+          label="URL"
+          value={<InlineLink href={projectUrl}>{projectUrl}</InlineLink>}
+        />
+      </MetaCard>
+
+      <MetaCard title="Parties">
+        <MetaRow label="Builder" value={<Strong>{builderCompany}</Strong>} />
+        <MetaRow label="Builder email" value={builderEmail} />
+        <MetaRow label="Owner" value={ownerName ?? "—"} />
+        <MetaRow label="Owner email" value={ownerEmail} />
+      </MetaCard>
+
+      <MetaCard title="Unlock">
+        <MetaRow label="Source" value={source} />
+        <MetaRow label="When" value={unlockedAt.toISOString()} />
+      </MetaCard>
     </EmailShell>
   );
 }

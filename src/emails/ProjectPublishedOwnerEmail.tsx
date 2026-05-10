@@ -1,11 +1,17 @@
 /**
  * ProjectPublishedOwnerEmail — confirmation to the owner that their
- * project is live on the marketplace. Builders are seeing it now and
- * tenders should start arriving.
+ * project is live on the marketplace.
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface ProjectPublishedOwnerEmailProps {
   ownerFirstName: string | null;
@@ -33,42 +39,29 @@ export function ProjectPublishedOwnerEmail({
       preview={`${projectTitle} is live on the BuilderHQ marketplace.`}
       kicker="Project live"
       heading={`${projectTitle} is live`}
+      whyReceiving="You're receiving this because you publish projects on BuilderHQ. We email you a confirmation each time one goes live."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        Your project is now visible to verified builders across BuilderHQ.
+        Your project is now in front of every verified builder on BuilderHQ.
         We&apos;ll email you the moment a builder unlocks it or submits a
-        tender.
+        tender — nothing else for you to do right now.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Project" value={projectTitle} />
-        <StatRow label="Type" value={projectType} />
-        <StatRow label="Location" value={location} />
-        {budgetBand ? <StatRow label="Budget" value={budgetBand} /> : null}
-      </Section>
+      <MetaCard>
+        <MetaRow label="Project" value={<Strong>{projectTitle}</Strong>} />
+        <MetaRow label="Type" value={projectType} />
+        <MetaRow label="Location" value={location} />
+        {budgetBand ? <MetaRow label="Budget" value={budgetBand} /> : null}
+      </MetaCard>
 
       <PrimaryButton href={manageUrl}>Manage project</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
-        Tip: a clear brief and complete document set typically nets 3× more
-        tenders. You can edit any field and re-publish at any time.
-      </Text>
+      <Caption>
+        Tip — clear briefs and complete document sets typically pull 3× more
+        tenders. You can edit any field and re-publish at any time from the
+        manage page.
+      </Caption>
     </EmailShell>
   );
 }

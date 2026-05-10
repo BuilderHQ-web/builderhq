@@ -4,8 +4,14 @@
  * marketplace before we taper this off.
  */
 
-import { BodyText, EmailShell, StatRow, brand } from "./_shell";
-import { Section } from "@react-email/components";
+import {
+  BodyText,
+  EmailShell,
+  InlineLink,
+  MetaCard,
+  MetaRow,
+  Strong,
+} from "./_shell";
 
 interface ProjectPublishedOpsEmailProps {
   projectTitle: string;
@@ -36,25 +42,26 @@ export function ProjectPublishedOpsEmail({
       preview={`Project live: ${projectTitle}`}
       kicker="Project published"
       heading={projectTitle}
+      tone="muted"
     >
       <BodyText>A project just went live on the marketplace.</BodyText>
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Type" value={projectType} />
-        <StatRow label="Location" value={location} />
-        {budgetBand ? <StatRow label="Budget" value={budgetBand} /> : null}
-        <StatRow label="Owner" value={ownerName ?? "—"} />
-        <StatRow label="Owner email" value={ownerEmail} />
-        <StatRow label="Documents" value={String(documentCount)} />
-        <StatRow label="URL" value={projectUrl} />
-      </Section>
+
+      <MetaCard title="Project">
+        <MetaRow label="Title" value={<Strong>{projectTitle}</Strong>} />
+        <MetaRow label="Type" value={projectType} />
+        <MetaRow label="Location" value={location} />
+        {budgetBand ? <MetaRow label="Budget" value={budgetBand} /> : null}
+        <MetaRow label="Documents" value={String(documentCount)} />
+        <MetaRow
+          label="URL"
+          value={<InlineLink href={projectUrl}>{projectUrl}</InlineLink>}
+        />
+      </MetaCard>
+
+      <MetaCard title="Owner">
+        <MetaRow label="Name" value={ownerName ?? "—"} />
+        <MetaRow label="Email" value={ownerEmail} />
+      </MetaCard>
     </EmailShell>
   );
 }

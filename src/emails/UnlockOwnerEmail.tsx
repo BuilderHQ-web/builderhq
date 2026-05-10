@@ -1,11 +1,19 @@
 /**
  * UnlockOwnerEmail — to project owner when a builder unlocks their
- * project. Owner sees who unlocked plus the verification chips so
+ * project. Owner sees who unlocked, plus the verification chips so
  * they know it's a real, vetted builder.
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  InlineLink,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface UnlockOwnerEmailProps {
   ownerFirstName: string | null;
@@ -34,55 +42,39 @@ export function UnlockOwnerEmail({
       preview={`${builderCompany} unlocked ${projectTitle}.`}
       kicker="Project unlocked"
       heading={`${builderCompany} is reviewing your project`}
+      whyReceiving="You're receiving this because a builder accessed the private details of a project you own. We tell you every time."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {builderCompany}
-        </strong>{" "}
-        just unlocked your project — they now have your address, contact
+        <Strong>{builderCompany}</Strong> just unlocked{" "}
+        <Strong>{projectTitle}</Strong> — they now have your address, contact
         details, and the documents you uploaded. A tender may follow.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        <StatRow label="Builder" value={builderCompany} />
-        {builderState ? <StatRow label="State" value={builderState} /> : null}
-        <StatRow
+      <MetaCard title="Builder">
+        <MetaRow label="Company" value={<Strong>{builderCompany}</Strong>} />
+        {builderState ? <MetaRow label="State" value={builderState} /> : null}
+        <MetaRow
           label="ABN"
-          value={abnVerified ? "✓ Verified active (ABR)" : "Pending"}
+          value={abnVerified ? "Verified active · ABR" : "Pending verification"}
         />
-        <StatRow
+        <MetaRow
           label="Licence"
           value={
-            anyLicenceVerified ? "✓ Verified active (state register)" : "Pending"
+            anyLicenceVerified
+              ? "Verified active · state register"
+              : "Pending verification"
           }
         />
-      </Section>
+      </MetaCard>
 
       <PrimaryButton href={projectUrl}>View project</PrimaryButton>
 
       {builderProfileUrl ? (
-        <Text
-          style={{
-            fontSize: "13px",
-            lineHeight: "22px",
-            color: brand.muted,
-            margin: "16px 0 0 0",
-          }}
-        >
-          See their public profile:{" "}
-          <a href={builderProfileUrl} style={{ color: brand.accent }}>
-            {builderCompany}
-          </a>
-        </Text>
+        <Caption>
+          See their public profile —{" "}
+          <InlineLink href={builderProfileUrl}>{builderCompany}</InlineLink>
+        </Caption>
       ) : null}
     </EmailShell>
   );

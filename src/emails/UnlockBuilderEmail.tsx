@@ -1,12 +1,19 @@
 /**
  * UnlockBuilderEmail — receipt to the builder confirming they unlocked
  * a project. Doubles as a useful reference doc — the address, owner
- * contact, and project URL are all here so they don't have to log back
- * in to find them.
+ * contact, and project URL are all here so they don't have to log
+ * back in to find them.
  */
 
-import { Section, Text } from "@react-email/components";
-import { BodyText, EmailShell, PrimaryButton, StatRow, brand } from "./_shell";
+import {
+  BodyText,
+  Caption,
+  EmailShell,
+  MetaCard,
+  MetaRow,
+  PrimaryButton,
+  Strong,
+} from "./_shell";
 
 interface UnlockBuilderEmailProps {
   builderFirstName: string | null;
@@ -33,47 +40,32 @@ export function UnlockBuilderEmail({
   return (
     <EmailShell
       preview={`Unlocked: ${projectTitle}`}
-      kicker={unlockedViaFba ? "Free with FBA" : "Unlocked"}
+      kicker={unlockedViaFba ? "Free with FBA · Unlocked" : "Unlocked"}
       heading={projectTitle}
+      whyReceiving="You're receiving this because you unlocked a project on BuilderHQ. We send a receipt every time so you have these details handy."
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        You&apos;ve unlocked{" "}
-        <strong style={{ color: brand.text, fontWeight: 600 }}>
-          {projectTitle}
-        </strong>
-        . Here&apos;s a quick reference — same details are always available on
+        You&apos;ve unlocked <Strong>{projectTitle}</Strong>. Here&apos;s a
+        quick reference for your records — the same details are always live on
         the project page.
       </BodyText>
 
-      <Section
-        style={{
-          backgroundColor: "rgba(0,212,200,0.05)",
-          border: `1px solid ${brand.border}`,
-          borderRadius: "6px",
-          padding: "16px 18px",
-          margin: "0 0 24px 0",
-        }}
-      >
-        {projectAddress ? <StatRow label="Address" value={projectAddress} /> : null}
-        <StatRow label="Owner" value={ownerName ?? "—"} />
-        <StatRow label="Owner email" value={ownerEmail} />
-        {ownerPhone ? <StatRow label="Owner phone" value={ownerPhone} /> : null}
-      </Section>
+      <MetaCard title="Project">
+        {projectAddress ? (
+          <MetaRow label="Address" value={projectAddress} />
+        ) : null}
+        <MetaRow label="Owner" value={<Strong>{ownerName ?? "—"}</Strong>} />
+        <MetaRow label="Email" value={ownerEmail} />
+        {ownerPhone ? <MetaRow label="Phone" value={ownerPhone} /> : null}
+      </MetaCard>
 
       <PrimaryButton href={projectUrl}>Open project</PrimaryButton>
 
-      <Text
-        style={{
-          fontSize: "12px",
-          lineHeight: "20px",
-          color: brand.dim,
-          margin: "24px 0 0 0",
-        }}
-      >
-        Next step: open the project, review the docs, then submit a tender
-        when you&apos;re ready. Owners see the strongest tenders first.
-      </Text>
+      <Caption>
+        Next step — open the project, review the documents, then submit a
+        tender when you&apos;re ready. Owners see complete tenders first.
+      </Caption>
     </EmailShell>
   );
 }
