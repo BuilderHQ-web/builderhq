@@ -362,6 +362,27 @@ export async function getById(
 }
 
 /**
+ * Subset of listForUser scoped to a single project — drives the inline
+ * messaging panel on project detail pages. Returns:
+ *
+ *   - For an owner viewing their own project → every conversation on
+ *     that project (one per builder who's unlocked).
+ *   - For a builder viewing a project they've unlocked → their single
+ *     conversation with the owner (length 0 or 1).
+ *
+ * Built on top of listForUser to avoid duplicating the join + unread
+ * computation. Filtering at the JS layer is fine here: a single user
+ * is never going to have thousands of conversations.
+ */
+export async function listForUserOnProject(
+  userId: string,
+  projectId: string,
+): Promise<ConversationListItem[]> {
+  const all = await listForUser(userId);
+  return all.filter((c) => c.projectId === projectId);
+}
+
+/**
  * The list-item shape (other party + project context) for a single
  * conversation. Built on top of `listForUser` to avoid duplicating
  * the join. Returns null if the user isn't a participant.

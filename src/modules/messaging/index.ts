@@ -28,6 +28,7 @@ export {
   postUnlockSystemMessage,
   postTenderSubmittedSystemMessage,
   listForUser,
+  listForUserOnProject,
   getById,
   getListItem,
   listMessages,

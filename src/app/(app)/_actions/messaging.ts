@@ -17,6 +17,7 @@ import {
   getById,
   getListItem,
   listForUser,
+  listForUserOnProject,
   listMessages,
   markRead as markReadSvc,
   postUserMessage,
@@ -37,6 +38,27 @@ export async function listMyConversationsAction(): Promise<
   const a = await requireUserId();
   if (!a.ok) return a;
   return ok(await listForUser(a.value));
+}
+
+/**
+ * Project-scoped conversation list. Powers the inline messaging panel
+ * on builder and owner project pages.
+ *
+ *   - Builder caller: returns 0–1 conversations (their thread with the
+ *     owner of this project, if it exists).
+ *   - Owner caller: returns 0–N conversations (one per builder who has
+ *     unlocked the project).
+ *
+ * No explicit auth check on projectId — the service-side filter on
+ * (ownerId | builderId = caller) means the caller can only ever see
+ * conversations they're a participant in.
+ */
+export async function listProjectConversationsAction(
+  projectId: string,
+): Promise<Result<ConversationListItem[]>> {
+  const a = await requireUserId();
+  if (!a.ok) return a;
+  return ok(await listForUserOnProject(a.value, projectId));
 }
 
 export async function countMyUnreadMessagesAction(): Promise<Result<number>> {

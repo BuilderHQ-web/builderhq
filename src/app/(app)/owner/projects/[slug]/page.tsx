@@ -11,15 +11,21 @@ import {
   Building,
   Wrench,
   Layers,
+  MessageSquare,
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner, type Project } from "@/modules/projects";
 import { listForProject } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
+import { listForUserOnProject } from "@/modules/messaging";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
+import {
+  ProjectMessagingPanel,
+  totalUnread,
+} from "@/components/app/messaging/project-thread";
 
 export async function generateMetadata({
   params,
@@ -120,6 +126,14 @@ export default async function ProjectDetailPage({
 
   const docs = await listForProject(session.user.id!, project.id);
   const tenderCount = await countTendersForProject(project.id);
+  // One conversation per builder who's unlocked the project. The
+  // inline panel below the grid lets the owner chat with each builder
+  // without bouncing to /messages.
+  const conversations = await listForUserOnProject(
+    session.user.id!,
+    project.id,
+  );
+  const messagingUnread = totalUnread(conversations);
 
   return (
     <div className="px-6 lg:px-10 py-8 lg:py-10">
@@ -327,6 +341,40 @@ export default async function ProjectDetailPage({
             </Reveal>
           </div>
         </div>
+
+        {/* Inline messaging — one conversation per builder who's
+              unlocked this project. The panel surfaces an empty state
+              until the first unlock; afterwards each unlocked builder
+              appears in the picker. */}
+        <section id="messaging" className="mt-8 scroll-mt-24">
+          <Reveal immediate delay={0.30}>
+            <div className="flex items-baseline justify-between gap-3 mb-3">
+              <div>
+                <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+                  <MessageSquare className="size-3" />
+                  Project messaging
+                  {messagingUnread > 0 ? (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-accent-contrast text-[10px] font-semibold tabular-nums">
+                      {messagingUnread}
+                    </span>
+                  ) : null}
+                </span>
+                <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
+                  {conversations.length === 0
+                    ? "Conversations appear when a builder unlocks"
+                    : `Talk to ${conversations.length} builder${conversations.length === 1 ? "" : "s"}`}
+                </h2>
+              </div>
+            </div>
+            <ProjectMessagingPanel
+              projectId={project.id}
+              scope="owner"
+              meId={session.user.id!}
+              initialConversations={conversations}
+              inboxHref="/owner/messages"
+            />
+          </Reveal>
+        </section>
       </div>
     </div>
   );

@@ -39,6 +39,11 @@ import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
+import type { ConversationListItem } from "@/modules/messaging";
+import {
+  ProjectMessagingPanel,
+  totalUnread,
+} from "@/components/app/messaging/project-thread";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
@@ -140,6 +145,8 @@ export function ProjectDetail({
   priceAud,
   myTenderStatus,
   viewerMode,
+  myUserId,
+  initialConversations,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -149,6 +156,8 @@ export function ProjectDetail({
   ownerContact: OwnerContact | null;
   fbaStatus: FbaStatus;
   priceAud: number;
+  myUserId: string;
+  initialConversations: ConversationListItem[];
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -509,6 +518,40 @@ export function ProjectDetail({
             </Reveal>
           </div>
         </div>
+
+        {/* Inline project messaging — only when the builder has
+              unlocked. The conversation already exists (auto-created
+              on unlock) so the panel mounts populated. Anchor target
+              for the in-card "Open conversation" link in OwnerContactBlock. */}
+        {unlocked ? (
+          <section id="messaging" className="mx-auto max-w-[1200px] px-6 lg:px-10 pb-8 lg:pb-10 scroll-mt-24">
+            <Reveal immediate delay={0.06}>
+              <div className="flex items-baseline justify-between gap-3 mb-3">
+                <div>
+                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+                    <MessageSquare className="size-3" />
+                    Project messaging
+                    {totalUnread(initialConversations) > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-accent-contrast text-[10px] font-semibold tabular-nums">
+                        {totalUnread(initialConversations)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
+                    Talk to the owner about this project
+                  </h2>
+                </div>
+              </div>
+              <ProjectMessagingPanel
+                projectId={preview.id}
+                scope="builder"
+                meId={myUserId}
+                initialConversations={initialConversations}
+                inboxHref="/builder/messages"
+              />
+            </Reveal>
+          </section>
+        ) : null}
       </div>
 
       {/* Sticky bar — five states:
@@ -582,7 +625,7 @@ function TenderCtaBar({
       : variant === "submitted"
       ? "Owner is reviewing. You can withdraw to start over."
       : tenderStatus === "awarded"
-      ? "The owner picked your tender. Sit tight — Phase 3 wires the next-step flow."
+      ? "The owner picked your tender — celebrate. Open the conversation to confirm scope, timing, and contract."
       : "Owner has decided on this tender.";
 
   const ctaLabel =
@@ -949,10 +992,14 @@ function OwnerContactBlock({ contact }: { contact: OwnerContact }) {
         />
       </ul>
 
-      <div className="pt-2 flex items-center gap-2 text-[11px] text-text-dim">
-        <MessageSquare className="size-3" />
-        Project messaging lands in Phase 3.
-      </div>
+      <a
+        href="#messaging"
+        className="mt-2 inline-flex items-center gap-2 text-[11.5px] text-accent-light hover:text-accent transition-colors"
+      >
+        <MessageSquare className="size-3.5" />
+        Open conversation with owner
+        <ArrowUpRight className="size-3 opacity-70" />
+      </a>
     </div>
   );
 }

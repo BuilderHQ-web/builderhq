@@ -13,6 +13,7 @@ import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
 import { hasFullVerificationForApproval } from "@/modules/verification";
+import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
 
 export async function generateMetadata({
@@ -58,6 +59,14 @@ export default async function BuilderProjectPage({
     ? await getActiveTenderForBuilder(userId, preview.id)
     : null;
 
+  // Inline project messaging — load the conversation (or 0 if not
+  // unlocked yet) so the panel renders without an initial fetch. The
+  // service-side filter handles auth gracefully; non-participants
+  // just see an empty list.
+  const conversations = unlocked
+    ? await listForUserOnProject(userId, preview.id)
+    : [];
+
   // Viewer-mode gate. We compute it server-side so the unlock CTA can
   // render a clear "verification required" state up-front — no need to
   // make the user click an unlock button just to discover they're
@@ -94,6 +103,8 @@ export default async function BuilderProjectPage({
       priceAud={priceAud}
       myTenderStatus={myTender?.status ?? null}
       viewerMode={viewerMode}
+      myUserId={userId}
+      initialConversations={conversations}
     />
   );
 }
