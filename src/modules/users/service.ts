@@ -36,14 +36,27 @@
  */
 
 import "server-only";
-import { verify } from "@node-rs/argon2";
-import { eq, sql } from "drizzle-orm";
+import { hash, verify } from "@node-rs/argon2";
+import { and, eq, gt, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 
 import { users } from "./schema";
+
+/**
+ * Same Argon2id params used everywhere passwords are hashed in the
+ * codebase (sign-up, password-change, claim). OWASP 2024 minimum
+ * for argon2id: 19 MiB memory, 2 iterations, 1 thread. Bumping any
+ * of these requires a migration plan (existing hashes don't auto-
+ * upgrade; verify-then-rehash on next login is the typical path).
+ */
+const PASSWORD_HASH_OPTS = {
+  memoryCost: 19_456,
+  timeCost: 2,
+  parallelism: 1,
+} as const;
 
 /**
  * Internal primitive. Invokes the `redact_user(uuid)` SQL function which
@@ -177,4 +190,207 @@ export async function forceDeleteAccount(
   const r = await softDeleteUser(userId);
   if (!r.ok) return r;
   return ok({ userId, previousRole: user.role });
+}
+
+// ── claim flow (Bubble migration → first password set) ───────────────
+
+/**
+ * Public-safe summary of a claim token's owner. Returned by
+ * `lookupClaimToken` so the /claim/[token] page can render the
+ * user's email + name as a confirmation step before they choose a
+ * password (so they know which account they're claiming).
+ *
+ * Never includes the password hash or any sensitive field.
+ */
+export type ClaimPreview = {
+  userId: string;
+  email: string;
+  firstName: string | null;
+  name: string | null;
+  role: "project_owner" | "builder" | "admin" | null;
+  expiresAt: Date;
+};
+
+/**
+ * Look up the user behind a claim token. Returns a public-safe
+ * preview, or a tagged fail for the four ways this can go wrong:
+ *
+ *   - `not_found`  — token doesn't exist (typo, copy-paste fail)
+ *   - `expired`    — token age > 90 days
+ *   - `conflict`   — token exists but the user already has a
+ *                    password set (they claimed once already and
+ *                    something is asking them to claim again —
+ *                    probably a stale email link)
+ *   - `internal`   — DB error
+ *
+ * Used by:
+ *   - The /claim/[token] page (server-render: validate before render)
+ *   - claimAccount() itself (re-checks under transaction)
+ */
+export async function lookupClaimToken(
+  token: string,
+): Promise<Result<ClaimPreview>> {
+  if (!token || token.length === 0) {
+    return fail("not_found", "Invalid claim link.");
+  }
+  try {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        name: users.name,
+        role: users.role,
+        passwordHash: users.passwordHash,
+        claimTokenExpiresAt: users.claimTokenExpiresAt,
+      })
+      .from(users)
+      .where(eq(users.claimToken, token))
+      .limit(1);
+
+    if (!user) return fail("not_found", "This claim link isn't valid.");
+    if (user.passwordHash) {
+      return fail(
+        "conflict",
+        "This account has already been claimed. Sign in normally — use 'forgot password' if you can't remember.",
+      );
+    }
+    if (!user.claimTokenExpiresAt || user.claimTokenExpiresAt < new Date()) {
+      return fail(
+        "rate_limited",
+        "This claim link has expired. Email support@builderhq.com.au and we'll send a fresh one.",
+      );
+    }
+
+    return ok({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      name: user.name,
+      role: user.role,
+      expiresAt: user.claimTokenExpiresAt,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "users.claim_lookup_failed", msg },
+      "claim token lookup failed",
+    );
+    return fail("internal", "Couldn't verify this link. Try again in a minute.");
+  }
+}
+
+/**
+ * Spend a claim token: set the user's first password + clear the
+ * token + activate the account. Returns the user id on success
+ * so the caller can call Auth.js signIn() to drop them straight
+ * into the app.
+ *
+ * Transaction-wrapped because we're touching three columns in a
+ * deliberate sequence (token check → hash → write). The token clear
+ * is what makes this single-use: a second attempt finds the token
+ * already null and bails.
+ *
+ * Validation:
+ *   - password length ≥ 10 (matches sign-up rule)
+ *   - token must still exist and be in date
+ *   - account must not already have a password
+ */
+export async function claimAccount(
+  token: string,
+  newPassword: string,
+): Promise<Result<{ userId: string; email: string }>> {
+  if (!token) return fail("not_found", "Invalid claim link.");
+  if (!newPassword || newPassword.length < 10) {
+    return fail("validation", "Password must be at least 10 characters.", {
+      issues: [
+        {
+          path: ["password"],
+          message: "Password must be at least 10 characters.",
+        },
+      ],
+    });
+  }
+  if (newPassword.length > 200) {
+    return fail("validation", "Password is too long.", {
+      issues: [{ path: ["password"], message: "Password is too long." }],
+    });
+  }
+
+  // Hash outside the transaction — argon2 is CPU-bound and we don't
+  // want to hold a DB row lock for ~120ms while we hash.
+  const passwordHash = await hash(newPassword, PASSWORD_HASH_OPTS);
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({
+          id: users.id,
+          email: users.email,
+          passwordHash: users.passwordHash,
+          claimTokenExpiresAt: users.claimTokenExpiresAt,
+        })
+        .from(users)
+        .where(
+          and(
+            eq(users.claimToken, token),
+            // Implicit: token still exists. Belt-and-braces: also
+            // check the expiry inside the txn so a 91-day-old token
+            // can't sneak through a race with the cleanup job.
+            gt(users.claimTokenExpiresAt, new Date()),
+          ),
+        )
+        .limit(1);
+
+      if (!user) {
+        return { kind: "not_found" as const };
+      }
+      if (user.passwordHash) {
+        return { kind: "already_claimed" as const };
+      }
+
+      await tx
+        .update(users)
+        .set({
+          passwordHash,
+          claimToken: null,
+          claimTokenExpiresAt: null,
+          status: "active",
+          emailVerified: sql`COALESCE(${users.emailVerified}, now())`,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
+
+      return { kind: "ok" as const, userId: user.id, email: user.email };
+    });
+
+    if (result.kind === "not_found") {
+      return fail(
+        "not_found",
+        "This claim link isn't valid or has expired. Email support@builderhq.com.au.",
+      );
+    }
+    if (result.kind === "already_claimed") {
+      return fail(
+        "conflict",
+        "This account has already been claimed. Sign in normally instead.",
+      );
+    }
+
+    logger.info(
+      { event: "users.claimed", userId: result.userId },
+      "user claimed migrated account",
+    );
+    return ok({ userId: result.userId, email: result.email });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "users.claim_failed", msg },
+      "claim transaction threw",
+    );
+    return fail(
+      "internal",
+      "Something went wrong on our side. Try again, or contact support.",
+    );
+  }
 }

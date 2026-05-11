@@ -18,4 +18,10 @@
  *   - admin/service.ts    → admin-side "delete this user"
  */
 
-export { deleteOwnAccount, forceDeleteAccount } from "./service";
+export {
+  deleteOwnAccount,
+  forceDeleteAccount,
+  lookupClaimToken,
+  claimAccount,
+  type ClaimPreview,
+} from "./service";

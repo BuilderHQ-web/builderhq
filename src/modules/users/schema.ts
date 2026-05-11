@@ -94,6 +94,28 @@ export const users = pgTable(
     // Soft delete — hard delete only via redact_user() on GDPR/Privacy Act
     // erasure requests. Day-to-day "delete" sets this column.
     deletedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    /**
+     * Single-use claim token for migrated accounts. NULL for normal
+     * sign-ups. When set, the user can hit /claim/<token> to set their
+     * first password (Bubble bcrypt hashes can't migrate). Cleared on
+     * successful claim. Expires in 90 days; re-issued by admin if a
+     * user contacts support after that.
+     */
+    claimToken: uuid("claim_token"),
+    claimTokenExpiresAt: timestamp("claim_token_expires_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+
+    /**
+     * Legacy migration breadcrumbs. `legacy_source = 'bubble'` for
+     * imported users. `legacy_bubble_id` is the Bubble unique-id so
+     * the migration scripts stay idempotent + admin can answer
+     * "where did this user come from?" questions.
+     */
+    legacyBubbleId: text("legacy_bubble_id"),
+    legacySource: text("legacy_source"),
   },
   (t) => [
     uniqueIndex("users_email_unique").on(t.email),
@@ -102,6 +124,10 @@ export const users = pgTable(
     index("users_role_idx").on(t.role),
     index("users_status_idx").on(t.status),
     index("users_created_at_idx").on(t.createdAt),
+    // claimToken / legacyBubbleId indexes live as partial unique
+    // constraints in migration 0015 (Drizzle can't express partial
+    // indexes inline yet — the DB has them, this code-side declaration
+    // is informational).
   ],
 );
 

@@ -23,6 +23,7 @@ import { fail, ok, type Result } from "@/lib/result";
 
 import { VerificationEmail } from "@/emails/VerificationEmail";
 import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
+import { LaunchInviteEmail } from "@/emails/LaunchInviteEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
 import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
 import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
@@ -132,6 +133,78 @@ export async function sendPasswordResetEmail(
   logger.info(
     { event: "email.password_reset.sent", to: input.to, resendId: data.id },
     "password reset email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Launch invite (Bubble → Neon migration) ─────────────────────────────
+
+interface SendLaunchInviteEmailInput {
+  to: string;
+  firstName: string | null;
+  claimUrl: string;
+  daysToExpire: number;
+}
+
+/**
+ * One-shot email blast for migrated Bubble users. Sent by the
+ * `scripts/migrate-bubble/05-blast.mjs` runner in batches of ~50/min
+ * to stay within Resend's free-tier rate limit. Idempotent on the
+ * runner side — keyed by claim token, won't double-send.
+ *
+ * Subject is intentionally event-style ("BuilderHQ 2.0 has landed —
+ * claim your account") rather than transactional ("Action required")
+ * so the recipient parses it as relevant news, not as a security alert.
+ */
+export async function sendLaunchInviteEmail(
+  input: SendLaunchInviteEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "BuilderHQ 2.0 has landed — claim your account";
+  const props = {
+    claimUrl: input.claimUrl,
+    firstName: input.firstName,
+    daysToExpire: input.daysToExpire,
+  };
+
+  const [html, text] = await Promise.all([
+    render(LaunchInviteEmail(props)),
+    render(LaunchInviteEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    // Mark the blast with a tag so Resend's dashboard groups them
+    // and we can see open / bounce rates as one cohort.
+    tags: [{ name: "category", value: "launch_invite" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.launch_invite.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "launch invite email send failed",
+    );
+    return fail(
+      "external_error",
+      "We couldn't send the launch invite to this address. The runner will retry.",
+    );
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    { event: "email.launch_invite.sent", to: input.to, resendId: data.id },
+    "launch invite email sent",
   );
   return ok({ id: data.id });
 }

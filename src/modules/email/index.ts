@@ -23,4 +23,5 @@ export {
   sendUnlockOwnerEmail,
   sendUnlockBuilderEmail,
   sendUnlockOpsEmail,
+  sendLaunchInviteEmail,
 } from "./service";
