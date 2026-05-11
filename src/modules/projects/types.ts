@@ -71,6 +71,13 @@ export type MarketplacePreview = {
   targetCompletionMonth: string | null;
   description: string | null;
   documentCount: number;
+  /**
+   * Number of builders who have unlocked this project. Bounded
+   * [0, UNLOCK_CAP] under normal operation. Drives the "X / 3 spots"
+   * marketplace indicator + the "FULL" disabled state on the unlock
+   * CTA. Imported from @/modules/unlocks for the actual cap.
+   */
+  unlockedCount: number;
   publishedAt: Date | null;
   createdAt: Date;
 };

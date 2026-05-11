@@ -16,7 +16,7 @@
  */
 
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
@@ -27,7 +27,11 @@ import {
   postUnlockSystemMessage,
 } from "@/modules/messaging";
 import { builderProfiles } from "@/modules/profiles/schema";
+// Public-barrel import — the project row FK target lives here so we
+// don't deepen the cross-module-schema lint debt.
+import { projects } from "@/modules/projects";
 
+import { UNLOCK_CAP } from "./constants";
 import { unlocks, savedProjects, type UnlockRow } from "./schema";
 
 /**
@@ -144,17 +148,24 @@ async function dispatchUnlock(
  * Idempotent: calling twice with the same builder+project is fine.
  * Returns the existing row in that case.
  *
- * The unlock flow now gates on Founding Builder Access (FBA):
+ * The unlock flow gates on three things, in this order:
  *
- *   - If the builder already has an unlock for this project → return
- *     it. (Idempotent.)
- *   - Else, if the caller passed a non-default source (e.g. "paid"
- *     after Stripe success in step 5b, or "admin" via admin override),
- *     trust that and write the row.
- *   - Else, default path: check the builder's FBA. If a credit is
- *     available, write the row with source="founding". If not, fail
- *     with `code: "payment_required"` — the UI surfaces the paid-
- *     unlock CTA (Stripe lands in step 5b).
+ *   1. **Already-unlocked short-circuit.** If this (builder × project)
+ *      already has a row, return it. No state change.
+ *   2. **Builder eligibility.** Verified ABN + licence (skipped for
+ *      admin / paid-source unlocks that already know better).
+ *   3. **Platform cap.** No project may have more than UNLOCK_CAP (3)
+ *      unlocks. Enforced inside a transaction with `SELECT … FOR UPDATE`
+ *      on the project row so two simultaneous unlock attempts can't
+ *      both squeeze in. Bypassed for caller-forced sources because
+ *      those callsites are admin tooling / Stripe webhooks already.
+ *   4. **FBA credit.** Founding-tier credit must be available (free
+ *      unlocks). Stripe paid path arrives in v2.
+ *
+ * The cap is enforced inside the same transaction as the insert.
+ * Without that, two builders racing to be the 3rd unlock could both
+ * pass the count check (each seeing 2 rows) and both insert — bumping
+ * the project to 4. The row lock serialises the cap check + insert.
  */
 export async function unlockProject(
   builderId: string,
@@ -179,18 +190,12 @@ export async function unlockProject(
   }
 
   // Caller-forced source (e.g. Stripe webhook, admin override).
+  // Still cap-enforced — admins shouldn't blow past the rule by accident.
   if (options.source && options.source !== "free") {
-    const [row] = await db
-      .insert(unlocks)
-      .values({ builderId, projectId, source: options.source })
-      .returning();
-    if (!row) return fail("internal", "Failed to record unlock.");
-    await ensureConversationOnUnlock(builderId, projectId);
-    void dispatchUnlock(builderId, projectId);
-    return ok(row);
+    return insertUnlockWithCap(builderId, projectId, options.source);
   }
 
-  // Default: gate on FBA.
+  // Default: gate on FBA credit.
   const credit = await checkCreditAvailable(builderId);
   if (!credit.ok) {
     return fail(
@@ -204,14 +209,75 @@ export async function unlockProject(
     );
   }
 
-  const [row] = await db
-    .insert(unlocks)
-    .values({ builderId, projectId, source: "founding" })
-    .returning();
-  if (!row) return fail("internal", "Failed to record unlock.");
+  return insertUnlockWithCap(builderId, projectId, "founding");
+}
+
+/**
+ * Cap-enforced insert. Wraps the count check + insert in a single
+ * transaction with `FOR UPDATE` on the project row, so simultaneous
+ * unlock attempts on the same project serialise through Postgres.
+ *
+ * Returns:
+ *   - ok(row)                          — unlock recorded
+ *   - fail("rate_limited", "project_full") — already at cap
+ *   - fail("internal", ...)            — DB error
+ *
+ * Side effects (conversation create + dispatch) run outside the
+ * transaction so they don't block the unlock if email/notification
+ * dispatch is slow.
+ */
+async function insertUnlockWithCap(
+  builderId: string,
+  projectId: string,
+  source: UnlockRow["source"],
+): Promise<Result<UnlockRow>> {
+  let inserted: UnlockRow | null = null;
+  let atCap = false;
+
+  try {
+    await db.transaction(async (tx) => {
+      // Row-level lock on the project. Any other unlock for this same
+      // project waits here until our transaction commits/rolls back.
+      // Doesn't affect reads, doesn't affect other projects.
+      await tx.execute(
+        sql`SELECT 1 FROM ${projects} WHERE ${projects.id} = ${projectId} FOR UPDATE`,
+      );
+
+      const current = await tx.$count(unlocks, eq(unlocks.projectId, projectId));
+      if (current >= UNLOCK_CAP) {
+        atCap = true;
+        return;
+      }
+
+      const [row] = await tx
+        .insert(unlocks)
+        .values({ builderId, projectId, source })
+        .returning();
+      inserted = row ?? null;
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "unlock.insert_failed", projectId, builderId, msg },
+      "unlock insert transaction threw",
+    );
+    return fail("internal", "Failed to record unlock.");
+  }
+
+  if (atCap) {
+    return fail(
+      "rate_limited",
+      `This project is full — ${UNLOCK_CAP} builders already have access.`,
+      { reason: "project_full" },
+    );
+  }
+  if (!inserted) {
+    return fail("internal", "Failed to record unlock.");
+  }
+
   await ensureConversationOnUnlock(builderId, projectId);
   void dispatchUnlock(builderId, projectId);
-  return ok(row);
+  return ok(inserted);
 }
 
 export async function isUnlocked(
@@ -239,6 +305,41 @@ export async function listMyUnlockedProjectIds(
 
 export async function countMyUnlocks(builderId: string): Promise<number> {
   return db.$count(unlocks, eq(unlocks.builderId, builderId));
+}
+
+/**
+ * Total unlocks on a single project. Bounded between 0 and
+ * UNLOCK_CAP under normal operation. Used by the marketplace card
+ * to render "X / N spots" and by the detail page to gate the
+ * unlock CTA.
+ *
+ * Bulk-fetch variant lives in `countUnlocksByProject` below — use
+ * that when you have a list of project ids (one query vs N).
+ */
+export async function countUnlocksForProject(projectId: string): Promise<number> {
+  return db.$count(unlocks, eq(unlocks.projectId, projectId));
+}
+
+/**
+ * Bulk version — one query for a batch of project ids. Returns a
+ * Map(projectId → count). Projects with zero unlocks are NOT in the
+ * map; callers should treat absence as zero.
+ */
+export async function countUnlocksByProject(
+  projectIds: string[],
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (projectIds.length === 0) return result;
+  const rows = await db
+    .select({
+      projectId: unlocks.projectId,
+      n: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(unlocks)
+    .where(inArray(unlocks.projectId, projectIds))
+    .groupBy(unlocks.projectId);
+  for (const r of rows) result.set(r.projectId, r.n);
+  return result;
 }
 
 // ── saved projects ───────────────────────────────────────────────────────

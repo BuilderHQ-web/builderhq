@@ -37,6 +37,9 @@ import type {
 } from "./types";
 
 import { documents } from "@/modules/documents/schema";
+// Cross-module table reads — go through public barrel so we don't
+// drag the unlocks service (and the lib/db chain) into a runtime cycle.
+import { unlocks } from "@/modules/unlocks";
 
 // Pricing intentionally not imported here — service.ts only needs it
 // for non-existent monetary calculations right now. Pricing lives in
@@ -355,7 +358,7 @@ export async function listForMarketplace(
     .limit(filters.limit ?? 60)
     .offset(filters.offset ?? 0);
 
-  return attachDocCounts(rows);
+  return attachMarketplaceCounts(rows);
 }
 
 /** Fetch a single preview by slug (used by the builder detail page). */
@@ -402,8 +405,8 @@ export async function getMarketplacePreview(
   // Touch `list` to satisfy lint without using it functionally.
   void list;
   if (!row) return fail("not_found", "Project not found.");
-  const [withCount] = await attachDocCounts([row]);
-  return ok(withCount!);
+  const [withCounts] = await attachMarketplaceCounts([row]);
+  return ok(withCounts!);
 }
 
 /**
@@ -461,41 +464,65 @@ export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
     .from(projects)
     .where(and(inArray(projects.id, ids), isNull(projects.deletedAt)))
     .orderBy(desc(projects.publishedAt));
-  return attachDocCounts(rows);
+  return attachMarketplaceCounts(rows);
 }
 
 /**
- * Take a batch of preview rows missing `documentCount` and merge in the
- * per-project counts in a single query. Cheap enough for any reasonable
- * page (≤60 rows). Replaces a flaky scalar-subquery select.
+ * Take a batch of preview rows and merge in the counts the marketplace
+ * card depends on — `documentCount` and `unlockedCount` — in two
+ * grouped-aggregate queries (one per join), run in parallel.
+ *
+ * Both queries are bounded by the input row count (≤ 60 typical) so
+ * they stay sub-millisecond even at scale. Avoids correlated subqueries
+ * which were measurably flaky on Neon.
+ *
+ * Counts default to 0 when no rows match — the maps don't include a
+ * key for zero-count projects, so the spread reads "absence as zero".
  */
-async function attachDocCounts<
+async function attachMarketplaceCounts<
   T extends { id: string },
->(rows: T[]): Promise<Array<T & { documentCount: number }>> {
+>(rows: T[]): Promise<Array<T & { documentCount: number; unlockedCount: number }>> {
   if (rows.length === 0) return [];
-  const counts = await db
-    .select({
-      projectId: documents.projectId,
-      count: sql<number>`count(*)`.mapWith(Number),
-    })
-    .from(documents)
-    .where(
-      and(
-        inArray(
-          documents.projectId,
-          rows.map((r) => r.id),
-        ),
-        eq(documents.status, "active"),
-        isNull(documents.deletedAt),
-      ),
-    )
-    .groupBy(documents.projectId);
+  const ids = rows.map((r) => r.id);
 
-  const map = new Map<string, number>();
-  for (const c of counts) {
-    if (c.projectId) map.set(c.projectId, c.count);
+  const [docCounts, unlockCounts] = await Promise.all([
+    db
+      .select({
+        projectId: documents.projectId,
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(documents)
+      .where(
+        and(
+          inArray(documents.projectId, ids),
+          eq(documents.status, "active"),
+          isNull(documents.deletedAt),
+        ),
+      )
+      .groupBy(documents.projectId),
+    db
+      .select({
+        projectId: unlocks.projectId,
+        count: sql<number>`count(*)`.mapWith(Number),
+      })
+      .from(unlocks)
+      .where(inArray(unlocks.projectId, ids))
+      .groupBy(unlocks.projectId),
+  ]);
+
+  const docMap = new Map<string, number>();
+  for (const c of docCounts) {
+    if (c.projectId) docMap.set(c.projectId, c.count);
   }
-  return rows.map((r) => ({ ...r, documentCount: map.get(r.id) ?? 0 }));
+  const unlockMap = new Map<string, number>();
+  for (const c of unlockCounts) {
+    unlockMap.set(c.projectId, c.count);
+  }
+  return rows.map((r) => ({
+    ...r,
+    documentCount: docMap.get(r.id) ?? 0,
+    unlockedCount: unlockMap.get(r.id) ?? 0,
+  }));
 }
 
 /** Soft-delete. Cascade is handled at the doc layer (project_id → null). */

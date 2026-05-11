@@ -20,11 +20,15 @@ export type {
 
 export type { Unlock, SavedProject } from "./types";
 
+export { UNLOCK_CAP } from "./constants";
+
 export {
   unlockProject,
   isUnlocked,
   listMyUnlockedProjectIds,
   countMyUnlocks,
+  countUnlocksForProject,
+  countUnlocksByProject,
   saveProject,
   unsaveProject,
   isSaved,

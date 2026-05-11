@@ -40,6 +40,10 @@ import type { Document, DocumentCategory } from "@/modules/documents";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
+// Direct constants import — keeps the server-only unlocks service
+// out of this client bundle. See modules/users/index.ts for the
+// equivalent pattern.
+import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 import {
   ProjectMessagingPanel,
   totalUnread,
@@ -207,6 +211,14 @@ export function ProjectDetail({
             "We need to confirm your ABN + licence first. Opening your profile.",
           );
           router.push("/builder/profile");
+          return;
+        }
+        if (reason === "project_full") {
+          toast.error(
+            "Project is full",
+            "Another builder unlocked the last spot — try a similar project.",
+          );
+          router.refresh();
           return;
         }
         toast.error("Couldn't unlock", r.error.message);
@@ -565,6 +577,8 @@ export function ProjectDetail({
           slug={preview.slug}
           tenderStatus={myTenderStatus}
         />
+      ) : preview.unlockedCount >= UNLOCK_CAP ? (
+        <ProjectFullBar />
       ) : viewerMode ? (
         <ViewerModeBar
           abnVerified={viewerMode.abnVerified}
@@ -575,6 +589,7 @@ export function ProjectDetail({
           priceAud={priceAud}
           documents={documents.length}
           fbaStatus={fbaStatus}
+          unlockedCount={preview.unlockedCount}
           unlocking={unlocking}
           onUnlock={onUnlock}
         />
@@ -669,17 +684,24 @@ function UnlockBar({
   priceAud,
   documents,
   fbaStatus,
+  unlockedCount,
   unlocking,
   onUnlock,
 }: {
   priceAud: number;
   documents: number;
   fbaStatus: FbaStatus;
+  unlockedCount: number;
   unlocking: boolean;
   onUnlock: () => void;
 }) {
   const fbaActive = fbaStatus.active;
   const hasCredits = fbaActive && fbaStatus.remainingThisCycle > 0;
+  // Spots-left framing — reinforces scarcity right at the unlock CTA.
+  // When count is 0, no "spots" copy (avoids implying the project is
+  // unpopular). When ≥1, surface the urgency.
+  const spotsLeft = Math.max(0, UNLOCK_CAP - unlockedCount);
+  const showScarcity = unlockedCount > 0;
 
   return (
     <div
@@ -723,6 +745,19 @@ function UnlockBar({
                   {fbaStatus.remainingThisCycle} of {fbaStatus.monthlyQuota} free
                   unlocks left this cycle · address · owner contact ·{" "}
                   {documents} document{documents === 1 ? "" : "s"}
+                  {showScarcity ? (
+                    <span
+                      className={cn(
+                        "ml-1.5",
+                        spotsLeft === 1 ? "text-warning font-semibold" : "",
+                      )}
+                    >
+                      ·{" "}
+                      {spotsLeft === 1
+                        ? "1 spot left"
+                        : `${spotsLeft} of ${UNLOCK_CAP} spots open`}
+                    </span>
+                  ) : null}
                 </div>
               </>
             ) : (
@@ -785,6 +820,54 @@ function UnlockBar({
             {fbaActive ? "View cycle status" : "Claim founder access"}
           </Link>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ProjectFullBar — sticky bottom CTA shown when 3 builders have
+ * already unlocked this project. Replaces the unlock CTA + the
+ * viewer-mode bar entirely; once full, no path leads to an unlock
+ * attempt that would fail at the server.
+ *
+ * Tone: not apologetic, not buggy — "this is by design, here's what
+ * else is around." Routes the builder back to browse so the moment
+ * doesn't dead-end.
+ */
+function ProjectFullBar() {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-danger/[0.05] backdrop-blur-md">
+      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="min-w-0 flex items-start gap-3">
+          <span className="size-10 rounded-md border border-danger/40 bg-danger/10 flex items-center justify-center shrink-0 text-danger">
+            <Lock className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-[13px] font-semibold text-text">
+                This project is full
+              </span>
+              <span className="text-[10px] tracking-[0.18em] uppercase text-danger font-ui font-medium">
+                {UNLOCK_CAP} / {UNLOCK_CAP} unlocked
+              </span>
+            </div>
+            <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
+              {UNLOCK_CAP} builders are already in the running. Try a similar
+              project in your service area before the next one fills up.
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/builder/browse"
+          className={cn(
+            "shrink-0 inline-flex items-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "border border-border-strong bg-transparent text-text hover:bg-surface-1",
+          )}
+        >
+          Browse projects
+          <ArrowUpRight className="size-4" />
+        </Link>
       </div>
     </div>
   );

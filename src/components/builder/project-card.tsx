@@ -27,6 +27,9 @@ import {
 import { cn } from "@/lib/utils";
 import type { MarketplacePreview } from "@/modules/projects";
 import { unlockPriceFor } from "@/modules/projects/pricing";
+// Constants path (NOT the module index) so we don't pull
+// `unlocks/service.ts` — which is `server-only` — into the client bundle.
+import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 import { Sparkles } from "lucide-react";
 
 const TYPE_META: Record<
@@ -92,6 +95,13 @@ export function ProjectCard({
   const [saved, setSaved] = useState(isSaved);
   const [pending, startTransition] = useTransition();
   const priceAud = unlockPriceFor(project.type);
+  // Cap-state. `isFull` overrides every other affordance on the card —
+  // once 3 builders have unlocked, no new ones can; we'd rather show
+  // that loud and clear than entice them to click an unlock CTA that
+  // fails on submit.
+  const unlockedCount = Math.min(project.unlockedCount, UNLOCK_CAP);
+  const isFull = unlockedCount >= UNLOCK_CAP;
+  const spotsLeft = Math.max(0, UNLOCK_CAP - unlockedCount);
 
   const onToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -167,9 +177,17 @@ export function ProjectCard({
           {meta.label}
         </span>
 
-        {/* unlock + save badges */}
+        {/* unlock + save badges. FULL state overrides FBA / Unlocked /
+            paid pricing because it's the strongest signal — once the
+            project is at cap, the only thing builders need to know is
+            "can I still unlock this?". Hint: no. */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          {isUnlocked ? (
+          {isFull && !isUnlocked ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-danger/45 bg-danger/15 text-[9px] tracking-[0.18em] uppercase text-danger font-semibold">
+              <Lock className="size-2.5" />
+              Filled
+            </span>
+          ) : isUnlocked ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent bg-accent-muted/60 text-[9px] tracking-[0.16em] uppercase text-accent-light">
               <Unlock className="size-2.5" />
               Unlocked
@@ -288,10 +306,12 @@ export function ProjectCard({
         ) : null}
 
         <div className="mt-auto pt-4 flex items-center justify-between gap-2 border-t border-border-subtle/50">
-          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-text-muted">
-            <Files className="size-3.5" />
-            {project.documentCount} document{project.documentCount === 1 ? "" : "s"}
-          </span>
+          <SpotsIndicator
+            unlockedCount={unlockedCount}
+            spotsLeft={spotsLeft}
+            isFull={isFull}
+            documentCount={project.documentCount}
+          />
           <span className="inline-flex items-center gap-1 text-[11.5px] text-accent-light opacity-60 group-hover:opacity-100 transition-opacity">
             View
             <ArrowUpRight className="size-3" />
@@ -299,6 +319,85 @@ export function ProjectCard({
         </div>
       </div>
     </Link>
+  );
+}
+
+/**
+ * SpotsIndicator — the "X of 3 spots taken" line that lives on every
+ * marketplace card's footer. Three visual states:
+ *
+ *   0–1 unlocks taken    → muted dots + neutral copy ("2 spots open")
+ *   2 unlocks taken      → warning dots + urgent copy ("1 spot left")
+ *   3 unlocks taken (full) → danger pill with lock ("FILLED")
+ *
+ * The intent is scarcity-as-signal: builders see immediately whether
+ * this project is fresh, almost-gone, or already locked off, without
+ * having to read a number. The dot pattern is the primary read; the
+ * copy reinforces.
+ */
+function SpotsIndicator({
+  unlockedCount,
+  spotsLeft,
+  isFull,
+  documentCount,
+}: {
+  unlockedCount: number;
+  spotsLeft: number;
+  isFull: boolean;
+  documentCount: number;
+}) {
+  if (isFull) {
+    return (
+      <span className="inline-flex items-center gap-2 text-[11px] tracking-[0.12em] uppercase">
+        <span className="inline-flex items-center gap-1 text-danger font-ui font-semibold">
+          <Lock className="size-3" />
+          Filled
+        </span>
+        <span className="text-text-dim">·</span>
+        <span className="inline-flex items-center gap-1 text-text-muted normal-case tracking-normal">
+          <Files className="size-3" />
+          {documentCount} doc{documentCount === 1 ? "" : "s"}
+        </span>
+      </span>
+    );
+  }
+
+  const isUrgent = spotsLeft === 1;
+  return (
+    <span className="inline-flex items-center gap-2 text-[11.5px]">
+      <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-0.5" aria-hidden>
+          {Array.from({ length: UNLOCK_CAP }).map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "size-1.5 rounded-full transition-colors",
+                i < unlockedCount
+                  ? isUrgent
+                    ? "bg-warning shadow-[0_0_6px_rgba(255,181,71,0.55)]"
+                    : "bg-accent shadow-[0_0_6px_rgba(0,212,200,0.45)]"
+                  : "bg-text-faint/35",
+              )}
+            />
+          ))}
+        </span>
+        <span
+          className={cn(
+            "font-ui",
+            isUrgent ? "text-warning font-semibold" : "text-text-muted",
+          )}
+        >
+          {isUrgent
+            ? "1 spot left"
+            : `${spotsLeft} of ${UNLOCK_CAP} spots`}
+        </span>
+      </span>
+      <span className="text-text-dim">·</span>
+      <span className="inline-flex items-center gap-1 text-text-muted">
+        <Files className="size-3" />
+        {documentCount}
+      </span>
+    </span>
   );
 }
 
