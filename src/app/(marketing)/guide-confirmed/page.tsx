@@ -17,8 +17,8 @@
 
 import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
-import Image from "next/image";
 
+import { Logo } from "@/components/brand/logo";
 import s from "./confirmed.module.css";
 import theme from "../guide/theme.module.css";
 import { ConfirmedConversion } from "./confirmed-conversion";
@@ -65,14 +65,12 @@ export default function GuideConfirmedPage() {
       <div className={s.noise} />
 
       <nav className={s.nav}>
-        <Link href="https://builderhq.com.au" className={s.navLogo}>
-          <Image
-            src="/brand/BuilderHQ_White_Text.png"
-            alt="BuilderHQ"
-            width={200}
-            height={32}
-            priority
-          />
+        <Link
+          href="https://builderhq.com.au"
+          className={s.navLogo}
+          aria-label="BuilderHQ home"
+        >
+          <Logo height={28} />
         </Link>
         <div className={s.navMeta}>
           <span className={s.navMetaDot} />

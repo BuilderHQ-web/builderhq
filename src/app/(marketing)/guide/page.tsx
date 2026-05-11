@@ -13,8 +13,8 @@
 import { Suspense } from "react";
 import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
-import Image from "next/image";
 
+import { Logo } from "@/components/brand/logo";
 import s from "./guide.module.css";
 import theme from "./theme.module.css";
 import { GuideForm } from "./guide-form";
@@ -66,14 +66,15 @@ export default function GuidePage() {
 
       {/* Nav */}
       <nav className={s.nav}>
-        <Link href="https://builderhq.com.au" className={s.navLogo}>
-          <Image
-            src="/brand/BuilderHQ_White_Text.png"
-            alt="BuilderHQ"
-            width={200}
-            height={32}
-            priority
-          />
+        <Link
+          href="https://builderhq.com.au"
+          className={s.navLogo}
+          aria-label="BuilderHQ home"
+        >
+          {/* Brand <Logo /> component handles the offset math on the
+              500x500 PNG (visible glyph is only 327x80 of the canvas)
+              so we don't end up with a tiny logo lost in whitespace. */}
+          <Logo height={28} />
         </Link>
         <div className={s.navMeta}>
           <span className={s.navMetaDot} />
