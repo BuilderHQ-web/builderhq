@@ -84,18 +84,18 @@ const adminNav: NavSection[] = [
   {
     items: [
       { href: "/admin", label: "Overview", icon: LayoutDashboard },
-      { href: "/admin/users", label: "Users", icon: UsersIcon, soon: "Phase 4" },
-      { href: "/admin/builders", label: "Builders", icon: Hammer, soon: "Phase 4" },
-      { href: "/admin/owners", label: "Owners", icon: House, soon: "Phase 4" },
-      { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Phase 4" },
-      { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Phase 4" },
-      { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Phase 4" },
+      { href: "/admin/users", label: "Users", icon: UsersIcon },
+      { href: "/admin/builders", label: "Builders", icon: Hammer },
+      { href: "/admin/owners", label: "Owners", icon: House, soon: "Later" },
+      { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Later" },
+      { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Later" },
+      { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Later" },
     ],
   },
   {
     title: "Platform",
     items: [
-      { href: "/admin/audit", label: "Audit log", icon: ShieldCheck, soon: "Phase 4" },
+      { href: "/admin/audit", label: "Audit log", icon: ShieldCheck, soon: "Later" },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },

@@ -92,6 +92,13 @@
       "when": 1779000000000,
       "tag": "0012_marketing_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1779100000000,
+      "tag": "0013_admin_actions",
+      "breakpoints": true
     }
   ]
 }
