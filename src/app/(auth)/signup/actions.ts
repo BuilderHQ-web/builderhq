@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signUp, signUpSchema } from "@/modules/auth";
+import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 
 /** Form-state shape consumed by useFormState / useActionState on the client. */
 export interface SignupActionState {
@@ -22,6 +24,16 @@ export async function signupAction(
   _prev: SignupActionState,
   formData: FormData,
 ): Promise<SignupActionState> {
+  // Per-IP rate gate on account creation. Stops obvious flooding;
+  // legitimate signups land well under the limit.
+  const ip = clientIpFromHeaders(await headers());
+  const rl = await limiters.signUp.limit(ip);
+  if (!rl.success) {
+    return {
+      error: "Too many signup attempts from this network. Wait a few minutes.",
+    };
+  }
+
   const raw = {
     firstName: String(formData.get("firstName") ?? ""),
     lastName: String(formData.get("lastName") ?? ""),

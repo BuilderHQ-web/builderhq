@@ -395,8 +395,8 @@ function InactiveStatusPanel({
     status.reason === "no_grant" && stillEligible
       ? "Sign up before the cutoff and finish onboarding to claim one of the remaining seats — three months of free unlocks plus the forever-founder badge."
       : status.reason === "no_grant"
-        ? "Founding seats are closed for this cohort. Pay-per-unlock is coming once Stripe is wired."
-        : "Pay-per-unlock takes over for new projects from here. Stripe checkout is live shortly.";
+        ? "Founding seats are closed for this cohort. Reach out to support@builderhq.com.au — we'll sort you out while paid unlocks roll out."
+        : "Your founding window has closed. Get in touch and we'll bridge you into the next cohort while paid unlocks roll out.";
 
   return (
     <div

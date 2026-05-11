@@ -221,7 +221,7 @@ function FbaInactiveCard({
   const sub =
     reason === "no_grant"
       ? "Sign up before 31 May 2026 to claim one of the remaining founding seats — 3 months of free unlocks."
-      : "Pay-per-unlock kicks in for new projects. Stripe checkout lands shortly.";
+      : "Your founding window has closed. Reach out and we'll sort access while paid unlocks roll out.";
 
   return (
     <motion.div

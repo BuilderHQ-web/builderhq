@@ -729,16 +729,23 @@ function UnlockBar({
               <>
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-[13px] font-semibold text-text">
-                    Unlock this project
+                    {fbaActive
+                      ? "Cycle credits used"
+                      : "Free during founding launch"}
                   </span>
-                  <span className="font-display text-[18px] leading-none text-text-muted">
-                    ${priceAud}
+                  <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
+                    <span className="line-through decoration-[rgba(255,255,255,0.35)] decoration-1">
+                      ${priceAud}
+                    </span>
+                    <span className="text-accent-light font-display text-[16px] leading-none">
+                      $0
+                    </span>
                   </span>
                 </div>
                 <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
                   {fbaActive
-                    ? "All free unlocks for this cycle have been used."
-                    : "Sign up for Founding Builder Access for free unlocks."}
+                    ? "Your cycle resets soon — see Founding access for the exact date."
+                    : "Founding Builder Access is one click — free unlocks while we open the platform."}
                 </div>
               </>
             )}
@@ -766,15 +773,17 @@ function UnlockBar({
             {unlocking ? "Unlocking…" : "Unlock with FBA"}
           </button>
         ) : (
-          <button
-            type="button"
-            disabled
-            title="Stripe checkout coming soon"
-            className="shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] bg-surface-2 text-text-dim cursor-not-allowed border border-border-subtle"
+          <Link
+            href="/builder/access"
+            className={cn(
+              "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              "bg-accent text-accent-contrast hover:bg-accent-hover",
+              "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+            )}
           >
-            <Lock className="size-3.5" />
-            Pay ${priceAud} · soon
-          </button>
+            <Sparkles className="size-3.5" />
+            {fbaActive ? "View cycle status" : "Claim founder access"}
+          </Link>
         )}
       </div>
     </div>

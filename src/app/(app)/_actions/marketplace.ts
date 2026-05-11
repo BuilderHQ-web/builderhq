@@ -34,8 +34,11 @@ async function requireBuilder(): Promise<Result<ActorContext>> {
 }
 
 /**
- * Unlock a project. Free during launch (Phase 2 step 4).
- * Step 5 will add Stripe + founding-credit branches.
+ * Unlock a project. During the founding launch this is gated on FBA
+ * credits — every onboarded builder gets an auto-grant at the founding
+ * cohort cap. Paid pay-per-unlock via Stripe lands in v2 (the service
+ * already returns a rate_limited Result when no credit is available;
+ * the client points the user to /builder/access to claim a seat).
  */
 export async function unlockProjectAction(
   projectId: string,

@@ -54,6 +54,18 @@ const serverSchema = z.object({
   INNGEST_SIGNING_KEY: z.string().optional(),
 
   SENTRY_DSN: z.url().optional().or(z.literal("")),
+  /** Sentry source-map upload credentials. CI / Vercel only — local
+   *  dev never needs these and the wrapper silently skips uploads. */
+  SENTRY_ORG: z.string().optional(),
+  SENTRY_PROJECT: z.string().optional(),
+  SENTRY_AUTH_TOKEN: z.string().optional(),
+
+  // Rate limiting (Upstash Redis). When unset, lib/ratelimit.ts no-ops
+  // — fine for local dev, dangerous in production. Both must be set
+  // together; lib/ratelimit warns at startup if one is set and not
+  // the other.
+  UPSTASH_REDIS_REST_URL: z.string().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
   ONESIGNAL_APP_ID: z.string().optional(),
   ONESIGNAL_REST_API_KEY: z.string().optional(),

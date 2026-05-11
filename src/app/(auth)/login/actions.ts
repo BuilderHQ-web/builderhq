@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { verify } from "@node-rs/argon2";
 import { eq } from "drizzle-orm";
@@ -9,6 +10,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { resendVerificationEmail, signIn } from "@/modules/auth";
 import { users } from "@/modules/users";
+import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 
 export interface LoginActionState {
   error?: string;
@@ -64,6 +66,18 @@ export async function loginAction(
   }
 
   const { email, password, next } = parsed.data;
+
+  // Rate-limit credential-stuffing attempts. Keyed by IP — broad but
+  // sufficient for casual abuse. Switch to (IP + email) compound if
+  // we see distributed credential spraying. Returns ok in dev when
+  // Upstash isn't configured.
+  const ip = clientIpFromHeaders(await headers());
+  const rl = await limiters.signIn.limit(ip);
+  if (!rl.success) {
+    return {
+      error: "Too many sign-in attempts. Wait a minute before trying again.",
+    };
+  }
 
   const [user] = await db
     .select({

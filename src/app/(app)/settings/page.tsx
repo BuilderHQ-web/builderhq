@@ -145,7 +145,7 @@ export default async function SettingsPage() {
               kicker="Profile"
               icon={<User className="size-3.5" />}
               title="Identity"
-              description="Your name, contact phone, and email across BuilderHQ. Email change comes with re-verification — coming soon."
+              description="Your name, contact phone, and email across BuilderHQ. Email changes need re-verification — reach out to support to swap addresses."
             >
               <ProfileForm
                 defaultFirstName={user.firstName ?? ""}
