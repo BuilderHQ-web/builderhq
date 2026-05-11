@@ -123,6 +123,15 @@ export const documents = pgTable(
 
     status: documentStatusEnum().notNull().default("pending"),
 
+    /**
+     * Original Bubble CDN URL for documents imported during the
+     * 2026 migration. NULL for files uploaded natively. Drives:
+     *   - Idempotency in scripts/migrate-bubble/04-files.mjs
+     *   - Audit trail back to the source if a doc is ever flagged
+     *     as corrupted or mis-categorised
+     */
+    legacySourceUrl: text("legacy_source_url"),
+
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),
