@@ -23,6 +23,7 @@ import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { OwnerSettingsForm } from "./owner-form";
 import { PreferencesForm } from "./preferences-form";
+import { DeleteAccountForm } from "./delete-account-form";
 import { getMarketingEmailsEnabled } from "./actions";
 
 export const metadata = { title: "Settings" };
@@ -86,12 +87,14 @@ export default async function SettingsPage() {
       label: "Preferences",
       icon: <Sliders className="size-3" />,
     },
-    {
+  );
+  if (role !== "admin") {
+    navItems.push({
       id: "danger",
       label: "Danger zone",
       icon: <AlertTriangle className="size-3" />,
-    },
-  );
+    });
+  }
 
   return (
     <>
@@ -236,22 +239,23 @@ export default async function SettingsPage() {
             </SettingsSection>
           </Reveal>
 
-          {/* Danger zone */}
-          <Reveal immediate delay={0.24}>
-            <SettingsSection
-              id="danger"
-              tone="danger"
-              kicker="Danger zone"
-              icon={<AlertTriangle className="size-3.5" />}
-              title="Permanent actions"
-              description="Account deletion ships in Phase 2 alongside the data-export tool."
-            >
-              <div className="text-[13px] text-text-dim flex items-center gap-2">
-                <span className="size-1.5 rounded-full bg-warning shadow-[0_0_8px_rgba(255,181,71,0.5)]" />
-                Account deletion is intentionally locked off until export is in place.
-              </div>
-            </SettingsSection>
-          </Reveal>
+          {/* Danger zone — only for non-admins. Admin self-deletion is
+              blocked at the service layer too; we hide the UI here so
+              admins aren't tempted to try. */}
+          {role !== "admin" ? (
+            <Reveal immediate delay={0.24}>
+              <SettingsSection
+                id="danger"
+                tone="danger"
+                kicker="Danger zone"
+                icon={<AlertTriangle className="size-3.5" />}
+                title="Permanent actions"
+                description="Delete your account. Your personal details get scrubbed; projects and tenders you transacted on stay visible to the other party with a 'Deleted user' label."
+              >
+                <DeleteAccountForm />
+              </SettingsSection>
+            </Reveal>
+          ) : null}
         </div>
       </div>
     </>

@@ -7,6 +7,7 @@
  */
 
 import { Badge } from "@/components/ui/badge";
+import type { AdminActionKind } from "@/modules/audit";
 
 type ApprovalStatus =
   | "incomplete"
@@ -17,18 +18,6 @@ type ApprovalStatus =
 
 type UserStatus = "pending_verification" | "active" | "suspended" | "banned";
 type Role = "project_owner" | "builder" | "admin" | null;
-type AdminActionKind =
-  | "builder_approved"
-  | "builder_rejected"
-  | "builder_suspended"
-  | "builder_unsuspended"
-  | "user_suspended"
-  | "user_unsuspended"
-  | "user_banned"
-  | "user_unbanned"
-  | "project_archived"
-  | "project_restored"
-  | "tender_force_decided";
 
 const APPROVAL_META: Record<
   ApprovalStatus,
@@ -83,6 +72,7 @@ const ACTION_LABEL: Record<AdminActionKind, string> = {
   user_unsuspended: "Unsuspended user",
   user_banned: "Banned user",
   user_unbanned: "Unbanned user",
+  user_deleted: "Deleted user",
   project_archived: "Archived project",
   project_restored: "Restored project",
   tender_force_decided: "Force-decided tender",
@@ -104,6 +94,7 @@ const NEGATIVE_KINDS: ReadonlySet<AdminActionKind> = new Set([
   "builder_suspended",
   "user_suspended",
   "user_banned",
+  "user_deleted",
   "project_archived",
 ]);
 

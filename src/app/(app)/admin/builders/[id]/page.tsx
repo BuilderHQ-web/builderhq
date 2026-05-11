@@ -384,6 +384,7 @@ export default async function AdminBuilderDetailPage(props: {
                 userId={user.id}
                 status={user.status}
                 role={user.role}
+                showDelete
               />
             </div>
             {user.lastSeenAt ? (

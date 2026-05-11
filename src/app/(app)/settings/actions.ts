@@ -11,6 +11,7 @@ import {
   updateProfile,
 } from "@/modules/auth";
 import { upsertOwnerProfile } from "@/modules/profiles";
+import { deleteOwnAccount } from "@/modules/users/account";
 import { db } from "@/lib/db";
 import { users } from "@/modules/users/schema";
 import { fail, ok, type Result } from "@/lib/result";
@@ -182,4 +183,59 @@ export async function getMarketingEmailsEnabled(): Promise<boolean> {
     .where(eq(users.id, userId))
     .limit(1);
   return row?.enabled ?? true;
+}
+
+// ── Danger zone: delete-my-account ────────────────────────────────────
+
+/**
+ * Soft-delete the current user's account, then sign them out.
+ *
+ * `signOut({ redirectTo })` throws a NEXT_REDIRECT exception which is
+ * how Next.js navigates after server actions — we don't return on the
+ * happy path. On any earlier failure (wrong password, validation) we
+ * return `{ error }` so the client form surfaces it inline without
+ * navigating away.
+ */
+export async function deleteMyAccountAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const userId = await requireUserId();
+  if (!userId) return { error: "Not authenticated." };
+
+  const password = String(formData.get("currentPassword") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+
+  // Double-confirmation gate: the user must type the literal word
+  // "delete" alongside their password. Mirrors the irreversible-action
+  // pattern GitHub / Vercel use — protects against muscle-memory
+  // submits after auto-fill drops a password into the field.
+  if (confirmation.toLowerCase() !== "delete") {
+    return {
+      fieldErrors: {
+        confirmation: 'Type "delete" to confirm.',
+      },
+    };
+  }
+
+  const result = await deleteOwnAccount(userId, password);
+  if (!result.ok) {
+    if (result.error.code === "validation" && result.error.details?.issues) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.details.issues as Array<{
+        path: (string | number)[];
+        message: string;
+      }>) {
+        const k = issue.path.join(".");
+        if (!fieldErrors[k]) fieldErrors[k] = issue.message;
+      }
+      return { fieldErrors };
+    }
+    return { error: result.error.message };
+  }
+
+  // Throws NEXT_REDIRECT → /login?account_deleted=1. We never reach the
+  // line after this, but TypeScript needs a return on the non-throw path.
+  await signOut({ redirectTo: "/login?account_deleted=1" });
+  return { ok: true };
 }

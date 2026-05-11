@@ -27,6 +27,8 @@ export {
   unsuspendUser,
   banUser,
   unbanUser,
+  // writes — account deletion (soft delete + PII scrub)
+  deleteUser,
   // types
   type AdminDashboardData,
   type AdminBuilderListItem,

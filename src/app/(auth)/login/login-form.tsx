@@ -16,6 +16,10 @@ const initialState: LoginActionState = {};
 export function LoginForm() {
   const params = useSearchParams();
   const next = params.get("next") ?? "";
+  // Soft signals from post-action redirects. Banner only — no other
+  // behaviour change.
+  const accountDeleted = params.get("account_deleted") === "1";
+  const passwordChanged = params.get("password_changed") === "1";
   const [state, formAction] = useActionState(loginAction, initialState);
   const [isPending, startTransition] = useTransition();
 
@@ -28,6 +32,23 @@ export function LoginForm() {
       noValidate
     >
       <input type="hidden" name="next" value={next} />
+
+      {accountDeleted ? (
+        <div
+          role="status"
+          className="rounded-md border border-border-subtle bg-surface-1/60 px-3.5 py-2.5 text-[13px] text-text-muted"
+        >
+          Your account has been deleted. Personal details were scrubbed and
+          this account can no longer sign in.
+        </div>
+      ) : passwordChanged ? (
+        <div
+          role="status"
+          className="rounded-md border border-accent/25 bg-accent-muted/50 px-3.5 py-2.5 text-[13px] text-accent-light"
+        >
+          Password updated — sign in to continue.
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>

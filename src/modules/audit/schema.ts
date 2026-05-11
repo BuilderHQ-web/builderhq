@@ -35,6 +35,7 @@ export const adminActionKindEnum = pgEnum("admin_action_kind", [
   "user_unsuspended",
   "user_banned",
   "user_unbanned",
+  "user_deleted",
   "project_archived",
   "project_restored",
   "tender_force_decided",

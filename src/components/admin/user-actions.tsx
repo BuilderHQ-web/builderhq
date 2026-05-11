@@ -15,7 +15,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, PauseOctagon, Undo2, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  Ban,
+  PauseOctagon,
+  Trash2,
+  Undo2,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
@@ -23,6 +30,7 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   banUserAction,
+  deleteUserAction,
   suspendUserAction,
   unbanUserAction,
   unsuspendUserAction,
@@ -30,13 +38,16 @@ import {
 
 type UserStatus = "pending_verification" | "active" | "suspended" | "banned";
 type Role = "project_owner" | "builder" | "admin" | null;
-type Mode = null | "suspend" | "ban";
+type Mode = null | "suspend" | "ban" | "delete";
 
 interface Props {
   userId: string;
   status: UserStatus;
   role: Role;
   compact?: boolean;
+  /** When true, the delete-account control is rendered. Hide it on the
+   *  list view (where the row is dense) and show it on the detail page. */
+  showDelete?: boolean;
 }
 
 export function UserAccountActions({
@@ -44,6 +55,7 @@ export function UserAccountActions({
   status,
   role,
   compact = false,
+  showDelete = false,
 }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(null);
@@ -79,7 +91,7 @@ export function UserAccountActions({
     });
   };
 
-  const runWithReason = (kind: "suspend" | "ban") => {
+  const runWithReason = (kind: "suspend" | "ban" | "delete") => {
     const trimmed = reason.trim();
     if (trimmed.length < 4) {
       toast.error(
@@ -92,13 +104,19 @@ export function UserAccountActions({
       const r =
         kind === "suspend"
           ? await suspendUserAction(userId, trimmed)
-          : await banUserAction(userId, trimmed);
+          : kind === "ban"
+            ? await banUserAction(userId, trimmed)
+            : await deleteUserAction(userId, trimmed);
       if (!r.ok) {
         toast.error(`Couldn't ${kind}`, r.error.message);
         return;
       }
       toast.success(
-        kind === "suspend" ? "User suspended" : "User banned",
+        kind === "suspend"
+          ? "User suspended"
+          : kind === "ban"
+            ? "User banned"
+            : "User deleted",
       );
       reset();
       router.refresh();
@@ -119,6 +137,7 @@ export function UserAccountActions({
   const canUnsuspend = status === "suspended";
   const canBan = status !== "banned";
   const canUnban = status === "banned";
+  const canDelete = showDelete; // role check happens server-side
 
   return (
     <div className={cn("flex flex-col gap-3", compact ? "w-full" : "w-full")}>
@@ -180,13 +199,43 @@ export function UserAccountActions({
             Unban
           </Button>
         ) : null}
+        {canDelete ? (
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "delete" ? "danger" : "outline"}
+            onClick={() => setMode(mode === "delete" ? null : "delete")}
+            disabled={pending}
+            className="gap-1.5 !border-danger/40 !text-danger hover:!bg-danger/10 data-[active=true]:!text-text"
+            data-active={mode === "delete"}
+          >
+            <Trash2 className="size-3.5" />
+            Delete
+          </Button>
+        ) : null}
       </div>
 
       {mode !== null ? (
-        <div className="rounded-md border border-border-subtle bg-surface-1/60 p-3 flex flex-col gap-2">
+        <div
+          className={cn(
+            "rounded-md border p-3 flex flex-col gap-2",
+            mode === "delete"
+              ? "border-danger/30 bg-danger/[0.04]"
+              : "border-border-subtle bg-surface-1/60",
+          )}
+        >
           <label className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-medium flex items-center gap-1.5">
-            <AlertTriangle className="size-3 text-warning" />
-            Reason for {mode === "suspend" ? "suspending" : "banning"}
+            <AlertTriangle
+              className={cn(
+                "size-3",
+                mode === "delete" ? "text-danger" : "text-warning",
+              )}
+            />
+            {mode === "suspend"
+              ? "Reason for suspending"
+              : mode === "ban"
+                ? "Reason for banning"
+                : "Reason for deleting — this is irreversible from the UI"}
           </label>
           <Textarea
             value={reason}
@@ -194,7 +243,9 @@ export function UserAccountActions({
             placeholder={
               mode === "suspend"
                 ? "Temporary block — why?"
-                : "Permanent ban — be specific."
+                : mode === "ban"
+                  ? "Permanent ban — be specific."
+                  : "Scrub PII and lock account. Projects/tenders stay visible to counter-parties."
             }
             rows={3}
             disabled={pending}
@@ -221,8 +272,10 @@ export function UserAccountActions({
                 <Loader2 className="size-3.5 animate-spin" />
               ) : mode === "suspend" ? (
                 <PauseOctagon className="size-3.5" />
-              ) : (
+              ) : mode === "ban" ? (
                 <Ban className="size-3.5" />
+              ) : (
+                <Trash2 className="size-3.5" />
               )}
               Confirm {mode}
             </Button>

@@ -30,6 +30,7 @@ import {
   approveBuilder,
   banUser,
   canAccessAdmin,
+  deleteUser,
   getAdminDashboardData,
   getBuilderForAdmin,
   listBuilders,
@@ -198,6 +199,22 @@ export async function unbanUserAction(
   const a = await requireAdmin();
   if (!a.ok) return a;
   const r = await unbanUser(a.value.id, userId, reason);
+  if (r.ok) revalidateAfterUserChange(userId);
+  return r;
+}
+
+/**
+ * Soft-delete an account from the admin surface. Scrubs PII via the
+ * SQL redact_user() function — relational rows (projects, tenders,
+ * conversations) survive so the counter-party retains their history.
+ */
+export async function deleteUserAction(
+  userId: string,
+  reason: string,
+): Promise<Result<{ userId: string }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  const r = await deleteUser(a.value.id, userId, reason);
   if (r.ok) revalidateAfterUserChange(userId);
   return r;
 }

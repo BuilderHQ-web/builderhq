@@ -29,6 +29,7 @@ import { fail, ok, type Result } from "@/lib/result";
 import { logger } from "@/lib/logger";
 
 import { users } from "@/modules/users";
+import { forceDeleteAccount } from "@/modules/users/account";
 import { projects } from "@/modules/projects";
 import { tenders } from "@/modules/tenders";
 import {
@@ -297,7 +298,11 @@ export async function listBuilders(
   filters: BuilderListFilters = {},
 ): Promise<AdminBuilderListItem[]> {
   const { status = "all", search, limit = 100, order = "newest" } = filters;
-  const conds = [];
+  // Exclude soft-deleted accounts from admin listings. Their data is
+  // scrubbed (company_name = "Deleted builder", approval_status =
+  // "incomplete") so showing them adds noise. Admins who need the audit
+  // history can still link directly to /admin/builders/[id].
+  const conds = [isNull(users.deletedAt)];
   if (status !== "all")
     conds.push(eq(builderProfiles.approvalStatus, status));
   if (search && search.trim()) {
@@ -794,6 +799,72 @@ export async function unbanUser(
   reason?: string,
 ): Promise<Result<{ userId: string }>> {
   return setUserStatus(actorId, userId, "active", { reason, kind: "unban" });
+}
+
+// ── writes: account deletion ──────────────────────────────────────────
+
+/**
+ * Admin-initiated account deletion. Soft-delete + PII redaction via the
+ * users module's `forceDeleteAccount` (which calls the redact_user SQL
+ * function). Logs `user_deleted` to the audit trail with the prior role
+ * captured in `meta` so the audit feed remains informative even after
+ * the user row's role is scrubbed.
+ *
+ * Refuses to delete other admins. Reason text is required — admin
+ * deletions are escalation-grade and need a paper trail.
+ */
+export async function deleteUser(
+  actorId: string,
+  userId: string,
+  reason: string,
+): Promise<Result<{ userId: string }>> {
+  if (!reason || reason.trim().length < 4) {
+    return fail("validation", "Reason is required (at least 4 characters).");
+  }
+  if (userId === actorId) {
+    return fail("forbidden", "Admins can't delete their own account here.");
+  }
+
+  // Snapshot identity BEFORE redaction so the audit log preserves enough
+  // context to make sense of the row afterwards (the user row's email
+  // becomes a stub immediately after this call).
+  const [snapshot] = await db
+    .select({
+      email: users.email,
+      role: users.role,
+      status: users.status,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!snapshot) return fail("not_found", "User not found.");
+
+  const r = await forceDeleteAccount(userId);
+  if (!r.ok) return r;
+
+  await logAdminAction({
+    actorId,
+    kind: "user_deleted",
+    subjectUserId: userId,
+    reason,
+    meta: {
+      previousEmail: snapshot.email,
+      previousRole: snapshot.role,
+      previousStatus: snapshot.status,
+    },
+  });
+
+  logger.info(
+    {
+      event: "admin.user_deleted",
+      actorId,
+      userId,
+      previousRole: snapshot.role,
+    },
+    "user soft-deleted by admin",
+  );
+
+  return ok({ userId });
 }
 
 // suppress unused-import warning — projectOwnerProfiles is reserved for
