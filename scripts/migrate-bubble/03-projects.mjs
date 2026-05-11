@@ -6,9 +6,11 @@
  *   - 21 Kelvin Cl, Niddrie       (owner: info@mokudesign.com.au)
  *   - 341 Beach Rd, Black Rock    (owner: billy@bdot.com.au)
  *
- * Both go in as status='awarded' so they don't appear in the
- * marketplace browse but unlock records survive for the builders
- * who already had access.
+ * Both go in as status='tendering' — they appear in the marketplace
+ * browse, but because they already have UNLOCK_CAP (3) unlocks each,
+ * the new card UI flips them to a "FILLED" state. New builders see
+ * them, can't unlock them, and the existing unlock records survive
+ * for the 3 builders who already have access.
  *
  * Per-project allowlists for unlocks (you provided these in chat):
  *   Niddrie:
@@ -171,7 +173,7 @@ try {
            legacy_bubble_id, legacy_source,
            published_at, created_at, updated_at)
          VALUES
-          ($1, $2, $3, $4::project_type, 'awarded'::project_status,
+          ($1, $2, $3, $4::project_type, 'tendering'::project_status,
            $5, $6, $7::australian_state, $8,
            $9, $10, $11, $12,
            $13::project_budget_band, $14,
