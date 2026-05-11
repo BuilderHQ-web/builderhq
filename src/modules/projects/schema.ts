@@ -208,6 +208,15 @@ export const projects = pgTable(
       .notNull()
       .defaultNow(),
     deletedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    /**
+     * Audit trail back to Bubble for migrated projects. NULL for
+     * projects created natively via /owner/projects/new. Used by the
+     * 2026 migration scripts as the idempotency key (re-running phase 3
+     * skips projects already imported).
+     */
+    legacyBubbleId: text("legacy_bubble_id"),
+    legacySource: text("legacy_source"),
   },
   (t) => [
     uniqueIndex("projects_slug_idx").on(t.slug),

@@ -141,10 +141,14 @@ try {
     }
 
     // ── builder_service_areas ───────────────────────────────────────────
-    // Bubble's service_area is a single state code (e.g. "VIC").
-    // We write one statewide row (no specific suburb, radius=50 → matches
-    // anything in that state via the matcher).
-    const areaState = mapState(row.service_area ?? "");
+    // Bubble's service_area column is empty for most builders — the
+    // state actually lives on `state_of_issue` (the licence column,
+    // which doubles as the builder's home state). Try service_area
+    // first, then fall back to state_of_issue.
+    // We write one statewide row (no specific suburb, radius=50 →
+    // matches anything in that state via the matcher).
+    const areaState =
+      mapState(row.service_area ?? "") || mapState(row.state_of_issue ?? "");
     if (areaState) {
       const existing = await client.query(
         `SELECT id FROM builder_service_areas
@@ -162,8 +166,8 @@ try {
         try {
           await client.query(
             `INSERT INTO builder_service_areas
-              (builder_id, state, suburb, radius_km, created_at, updated_at)
-             VALUES ($1, $2::australian_state, NULL, 50, now(), now())`,
+              (builder_id, state, suburb, radius_km, created_at)
+             VALUES ($1, $2::australian_state, NULL, 50, now())`,
             [userId, areaState],
           );
           areasCreated++;
@@ -175,10 +179,16 @@ try {
     }
 
     // ── builder_project_categories ──────────────────────────────────────
-    const prefRaw = String(row.project_preference ?? "").trim();
+    // Bubble has TWO project-preference columns (project_preference +
+    // project_preference2). The "2" variant is the actually-populated
+    // one in the export; the unsuffixed one is an older Bubble field
+    // they migrated away from. Try both, prefer the populated one.
+    const prefRaw =
+      String(row.project_preference2 ?? "").trim() ||
+      String(row.project_preference ?? "").trim();
     const categories = prefRaw
       .split(/\s*,\s*/)
-      .map((p) => mapProjectCategory(p))
+      .map((p) => mapProjectCategory(String(p).trim()))
       .filter((c) => !!c);
     for (const cat of new Set(categories)) {
       const existing = await client.query(
@@ -223,9 +233,12 @@ try {
         ? new Date(row.founding_builder_end_date)
         : new Date(Date.now() + 90 * 86_400_000);
 
-      const totalSaved = Number(row.total_money_saved_aud ?? 0) || 0;
-      const totalFree = Number(row.total_free_unlocks_used ?? 0) || 0;
-
+      // Note on legacy usage stats: Bubble tracked
+      // total_money_saved_aud + total_free_unlocks_used as
+      // standalone counters. Neon reconstructs usage from the
+      // actual `unlocks` rows (source='founding'), so we don't
+      // need to preserve those numbers — phase 3 re-creates the
+      // unlocks and the cycle math comes out the same.
       const existing = await client.query(
         `SELECT id FROM fba_grants
           WHERE builder_id = $1 AND source = 'founding'
@@ -246,15 +259,9 @@ try {
           await client.query(
             `INSERT INTO fba_grants
               (builder_id, source, start_at, end_at, monthly_quota,
-               meta, created_at, updated_at)
-             VALUES ($1, 'founding', $2, $3, 5,
-                     jsonb_build_object(
-                       'legacy_money_saved_aud', $4::numeric,
-                       'legacy_free_unlocks_used', $5::int,
-                       'source_csv', 'bubble'
-                     ),
-                     now(), now())`,
-            [userId, startAt, endAt, totalSaved, totalFree],
+               created_at)
+             VALUES ($1, 'founding', $2, $3, 5, now())`,
+            [userId, startAt, endAt],
           );
           grantsCreated++;
           log("info", "grant.created", { userId });

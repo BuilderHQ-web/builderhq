@@ -257,12 +257,36 @@ try {
         const instagram =
           String(builderRow.instagram ?? "").trim() || null;
 
+        // ABN conflict guard. The Bubble export contains multiple
+        // staff emails for the same company (e.g. moe@ and
+        // accounts.vic@ at Synergy Group), but Neon enforces a unique
+        // ABN per builder_profile. If another row already claims
+        // this ABN, insert THIS profile with abn=null and admin
+        // reconciles later. We still migrate the user so unlocks /
+        // tenders bound to their email survive.
+        let effectiveAbn = abn;
+        if (abn) {
+          const abnClash = await client.query(
+            `SELECT user_id FROM builder_profiles WHERE abn = $1 LIMIT 1`,
+            [abn],
+          );
+          if (abnClash.rows.length > 0) {
+            effectiveAbn = null;
+            log("warn", "builder.abn_conflict", {
+              email,
+              abn,
+              existingUserId: abnClash.rows[0].user_id,
+              note: "inserted with abn=null; admin should reconcile",
+            });
+          }
+        }
+
         // Approval status:
-        //   - completed_steps = 3 + valid ABN → pending_review (admin
-        //     re-verifies in the new admin UI)
+        //   - completed_steps = 3 + valid ABN (not nulled out by
+        //     conflict) → pending_review (admin re-verifies)
         //   - otherwise → incomplete (user finishes onboarding after claim)
         const approvalStatus =
-          completedSteps >= 3 && abn ? "pending_review" : "incomplete";
+          completedSteps >= 3 && effectiveAbn ? "pending_review" : "incomplete";
 
         await client.query(
           `INSERT INTO builder_profiles
@@ -284,7 +308,7 @@ try {
           [
             userId,
             companyName,
-            abn,
+            effectiveAbn,
             acn,
             addr.addressLine1,
             addr.suburb,
