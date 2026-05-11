@@ -1,0 +1,426 @@
+/* /estimate_received — post-submit confirmation styles.
+ *
+ * Same editorial scaffold as /guide-confirmed: shared theme.scope
+ * tokens, ambient backdrop, centered single-column layout. The
+ * differences from the guide confirmation:
+ *
+ *   - There's no PDF; the deliverable is a callback from ops. So the
+ *     hero artwork is a phone/clock "concierge" badge, not a magazine
+ *     cover with a tick.
+ *   - The reassurance panels speak to "we'll reach out within 12hr"
+ *     and "have your drawings ready", not "check your inbox / spam".
+ */
+
+.body {
+  background: var(--g-bg);
+  color: var(--g-text);
+  font-family: var(--g-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.body :global(*),
+.body :global(*::before),
+.body :global(*::after) { margin: 0; padding: 0; box-sizing: border-box; }
+.body :global(::selection) { background: var(--g-teal); color: #03090f; }
+
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.orb { position: absolute; border-radius: 50%; filter: blur(100px); }
+.orb1 { top: -250px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0, 212, 200, 0.18), transparent 65%); }
+.orb2 { bottom: -300px; left: -250px; width: 800px; height: 800px; background: radial-gradient(circle, rgba(0, 212, 200, 0.10), transparent 65%); }
+.orb3 {
+  top: 30%; left: 50%;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(0, 212, 200, 0.08), transparent 70%);
+  transform: translateX(-50%);
+}
+
+.gridBg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 200, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 200, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+}
+.noise {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+.nav {
+  position: relative;
+  z-index: 10;
+  padding: 24px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--g-line);
+  flex-shrink: 0;
+}
+.navLogo { display: inline-flex; }
+.navMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--g-text-dim);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.navMetaDot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--g-teal);
+  box-shadow: 0 0 6px var(--g-teal-glow);
+}
+
+.main {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 48px;
+}
+.container {
+  max-width: 720px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Hero badge — a clock-in-a-disc, replacing the magazine cover.
+ * Visually echoes /guide-confirmed but communicates "we'll be in
+ * touch" instead of "here's your file". */
+.badgeWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 56px;
+  position: relative;
+}
+.badgeWrap::before {
+  content: "";
+  position: absolute;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(0, 212, 200, 0.18), transparent 70%);
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  filter: blur(40px);
+  z-index: 0;
+}
+.badge {
+  position: relative;
+  z-index: 1;
+  width: 156px;
+  height: 156px;
+  border-radius: 50%;
+  background: linear-gradient(155deg, #03090f 0%, #061626 50%, #082030 100%);
+  border: 1px solid var(--g-line-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    0 10px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: badgeFloat 6s ease-in-out infinite;
+}
+@keyframes badgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.badge::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(0, 212, 200, 0.5), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.badgeIcon {
+  width: 72px;
+  height: 72px;
+  color: var(--g-teal);
+  position: relative;
+  z-index: 1;
+}
+.badgeRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 212, 200, 0.18);
+  animation: badgeSpin 18s linear infinite;
+  pointer-events: none;
+}
+@keyframes badgeSpin {
+  to { transform: rotate(360deg); }
+}
+
+.successTick {
+  position: absolute;
+  bottom: -16px;
+  right: 50%;
+  transform: translateX(108px);
+  width: 56px; height: 56px;
+  background: var(--g-teal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 16px 32px rgba(0, 212, 200, 0.4),
+    0 0 0 8px rgba(3, 9, 15, 0.95);
+  z-index: 2;
+  animation: tickPop 0.6s cubic-bezier(0.22, 1.4, 0.36, 1) 0.3s both;
+}
+@keyframes tickPop {
+  0% { transform: translateX(108px) scale(0); }
+  100% { transform: translateX(108px) scale(1); }
+}
+.successTick svg { width: 26px; height: 26px; color: #03090f; }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 18px;
+  border: 1px solid var(--g-line-teal);
+  border-radius: 100px;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--g-teal);
+  font-weight: 600;
+  margin-bottom: 32px;
+  animation: cFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+.eyebrowDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--g-teal);
+  box-shadow: 0 0 10px rgba(0, 212, 200, 0.7);
+  animation: dotPulse 2.5s ease-in-out infinite;
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.headline {
+  font-family: var(--g-serif);
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 300;
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  color: var(--g-white);
+  margin-bottom: 28px;
+  animation: cFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+.headline em { font-style: italic; color: var(--g-teal); font-weight: 300; }
+
+.deck {
+  font-family: var(--g-serif);
+  font-size: 22px;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--g-text-soft);
+  max-width: 600px;
+  margin: 0 auto 56px;
+  animation: cFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+@keyframes cFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto 48px;
+  animation: cFadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+.infoPanel {
+  background: linear-gradient(180deg, rgba(10, 21, 33, 0.5), rgba(6, 13, 22, 0.7));
+  border: 1px solid var(--g-line);
+  border-radius: 12px;
+  padding: 24px 22px;
+  text-align: left;
+  transition: border-color 0.3s ease;
+}
+.infoPanel:hover { border-color: var(--g-line-teal); }
+.infoIcon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 212, 200, 0.1);
+  border: 1px solid var(--g-line-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: var(--g-teal);
+}
+.infoIcon svg { width: 18px; height: 18px; }
+.infoLabel { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--g-teal); font-weight: 700; margin-bottom: 8px; }
+.infoText {
+  font-family: var(--g-serif);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--g-text);
+  letter-spacing: -0.005em;
+}
+.infoText strong { color: var(--g-teal); font-weight: 500; font-style: italic; }
+
+.timeline {
+  max-width: 640px;
+  margin: 0 auto 48px;
+  padding: 24px 28px;
+  border: 1px solid var(--g-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(10, 21, 33, 0.35), rgba(6, 13, 22, 0.5));
+  text-align: left;
+  animation: cFadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+.timelineLabel {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--g-teal);
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.timelineLabel::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--g-line-teal), transparent);
+}
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.timelineRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--g-serif);
+  font-size: 15px;
+  color: var(--g-text);
+}
+.timelineRow em { font-style: italic; color: var(--g-teal); }
+.timelineDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--g-teal);
+  box-shadow: 0 0 8px var(--g-teal-glow);
+}
+.timelineDotMuted {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--g-line-strong);
+}
+
+.secondaryCta { margin-top: 24px; animation: cFadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  font-family: var(--g-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--g-text-soft);
+  text-decoration: none;
+  border-radius: 100px;
+  border: 1px solid var(--g-line-strong);
+  transition: all 0.2s ease;
+}
+.secondaryLink:hover {
+  color: var(--g-teal);
+  border-color: var(--g-line-teal);
+  background: rgba(0, 212, 200, 0.04);
+}
+.secondaryArrow {
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+.secondaryLink:hover .secondaryArrow { transform: translateX(3px); }
+
+.footer {
+  position: relative;
+  z-index: 5;
+  padding: 32px 48px;
+  border-top: 1px solid var(--g-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.footerLeft { font-size: 12px; color: var(--g-text-dim); }
+.footerLinks { display: flex; gap: 24px; }
+.footerLinks a {
+  font-size: 12px;
+  color: var(--g-text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footerLinks a:hover { color: var(--g-teal); }
+
+@media (max-width: 720px) {
+  .nav { padding: 18px 24px; }
+  .navMeta { font-size: 9px; }
+  .main { padding: 40px 20px; }
+  .badge { width: 124px; height: 124px; }
+  .badgeIcon { width: 56px; height: 56px; }
+  .badgeWrap { margin-bottom: 44px; }
+  .successTick {
+    width: 46px; height: 46px;
+    transform: translateX(82px);
+  }
+  .successTick svg { width: 22px; height: 22px; }
+  @keyframes tickPop {
+    0% { transform: translateX(82px) scale(0); }
+    100% { transform: translateX(82px) scale(1); }
+  }
+  .headline { font-size: clamp(38px, 10vw, 56px); }
+  .deck { font-size: 18px; margin-bottom: 36px; }
+  .infoGrid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 28px; }
+  .infoPanel { padding: 22px 20px; }
+  .timeline { padding: 20px 18px; }
+  .timelineRow { font-size: 14px; }
+  .footer { padding: 24px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+}

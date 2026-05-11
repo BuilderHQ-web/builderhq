@@ -26,4 +26,5 @@ export {
   sendLaunchInviteEmail,
   sendGuideDownloadEmail,
   sendGuideLeadOpsEmail,
+  sendEstimateRequestOpsEmail,
 } from "./service";

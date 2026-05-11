@@ -26,6 +26,7 @@ import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
 import { LaunchInviteEmail } from "@/emails/LaunchInviteEmail";
 import { GuideDownloadEmail } from "@/emails/GuideDownloadEmail";
 import { GuideLeadOpsEmail } from "@/emails/GuideLeadOpsEmail";
+import { EstimateRequestOpsEmail } from "@/emails/EstimateRequestOpsEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
 import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
 import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
@@ -328,6 +329,88 @@ export async function sendGuideLeadOpsEmail(
   logger.info(
     { event: "email.guide_lead_ops.sent", leadId: input.leadId, resendId: data.id },
     "guide ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Marketing lead capture (estimate request, ops-only) ────────────────
+
+interface SendEstimateRequestOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  projectType: string | null;
+  company: string | null;
+  source: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Ops-only notification for estimate-request submissions. NO customer
+ * email — the team contacts the customer manually within the 12-hour
+ * SLA, so automating a customer touch here would undercut the
+ * concierge framing of the service.
+ */
+export async function sendEstimateRequestOpsEmail(
+  input: SendEstimateRequestOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const fullName = [input.firstName, input.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const subject = `ACTION: Estimate request from ${fullName || input.email}`;
+  const props = {
+    leadId: input.leadId,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    phone: input.phone,
+    projectType: input.projectType,
+    company: input.company,
+    source: input.source,
+    createdAt: input.createdAt,
+  };
+
+  const [html, text] = await Promise.all([
+    render(EstimateRequestOpsEmail(props)),
+    render(EstimateRequestOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "estimate_request" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.estimate_request_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "estimate request ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.estimate_request_ops.sent",
+      leadId: input.leadId,
+      resendId: data.id,
+    },
+    "estimate request ops notification sent",
   );
   return ok({ id: data.id });
 }
