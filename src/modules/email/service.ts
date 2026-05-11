@@ -24,6 +24,8 @@ import { fail, ok, type Result } from "@/lib/result";
 import { VerificationEmail } from "@/emails/VerificationEmail";
 import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
 import { LaunchInviteEmail } from "@/emails/LaunchInviteEmail";
+import { GuideDownloadEmail } from "@/emails/GuideDownloadEmail";
+import { GuideLeadOpsEmail } from "@/emails/GuideLeadOpsEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
 import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
 import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
@@ -205,6 +207,127 @@ export async function sendLaunchInviteEmail(
   logger.info(
     { event: "email.launch_invite.sent", to: input.to, resendId: data.id },
     "launch invite email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Marketing lead capture (guide download) ─────────────────────────────
+
+interface SendGuideDownloadEmailInput {
+  to: string;
+  firstName: string;
+  downloadUrl: string;
+}
+
+/**
+ * User-facing email — drops the PDF link into the recipient's inbox.
+ * Tagged so Resend's dashboard can break out open + click rates per
+ * landing-page cohort (we'll add more guides later).
+ */
+export async function sendGuideDownloadEmail(
+  input: SendGuideDownloadEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "Your Melbourne Build Brief is here";
+  const props = {
+    firstName: input.firstName,
+    downloadUrl: input.downloadUrl,
+  };
+
+  const [html, text] = await Promise.all([
+    render(GuideDownloadEmail(props)),
+    render(GuideDownloadEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lead_guide_delivery" },
+      { name: "variant", value: "melbourne_build_brief" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.guide_download.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "guide download email send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    { event: "email.guide_download.sent", to: input.to, resendId: data.id },
+    "guide download email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendGuideLeadOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  email: string;
+  phone: string | null;
+  source: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Internal ops notification — fires to info@builderhq.com.au on every
+ * guide download so the team sees inbound interest in real time.
+ */
+export async function sendGuideLeadOpsEmail(
+  input: SendGuideLeadOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `New guide download: ${input.firstName} (${input.email})`;
+  const props = {
+    leadId: input.leadId,
+    firstName: input.firstName,
+    email: input.email,
+    phone: input.phone,
+    source: input.source,
+    createdAt: input.createdAt,
+  };
+
+  const [html, text] = await Promise.all([
+    render(GuideLeadOpsEmail(props)),
+    render(GuideLeadOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "ops_lead_capture" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.guide_lead_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "guide ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    { event: "email.guide_lead_ops.sent", leadId: input.leadId, resendId: data.id },
+    "guide ops notification sent",
   );
   return ok({ id: data.id });
 }

@@ -24,4 +24,6 @@ export {
   sendUnlockBuilderEmail,
   sendUnlockOpsEmail,
   sendLaunchInviteEmail,
+  sendGuideDownloadEmail,
+  sendGuideLeadOpsEmail,
 } from "./service";
