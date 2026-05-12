@@ -180,33 +180,12 @@ export function LaunchScreen({ launchAt }: Props) {
           everything works on the web.
         </motion.p>
 
-        {/* CTA — defensive click handler so it works in every context:
-            · Regular mobile browser: window.open(_blank) succeeds → new tab
-            · BDK Native WebView w/ _blank support: same
-            · BDK Native WebView blocking _blank (most are): window.open()
-              returns null → fall through to window.location.href which
-              navigates the WebView to builderhq.com.au, which is at
-              least the right destination even if it stays in-app
-            · Popup-blocked Safari: same fall-through path
-            Either way, tapping the button MOVES the user. The current
-            failure mode (nothing happens) was the bare <a target=_blank>
-            being silently ignored by the wrapping WebView. */}
+        {/* CTA */}
         <motion.a
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.75, ease: [0.32, 0.72, 0, 1] }}
           href="https://builderhq.com.au"
-          onClick={(e) => {
-            e.preventDefault();
-            const url = "https://builderhq.com.au";
-            const w = window.open(url, "_blank", "noopener,noreferrer");
-            if (!w || w.closed) {
-              // WebView blocked the popup — degrade gracefully to an
-              // in-place navigation. Top-level navigation is much less
-              // commonly intercepted than window.open.
-              window.location.href = url;
-            }
-          }}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
@@ -214,9 +193,6 @@ export function LaunchScreen({ launchAt }: Props) {
             "bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase",
             "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_14px_36px_-14px_rgba(0,212,200,0.6)]",
             "active:scale-[0.97] transition-transform duration-[160ms]",
-            // No tap delay on iOS Safari + don't let the WebView eat
-            // the click as a long-press / text-selection gesture
-            "touch-manipulation select-none cursor-pointer",
           )}
         >
           Open in browser
