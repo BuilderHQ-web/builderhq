@@ -17,7 +17,12 @@
  *   5. DAYS — big animated count-up on mount, then live tick
  *   6. HH·MM·SS sub-row — live tick, smaller
  *   7. Tagline copy
- *   8. CTA — "Use the web" → builderhq.com.au in native browser
+ *   8. URL prompt — "Visit us on" + tap-to-copy builderhq.com.au.
+ *      Replaces the old "Open in browser" CTA, which sat dead in
+ *      every WebView (target=_blank is silently ignored by WKWebView /
+ *      Android WebView, and there's no JS-only way to force Safari).
+ *      Tap-to-copy is universal: works in every WebView + browser, and
+ *      lets the user paste into their real browser when they're ready.
  *   9. Footer signature
  *
  * Background:
@@ -43,7 +48,7 @@ import {
   useMotionValue,
   useTransform,
 } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -180,24 +185,24 @@ export function LaunchScreen({ launchAt }: Props) {
           everything works on the web.
         </motion.p>
 
-        {/* CTA */}
-        <motion.a
+        {/* URL prompt — no auto-navigation. The user copies the URL,
+            switches to their preferred browser, pastes it. Universal
+            in any WebView, no popup blockers, no "opens in new tab"
+            surprises in Safari. */}
+        <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.75, ease: [0.32, 0.72, 0, 1] }}
-          href="https://builderhq.com.au"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "mt-8 inline-flex items-center gap-2 h-12 px-7 rounded-full",
-            "bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase",
-            "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_14px_36px_-14px_rgba(0,212,200,0.6)]",
-            "active:scale-[0.97] transition-transform duration-[160ms]",
-          )}
+          className="mt-8 flex flex-col items-center gap-3"
         >
-          Open in browser
-          <ArrowUpRight className="size-4" />
-        </motion.a>
+          <span className="text-[10.5px] tracking-[0.32em] uppercase text-text-dim font-ui font-medium">
+            Visit us at
+          </span>
+          <CopyUrlPill url="builderhq.com.au" />
+          <span className="text-[11.5px] leading-[18px] text-text-dim max-w-[260px] text-center mt-1">
+            Open your browser and paste — full platform&apos;s ready.
+          </span>
+        </motion.div>
       </main>
 
       {/* Footer */}
@@ -220,6 +225,121 @@ export function LaunchScreen({ launchAt }: Props) {
       {/* Scanline sweep */}
       <Scanline />
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CopyUrlPill — prominent URL display with one-tap clipboard copy.
+   Replaces the old "Open in browser" CTA. No navigation occurs on
+   tap (the WebView would just intercept anyway) — instead the URL
+   lands on the user's clipboard. Confirmation flips the icon to
+   a tick for ~1.6s.
+
+   Why two clipboard paths:
+     1. `navigator.clipboard.writeText` — modern API, works on iOS 13+
+        and modern Android WebView. Requires the page to be HTTPS,
+        which we are.
+     2. `document.execCommand("copy")` via a hidden textarea — legacy
+        fallback for older Android WebViews where the Clipboard API
+        is locked behind a permission prompt or just unimplemented.
+   ────────────────────────────────────────────────────────────────── */
+
+function CopyUrlPill({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const onTap = async () => {
+    const full = url.startsWith("http") ? url : `https://${url}`;
+    let ok = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(full);
+        ok = true;
+      }
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      // Legacy WebView fallback. Synchronous DOM manipulation +
+      // execCommand has the broadest compatibility, including older
+      // Android WebView and embedded browsers that haven't whitelisted
+      // the Clipboard API.
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = full;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`Copy ${url} to clipboard`}
+      className={cn(
+        "group inline-flex items-center gap-3 h-12 pl-5 pr-2",
+        "rounded-full border border-border-accent bg-[rgba(0,212,200,0.06)]",
+        "shadow-[0_0_0_1px_rgba(0,212,200,0.2),_0_14px_36px_-14px_rgba(0,212,200,0.5)]",
+        "active:scale-[0.97] transition-transform duration-[160ms]",
+        // Stop iOS from treating the long-press as a text/copy gesture
+        "touch-manipulation select-none",
+      )}
+    >
+      <span className="font-ui text-[14.5px] tracking-[-0.005em] text-text font-semibold tabular-nums">
+        {url}
+      </span>
+      <span
+        className={cn(
+          "ml-1 inline-flex items-center justify-center size-8 rounded-full",
+          "transition-colors duration-[160ms]",
+          copied
+            ? "bg-accent text-accent-contrast"
+            : "bg-[rgba(0,212,200,0.18)] text-accent-light",
+        )}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {copied ? (
+            <motion.span
+              key="check"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="inline-flex"
+            >
+              <Check className="size-4" strokeWidth={2.5} />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="copy"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="inline-flex"
+            >
+              <Copy className="size-4" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </span>
+      {/* Screen-reader-only confirmation */}
+      <span className="sr-only" aria-live="polite">
+        {copied ? "Copied to clipboard" : ""}
+      </span>
+    </button>
   );
 }
 
