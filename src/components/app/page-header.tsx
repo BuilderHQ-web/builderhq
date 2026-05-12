@@ -21,7 +21,12 @@ export function PageHeader({
 }) {
   return (
     <div className={cn("border-b border-border-subtle", className)}>
-      <div className="px-6 lg:px-10 py-9 lg:py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+      {/* Inner wrapper matches the content column max-width below the
+          header. Without this cap, on ultrawide displays the title +
+          actions stretch full-viewport while the content cards beneath
+          remain centred at ~1320px — leaving the "Approved" badge
+          marooned in the right gutter, miles from the rest of the UI. */}
+      <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-10 py-9 lg:py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div className="flex flex-col gap-3 min-w-0">
           {eyebrow ? (
             <span className="text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium">

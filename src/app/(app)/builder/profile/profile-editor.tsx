@@ -184,7 +184,7 @@ export function BuilderProfileEditor({
     <>
       <ProfileHero profile={profile} />
 
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1100px] flex flex-col gap-4 sm:gap-5">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1320px] flex flex-col gap-4 sm:gap-5">
         <Reveal immediate delay={0.04}>
           <IdentitySection
             profile={profile}
