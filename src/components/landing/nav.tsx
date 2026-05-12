@@ -119,7 +119,7 @@ export function LandingNav() {
           <div className="flex md:hidden items-center gap-2">
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center px-4 h-9 rounded-full leading-none bg-accent text-accent-contrast text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms]"
+              className="inline-flex items-center justify-center px-4 h-11 rounded-full leading-none bg-accent text-accent-contrast text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms]"
             >
               Get started
             </Link>
@@ -128,7 +128,7 @@ export function LandingNav() {
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="size-9 rounded-md border border-border-subtle text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)] transition-colors flex items-center justify-center"
+              className="size-11 rounded-md border border-border-subtle text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)] transition-colors flex items-center justify-center"
             >
               {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
@@ -147,11 +147,15 @@ export function LandingNav() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "fixed inset-x-0 top-[58px] z-40 md:hidden",
+              "fixed inset-x-0 top-[68px] z-40 md:hidden",
               "bg-bg/95 backdrop-blur-xl border-b border-border-subtle",
+              "max-h-[calc(100dvh-68px)] overflow-y-auto",
             )}
+            style={{
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
           >
-            <div className="px-6 py-5 flex flex-col gap-1">
+            <div className="px-5 py-5 flex flex-col gap-1">
               {links.map((l) => (
                 <Link
                   key={l.href}

@@ -297,7 +297,7 @@ export function TendersComparison({
   // ── render ───────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5 sm:space-y-7">
       <ProjectPulseHeader
         analytics={analytics}
         tenders={tenders}
@@ -433,18 +433,18 @@ function ProjectPulseHeader({
         }}
       />
 
-      <div className="relative px-5 lg:px-6 pt-5 pb-2 flex items-center gap-2">
+      <div className="relative px-4 sm:px-5 lg:px-6 pt-5 pb-2 flex items-center gap-2 flex-wrap">
         <span className="size-7 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.06)] flex items-center justify-center text-accent-light shrink-0">
           <Activity className="size-3.5" />
         </span>
         <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
           Project pulse
         </span>
-        <span className="text-[10.5px] text-text-dim ml-1">
+        <span className="text-[10.5px] text-text-dim ml-0 sm:ml-1 w-full sm:w-auto">
           What every builder is saying about this project, at a glance.
         </span>
       </div>
-      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 divide-border-subtle/60 sm:divide-x">
+      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 divide-border-subtle/60 sm:divide-x divide-border-subtle/60">
         <PulseTile
           icon={<Activity className="size-4" />}
           label="Tenders received"
@@ -509,7 +509,7 @@ function ProjectPulseHeader({
 
       {/* Price-distribution sparkline — only shown with 2+ priced tenders */}
       {analytics.price.median != null && analytics.price.min != null && analytics.price.max != null ? (
-        <div className="relative px-5 lg:px-6 py-4 border-t border-border-subtle/60">
+        <div className="relative px-4 sm:px-5 lg:px-6 py-4 border-t border-border-subtle/60">
           <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-2">
             Price distribution
           </div>
@@ -547,7 +547,7 @@ function PulseTile({
           ? "text-[#ffd887]"
           : "text-text";
   return (
-    <div className="px-5 lg:px-6 py-5">
+    <div className="px-4 sm:px-5 lg:px-6 py-4 sm:py-5">
       <div className="flex items-center gap-2 mb-2.5 text-text-dim">
         <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted">
           {icon}
@@ -556,10 +556,9 @@ function PulseTile({
       </div>
       <div
         className={cn(
-          "font-display tabular-nums leading-none",
+          "font-display tabular-nums leading-none text-[22px] sm:text-[26px]",
           valueClass,
         )}
-        style={{ fontSize: 26 }}
       >
         {value}
       </div>
@@ -664,38 +663,40 @@ function FilterPills({
   onChange: (f: StatusFilter) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(10,28,44,0.55)] w-fit">
-      {(
-        [
-          ["all", "All", tenders.length],
-          ["submitted", "Submitted", tenders.filter((t) => t.status === "submitted").length],
-          ["shortlisted", "Shortlisted", tenders.filter((t) => t.status === "shortlisted").length],
-          ["awarded", "Awarded", tenders.filter((t) => t.status === "awarded").length],
-          ["rejected", "Rejected", tenders.filter((t) => t.status === "rejected").length],
-        ] as const
-      ).map(([id, label, n]) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => onChange(id as StatusFilter)}
-          className={cn(
-            "h-9 px-4 rounded-full text-[12px] tracking-[0.04em] transition-colors inline-flex items-center gap-2",
-            filter === id
-              ? "bg-accent-muted/60 border border-border-accent text-accent-light"
-              : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)]",
-          )}
-        >
-          {label}
-          <span
+    <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      <div className="inline-flex sm:flex flex-nowrap sm:flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(10,28,44,0.55)] w-max sm:w-fit">
+        {(
+          [
+            ["all", "All", tenders.length],
+            ["submitted", "Submitted", tenders.filter((t) => t.status === "submitted").length],
+            ["shortlisted", "Shortlisted", tenders.filter((t) => t.status === "shortlisted").length],
+            ["awarded", "Awarded", tenders.filter((t) => t.status === "awarded").length],
+            ["rejected", "Rejected", tenders.filter((t) => t.status === "rejected").length],
+          ] as const
+        ).map(([id, label, n]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id as StatusFilter)}
             className={cn(
-              "tabular-nums text-[10.5px] font-mono",
-              filter === id ? "text-accent" : "text-text-dim",
+              "h-9 px-3 sm:px-4 rounded-full text-[12px] tracking-[0.04em] transition-colors inline-flex items-center gap-2 shrink-0",
+              filter === id
+                ? "bg-accent-muted/60 border border-border-accent text-accent-light"
+                : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)]",
             )}
           >
-            {n}
-          </span>
-        </button>
-      ))}
+            {label}
+            <span
+              className={cn(
+                "tabular-nums text-[10.5px] font-mono",
+                filter === id ? "text-accent" : "text-text-dim",
+              )}
+            >
+              {n}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -862,7 +863,7 @@ function TenderCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "relative overflow-hidden rounded-md border p-5",
+        "relative overflow-hidden rounded-md border p-4 sm:p-5",
         "shadow-[0_14px_36px_-22px_rgba(0,0,0,0.55)]",
         tender.status === "awarded"
           ? "border-border-accent/60 bg-[linear-gradient(160deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]"
@@ -890,10 +891,11 @@ function TenderCard({
         <button
           type="button"
           onClick={onRemove}
-          className="absolute top-3 right-3 size-6 rounded-sm flex items-center justify-center text-text-dim hover:text-text hover:bg-[rgba(255,255,255,0.04)] transition-colors z-10"
+          aria-label="Remove from compare"
+          className="absolute top-2 right-2 size-8 rounded-sm flex items-center justify-center text-text-dim hover:text-text hover:bg-[rgba(255,255,255,0.04)] transition-colors z-10"
           title="Remove from compare"
         >
-          <X className="size-3.5" />
+          <X className="size-4" />
         </button>
       ) : null}
 
@@ -1696,13 +1698,13 @@ function DetailCard({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-[rgba(255,255,255,0.018)] transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 sm:px-5 py-4 hover:bg-[rgba(255,255,255,0.018)] transition-colors text-left"
       >
         <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
               {title}
             </h3>
@@ -1728,7 +1730,7 @@ function DetailCard({
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 pt-1 border-t border-border-subtle/60">
+            <div className="px-4 sm:px-5 pb-5 pt-1 border-t border-border-subtle/60">
               {children}
             </div>
           </motion.div>
@@ -1790,77 +1792,79 @@ function CostBreakdownSection({ selected }: { selected: TenderForOwner[] }) {
             </button>
           </div>
 
-          <div className="rounded-sm border border-border-subtle overflow-hidden">
-            <div
-              className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
-              style={{
-                gridTemplateColumns: `minmax(220px,1.4fr) repeat(${selected.length}, minmax(140px,1fr))`,
-              }}
-            >
-              <div className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
-                Trade
-              </div>
-              {selected.map((t) => (
-                <div
-                  key={t.id}
-                  className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim border-l border-border-subtle/60 truncate"
-                  title={t.builder.name ?? ""}
-                >
-                  {t.builder.companyName ?? t.builder.name ?? "—"}
+          <div className="rounded-sm border border-border-subtle overflow-x-auto">
+            <div className="min-w-[480px]">
+              <div
+                className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
+                style={{
+                  gridTemplateColumns: `minmax(180px,1.4fr) repeat(${selected.length}, minmax(120px,1fr))`,
+                }}
+              >
+                <div className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
+                  Trade
                 </div>
-              ))}
-            </div>
-
-            {tradeRows.map((trade) => {
-              const lowest = lowestForTrade(trade, selected);
-              const isDecision = isDecisionTrade(trade, selected);
-              return (
-                <div
-                  key={trade}
-                  className={cn(
-                    "grid border-b border-border-subtle/60 last:border-b-0 transition-colors",
-                    isDecision && "bg-[rgba(251,184,64,0.04)]",
-                  )}
-                  style={{
-                    gridTemplateColumns: `minmax(220px,1.4fr) repeat(${selected.length}, minmax(140px,1fr))`,
-                  }}
-                >
-                  <div className="px-4 py-3 text-[12.5px] text-text">
-                    {tradeLabel(trade)}
-                    {isDecision ? (
-                      <span className="ml-2 text-[9px] tracking-[0.16em] uppercase text-warning">
-                        Decision
-                      </span>
-                    ) : null}
+                {selected.map((t) => (
+                  <div
+                    key={t.id}
+                    className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim border-l border-border-subtle/60 truncate"
+                    title={t.builder.name ?? ""}
+                  >
+                    {t.builder.companyName ?? t.builder.name ?? "—"}
                   </div>
-                  {selected.map((t) => {
-                    const v = costByTender.get(t.id)?.get(trade);
-                    const isLow =
-                      lowest != null && v != null && v === lowest && lowest > 0;
-                    return (
-                      <div
-                        key={t.id}
-                        className="px-4 py-3 border-l border-border-subtle/60 tabular-nums text-[12.5px] font-mono"
-                      >
-                        {v == null ? (
-                          <span className="text-text-dim/60">—</span>
-                        ) : (
-                          <span
-                            className={cn(
-                              isLow
-                                ? "text-accent-light font-semibold"
-                                : "text-text",
-                            )}
-                          >
-                            {formatAud(v)}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+                ))}
+              </div>
+
+              {tradeRows.map((trade) => {
+                const lowest = lowestForTrade(trade, selected);
+                const isDecision = isDecisionTrade(trade, selected);
+                return (
+                  <div
+                    key={trade}
+                    className={cn(
+                      "grid border-b border-border-subtle/60 last:border-b-0 transition-colors",
+                      isDecision && "bg-[rgba(251,184,64,0.04)]",
+                    )}
+                    style={{
+                      gridTemplateColumns: `minmax(180px,1.4fr) repeat(${selected.length}, minmax(120px,1fr))`,
+                    }}
+                  >
+                    <div className="px-4 py-3 text-[12.5px] text-text">
+                      {tradeLabel(trade)}
+                      {isDecision ? (
+                        <span className="ml-2 text-[9px] tracking-[0.16em] uppercase text-warning">
+                          Decision
+                        </span>
+                      ) : null}
+                    </div>
+                    {selected.map((t) => {
+                      const v = costByTender.get(t.id)?.get(trade);
+                      const isLow =
+                        lowest != null && v != null && v === lowest && lowest > 0;
+                      return (
+                        <div
+                          key={t.id}
+                          className="px-4 py-3 border-l border-border-subtle/60 tabular-nums text-[12.5px] font-mono"
+                        >
+                          {v == null ? (
+                            <span className="text-text-dim/60">—</span>
+                          ) : (
+                            <span
+                              className={cn(
+                                isLow
+                                  ? "text-accent-light font-semibold"
+                                  : "text-text",
+                              )}
+                            >
+                              {formatAud(v)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </>
       )}
@@ -1916,70 +1920,72 @@ function ScopeSection({ selected }: { selected: TenderForOwner[] }) {
         Items with mixed inclusion are sorted to the top. These are real
         decision points — owners often handle excluded items themselves.
       </p>
-      <div className="rounded-sm border border-border-subtle overflow-hidden">
-        <div
-          className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
-          style={{
-            gridTemplateColumns: `minmax(220px,1.6fr) repeat(${selected.length}, minmax(120px,1fr))`,
-          }}
-        >
-          <div className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
-            Item
-          </div>
-          {selected.map((t) => (
-            <div
-              key={t.id}
-              className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim border-l border-border-subtle/60 truncate"
-            >
-              {t.builder.companyName ?? t.builder.name ?? "—"}
+      <div className="rounded-sm border border-border-subtle overflow-x-auto">
+        <div className="min-w-[420px]">
+          <div
+            className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
+            style={{
+              gridTemplateColumns: `minmax(180px,1.6fr) repeat(${selected.length}, minmax(110px,1fr))`,
+            }}
+          >
+            <div className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
+              Item
             </div>
-          ))}
-        </div>
-        {sortedExclusions.map((ex) => {
-          const mixed = isMixed(ex, selected, exclusionsByTender);
-          return (
-            <div
-              key={ex}
-              className={cn(
-                "grid border-b border-border-subtle/60 last:border-b-0",
-                mixed && "bg-[rgba(251,184,64,0.04)]",
-              )}
-              style={{
-                gridTemplateColumns: `minmax(220px,1.6fr) repeat(${selected.length}, minmax(120px,1fr))`,
-              }}
-            >
-              <div className="px-4 py-3 text-[12.5px] text-text">
-                {ex}
-                {mixed ? (
-                  <span className="ml-2 text-[9px] tracking-[0.16em] uppercase text-warning">
-                    Mixed
-                  </span>
-                ) : null}
+            {selected.map((t) => (
+              <div
+                key={t.id}
+                className="px-4 py-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim border-l border-border-subtle/60 truncate"
+              >
+                {t.builder.companyName ?? t.builder.name ?? "—"}
               </div>
-              {selected.map((t) => {
-                const has = exclusionsByTender.get(t.id)?.has(ex) ?? false;
-                return (
-                  <div
-                    key={t.id}
-                    className="px-4 py-3 border-l border-border-subtle/60"
-                  >
-                    {has ? (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-warning">
-                        <X className="size-3.5" />
-                        Excluded
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-accent-light">
-                        <Check className="size-3.5" />
-                        Included
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+            ))}
+          </div>
+          {sortedExclusions.map((ex) => {
+            const mixed = isMixed(ex, selected, exclusionsByTender);
+            return (
+              <div
+                key={ex}
+                className={cn(
+                  "grid border-b border-border-subtle/60 last:border-b-0",
+                  mixed && "bg-[rgba(251,184,64,0.04)]",
+                )}
+                style={{
+                  gridTemplateColumns: `minmax(180px,1.6fr) repeat(${selected.length}, minmax(110px,1fr))`,
+                }}
+              >
+                <div className="px-4 py-3 text-[12.5px] text-text">
+                  {ex}
+                  {mixed ? (
+                    <span className="ml-2 text-[9px] tracking-[0.16em] uppercase text-warning">
+                      Mixed
+                    </span>
+                  ) : null}
+                </div>
+                {selected.map((t) => {
+                  const has = exclusionsByTender.get(t.id)?.has(ex) ?? false;
+                  return (
+                    <div
+                      key={t.id}
+                      className="px-4 py-3 border-l border-border-subtle/60"
+                    >
+                      {has ? (
+                        <span className="inline-flex items-center gap-1.5 text-[12px] text-warning">
+                          <X className="size-3.5" />
+                          Excluded
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[12px] text-accent-light">
+                          <Check className="size-3.5" />
+                          Included
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </DetailCard>
   );
@@ -2008,9 +2014,9 @@ function ConditionsSection({ selected }: { selected: TenderForOwner[] }) {
       defaultOpen={false}
     >
       <div
-        className="grid gap-3"
+        className="grid gap-3 grid-cols-1 sm:grid-cols-[var(--cols)]"
         style={{
-          gridTemplateColumns: `repeat(${selected.length}, minmax(0,1fr))`,
+          ["--cols" as never]: `repeat(${selected.length}, minmax(0,1fr))`,
         }}
       >
         {selected.map((t) => (
@@ -2045,9 +2051,9 @@ function PitchSection({ selected }: { selected: TenderForOwner[] }) {
       defaultOpen={false}
     >
       <div
-        className="grid gap-3"
+        className="grid gap-3 grid-cols-1 sm:grid-cols-[var(--cols)]"
         style={{
-          gridTemplateColumns: `repeat(${selected.length}, minmax(0,1fr))`,
+          ["--cols" as never]: `repeat(${selected.length}, minmax(0,1fr))`,
         }}
       >
         {selected.map((t) => (
@@ -2124,9 +2130,9 @@ function DocumentsSection({ selected }: { selected: TenderForOwner[] }) {
       defaultOpen={false}
     >
       <div
-        className="grid gap-3"
+        className="grid gap-3 grid-cols-1 sm:grid-cols-[var(--cols)]"
         style={{
-          gridTemplateColumns: `repeat(${selected.length}, minmax(0,1fr))`,
+          ["--cols" as never]: `repeat(${selected.length}, minmax(0,1fr))`,
         }}
       >
         {selected.map((t) => (

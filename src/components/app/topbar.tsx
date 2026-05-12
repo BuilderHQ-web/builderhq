@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Settings, User as UserIcon, Search, Sparkles } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Settings, User as UserIcon, Search, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/brand/logo";
 import { NotificationBell } from "@/components/app/notification-bell";
 import { openCommandPalette } from "@/components/app/command-palette";
+import { openMobileNav } from "@/components/app/mobile-nav";
 
 import { signOutAction } from "@/app/(app)/_actions/sign-out";
 
@@ -59,16 +60,31 @@ export function Topbar({
 
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-border-subtle bg-bg/95 backdrop-blur-md">
-      <div className="h-full flex items-center justify-between px-5 lg:px-6 gap-4">
-        {/* Mobile: brand. Desktop: breadcrumbs. */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="h-full flex items-center justify-between px-3 sm:px-5 lg:px-6 gap-3">
+        {/* Mobile: hamburger + brand. Desktop: breadcrumbs (sidebar
+            owns the brand at lg+). The hamburger uses a 44px square
+            tap target — comfortably above the iOS HIG floor. */}
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => openMobileNav()}
+            aria-label="Open menu"
+            className={cn(
+              "lg:hidden inline-flex items-center justify-center size-11 -ml-2",
+              "rounded-full text-text-muted active:text-text active:bg-surface-1",
+              "transition-colors duration-[120ms]",
+              "focus:outline-none focus-visible:ring-focus",
+            )}
+          >
+            <Menu className="size-5" />
+          </button>
           <div className="lg:hidden">
             <Logo size={20} />
           </div>
           <Breadcrumbs crumbs={crumbs} />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Founding member badge — shown for builders with active FBA */}
           {isFounding ? (
             <Link

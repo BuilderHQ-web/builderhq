@@ -56,7 +56,7 @@ export function BuilderHeroIntro({ firstName }: { firstName: string }) {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-5 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,5vw+1rem,5rem)]"
+        className="mt-5 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(2.5rem,5vw+1rem,5rem)]"
       >
         Hi{" "}
         <motion.span

@@ -53,7 +53,7 @@ export function VerificationCallout({
         }}
       />
 
-      <div className="relative px-6 lg:px-7 py-6 lg:py-7 flex flex-col gap-5">
+      <div className="relative px-4 sm:px-6 lg:px-7 py-5 sm:py-6 lg:py-7 flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <span

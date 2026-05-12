@@ -24,7 +24,7 @@ export default function AboutPage() {
       sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted — so the right team gets the job, faster."
     >
       {/* Mission statement */}
-      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-7 lg:px-10 py-10 lg:py-12 mb-14 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
@@ -53,11 +53,11 @@ export default function AboutPage() {
       </section>
 
       {/* Pillars */}
-      <section className="mb-14 lg:mb-20">
+      <section className="mb-12 lg:mb-20">
         <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
           What we believe
         </span>
-        <h2 className="mt-4 font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-8">
+        <h2 className="mt-4 font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
           Four principles, no compromise.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -85,7 +85,7 @@ export default function AboutPage() {
       </section>
 
       {/* Built with industry experts */}
-      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-7 lg:px-10 py-10 lg:py-12 mb-14 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -bottom-24 -left-20 size-72 rounded-full opacity-50"
@@ -137,7 +137,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="mt-16 text-center">
+      <section className="mt-12 sm:mt-16 text-center">
         <h2 className="font-display uppercase tracking-[-0.012em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
           Ready to{" "}
           <span
@@ -165,7 +165,7 @@ export default function AboutPage() {
           </Link>
           <Link
             href="/faq"
-            className="group inline-flex items-center gap-1.5 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
+            className="group inline-flex items-center gap-1.5 h-12 px-3 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
           >
             Read the FAQ
             <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />

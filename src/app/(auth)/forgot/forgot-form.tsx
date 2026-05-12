@@ -80,7 +80,7 @@ export function ForgotForm() {
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2 w-full sm:w-auto">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Sending…" : "Send reset link"}
       </Button>

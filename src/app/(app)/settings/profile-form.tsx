@@ -84,8 +84,13 @@ export function ProfileForm({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="md" disabled={isPending}>
+      <div className="flex items-center gap-3 flex-wrap">
+        <Button
+          type="submit"
+          size="md"
+          disabled={isPending}
+          className="max-sm:!h-11 max-sm:w-full"
+        >
           {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
           {isPending ? "Saving…" : "Save changes"}
         </Button>

@@ -178,21 +178,21 @@ export default async function BuilderDashboard() {
               "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
-        <div className="relative px-6 lg:px-10 pt-16 lg:pt-20 pb-14 lg:pb-16">
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
             <BuilderHeroIntro firstName={firstName} />
-            <p className="mt-5 max-w-[52ch] text-[15px] leading-[1.7] text-text-subtle">
+            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.65] sm:leading-[1.7] text-text-subtle">
               {dash.actionsNeeded.length > 0
                 ? `${dash.actionsNeeded.length} tender${dash.actionsNeeded.length === 1 ? "" : "s"} need your attention.`
                 : dash.pipeline.active > 0
                   ? `${dash.pipeline.active} active tender${dash.pipeline.active === 1 ? "" : "s"} in flight. ${suggested.length} new project${suggested.length === 1 ? "" : "s"} matched.`
                   : "Browse residential projects matched to your service area and specialties. Unlock the ones that fit, tender with confidence."}
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-7 sm:mt-9 flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link
                 href="/builder/browse"
                 className={cn(
-                  "group inline-flex items-center gap-2.5 h-12 px-7 rounded-full",
+                  "group inline-flex items-center justify-center gap-2.5 h-12 px-6 sm:px-7 rounded-full w-full sm:w-auto",
                   "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
                   "transition-colors duration-[160ms] hover:bg-accent-hover",
                   "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
@@ -204,13 +204,13 @@ export default async function BuilderDashboard() {
               </Link>
               <Link
                 href="/builder/tenders"
-                className="inline-flex items-center gap-1.5 h-12 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
               >
                 My tenders
               </Link>
               <Link
                 href="/builder/saved"
-                className="inline-flex items-center gap-1.5 h-12 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
               >
                 <Bookmark className="size-3.5" />
                 Saved
@@ -220,7 +220,7 @@ export default async function BuilderDashboard() {
         </div>
       </section>
 
-      <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 flex flex-col gap-8 sm:gap-10">
         {/* ── Verification callout ─────────────────────────────────── */}
         {verificationStatus &&
         (!verificationStatus.abnVerified ||
@@ -533,7 +533,7 @@ function PulseTile({
   return (
     <div
       className={cn(
-        "relative rounded-md border p-5 overflow-hidden transform-gpu",
+        "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
         "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
         t.ring,
       )}
@@ -554,14 +554,13 @@ function PulseTile({
       </div>
       <div
         className={cn(
-          "relative font-display tracking-[-0.01em] leading-none tabular-nums",
+          "relative font-display tracking-[-0.01em] leading-none tabular-nums text-[28px] sm:text-[36px]",
           t.num,
         )}
-        style={{ fontSize: 36 }}
       >
         {value}
       </div>
-      <div className="relative mt-2 text-[11.5px] text-text-dim leading-[1.4]">
+      <div className="relative mt-2 text-[11px] sm:text-[11.5px] text-text-dim leading-[1.4]">
         {sub}
       </div>
     </div>
@@ -601,7 +600,7 @@ function ActionNeededCallout({
         className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
         style={{ background: haloCls }}
       />
-      <div className="relative px-6 lg:px-7 py-6 lg:py-7">
+      <div className="relative px-4 sm:px-6 lg:px-7 py-5 sm:py-6 lg:py-7">
         <div className="flex items-start gap-3 mb-5">
           <span
             className={cn(
@@ -677,9 +676,9 @@ function ActionRow({ action }: { action: BuilderActionNeeded }) {
     <li>
       <Link
         href={`/builder/projects/${action.projectSlug}/tender`}
-        className="group grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+        className="group grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
       >
-        <div className="min-w-0">
+        <div className="min-w-0 col-span-2 sm:col-span-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[13px] font-semibold text-text truncate">
               {action.projectTitle}
@@ -709,18 +708,18 @@ function ActionRow({ action }: { action: BuilderActionNeeded }) {
         {action.reason !== "awarded" ? (
           <span
             className={cn(
-              "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0",
+              "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0 justify-self-end",
               urgencyCls,
             )}
           >
             {expiryLabel}
           </span>
         ) : (
-          <span className="px-2 py-1 rounded-sm border border-border-accent bg-accent-muted/40 text-[10px] tracking-[0.04em] uppercase text-accent-light shrink-0">
+          <span className="px-2 py-1 rounded-sm border border-border-accent bg-accent-muted/40 text-[10px] tracking-[0.04em] uppercase text-accent-light shrink-0 justify-self-end">
             Won
           </span>
         )}
-        <ArrowUpRight className="size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
+        <ArrowUpRight className="hidden sm:block size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
       </Link>
     </li>
   );
@@ -791,7 +790,7 @@ function PipelineStrip({
             : "border-border-subtle bg-[rgba(255,255,255,0.018)] text-text-muted";
 
   return (
-    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-5">
+    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-4 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {stages.map((st) => {
           const pct = total > 0 ? Math.round((st.value / total) * 100) : 0;
@@ -836,7 +835,7 @@ function ActivityFeed({ events }: { events: BuilderActivityEvent[] }) {
           <li
             key={i}
             className={cn(
-              "px-6 py-3 flex items-center gap-3",
+              "px-4 sm:px-6 py-3 flex items-center gap-3",
               i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
             )}
           >
@@ -941,8 +940,8 @@ function Panel({
         "shadow-[0_12px_32px_-18px_rgba(0,0,0,0.55)]",
       )}
     >
-      <header className="px-6 py-4 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
+      <header className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5 min-w-0">
           <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
             {title}
           </h2>

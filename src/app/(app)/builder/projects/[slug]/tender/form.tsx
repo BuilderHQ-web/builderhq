@@ -397,24 +397,24 @@ export function TenderForm({
     <div className="pb-32">
       {/* Header */}
       <div className="border-b border-border-subtle bg-bg-deep/30">
-        <div className="px-6 lg:px-10 py-6 lg:py-8 mx-auto max-w-[1500px]">
+        <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1500px]">
           <Link
             href={`/builder/projects/${preview.slug}`}
-            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-5"
+            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
           >
             <ArrowLeft className="size-3.5" />
             Back to project
           </Link>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+              <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
                 <FileText className="size-3.5" />
                 Tender
                 <span className="text-text-dim/60 mx-1">·</span>
                 <StatusPill status={tender?.status ?? "draft"} />
               </span>
-              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[34px] sm:text-[40px] leading-[0.95] text-text">
+              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[26px] sm:text-[40px] leading-[0.95] text-text break-words">
                 {preview.title}
               </h1>
               <p className="mt-2 text-[13px] text-text-muted">
@@ -439,7 +439,7 @@ export function TenderForm({
         <AwardedBanner contact={ownerContact} projectTitle={preview.title} />
       ) : null}
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-5 sm:gap-6">
         {/* Main column */}
         <div className="space-y-5 min-w-0">
           {/* SECTION 0 — Documents (promoted to first position so it
@@ -680,8 +680,8 @@ export function TenderForm({
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
-        <div className="mx-auto max-w-[1500px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex items-center gap-3">
             {tender?.status === "draft" || !tender ? (
               ready ? (
@@ -729,7 +729,7 @@ export function TenderForm({
               {busy === "submit" ? "Submitting…" : "Submit tender"}
             </button>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {tender &&
               (tender.status === "submitted" ||
                 tender.status === "shortlisted") ? (
@@ -737,21 +737,23 @@ export function TenderForm({
                   type="button"
                   onClick={onWithdraw}
                   disabled={busy === "withdraw"}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-danger/40 text-danger text-[12.5px] tracking-[0.04em] hover:bg-danger/10 transition-colors disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-4 rounded-full border border-danger/40 text-danger text-[12px] sm:text-[12.5px] tracking-[0.04em] hover:bg-danger/10 transition-colors disabled:opacity-60 shrink-0"
                 >
                   {busy === "withdraw" ? (
                     <Loader2 className="size-3.5 animate-spin" />
                   ) : (
                     <X className="size-3.5" />
                   )}
-                  {busy === "withdraw" ? "Withdrawing…" : "Withdraw to edit"}
+                  <span className="hidden sm:inline">{busy === "withdraw" ? "Withdrawing…" : "Withdraw to edit"}</span>
+                  <span className="sm:hidden">{busy === "withdraw" ? "Withdrawing" : "Withdraw"}</span>
                 </button>
               ) : null}
               <Link
                 href={`/builder/projects/${preview.slug}`}
-                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+                className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-4 rounded-full border border-border-strong text-text text-[12px] sm:text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors shrink-0"
               >
-                Back to project
+                <span className="hidden sm:inline">Back to project</span>
+                <span className="sm:hidden">Back</span>
                 <ArrowUpRight className="size-3.5" />
               </Link>
             </div>
@@ -780,7 +782,7 @@ function Section({
       id={`section-${slug(title)}`}
       className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]"
     >
-      <header className="px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
+      <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
         <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
@@ -791,7 +793,7 @@ function Section({
           {sub ? <p className="text-[12px] text-text-dim mt-0.5">{sub}</p> : null}
         </div>
       </header>
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -821,13 +823,13 @@ function Collapsible({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full text-left px-6 py-4 border-b border-border-subtle/60 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.018)] transition-colors"
+        className="w-full text-left px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.018)] transition-colors"
       >
         <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
               {title}
             </h2>
@@ -861,7 +863,7 @@ function Collapsible({
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="p-6">{children}</div>
+            <div className="p-4 sm:p-6">{children}</div>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -977,7 +979,7 @@ function CostBreakdown({
           .map((l) => (
             <div
               key={l.id}
-              className="grid grid-cols-[1fr_180px_28px] gap-3 items-center px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0"
+              className="grid grid-cols-[1fr_120px_28px] sm:grid-cols-[1fr_180px_28px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0"
             >
               <input
                 type="text"
@@ -1070,7 +1072,7 @@ function TradeRow({
   isLocked: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_180px] gap-3 items-center px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0 transition-colors hover:bg-[rgba(255,255,255,0.012)]">
+    <div className="grid grid-cols-[1fr_140px] sm:grid-cols-[1fr_180px] gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0 transition-colors hover:bg-[rgba(255,255,255,0.012)]">
       <div className="min-w-0">
         <div className="text-[12.5px] font-medium text-text">{tradeLabel}</div>
         {hint ? (
@@ -1304,7 +1306,7 @@ function DocsRailCard({
         }}
       />
 
-      <header className="relative px-6 py-5 border-b border-border-subtle/60 flex items-start gap-3">
+      <header className="relative px-4 sm:px-6 py-5 border-b border-border-subtle/60 flex items-start gap-3">
         <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center shrink-0">
           <Upload className="size-4" />
         </span>
@@ -1331,7 +1333,7 @@ function DocsRailCard({
         </div>
       </header>
 
-      <div className="relative p-6 space-y-4">
+      <div className="relative p-4 sm:p-6 space-y-4">
         {/* AI-extract teaser */}
         <div className="rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)] px-3.5 py-2.5 flex items-start gap-2.5">
           <Sparkles className="size-4 text-accent-light shrink-0 mt-0.5" />
@@ -1962,7 +1964,7 @@ function AwardedBanner({
   return (
     <div className="border-b border-accent/30">
       <div
-        className="px-6 lg:px-10 py-6 mx-auto max-w-[1500px]"
+        className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 mx-auto max-w-[1500px]"
         style={{
           background:
             "linear-gradient(180deg, rgba(0,212,200,0.10), rgba(0,212,200,0.02))",

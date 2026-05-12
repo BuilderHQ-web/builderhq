@@ -57,7 +57,7 @@ export function SignupForm({
         {fieldError("role") ? <p className="text-[12px] text-danger">{fieldError("role")!}</p> : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor="firstName">First name</Label>
           <Input id="firstName" name="firstName" autoComplete="given-name" required />
@@ -107,7 +107,7 @@ export function SignupForm({
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2 w-full sm:w-auto">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Creating account…" : "Create account"}
       </Button>
@@ -147,7 +147,7 @@ function RoleOption({
       onClick={() => onSelect(value)}
       aria-pressed={isActive}
       className={cn(
-        "group relative flex flex-col items-start gap-1.5 rounded-md border px-3.5 py-3 text-left",
+        "group relative flex flex-col items-start gap-1.5 rounded-md border px-3.5 py-3.5 sm:py-3 text-left min-h-[68px]",
         "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         isActive
           ? "border-accent bg-accent-muted/40"

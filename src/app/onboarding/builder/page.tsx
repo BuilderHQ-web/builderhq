@@ -18,10 +18,10 @@ export default async function BuilderOnboardingPage() {
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7 sm:gap-8">
       <header className="flex flex-col gap-3">
         <Eyebrow>Builder · setup</Eyebrow>
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.5rem,5vw+1rem,3.75rem)] leading-[0.95]">
+        <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.25rem,5vw+1rem,3.75rem)] leading-[0.95]">
           Welcome, {firstName}
         </h1>
         <p className="text-[14px] leading-[22px] text-text-muted max-w-[58ch]">

@@ -70,7 +70,12 @@ export function PasswordForm() {
       </p>
 
       <div>
-        <Button type="submit" size="md" disabled={isPending}>
+        <Button
+          type="submit"
+          size="md"
+          disabled={isPending}
+          className="max-sm:!h-11 max-sm:w-full"
+        >
           {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
           {isPending ? "Updating…" : "Update password"}
         </Button>

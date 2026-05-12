@@ -46,9 +46,9 @@ export function Showcase() {
   const activeTab = TABS.find((t) => t.id === active)!;
 
   return (
-    <section id="showcase" className="relative px-6 md:px-10 py-24 lg:py-32">
+    <section id="showcase" className="relative px-5 md:px-10 py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px]">
-        <div className="text-center mb-12 lg:mb-16">
+        <div className="text-center mb-10 lg:mb-16">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               See it in motion

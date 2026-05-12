@@ -77,7 +77,7 @@ export function ClaimForm({ token }: { token: string }) {
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={pending} className="mt-1 gap-2">
+      <Button type="submit" size="lg" disabled={pending} className="mt-1 gap-2 w-full sm:w-auto">
         {pending ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (

@@ -318,3 +318,66 @@ html.custom-cursor body.cursor-hovering .cursor-glow {
   50%      { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,212,200,0.10); }
 }
 
+/* ==========================================================================
+   Mobile baseline.
+
+   Touch-device defaults that the desktop ones either don't need or
+   actively don't want. Scoped by `(pointer: coarse)` and / or by
+   max-width media queries so a laptop with a trackpad keeps the
+   crisper desktop UX.
+   ========================================================================== */
+
+@media (max-width: 1023px) {
+  /* iOS Safari + Chrome shrink the page text when an input has
+     font-size < 16px and you tap it. Force the floor on every
+     form-control so the layout never flinches. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Honour notch / home-indicator safe areas on the body so fixed
+     bars (topbar, drawer footer, sticky CTAs) aren't drawn under
+     the iPhone bezel. Individual components opt in via
+     `env(safe-area-inset-*)` for finer control. */
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@media (pointer: coarse) {
+  /* Kill the muddy blue flash iOS / Android show on tap. We have
+     proper `:active` styling on every interactive element. */
+  a, button, [role="button"], input, select, textarea, label, summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sticky bars + horizontal carousels feel jittery without inertial
+     scrolling on iOS. */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent the elastic over-scroll bounce on the document — it
+     reveals the body background and feels broken on a dark app. */
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Most desktop hover styles look wrong on touch (sticky hover
+     state after a tap). Components opt out via their own `@media
+     (hover: hover)` queries when they want to keep a hover effect. */
+}
+
+/* Universal — irrespective of device type. */
+img, svg, video, canvas, iframe {
+  /* Keep media inside its column on narrow screens. */
+  max-width: 100%;
+}
+
+/* Long-form content gets its own line-height — but tight UI labels
+   don't want it leaking in. Scoped to `prose`-style containers
+   downstream. */
+

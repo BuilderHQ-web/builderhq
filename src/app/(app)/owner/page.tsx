@@ -83,13 +83,13 @@ export default async function OwnerDashboard() {
               "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
-        <div className="relative px-6 lg:px-10 pt-16 lg:pt-20 pb-14 lg:pb-16">
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
             <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
               {isFirstTime ? "Welcome to BuilderHQ" : "Project hub"}
             </span>
-            <h1 className="mt-6 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,5vw+1rem,5rem)]">
+            <h1 className="mt-5 sm:mt-6 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(2.5rem,5vw+1rem,5rem)]">
               Hi{" "}
               <span
                 className="text-accent-light"
@@ -102,7 +102,7 @@ export default async function OwnerDashboard() {
               </span>
               .
             </h1>
-            <p className="mt-5 max-w-[52ch] text-[15px] leading-[1.7] text-text-subtle">
+            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.65] sm:leading-[1.7] text-text-subtle">
               {isFirstTime
                 ? "Upload a residential project once. Verified Australian builders match, unlock, and tender. You compare side-by-side and decide."
                 : data.tenders.awaitingDecision > 0
@@ -112,7 +112,7 @@ export default async function OwnerDashboard() {
             <Link
               href="/owner/projects/new"
               className={cn(
-                "group mt-9 inline-flex items-center gap-2.5 h-12 px-7 rounded-full",
+                "group mt-7 sm:mt-9 inline-flex items-center justify-center gap-2.5 h-12 px-6 sm:px-7 rounded-full w-full sm:w-auto max-w-sm",
                 "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
                 "transition-colors duration-[160ms] hover:bg-accent-hover",
                 "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
@@ -135,7 +135,7 @@ export default async function OwnerDashboard() {
         </div>
       </section>
 
-      <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 flex flex-col gap-8 sm:gap-10">
         {/* ── Pulse strip ───────────────────────────────────────────── */}
         {!isFirstTime ? (
           <Reveal immediate delay={0.04}>
@@ -340,7 +340,7 @@ function PulseTile({
   return (
     <div
       className={cn(
-        "relative rounded-md border p-5 overflow-hidden transform-gpu",
+        "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
         "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
         t.ring,
       )}
@@ -361,14 +361,13 @@ function PulseTile({
       </div>
       <div
         className={cn(
-          "relative font-display tracking-[-0.01em] leading-none tabular-nums",
+          "relative font-display tracking-[-0.01em] leading-none tabular-nums text-[28px] sm:text-[36px]",
           t.num,
         )}
-        style={{ fontSize: 36 }}
       >
         {value}
       </div>
-      <div className="relative mt-2 text-[11.5px] text-text-dim leading-[1.4]">
+      <div className="relative mt-2 text-[11px] sm:text-[11.5px] text-text-dim leading-[1.4]">
         {sub}
       </div>
     </div>
@@ -398,7 +397,7 @@ function DecisionsWaitingCallout({
             "radial-gradient(circle, rgba(255,181,71,0.22), transparent 70%)",
         }}
       />
-      <div className="relative px-6 lg:px-7 py-6 lg:py-7">
+      <div className="relative px-4 sm:px-6 lg:px-7 py-5 sm:py-6 lg:py-7">
         <div className="flex items-start gap-3 mb-5">
           <span className="size-9 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
             <Hourglass className="size-4" />
@@ -452,10 +451,10 @@ function DecisionRow({
     <li>
       <Link
         href={`/owner/projects/${decision.projectSlug}/tenders`}
-        className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+        className="group grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
       >
         <span
-          className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
+          className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0 row-span-1 sm:row-span-1"
           style={{
             background:
               "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
@@ -463,7 +462,7 @@ function DecisionRow({
         >
           {decision.builderInitials}
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 col-span-2 sm:col-span-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[13px] font-semibold text-text truncate">
               {decision.builderName}
@@ -492,20 +491,20 @@ function DecisionRow({
             {decision.projectTitle}
           </div>
         </div>
-        <span className="font-display text-[16px] tabular-nums text-text shrink-0">
+        <span className="font-display text-[16px] tabular-nums text-text shrink-0 justify-self-end">
           {decision.totalPriceAud != null
             ? formatAudCompact(decision.totalPriceAud)
             : "—"}
         </span>
         <span
           className={cn(
-            "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0",
+            "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0 col-start-3 sm:col-start-auto justify-self-end",
             urgencyCls,
           )}
         >
           {expiryLabel}
         </span>
-        <ArrowUpRight className="size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
+        <ArrowUpRight className="hidden sm:block size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
       </Link>
     </li>
   );
@@ -525,7 +524,7 @@ function ProjectPulseCard({
     <Link
       href={`/owner/projects/${project.slug}/tenders`}
       className={cn(
-        "group relative overflow-hidden rounded-md border p-5 transition-[border-color,background-color] duration-[260ms]",
+        "group relative overflow-hidden rounded-md border p-4 sm:p-5 transition-[border-color,background-color] duration-[260ms]",
         recommendationMeta.cardCls,
       )}
     >
@@ -557,7 +556,7 @@ function ProjectPulseCard({
         </span>
       </div>
 
-      <div className="relative grid grid-cols-4 gap-3">
+      <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3">
         <PulseStat
           label="Tenders"
           value={String(analytics.count)}
@@ -739,7 +738,7 @@ function ActivityFeed({
           <li
             key={i}
             className={cn(
-              "px-6 py-3 flex items-center gap-3",
+              "px-4 sm:px-6 py-3 flex items-center gap-3",
               i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
             )}
           >
@@ -844,7 +843,7 @@ function RecentProjectsPanel({
       }
     >
       {isFirstTime ? (
-        <div className="px-6 py-12 text-center">
+        <div className="px-4 sm:px-6 py-12 text-center">
           <div
             aria-hidden
             className="mx-auto size-12 rounded-full bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light mb-5"
@@ -882,7 +881,7 @@ function RecentProjectsPanel({
                   : `/owner/projects/${p.slug}`
               }
               className={cn(
-                "grid grid-cols-[1fr_auto_auto] gap-4 items-center px-6 py-4 transition-colors hover:bg-[rgba(0,212,200,0.025)]",
+                "grid grid-cols-[1fr_auto_auto] gap-3 sm:gap-4 items-center px-4 sm:px-6 py-4 transition-colors hover:bg-[rgba(0,212,200,0.025)]",
                 i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
               )}
             >
@@ -949,8 +948,8 @@ function Panel({
         className,
       )}
     >
-      <header className="px-6 py-4 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
+      <header className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5 min-w-0">
           <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
             {title}
           </h2>

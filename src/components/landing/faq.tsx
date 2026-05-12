@@ -107,10 +107,10 @@ export function FAQ() {
   return (
     <section
       id="faq"
-      className="relative px-6 md:px-10 py-24 lg:py-32"
+      className="relative px-5 md:px-10 py-20 lg:py-32"
     >
       <div className="mx-auto max-w-[1080px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-12 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-16 items-start">
           {/* Header column — sticks to the left while the user reads through */}
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
@@ -167,7 +167,7 @@ function FAQRow({
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          "w-full flex items-center gap-4 px-6 lg:px-7 py-5 lg:py-6 text-left",
+          "w-full flex items-center gap-4 px-5 lg:px-7 py-5 lg:py-6 text-left",
           "hover:bg-[rgba(255,255,255,0.018)] transition-colors duration-[160ms]",
         )}
       >
@@ -200,7 +200,7 @@ function FAQRow({
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-6 lg:px-7 pb-6 lg:pb-7 text-[14px] leading-[1.75] text-text-subtle max-w-[60ch]">
+            <div className="px-5 lg:px-7 pb-6 lg:pb-7 text-[14px] leading-[1.75] text-text-subtle max-w-[60ch]">
               {qa.a}
             </div>
           </motion.div>

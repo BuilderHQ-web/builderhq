@@ -184,7 +184,7 @@ export function BuilderProfileEditor({
     <>
       <ProfileHero profile={profile} />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1100px] flex flex-col gap-5">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1100px] flex flex-col gap-4 sm:gap-5">
         <Reveal immediate delay={0.04}>
           <IdentitySection
             profile={profile}
@@ -320,13 +320,13 @@ function SectionCard({
 }) {
   return (
     <section className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]">
-      <header className="px-7 py-5 flex items-start justify-between gap-3 border-b border-border-subtle/60">
-        <div>
+      <header className="px-4 sm:px-7 py-4 sm:py-5 flex items-start justify-between gap-3 border-b border-border-subtle/60">
+        <div className="min-w-0">
           <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium text-accent">
             <Icon className="size-3.5" />
             {kicker}
           </span>
-          <h2 className="mt-1.5 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
+          <h2 className="mt-1.5 font-display uppercase tracking-[-0.012em] text-[20px] sm:text-[22px] leading-[1.05] text-text">
             {title}
           </h2>
           {description ? (
@@ -337,7 +337,7 @@ function SectionCard({
         </div>
         {trailing ? <div className="shrink-0 mt-1">{trailing}</div> : null}
       </header>
-      <div className="px-7 py-6">{children}</div>
+      <div className="px-4 sm:px-7 py-5 sm:py-6">{children}</div>
     </section>
   );
 }

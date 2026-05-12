@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Three-layer custom cursor — dot (instant), ring (lerp .14),
@@ -14,11 +14,20 @@ import { useEffect, useRef } from "react";
  * On hover of an interactive element (`a, button, [data-cursor=hover]`),
  * the ring + glow grow to "swallow" the element and the dot shrinks —
  * gives a pleasant magnetic feel.
+ *
+ * Important — the three cursor layers are rendered conditionally on
+ * `enabled`, NOT just hidden when JS bails. Without that gate, the
+ * divs would sit at `top: 0; left: 0` permanently on touch devices
+ * (the useEffect's early-return skips the transform setup, but the
+ * elements still render). Result: a stray cursor in the corner.
  */
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
+  // Starts false on both server + client to keep hydration in sync;
+  // flips true only after the pointer-fine + reduce-motion guards pass.
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
     const isFinePointer = window.matchMedia("(pointer: fine)").matches;
@@ -26,6 +35,7 @@ export function CustomCursor() {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     if (!isFinePointer || reduce) return;
+    setEnabled(true);
 
     const html = document.documentElement;
     html.classList.add("custom-cursor");
@@ -94,6 +104,8 @@ export function CustomCursor() {
       html.classList.remove("custom-cursor");
     };
   }, []);
+
+  if (!enabled) return null;
 
   return (
     <>

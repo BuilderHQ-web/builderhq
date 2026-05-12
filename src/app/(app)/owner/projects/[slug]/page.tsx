@@ -136,12 +136,12 @@ export default async function ProjectDetailPage({
   const messagingUnread = totalUnread(conversations);
 
   return (
-    <div className="px-6 lg:px-10 py-8 lg:py-10">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[920px]">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60">·</span>
@@ -149,25 +149,25 @@ export default async function ProjectDetailPage({
                 {project.status}
               </span>
             </span>
-            <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[44px] sm:text-[52px] leading-[0.92] text-text">
+            <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[52px] leading-[0.92] text-text break-words">
               {project.title}
             </h1>
             {project.suburb ? (
-              <p className="mt-3 text-[14px] text-text-muted">
+              <p className="mt-3 text-[13px] sm:text-[14px] text-text-muted break-words">
                 {project.suburb}, {project.state} {project.postcode}
               </p>
             ) : null}
           </div>
           <Link
             href={`/owner/projects/${project.slug}/edit`}
-            className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2")}
+            className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
           >
             <Pencil className="size-3.5" />
-            Edit
+            <span className="hidden sm:inline">Edit</span>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
           {/* Left — details (staggered entrance) */}
           <div className="space-y-5">
             <Reveal immediate delay={0.04}>

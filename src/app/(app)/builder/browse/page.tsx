@@ -82,16 +82,16 @@ export default async function BrowsePage({
     ).length;
 
   return (
-    <div className="px-6 lg:px-10 py-8 lg:py-10">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1320px]">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-7">
-          <div>
+        <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
+          <div className="min-w-0">
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
               <Compass className="size-3.5" />
               Browse
             </span>
-            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[44px] leading-[0.95] text-text">
               Find tender-ready work
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
@@ -171,14 +171,15 @@ function FilterBar({ params }: { params: SearchParams }) {
   return (
     <form
       method="get"
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-4 lg:p-5"
+      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-3 sm:p-4 lg:p-5"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
         <Input
           type="text"
           name="q"
           defaultValue={params.q ?? ""}
           placeholder="Search by title…"
+          className="sm:col-span-2 lg:col-span-1"
         />
         <Select name="type" defaultValue={params.type ?? ""}>
           <option value="">Any type</option>
@@ -213,11 +214,11 @@ function FilterBar({ params }: { params: SearchParams }) {
             </option>
           ))}
         </Select>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
           <button
             type="submit"
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-md",
+              "inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-md flex-1 lg:flex-initial",
               "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
               "hover:bg-accent-hover transition-colors duration-[140ms]",
               "active:scale-[0.985] active:duration-[80ms]",
@@ -229,7 +230,7 @@ function FilterBar({ params }: { params: SearchParams }) {
           {hasAny ? (
             <Link
               href="/builder/browse"
-              className="inline-flex items-center justify-center gap-1 h-10 px-3 rounded-md border border-border-subtle text-[11px] text-text-dim hover:text-text hover:border-border transition-colors"
+              className="inline-flex items-center justify-center gap-1 h-11 px-3 rounded-md border border-border-subtle text-[11px] text-text-dim hover:text-text hover:border-border transition-colors"
             >
               <X className="size-3" />
               Clear

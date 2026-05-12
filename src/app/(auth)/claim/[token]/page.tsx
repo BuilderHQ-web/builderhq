@@ -45,7 +45,7 @@ export default async function ClaimPage(props: {
           <span className="text-[11px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
             Claim · BuilderHQ
           </span>
-          <h1 className="font-display uppercase tracking-[-0.02em] text-[40px] sm:text-[48px] leading-[0.92] text-text">
+          <h1 className="font-display uppercase tracking-[-0.02em] text-[36px] sm:text-[48px] leading-[0.92] text-text">
             {code === "conflict"
               ? "Already claimed"
               : code === "rate_limited"
@@ -57,25 +57,25 @@ export default async function ClaimPage(props: {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
           {code === "conflict" ? (
             <Link
               href="/login"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors w-full sm:w-auto"
             >
               Sign in
             </Link>
           ) : (
             <a
               href="mailto:support@builderhq.com.au?subject=Account%20claim%20link%20expired"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors w-full sm:w-auto"
             >
               Email support
             </a>
           )}
           <Link
             href="/"
-            className="text-[13px] text-text-dim hover:text-text-muted transition-colors"
+            className="text-[13px] text-text-dim hover:text-text-muted transition-colors py-2 -my-2 sm:py-0 sm:my-0"
           >
             Back home
           </Link>
@@ -92,14 +92,14 @@ export default async function ClaimPage(props: {
   );
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7 sm:gap-8">
       <div className="flex flex-col gap-3">
         <span className="inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
           <Logo height={14} />
           <span aria-hidden className="text-text-dim">·</span>
           Claim your account
         </span>
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[44px] sm:text-[52px] leading-[0.92] text-text">
+        <h1 className="font-display uppercase tracking-[-0.02em] text-[40px] sm:text-[52px] leading-[0.92] text-text">
           {greeting}
         </h1>
         <p className="text-[14px] leading-[22px] text-text-muted">
@@ -110,13 +110,13 @@ export default async function ClaimPage(props: {
       </div>
 
       <div className="rounded-md border border-border-subtle bg-surface-1/60 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
           <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
             Claiming
           </span>
           <span className="text-[13px] text-text truncate">{email}</span>
         </div>
-        <span className="text-[10.5px] tracking-[0.14em] uppercase text-text-dim font-ui">
+        <span className="text-[10.5px] tracking-[0.14em] uppercase text-text-dim font-ui shrink-0">
           {daysLeft}d to use
         </span>
       </div>

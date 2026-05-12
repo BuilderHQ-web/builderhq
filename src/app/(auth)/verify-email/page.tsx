@@ -13,19 +13,19 @@ export default async function VerifyEmailPage({
   const { email } = await searchParams;
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8 sm:gap-10">
       <div className="flex flex-col gap-3">
         <div className="inline-flex size-10 items-center justify-center rounded-full border border-border-accent bg-accent-muted/40 text-accent mb-1">
           <Mail className="size-4" />
         </div>
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[40px] sm:text-[48px] leading-[0.92] text-text">
+        <h1 className="font-display uppercase tracking-[-0.02em] text-[36px] sm:text-[48px] leading-[0.92] text-text">
           Check your inbox
         </h1>
-        <p className="text-[15px] leading-[24px] text-text-muted">
+        <p className="text-[14px] sm:text-[15px] leading-[22px] sm:leading-[24px] text-text-muted break-words">
           {email ? (
             <>
               We sent a verification link to{" "}
-              <span className="text-text">{email}</span>. Click it within
+              <span className="text-text break-all">{email}</span>. Click it within
               the next 24 hours to activate your account.
             </>
           ) : (
@@ -51,16 +51,16 @@ export default async function VerifyEmailPage({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between text-[13px] text-text-dim">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 text-[13px] text-text-dim">
         <Link
           href="/signup"
-          className="hover:text-accent-light transition-colors"
+          className="hover:text-accent-light transition-colors py-2 -my-2"
         >
           Wrong email? Sign up again
         </Link>
         <Link
           href="/login"
-          className="hover:text-accent-light transition-colors"
+          className="hover:text-accent-light transition-colors py-2 -my-2"
         >
           Back to log in →
         </Link>

@@ -389,15 +389,15 @@ export function ProjectWizard({
     <div className="min-h-screen pb-32">
       {/* Header — type, title, save state */}
       <header className="border-b border-border-subtle bg-bg-deep/30">
-        <div className="px-6 lg:px-10 py-6 lg:py-7 flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-7 flex items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60 mx-1">·</span>
               <StatusPill status={project.status} />
             </span>
-            <h1 className="mt-1.5 font-display uppercase tracking-[-0.018em] text-[32px] sm:text-[40px] leading-[0.95] text-text truncate">
+            <h1 className="mt-1.5 font-display uppercase tracking-[-0.018em] text-[26px] sm:text-[40px] leading-[0.95] text-text truncate">
               {project.title}
             </h1>
           </div>
@@ -414,7 +414,7 @@ export function ProjectWizard({
       </header>
 
       {/* Step content */}
-      <div className="px-6 lg:px-10 py-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
         <div className="mx-auto max-w-[820px]">
           {step === 1 ? (
             <Step1Basics
@@ -511,7 +511,7 @@ function ProgressTracker({
   ];
 
   return (
-    <div className="px-6 lg:px-10 pb-6">
+    <div className="px-4 sm:px-6 lg:px-10 pb-6">
       <div className="mx-auto max-w-[820px] grid grid-cols-3 gap-3 relative">
         {/* connecting line */}
         <span
@@ -1255,8 +1255,8 @@ function PublishBar({
 }) {
   const isPublished = project.status !== "draft";
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md">
-      <div className="mx-auto max-w-[820px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-bg-deep/98 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-[820px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
           {isPublished ? (
             <div className="text-[13px] text-accent-light flex items-center gap-2">
@@ -1281,9 +1281,10 @@ function PublishBar({
         {isPublished ? (
           <a
             href={`/owner/projects/${project.slug}`}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+            className="inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors shrink-0"
           >
-            View project
+            <span className="hidden sm:inline">View project</span>
+            <span className="sm:hidden">View</span>
             <ArrowUpRight className="size-3.5" />
           </a>
         ) : (
@@ -1292,7 +1293,7 @@ function PublishBar({
             onClick={onPublish}
             disabled={!allDone || publishing}
             className={cn(
-              "inline-flex items-center gap-2 h-10 px-5 rounded-full text-[12.5px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              "inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-full text-[12.5px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] shrink-0",
               allDone && !publishing
                 ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_28px_-8px_rgba(0,212,200,0.55)]"
                 : "bg-surface-2 text-text-dim cursor-not-allowed",
@@ -1364,11 +1365,11 @@ function StatusPill({ status }: { status: Project["status"] }) {
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
     <div>
-      <h2 className="font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[32px] leading-[0.95] text-text">
+      <h2 className="font-display uppercase tracking-[-0.018em] text-[24px] sm:text-[32px] leading-[0.95] text-text">
         {title}
       </h2>
       {sub ? (
-        <p className="mt-2 text-[13.5px] leading-[1.6] text-text-muted">
+        <p className="mt-2 text-[13px] sm:text-[13.5px] leading-[1.6] text-text-muted">
           {sub}
         </p>
       ) : null}
@@ -1392,7 +1393,7 @@ function Card({
       className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_18px_44px_-22px_rgba(0,0,0,0.55)]"
     >
       {title ? (
-        <header className="px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
+        <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
           {icon ? (
             <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
               {icon}
@@ -1408,7 +1409,7 @@ function Card({
           </div>
         </header>
       ) : null}
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </section>
   );
 }

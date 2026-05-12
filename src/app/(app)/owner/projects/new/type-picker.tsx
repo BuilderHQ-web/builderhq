@@ -112,7 +112,7 @@ export function TypePicker() {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         <span className="text-[12px] text-text-dim">
           You can edit anything in the next step.
         </span>
@@ -121,7 +121,7 @@ export function TypePicker() {
           onClick={onContinue}
           disabled={!picked || isPending}
           className={cn(
-            "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
             picked && !isPending
               ? "bg-accent text-accent-contrast hover:bg-accent-hover"
               : "bg-surface-2 text-text-dim cursor-not-allowed",

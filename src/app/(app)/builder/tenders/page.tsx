@@ -68,15 +68,15 @@ export default async function MyTendersPage() {
   };
 
   return (
-    <div className="px-6 lg:px-10 py-8 lg:py-10">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1320px]">
-        <div className="flex items-start justify-between gap-4 mb-7">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-7">
+          <div className="min-w-0">
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
               <FileText className="size-3.5" />
               My tenders
             </span>
-            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text">
               Your tender pipeline
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
@@ -86,7 +86,7 @@ export default async function MyTendersPage() {
           </div>
           <Link
             href="/builder/browse"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-border-strong text-text text-[12px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-full border border-border-strong text-text text-[12px] tracking-[0.04em] hover:bg-surface-1 transition-colors self-start"
           >
             <Compass className="size-3.5" />
             Browse projects
@@ -153,7 +153,7 @@ function Bucket({
 }) {
   return (
     <section>
-      <header className="mb-3 flex items-baseline gap-3">
+      <header className="mb-3 flex items-baseline gap-3 flex-wrap">
         <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
           {title}
         </h2>
@@ -198,7 +198,7 @@ function Row({
           ? `/builder/projects/${slug}/tender`
           : "#"
       }
-      className="grid grid-cols-1 sm:grid-cols-[1.6fr_1fr_1fr_auto] gap-2 sm:gap-4 px-5 py-4 items-center transition-colors hover:bg-[rgba(0,212,200,0.025)] border-b border-border-subtle/60 last:border-b-0"
+      className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.6fr_1fr_1fr_auto] gap-x-3 gap-y-1 sm:gap-4 px-4 sm:px-5 py-4 items-center transition-colors hover:bg-[rgba(0,212,200,0.025)] border-b border-border-subtle/60 last:border-b-0"
     >
       <div className="min-w-0">
         <div className="text-[13.5px] font-semibold text-text truncate">
@@ -210,6 +210,14 @@ function Row({
             : "Location pending"}
         </div>
       </div>
+      <span
+        className={cn(
+          "justify-self-end sm:hidden inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase shrink-0",
+          meta.cls,
+        )}
+      >
+        {meta.label}
+      </span>
       <div className="text-[13px] text-text font-mono tabular-nums">
         {tender.totalPriceAud != null
           ? new Intl.NumberFormat("en-AU", {
@@ -224,7 +232,7 @@ function Row({
       </div>
       <span
         className={cn(
-          "justify-self-start sm:justify-self-end inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase",
+          "hidden sm:inline-flex justify-self-end items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase",
           meta.cls,
         )}
       >

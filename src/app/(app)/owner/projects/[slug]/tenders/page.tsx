@@ -33,23 +33,23 @@ export default async function ProjectTendersPage({
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
 
   return (
-    <div className="px-6 lg:px-10 py-8 lg:py-10">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1400px]">
         <Link
           href={`/owner/projects/${project.slug}`}
-          className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-5"
+          className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
         >
           <ArrowLeft className="size-3.5" />
           Back to project
         </Link>
 
-        <div className="flex items-start justify-between gap-4 mb-7">
-          <div>
+        <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
+          <div className="min-w-0">
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
               <Files className="size-3.5" />
               Tenders · compare &amp; decide
             </span>
-            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text break-words">
               {project.title}
             </h1>
             <p className="mt-2 text-[13px] text-text-muted max-w-[58ch]">

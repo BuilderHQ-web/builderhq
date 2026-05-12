@@ -23,7 +23,7 @@ export function Problem() {
   return (
     <section
       id="problem"
-      className="relative px-6 md:px-10 pt-28 pb-24 lg:pt-36 lg:pb-32"
+      className="relative px-5 md:px-10 pt-20 pb-20 lg:pt-36 lg:pb-32"
     >
       <div className="mx-auto max-w-[1080px]">
         <Reveal>
@@ -48,7 +48,7 @@ export function Problem() {
           </div>
         </Reveal>
 
-        <div className="mt-16 lg:mt-20">
+        <div className="mt-12 lg:mt-20">
           {/* Header row */}
           <div className="hidden md:grid grid-cols-[1fr_auto_1fr] gap-8 items-center px-6 mb-4">
             <span className="text-[10px] tracking-[0.24em] uppercase text-text-dim">

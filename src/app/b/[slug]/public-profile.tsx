@@ -171,7 +171,7 @@ export function PublicBuilderProfile({
 
       <Hero profile={profile} />
 
-      <main className="relative px-6 lg:px-10 mx-auto max-w-[1100px] flex flex-col gap-12 lg:gap-16 py-12 lg:py-16">
+      <main className="relative px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] flex flex-col gap-12 lg:gap-16 py-10 sm:py-12 lg:py-16">
         <Reveal immediate delay={0.06}>
           <StatsStrip
             profile={profile}
@@ -231,17 +231,19 @@ function PreviewBanner({ status }: { status: ApprovalStatus }) {
           : "border-warning/35 bg-[rgba(255,181,71,0.06)] text-warning",
       )}
     >
-      <div className="max-w-[1100px] mx-auto px-6 lg:px-10 py-2.5 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2">
-          <Eye className="size-3.5" />
-          <strong className="font-medium">Preview mode</strong>
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+          <span className="inline-flex items-center gap-2">
+            <Eye className="size-3.5" />
+            <strong className="font-medium">Preview mode</strong>
+          </span>
           <span className="opacity-80">
             · This profile is {meta.label.toLowerCase()} — only visible to you.
           </span>
         </span>
         <Link
           href="/builder/profile"
-          className="text-[11.5px] tracking-[0.04em] underline-offset-4 hover:underline"
+          className="text-[11.5px] tracking-[0.04em] underline-offset-4 hover:underline shrink-0"
         >
           Edit profile
         </Link>
@@ -296,7 +298,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
         }}
       />
 
-      <div className="relative px-6 lg:px-10 pt-14 lg:pt-20 pb-12 lg:pb-16 mx-auto max-w-[1100px]">
+      <div className="relative px-4 sm:px-6 lg:px-10 pt-12 sm:pt-14 lg:pt-20 pb-10 sm:pb-12 lg:pb-16 mx-auto max-w-[1100px]">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium mb-7 hover:opacity-80 transition-opacity"
@@ -315,7 +317,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
           <div className="relative">
             <div
               className={cn(
-                "relative size-[180px] sm:size-[200px] rounded-md overflow-hidden border border-border-accent/40",
+                "relative size-[148px] sm:size-[200px] rounded-md overflow-hidden border border-border-accent/40",
                 "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]",
                 "shadow-[0_24px_60px_-24px_rgba(0,212,200,0.40),0_0_0_1px_rgba(0,212,200,0.18)]",
                 "flex items-center justify-center",
@@ -329,7 +331,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
                   className="size-full object-contain p-3"
                 />
               ) : (
-                <span className="font-display text-[68px] tracking-[0.04em] text-accent-light/85 leading-none">
+                <span className="font-display text-[54px] sm:text-[68px] tracking-[0.04em] text-accent-light/85 leading-none">
                   {initials}
                 </span>
               )}
@@ -362,7 +364,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
               ) : null}
             </div>
 
-            <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.4rem,5.5vw+1rem,5.5rem)] leading-[0.92] text-text">
+            <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.2rem,5.5vw+1rem,5.5rem)] leading-[0.92] text-text break-words">
               {profile.tradingName && profile.tradingName.trim().length > 0
                 ? profile.tradingName
                 : profile.companyName}
@@ -588,12 +590,12 @@ function StatCard({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] p-5">
+    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] p-4 sm:p-5">
       <div className="flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-text-dim">
-        <Icon className="size-3 text-accent-light" />
-        {label}
+        <Icon className="size-3 text-accent-light shrink-0" />
+        <span className="truncate">{label}</span>
       </div>
-      <div className="mt-3 font-display tabular-nums leading-none text-text" style={{ fontSize: 38 }}>
+      <div className="mt-3 font-display tabular-nums leading-none text-text text-[32px] sm:text-[38px]">
         {value}
       </div>
       {sub ? (
@@ -661,7 +663,7 @@ function CategoriesSection({ categories }: { categories: ProjectType[] }) {
             <div
               key={c}
               className={cn(
-                "group relative rounded-md border border-border-subtle p-5",
+                "group relative rounded-md border border-border-subtle p-4 sm:p-5",
                 "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
                 "transition-[border-color,box-shadow,transform] duration-[220ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
                 "hover:border-border-accent/55 hover:-translate-y-0.5",
@@ -716,7 +718,7 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
             <div
               key={state}
               className={cn(
-                "rounded-md border border-border-subtle p-5",
+                "rounded-md border border-border-subtle p-4 sm:p-5",
                 "bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]",
               )}
             >
@@ -784,7 +786,7 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
           <div
             key={l.id}
             className={cn(
-              "rounded-md border border-border-subtle p-5",
+              "rounded-md border border-border-subtle p-4 sm:p-5",
               "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
             )}
           >
@@ -807,11 +809,11 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums">
+                <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums break-all">
                   #{l.licenceNumber}
                 </div>
                 {l.licenceHolderName ? (
-                  <div className="mt-0.5 text-[12px] text-text-dim">
+                  <div className="mt-0.5 text-[12px] text-text-dim break-words">
                     Held by {l.licenceHolderName}
                   </div>
                 ) : null}
@@ -862,13 +864,13 @@ function CallToAction({
             "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(0,212,200,0.10), transparent 70%), radial-gradient(ellipse 60% 80% at 100% 50%, rgba(26,95,212,0.10), transparent 70%)",
         }}
       />
-      <div className="relative px-7 lg:px-10 py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
+      <div className="relative px-5 sm:px-7 lg:px-10 py-9 sm:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
         <div>
           <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
             <Sparkles className="size-3" />
             Have a project?
           </span>
-          <h3 className="mt-2 font-display uppercase tracking-[-0.012em] text-[28px] leading-[1.05] text-text">
+          <h3 className="mt-2 font-display uppercase tracking-[-0.012em] text-[26px] sm:text-[28px] leading-[1.05] text-text break-words">
             Tender it to {companyName}
           </h3>
           <p className="mt-2 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
@@ -886,6 +888,7 @@ function CallToAction({
               "hover:bg-accent-hover transition-colors duration-[140ms]",
               "active:scale-[0.985] active:duration-[80ms]",
               "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_8px_24px_-8px_rgba(0,212,200,0.5)]",
+              "max-sm:w-full",
             )}
           >
             {viewerSignedIn ? "Upload a project" : "Get started — free"}
@@ -893,7 +896,7 @@ function CallToAction({
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-1 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-1 transition-colors max-sm:w-full"
           >
             How BuilderHQ works
           </Link>
@@ -908,7 +911,7 @@ function CallToAction({
 function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-bg-deep/40 mt-8">
-      <div className="px-6 lg:px-10 mx-auto max-w-[1100px] py-8 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
+      <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] py-8 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
         <span className="inline-flex items-center gap-2">
           <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
           BuilderHQ · Australia&apos;s residential tender platform

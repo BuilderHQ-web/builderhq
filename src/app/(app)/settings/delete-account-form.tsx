@@ -65,7 +65,7 @@ export function DeleteAccountForm() {
           variant="outline"
           size="md"
           onClick={() => setOpen(true)}
-          className="self-start gap-2 !border-danger/40 !text-danger hover:!bg-danger/10"
+          className="self-stretch sm:self-start gap-2 !border-danger/40 !text-danger hover:!bg-danger/10 max-sm:!h-11"
         >
           <AlertTriangle className="size-3.5" />
           Start account deletion
@@ -131,13 +131,13 @@ export function DeleteAccountForm() {
             You&apos;ll be signed out immediately after this completes.
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2">
             <Button
               type="submit"
               variant="danger"
               size="md"
               disabled={pending}
-              className="gap-2"
+              className="gap-2 max-sm:!h-11"
             >
               {pending ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -152,6 +152,7 @@ export function DeleteAccountForm() {
               size="md"
               onClick={() => setOpen(false)}
               disabled={pending}
+              className="max-sm:!h-11"
             >
               Cancel
             </Button>

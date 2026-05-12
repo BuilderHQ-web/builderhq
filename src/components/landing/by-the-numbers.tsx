@@ -60,7 +60,7 @@ export function ByTheNumbers() {
     <section
       id="by-the-numbers"
       aria-label="Platform facts at a glance"
-      className="relative px-6 md:px-10 py-14 lg:py-16"
+      className="relative px-5 md:px-10 py-12 lg:py-16"
     >
       <div className="mx-auto max-w-[1320px]">
         <Reveal>
@@ -94,7 +94,7 @@ export function ByTheNumbers() {
 
 function Tile({ item }: { item: Item }) {
   return (
-    <div className="px-6 lg:px-8 py-7 lg:py-8 flex flex-col gap-2">
+    <div className="px-5 lg:px-8 py-6 lg:py-8 flex flex-col gap-2">
       {item.numeric ? (
         <CountUp
           to={item.numeric.to}

@@ -139,6 +139,11 @@ export function UserAccountActions({
   const canUnban = status === "banned";
   const canDelete = showDelete; // role check happens server-side
 
+  // Buttons use `sm` size (h-8 ≈ 32px) at desktop where the table is dense,
+  // but bump to a 44px minimum-tap-target on touch via responsive class.
+  const touchSize = "max-sm:!h-11 max-sm:!px-5 max-sm:!text-[13px]";
+  const detailWidth = !compact ? "max-sm:w-full" : "";
+
   return (
     <div className={cn("flex flex-col gap-3", compact ? "w-full" : "w-full")}>
       <div
@@ -154,7 +159,7 @@ export function UserAccountActions({
             variant={mode === "suspend" ? "danger" : "outline"}
             onClick={() => setMode(mode === "suspend" ? null : "suspend")}
             disabled={pending}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <PauseOctagon className="size-3.5" />
             Suspend
@@ -167,7 +172,7 @@ export function UserAccountActions({
             variant="outline"
             onClick={runUnsuspend}
             disabled={pending || mode !== null}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <Undo2 className="size-3.5" />
             Unsuspend
@@ -180,7 +185,7 @@ export function UserAccountActions({
             variant={mode === "ban" ? "danger" : "outline"}
             onClick={() => setMode(mode === "ban" ? null : "ban")}
             disabled={pending}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <Ban className="size-3.5" />
             Ban
@@ -193,7 +198,7 @@ export function UserAccountActions({
             variant="outline"
             onClick={runUnban}
             disabled={pending || mode !== null}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <Undo2 className="size-3.5" />
             Unban
@@ -206,7 +211,11 @@ export function UserAccountActions({
             variant={mode === "delete" ? "danger" : "outline"}
             onClick={() => setMode(mode === "delete" ? null : "delete")}
             disabled={pending}
-            className="gap-1.5 !border-danger/40 !text-danger hover:!bg-danger/10 data-[active=true]:!text-text"
+            className={cn(
+              "gap-1.5 !border-danger/40 !text-danger hover:!bg-danger/10 data-[active=true]:!text-text",
+              touchSize,
+              detailWidth,
+            )}
             data-active={mode === "delete"}
           >
             <Trash2 className="size-3.5" />
@@ -250,13 +259,14 @@ export function UserAccountActions({
             rows={3}
             disabled={pending}
           />
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={reset}
               disabled={pending}
+              className={cn(touchSize)}
             >
               Cancel
             </Button>
@@ -266,7 +276,7 @@ export function UserAccountActions({
               variant="danger"
               onClick={() => runWithReason(mode)}
               disabled={pending || reason.trim().length < 4}
-              className="gap-1.5"
+              className={cn("gap-1.5", touchSize)}
             >
               {pending ? (
                 <Loader2 className="size-3.5 animate-spin" />

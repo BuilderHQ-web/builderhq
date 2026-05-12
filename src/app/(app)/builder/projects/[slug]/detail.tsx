@@ -243,18 +243,18 @@ export function ProjectDetail({
     <div className="pb-32">
       {/* Header */}
       <div className="border-b border-border-subtle bg-bg-deep/30">
-        <div className="px-6 lg:px-10 py-6 lg:py-8 mx-auto max-w-[1200px]">
+        <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1200px]">
           <Link
             href="/builder/browse"
-            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-5"
+            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
           >
             <ArrowLeft className="size-3.5" />
             Back to browse
           </Link>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium flex-wrap">
                 {meta.icon}
                 {meta.label}
                 <span className="text-text-dim/60 mx-1">·</span>
@@ -270,19 +270,21 @@ export function ProjectDetail({
                   </span>
                 )}
               </span>
-              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[36px] sm:text-[44px] leading-[0.95] text-text">
+              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text break-words">
                 {preview.title}
               </h1>
               <div className="mt-2 flex items-center gap-2 text-[13px] text-text-muted">
-                <MapPin className="size-3.5" />
-                {preview.suburb && preview.state ? (
-                  <>
-                    {preview.suburb}, {preview.state}
-                    {preview.postcode ? ` ${preview.postcode}` : ""}
-                  </>
-                ) : (
-                  "Location pending"
-                )}
+                <MapPin className="size-3.5 shrink-0" />
+                <span className="truncate">
+                  {preview.suburb && preview.state ? (
+                    <>
+                      {preview.suburb}, {preview.state}
+                      {preview.postcode ? ` ${preview.postcode}` : ""}
+                    </>
+                  ) : (
+                    "Location pending"
+                  )}
+                </span>
               </div>
             </div>
 
@@ -292,7 +294,7 @@ export function ProjectDetail({
                 onClick={onToggleSave}
                 disabled={savingPending}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-full border text-[12px] tracking-[0.04em] transition-colors",
+                  "inline-flex items-center gap-1.5 h-11 px-4 rounded-full border text-[12px] tracking-[0.04em] transition-colors",
                   saved
                     ? "border-border-accent bg-accent-muted/40 text-accent-light"
                     : "border-border-strong text-text hover:bg-surface-1",
@@ -312,8 +314,8 @@ export function ProjectDetail({
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1200px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1200px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
           {/* Left — public details (staggered entrance) */}
           <div className="space-y-5">
             <Reveal immediate delay={0.04}>
@@ -536,7 +538,7 @@ export function ProjectDetail({
               on unlock) so the panel mounts populated. Anchor target
               for the in-card "Open conversation" link in OwnerContactBlock. */}
         {unlocked ? (
-          <section id="messaging" className="mx-auto max-w-[1200px] px-6 lg:px-10 pb-8 lg:pb-10 scroll-mt-24">
+          <section id="messaging" className="mx-auto max-w-[1200px] px-0 sm:px-6 lg:px-10 pb-8 lg:pb-10 scroll-mt-24 mt-6 sm:mt-8">
             <Reveal immediate delay={0.06}>
               <div className="flex items-baseline justify-between gap-3 mb-3">
                 <div>
@@ -651,15 +653,15 @@ function TenderCtaBar({
       : "View tender";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md">
-      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
             <FileText className="size-4" />
           </span>
           <div className="min-w-0">
             <div className="text-[13px] font-semibold text-text">{headline}</div>
-            <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
+            <div className="text-[11.5px] text-text-dim mt-0.5 line-clamp-2 sm:truncate">
               {sub}
             </div>
           </div>
@@ -667,7 +669,7 @@ function TenderCtaBar({
         <Link
           href={`/builder/projects/${slug}/tender`}
           className={cn(
-            "inline-flex items-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] shrink-0",
             "bg-accent text-accent-contrast hover:bg-accent-hover",
             "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
           )}
@@ -706,13 +708,13 @@ function UnlockBar({
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-md",
+        "fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-md pb-[env(safe-area-inset-bottom)]",
         hasCredits
           ? "border-border-accent/40 bg-[rgba(0,212,200,0.05)]"
           : "border-border-subtle bg-bg-deep/98",
       )}
     >
-      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         {/* Left — status / pricing */}
         <div className="min-w-0 flex items-start gap-3">
           <span
@@ -794,7 +796,7 @@ function UnlockBar({
             onClick={onUnlock}
             disabled={unlocking}
             className={cn(
-              "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
               "bg-accent text-accent-contrast hover:bg-accent-hover",
               "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
               unlocking && "opacity-70 cursor-not-allowed",
@@ -811,7 +813,7 @@ function UnlockBar({
           <Link
             href="/builder/access"
             className={cn(
-              "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+              "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
               "bg-accent text-accent-contrast hover:bg-accent-hover",
               "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
             )}
@@ -837,8 +839,8 @@ function UnlockBar({
  */
 function ProjectFullBar() {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-danger/[0.05] backdrop-blur-md">
-      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-danger/[0.05] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-danger/40 bg-danger/10 flex items-center justify-center shrink-0 text-danger">
             <Lock className="size-4" />
@@ -861,7 +863,7 @@ function ProjectFullBar() {
         <Link
           href="/builder/browse"
           className={cn(
-            "shrink-0 inline-flex items-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
             "border border-border-strong bg-transparent text-text hover:bg-surface-1",
           )}
         >
@@ -905,8 +907,8 @@ function ViewerModeBar({
       : "Verify a builder licence — VIC verifies live; other states get a manual review.";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-[rgba(255,181,71,0.04)] backdrop-blur-md">
-      <div className="mx-auto max-w-[1200px] px-6 lg:px-10 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-[rgba(255,181,71,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
             <ShieldCheck className="size-4" />
@@ -945,7 +947,7 @@ function ViewerModeBar({
         <Link
           href="/builder/profile"
           className={cn(
-            "shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms]",
+            "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
             "bg-accent text-accent-contrast hover:bg-accent-hover",
             "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
           )}

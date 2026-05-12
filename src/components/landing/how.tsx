@@ -50,14 +50,14 @@ export function HowItWorks() {
   return (
     <section
       id="how"
-      className="relative px-6 md:px-10 py-24 lg:py-32 border-y border-border-subtle"
+      className="relative px-5 md:px-10 py-20 lg:py-32 border-y border-border-subtle"
       style={{
         background:
           "linear-gradient(180deg, rgba(6,18,30,0.5), rgba(3,9,15,0.6))",
       }}
     >
       <div className="mx-auto max-w-[1320px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1fr] gap-12 lg:gap-16 items-end">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1fr] gap-8 lg:gap-16 items-end">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               How it works
@@ -83,7 +83,7 @@ export function HowItWorks() {
         {/* 3 cards + 2 connectors. On large screens it's a row with
             horizontal connectors between cards; on small screens it
             stacks with vertical connectors. */}
-        <div className="mt-14 lg:mt-20 grid grid-cols-1 lg:grid-cols-[1fr_56px_1fr_56px_1fr] gap-y-4 gap-x-0 items-stretch">
+        <div className="mt-10 lg:mt-20 grid grid-cols-1 lg:grid-cols-[1fr_56px_1fr_56px_1fr] gap-y-4 gap-x-0 items-stretch">
           <Reveal>
             <Step {...steps[0]!} />
           </Reveal>
@@ -151,7 +151,7 @@ function Step({
   points: string[];
 }) {
   return (
-    <div className="group relative h-full p-9 rounded-md border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.7),rgba(6,20,32,0.85))] transition-[border-color,transform] duration-[600ms] ease-[var(--ease-out)] hover:border-border-accent hover:-translate-y-1 overflow-hidden">
+    <div className="group relative h-full p-7 sm:p-9 rounded-md border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.7),rgba(6,20,32,0.85))] transition-[border-color,transform] duration-[600ms] ease-[var(--ease-out)] hover:border-border-accent hover:-translate-y-1 overflow-hidden">
       <span className="font-display tracking-[0.22em] text-[11px] text-accent">
         {n}
       </span>

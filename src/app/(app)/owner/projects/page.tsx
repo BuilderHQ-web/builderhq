@@ -41,7 +41,7 @@ export default async function ProjectsPage() {
         }
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
         {projects.length === 0 ? (
           <EmptyState
             icon={<FolderOpen className="size-4" />}
@@ -76,7 +76,7 @@ export default async function ProjectsPage() {
                       : `/owner/projects/${p.slug}`
                   }
                   className={cn(
-                    "group grid grid-cols-1 md:grid-cols-[1.6fr_1fr_120px_140px_120px] gap-2 md:gap-4 px-5 py-4 items-center",
+                    "group grid grid-cols-[1fr_auto] md:grid-cols-[1.6fr_1fr_120px_140px_120px] gap-2 md:gap-4 px-4 sm:px-5 py-4 items-center",
                     "transition-[background-color,transform] duration-[160ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
                     "hover:bg-[rgba(0,212,200,0.045)]",
                     "active:scale-[0.997] active:duration-[100ms]",

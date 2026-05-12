@@ -51,10 +51,10 @@ export function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="relative py-24 lg:py-32 overflow-hidden"
+      className="relative py-20 lg:py-32 overflow-hidden"
     >
-      <div className="px-6 md:px-10">
-        <div className="mx-auto max-w-[1320px] text-center mb-14 lg:mb-16">
+      <div className="px-5 md:px-10">
+        <div className="mx-auto max-w-[1320px] text-center mb-10 lg:mb-16">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               Built with industry experts
@@ -115,7 +115,7 @@ export function Testimonials() {
 function ReviewCard({ r }: { r: Review }) {
   return (
     <article
-      className="relative w-[420px] shrink-0 rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,26,40,0.85),rgba(6,18,28,0.95))] p-7 transition-colors duration-[400ms] hover:border-border-accent overflow-hidden"
+      className="relative w-[340px] sm:w-[400px] lg:w-[420px] shrink-0 rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,26,40,0.85),rgba(6,18,28,0.95))] p-6 sm:p-7 transition-colors duration-[400ms] hover:border-border-accent overflow-hidden"
     >
       {/* sheen */}
       <span

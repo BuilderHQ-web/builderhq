@@ -143,6 +143,13 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
     );
   }
 
+  // Buttons use `sm` size (h-8 ≈ 32px) at desktop where the table is dense,
+  // but bump to a 44px minimum-tap-target on touch via responsive class.
+  const touchSize = "max-sm:!h-11 max-sm:!px-5 max-sm:!text-[13px]";
+  // In the detail (non-compact) view the buttons own their full row width
+  // so they look balanced when stacked.
+  const detailWidth = !compact ? "max-sm:w-full" : "";
+
   return (
     <div className={cn("flex flex-col gap-3", compact ? "w-full" : "w-full")}>
       {/* row of action buttons */}
@@ -159,7 +166,7 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
             variant="primary"
             onClick={runApprove}
             disabled={pending || mode !== null}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             {pending && mode === null ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -176,7 +183,7 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
             variant={mode === "reject" ? "danger" : "outline"}
             onClick={() => setMode(mode === "reject" ? null : "reject")}
             disabled={pending}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <X className="size-3.5" />
             Reject
@@ -189,7 +196,7 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
             variant={mode === "suspend" ? "danger" : "outline"}
             onClick={() => setMode(mode === "suspend" ? null : "suspend")}
             disabled={pending}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <PauseOctagon className="size-3.5" />
             Suspend
@@ -202,7 +209,7 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
             variant="outline"
             onClick={runUnsuspend}
             disabled={pending || mode !== null}
-            className="gap-1.5"
+            className={cn("gap-1.5", touchSize, detailWidth)}
           >
             <Undo2 className="size-3.5" />
             Reinstate
@@ -228,13 +235,14 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
             rows={3}
             disabled={pending}
           />
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={reset}
               disabled={pending}
+              className={cn(touchSize)}
             >
               Cancel
             </Button>
@@ -244,7 +252,7 @@ function ActionsCore({ builderId, status, compact = false }: CommonProps) {
               variant="danger"
               onClick={() => runWithReason(mode)}
               disabled={pending || reason.trim().length < 4}
-              className="gap-1.5"
+              className={cn("gap-1.5", touchSize)}
             >
               {pending ? (
                 <Loader2 className="size-3.5 animate-spin" />

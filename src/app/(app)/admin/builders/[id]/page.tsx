@@ -85,7 +85,7 @@ export default async function AdminBuilderDetailPage(props: {
         }
       />
 
-      <div className="px-6 lg:px-10 pt-5">
+      <div className="px-4 sm:px-6 lg:px-10 pt-5">
         <Link
           href="/admin/builders"
           className="inline-flex items-center gap-1.5 text-[12px] text-text-muted hover:text-text transition-colors"
@@ -95,11 +95,11 @@ export default async function AdminBuilderDetailPage(props: {
         </Link>
       </div>
 
-      <div className="px-6 lg:px-10 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
         {/* ── LEFT column ─────────────────────────────────────────── */}
         <div className="flex flex-col gap-6 min-w-0">
           {/* identity card */}
-          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-6">
+          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-5 sm:p-6">
             <h2 className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
               Identity
             </h2>
@@ -195,12 +195,12 @@ export default async function AdminBuilderDetailPage(props: {
           </section>
 
           {/* verification card */}
-          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-6">
-            <header className="flex items-start justify-between gap-3">
+          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-5 sm:p-6">
+            <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <h2 className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
                 Verification
               </h2>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge
                   variant={abnVerified ? "success" : "outline"}
                   className="!normal-case tracking-normal"
@@ -267,12 +267,12 @@ export default async function AdminBuilderDetailPage(props: {
 
           {/* history card */}
           <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-            <header className="px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
+            <header className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
               <h2 className="font-ui font-semibold text-[13px] text-text inline-flex items-center gap-2">
                 <History className="size-3.5 text-text-faint" />
                 Audit history
               </h2>
-              <span className="text-[11px] text-text-dim">
+              <span className="text-[11px] text-text-dim shrink-0">
                 {history.length} action{history.length === 1 ? "" : "s"}
               </span>
             </header>
@@ -286,12 +286,12 @@ export default async function AdminBuilderDetailPage(props: {
                 {history.map((h) => (
                   <li
                     key={h.id}
-                    className="px-6 py-3 grid grid-cols-[auto_1fr_auto] gap-3 items-start"
+                    className="px-4 sm:px-6 py-3 grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] gap-x-3 gap-y-1 items-start"
                   >
                     <ActionKindBadge kind={h.kind} />
                     <div className="flex flex-col gap-0.5 min-w-0">
                       {h.reason ? (
-                        <p className="text-[12.5px] text-text-muted">
+                        <p className="text-[12.5px] text-text-muted break-words">
                           “{h.reason}”
                         </p>
                       ) : null}
@@ -299,7 +299,7 @@ export default async function AdminBuilderDetailPage(props: {
                         Actor {h.actorId?.slice(0, 8) ?? "system"}…
                       </p>
                     </div>
-                    <span className="text-[11px] text-text-dim tabular-nums">
+                    <span className="col-start-2 sm:col-start-3 text-[11px] text-text-dim tabular-nums">
                       {h.createdAt.toLocaleDateString("en-AU", {
                         day: "numeric",
                         month: "short",
@@ -316,7 +316,7 @@ export default async function AdminBuilderDetailPage(props: {
         {/* ── RIGHT column ────────────────────────────────────────── */}
         <aside className="flex flex-col gap-6 min-w-0">
           {/* approval actions */}
-          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-6">
+          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-5 sm:p-6">
             <header className="flex flex-col gap-1">
               <h2 className="font-ui font-semibold text-[14px] text-text inline-flex items-center gap-2">
                 <ShieldCheck className="size-3.5 text-text-faint" />
@@ -368,7 +368,7 @@ export default async function AdminBuilderDetailPage(props: {
           </section>
 
           {/* account-status actions */}
-          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-6">
+          <section className="rounded-md border border-border-subtle bg-surface-1/40 p-5 sm:p-6">
             <header className="flex flex-col gap-1">
               <h2 className="font-ui font-semibold text-[14px] text-text inline-flex items-center gap-2">
                 <AlertOctagon className="size-3.5 text-text-faint" />

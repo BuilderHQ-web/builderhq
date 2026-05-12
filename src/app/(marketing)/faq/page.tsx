@@ -387,7 +387,7 @@ function FAQContent() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-10 lg:gap-14">
+    <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8 lg:gap-14">
       {/* Sticky category nav */}
       <aside className="hidden lg:block">
         <nav className="sticky top-28 flex flex-col gap-1">
@@ -405,7 +405,7 @@ function FAQContent() {
         </nav>
       </aside>
 
-      <div className="min-w-0 flex flex-col gap-12">
+      <div className="min-w-0 flex flex-col gap-10 sm:gap-12">
         {CATEGORIES.map((cat) => (
           <section
             key={cat.id}
@@ -413,7 +413,7 @@ function FAQContent() {
             className="scroll-mt-28"
           >
             <h2
-              className="font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-5"
+              className="font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
               dangerouslySetInnerHTML={{ __html: cat.label }}
             />
             <ul className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))] overflow-hidden divide-y divide-border-subtle/60">
@@ -435,7 +435,7 @@ function FAQContent() {
         ))}
 
         <section className="mt-6 rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))] px-6 lg:px-8 py-7 lg:py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
               Still have a question?
             </span>
@@ -449,9 +449,9 @@ function FAQContent() {
           </div>
           <a
             href="mailto:info@builderhq.com.au"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-full border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light text-[12.5px] font-semibold tracking-[0.04em] hover:bg-[rgba(0,212,200,0.10)] transition-colors shrink-0"
+            className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light text-[12.5px] font-semibold tracking-[0.04em] hover:bg-[rgba(0,212,200,0.10)] transition-colors shrink-0 self-start sm:self-auto"
           >
-            <Mail className="size-3.5" />
+            <Mail className="size-3.5 shrink-0" />
             info@builderhq.com.au
           </a>
         </section>
@@ -475,7 +475,7 @@ function FAQRow({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center gap-4 px-6 lg:px-7 py-5 lg:py-6 text-left hover:bg-[rgba(255,255,255,0.018)] transition-colors duration-[160ms]"
+        className="w-full flex items-center gap-4 px-5 lg:px-7 py-5 lg:py-6 text-left hover:bg-[rgba(255,255,255,0.018)] transition-colors duration-[160ms]"
       >
         <span
           className={cn(
@@ -506,7 +506,7 @@ function FAQRow({
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-6 lg:px-7 pb-6 lg:pb-7 text-[14px] leading-[1.75] text-text-subtle max-w-[68ch]">
+            <div className="px-5 lg:px-7 pb-6 lg:pb-7 text-[14px] leading-[1.75] text-text-subtle max-w-[68ch] [overflow-wrap:anywhere]">
               {qa.a}
             </div>
           </motion.div>

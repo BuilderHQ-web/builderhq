@@ -82,11 +82,11 @@ export default async function AdminDashboard() {
         }
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-10">
         {/* ── Hero stats ───────────────────────────────────────────── */}
         <section>
           <SectionLabel>At a glance</SectionLabel>
-          <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard
               label="Total users"
               value={fmt(data.totals.users)}
@@ -116,7 +116,7 @@ export default async function AdminDashboard() {
 
         {/* ── Pending review queue ─────────────────────────────────── */}
         <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-          <header className="px-6 py-5 flex items-start justify-between gap-3 border-b border-border-subtle">
+          <header className="px-4 sm:px-6 py-5 flex items-start justify-between gap-3 border-b border-border-subtle">
             <div className="flex flex-col gap-1 min-w-0">
               <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
                 <span className="inline-flex items-center gap-2">
@@ -131,7 +131,7 @@ export default async function AdminDashboard() {
             </div>
             <Link
               href="/admin/builders?status=pending_review"
-              className="text-[12px] tracking-[-0.005em] text-text-muted hover:text-text inline-flex items-center gap-1"
+              className="text-[12px] tracking-[-0.005em] text-text-muted hover:text-text inline-flex items-center gap-1 shrink-0"
             >
               See all
               <ArrowUpRight className="size-3.5" />
@@ -151,7 +151,7 @@ export default async function AdminDashboard() {
                 return (
                   <li
                     key={b.userId}
-                    className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr_auto] gap-3 md:gap-6 px-6 py-4 items-start"
+                    className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr_auto] gap-3 md:gap-6 px-4 sm:px-6 py-4 items-start"
                   >
                     <Link
                       href={`/admin/builders/${b.userId}`}
@@ -302,12 +302,12 @@ export default async function AdminDashboard() {
         {/* ── Recent activity ─────────────────────────────────────── */}
         <section className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3">
           <div className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-            <header className="px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
+            <header className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
               <h3 className="font-ui font-semibold text-[13px] text-text inline-flex items-center gap-2">
                 <History className="size-3.5 text-text-faint" />
                 Recent admin actions
               </h3>
-              <span className="text-[11px] text-text-dim">Append-only log</span>
+              <span className="text-[11px] text-text-dim shrink-0">Append-only log</span>
             </header>
             {data.recentActions.length === 0 ? (
               <EmptyState
@@ -325,7 +325,7 @@ export default async function AdminDashboard() {
                   return (
                     <li
                       key={a.id}
-                      className="px-6 py-3 grid grid-cols-[auto_1fr_auto] gap-3 items-start"
+                      className="px-4 sm:px-6 py-3 grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] gap-x-3 gap-y-1 items-start"
                     >
                       <ActionKindBadge kind={a.kind} />
                       <div className="flex flex-col gap-0.5 min-w-0">
@@ -347,7 +347,7 @@ export default async function AdminDashboard() {
                           )}
                         </p>
                       </div>
-                      <span className="text-[11px] text-text-dim tabular-nums">
+                      <span className="col-start-2 sm:col-start-3 text-[11px] text-text-dim tabular-nums">
                         {relativeTime(a.createdAt)}
                       </span>
                     </li>
@@ -358,7 +358,7 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-            <header className="px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
+            <header className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3 border-b border-border-subtle">
               <h3 className="font-ui font-semibold text-[13px] text-text inline-flex items-center gap-2">
                 <UsersIcon className="size-3.5 text-text-faint" />
                 Recent signups
@@ -374,7 +374,7 @@ export default async function AdminDashboard() {
                 {data.recentSignups.map((s) => (
                   <li
                     key={s.id}
-                    className="px-6 py-3 flex items-center justify-between gap-3"
+                    className="px-4 sm:px-6 py-3 flex items-center justify-between gap-3"
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="text-[12.5px] text-text truncate">
@@ -384,7 +384,7 @@ export default async function AdminDashboard() {
                         {s.email}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                       <RoleBadge role={s.role} />
                       <UserStatusBadge status={s.status} />
                     </div>

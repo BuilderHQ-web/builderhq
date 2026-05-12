@@ -71,9 +71,9 @@ const TILES: Tile[] = [
 
 export function Features() {
   return (
-    <section id="features" className="relative px-6 md:px-10 py-24 lg:py-32">
+    <section id="features" className="relative px-5 md:px-10 py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] gap-12 lg:gap-16 items-end">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] gap-8 lg:gap-16 items-end">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The platform
@@ -99,7 +99,7 @@ export function Features() {
         <Reveal delay={0.15}>
           {/* 4-col bento. Wide tiles span 2 cols, small tiles span 1.
               Mobile stacks single-column. */}
-          <div className="mt-14 lg:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="mt-10 lg:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {TILES.map((t) => (
               <Tile key={t.n} tile={t} />
             ))}
@@ -125,7 +125,7 @@ function Tile({ tile }: { tile: Tile }) {
         "border border-border-subtle bg-[linear-gradient(180deg,rgba(10,26,42,0.55),rgba(6,18,30,0.78))]",
         "transition-[border-color,background] duration-[700ms] ease-[var(--ease-out)]",
         "hover:border-border-accent/60 hover:bg-[linear-gradient(180deg,rgba(10,32,52,0.65),rgba(6,18,30,0.82))]",
-        "p-7 lg:p-8 min-h-[280px] flex flex-col",
+        "p-6 lg:p-8 min-h-[260px] sm:min-h-[280px] flex flex-col",
         span,
       ].join(" ")}
     >

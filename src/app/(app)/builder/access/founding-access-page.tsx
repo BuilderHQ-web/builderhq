@@ -73,7 +73,7 @@ export function FoundingAccessPage({
   return (
     <div className="relative">
       <Hero companyName={companyName} status={status} cutoffDate={cutoffDate} />
-      <div className="px-6 lg:px-10 py-10 lg:py-14 mx-auto max-w-[1200px] flex flex-col gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 mx-auto max-w-[1200px] flex flex-col gap-8 sm:gap-10">
         {status.active ? (
           <>
             <Reveal immediate delay={0.06}>
@@ -173,7 +173,7 @@ function Hero({
         }}
       />
 
-      <div className="relative px-6 lg:px-10 pt-16 lg:pt-20 pb-12 lg:pb-16 mx-auto max-w-[1200px]">
+      <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-12 lg:pb-16 mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -236,7 +236,7 @@ function StatusPanel({
     <div
       ref={ref}
       className={cn(
-        "relative overflow-hidden rounded-md border p-7 lg:p-9",
+        "relative overflow-hidden rounded-md border p-5 sm:p-7 lg:p-9",
         "border-border-accent/40",
         "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(6,18,30,0.6)_100%)]",
         "shadow-[0_24px_60px_-30px_rgba(0,212,200,0.4)]",
@@ -401,7 +401,7 @@ function InactiveStatusPanel({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md border p-7 lg:p-9",
+        "relative overflow-hidden rounded-md border p-5 sm:p-7 lg:p-9",
         stillEligible
           ? "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(6,18,30,0.6)_100%)]"
           : "border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))]",
@@ -645,7 +645,7 @@ function CohortPanel({
       )}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-0">
-        <div className="p-7 lg:p-9 border-b lg:border-b-0 lg:border-r border-border-subtle/60">
+        <div className="p-5 sm:p-7 lg:p-9 border-b lg:border-b-0 lg:border-r border-border-subtle/60">
           <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
             <Trophy className="size-3" />
             Founding cohort
@@ -696,7 +696,7 @@ function CohortPanel({
           </div>
         </div>
 
-        <div className="p-7 lg:p-9 flex flex-col justify-between gap-6">
+        <div className="p-5 sm:p-7 lg:p-9 flex flex-col justify-between gap-6">
           <div>
             <span className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui font-medium inline-flex items-center gap-2">
               <CalendarClock className="size-3" />
@@ -846,7 +846,7 @@ function ForeverFounder() {
             "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(0,212,200,0.10), transparent 70%), radial-gradient(ellipse 60% 80% at 100% 50%, rgba(26,95,212,0.10), transparent 70%)",
         }}
       />
-      <div className="relative px-7 lg:px-9 py-9 grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-6">
+      <div className="relative px-5 sm:px-7 lg:px-9 py-7 sm:py-9 grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-5 sm:gap-6">
         <FoundingBadge size="md" />
         <div>
           <h3 className="font-display uppercase tracking-[-0.012em] text-[20px] leading-[1.05] text-text">

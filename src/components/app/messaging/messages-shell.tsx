@@ -633,7 +633,7 @@ function ThreadHeader({
         type="button"
         onClick={onBack}
         aria-label="Back to inbox"
-        className="md:hidden size-8 rounded-md hover:bg-surface-1 flex items-center justify-center text-text-muted"
+        className="md:hidden size-10 -ml-1.5 rounded-md hover:bg-surface-1 flex items-center justify-center text-text-muted shrink-0"
       >
         <ArrowUpRight className="size-4 -rotate-180" />
       </button>

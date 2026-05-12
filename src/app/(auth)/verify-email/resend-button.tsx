@@ -18,12 +18,12 @@ export function ResendButton({ email }: { email: string }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <form action={(fd) => startTransition(() => formAction(fd))} className="flex flex-col gap-2">
+    <form action={(fd) => startTransition(() => formAction(fd))} className="flex flex-col gap-2 items-start">
       <input type="hidden" name="email" value={email} />
       <Button
         type="submit"
         variant="outline"
-        size="sm"
+        size="md"
         disabled={isPending}
         className="gap-2"
       >

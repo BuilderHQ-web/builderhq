@@ -258,8 +258,13 @@ export function OwnerSettingsForm({ defaults }: { defaults: Defaults }) {
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3 pt-2 border-t border-border-subtle/60 mt-1">
-        <Button type="submit" size="md" disabled={pending}>
+      <div className="flex items-center gap-3 pt-2 border-t border-border-subtle/60 mt-1 flex-wrap">
+        <Button
+          type="submit"
+          size="md"
+          disabled={pending}
+          className="max-sm:!h-11 max-sm:w-full"
+        >
           {pending ? <Loader2 className="size-3.5 animate-spin" /> : null}
           {pending ? "Saving…" : "Save changes"}
         </Button>

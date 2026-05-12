@@ -11,11 +11,11 @@ export default function Loading() {
     <div>
       {/* Hero band */}
       <section className="relative overflow-hidden border-b border-border-subtle">
-        <div className="px-6 lg:px-10 pt-16 lg:pt-20 pb-14 lg:pb-16">
+        <div className="px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center gap-4">
             <Skeleton className="h-3 w-[100px] rounded-sm" />
-            <Skeleton className="h-12 w-[420px] rounded-sm" />
-            <Skeleton className="h-3.5 w-[320px] rounded-sm" />
+            <Skeleton className="h-12 w-full max-w-[420px] rounded-sm" />
+            <Skeleton className="h-3.5 w-full max-w-[320px] rounded-sm" />
             <div className="flex items-center gap-3 mt-4">
               <Skeleton className="h-12 w-[180px] rounded-full" />
               <Skeleton className="h-12 w-[110px] rounded-full" />
@@ -24,7 +24,7 @@ export default function Loading() {
         </div>
       </section>
 
-      <div className="px-6 lg:px-10 py-10 lg:py-14 flex flex-col gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 flex flex-col gap-8 sm:gap-10">
         {/* FBA panel */}
         <section>
           <Skeleton className="h-3 w-[90px] rounded-sm mb-5" />

@@ -65,24 +65,24 @@ export function MarketingPageShell({
 
       <LandingNav />
 
-      <main className="relative z-10 pt-32 lg:pt-40 pb-24 lg:pb-32 px-6 md:px-10">
+      <main className="relative z-10 pt-28 lg:pt-40 pb-20 lg:pb-32 px-5 md:px-10">
         <div className="mx-auto max-w-[860px]">
           {/* Page header */}
-          <header className="mb-14 lg:mb-20">
+          <header className="mb-12 lg:mb-20">
             <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
               {kicker}
             </span>
-            <h1 className="mt-7 font-display uppercase tracking-[-0.018em] leading-[0.95] text-[clamp(2.75rem,5.5vw+1rem,5.5rem)]">
+            <h1 className="mt-6 font-display uppercase tracking-[-0.018em] leading-[0.95] text-[clamp(2.5rem,5.5vw+1rem,5.5rem)] break-words">
               {title}
             </h1>
             {sub ? (
-              <p className="mt-7 max-w-[55ch] text-[15.5px] leading-[1.75] text-text-subtle">
+              <p className="mt-6 max-w-[55ch] text-[15.5px] leading-[1.75] text-text-subtle">
                 {sub}
               </p>
             ) : null}
             {meta ? (
-              <p className="mt-6 text-[11px] tracking-[0.18em] uppercase text-text-dim">
+              <p className="mt-5 text-[11px] tracking-[0.18em] uppercase text-text-dim">
                 {meta}
               </p>
             ) : null}

@@ -102,7 +102,7 @@ export function OwnerForm({ defaults }: Props) {
       {/* 01 — Entity type */}
       <Section index="01" title="What kind of project are you running?">
         <input type="hidden" name="entityType" value={entityType ?? ""} />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2">
           {entityTypes.map((opt) => (
             <EntityCard
               key={opt.value}
@@ -186,7 +186,10 @@ export function OwnerForm({ defaults }: Props) {
       ) : null}
 
       {/* Submit */}
-      <div className="flex items-center justify-between gap-4 border-t border-border-subtle pt-6">
+      <div
+        className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-border-subtle pt-6"
+        style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+      >
         <p className="text-[12px] text-text-dim">
           You can update everything later in Settings.
         </p>
@@ -194,7 +197,7 @@ export function OwnerForm({ defaults }: Props) {
           type="submit"
           size="lg"
           disabled={isPending || !entityType}
-          className="gap-2"
+          className="gap-2 w-full sm:w-auto"
         >
           {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           {isPending ? "Saving…" : "Continue to dashboard"}
@@ -255,7 +258,7 @@ function EntityCard({
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        "group relative flex flex-col items-start gap-2 rounded-md border px-3.5 py-3.5 text-left",
+        "group relative flex flex-col items-start gap-2 rounded-md border px-3.5 py-4 sm:py-3.5 text-left min-h-[88px]",
         "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         active
           ? "border-accent bg-accent-muted/60"
@@ -304,7 +307,7 @@ function ContactCard({
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        "flex items-start gap-3 rounded-md border px-4 py-3 text-left",
+        "flex items-start gap-3 rounded-md border px-4 py-3.5 sm:py-3 text-left min-h-[60px]",
         "transition-[background,border-color] duration-[160ms] ease-[var(--ease-out)]",
         active
           ? "border-accent bg-accent-muted/60"

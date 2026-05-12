@@ -95,7 +95,7 @@ export default async function AdminUsersPage(props: {
         description="Every account on the platform. Suspend or ban from here — admin accounts are protected. The builder column links into the full review surface."
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
         {/* ── Filters ──────────────────────────────────────────────── */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <nav className="flex flex-wrap items-center gap-1.5">
@@ -115,7 +115,7 @@ export default async function AdminUsersPage(props: {
                   key={f.key}
                   href={href}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3.5 h-8",
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 h-9",
                     "text-[12px] font-ui tracking-[-0.005em] border transition-[background,border-color,color] duration-[140ms]",
                     active
                       ? "bg-accent text-accent-contrast border-accent"
@@ -132,12 +132,16 @@ export default async function AdminUsersPage(props: {
           <form
             action="/admin/users"
             method="get"
-            className="flex items-center gap-2 lg:w-[480px]"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-[480px]"
           >
             {role !== "all" ? (
               <input type="hidden" name="role" value={role} />
             ) : null}
-            <Select name="status" defaultValue={status} className="h-9 w-[180px] text-[12.5px]">
+            <Select
+              name="status"
+              defaultValue={status}
+              className="h-10 sm:w-[180px] text-[12.5px]"
+            >
               <option value="all">All statuses</option>
               <option value="pending_verification">Pending email</option>
               <option value="active">Active</option>
@@ -151,7 +155,7 @@ export default async function AdminUsersPage(props: {
                 name="q"
                 defaultValue={q}
                 placeholder="Name or email"
-                className="pl-9 h-9 text-[12.5px]"
+                className="pl-9 h-10 text-[12.5px]"
               />
             </div>
           </form>
@@ -181,7 +185,7 @@ export default async function AdminUsersPage(props: {
               {users.map((u) => (
                 <li
                   key={u.id}
-                  className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr_1.2fr_1fr_1.6fr] gap-3 lg:gap-4 px-6 py-4 items-start lg:items-center"
+                  className="grid grid-cols-1 lg:grid-cols-[2.2fr_1fr_1.2fr_1fr_1.6fr] gap-3 lg:gap-4 px-4 sm:px-6 py-4 items-start lg:items-center"
                 >
                   <div className="flex flex-col gap-0.5 min-w-0">
                     {u.role === "builder" ? (
@@ -200,13 +204,23 @@ export default async function AdminUsersPage(props: {
                       {u.email}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-1.5 flex-wrap lg:block">
                     <RoleBadge role={u.role} />
+                    <span className="lg:hidden">
+                      <UserStatusBadge status={u.status} />
+                    </span>
+                    <span className="lg:hidden text-[11.5px] text-text-dim tabular-nums">
+                      {u.createdAt.toLocaleDateString("en-AU", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
                   </div>
-                  <div>
+                  <div className="hidden lg:block">
                     <UserStatusBadge status={u.status} />
                   </div>
-                  <div className="text-[12px] text-text-dim tabular-nums">
+                  <div className="hidden lg:block text-[12px] text-text-dim tabular-nums">
                     {u.createdAt.toLocaleDateString("en-AU", {
                       day: "numeric",
                       month: "short",
@@ -224,7 +238,7 @@ export default async function AdminUsersPage(props: {
                 </li>
               ))}
             </ul>
-            <div className="px-6 py-3 border-t border-border-subtle text-[11px] text-text-dim">
+            <div className="px-4 sm:px-6 py-3 border-t border-border-subtle text-[11px] text-text-dim">
               {users.length} user{users.length === 1 ? "" : "s"}
               {users.length === 200 ? " (max page size)" : null}
             </div>

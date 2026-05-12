@@ -65,11 +65,11 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Label htmlFor="password">Password</Label>
           <Link
             href="/forgot"
-            className="text-[12px] text-text-dim hover:text-accent-light transition-colors"
+            className="text-[12px] text-text-dim hover:text-accent-light transition-colors py-1 -my-1"
           >
             Forgot?
           </Link>
@@ -93,7 +93,7 @@ export function LoginForm() {
         </div>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2">
+      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2 w-full sm:w-auto">
         {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {isPending ? "Logging in…" : "Log in"}
       </Button>

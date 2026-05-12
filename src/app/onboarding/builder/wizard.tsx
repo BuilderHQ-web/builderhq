@@ -379,7 +379,7 @@ function StepShell({
   return (
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h2 className="font-display uppercase tracking-[-0.02em] text-[clamp(2rem,4vw+1rem,3rem)] leading-[1.0]">
+        <h2 className="font-display uppercase tracking-[-0.02em] text-[clamp(1.75rem,4vw+1rem,3rem)] leading-[1.0]">
           {title}
         </h2>
         {description ? (
@@ -387,7 +387,10 @@ function StepShell({
         ) : null}
       </header>
       <div className="flex flex-col gap-5">{children}</div>
-      <div className="flex items-center justify-between gap-3 border-t border-border-subtle pt-6">
+      <div
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-border-subtle pt-6"
+        style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+      >
         {footer}
       </div>
     </section>
@@ -529,7 +532,7 @@ function CompanyStep({
               type="submit"
               size="lg"
               disabled={!canContinue}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {savePending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
@@ -857,10 +860,10 @@ function AddressStep({
         description="Used to pre-fill addresses on quotes. Postal address only matters if it differs from your business address."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending} className="gap-2 w-full sm:w-auto">
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
               {!pending ? <ArrowRight className="size-4" /> : null}
@@ -892,16 +895,16 @@ function AddressStep({
           />
         </div>
 
-        <div className="flex items-start gap-2 mt-2">
+        <div className="flex items-start gap-2.5 mt-2 py-1.5 -my-1.5">
           <input
             id="hasDifferentPostal"
             name="hasDifferentPostal"
             type="checkbox"
             checked={values.hasDifferentPostal}
             onChange={(e) => onChange({ ...values, hasDifferentPostal: e.target.checked })}
-            className="mt-1 accent-accent"
+            className="mt-1 accent-accent size-4 shrink-0"
           />
-          <Label htmlFor="hasDifferentPostal" className="cursor-pointer">
+          <Label htmlFor="hasDifferentPostal" className="cursor-pointer leading-[20px] py-0.5">
             Postal address is different
           </Label>
         </div>
@@ -999,10 +1002,10 @@ function CategoriesStep({
         description="Pick all that apply. Used to match you with relevant projects."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2 w-full sm:w-auto">
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
               {!pending ? <ArrowRight className="size-4" /> : null}
@@ -1103,10 +1106,10 @@ function ServiceAreasStep({
         description="Add the suburbs you take projects in, then dial each radius for how far you'll travel. We use this to suggest projects on your dashboard — bigger radius = more suggestions."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2 w-full sm:w-auto">
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
               {!pending ? <ArrowRight className="size-4" /> : null}
@@ -1193,9 +1196,9 @@ function ServiceAreaRow({
 
   return (
     <li className="rounded-md border border-border-subtle bg-surface-1 px-4 py-3.5">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
         <MapPin className="size-3.5 text-accent shrink-0" />
-        <span className="text-[13px] text-text font-medium">
+        <span className="text-[13px] text-text font-medium min-w-0 break-words">
           {area.suburb ?? "Statewide"}
         </span>
         <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-mono">
@@ -1209,15 +1212,15 @@ function ServiceAreaRow({
         <button
           type="button"
           onClick={onRemove}
-          className="ml-auto text-text-faint hover:text-danger transition-colors"
+          className="ml-auto text-text-faint hover:text-danger transition-colors inline-flex items-center justify-center min-h-11 min-w-11 -my-2 -mr-2"
           aria-label="Remove area"
         >
           <Trash2 className="size-3.5" />
         </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui shrink-0">
+      <div className="mt-3 flex items-center gap-2 sm:gap-3">
+        <span className="hidden sm:inline text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui shrink-0">
           Radius
         </span>
         <input
@@ -1227,10 +1230,10 @@ function ServiceAreaRow({
           step={5}
           value={Math.min(area.radiusKm, 100)}
           onChange={(e) => onRadiusChange(Number(e.target.value))}
-          className="flex-1 accent-accent"
+          className="flex-1 accent-accent min-w-0 h-6 sm:h-auto"
           aria-label={`Radius for ${area.suburb ?? area.state}`}
         />
-        <span className="text-[12.5px] font-display tabular-nums text-accent-light shrink-0 w-[64px] text-right">
+        <span className="text-[12.5px] font-display tabular-nums text-accent-light shrink-0 w-[60px] sm:w-[64px] text-right">
           {area.radiusKm >= 100 ? "100+ km" : `${area.radiusKm} km`}
         </span>
       </div>
@@ -1404,10 +1407,10 @@ function LicencesStep({
         description="At least one. Add one row per state if you're licensed in multiple. The licence type wording varies by state — use the wording on your licence."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending || values.length === 0} className="gap-2 w-full sm:w-auto">
               Continue
               <ArrowRight className="size-4" />
             </Button>
@@ -1478,7 +1481,7 @@ function LicencesStep({
                     <button
                       type="button"
                       onClick={() => remove(l)}
-                      className="text-text-faint hover:text-danger transition-colors"
+                      className="text-text-faint hover:text-danger transition-colors inline-flex items-center justify-center min-h-11 min-w-11 -my-2 -mr-2 shrink-0"
                       disabled={pending}
                       aria-label="Remove licence"
                     >
@@ -1567,13 +1570,13 @@ function LicencesStep({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button type="button" size="md" onClick={add} disabled={pending} className="gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <Button type="button" size="md" onClick={add} disabled={pending} className="gap-2 w-full sm:w-auto">
                 {pending ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
                 Save licence
               </Button>
               {values.length > 0 ? (
-                <Button type="button" variant="ghost" size="md" onClick={() => setAdding(false)}>
+                <Button type="button" variant="ghost" size="md" onClick={() => setAdding(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
               ) : null}
@@ -1581,7 +1584,7 @@ function LicencesStep({
           </div>
         ) : (
           <div>
-            <Button type="button" variant="outline" size="md" onClick={() => setAdding(true)} className="gap-2">
+            <Button type="button" variant="outline" size="md" onClick={() => setAdding(true)} className="gap-2 w-full sm:w-auto">
               <Plus className="size-3.5" />
               Add another licence
             </Button>
@@ -1680,10 +1683,10 @@ function AboutStep({
         description="Optional, but a strong bio + socials make a real difference for project owners deciding whether to unlock you. You can edit anytime."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending} className="gap-2 w-full sm:w-auto">
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Continue
               {!pending ? <ArrowRight className="size-4" /> : null}
@@ -1789,10 +1792,10 @@ function ReviewStep({
         description="A quick check before we send your profile to BuilderHQ for review. Everything's editable later from your settings."
         footer={
           <>
-            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2">
+            <Button type="button" variant="ghost" size="md" onClick={onBack} className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button type="submit" size="lg" disabled={pending} className="gap-2">
+            <Button type="submit" size="lg" disabled={pending} className="gap-2 w-full sm:w-auto">
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               {pending ? "Submitting…" : "Submit for review"}
             </Button>
@@ -1944,7 +1947,7 @@ function CheckCard({
 
 function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1 px-5 py-4 flex flex-col gap-2">
+    <section className="rounded-md border border-border-subtle bg-surface-1 px-4 sm:px-5 py-4 flex flex-col gap-2">
       <h3 className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">{title}</h3>
       <div className="flex flex-col gap-1">{children}</div>
     </section>
@@ -1953,9 +1956,9 @@ function ReviewSection({ title, children }: { title: string; children: React.Rea
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[120px_1fr] gap-3 text-[13px]">
+    <div className="grid grid-cols-[96px_1fr] sm:grid-cols-[120px_1fr] gap-2.5 sm:gap-3 text-[13px]">
       <span className="text-text-dim">{label}</span>
-      <span className="text-text break-words">{value}</span>
+      <span className="text-text break-words min-w-0">{value}</span>
     </div>
   );
 }

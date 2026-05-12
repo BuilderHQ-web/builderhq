@@ -7,6 +7,7 @@ import { countUnread as countUnreadNotifications } from "@/modules/notifications
 import { countUnreadForUser as countUnreadMessages } from "@/modules/messaging";
 import { logger } from "@/lib/logger";
 import { Sidebar } from "@/components/app/sidebar";
+import { MobileNav } from "@/components/app/mobile-nav";
 import { Topbar } from "@/components/app/topbar";
 import { CommandPalette } from "@/components/app/command-palette";
 
@@ -90,6 +91,10 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-dvh">
       <Sidebar role={role} initialUnreadMessages={initialUnreadMessages} />
+      {/* Touch-device counterpart to the sidebar. Always mounted so
+          the hamburger trigger can open it via custom event; hidden
+          at lg+ via internal `lg:hidden`. */}
+      <MobileNav role={role} initialUnreadMessages={initialUnreadMessages} />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar
           user={{

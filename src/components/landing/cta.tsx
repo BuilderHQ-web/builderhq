@@ -13,7 +13,7 @@ export function CTA({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="cta"
-      className="relative px-6 md:px-10 py-32 lg:py-40 overflow-hidden"
+      className="relative px-5 md:px-10 py-20 sm:py-24 lg:py-40 overflow-hidden"
     >
       <div
         aria-hidden
@@ -64,7 +64,7 @@ export function CTA({ cta }: { cta: CtaLinks }) {
             </Link>
             <Link
               href={cta.secondary.href}
-              className="group inline-flex items-center gap-1.5 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
+              className="group inline-flex items-center gap-1.5 h-12 px-3 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
             >
               {cta.secondary.label}
               <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />

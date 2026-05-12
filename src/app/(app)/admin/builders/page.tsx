@@ -86,7 +86,7 @@ export default async function AdminBuildersPage(props: {
         description="Approve new submissions, audit existing builders, and suspend abuse. Filters & search are reflected in the URL — share the link to share the view."
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
         {/* ── Filter pills + search ────────────────────────────────── */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <nav className="flex flex-wrap items-center gap-1.5">
@@ -105,7 +105,7 @@ export default async function AdminBuildersPage(props: {
                   key={f.key}
                   href={href}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3.5 h-8",
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 h-9",
                     "text-[12px] font-ui tracking-[-0.005em] border transition-[background,border-color,color] duration-[140ms]",
                     active
                       ? "bg-accent text-accent-contrast border-accent"
@@ -122,7 +122,7 @@ export default async function AdminBuildersPage(props: {
           <form
             action="/admin/builders"
             method="get"
-            className="relative flex items-center gap-2 lg:w-[320px]"
+            className="relative flex items-center gap-2 w-full lg:w-[320px]"
           >
             {status !== "all" ? (
               <input type="hidden" name="status" value={status} />
@@ -134,7 +134,7 @@ export default async function AdminBuildersPage(props: {
                 name="q"
                 defaultValue={q}
                 placeholder="Company, email, or ABN"
-                className="pl-9 h-9 text-[12.5px]"
+                className="pl-9 h-10 text-[12.5px]"
               />
             </div>
           </form>
@@ -164,7 +164,7 @@ export default async function AdminBuildersPage(props: {
               {builders.map((b) => (
                 <li
                   key={b.userId}
-                  className="grid grid-cols-1 lg:grid-cols-[2fr_1.4fr_1fr_1.6fr_1.4fr] gap-3 lg:gap-4 px-6 py-4 items-start lg:items-center"
+                  className="grid grid-cols-1 lg:grid-cols-[2fr_1.4fr_1fr_1.6fr_1.4fr] gap-3 lg:gap-4 px-4 sm:px-6 py-4 items-start lg:items-center"
                 >
                   <Link
                     href={`/admin/builders/${b.userId}`}
@@ -219,7 +219,7 @@ export default async function AdminBuildersPage(props: {
                 </li>
               ))}
             </ul>
-            <div className="px-6 py-3 border-t border-border-subtle text-[11px] text-text-dim">
+            <div className="px-4 sm:px-6 py-3 border-t border-border-subtle text-[11px] text-text-dim">
               {builders.length} builder{builders.length === 1 ? "" : "s"}
               {builders.length === 200 ? " (max page size)" : null}
             </div>

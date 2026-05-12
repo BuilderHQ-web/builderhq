@@ -25,7 +25,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-28 lg:pt-44 pb-16 lg:pb-32 px-6 md:px-10 overflow-hidden"
+      className="relative isolate pt-24 lg:pt-44 pb-12 lg:pb-32 px-5 md:px-10 overflow-hidden"
     >
       {/* Single scan-line sweep on mount — subtle premium signal */}
       <motion.span
@@ -45,7 +45,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-20 items-center">
         {/* Left — copy */}
         <div>
           <motion.span
@@ -61,7 +61,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             Australian residential tendering
           </motion.span>
 
-          <h1 className="mt-7 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,7.5vw+1rem,7rem)]">
+          <h1 className="mt-6 lg:mt-7 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,7.5vw+1rem,7rem)]">
             <Row delay={0}>
               <span className="block text-text">Tender</span>
             </Row>
@@ -90,7 +90,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.34, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-9 max-w-[34rem] text-[16px] leading-[1.7] text-text-subtle"
+            className="mt-7 lg:mt-9 max-w-[34rem] text-[16px] leading-[1.7] text-text-subtle"
           >
             Upload your project once. Get matched with verified builders,
             compare tenders side-by-side — all in one place.
@@ -100,7 +100,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.46, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 flex flex-wrap items-center gap-4"
+            className="mt-8 lg:mt-10 flex flex-wrap items-center gap-3 sm:gap-4"
           >
             <Link
               href={cta.primary.href}
@@ -117,7 +117,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
             <Link
               href={cta.secondary.href}
-              className="group inline-flex items-center gap-1.5 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
+              className="group inline-flex items-center gap-1.5 h-12 px-3 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
             >
               {cta.secondary.label}
               <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
@@ -130,7 +130,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.58, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-12 flex flex-wrap gap-x-6 gap-y-3 text-[11px] tracking-[0.04em] text-text-dim"
+            className="mt-10 lg:mt-12 flex flex-wrap gap-x-5 sm:gap-x-6 gap-y-2.5 text-[11px] tracking-[0.04em] text-text-dim"
           >
             <ProofItem label="Free for project owners" />
             <ProofItem label="ABR + state-register verified" />
@@ -258,7 +258,7 @@ function HeroCardCycler() {
       // The flick arc translates +90px on the x axis at peak — we leave
       // a little breathing room so the leaving card stays visible
       // before fading out.
-      className="relative mx-auto max-w-[420px] sm:max-w-[460px] lg:max-w-none h-[460px] sm:h-[500px] lg:h-[540px] [perspective:1400px]"
+      className="relative mx-auto w-full max-w-[380px] sm:max-w-[440px] lg:max-w-none h-[420px] sm:h-[480px] lg:h-[540px] [perspective:1400px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -362,14 +362,14 @@ function HeroCardCycler() {
       {/* Dot indicators with progress fill — calm sense of "next in
           1.2s" without being a loading bar. Resets cleanly on
           click + hover-pause. */}
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
+      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-40">
         {HERO_CARDS.map((card, i) => (
           <button
             key={card.id}
             type="button"
             onClick={() => advance(i)}
             aria-label={`Show ${card.id} card`}
-            className="group p-1.5"
+            className="group inline-flex items-center justify-center h-11 px-2"
           >
             <span
               className={cn(

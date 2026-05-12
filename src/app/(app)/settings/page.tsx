@@ -110,7 +110,7 @@ export default async function SettingsPage() {
         }
       />
 
-      <div className="px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1080px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 lg:py-10 mx-auto max-w-[1080px] grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-10">
         {/* Sticky quick-jump nav — collapses to a horizontal scroller
               on mobile via flex-wrap. Keeps long settings lists scannable. */}
         <aside className="hidden lg:block">
@@ -193,11 +193,12 @@ export default async function SettingsPage() {
                 <Link
                   href="/builder/profile"
                   className={cn(
-                    "group inline-flex items-center gap-2 h-10 px-4 rounded-full",
+                    "group inline-flex items-center justify-center gap-2 h-11 sm:h-10 px-4 rounded-full",
                     "border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light",
                     "text-[12.5px] font-semibold tracking-[0.04em]",
                     "hover:bg-[rgba(0,212,200,0.10)] transition-colors duration-[140ms]",
                     "active:scale-[0.985] active:duration-[80ms]",
+                    "max-sm:w-full",
                   )}
                 >
                   Open public profile
@@ -293,7 +294,7 @@ function SettingsSection({
         tone === "danger" ? "border-danger/25" : "border-border-subtle",
       )}
     >
-      <header className="px-7 py-5 flex flex-col gap-2 border-b border-border-subtle/60">
+      <header className="px-5 sm:px-7 py-5 flex flex-col gap-2 border-b border-border-subtle/60">
         <span
           className={cn(
             "inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium",
@@ -310,7 +311,7 @@ function SettingsSection({
           {description}
         </p>
       </header>
-      <div className="px-7 py-6">{children}</div>
+      <div className="px-5 sm:px-7 py-6">{children}</div>
     </section>
   );
 }

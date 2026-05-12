@@ -59,9 +59,9 @@ export default async function UnsubscribePage({
   const isUnsubscribed = !targetState;
 
   return (
-    <main className="min-h-screen bg-bg-deep flex items-center justify-center px-6 py-16">
+    <main className="min-h-screen bg-bg-deep flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
       <section className="w-full max-w-[520px] rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] shadow-[0_18px_44px_-22px_rgba(0,212,200,0.20)] overflow-hidden">
-        <div className="px-7 py-8">
+        <div className="px-5 sm:px-7 py-7 sm:py-8">
           <span className="size-11 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center mb-5">
             {isUnsubscribed ? (
               <CheckCircle2 className="size-5" />
@@ -100,14 +100,14 @@ export default async function UnsubscribePage({
             {isUnsubscribed ? (
               <Link
                 href={`/unsubscribe/${token}?resubscribe=1`}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light text-[12.5px] font-semibold tracking-[0.04em] hover:bg-[rgba(0,212,200,0.10)] transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-10 px-4 rounded-full border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light text-[12.5px] font-semibold tracking-[0.04em] hover:bg-[rgba(0,212,200,0.10)] transition-colors"
               >
                 Resubscribe
               </Link>
             ) : null}
             <Link
               href="/"
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-full text-[12.5px] tracking-[0.04em] text-text hover:bg-surface-1 transition-colors"
+              className="inline-flex items-center justify-center gap-2 h-11 sm:h-10 px-4 rounded-full text-[12.5px] tracking-[0.04em] text-text hover:bg-surface-1 transition-colors"
             >
               Back to BuilderHQ
               <ArrowUpRight className="size-3.5" />

@@ -70,7 +70,7 @@ function FbaActiveCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "relative overflow-hidden rounded-md border p-6 lg:p-7",
+        "relative overflow-hidden rounded-md border p-5 sm:p-6 lg:p-7",
         "border-border-accent/40",
         "shadow-[0_14px_36px_-22px_rgba(0,212,200,0.45)]",
         "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(6,18,30,0.6)_100%)]",
@@ -228,7 +228,7 @@ function FbaInactiveCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))] p-6 lg:p-7"
+      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))] p-5 sm:p-6 lg:p-7"
     >
       <div className="flex items-start gap-3">
         <span className="size-10 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted flex items-center justify-center shrink-0">
