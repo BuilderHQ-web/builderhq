@@ -156,18 +156,6 @@ export function LaunchInviteEmail({
                 fontWeight: 700,
               }}
             >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  background: COLORS.accent,
-                  verticalAlign: "middle",
-                  margin: "-2px 10px 0 0",
-                  boxShadow: "0 0 10px rgba(0,212,200,0.6)",
-                }}
-              />
               BuilderHQ 2.0
             </Text>
 

@@ -363,7 +363,6 @@ ${APP_HOME}
 
                     <!-- Kicker -->
                     <p style="margin:0 0 18px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:#00d4c8;font-weight:700;">
-                      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00d4c8;vertical-align:middle;margin:-2px 10px 0 0;box-shadow:0 0 10px rgba(0,212,200,0.6);"></span>
                       BuilderHQ 2.0
                     </p>
 
