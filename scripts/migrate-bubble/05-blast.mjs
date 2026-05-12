@@ -44,11 +44,19 @@ import { openNeon, log, readonlyMode, flagValue, hasFlag } from "./_lib.mjs";
 const DRY = readonlyMode();
 const SEND_TEST_ONLY = flagValue("send-test-only");
 const SKIP_CONFIRM = hasFlag("--skip-confirm");
+// `--skip-emails=a@x.com,b@y.com` — drop those addresses from the cohort
+// without touching the DB. Handy when we know a few users in the
+// migrated set are duplicates or test accounts we don't want to spam.
+const SKIP_EMAILS = (flagValue("skip-emails") ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 log("info", "migrate.phase_start", {
   phase: "05-blast",
   dry: DRY,
   testTo: SEND_TEST_ONLY ?? null,
+  skipEmails: SKIP_EMAILS,
 });
 
 // ── Pre-flight: refuse to send from a non-production URL ────────────────
@@ -107,8 +115,20 @@ const r = SEND_TEST_ONLY
   ? await client.query(recipientsQuery, [SEND_TEST_ONLY])
   : await client.query(recipientsQuery);
 
-const recipients = r.rows;
-log("info", "blast.cohort", { count: recipients.length });
+const rawRecipients = r.rows;
+// Apply the in-memory skip list. Logging each drop so we can audit
+// from the script output rather than digging through the DB.
+const recipients = rawRecipients.filter((u) => {
+  if (SKIP_EMAILS.includes(u.email.toLowerCase())) {
+    log("info", "blast.skip_email", { email: u.email });
+    return false;
+  }
+  return true;
+});
+log("info", "blast.cohort", {
+  count: recipients.length,
+  skipped: rawRecipients.length - recipients.length,
+});
 
 if (recipients.length === 0) {
   console.log(
