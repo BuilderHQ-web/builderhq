@@ -25,7 +25,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-24 lg:pt-44 pb-12 lg:pb-32 px-5 md:px-10 overflow-hidden"
+      className="relative isolate pt-20 lg:pt-44 pb-16 lg:pb-32 px-5 md:px-10 overflow-hidden"
     >
       {/* Single scan-line sweep on mount — subtle premium signal */}
       <motion.span
@@ -45,7 +45,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
         {/* Left — copy */}
         <div>
           <motion.span
@@ -61,7 +61,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             Australian residential tendering
           </motion.span>
 
-          <h1 className="mt-6 lg:mt-7 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(3rem,7.5vw+1rem,7rem)]">
+          <h1 className="mt-5 lg:mt-7 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(2.75rem,7.5vw+1rem,7rem)]">
             <Row delay={0}>
               <span className="block text-text">Tender</span>
             </Row>
@@ -90,7 +90,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.34, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-7 lg:mt-9 max-w-[34rem] text-[16px] leading-[1.7] text-text-subtle"
+            className="mt-6 lg:mt-9 max-w-[34rem] text-[15px] sm:text-[16px] leading-[1.6] sm:leading-[1.7] text-text-subtle"
           >
             Upload your project once. Get matched with verified builders,
             compare tenders side-by-side — all in one place.
@@ -100,12 +100,13 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.46, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 lg:mt-10 flex flex-wrap items-center gap-3 sm:gap-4"
+            className="mt-7 sm:mt-8 lg:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5 sm:gap-4"
           >
             <Link
               href={cta.primary.href}
               className={cn(
-                "group inline-flex items-center gap-2 h-12 px-7 rounded-full",
+                // Full-width on mobile (touch), pill on desktop.
+                "group inline-flex items-center justify-center sm:justify-start gap-2 h-12 px-7 rounded-full",
                 "bg-accent text-accent-contrast",
                 "text-[13px] font-semibold tracking-[0.04em]",
                 "transition-colors duration-[160ms] hover:bg-accent-hover",
@@ -117,7 +118,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
             <Link
               href={cta.secondary.href}
-              className="group inline-flex items-center gap-1.5 h-12 px-3 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
+              className="group inline-flex items-center justify-center sm:justify-start gap-1.5 h-12 px-3 text-[13px] tracking-[0.02em] text-text-muted hover:text-text transition-colors duration-[160ms]"
             >
               {cta.secondary.label}
               <ArrowUpRight className="size-3.5 opacity-60 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
@@ -140,14 +141,20 @@ export function Hero({ cta }: { cta: CtaLinks }) {
 
         {/* Right — dynamic stacked cycler. Four product views auto-rotate
               with a real "flick to the back of the deck" arc on every
-              transition. Visible on every breakpoint now: full size on
-              lg+, scaled-down on mobile so the page still has a hero
-              visual on phones. */}
+              transition.
+
+              DESKTOP ONLY (`hidden lg:block`). The deck is dense — four
+              full-detail product cards stacked in perspective — and on
+              phones it crowded the hero and made the overall page feel
+              busy. Mobile users get the cleaner Resend-style hero:
+              kicker → headline → deck → CTAs → trust strip. The product
+              previews still live in the Showcase section further down
+              the page, where they're sized for mobile reading. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
+          className="hidden lg:block relative"
         >
           <HeroCardCycler />
         </motion.div>

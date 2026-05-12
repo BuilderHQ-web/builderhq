@@ -69,9 +69,16 @@ export function Showcase() {
           </Reveal>
         </div>
 
-        {/* Feature pills — clicking swaps the dashboard */}
+        {/* Feature pills — clicking swaps the dashboard (desktop only).
+              On mobile the pills aren't interactive; we show them as a
+              clean stacked list with the caption underneath each one
+              (Resend-style). Skipping the full dashboard mockup is
+              deliberate — the previews are dense data screens that
+              don't compress gracefully into a 375px viewport, so we
+              keep them desktop-only and let the copy carry the story
+              on phones. */}
         <Reveal delay={0.05}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div className="hidden lg:grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             {TABS.map((t) => (
               <Pill
                 key={t.id}
@@ -81,44 +88,47 @@ export function Showcase() {
               />
             ))}
           </div>
+
+          {/* Mobile rendering — stacked feature cards with caption,
+                no dashboard. Each card shows icon + title + caption in
+                a clean Resend-style block. */}
+          <div className="lg:hidden flex flex-col gap-3">
+            {TABS.map((t) => (
+              <FeatureBlock key={t.id} tab={t} />
+            ))}
+          </div>
         </Reveal>
 
-        {/* The dashboard — content swaps on tab change. On mobile, the
-              inner tables (cost breakdown, tender comparison) carry
-              fixed column widths that would overflow a phone-width
-              container — we let the outer card scroll horizontally with
-              momentum so users can drag through dense screens. The
-              card itself stays edge-to-edge of the page section so the
-              scroll feels intentional, not accidental. */}
+        {/* The dashboard — DESKTOP ONLY. Content swaps on tab change.
+              The inner tables (cost breakdown, tender comparison) carry
+              fixed column widths that don't compress to a phone-width
+              container; hiding the entire dashboard on mobile keeps the
+              page calm. The full preview still lives at lg+. */}
         <Reveal delay={0.1}>
           <div
-            className="relative rounded-lg border border-border-subtle shadow-[0_50px_140px_rgba(0,0,0,0.55)] overflow-hidden"
+            className="hidden lg:block relative rounded-lg border border-border-subtle shadow-[0_50px_140px_rgba(0,0,0,0.55)] overflow-hidden"
             style={{
               background:
                 "linear-gradient(180deg, rgba(8,22,36,0.95), rgba(4,14,24,0.98))",
             }}
           >
-            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
-              <div className="min-w-[760px] lg:min-w-0">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={active}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    {active === "tracking" && <DashboardTracking />}
-                    {active === "workspace" && <DashboardWorkspace />}
-                    {active === "compare" && <DashboardCompare />}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {active === "tracking" && <DashboardTracking />}
+                {active === "workspace" && <DashboardWorkspace />}
+                {active === "compare" && <DashboardCompare />}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          {/* caption under the dashboard */}
-          <p className="mt-6 text-center text-[13px] text-text-dim">
+          {/* caption under the desktop dashboard */}
+          <p className="hidden lg:block mt-6 text-center text-[13px] text-text-dim">
             <span className="text-accent-light">{activeTab.title}</span>
             {" — "}
             {activeTab.caption}
@@ -126,6 +136,40 @@ export function Showcase() {
         </Reveal>
       </div>
     </section>
+  );
+}
+
+// ── mobile feature block ─────────────────────────────────────────────────
+//
+// Resend-style stacked feature card for narrow viewports. No tab state,
+// no dashboard swap — just icon, title, caption. The full interactive
+// dashboard preview returns at lg+.
+
+function FeatureBlock({ tab }: { tab: Tab }) {
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-3.5 rounded-md border border-border-subtle p-5",
+        "bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      <div
+        className={cn(
+          "shrink-0 size-10 rounded-md flex items-center justify-center",
+          "border border-border-accent bg-accent-muted text-accent-light",
+        )}
+      >
+        {tab.icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[15px] font-medium text-text leading-snug">
+          {tab.title}
+        </div>
+        <p className="mt-1 text-[13px] leading-[1.55] text-text-subtle">
+          {tab.caption}
+        </p>
+      </div>
+    </div>
   );
 }
 
