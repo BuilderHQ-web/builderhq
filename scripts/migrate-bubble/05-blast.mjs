@@ -256,7 +256,7 @@ What's new at a glance:
   · Founding Builder Access: free unlocks while we open the platform
   · Inline messaging on every project, not buried two screens deep
 
-Stuck? Reply to this email or write to support@builderhq.com.au.
+Stuck? Reply to this email or write to info@builderhq.com.au.
 
 — BuilderHQ
 `;
@@ -293,7 +293,7 @@ Stuck? Reply to this email or write to support@builderhq.com.au.
     </ul>
     <hr style="border:0;border-top:1px solid #1a2d3f;margin:32px 0;"/>
     <p style="font-size:12px;color:#788896;line-height:1.55;margin:0;">
-      Stuck? Reply to this email or write to <a href="mailto:support@builderhq.com.au" style="color:#7ef5ed;">support@builderhq.com.au</a>.
+      Stuck? Reply to this email or write to <a href="mailto:info@builderhq.com.au" style="color:#7ef5ed;">info@builderhq.com.au</a>.
       Didn't expect this email? You can safely ignore it.
     </p>
   </div>

@@ -258,7 +258,7 @@ export async function lookupClaimToken(
     if (!user.claimTokenExpiresAt || user.claimTokenExpiresAt < new Date()) {
       return fail(
         "rate_limited",
-        "This claim link has expired. Email support@builderhq.com.au and we'll send a fresh one.",
+        "This claim link has expired. Email info@builderhq.com.au and we'll send a fresh one.",
       );
     }
 
@@ -367,7 +367,7 @@ export async function claimAccount(
     if (result.kind === "not_found") {
       return fail(
         "not_found",
-        "This claim link isn't valid or has expired. Email support@builderhq.com.au.",
+        "This claim link isn't valid or has expired. Email info@builderhq.com.au.",
       );
     }
     if (result.kind === "already_claimed") {

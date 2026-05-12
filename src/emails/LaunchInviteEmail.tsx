@@ -87,8 +87,8 @@ export function LaunchInviteEmail({
 
       <Caption>
         Stuck? Reply to this email or write to{" "}
-        <InlineLink href="mailto:support@builderhq.com.au">
-          support@builderhq.com.au
+        <InlineLink href="mailto:info@builderhq.com.au">
+          info@builderhq.com.au
         </InlineLink>{" "}
         — we&apos;ll get you sorted in a few hours.
       </Caption>

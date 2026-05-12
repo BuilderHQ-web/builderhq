@@ -67,7 +67,7 @@ export default async function ClaimPage(props: {
             </Link>
           ) : (
             <a
-              href="mailto:support@builderhq.com.au?subject=Account%20claim%20link%20expired"
+              href="mailto:info@builderhq.com.au?subject=Account%20claim%20link%20expired"
               className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors w-full sm:w-auto"
             >
               Email support
@@ -126,7 +126,7 @@ export default async function ClaimPage(props: {
       <p className="text-[12px] text-text-dim leading-[1.6]">
         Wrong email?{" "}
         <a
-          href="mailto:support@builderhq.com.au?subject=Wrong%20email%20on%20claim%20link"
+          href="mailto:info@builderhq.com.au?subject=Wrong%20email%20on%20claim%20link"
           className="text-text hover:text-accent-light underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors"
         >
           Tell support

@@ -104,7 +104,7 @@ export async function loginAction(
 
   // Status branches — only reached when credentials are correct.
   if (user.status === "banned" || user.status === "suspended") {
-    return { error: "This account has been suspended. Contact support@builderhq.com.au." };
+    return { error: "This account has been suspended. Contact info@builderhq.com.au." };
   }
 
   if (user.status === "pending_verification") {

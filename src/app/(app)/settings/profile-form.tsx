@@ -70,7 +70,7 @@ export function ProfileForm({
 
       <Field
         label="Email"
-        hint="Email change requires re-verification. Contact support@builderhq.com.au to swap email addresses for now."
+        hint="Email change requires re-verification. Contact info@builderhq.com.au to swap email addresses for now."
       >
         <Input defaultValue={email} disabled autoComplete="email" />
       </Field>
