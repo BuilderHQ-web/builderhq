@@ -258,10 +258,13 @@ console.log(
 //   • body copy → primary CTA → pasteable URL
 //   • divider → "what's new" beats → footer
 
-const LOGO_URL = "https://builderhq.com.au/brand/BuilderHQ_email_logo.png";
-const APP_HOME = "https://builderhq.com.au";
-
 function buildEmailBody({ firstName, claimUrl, daysToExpire }) {
+  // Declared inside the function so the send loop above (which calls
+  // buildEmailBody before this file finishes parsing) can't trip the
+  // temporal dead zone on these consts.
+  const LOGO_URL = "https://builderhq.com.au/brand/BuilderHQ_email_logo.png";
+  const APP_HOME = "https://builderhq.com.au";
+
   const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
 
   // ─ Plain-text fallback (shown by clients with images disabled, also
