@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Reveal } from "./reveal";
 import { cn } from "@/lib/utils";
@@ -37,16 +37,120 @@ const TABS: Tab[] = [
 ];
 
 /**
- * Showcase — three feature pills above one realistic dashboard. The
- * active pill swaps the dashboard view AND lights its perimeter with
- * a slow-running teal beam.
+ * Showcase — three feature pills above one realistic dashboard.
+ *
+ * Desktop choreography (lg+):
+ *   The section is pinned at the top of the viewport for the duration
+ *   of two extra viewport heights of scroll. As the user scrolls through
+ *   that range, the dashboard swaps tracking → workspace → compare,
+ *   tied 1:1 to scroll progress.
+ *
+ *   · 0.00 → 0.33 of scroll-progress: tracking
+ *   · 0.33 → 0.66                  : workspace
+ *   · 0.66 → 1.00                  : compare
+ *
+ *   Clicking a pill smooth-scrolls to the corresponding progress
+ *   position (via Lenis-driven `window.scrollTo`). Active tab is
+ *   always whatever the scroll position dictates — clicks just move
+ *   the scroll, the state follows.
+ *
+ * Mobile (< lg):
+ *   No pin. Pills are tap-to-switch, the mini-mockup below them swaps
+ *   on tap. Pin-and-scrub doesn't play nicely with iOS Safari URL bar
+ *   collapse + the WebKit refresh on rubber-band, and mobile users
+ *   already have the swap interaction.
  */
 export function Showcase() {
   const [active, setActive] = useState<TabId>("tracking");
   const activeTab = TABS.find((t) => t.id === active)!;
 
+  // Pin container — the outer ref that ScrollTrigger watches.
+  const pinRef = useRef<HTMLDivElement>(null);
+
+  // Desktop-only ScrollTrigger. matchMedia ensures it unbinds on
+  // resize-across-breakpoint and on unmount.
+  useEffect(() => {
+    const el = pinRef.current;
+    if (!el) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cancelled = false;
+    let cleanup: (() => void) | null = null;
+
+    (async () => {
+      const [gsapModule, scrollTriggerModule] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+      if (cancelled) return;
+
+      const gsap = gsapModule.gsap ?? gsapModule.default;
+      const { ScrollTrigger } = scrollTriggerModule;
+      gsap.registerPlugin(ScrollTrigger);
+
+      // gsap.matchMedia automatically unbinds on breakpoint change so
+      // the pin doesn't survive into mobile widths.
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 1024px)", () => {
+        const trigger = ScrollTrigger.create({
+          trigger: el,
+          start: "top top",
+          // 2 viewport heights of scroll while pinned — enough to feel
+          // deliberate, not so much that users feel "stuck."
+          end: "+=200%",
+          pin: true,
+          scrub: 0.6,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            const next: TabId =
+              self.progress < 0.34
+                ? "tracking"
+                : self.progress < 0.67
+                  ? "workspace"
+                  : "compare";
+            // setState short-circuit — no re-render unless value changes.
+            setActive((cur) => (cur === next ? cur : next));
+          },
+        });
+        return () => trigger.kill();
+      });
+
+      cleanup = () => mm.revert();
+    })();
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, []);
+
+  // Click-to-jump for the desktop pills. Computes the scroll position
+  // that corresponds to the centre of the requested tab's slice (0.17,
+  // 0.5, 0.83) and animates window scroll there. Mobile uses the same
+  // handler but the pin isn't active, so it just sets state.
+  const onTabClick = (id: TabId) => {
+    setActive(id);
+    if (typeof window === "undefined") return;
+    const el = pinRef.current;
+    if (!el) return;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    if (!isDesktop) return;
+
+    const rect = el.getBoundingClientRect();
+    const sectionTop = window.scrollY + rect.top;
+    const range = window.innerHeight * 2; // matches the `+=200%` above
+    const centre = id === "tracking" ? 0.17 : id === "workspace" ? 0.5 : 0.83;
+    const target = sectionTop + range * centre;
+    window.scrollTo({ top: target, behavior: "smooth" });
+  };
+
   return (
-    <section id="showcase" className="relative px-5 md:px-10 py-20 lg:py-32">
+    <section
+      id="showcase"
+      ref={pinRef}
+      className="relative px-5 md:px-10 py-20 lg:py-32 lg:min-h-screen"
+    >
       <div className="mx-auto max-w-[1320px]">
         <div className="text-center mb-10 lg:mb-16">
           <Reveal>
@@ -69,7 +173,12 @@ export function Showcase() {
           </Reveal>
         </div>
 
-        {/* Feature pills — desktop. Click to swap the big dashboard. */}
+        {/* Feature pills — desktop. Click smooth-scrolls to that
+            slice of the pinned section; the scroll position then drives
+            `active` via the ScrollTrigger above. Looks/feels identical
+            to a normal tab click but stays in sync with scroll position
+            so the user can scroll past the section without it
+            disagreeing with itself. */}
         <Reveal delay={0.05}>
           <div className="hidden lg:grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             {TABS.map((t) => (
@@ -77,7 +186,7 @@ export function Showcase() {
                 key={t.id}
                 tab={t}
                 active={active === t.id}
-                onClick={() => setActive(t.id)}
+                onClick={() => onTabClick(t.id)}
               />
             ))}
           </div>
