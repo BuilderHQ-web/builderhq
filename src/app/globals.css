@@ -218,12 +218,13 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
+  /* No native smooth-scroll. Lenis owns smooth scrolling on the
+     marketing site (see <SmoothScroll />), and the two fight each
+     other if both are on — anchor jumps end up split between the
+     two with stuttering. App routes use native auto scroll, which
+     is what data-dense product surfaces want anyway. */
+  scroll-behavior: auto;
   scroll-padding-top: 96px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
 }
 
 body {

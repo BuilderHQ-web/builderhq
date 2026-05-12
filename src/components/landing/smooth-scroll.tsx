@@ -73,6 +73,12 @@ export function SmoothScroll() {
         easing: (t: number) =>
           t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
         smoothWheel: true,
+        // CRITICAL: Lenis 1.3+ defaults `autoRaf: true`, which runs an
+        // internal requestAnimationFrame loop. We're also driving Lenis
+        // from GSAP's ticker below — running both means the smoothing
+        // math executes twice per frame and movement feels sluggish /
+        // jumpy. Disable Lenis's internal raf and let GSAP own it.
+        autoRaf: false,
       });
 
       // GSAP ↔ Lenis bridge. ScrollTrigger uses GSAP's ticker; Lenis
