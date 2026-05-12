@@ -46,8 +46,22 @@ export function Hero({ cta }: { cta: CtaLinks }) {
       />
 
       <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
-        {/* Left — copy */}
-        <div>
+        {/* Left — copy. Centred on mobile (Resend-style), left-aligned
+            from lg+ where the deck sits to the right. */}
+        <div className="text-center lg:text-left">
+          {/* MOBILE-ONLY floating preview card — sits above the
+              headline on phones to satisfy "one card floating
+              dynamically". Hidden at lg+ where the full HeroCardCycler
+              takes over to the right of the copy. */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:hidden mb-8 flex justify-center"
+          >
+            <FloatingHeroChip />
+          </motion.div>
+
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -90,7 +104,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.34, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 lg:mt-9 max-w-[34rem] text-[15px] sm:text-[16px] leading-[1.6] sm:leading-[1.7] text-text-subtle"
+            className="mt-6 lg:mt-9 mx-auto lg:mx-0 max-w-[34rem] text-[15px] sm:text-[16px] leading-[1.6] sm:leading-[1.7] text-text-subtle"
           >
             Upload your project once. Get matched with verified builders,
             compare tenders side-by-side — all in one place.
@@ -100,7 +114,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.46, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-7 sm:mt-8 lg:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5 sm:gap-4"
+            className="mt-8 lg:mt-10 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start sm:flex-wrap gap-3 sm:gap-4"
           >
             <Link
               href={cta.primary.href}
@@ -125,13 +139,16 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
           </motion.div>
 
-          {/* Trust strip — short, confident proof points under the CTAs.
-              Each one's a real platform behaviour, not a slogan. */}
+          {/* Trust strip — DESKTOP ONLY. On mobile we follow the Resend
+              pattern: hero is calm, the proof points live in the
+              Problem / Features sections below where they have room
+              to breathe. Keeps the mobile hero to: chip → kicker →
+              headline → tagline → CTAs. */}
           <motion.ul
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.58, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 lg:mt-12 flex flex-wrap gap-x-5 sm:gap-x-6 gap-y-2.5 text-[11px] tracking-[0.04em] text-text-dim"
+            className="hidden lg:flex mt-10 lg:mt-12 flex-wrap gap-x-5 sm:gap-x-6 gap-y-2.5 text-[11px] tracking-[0.04em] text-text-dim"
           >
             <ProofItem label="Free for project owners" />
             <ProofItem label="ABR + state-register verified" />
@@ -160,6 +177,95 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Single small product preview that sits above the headline on mobile.
+ * Resend uses a tiny 3D cube as a hero anchor — we use a compact
+ * "Best value" tender row so the visual sells the actual product, not
+ * just decoration. Float animation gives it a gentle dynamism without
+ * the deck's complexity.
+ */
+function FloatingHeroChip() {
+  return (
+    <motion.div
+      // Gentle continuous float — 4.5s sinusoidal, low amplitude.
+      // Reduces perceived "static-ness" without being distracting.
+      animate={{ y: [0, -6, 0] }}
+      transition={{
+        duration: 4.5,
+        ease: "easeInOut",
+        repeat: Infinity,
+      }}
+      className="relative w-full max-w-[300px]"
+    >
+      {/* Glow halo behind the chip */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -inset-8 rounded-3xl"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, rgba(0,212,200,0.18), transparent 70%)",
+        }}
+      />
+      <div
+        className="relative rounded-lg border border-[rgba(100,180,255,0.16)] backdrop-blur-xl overflow-hidden shadow-[0_24px_70px_rgba(0,0,0,0.55)]"
+        style={{
+          background:
+            "linear-gradient(160deg, rgba(10,30,48,0.94), rgba(6,18,30,0.97))",
+        }}
+      >
+        <span
+          aria-hidden
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(126,245,237,0.55), transparent)",
+          }}
+        />
+        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-[rgba(255,255,255,0.05)]">
+          <span className="relative flex size-1.5">
+            <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
+            <span className="relative size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
+          </span>
+          <span className="text-[9px] tracking-[0.18em] uppercase text-text-muted font-ui">
+            Best tender
+          </span>
+          <span className="ml-auto text-[8.5px] tracking-[0.14em] uppercase text-accent border border-border-accent px-1.5 py-0.5 rounded-sm">
+            Live
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 px-3.5 py-3">
+          <span
+            className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+            }}
+          >
+            JS
+          </span>
+          <div className="min-w-0 flex-1 text-left">
+            <div className="text-[12px] font-semibold text-text truncate">
+              Smith Builders
+            </div>
+            <div className="text-[9.5px] text-text-dim">
+              ABN ✓ · Licence ✓
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div
+              className="font-display tabular-nums leading-none text-accent-light"
+              style={{ fontSize: 17 }}
+            >
+              $1.78M
+            </div>
+            <div className="text-[9px] mt-0.5 text-accent-light/80">-4% median</div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

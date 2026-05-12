@@ -67,13 +67,36 @@ export function LandingNav() {
 
   return (
     <>
+      {/* Soft gradient mask that fades the page bg into the nav so
+          content scrolling underneath doesn't poke through the nav
+          plate, without creating a visible "stripe" at the top. Sits
+          BEHIND the nav, in front of the page. Resend uses the same
+          trick — the top edge feels like one continuous canvas. */}
+      <div
+        aria-hidden
+        className={cn(
+          "fixed top-0 inset-x-0 z-40 h-24 pointer-events-none",
+          "transition-opacity duration-[420ms] ease-[var(--ease-out)]",
+          scrolled ? "opacity-100" : "opacity-0",
+        )}
+        style={{
+          background:
+            "linear-gradient(180deg, #060f19 0%, #060f19 55%, rgba(6,15,25,0) 100%)",
+        }}
+      />
       <nav
         className={cn(
           "fixed top-0 left-0 right-0 z-50",
-          "transition-[background,backdrop-filter,border-color,padding] duration-[420ms] ease-[var(--ease-out)]",
-          scrolled || mobileOpen
-            ? "bg-bg/80 backdrop-blur-xl border-b border-border-subtle py-3"
-            : "bg-transparent border-b border-transparent py-5",
+          "transition-[padding] duration-[420ms] ease-[var(--ease-out)]",
+          // No background, no border — the gradient mask behind us
+          // does the work of separating from page content. When the
+          // mobile menu is open we paint a solid plate so the panel
+          // beneath us has something to anchor to visually.
+          mobileOpen
+            ? "bg-[#060f19] border-b border-border-subtle py-3"
+            : scrolled
+              ? "bg-transparent py-3"
+              : "bg-transparent py-5",
         )}
       >
         <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 flex items-center justify-between">

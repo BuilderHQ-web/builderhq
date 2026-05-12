@@ -69,14 +69,7 @@ export function Showcase() {
           </Reveal>
         </div>
 
-        {/* Feature pills — clicking swaps the dashboard (desktop only).
-              On mobile the pills aren't interactive; we show them as a
-              clean stacked list with the caption underneath each one
-              (Resend-style). Skipping the full dashboard mockup is
-              deliberate — the previews are dense data screens that
-              don't compress gracefully into a 375px viewport, so we
-              keep them desktop-only and let the copy carry the story
-              on phones. */}
+        {/* Feature pills — desktop. Click to swap the big dashboard. */}
         <Reveal delay={0.05}>
           <div className="hidden lg:grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             {TABS.map((t) => (
@@ -89,21 +82,98 @@ export function Showcase() {
             ))}
           </div>
 
-          {/* Mobile rendering — stacked feature cards with caption,
-                no dashboard. Each card shows icon + title + caption in
-                a clean Resend-style block. */}
-          <div className="lg:hidden flex flex-col gap-3">
+          {/* MOBILE — three clickable feature cards then a single
+                compact preview that swaps based on active tab.
+                Resend-style: card list → small mockup pinned underneath
+                so the reader gets both the value-prop and a visual.
+                The mini-preview is purpose-built for mobile (no fake
+                sidebar, no 5-tile data strip) and renders fully inside
+                the 375px viewport with no horizontal scroll. */}
+          <div className="lg:hidden flex flex-col gap-2.5">
             {TABS.map((t) => (
-              <FeatureBlock key={t.id} tab={t} />
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActive(t.id)}
+                aria-pressed={active === t.id}
+                className={cn(
+                  "group relative flex items-start gap-3.5 rounded-md border p-4 text-left transition-colors duration-[260ms]",
+                  active === t.id
+                    ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
+                    : "border-border-subtle bg-[rgba(255,255,255,0.012)] active:border-border",
+                )}
+              >
+                {active === t.id ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-md"
+                    style={{
+                      padding: "1px",
+                      background:
+                        "linear-gradient(90deg, transparent 0%, transparent 30%, rgba(126,245,237,0.7) 50%, transparent 70%, transparent 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "beamPerimeter 2.6s linear infinite",
+                      WebkitMask:
+                        "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                      WebkitMaskComposite: "xor",
+                      mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                      maskComposite: "exclude",
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={cn(
+                    "shrink-0 size-9 rounded-md flex items-center justify-center border transition-colors duration-[260ms]",
+                    active === t.id
+                      ? "border-border-accent bg-accent-muted text-accent-light"
+                      : "border-border-subtle bg-[rgba(255,255,255,0.02)] text-text-muted",
+                  )}
+                >
+                  {t.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div
+                    className={cn(
+                      "text-[15px] font-medium leading-snug transition-colors duration-[260ms]",
+                      active === t.id ? "text-text" : "text-text-muted",
+                    )}
+                  >
+                    {t.title}
+                  </div>
+                  <p className="mt-1 text-[12.5px] leading-[1.5] text-text-subtle">
+                    {t.caption}
+                  </p>
+                </div>
+              </button>
             ))}
+
+            {/* Mobile mini-mockup. Single small preview that swaps. */}
+            <div
+              className="mt-4 relative rounded-md border border-border-subtle overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(8,22,36,0.95), rgba(4,14,24,0.98))",
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="p-4"
+                >
+                  {active === "tracking" && <MobileTrackingMini />}
+                  {active === "workspace" && <MobileWorkspaceMini />}
+                  {active === "compare" && <MobileCompareMini />}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </Reveal>
 
-        {/* The dashboard — DESKTOP ONLY. Content swaps on tab change.
-              The inner tables (cost breakdown, tender comparison) carry
-              fixed column widths that don't compress to a phone-width
-              container; hiding the entire dashboard on mobile keeps the
-              page calm. The full preview still lives at lg+. */}
+        {/* The dashboard — DESKTOP ONLY. Content swaps on tab change. */}
         <Reveal delay={0.1}>
           <div
             className="hidden lg:block relative rounded-lg border border-border-subtle shadow-[0_50px_140px_rgba(0,0,0,0.55)] overflow-hidden"
@@ -139,35 +209,288 @@ export function Showcase() {
   );
 }
 
-// ── mobile feature block ─────────────────────────────────────────────────
+// ── mobile mini-mockups ──────────────────────────────────────────────────
 //
-// Resend-style stacked feature card for narrow viewports. No tab state,
-// no dashboard swap — just icon, title, caption. The full interactive
-// dashboard preview returns at lg+.
+// Compact previews used in the mobile showcase — purpose-built for
+// narrow viewports so we don't squeeze the desktop dashboards through
+// a horizontal scroll. Each renders in ~180–220px of vertical height
+// and stays fully within a 375px container.
 
-function FeatureBlock({ tab }: { tab: Tab }) {
+function MobileTrackingMini() {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
+            Tenders received
+          </div>
+          <div className="text-[14px] font-semibold text-text">Compare &amp; decide</div>
+        </div>
+        <span className="px-1.5 py-0.5 border border-border-accent rounded-sm text-[8px] tracking-[0.14em] uppercase text-accent">
+          Live
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <MiniKpi label="Tenders" value="3" />
+        <MiniKpi label="Median" value="$1.86M" />
+        <MiniKpi label="Spread" value="7%" tone="accent" />
+      </div>
+      <div className="space-y-1.5">
+        <MiniTenderRow initials="JS" name="Smith Builders" price="$1.78M" delta="-4%" highlight />
+        <MiniTenderRow initials="AC" name="Chen Construction" price="$1.91M" delta="+3%" />
+        <MiniTenderRow initials="MR" name="Roberts &amp; Co" price="$1.88M" delta="+1%" />
+      </div>
+    </div>
+  );
+}
+
+function MobileWorkspaceMini() {
+  const rows: Array<[string, string, "Latest" | "v2"]> = [
+    ["Architectural plans v3.pdf", "2.4 MB", "Latest"],
+    ["Specifications.pdf", "1.1 MB", "Latest"],
+    ["Scope of works.docx", "164 KB", "Latest"],
+    ["Engineering report.pdf", "920 KB", "v2"],
+  ];
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
+            Documents
+          </div>
+          <div className="text-[14px] font-semibold text-text">Project workspace</div>
+        </div>
+        <span className="px-1.5 py-0.5 border border-border-accent rounded-sm text-[8px] tracking-[0.14em] uppercase text-accent">
+          v3
+        </span>
+      </div>
+      <div className="rounded-sm border border-border-subtle overflow-hidden">
+        {rows.map(([name, size, status], i) => (
+          <div
+            key={name}
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-2 text-[11px]",
+              i < rows.length - 1 && "border-b border-border-subtle",
+            )}
+          >
+            <span className="size-4 rounded-[2px] bg-[rgba(0,212,200,0.12)] border border-border-accent/40 inline-flex items-center justify-center text-[7px] text-accent-light shrink-0">
+              ▣
+            </span>
+            <span className="flex-1 truncate text-text font-medium">{name}</span>
+            <span className="text-text-dim font-mono text-[9px] tabular-nums shrink-0">
+              {size}
+            </span>
+            <span
+              className={cn(
+                "shrink-0 text-[8.5px] tracking-[0.12em] uppercase",
+                status === "Latest" ? "text-accent-light" : "text-warning",
+              )}
+            >
+              {status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileCompareMini() {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
+            3 tenders · ranked
+          </div>
+          <div className="text-[14px] font-semibold text-text">Side-by-side</div>
+        </div>
+        <span className="px-1.5 py-0.5 border border-border-accent rounded-sm text-[8px] tracking-[0.14em] uppercase text-accent">
+          Comparing
+        </span>
+      </div>
+      <div className="space-y-2">
+        <MobileCompareCard
+          initials="JS"
+          name="Smith Builders"
+          price="$1.78M"
+          duration="26w"
+          completeness={100}
+          badge="Best value"
+          highlight
+        />
+        <MobileCompareCard
+          initials="AC"
+          name="Chen Construction"
+          price="$1.91M"
+          duration="30w"
+          completeness={88}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MiniKpi({
+  label,
+  value,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  tone?: "muted" | "accent";
+}) {
+  return (
+    <div className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] px-2 py-2">
+      <div className="text-[7.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "font-display tabular-nums leading-none",
+          tone === "accent" ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 15 }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MiniTenderRow({
+  initials,
+  name,
+  price,
+  delta,
+  highlight = false,
+}: {
+  initials: string;
+  name: string;
+  price: string;
+  delta: string;
+  highlight?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3.5 rounded-md border border-border-subtle p-5",
-        "bg-[rgba(255,255,255,0.012)]",
+        "flex items-center gap-2 px-2.5 py-2 rounded-sm border",
+        highlight
+          ? "border-border-accent/55 bg-[rgba(0,212,200,0.05)]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
       )}
     >
-      <div
+      <span
+        className="size-6 rounded-full flex items-center justify-center text-[9px] font-bold border border-border-accent text-accent-light shrink-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+        }}
+      >
+        {initials}
+      </span>
+      <span
+        className="min-w-0 flex-1 truncate text-[11px] font-semibold text-text"
+        dangerouslySetInnerHTML={{ __html: name }}
+      />
+      <span
         className={cn(
-          "shrink-0 size-10 rounded-md flex items-center justify-center",
-          "border border-border-accent bg-accent-muted text-accent-light",
+          "shrink-0 font-display tabular-nums leading-none",
+          highlight ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 13 }}
+      >
+        {price}
+      </span>
+      <span
+        className={cn(
+          "shrink-0 text-[9px] tabular-nums",
+          highlight ? "text-accent-light/80" : "text-text-dim",
         )}
       >
-        {tab.icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-medium text-text leading-snug">
-          {tab.title}
+        {delta}
+      </span>
+    </div>
+  );
+}
+
+function MobileCompareCard({
+  initials,
+  name,
+  price,
+  duration,
+  completeness,
+  badge,
+  highlight = false,
+}: {
+  initials: string;
+  name: string;
+  price: string;
+  duration: string;
+  completeness: number;
+  badge?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-sm border p-2.5",
+        highlight
+          ? "border-border-accent/60 bg-[linear-gradient(160deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]"
+          : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        <span
+          className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold border border-border-accent text-accent-light shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+          }}
+        >
+          {initials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-text truncate">
+              {name}
+            </span>
+            {badge ? (
+              <span className="inline-flex items-center px-1 py-0.5 rounded-sm border border-border-accent bg-accent-muted/40 text-[7px] tracking-[0.14em] uppercase text-accent-light font-semibold">
+                {badge}
+              </span>
+            ) : null}
+          </div>
+          <div className="text-[9px] text-text-dim">ABN ✓ · Licence ✓ · {duration}</div>
         </div>
-        <p className="mt-1 text-[13px] leading-[1.55] text-text-subtle">
-          {tab.caption}
-        </p>
+        <div
+          className={cn(
+            "shrink-0 font-display tabular-nums leading-none",
+            highlight ? "text-accent-light" : "text-text",
+          )}
+          style={{ fontSize: 15 }}
+        >
+          {price}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <div className="flex-1 h-[3px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+          <span
+            className={cn(
+              "block h-full rounded-full",
+              completeness >= 90 ? "bg-accent" : "bg-warning",
+            )}
+            style={{ width: `${completeness}%` }}
+          />
+        </div>
+        <span
+          className={cn(
+            "text-[9px] tabular-nums",
+            completeness >= 90 ? "text-accent-light" : "text-warning",
+          )}
+        >
+          {completeness}%
+        </span>
       </div>
     </div>
   );
