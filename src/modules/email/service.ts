@@ -27,6 +27,8 @@ import { LaunchInviteEmail } from "@/emails/LaunchInviteEmail";
 import { GuideDownloadEmail } from "@/emails/GuideDownloadEmail";
 import { GuideLeadOpsEmail } from "@/emails/GuideLeadOpsEmail";
 import { EstimateRequestOpsEmail } from "@/emails/EstimateRequestOpsEmail";
+import { ArchitectTenderOpsEmail } from "@/emails/ArchitectTenderOpsEmail";
+import { ArchitectTenderConfirmationEmail } from "@/emails/ArchitectTenderConfirmationEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
 import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
 import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
@@ -411,6 +413,156 @@ export async function sendEstimateRequestOpsEmail(
       resendId: data.id,
     },
     "estimate request ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Marketing lead capture (architect-tender, private outreach) ────────
+
+interface SendArchitectTenderOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  practiceName: string;
+  projectAddress: string;
+  source: string | null;
+  ref: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Ops notification for architect-tender confirmations. The submission
+ * itself is the meaningful signal — there's no public ad funnel, just
+ * a cold email that linked them here. Sends to info@ alongside the
+ * architect-facing confirmation email below.
+ */
+export async function sendArchitectTenderOpsEmail(
+  input: SendArchitectTenderOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const fullName =
+    [input.firstName, input.lastName].filter(Boolean).join(" ").trim();
+  const subject = `ARCHITECT: ${fullName || input.email} — ${input.projectAddress}`;
+  const props = {
+    leadId: input.leadId,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    phone: input.phone,
+    practiceName: input.practiceName,
+    projectAddress: input.projectAddress,
+    source: input.source,
+    ref: input.ref,
+    createdAt: input.createdAt,
+  };
+
+  const [html, text] = await Promise.all([
+    render(ArchitectTenderOpsEmail(props)),
+    render(ArchitectTenderOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "architect_tender" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.architect_tender_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "architect tender ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.architect_tender_ops.sent",
+      leadId: input.leadId,
+      resendId: data.id,
+    },
+    "architect tender ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendArchitectTenderConfirmationEmailInput {
+  to: string;
+  firstName: string;
+  practiceName: string;
+  projectAddress: string;
+}
+
+/**
+ * Architect-facing holding email — confirms receipt of the onboarding
+ * form and tells them Aryan will reply personally within 24 hours.
+ * Intentionally austere; the substantive follow-up is sent by hand.
+ */
+export async function sendArchitectTenderConfirmationEmail(
+  input: SendArchitectTenderConfirmationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "Received — your project is being onboarded";
+  const props = {
+    firstName: input.firstName,
+    practiceName: input.practiceName,
+    projectAddress: input.projectAddress,
+  };
+
+  const [html, text] = await Promise.all([
+    render(ArchitectTenderConfirmationEmail(props)),
+    render(ArchitectTenderConfirmationEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    // Cold-outreach reply-to lands on Aryan personally — the email
+    // body invites a direct reply with project context, so we don't
+    // want that reply hitting the generic info@ shared inbox.
+    replyTo: "aryan@builderhq.com.au",
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lead_architect_confirmation" },
+      { name: "variant", value: "architect_tender" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.architect_tender_confirmation.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "architect tender confirmation send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.architect_tender_confirmation.sent",
+      to: input.to,
+      resendId: data.id,
+    },
+    "architect tender confirmation sent",
   );
   return ok({ id: data.id });
 }

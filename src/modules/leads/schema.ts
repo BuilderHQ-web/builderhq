@@ -27,6 +27,10 @@ import {
 export const leadKindEnum = pgEnum("lead_kind", [
   "guide_melbourne_build_brief",
   "estimate_request",
+  // Cold-outreach confirmation from architects whose planning permit
+  // applications appeared on PlanningAlerts (Moonee Valley + Merri-bek
+  // pilot). Per-form specifics ride in the `meta` jsonb column.
+  "architect_tender",
 ]);
 
 export const leads = pgTable(

@@ -1,0 +1,142 @@
+/* /architect-tender-confirmed — single-viewport receipt page.
+ *
+ * Mirrors the design discipline of /architect-tender but compressed
+ * to a single centred composition. One headline. One paragraph. One
+ * fade-in. No CTA — the architect's next action is to wait for the
+ * direct email from Aryan, not click anything here.
+ */
+
+.body {
+  --g-bg: #03090f;
+  --g-teal: #00d4c8;
+  --g-text: rgba(255, 255, 255, 0.92);
+  --g-serif: "Fraunces", Georgia, serif;
+  --g-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  background: var(--g-bg);
+  color: var(--g-text);
+  font-family: var(--g-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.body :global(*),
+.body :global(*::before),
+.body :global(*::after) {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.body :global(::selection) {
+  background: var(--g-teal);
+  color: #03090f;
+}
+
+.fade {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: confirmedFade 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes confirmedFade {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.topbar {
+  padding: 28px 32px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.card {
+  max-width: 580px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
+  color: var(--g-teal);
+  margin-bottom: 22px;
+}
+
+.headline {
+  font-family: var(--g-serif);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw + 0.5rem, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.018em;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 24px;
+}
+
+.copy {
+  font-family: var(--g-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.copy a {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(0, 212, 200, 0.5);
+}
+.copy a:hover {
+  color: var(--g-teal);
+}
+
+.footer {
+  padding: 28px 32px 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: center;
+}
+.footerCopy {
+  font-family: var(--g-sans);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+.footerCopy a {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+}
+.footerCopy a:hover {
+  color: var(--g-teal);
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 20px 22px;
+  }
+  .main {
+    padding: 28px 22px;
+  }
+  .footer {
+    padding: 20px 22px 28px;
+  }
+}
