@@ -1,81 +1,53 @@
 /**
- * /(main)/index → Dashboard
+ * /(main)/index → Dashboard router.
  *
- * Role-aware welcome scaffold. Currently a polished placeholder ready
- * to be replaced with the real owner / builder dashboard content:
- *   · Owner: project status pulses, recent tenders received, action items
- *   · Builder: FBA grant status, projects in service area, my tenders,
- *              messages
+ * The dashboard tab is role-aware: project owners and builders see
+ * fundamentally different home screens because they care about
+ * different things. The role lives on `useAuth().user.role`, hydrated
+ * from /api/mobile/auth/me on boot.
  *
- * For v1 we render the user's name, role pill, and a "what's coming"
- * teaser so the shell can be merged + iterated on screen-by-screen
- * without breaking the navigation flow.
+ * This file is purposefully thin — it does role detection only and
+ * delegates to the role-specific home component. Each home owns its
+ * own data fetch, polish, and empty states.
+ *
+ * If the user object hasn't hydrated yet (e.g. token in SecureStore
+ * but /me hasn't returned), we render an empty Screen — the parent
+ * (main)/_layout already guards against unauthenticated access, so
+ * the gap is sub-second and unobtrusive.
  */
-import { ScrollView, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import { View } from "react-native";
 
 import { Screen } from "@/components/ui/screen";
 import { useAuth } from "@/lib/auth";
-
-const ROLE_LABEL: Record<string, string> = {
-  project_owner: "Owner",
-  builder: "Builder",
-  admin: "Admin",
-};
+import { OwnerHome } from "@/components/dashboard/owner-home";
 
 export default function DashboardScreen() {
-  const { user } = useAuth();
-  const greetingName = user?.name ?? "there";
+  const { user, isLoading } = useAuth();
 
-  return (
-    <Screen variant="flat">
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 48 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View entering={FadeInUp.delay(50).duration(420).springify()}>
-          <Text className="text-accent text-[10.5px] tracking-[0.24em] uppercase font-ui font-medium">
-            Dashboard
-          </Text>
-        </Animated.View>
+  // Boot frame — user not yet hydrated.
+  if (isLoading || !user) {
+    return (
+      <Screen variant="flat">
+        <View className="flex-1" />
+      </Screen>
+    );
+  }
 
-        <Animated.View entering={FadeInUp.delay(120).duration(420).springify()}>
-          <Text className="text-text font-display tracking-[-0.018em] text-[44px] leading-[0.95] mt-3">
-            Hi {greetingName.split(" ")[0]}
-            <Text className="text-accent-light">.</Text>
-          </Text>
-        </Animated.View>
-
-        {user?.role ? (
-          <Animated.View
-            entering={FadeInUp.delay(180).duration(420).springify()}
-            className="mt-4 self-start"
-          >
-            <View className="px-2.5 h-7 rounded-full border border-border-accent bg-accent-muted justify-center">
-              <Text className="text-accent text-[10px] tracking-[0.18em] uppercase font-ui font-semibold">
-                {ROLE_LABEL[user.role] ?? user.role}
-              </Text>
-            </View>
-          </Animated.View>
-        ) : null}
-
-        <Animated.View
-          entering={FadeInUp.delay(240).duration(460).springify()}
-          className="mt-10 rounded-2xl border border-border-subtle bg-surface-1/40 p-6"
-        >
-          <Text className="text-accent-light text-[11px] tracking-[0.22em] uppercase font-ui font-medium">
-            Coming soon
-          </Text>
-          <Text className="text-text text-[18px] font-display tracking-[-0.01em] mt-2 leading-snug">
-            Your real dashboard goes here.
-          </Text>
-          <Text className="text-text-muted text-[14px] leading-[22px] mt-3">
-            We&apos;re wiring up the live KPI tiles, project pulse, recent
-            messages and FBA grant status. Each section will roll in over
-            the next iteration.
-          </Text>
-        </Animated.View>
-      </ScrollView>
-    </Screen>
-  );
+  switch (user.role) {
+    case "project_owner":
+    case "admin":
+      return <OwnerHome />;
+    case "builder":
+      // Builder home lands in the next pass — share the same data /
+      // animation pattern as OwnerHome. For now, fall back to the
+      // owner home which gracefully handles a builder via the 403
+      // path (the dashboard call returns role=builder hint).
+      return <OwnerHome />;
+    default:
+      return (
+        <Screen variant="flat">
+          <View className="flex-1" />
+        </Screen>
+      );
+  }
 }
