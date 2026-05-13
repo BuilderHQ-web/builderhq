@@ -33,6 +33,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -79,6 +80,22 @@ export const COMPANY = {
   websiteUrl: "https://builderhq.com.au",
   tagline: "Australia's residential tender platform",
 } as const;
+
+/**
+ * Single source of truth for the email-header logo. Must be an absolute
+ * URL — email clients have no concept of relative paths. The asset lives
+ * at /public/brand/BuilderHQ_email_logo.png; Vercel serves it from the
+ * production origin below.
+ *
+ * Source dimensions: 327×80 px, RGBA transparent. The "b" mark is teal
+ * (#5cdce0) so the wordmark reads well on the dark email canvas without
+ * a coloured background plate. Don't swap this file without a matched
+ * design review — every transactional email links to it.
+ */
+export const LOGO_URL =
+  "https://builderhq.com.au/brand/BuilderHQ_email_logo.png";
+export const LOGO_NATIVE_W = 327;
+export const LOGO_NATIVE_H = 80;
 
 // ── EmailShell ────────────────────────────────────────────────────────
 
@@ -137,6 +154,9 @@ export function EmailShell({
             .bhq-heading { font-size: 32px !important; }
             .bhq-cta { width: 100% !important; box-sizing: border-box; padding-left: 14px !important; padding-right: 14px !important; }
             .bhq-cta-row td { display: block !important; padding-bottom: 10px !important; }
+            /* Logo gets a modest 14% trim on phones so the header doesn't
+               feel oversized against the narrower card chrome. */
+            .bhq-logo { width: 120px !important; height: 29px !important; }
           }
           /* Outlook.com / Outlook for Windows dark mode hint */
           [data-ogsc] .bhq-body { background-color: ${brand.bg} !important; }
@@ -189,20 +209,47 @@ export function EmailShell({
             padding: "0 24px",
           }}
         >
-          {/* Wordmark */}
+          {/* Brand logo.
+              ─────────────────────────────────────────────────────────
+              Renders the BuilderHQ wordmark + teal mark from the hosted
+              brand asset. Sizing notes:
+                · Source PNG is 327×80 (4.0875:1).
+                · Display width: 140px → derived height 34px. That's the
+                  sweet spot for transactional email headers — readable
+                  at distance, restrained enough not to crowd the kicker
+                  / heading directly below it.
+                · The .bhq-logo mobile media query (in <Head>) drops the
+                  width to 120px on screens <= 480px so the mark doesn't
+                  overpower a phone header.
+                · `display: block` + `border: 0` are the two attributes
+                  every email client respects for inline images — without
+                  them Outlook adds a 4px baseline gap and Yahoo draws a
+                  link border ring.
+                · `outline: none` is belt-and-braces for clients that
+                  treat focusable images as link-targets.
+              Wrapping in a <Link> to the marketing site is the standard
+              "click logo → go home" affordance recipients expect. */}
           <Section style={{ padding: "0 0 24px 0" }}>
-            <Text
-              style={{
-                fontSize: "13px",
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                color: brand.accent,
-                margin: 0,
-                fontWeight: 700,
-              }}
+            <Link
+              href={COMPANY.websiteUrl}
+              style={{ textDecoration: "none", display: "inline-block" }}
             >
-              BUILDER<span style={{ color: brand.text }}>HQ</span>
-            </Text>
+              <Img
+                src={LOGO_URL}
+                alt={COMPANY.name}
+                className="bhq-logo"
+                width="140"
+                height="34"
+                style={{
+                  display: "block",
+                  width: "140px",
+                  height: "34px",
+                  border: 0,
+                  outline: "none",
+                  textDecoration: "none",
+                }}
+              />
+            </Link>
           </Section>
 
           {/* Card */}

@@ -33,6 +33,8 @@ import {
   Text,
 } from "@react-email/components";
 
+import { COMPANY, LOGO_URL } from "./_shell";
+
 interface LaunchInviteEmailProps {
   claimUrl: string;
   firstName: string | null;
@@ -56,8 +58,10 @@ const SANS =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 const SERIF = "Georgia, 'Times New Roman', serif";
 
-const LOGO_URL = "https://builderhq.com.au/brand/BuilderHQ_email_logo.png";
-const APP_HOME = "https://builderhq.com.au";
+// LOGO_URL is now imported from _shell.tsx — the single source of truth
+// for the email brand asset. APP_HOME kept local because this email also
+// uses it for the CTA and footer link, not just the logo wrap.
+const APP_HOME = COMPANY.websiteUrl;
 
 const WHATS_NEW: Array<[string, string]> = [
   ["A redesigned dashboard", "with the four numbers that actually matter"],
