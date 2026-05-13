@@ -25,6 +25,7 @@ import { useFocusEffect } from "expo-router";
 
 import { api } from "./api";
 import type {
+  BuilderDashboardPayload,
   OwnerDashboardPayload,
   ProjectDetailPayload,
 } from "@/components/dashboard/types";
@@ -98,10 +99,31 @@ export function useOwnerDashboard() {
   return useDashboard<OwnerDashboardPayload>("/api/mobile/dashboard/owner");
 }
 
+export function useBuilderDashboard() {
+  return useDashboard<BuilderDashboardPayload>(
+    "/api/mobile/dashboard/builder",
+  );
+}
+
 export function useProjectDetail(slug: string | null) {
   // Empty slug → null path keeps the hook a no-op while expo-router is
   // settling params on first frame.
   return useDashboard<ProjectDetailPayload>(
     slug ? `/api/mobile/projects/${encodeURIComponent(slug)}` : "",
   );
+}
+
+/**
+ * Fire-and-result helper for the unlock action. Returns a Result the
+ * detail screen can branch on:
+ *   · ok: true  → tell the user, refetch the detail payload (which now
+ *                 returns mode="unlocked_builder")
+ *   · ok: false → show the error.message (rate_limited, forbidden,
+ *                 not_found, etc.)
+ */
+export async function unlockProject(slug: string) {
+  return api.post<{
+    ok: true;
+    unlock: { id: string; source: string; unlockedAt: string };
+  }>(`/api/mobile/projects/${encodeURIComponent(slug)}/unlock`);
 }

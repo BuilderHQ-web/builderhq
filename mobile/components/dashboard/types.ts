@@ -148,4 +148,152 @@ export interface OwnerProjectDetailPayload {
   showsFullAddress: true;
 }
 
-export type ProjectDetailPayload = OwnerProjectDetailPayload;
+// ─── Builder-side payload shapes ────────────────────────────────────
+
+/** Fields visible in both `preview` and `unlocked_builder` modes.
+ *  The unlocked variant adds `addressLine1`; everything else matches. */
+export interface BuilderProjectFields {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  type: string;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  floors: number | null;
+  dwellingCount: number | null;
+  landSizeBand: string | null;
+  buildSizeBand: string | null;
+  renovationScope: string | null;
+  existingAgeBand: string | null;
+  extensionType: string | null;
+  extensionSizeBand: string | null;
+  budgetBand: string | null;
+  targetStartMonth: string | null;
+  targetCompletionMonth: string | null;
+  description: string | null;
+  publishedAtIso: string | null;
+}
+
+export type UnlockPricing =
+  | { kind: "free"; reason: "founding_access"; remainingThisCycle: number }
+  | { kind: "paid"; priceAud: number }
+  | { kind: "unavailable"; reason: string };
+
+export interface UnlockAffordance {
+  canUnlock: boolean;
+  slotsRemaining: number;
+  unlockCap: number;
+  pricing: UnlockPricing;
+}
+
+export interface BuilderTenderSnapshot {
+  id: string;
+  status: string;
+  totalPriceAud: number | null;
+  durationWeeks: number | null;
+  submittedAt: string | null;
+  updatedAt: string;
+}
+
+export interface PreviewProjectDetailPayload {
+  mode: "preview";
+  project: BuilderProjectFields;
+  documentCount: number;
+  unlockedCount: number;
+  isSaved: boolean;
+  unlock: UnlockAffordance;
+  showsFullAddress: false;
+}
+
+export interface UnlockedBuilderDetailPayload {
+  mode: "unlocked_builder";
+  project: BuilderProjectFields & { addressLine1: string | null };
+  documents: ProjectDocumentRow[];
+  unlockedCount: number;
+  isSaved: boolean;
+  myTender: BuilderTenderSnapshot | null;
+  showsFullAddress: true;
+}
+
+/** Tagged-union for the project detail endpoint. */
+export type ProjectDetailPayload =
+  | OwnerProjectDetailPayload
+  | PreviewProjectDetailPayload
+  | UnlockedBuilderDetailPayload;
+
+// ─── Builder dashboard payload ──────────────────────────────────────
+
+export interface BuilderProjectListItem {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  type: string;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  budgetBand: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  unlockedCount: number;
+  publishedAt: string | null;
+}
+
+export interface BuilderTenderListItem {
+  id: string;
+  projectId: string;
+  projectSlug: string;
+  projectTitle: string;
+  status: string;
+  totalPriceAud: number | null;
+  durationWeeks: number | null;
+  submittedAt: string | null;
+  updatedAt: string;
+}
+
+export interface BuilderDashboardStats {
+  activeTenders: number;
+  unlockedProjects: number;
+  savedProjects: number;
+  suggestedCount: number;
+}
+
+export type BuilderFbaStatus =
+  | {
+      active: true;
+      remainingThisCycle: number;
+      monthlyQuota: number;
+      daysToRefresh: number;
+      daysToGrantEnd: number;
+      cycleIndex: number;
+      totalCycles: number;
+      totalSavedAud: number;
+    }
+  | {
+      active: false;
+      reason: "no_grant" | "expired" | "revoked";
+    };
+
+export interface BuilderDashboardPayload {
+  user: { id: string; role: "builder" | "admin" };
+  profile: {
+    hasProfile: boolean;
+    approvalStatus: string | null;
+    companyName: string | null;
+    serviceAreas: Array<{
+      state: string;
+      suburb: string | null;
+      statewide: boolean;
+    }>;
+  };
+  stats: BuilderDashboardStats;
+  fba: BuilderFbaStatus;
+  suggested: BuilderProjectListItem[];
+  unlocked: BuilderProjectListItem[];
+  myTenders: BuilderTenderListItem[];
+  activity: ActivityItem[];
+}

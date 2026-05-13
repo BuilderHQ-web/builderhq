@@ -19,6 +19,7 @@ import { View } from "react-native";
 
 import { Screen } from "@/components/ui/screen";
 import { useAuth } from "@/lib/auth";
+import { BuilderHome } from "@/components/dashboard/builder-home";
 import { OwnerHome } from "@/components/dashboard/owner-home";
 
 export default function DashboardScreen() {
@@ -35,13 +36,13 @@ export default function DashboardScreen() {
 
   switch (user.role) {
     case "project_owner":
-    case "admin":
       return <OwnerHome />;
     case "builder":
-      // Builder home lands in the next pass — share the same data /
-      // animation pattern as OwnerHome. For now, fall back to the
-      // owner home which gracefully handles a builder via the 403
-      // path (the dashboard call returns role=builder hint).
+      return <BuilderHome />;
+    case "admin":
+      // Admins are rare and ops-heavy; we surface the owner dashboard
+      // by default since admin accounts typically also own test
+      // projects. A proper admin tools screen can land later.
       return <OwnerHome />;
     default:
       return (
