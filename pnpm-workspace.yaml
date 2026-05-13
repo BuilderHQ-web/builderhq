@@ -1,3 +1,13 @@
+# pnpm workspace — keeps web + mobile sharing one lockfile.
+# When you `pnpm install` at the repo root, both apps' dependencies
+# resolve together. The root package.json (Next.js web app) and
+# mobile/package.json (Expo mobile app) are independent packages but
+# the single lockfile means version drift between them stops being a
+# class of bug.
+packages:
+  - "."
+  - "mobile"
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
