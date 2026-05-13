@@ -1,21 +1,28 @@
 /**
- * /architect-tender — V2 layout.
+ * /architect-tender — V3 elevation pass.
  *
- * Two-column hero + form composition on desktop so the action lands
- * above the fold (no scrolling required for an architect arriving from
- * the cold email). Ambient backdrop from the (marketing)/guide family
- * — three out-of-frame teal orbs, faint blueprint grid, subtle noise
- * — adds atmosphere without breaking editorial restraint.
+ * Tone goal (per Aryan's "10/10" brief):
+ *   Architects from a cold-email outreach land here with skepticism.
+ *   In the first 3 seconds the page has to feel deliberate, modern,
+ *   serious — and make submitting the form feel like the obvious next
+ *   step. Everything is tuned to that single conversion.
  *
- * Right column = the form card. Left column = hero copy + "why this
- * exists" + trust row. Below the grid: a quiet council marquee band
- * for credibility, then a single-line footer routed to
- * info@builderhq.com.au.
+ * Layout:
+ *   · Two-column desktop grid — hero copy left, form card right. The
+ *     action is above the fold on a 13" laptop.
+ *   · Ambient backdrop (orbs + grid + noise) drifts slowly behind
+ *     everything so the page feels alive without animating the action.
+ *   · Form card carries a rotating teal beam along its perimeter —
+ *     defined in the CSS module (see .formCard::before / ::after).
+ *   · Council marquee below the fold is the credibility pillar.
  *
- * Robots are blocked — private outreach URL, never indexed.
+ * Header brand wraps in <Link href="/"> so the logo is the canonical
+ * route back to the main site. Robots blocked because this is private
+ * outreach, never indexed.
  */
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 
 import { Logo } from "@/components/brand/logo";
@@ -40,20 +47,19 @@ const inter = Inter({
 export const metadata = {
   title: "Onboard your project for tender — BuilderHQ",
   description:
-    "A planning-stage tender initiative for Moonee Valley and Merri-bek projects. By invitation.",
+    "A planning-stage tender initiative for Melbourne architects. By invitation.",
   robots: { index: false, follow: false },
 };
 
 /**
- * Council directory used in the marquee. Order is tuned for visual
- * rhythm — alternating wide horizontal wordmarks with taller stacked
- * marks so the band doesn't feel like a column of one shape. All assets
- * live in /public/brand/councils/, pre-processed to transparent
- * backgrounds and trimmed to their bounding boxes.
+ * Council directory used in the marquee. Order alternates wide
+ * horizontal wordmarks with stacked marks so the band reads with
+ * rhythm. All assets in /public/brand/councils/ — pre-processed to
+ * transparent backgrounds + trimmed to bounding box.
  *
- * Each entry supports an optional `wide` flag so the marquee can give
- * horizontal wordmarks a wider slot than stacked marks without making
- * the CSS guess at aspect ratios. Defaults to `false` (stacked).
+ * Each entry supports a `wide` flag so the marquee can give horizontal
+ * wordmarks a wider slot than stacked marks without CSS aspect-ratio
+ * guesswork.
  */
 type Council = {
   name: string;
@@ -75,6 +81,7 @@ const COUNCILS: Council[] = [
 ];
 
 export default function ArchitectTenderPage() {
+  const year = new Date().getFullYear();
   return (
     <div
       className={`${fraunces.variable} ${inter.variable} ${s.body}`}
@@ -83,7 +90,8 @@ export default function ArchitectTenderPage() {
           "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Ambient backdrop layers — fixed, behind everything else */}
+      {/* Ambient backdrop — fixed, behind content. Orbs drift on long
+          loops; grid + noise are static. */}
       <div className={s.ambient} aria-hidden>
         <div className={`${s.orb} ${s.orb1}`} />
         <div className={`${s.orb} ${s.orb2}`} />
@@ -93,14 +101,12 @@ export default function ArchitectTenderPage() {
       <div className={s.noise} aria-hidden />
 
       <div className={s.fade}>
-        {/* Top bar — logo + invitation tag */}
+        {/* Top bar — logo (links home) + invitation indicator */}
         <header className={s.topbar}>
-          <span className={s.brand} aria-label="BuilderHQ">
+          <Link href="/" className={s.brand} aria-label="BuilderHQ — home">
             <Logo height={26} />
-          </span>
-          <span className={s.invitation}>
-            By invitation · Moonee Valley &amp; Merri-bek
-          </span>
+          </Link>
+          <span className={s.invitation}>By invitation</span>
         </header>
 
         <main className={s.main}>
@@ -111,7 +117,7 @@ export default function ArchitectTenderPage() {
                 className={s.eyebrow}
                 style={{ fontFamily: "var(--font-fraunces), Georgia, serif" }}
               >
-                A planning-stage tender initiative
+                Planning-stage tender, by invitation
               </span>
               <h1
                 className={s.headline}
@@ -121,9 +127,9 @@ export default function ArchitectTenderPage() {
                 <span className={s.headlineItalic}>tender.</span>
               </h1>
               <p className={s.subhead}>
-                Free for Planning Permit projects across Moonee Valley and
-                Merri-bek. Builder outreach, tender setup, and coordination
-                handled on your behalf.
+                Builder outreach, tender setup, coordination — handled.
+                Free for Planning Permit projects across the Melbourne
+                metro.
               </p>
 
               <section className={s.why}>
@@ -135,18 +141,16 @@ export default function ArchitectTenderPage() {
                 </h2>
                 <div className={s.prose}>
                   <p>
-                    The biggest cost on most Melbourne builds isn&apos;t the
-                    construction. It&apos;s the time between planning
-                    approval and breaking ground — when homeowners scramble
-                    to find builders, gather quotes that don&apos;t compare,
-                    and discover their budget no longer matches the plans.
+                    The biggest cost on most Melbourne builds isn&apos;t
+                    construction. It&apos;s the gap between planning
+                    approval and ground break — when owners scramble for
+                    builders and gather quotes that don&apos;t compare.
                   </p>
                   <p>
-                    BuilderHQ runs that process structured, early, and in
-                    parallel with the planning permit. Vetted local builders
-                    review the same documentation. Submissions come back
-                    side-by-side. The client decides with information, not
-                    pressure.
+                    BuilderHQ runs tender in parallel with planning. Vetted
+                    local builders review the same documentation, submit
+                    side-by-side, and the client decides with information,
+                    not pressure.
                   </p>
                 </div>
 
@@ -161,7 +165,7 @@ export default function ArchitectTenderPage() {
                       Independent
                     </span>
                     <span className={s.trustCopy}>
-                      No commissions from builders
+                      Aligned with the architect, paid by no one on the trade side
                     </span>
                   </div>
                   <div className={s.trustItem}>
@@ -184,17 +188,17 @@ export default function ArchitectTenderPage() {
                         fontFamily: "var(--font-fraunces), Georgia, serif",
                       }}
                     >
-                      Free during pilot
+                      Pilot phase
                     </span>
                     <span className={s.trustCopy}>
-                      Moonee Valley and Merri-bek
+                      Free for invited Melbourne metro projects
                     </span>
                   </div>
                 </div>
               </section>
             </div>
 
-            {/* ── Right column: form card ── */}
+            {/* ── Right column: form card with rotating beam ── */}
             <aside>
               <div className={s.formCard}>
                 <div className={s.formCardHeader}>
@@ -205,8 +209,7 @@ export default function ArchitectTenderPage() {
                     Confirm onboarding
                   </h2>
                   <p className={s.formCardSub}>
-                    Submitting confirms you&rsquo;d like BuilderHQ to onboard
-                    the project for tender. Dashboard access within 24 hours.
+                    Two minutes to submit. <strong>Dashboard access within 24 hours.</strong>
                   </p>
                 </div>
 
@@ -222,26 +225,50 @@ export default function ArchitectTenderPage() {
           </div>
         </main>
 
-        {/* Council marquee — quiet legitimacy band. Replace each entry
-            with `logoSrc` once the council brand assets land in
-            /public/brand/councils/. */}
+        {/* Council marquee — quiet credibility band below the action.
+            See council-marquee.tsx for the silhouette + hover-colour
+            treatment notes. */}
         <CouncilMarquee styles={s} councils={COUNCILS} />
 
         <footer className={s.footer}>
-          <div className={s.footerRow}>
-            <span className={s.footerBrand}>
-              <Logo height={18} />
-              <span>builderhq.com.au</span>
-            </span>
-            <span className={s.footerContact}>
-              <a href="mailto:info@builderhq.com.au">info@builderhq.com.au</a>
-            </span>
+          <div className={s.footerInner}>
+            <div className={s.footerPrimary}>
+              <div className={s.footerBrand}>
+                <div className={s.footerBrandRow}>
+                  <Logo height={18} />
+                  <span>builderhq.com.au</span>
+                </div>
+                <p className={s.footerTagline}>
+                  Tender, structured.
+                </p>
+              </div>
+              <div className={s.footerContact}>
+                <span className={s.footerContactRow}>
+                  <a href="mailto:info@builderhq.com.au">info@builderhq.com.au</a>
+                </span>
+                <span className={s.footerLocation}>
+                  Melbourne, Victoria
+                </span>
+              </div>
+            </div>
+
+            <div className={s.footerDivider} aria-hidden />
+
+            <p className={s.disclaimer}>
+              Project profiles are built from publicly available planning
+              materials. A tender is initiated only with architect or
+              owner consent.
+            </p>
+
+            <div className={s.footerDivider} aria-hidden />
+
+            <div className={s.footerMeta}>
+              <span>© {year} BuilderHQ</span>
+              <span className={s.footerMetaRight}>
+                Private outreach · not indexed
+              </span>
+            </div>
           </div>
-          <p className={s.disclaimer}>
-            BuilderHQ prepares project profiles using publicly available
-            planning application materials. Architect or owner consent is
-            required before any tender is initiated.
-          </p>
         </footer>
       </div>
     </div>

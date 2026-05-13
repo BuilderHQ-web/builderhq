@@ -12,6 +12,7 @@
  *     direct email from Aryan, not click anything here.
  */
 
+import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 
 import { Logo } from "@/components/brand/logo";
@@ -51,9 +52,9 @@ export default function ArchitectTenderConfirmedPage() {
 
       <div className={s.fade}>
         <header className={s.topbar}>
-          <span aria-label="BuilderHQ">
+          <Link href="/" aria-label="BuilderHQ — home" style={{ display: "inline-flex", textDecoration: "none" }}>
             <Logo height={26} />
-          </span>
+          </Link>
         </header>
 
         <main className={s.main}>

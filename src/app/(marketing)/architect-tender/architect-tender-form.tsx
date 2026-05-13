@@ -144,7 +144,7 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
         setSubmitting(false);
         setSubmitError(
           r.error.message ||
-            "Something went wrong on our side. Try again, or email aryan@builderhq.com.au directly.",
+            "Something went wrong on our side. Try again, or email info@builderhq.com.au directly.",
         );
         return;
       }
@@ -325,8 +325,31 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
           disabled={submitDisabled}
           aria-disabled={submitDisabled}
         >
-          {submitting ? "Onboarding…" : "Onboard project"}
+          <span>{submitting ? "Onboarding…" : "Onboard project"}</span>
+          {!submitting ? (
+            // A subtle chevron that nudges right on hover — the only
+            // moving piece on the CTA button. Hand-rolled SVG keeps the
+            // form free of icon library deps.
+            <svg
+              className={styles.submitArrow}
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="13 6 19 12 13 18" />
+            </svg>
+          ) : null}
         </button>
+        <span className={styles.submitNote}>
+          Two minutes. Dashboard within 24 hours.
+        </span>
         {submitError ? (
           <span className={styles.submitError}>{submitError}</span>
         ) : null}
