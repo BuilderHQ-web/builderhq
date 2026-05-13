@@ -366,6 +366,13 @@ export function ProjectWizard({
       }
       setProject(r.value);
       toast.success("Project published", "Builders can now find it in the marketplace.");
+      // Invalidate the RSC cache *before* navigating. Without this, the
+      // detail route's prefetched fragment (taken while the project was
+      // still a draft) can bleed into the post-publish render and throw
+      // — symptom: success toast fires, then the detail page bounces to
+      // the global error boundary. router.refresh() forces Next.js to
+      // re-fetch RSC for the next navigation.
+      router.refresh();
       router.push(`/owner/projects/${r.value.slug}`);
     } finally {
       setPublishing(false);
