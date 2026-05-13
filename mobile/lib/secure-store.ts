@@ -2,10 +2,14 @@
  * Encrypted key/value store — wraps expo-secure-store with a typed
  * façade for the handful of secrets we hold:
  *
- *   · session_token   — Auth.js JWT or session cookie
- *   · user_id         — currently-signed-in user's UUID
- *   · push_token      — Expo push notification token (cached locally so
- *                       we don't re-register on every cold start)
+ *   · access_token       — 15-min mobile JWT for Authorization header
+ *   · refresh_token      — 60-day opaque token, exchanged at /refresh
+ *   · access_expires_at  — ISO-8601 when access_token expires, used
+ *                          for proactive refresh ~2 min before expiry
+ *   · user_id            — currently-signed-in user's UUID (cached so
+ *                          boot doesn't always need a network hop)
+ *   · push_token         — Expo push notification token (cached locally
+ *                          so we don't re-register on every cold start)
  *
  * SecureStore writes to the iOS Keychain (with `kSecAttrAccessible`
  * set to AfterFirstUnlock) and Android Keystore — both encrypted at
@@ -15,7 +19,12 @@
  */
 import * as SecureStore from "expo-secure-store";
 
-type Key = "session_token" | "user_id" | "push_token";
+type Key =
+  | "access_token"
+  | "refresh_token"
+  | "access_expires_at"
+  | "user_id"
+  | "push_token";
 
 export async function get(key: Key): Promise<string | null> {
   try {
@@ -49,5 +58,11 @@ export async function clear(key: Key): Promise<void> {
 }
 
 export async function clearAll(): Promise<void> {
-  await Promise.all([clear("session_token"), clear("user_id"), clear("push_token")]);
+  await Promise.all([
+    clear("access_token"),
+    clear("refresh_token"),
+    clear("access_expires_at"),
+    clear("user_id"),
+    clear("push_token"),
+  ]);
 }

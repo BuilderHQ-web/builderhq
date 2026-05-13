@@ -26,15 +26,42 @@ import "../global.css";
 import "react-native-reanimated";
 
 import * as SplashScreen from "expo-splash-screen";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { Fragment, useEffect, type ReactElement, type ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { KeyboardProvider } from "react-native-keyboard-controller";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { initSounds } from "@/lib/sounds";
+
+/**
+ * `react-native-keyboard-controller` ships a native binding (TurboModule).
+ * Expo Go can't load custom native modules, so importing the provider
+ * eagerly there throws `KeyboardControllerNative.getConstants is not a
+ * function`.
+ *
+ * Detect the runtime up front and lazily require the real provider only
+ * when we're inside a dev build / store build. In Expo Go we use a
+ * passthrough so the rest of the layout still mounts — the only thing
+ * lost is the smooth-keyboard avoidance, which is purely cosmetic.
+ *
+ * When you graduate from Expo Go to `expo run:ios` (dev client) the
+ * real provider takes over automatically; nothing in the consuming code
+ * has to change.
+ */
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const KeyboardProvider: ({
+  children,
+}: {
+  children: ReactNode;
+}) => ReactElement = isExpoGo
+  ? ({ children }) => <Fragment>{children}</Fragment>
+  : // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("react-native-keyboard-controller").KeyboardProvider;
 
 // Keep the splash visible while we boot.
 SplashScreen.preventAutoHideAsync().catch(() => {});

@@ -85,6 +85,48 @@ export const verificationTokens = pgTable(
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
 );
 
+/**
+ * Mobile-app refresh tokens.
+ *
+ * Separate from the Auth.js DB sessions above because mobile uses a
+ * bearer-JWT flow (short-lived access token + long-lived refresh token),
+ * not cookie sessions. We keep state for refresh tokens — not access
+ * tokens — so we can revoke a device's session immediately on logout
+ * and detect refresh-token theft via the rotation chain.
+ *
+ * Every successful POST /api/mobile/auth/refresh issues a new row and
+ * marks the prior row revoked with `rotatedToId` pointing to its
+ * successor. If a presented token's hash matches a row that's already
+ * revoked, the whole chain is invalidated (someone copied the token
+ * and the real client tripped the alarm).
+ */
+export const mobileRefreshTokens = pgTable(
+  "mobile_refresh_tokens",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** SHA-256 hex of the raw token. Raw token never persists server-side. */
+    tokenHash: text().notNull().unique(),
+    /** Free-text client label (e.g. "iPhone 17 Pro"). Nullable. */
+    deviceLabel: text(),
+    expiresAt: timestamp({ mode: "date", withTimezone: true }).notNull(),
+    revokedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** Successor token row when revoked via rotation. NULL otherwise. */
+    rotatedToId: uuid(),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    lastUsedAt: timestamp({ mode: "date", withTimezone: true }),
+  },
+  (t) => [
+    index("mobile_refresh_tokens_user_id_idx").on(t.userId),
+    index("mobile_refresh_tokens_expires_at_idx").on(t.expiresAt),
+  ],
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type MobileRefreshToken = typeof mobileRefreshTokens.$inferSelect;
