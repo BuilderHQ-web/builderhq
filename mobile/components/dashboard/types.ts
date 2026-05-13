@@ -278,6 +278,51 @@ export type BuilderFbaStatus =
       reason: "no_grant" | "expired" | "revoked";
     };
 
+// ─── Browse payload ─────────────────────────────────────────────────
+
+export interface BrowseListItem {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  type: string;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  floors: number | null;
+  dwellingCount: number | null;
+  landSizeBand: string | null;
+  buildSizeBand: string | null;
+  budgetBand: string | null;
+  documentCount: number;
+  unlockedCount: number;
+  isFull: boolean;
+  publishedAt: string | null;
+  isNew: boolean;
+}
+
+export interface BrowseFilters {
+  q?: string;
+  type?: "single_dwelling" | "multi_dwelling" | "renovation" | "extension";
+  state?: string;
+  budgets?: string[];
+  inMyArea?: boolean;
+  excludeFull?: boolean;
+}
+
+export interface BrowsePayload {
+  items: BrowseListItem[];
+  hasMore: boolean;
+  nextOffset: number | null;
+  savedIds: string[];
+  mySavedCount: number;
+  /** When inMyArea was requested but the builder has no service areas
+   *  configured. Mobile renders a dedicated empty state. */
+  emptyReason?: "no_service_areas";
+}
+
 export interface BuilderDashboardPayload {
   user: { id: string; role: "builder" | "admin" };
   profile: {

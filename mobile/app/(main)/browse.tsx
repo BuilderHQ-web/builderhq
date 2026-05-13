@@ -1,44 +1,43 @@
 /**
- * /(main)/browse → project browse list.
+ * /(main)/browse → role-aware browse tab.
  *
- * v1: shell-only — once the /api/mobile/projects endpoint is wired up,
- * this hosts a FlashList of project cards with the same FILLED-state
- * logic as web. Swipe gestures on cards (save / dismiss) will be added
- * via react-native-gesture-handler in v2.
+ *   · builder → <BuilderBrowse /> — the marketplace (search, filters,
+ *               saved hearts, infinite scroll).
+ *   · owner / admin → <OwnerBrowse /> — paginated list of their own
+ *               projects with a status-filter pill row and a + New FAB.
+ *
+ * Each variant owns its own data fetch + UX. This file is just a
+ * dispatcher so future role splits stay clean.
  */
-import { Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import { View } from "react-native";
 
 import { Screen } from "@/components/ui/screen";
+import { useAuth } from "@/lib/auth";
+import { BuilderBrowse } from "@/components/browse/builder-browse";
+import { OwnerBrowse } from "@/components/browse/owner-browse";
 
 export default function BrowseScreen() {
-  return (
-    <Screen variant="flat">
-      <View className="flex-1 px-6 pt-4">
-        <Animated.View entering={FadeInUp.delay(50).duration(420).springify()}>
-          <Text className="text-accent text-[10.5px] tracking-[0.24em] uppercase font-ui font-medium">
-            Browse
-          </Text>
-          <Text className="text-text font-display tracking-[-0.018em] text-[44px] leading-[0.95] mt-3">
-            Live projects
-            <Text className="text-accent-light">.</Text>
-          </Text>
-          <Text className="text-text-muted text-[14px] leading-[22px] mt-4 max-w-[36ch]">
-            Verified Australian residential builds, ranked by fit to your
-            service area + project preferences.
-          </Text>
-        </Animated.View>
+  const { user, isLoading } = useAuth();
 
-        <Animated.View
-          entering={FadeInUp.delay(220).duration(460).springify()}
-          className="mt-10 rounded-2xl border border-border-subtle bg-surface-1/40 p-6"
-        >
-          <Text className="text-text-dim text-[12px] leading-[18px]">
-            Project list lands here — FlashList-backed, swipe to save, tap
-            to view, pull to refresh. Wiring up next.
-          </Text>
-        </Animated.View>
-      </View>
-    </Screen>
-  );
+  if (isLoading || !user) {
+    return (
+      <Screen variant="flat">
+        <View className="flex-1" />
+      </Screen>
+    );
+  }
+
+  switch (user.role) {
+    case "builder":
+      return <BuilderBrowse />;
+    case "project_owner":
+    case "admin":
+      return <OwnerBrowse />;
+    default:
+      return (
+        <Screen variant="flat">
+          <View className="flex-1" />
+        </Screen>
+      );
+  }
 }
