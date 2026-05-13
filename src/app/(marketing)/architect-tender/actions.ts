@@ -90,9 +90,10 @@ export async function submitArchitectTenderAction(
     );
   }
 
-  // Build the meta payload. `consent` is captured as part of the lead
-  // record itself (legally significant — they confirmed the box on
-  // submit; the timestamp + IP are on the row already).
+  // Surname, practice name, and project address are first-class columns
+  // on leads as of migration 0021 — `project_address` is indexed
+  // case-insensitively for dedupe + admin search. `meta` only carries
+  // truly form-specific bits (consent flag, ref, intent marker).
   const refRaw = (v.ref ?? "").trim();
   const source =
     refRaw.length > 0
@@ -100,9 +101,6 @@ export async function submitArchitectTenderAction(
       : "architect_outreach";
 
   const meta: Record<string, unknown> = {
-    last_name: v.surname,
-    practice_name: v.practiceName,
-    project_address: v.projectAddress,
     consent: true,
     tender_intent: true,
     ref: refRaw || null,
@@ -111,8 +109,11 @@ export async function submitArchitectTenderAction(
   const leadResult = await createLead({
     kind: "architect_tender",
     firstName: v.firstName,
+    lastName: v.surname,
     email: v.email.trim().toLowerCase(),
     phone: v.phone && v.phone.length > 0 ? v.phone : null,
+    practiceName: v.practiceName,
+    projectAddress: v.projectAddress,
     source,
     ip,
     userAgent,

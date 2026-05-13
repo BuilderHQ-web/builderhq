@@ -42,8 +42,32 @@ export const leads = pgTable(
 
     // Canonical identity captured by every form.
     firstName: text("first_name").notNull(),
+    /**
+     * Surname — populated for forms that collect it (architect_tender,
+     * estimate_request). NULL for the guide flow which only asks for
+     * a first name. Lifted out of `meta` so admin queries don't have
+     * to JSON-path through to search by family name.
+     */
+    lastName: text("last_name"),
     email: text().notNull(),
     phone: text(),
+
+    /**
+     * Architect / company / practice the lead is associated with.
+     * Currently populated by architect_tender; estimate_request also
+     * captures a "company" field that lands here. NULL otherwise.
+     */
+    practiceName: text("practice_name"),
+
+    /**
+     * Project street address — the pivot column for /architect-tender.
+     * Used for dedupe ("did we already onboard 67 Bowes Avenue?"),
+     * cross-reference against the original PlanningAlerts entry, and
+     * the admin list-view's primary sort key. Indexed case-insensitively
+     * (see migration 0021). NULL for lead kinds that don't capture an
+     * address (guide download, estimate request).
+     */
+    projectAddress: text("project_address"),
 
     // Attribution — utm_* params, referrer-derived source, etc.
     source: text(),

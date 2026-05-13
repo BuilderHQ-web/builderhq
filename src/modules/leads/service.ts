@@ -26,17 +26,41 @@ const createLeadSchema = z.object({
   kind: z.enum([
     "guide_melbourne_build_brief",
     "estimate_request",
+    "architect_tender",
   ]),
   firstName: z
     .string()
     .min(1, "First name is required")
     .max(80)
     .trim(),
+  /** Surname — top-level column (was meta-only). NULL allowed for flows
+   *  that don't capture it (e.g. guide download). */
+  lastName: z
+    .string()
+    .max(80)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.trim() ? v.trim() : null)),
   email: z.email("Enter a valid email").transform((v) => v.toLowerCase().trim()),
   phone: z
     .string()
     .max(40)
     .optional()
+    .transform((v) => (v && v.trim() ? v.trim() : null)),
+  /** Architect / company / practice name. NULL for flows that don't ask. */
+  practiceName: z
+    .string()
+    .max(160)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.trim() ? v.trim() : null)),
+  /** Project address — pivot column for architect_tender; NULL for
+   *  guide / estimate flows. Indexed case-insensitively via 0021. */
+  projectAddress: z
+    .string()
+    .max(240)
+    .optional()
+    .nullable()
     .transform((v) => (v && v.trim() ? v.trim() : null)),
   source: z.string().max(160).optional().nullable(),
   ip: z.string().max(80).optional().nullable(),
@@ -62,8 +86,11 @@ export async function createLead(
       .values({
         kind: parsed.data.kind,
         firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
         email: parsed.data.email,
         phone: parsed.data.phone,
+        practiceName: parsed.data.practiceName,
+        projectAddress: parsed.data.projectAddress,
         source: parsed.data.source ?? null,
         ip: parsed.data.ip ?? null,
         userAgent: parsed.data.userAgent ?? null,
