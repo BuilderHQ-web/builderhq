@@ -16,6 +16,7 @@
  */
 
 import "server-only";
+import { after } from "next/server";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -276,7 +277,12 @@ async function insertUnlockWithCap(
   }
 
   await ensureConversationOnUnlock(builderId, projectId);
-  void dispatchUnlock(builderId, projectId);
+  // `after()` keeps the function runtime alive on Vercel until the
+  // dispatch completes. dispatchUnlock today sends ~3 emails (owner /
+  // builder confirmation / ops) which fits inside the response window,
+  // but consistency matters — naked `void` is the same fragile pattern
+  // that bit projects/service.ts publish.
+  after(() => dispatchUnlock(builderId, projectId));
   return ok(inserted);
 }
 

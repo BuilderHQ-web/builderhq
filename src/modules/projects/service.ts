@@ -21,6 +21,7 @@
  */
 
 import "server-only";
+import { after } from "next/server";
 import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -213,18 +214,23 @@ export async function publish(
     .returning();
   if (!row) return fail("internal", "Failed to publish project.");
 
-  // Fan-out: owner confirmation, ops heads-up, fan-out to builders.
-  // Fire-and-forget — the publish action returns immediately and the
-  // bulk send runs in the background. Lazy import keeps the module
-  // graph clean.
-  void (async () => {
+  // Fan-out: owner confirmation, ops heads-up, fan-out to every
+  // eligible builder. Wrapped in `after()` from next/server so the
+  // function runtime stays alive on Vercel until the bulk send
+  // completes — without it, a naked `void (async ...)` IIFE gets the
+  // function recycled mid-flight and the trailing batches silently
+  // drop (we burned a publish on this exact pattern; see commit msg).
+  //
+  // Lazy import keeps the module graph clean and the publish-path
+  // bundle small.
+  after(async () => {
     try {
       const { dispatchProjectPublishedEvent } = await import("./dispatch");
       await dispatchProjectPublishedEvent(row.id);
     } catch {
       /* dispatch is internally try/catch'd; this is belt-and-braces */
     }
-  })();
+  });
 
   return ok(row);
 }
