@@ -24,7 +24,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
 
 import { api } from "./api";
-import type { OwnerDashboardPayload } from "@/components/dashboard/types";
+import type {
+  OwnerDashboardPayload,
+  ProjectDetailPayload,
+} from "@/components/dashboard/types";
 
 interface DashboardState<T> {
   data: T | null;
@@ -40,6 +43,12 @@ function useDashboard<T>(path: string): DashboardState<T> {
 
   const load = useCallback(
     async (showSpinner: boolean) => {
+      // Empty path = "no resource yet" — common during expo-router
+      // param settling. Skip the fetch but don't tear down state.
+      if (!path) {
+        if (showSpinner) setLoading(false);
+        return;
+      }
       if (showSpinner) setLoading(true);
       setError(null);
       const r = await api.get<T>(path);
@@ -87,4 +96,12 @@ function useDashboard<T>(path: string): DashboardState<T> {
 
 export function useOwnerDashboard() {
   return useDashboard<OwnerDashboardPayload>("/api/mobile/dashboard/owner");
+}
+
+export function useProjectDetail(slug: string | null) {
+  // Empty slug → null path keeps the hook a no-op while expo-router is
+  // settling params on first frame.
+  return useDashboard<ProjectDetailPayload>(
+    slug ? `/api/mobile/projects/${encodeURIComponent(slug)}` : "",
+  );
 }

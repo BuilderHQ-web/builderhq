@@ -63,3 +63,89 @@ export interface OwnerDashboardPayload {
   projects: OwnerProjectListItem[];
   activity: ActivityItem[];
 }
+
+// ─── Project detail payload ──────────────────────────────────────────
+
+export interface ProjectDocumentRow {
+  id: string;
+  category: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  version: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface ProjectTenderRow {
+  id: string;
+  status: string;
+  totalPriceAud: number | null;
+  durationWeeks: number | null;
+  proposedStartMonth: string | null;
+  submittedAt: string | null;
+  builder: {
+    id: string;
+    displayName: string;
+    company: string | null;
+    state: string | null;
+    yearsInOperation: number | null;
+  };
+}
+
+export interface ProjectConversationRow {
+  id: string;
+  builderId: string;
+  builderName: string;
+  lastMessageAt: string | null;
+  lastMessagePreview: string | null;
+  unreadCount: number;
+}
+
+/**
+ * Full project payload for the owner-mode detail screen. `mode` is the
+ * tagged-union discriminator so the screen can render confidently
+ * against this shape vs the future `unlocked_builder` / `preview`
+ * variants without nullable-field-walking.
+ */
+export interface OwnerProjectDetailPayload {
+  mode: "owner";
+  project: {
+    id: string;
+    slug: string;
+    title: string;
+    status: string;
+    type: string;
+    description: string | null;
+    suburb: string | null;
+    state: string | null;
+    postcode: string | null;
+    addressLine1: string | null;
+    dwellingCount: number | null;
+    bedrooms: number | null;
+    bathrooms: number | null;
+    floors: number | null;
+    landSizeBand: string | null;
+    buildSizeBand: string | null;
+    extensionType: string | null;
+    extensionSizeBand: string | null;
+    renovationScope: string | null;
+    existingAgeBand: string | null;
+    budgetBand: string | null;
+    targetStartMonth: string | null;
+    targetCompletionMonth: string | null;
+    publishedAtIso: string | null;
+    createdAtIso: string;
+  };
+  stats: {
+    unlockCount: number;
+    tenderCount: number;
+    unreadMessages: number;
+  };
+  documents: ProjectDocumentRow[];
+  tenders: ProjectTenderRow[];
+  conversations: ProjectConversationRow[];
+  showsFullAddress: true;
+}
+
+export type ProjectDetailPayload = OwnerProjectDetailPayload;

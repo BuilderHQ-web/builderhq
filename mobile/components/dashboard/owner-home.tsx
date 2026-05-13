@@ -451,11 +451,7 @@ function OwnerProjectCard({ project }: { project: OwnerProjectListItem }) {
 
   const onPress = useCallback(() => {
     void haptics.tap();
-    // Project detail screen lands in the next pass.
-    router.push({
-      pathname: "/(main)/projects/[slug]" as never,
-      params: { slug: project.slug } as never,
-    });
+    router.push(`/(main)/projects/${project.slug}` as never);
   }, [project.slug]);
 
   return (
