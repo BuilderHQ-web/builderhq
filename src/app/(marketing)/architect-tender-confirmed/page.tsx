@@ -71,17 +71,16 @@ export default function ArchitectTenderConfirmedPage() {
               Your project is being onboarded.
             </h1>
             <p className={s.copy}>
-              Aryan will be in touch within 24 hours with your dashboard
-              access and the next steps. Reply directly to that email with
-              any questions.
+              You&rsquo;ll receive an email from us within 24 hours with
+              your dashboard access and the next steps. Reply directly to
+              that email with any questions.
             </p>
           </div>
         </main>
 
         <footer className={s.footer}>
           <span className={s.footerCopy}>
-            Aryan Karkun · Founder ·{" "}
-            <a href="mailto:aryan@builderhq.com.au">aryan@builderhq.com.au</a>
+            <a href="mailto:info@builderhq.com.au">info@builderhq.com.au</a>
           </span>
         </footer>
       </div>

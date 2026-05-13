@@ -43,20 +43,18 @@ export function ArchitectTenderConfirmationEmail({
       </BodyText>
 
       <BodyText>
-        I&apos;ll be in touch personally within 24 hours with your dashboard
-        access and the draft project profile, prepared from the publicly
-        available planning application materials. Reply to that email with
-        any questions or context you&apos;d like reflected before builder
+        We&rsquo;ll be in touch within 24 hours with your dashboard access
+        and the draft project profile, prepared from the publicly available
+        planning application materials. Reply to that email with any
+        questions or context you&rsquo;d like reflected before builder
         outreach starts.
       </BodyText>
 
       <BodyText>
-        — Aryan Karkun
+        — The BuilderHQ team
         <br />
-        Founder, BuilderHQ
-        <br />
-        <InlineLink href="mailto:aryan@builderhq.com.au">
-          aryan@builderhq.com.au
+        <InlineLink href="mailto:info@builderhq.com.au">
+          info@builderhq.com.au
         </InlineLink>
       </BodyText>
     </EmailShell>

@@ -528,10 +528,11 @@ export async function sendArchitectTenderConfirmationEmail(
 
   const { data, error } = await resend.emails.send({
     from: env.EMAIL_FROM,
-    // Cold-outreach reply-to lands on Aryan personally — the email
-    // body invites a direct reply with project context, so we don't
-    // want that reply hitting the generic info@ shared inbox.
-    replyTo: "aryan@builderhq.com.au",
+    // No explicit reply-to — falls back to EMAIL_FROM
+    // (info@builderhq.com.au). The architect-facing flow is now
+    // de-personalised; replies route to the central inbox. Add a
+    // per-template replyTo back here if we ever re-introduce a
+    // founder-signed variant.
     to: input.to,
     subject,
     html,

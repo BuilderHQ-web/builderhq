@@ -1,35 +1,42 @@
-/* /architect-tender — editorial-tier confirmation page for a private
+/* /architect-tender — editorial-tier confirmation page for the private
  * cold-outreach campaign aimed at senior Melbourne architects.
  *
- * Design intent (from the brief, kept here as the canonical reference):
- *   · Editorial restraint above everything. Every element earns its
- *     place. Generous whitespace, not dense layouts.
- *   · Fraunces serif for headlines + italic accents. Inter for body.
- *   · Dark navy (#03090f) canvas. Off-white text. Teal (#00d4c8) used
- *     SPARINGLY — never more than 2-3 accents on screen at once.
- *   · Buttons are architectural, never consumer: 2px radius max,
- *     square edges, no pill shapes.
- *   · Form fields with quiet borders, generous padding, invisible-
- *     but-precise focus states.
- *   · Single 400ms fade-in on page load. No scroll animations, no
- *     parallax, no hover transforms beyond colour shifts.
- *   · Body line-height 1.6+. Body column max-width ~620px.
+ * V2 layout (per Aryan's review):
+ *   · Two-column hero/form composition on desktop — copy on the left,
+ *     form card on the right. Everything important above the fold; no
+ *     scrolling required to reach the action.
+ *   · Ambient backdrop from the (marketing)/guide design family —
+ *     three out-of-frame teal orbs + faint blueprint grid + subtle
+ *     noise. Adds atmosphere without breaking the editorial restraint
+ *     the brief demands.
+ *   · Council marquee band runs full-width below the main content as
+ *     a quiet legitimacy signal.
+ *   · Footer simplified — single info@builderhq.com.au contact, no
+ *     founder name (per Aryan's note).
  *
- * Reuses the brand colour tokens (`--g-*`) from the existing
- * theme.module.css under (marketing)/guide/. Conventions kept identical
- * so the family of pages reads as one publication.
+ * Restraint principles preserved from V1:
+ *   · Fraunces serif for headlines + italics. Inter for body.
+ *   · Teal touches still sparing — used for: eyebrow, italic "tender",
+ *     trust titles, form focus border, submit button. Five accents
+ *     total, never more than 3 visible at any one moment.
+ *   · 2px button radius. No glassmorphism. No bold weights as emphasis.
+ *   · Single 400ms fade-in on page load; the marquee runs continuously
+ *     at a calm 60s loop so it doesn't pull focus.
  */
 
-/* Token scope. Same tokens as (marketing)/guide/theme.module.css but
- * declared on the page root so this file is fully self-contained and
- * doesn't depend on the page also wiring in theme.module.css. */
+/* ─── Tokens (scoped to this page) ────────────────────────────────── */
+
 .body {
   --g-bg: #03090f;
+  --g-bg-deep: #060f19;
   --g-teal: #00d4c8;
   --g-text: rgba(255, 255, 255, 0.92);
+  --g-text-soft: rgba(255, 255, 255, 0.72);
+  --g-text-dim: rgba(255, 255, 255, 0.45);
   --g-serif: "Fraunces", Georgia, serif;
   --g-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 
+  position: relative;
   background: var(--g-bg);
   color: var(--g-text);
   font-family: var(--g-sans);
@@ -40,6 +47,7 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .body :global(*),
@@ -54,9 +62,71 @@
   color: #03090f;
 }
 
-/* Single subtle entrance — 400ms, ease-out, no stagger. The brief
- * was explicit: one fade-in only, no scroll animations. */
+/* ─── Ambient backdrop ───────────────────────────────────────────── */
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+.orb1 {
+  top: -260px;
+  right: -200px;
+  width: 720px;
+  height: 720px;
+  background: radial-gradient(circle, rgba(0, 212, 200, 0.16), transparent 65%);
+}
+.orb2 {
+  bottom: -320px;
+  left: -260px;
+  width: 820px;
+  height: 820px;
+  background: radial-gradient(circle, rgba(0, 212, 200, 0.09), transparent 65%);
+}
+.orb3 {
+  top: 28%;
+  left: 42%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(0, 212, 200, 0.05), transparent 70%);
+}
+.gridBg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 200, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 200, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 80%);
+}
+.noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ─── Single fade-in on mount ─────────────────────────────────────── */
+
 .fade {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   opacity: 0;
   transform: translateY(8px);
   animation: editorialFade 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -68,16 +138,17 @@
   }
 }
 
-/* ─── Top bar ──────────────────────────────────────────────────────── */
+/* ─── Top bar ─────────────────────────────────────────────────────── */
 
 .topbar {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 32px;
+  padding: 24px 48px;
   gap: 16px;
   flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .brand {
   display: inline-flex;
@@ -94,21 +165,34 @@
   white-space: nowrap;
 }
 
-/* ─── Main column ──────────────────────────────────────────────────── */
+/* ─── Main two-column ────────────────────────────────────────────── */
 
 .main {
   flex: 1;
   width: 100%;
-  max-width: 760px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 56px 32px 88px;
+  padding: 56px 48px 48px;
 }
 
-/* ─── Hero ─────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+    gap: 80px;
+    align-items: start;
+  }
+}
 
-.hero {
-  margin-top: 32px;
-  max-width: 720px;
+/* ─── Left column ────────────────────────────────────────────────── */
+
+.left {
+  display: flex;
+  flex-direction: column;
 }
 
 .eyebrow {
@@ -125,10 +209,10 @@
 .headline {
   font-family: var(--g-serif);
   font-weight: 400;
-  font-size: clamp(34px, 5vw + 0.5rem, 60px);
+  font-size: clamp(34px, 4.2vw + 0.5rem, 56px);
   line-height: 1.04;
   letter-spacing: -0.018em;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.96);
   margin-bottom: 24px;
 }
 .headlineItalic {
@@ -143,70 +227,153 @@
   font-size: 17px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.72);
-  max-width: 580px;
+  max-width: 540px;
+  margin-bottom: 44px;
 }
 
-/* ─── Section: why this exists ─────────────────────────────────────── */
+/* ─── Why this exists (compact, under hero) ──────────────────────── */
 
-.section {
-  margin-top: 88px;
+.why {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 32px;
+  max-width: 560px;
 }
 
 .sectionHeading {
   font-family: var(--g-serif);
   font-weight: 400;
-  font-size: clamp(22px, 1.6vw + 1rem, 28px);
-  letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.94);
-  margin-bottom: 28px;
+  font-size: 20px;
+  letter-spacing: -0.005em;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 18px;
 }
 
-.prose {
-  max-width: 620px;
-}
 .prose p {
   font-family: var(--g-sans);
-  font-size: 16.5px;
-  line-height: 1.72;
-  color: rgba(255, 255, 255, 0.78);
-  margin-bottom: 22px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 14px;
 }
 .prose p:last-child {
   margin-bottom: 0;
 }
 
-.separator {
-  border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.10);
-  max-width: 620px;
-  margin: 72px 0;
-  height: 0;
+/* ─── Trust row (in left column, below why) ──────────────────────── */
+
+.trust {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  margin-top: 40px;
+  max-width: 560px;
 }
-
-/* ─── Form ─────────────────────────────────────────────────────────── */
-
-.formIntro {
-  font-family: var(--g-sans);
+.trustItem + .trustItem {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 22px;
+}
+.trustItem {
+  padding-right: 22px;
+  display: flex;
+  flex-direction: column;
+}
+.trustItem:last-child {
+  padding-right: 0;
+}
+.trustTitle {
+  font-family: var(--g-serif);
   font-style: italic;
   font-weight: 400;
-  font-size: 14.5px;
+  font-size: 13.5px;
+  color: var(--g-teal);
+  margin-bottom: 6px;
+}
+.trustCopy {
+  font-family: var(--g-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.62);
+}
+
+@media (max-width: 720px) {
+  .trust {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .trustItem,
+  .trustItem + .trustItem {
+    padding-left: 0;
+    padding-right: 0;
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 14px;
+  }
+  .trustItem:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+/* ─── Right column: form card ────────────────────────────────────── */
+
+.formCard {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 22, 36, 0.65),
+    rgba(6, 15, 25, 0.85)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  padding: 36px 36px 32px;
+}
+.formCard::before {
+  /* The single accent touch on the form card — a hair-thin teal stroke
+   * at the top edge. Replaces any "card chrome" that would otherwise
+   * feel SaaS-y. */
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--g-teal),
+    transparent
+  );
+  opacity: 0.65;
+}
+
+.formCardHeader {
+  margin-bottom: 28px;
+}
+.formCardTitle {
+  font-family: var(--g-serif);
+  font-weight: 400;
+  font-size: 24px;
+  letter-spacing: -0.008em;
+  color: rgba(255, 255, 255, 0.96);
+  margin-bottom: 8px;
+}
+.formCardSub {
+  font-family: var(--g-sans);
+  font-style: italic;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.55;
-  margin-top: -10px;
-  margin-bottom: 36px;
-  max-width: 580px;
 }
 
 .form {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 22px;
-  max-width: 640px;
+  gap: 18px;
 }
-@media (min-width: 768px) {
+@media (min-width: 520px) {
   .form {
     grid-template-columns: 1fr 1fr;
-    gap: 22px 20px;
+    gap: 18px 16px;
   }
   .formFull {
     grid-column: 1 / -1;
@@ -219,36 +386,37 @@
 }
 .label {
   font-family: var(--g-sans);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
-  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.58);
+  margin-bottom: 8px;
 }
 .input {
   width: 100%;
-  background: #050d17;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(3, 9, 15, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 2px;
-  padding: 16px 16px;
+  padding: 14px 14px;
   font-family: var(--g-sans);
   font-size: 16px;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.95);
-  transition: border-color 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
   outline: none;
   -webkit-appearance: none;
-  min-height: 58px;
+  min-height: 54px;
 }
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.3);
 }
 .input:hover {
   border-color: rgba(255, 255, 255, 0.22);
 }
 .input:focus {
   border-color: var(--g-teal);
+  background: rgba(3, 9, 15, 0.85);
 }
 .input[aria-invalid="true"] {
   border-color: rgba(255, 122, 138, 0.55);
@@ -258,9 +426,9 @@
   font-family: var(--g-serif);
   font-style: italic;
   font-weight: 400;
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--g-teal);
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 /* ─── Consent checkbox ────────────────────────────────────────────── */
@@ -269,14 +437,12 @@
   grid-column: 1 / -1;
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 4px;
   cursor: pointer;
   user-select: none;
 }
 .consentInput {
-  /* Visually hidden, keyboard-reachable. The visible square is the
-   * .consentBox below, styled to brand. */
   position: absolute;
   opacity: 0;
   width: 1px;
@@ -287,7 +453,7 @@
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  margin-top: 3px;
+  margin-top: 2px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 2px;
   background: transparent;
@@ -316,30 +482,30 @@
 }
 .consentLabel {
   font-family: var(--g-sans);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.78);
-  max-width: 560px;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* ─── Submit ──────────────────────────────────────────────────────── */
 
 .submitRow {
   grid-column: 1 / -1;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 .submit {
   display: inline-flex;
+  width: 100%;
   align-items: center;
   justify-content: center;
-  padding: 18px 32px;
-  min-height: 58px;
+  padding: 16px 28px;
+  min-height: 56px;
   background: var(--g-teal);
   color: #03090f;
   border: 0;
   border-radius: 2px;
   font-family: var(--g-sans);
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -353,70 +519,121 @@
   opacity: 0.35;
   cursor: not-allowed;
 }
-
 .submitError {
   display: block;
-  margin-top: 14px;
+  margin-top: 12px;
   font-family: var(--g-serif);
   font-style: italic;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--g-teal);
 }
 
-/* ─── Trust row ───────────────────────────────────────────────────── */
+/* ─── Council marquee ─────────────────────────────────────────────── */
 
-.trust {
-  margin-top: 80px;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  max-width: 720px;
+.marquee {
+  position: relative;
+  z-index: 4;
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 28px 0;
+  overflow: hidden;
+  background: rgba(3, 9, 15, 0.4);
 }
-@media (min-width: 768px) {
-  .trust {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0;
-  }
-  .trustItem + .trustItem {
-    border-left: 1px solid rgba(255, 255, 255, 0.10);
-    padding-left: 28px;
-  }
-  .trustItem {
-    padding-right: 28px;
-  }
+.marqueeLabel {
+  text-align: center;
+  font-family: var(--g-sans);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-bottom: 22px;
 }
-.trustItem {
+.marqueeViewport {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+.marqueeTrack {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 64px;
+  width: max-content;
+  /* Continuous slow drift. -50% works because we render the items
+   * twice — when the first set has translated past, the second set is
+   * exactly where the first started, creating a seamless loop. */
+  animation: marqueeDrift 60s linear infinite;
 }
-.trustTitle {
+@keyframes marqueeDrift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marqueeItem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  height: 56px;
+  padding: 0 18px;
+}
+.marqueeLogo {
+  /* Default treatment for logo images, when supplied. Desaturate + dim
+   * so they read as quiet credibility cues, not promotional badges. */
+  max-height: 36px;
+  width: auto;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.55;
+  transition: opacity 220ms ease, filter 220ms ease;
+}
+.marqueeItem:hover .marqueeLogo {
+  filter: grayscale(0) brightness(1);
+  opacity: 0.95;
+}
+.marqueeWordmark {
+  /* Fallback wordmark for councils where we don't yet have the logo
+   * file. Set in Fraunces small caps so they read as a directory line,
+   * not an ad. Replaced with <img> once logo assets land. */
   font-family: var(--g-serif);
   font-style: italic;
   font-weight: 400;
-  font-size: 14px;
-  color: var(--g-teal);
-  margin-bottom: 8px;
-}
-.trustCopy {
-  font-family: var(--g-sans);
-  font-size: 13px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.68);
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
 }
 
 /* ─── Footer ──────────────────────────────────────────────────────── */
 
 .footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 36px 32px 44px;
+  position: relative;
+  z-index: 5;
+  padding: 28px 48px 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .footerRow {
   width: 100%;
-  max-width: 760px;
+  max-width: 1440px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
 }
 @media (min-width: 720px) {
   .footerRow {
@@ -428,59 +645,91 @@
 .footerBrand {
   font-family: var(--g-sans);
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
 .footerBrand span {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.32);
 }
-.footerAryan {
+.footerContact {
   font-family: var(--g-sans);
   font-size: 12.5px;
   color: rgba(255, 255, 255, 0.55);
 }
-.footerAryan a {
+.footerContact a {
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
 }
-.footerAryan a:hover {
+.footerContact a:hover {
   color: var(--g-teal);
 }
 .disclaimer {
   width: 100%;
-  max-width: 760px;
-  margin: 26px auto 0;
+  max-width: 1440px;
+  margin: 18px auto 0;
   font-family: var(--g-sans);
   font-size: 11px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.45);
-  max-width: 620px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.38);
+  max-width: 720px;
 }
 
-/* ─── Mobile-specific tightening ──────────────────────────────────── */
+/* ─── Tablet / mobile ────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .main {
+    padding: 40px 32px 40px;
+  }
+  .formCard {
+    padding: 32px 28px 28px;
+  }
+  .why {
+    margin-top: 8px;
+  }
+}
 
 @media (max-width: 720px) {
   .topbar {
-    padding: 20px 22px;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
   .invitation {
     font-size: 11.5px;
   }
   .main {
-    padding: 32px 22px 64px;
+    padding: 32px 22px 32px;
   }
-  .hero {
-    margin-top: 8px;
+  .grid {
+    gap: 36px;
   }
-  .section {
-    margin-top: 56px;
+  .headline {
+    font-size: clamp(30px, 7.5vw, 40px);
   }
-  .separator {
-    margin: 48px 0;
+  .subhead {
+    font-size: 15.5px;
+    margin-bottom: 32px;
+  }
+  .why {
+    padding-top: 24px;
+  }
+  .formCard {
+    padding: 26px 22px 24px;
+  }
+  .marquee {
+    padding: 22px 0;
+  }
+  .marqueeTrack {
+    gap: 44px;
+    /* Slow it slightly on mobile so small logos don't blur. */
+    animation-duration: 75s;
+  }
+  .marqueeItem {
+    min-width: 140px;
+    height: 48px;
   }
   .footer {
-    padding: 28px 22px 36px;
+    padding: 22px 22px 28px;
   }
 }
