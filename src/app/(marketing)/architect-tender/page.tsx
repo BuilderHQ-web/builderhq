@@ -45,20 +45,33 @@ export const metadata = {
 };
 
 /**
- * Placeholder council directory — text wordmarks while we wait on the
- * official logo files from Aryan. Swap `logoSrc` in for each entry as
- * the assets land in /public/brand/councils/. No data layer churn
- * required.
+ * Council directory used in the marquee. Order is tuned for visual
+ * rhythm — alternating wide horizontal wordmarks with taller stacked
+ * marks so the band doesn't feel like a column of one shape. All assets
+ * live in /public/brand/councils/, pre-processed to transparent
+ * backgrounds and trimmed to their bounding boxes.
+ *
+ * Each entry supports an optional `wide` flag so the marquee can give
+ * horizontal wordmarks a wider slot than stacked marks without making
+ * the CSS guess at aspect ratios. Defaults to `false` (stacked).
  */
-const COUNCILS = [
-  { name: "Moonee Valley City Council" },
-  { name: "Merri-bek City Council" },
-  { name: "City of Melbourne" },
-  { name: "City of Yarra" },
-  { name: "City of Port Phillip" },
-  { name: "Stonnington City Council" },
-  { name: "Glen Eira City Council" },
-  { name: "Bayside City Council" },
+type Council = {
+  name: string;
+  logoSrc: string;
+  /** True for horizontal wordmark logos that need a wider slot. */
+  wide?: boolean;
+};
+const COUNCILS: Council[] = [
+  { name: "Moonee Valley City Council", logoSrc: "/brand/councils/moonee-valley.png", wide: true },
+  { name: "City of Yarra", logoSrc: "/brand/councils/yarra.png" },
+  { name: "Merri-bek City Council", logoSrc: "/brand/councils/merri-bek.png", wide: true },
+  { name: "City of Darebin", logoSrc: "/brand/councils/darebin.png" },
+  { name: "Banyule City Council", logoSrc: "/brand/councils/banyule.png", wide: true },
+  { name: "City of Stonnington", logoSrc: "/brand/councils/stonnington.png" },
+  { name: "Maribyrnong City Council", logoSrc: "/brand/councils/maribyrnong.svg", wide: true },
+  { name: "Manningham City Council", logoSrc: "/brand/councils/manningham.png" },
+  { name: "Bayside City Council", logoSrc: "/brand/councils/bayside.png", wide: true },
+  { name: "City of Whitehorse", logoSrc: "/brand/councils/whitehorse.png" },
 ];
 
 export default function ArchitectTenderPage() {

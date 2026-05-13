@@ -530,52 +530,69 @@
 
 /* ─── Council marquee ─────────────────────────────────────────────── */
 
+/* The marquee is the second-most-visible element on this page after the
+ * form, so its restraint matters. Logos render as soft-white silhouettes
+ * by default — `brightness(0) invert(1)` collapses every brand colour
+ * into the same monochrome tone, so a navy Banyule and an orange Bayside
+ * read with equal visual weight. On hover, the filter falls away and
+ * the real council colour bloom feels like a quiet reveal. */
+
 .marquee {
   position: relative;
   z-index: 4;
-  margin-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 28px 0;
+  margin-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 36px 0 40px;
   overflow: hidden;
-  background: rgba(3, 9, 15, 0.4);
+  background:
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(0, 212, 200, 0.04),
+      transparent 70%
+    ),
+    rgba(3, 9, 15, 0.55);
 }
 .marqueeLabel {
   text-align: center;
   font-family: var(--g-sans);
   font-size: 10.5px;
-  letter-spacing: 0.22em;
+  font-weight: 500;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.42);
-  margin-bottom: 22px;
+  margin-bottom: 28px;
 }
 .marqueeViewport {
   position: relative;
   overflow: hidden;
+  /* Wider feathered fade so logos slide in/out of view gracefully
+   * rather than popping at a hard edge. */
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    black 8%,
-    black 92%,
+    black 12%,
+    black 88%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    black 8%,
-    black 92%,
+    black 12%,
+    black 88%,
     transparent 100%
   );
 }
 .marqueeTrack {
   display: flex;
   align-items: center;
-  gap: 64px;
+  gap: 72px;
   width: max-content;
   /* Continuous slow drift. -50% works because we render the items
    * twice — when the first set has translated past, the second set is
    * exactly where the first started, creating a seamless loop. */
-  animation: marqueeDrift 60s linear infinite;
+  animation: marqueeDrift 65s linear infinite;
+  will-change: transform;
 }
 @keyframes marqueeDrift {
   from {
@@ -585,38 +602,44 @@
     transform: translateX(-50%);
   }
 }
+
+/* Default item — stacked marks (Yarra, Darebin, Stonnington, Whitehorse,
+ * Manningham). Narrower slot, taller height so the vertical composition
+ * of mark + wordmark renders at meaningful size. */
 .marqueeItem {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 180px;
-  height: 56px;
-  padding: 0 18px;
+  flex-shrink: 0;
+  width: 140px;
+  height: 76px;
+  padding: 0 12px;
 }
+/* Horizontal wordmark variant — Moonee Valley, Merri-bek, Banyule,
+ * Bayside, Maribyrnong. These need a wider slot to breathe and render
+ * the wordmark legibly at marquee scale. */
+.marqueeItemWide {
+  width: 220px;
+}
+
 .marqueeLogo {
-  /* Default treatment for logo images, when supplied. Desaturate + dim
-   * so they read as quiet credibility cues, not promotional badges. */
-  max-height: 36px;
+  /* The silhouette treatment. brightness(0) crushes every pixel to pure
+   * black, invert(1) flips it to pure white — so colour information is
+   * thrown away entirely and we get a uniform mono treatment regardless
+   * of the source artwork. Opacity dials it back so it reads as a
+   * credibility band, not a badge wall. */
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
-  filter: grayscale(1) brightness(1.6);
-  opacity: 0.55;
-  transition: opacity 220ms ease, filter 220ms ease;
+  height: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.42;
+  transition: opacity 280ms ease, filter 280ms ease;
 }
 .marqueeItem:hover .marqueeLogo {
-  filter: grayscale(0) brightness(1);
-  opacity: 0.95;
-}
-.marqueeWordmark {
-  /* Fallback wordmark for councils where we don't yet have the logo
-   * file. Set in Fraunces small caps so they read as a directory line,
-   * not an ad. Replaced with <img> once logo assets land. */
-  font-family: var(--g-serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 18px;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.55);
-  white-space: nowrap;
+  filter: none;
+  opacity: 1;
 }
 
 /* ─── Footer ──────────────────────────────────────────────────────── */
@@ -718,16 +741,31 @@
     padding: 26px 22px 24px;
   }
   .marquee {
-    padding: 22px 0;
+    padding: 26px 0 30px;
+    margin-top: 24px;
+  }
+  .marqueeLabel {
+    margin-bottom: 20px;
+    font-size: 10px;
   }
   .marqueeTrack {
-    gap: 44px;
-    /* Slow it slightly on mobile so small logos don't blur. */
-    animation-duration: 75s;
+    gap: 52px;
+    /* Slightly slower so small logos don't blur in peripheral vision. */
+    animation-duration: 78s;
   }
   .marqueeItem {
-    min-width: 140px;
-    height: 48px;
+    width: 108px;
+    height: 60px;
+    padding: 0 8px;
+  }
+  .marqueeItemWide {
+    width: 168px;
+  }
+  .marqueeLogo {
+    /* On smaller screens leave the dim treatment slightly brighter —
+     * hover is touch-only and rarely fires, so we want the band to
+     * read well without interaction. */
+    opacity: 0.5;
   }
   .footer {
     padding: 22px 22px 28px;
