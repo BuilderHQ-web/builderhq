@@ -165,7 +165,7 @@ export default function ArchitectTenderPage() {
                       Independent
                     </span>
                     <span className={s.trustCopy}>
-                      Aligned with the architect, paid by no one on the trade side
+                      For the brief, not the builder
                     </span>
                   </div>
                   <div className={s.trustItem}>
