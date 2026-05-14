@@ -204,8 +204,12 @@ export function BuilderHome() {
   }
   if (!data) return null;
 
+  // Always greet the human, not the company. Company names can be 30+
+  // chars (e.g. "Synergy Building Group - VIC Pty Ltd") and break the
+  // Bebas display headline. Company appears as a smaller subline.
   const firstName = user?.name?.split(" ")[0] ?? null;
-  const headlineName = data.profile.companyName ?? firstName;
+  const headlineName = firstName;
+  const subCompany = data.profile.companyName;
 
   return (
     <Screen variant="flat" edges={["top"]}>
@@ -214,7 +218,7 @@ export function BuilderHome() {
         backdropStyle={headerBgStyle}
         centerSlot={
           <Animated.View style={headerTitleStyle}>
-            <HeaderTitle kicker="Dashboard" title={headlineName ?? "Home"} />
+            <HeaderTitle kicker="Dashboard" title={firstName ?? "Home"} />
           </Animated.View>
         }
       />
@@ -254,11 +258,14 @@ export function BuilderHome() {
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
             style={{
               color: colors.text,
               fontFamily: "BebasNeue_400Regular",
-              fontSize: 44,
-              lineHeight: 46,
+              fontSize: 48,
+              lineHeight: 50,
               letterSpacing: -0.6,
               marginTop: 6,
             }}
@@ -267,14 +274,33 @@ export function BuilderHome() {
             <Text style={{ color: colors.accentLight }}>.</Text>
           </Text>
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(160).duration(420).springify()}>
+        {subCompany ? (
+          <Animated.View
+            entering={FadeInUp.delay(140).duration(420).springify()}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.textFaint,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 12,
+                letterSpacing: 0.04,
+                fontWeight: "500",
+                marginTop: 4,
+              }}
+            >
+              {subCompany}
+            </Text>
+          </Animated.View>
+        ) : null}
+        <Animated.View entering={FadeInUp.delay(180).duration(420).springify()}>
           <Text
             style={{
               color: colors.textMuted,
               fontFamily: "DMSans_400Regular",
-              fontSize: 15,
-              lineHeight: 22,
-              marginTop: 8,
+              fontSize: 14.5,
+              lineHeight: 21,
+              marginTop: 10,
             }}
           >
             {subheadCopy(data)}

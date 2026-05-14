@@ -12,12 +12,12 @@
  */
 import { Redirect, Tabs } from "expo-router";
 import { Compass, Home, MessageCircle, User2 } from "lucide-react-native";
-import { StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { View } from "react-native";
 
 import { useAuth } from "@/lib/auth";
-import { canvasGradient, colors } from "@/lib/theme";
+import { colors } from "@/lib/theme";
 import { GlassTabBar } from "@/components/ui/glass-tab-bar";
+import { GridCanvas } from "@/components/ui/grid-canvas";
 
 export default function MainLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,13 +26,10 @@ export default function MainLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      {/* Canvas gradient — quiet vertical depth behind every tab. */}
-      <LinearGradient
-        colors={canvasGradient}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Page canvas — slate-navy gradient + faint blueprint grid +
+            soft teal/blue blooms. Mirrors the website's landing-page
+            background so the brand reads coherent across platforms. */}
+      <GridCanvas />
 
       <Tabs
         // Use our custom floating glass pill instead of the default

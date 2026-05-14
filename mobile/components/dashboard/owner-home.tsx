@@ -249,6 +249,9 @@ export function OwnerHome() {
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
             style={{
               color: colors.text,
               fontFamily: "BebasNeue_400Regular",

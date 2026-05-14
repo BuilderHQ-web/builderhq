@@ -1,22 +1,18 @@
 /**
- * <GlassTabBar /> — the floating, frosted, pill-shaped bottom tab
- * bar that replaces React Navigation's default tab bar.
+ * <GlassTabBar /> — App Store / Revolut style frosted floating tab bar.
  *
- * Design recipe:
- *   · Floats above the canvas with a margin from the screen edges +
- *     bottom safe area, so it reads as an interactive overlay rather
- *     than a fixed dock.
- *   · BlurView backdrop tinted toward the canvas — same trick the
- *     iOS native control center / dynamic island uses.
- *   · Active tab is rendered inside a gradient pill that slides into
- *     position with a Reanimated spring. The inactive tabs are just
- *     icon + label dimmed; the visual focus stays on the active pill.
- *   · Light haptic on every tab change (already wired in the route
- *     listener, but we also fire on the GlassTabBar press so direct
- *     consumers feel the same).
+ * Pattern (matches iOS App Store):
+ *   · Pill-shape with heavy backdrop blur — content scrolling under
+ *     gets blurred behind it, so the bar reads as an overlay.
+ *   · Every tab shows icon + label, always — no hiding-on-inactive
+ *     gymnastics that breaks layout.
+ *   · Active tab gets a soft white-glass pill behind it (subtle, not
+ *     a loud gradient) + the icon + label adopt the accent colour.
+ *   · Inactive tabs are dim text + dim icon.
  *
- * Wired into Expo Router via `tabBar={(props) => <GlassTabBar {...} />}`
- * on the parent <Tabs /> component.
+ * Floats with a margin from the screen edges + the bottom safe area
+ * so the gesture handler at the bottom of iPhones doesn't fight the
+ * tap area.
  */
 import { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -27,16 +23,15 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
 import { Frosted } from "./frosted";
-import { brandGradient, colors } from "@/lib/theme";
+import { colors } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
-const TAB_HEIGHT = 64;
-const PILL_HEIGHT = 50;
-const HORIZONTAL_MARGIN = 16;
+const TAB_HEIGHT = 62;
+const PILL_HEIGHT = 46;
+const HORIZONTAL_MARGIN = 14;
 
 export function GlassTabBar({
   state,
@@ -44,21 +39,18 @@ export function GlassTabBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  // Pull insets off the bottom — but keep at least 12px so the bar
-  // floats nicely on devices without home-indicator buffer.
-  const bottomPad = Math.max(insets.bottom, 12);
+  // Push the bar a little above the home indicator. iPhones with a
+  // notch get the safe area inset; older devices fall back to 12.
+  const bottomPad = Math.max(insets.bottom - 4, 12);
 
-  // Active-pill x-position. We compute the per-tab width from the
-  // measured bar width once the layout runs.
   const tabCount = state.routes.length;
-  const pillX = useSharedValue(0);
+  const pillX = useSharedValue(state.index);
 
-  // Sync the pill to the active index whenever it changes.
   useEffect(() => {
     pillX.value = withSpring(state.index, {
-      mass: 0.6,
+      mass: 0.5,
       damping: 16,
-      stiffness: 140,
+      stiffness: 160,
     });
   }, [state.index, pillX]);
 
@@ -75,25 +67,17 @@ export function GlassTabBar({
       <View
         style={{
           height: TAB_HEIGHT,
-          borderRadius: 32,
+          borderRadius: TAB_HEIGHT / 2,
           overflow: "hidden",
-          // Shadow gives the bar separation from the content scrolling
-          // beneath it. Stronger on iOS, fallback elevation on Android.
           shadowColor: "#000",
-          shadowOpacity: 0.35,
+          shadowOpacity: 0.45,
           shadowRadius: 24,
           shadowOffset: { width: 0, height: 12 },
-          elevation: 12,
+          elevation: 14,
         }}
       >
-        {/* Frosted-glass backdrop — solid tinted layer for now. When
-              we ship a dev-client build, swap to a real BlurView for
-              true backdrop blur. */}
-        <Frosted tint="deep" style={StyleSheet.absoluteFill} />
-        <View
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.glass2 }]}
-        />
-        {/* Hairline borders */}
+        <Frosted tint="deep" intensity={70} style={StyleSheet.absoluteFill} />
+        {/* Inner highlight on the top edge — the glass tell */}
         <View
           pointerEvents="none"
           style={{
@@ -102,24 +86,24 @@ export function GlassTabBar({
             left: 0,
             right: 0,
             height: 1,
-            backgroundColor: colors.glassEdge,
+            backgroundColor: "rgba(255, 255, 255, 0.10)",
           }}
         />
+        {/* Outer hairline border */}
         <View
           pointerEvents="none"
           style={{
             ...StyleSheet.absoluteFillObject,
-            borderRadius: 32,
+            borderRadius: TAB_HEIGHT / 2,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: "rgba(255, 255, 255, 0.06)",
           }}
         />
 
-        {/* Active pill — a sliding gradient pill that sits behind the
-              active tab's icon + label. */}
+        {/* The sliding active pill */}
         <ActivePill pillX={pillX} tabCount={tabCount} />
 
-        {/* Tabs */}
+        {/* Tab buttons */}
         <View style={{ flexDirection: "row", height: "100%" }}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key]!;
@@ -128,6 +112,7 @@ export function GlassTabBar({
               typeof options.tabBarLabel === "string"
                 ? options.tabBarLabel
                 : options.title ?? route.name;
+            const TabIcon = options.tabBarIcon;
 
             const onPress = () => {
               void haptics.tap();
@@ -144,8 +129,6 @@ export function GlassTabBar({
               navigation.emit({ type: "tabLongPress", target: route.key });
             };
 
-            const TabIcon = options.tabBarIcon;
-
             return (
               <Pressable
                 key={route.key}
@@ -158,31 +141,28 @@ export function GlassTabBar({
                   flex: 1,
                   alignItems: "center",
                   justifyContent: "center",
-                  flexDirection: "row",
-                  gap: 6,
+                  gap: 3,
                 }}
               >
                 {TabIcon ? (
                   <TabIcon
                     focused={focused}
-                    color={focused ? colors.text : colors.textMuted}
+                    color={focused ? colors.accentLight : colors.textMuted}
                     size={20}
                   />
                 ) : null}
-                {focused ? (
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontFamily: "SpaceGrotesk_500Medium",
-                      fontSize: 12,
-                      fontWeight: "600",
-                      letterSpacing: 0.02,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {typeof label === "string" ? label : ""}
-                  </Text>
-                ) : null}
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: focused ? colors.accentLight : colors.textMuted,
+                    fontFamily: "SpaceGrotesk_500Medium",
+                    fontSize: 10,
+                    fontWeight: focused ? "600" : "500",
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {typeof label === "string" ? label : ""}
+                </Text>
               </Pressable>
             );
           })}
@@ -193,9 +173,9 @@ export function GlassTabBar({
 }
 
 /**
- * The animated gradient pill that sits behind the active tab. Width
- * grows so labels can fit; inactive tabs hide their label so the row
- * doesn't get crowded.
+ * The active pill — a soft semi-transparent glass-on-glass surface
+ * that slides between tab positions. Subtle on purpose; the icon +
+ * label tint do most of the work.
  */
 function ActivePill({
   pillX,
@@ -204,13 +184,10 @@ function ActivePill({
   pillX: SharedValue<number>;
   tabCount: number;
 }) {
-  const animatedStyle = useAnimatedStyle(() => {
-    // Tab slots are equal width; pill centres in the active slot.
-    return {
-      left: `${(100 / tabCount) * pillX.value}%`,
-      width: `${100 / tabCount}%`,
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    left: `${(100 / tabCount) * pillX.value}%`,
+    width: `${100 / tabCount}%`,
+  }));
 
   return (
     <Animated.View
@@ -229,29 +206,11 @@ function ActivePill({
         style={{
           flex: 1,
           borderRadius: PILL_HEIGHT / 2,
-          overflow: "hidden",
-          shadowColor: colors.accent,
-          shadowOpacity: 0.45,
-          shadowRadius: 14,
-          shadowOffset: { width: 0, height: 4 },
+          backgroundColor: "rgba(255, 255, 255, 0.08)",
+          borderWidth: 1,
+          borderColor: "rgba(255, 255, 255, 0.12)",
         }}
-      >
-        <LinearGradient
-          colors={brandGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Inner glow */}
-        <View
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            borderRadius: PILL_HEIGHT / 2,
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.22)",
-          }}
-        />
-      </View>
+      />
     </Animated.View>
   );
 }
