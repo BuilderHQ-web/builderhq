@@ -13,46 +13,70 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand canvas — dark-only. Mirrors src/app/globals.css @theme block on web.
-        bg: "#03090f",
-        "bg-deep": "#060f19",
-        "bg-raised": "#0c1726",
-        "bg-elev": "#101e32",
+        // ── Dark canvas (v2 — warmer, deeper, gradient-friendly) ──────
+        //
+        // The base sits between Starlink's near-black and Revolut's
+        // slate-purple — a deep navy with a hair of warmth so the
+        // teal/blue accents pop instead of disappearing. App _layout
+        // pairs this token with a top-to-bottom LinearGradient so the
+        // bg gently shifts hue as the eye travels.
+        bg: "#0a0d1a",
+        "bg-deep": "#06080f",
+        "bg-tint": "#10162a", // lower stop of the page gradient
+        "bg-raised": "#141a2e",
+        "bg-elev": "#1a2240",
 
-        "surface-1": "#0c1726",
-        "surface-2": "#142539",
-        "surface-3": "#1c3046",
-        "surface-hover": "#243a52",
+        // ── Glass surfaces (paired with <BlurView intensity={60-80} />) ──
+        // The rgba values are read by Glass primitives and StyleSheet
+        // entries — Tailwind drops these into inline styles at build.
+        "glass-1": "rgba(255, 255, 255, 0.04)",
+        "glass-2": "rgba(255, 255, 255, 0.07)",
+        "glass-3": "rgba(255, 255, 255, 0.10)",
+        "glass-edge": "rgba(255, 255, 255, 0.14)", // top-inner highlight
 
-        // Brand-tinted borders (blueprint-blue, not neutral grey)
-        "border-subtle": "rgba(100, 180, 255, 0.06)",
-        border: "rgba(100, 180, 255, 0.10)",
-        "border-strong": "rgba(100, 180, 255, 0.18)",
-        "border-accent": "rgba(0, 212, 200, 0.30)",
-        "border-accent-strong": "rgba(0, 212, 200, 0.45)",
+        // ── Borders — neutral white-tinged so glass reads premium ──
+        "border-subtle": "rgba(255, 255, 255, 0.06)",
+        border: "rgba(255, 255, 255, 0.10)",
+        "border-strong": "rgba(255, 255, 255, 0.18)",
+        "border-accent": "rgba(0, 212, 200, 0.40)",
+        "border-accent-strong": "rgba(0, 212, 200, 0.65)",
+        "border-blue": "rgba(76, 144, 255, 0.40)",
 
-        // Text — premium screen-white
-        text: "#eef6ff",
-        "text-muted": "#98b8d0",
-        "text-subtle": "rgba(238, 246, 255, 0.62)",
-        "text-faint": "rgba(238, 246, 255, 0.42)",
-        "text-dim": "#567080",
-        "text-inverse": "#031118",
+        // ── Text ──
+        text: "#f5f7ff",
+        "text-muted": "#a8b3cf",
+        "text-subtle": "rgba(245, 247, 255, 0.62)",
+        "text-faint": "rgba(245, 247, 255, 0.42)",
+        "text-dim": "#697296",
+        "text-inverse": "#06080f",
 
-        // Accent — BuilderHQ teal
+        // ── Accent — teal stays as the primary brand mark, but the
+        // light/glow stops are tuned brighter for the new canvas.
         accent: "#00d4c8",
-        "accent-hover": "#6df0e8",
-        "accent-active": "#4cd9d2",
-        "accent-muted": "rgba(0, 212, 200, 0.14)",
-        "accent-glow": "rgba(0, 212, 200, 0.35)",
-        "accent-light": "#7ef5ed",
+        "accent-hover": "#22e3d8",
+        "accent-active": "#00b9ae",
+        "accent-muted": "rgba(0, 212, 200, 0.16)",
+        "accent-glow": "rgba(0, 212, 200, 0.45)",
+        "accent-light": "#7df5ed",
         "accent-contrast": "#031118",
 
-        // Secondary brand blue
-        blue: "#1a5fd4",
-        "blue-glow": "rgba(26, 95, 212, 0.30)",
+        // ── Secondary brand — vibrant blue ──
+        // The website's brand blue is `#1a5fd4`; the mobile palette
+        // ships a brighter complement (#3b82f6) for energy, plus a
+        // light stop for highlight states. Paired with teal in the
+        // gradient system to feel alive.
+        blue: "#3b82f6",
+        "blue-hover": "#5d97f8",
+        "blue-light": "#7eb1ff",
+        "blue-glow": "rgba(59, 130, 246, 0.40)",
+        "blue-muted": "rgba(59, 130, 246, 0.16)",
 
-        // Semantic
+        // ── Hero gradient stops (for LinearGradient props) ──
+        "grad-from": "#00d4c8",
+        "grad-via": "#1ea3f0",
+        "grad-to": "#3b82f6",
+
+        // ── Semantic ──
         success: "#86efac",
         "success-muted": "rgba(134, 239, 172, 0.14)",
         warning: "#fbb840",

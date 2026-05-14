@@ -1,46 +1,60 @@
 /**
- * <BuilderHome /> — the builder mobile dashboard.
+ * <BuilderHome /> — v2 builder home.
  *
- * Hierarchy of attention:
- *   1. Hero — time-of-day greeting + company name in Bebas display.
- *   2. FBA card — the single most important read for a builder: do I
- *      have free credits left this cycle? Highly visible band with the
- *      remaining count + days to refresh. Renders an "inactive" state
- *      when the grant has lapsed or never existed.
- *   3. Stat tiles — active tenders, unlocked projects, saved projects.
- *      Tap-targets ready for the corresponding screens once they land.
- *   4. New for you — top suggested in-area projects. The "open the app
- *      to see what's new" surface that drives daily return visits.
- *   5. My tenders — active submissions with status pills.
- *   6. Recently unlocked — quick re-entry into projects already opened.
- *   7. Activity — last 10 notifications.
+ * Premium glassmorphic dashboard for builders. Layout:
+ *   1. Hero greeting + name (Bebas display).
+ *   2. FBA gradient hero — the headline number on a brand-gradient
+ *      card. Inactive grant shows a muted glass card with the reason.
+ *   3. 3-up secondary stats — active tenders, unlocked, saved.
+ *   4. "For you" horizontal swipe of service-area-matched projects.
+ *   5. "My tenders" vertical glass-card list.
+ *   6. Recent activity feed.
  *
- * Native UX rituals identical to OwnerHome — pull-to-refresh, light
- * haptic on every tap, staggered Reanimated FadeInUp entrances,
- * skeleton on first paint, dedicated empty states per section.
+ * Same UX rituals as OwnerHome: sticky BlurHeader, pull-to-refresh,
+ * Reanimated stagger, haptics, floating tab bar buffer.
  */
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
-import { router } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, {
+  FadeInUp,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  ArrowRight,
+  Bell,
   Building,
   ChevronRight,
   FileText,
   Home as HomeIcon,
   Inbox,
   Layers,
+  Lock,
+  MapPin,
   Sparkles,
+  TrendingUp,
   Wrench,
   Zap,
-  TrendingUp,
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
+import { GlassCard } from "@/components/ui/glass-card";
+import { BlurHeader, HeaderTitle } from "@/components/ui/blur-header";
 import { useAuth } from "@/lib/auth";
 import { haptics } from "@/lib/haptics";
 import { useBuilderDashboard } from "@/lib/dashboard";
-
+import { brandGradient, colors } from "@/lib/theme";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
 import type {
@@ -50,7 +64,9 @@ import type {
   BuilderTenderListItem,
 } from "./types";
 
-// ── Helpers ──────────────────────────────────────────────────────────
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+// ── Mappings ────────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -67,14 +83,21 @@ const BUDGET_LABEL: Record<string, string> = {
   "3m_5m": "$3M – $5M",
   over_5m: "Over $5M",
 };
-
-const TENDER_TONE: Record<string, { bg: string; ring: string; text: string }> = {
-  draft: { bg: "rgba(238,246,255,0.06)", ring: "rgba(238,246,255,0.12)", text: "#98b8d0" },
-  submitted: { bg: "rgba(0,212,200,0.10)", ring: "rgba(0,212,200,0.30)", text: "#7ef5ed" },
-  shortlisted: { bg: "rgba(125,211,252,0.10)", ring: "rgba(125,211,252,0.30)", text: "#7dd3fc" },
-  awarded: { bg: "rgba(134,239,172,0.10)", ring: "rgba(134,239,172,0.30)", text: "#86efac" },
-  rejected: { bg: "rgba(255,122,138,0.10)", ring: "rgba(255,122,138,0.30)", text: "#ff7a8a" },
-  withdrawn: { bg: "rgba(238,246,255,0.04)", ring: "rgba(238,246,255,0.08)", text: "#567080" },
+const TENDER_GRAD: Record<string, [string, string]> = {
+  draft: ["rgba(168, 179, 207, 0.10)", "rgba(168, 179, 207, 0.18)"],
+  submitted: ["rgba(0, 212, 200, 0.20)", "rgba(0, 212, 200, 0.32)"],
+  shortlisted: ["rgba(125, 211, 252, 0.20)", "rgba(125, 211, 252, 0.32)"],
+  awarded: ["rgba(134, 239, 172, 0.22)", "rgba(134, 239, 172, 0.36)"],
+  rejected: ["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"],
+  withdrawn: ["rgba(255, 255, 255, 0.06)", "rgba(255, 255, 255, 0.10)"],
+};
+const TENDER_TEXT: Record<string, string> = {
+  draft: "#a8b3cf",
+  submitted: "#7df5ed",
+  shortlisted: "#7dd3fc",
+  awarded: "#86efac",
+  rejected: "#ff7a8a",
+  withdrawn: "#697296",
 };
 const TENDER_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -97,18 +120,16 @@ function relativeTime(iso: string, now = Date.now()): string {
   const diff = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
   if (diff < 60) return "just now";
   const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  const w = Math.floor(d / 7);
-  if (w < 5) return `${w}w ago`;
-  return `${Math.floor(d / 30)}mo ago`;
+  if (d < 7) return `${d}d`;
+  return `${Math.floor(d / 7)}w`;
 }
 
-function projectTypeIcon(type: string, size = 14) {
-  const p = { size, color: "#7ef5ed", strokeWidth: 1.6 };
+function projectTypeIcon(type: string, size = 14, color: string = colors.accentLight) {
+  const p = { size, color, strokeWidth: 1.6 };
   switch (type) {
     case "single_dwelling":
       return <HomeIcon {...p} />;
@@ -128,13 +149,29 @@ function navigateToProject(slug: string) {
   router.push(`/(main)/projects/${slug}` as never);
 }
 
-// ── Screen ───────────────────────────────────────────────────────────
+// ── Screen ──────────────────────────────────────────────────────────
 
 export function BuilderHome() {
   const { user } = useAuth();
   const { data, isLoading, error, refetch } = useBuilderDashboard();
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
+  const headerBgStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [60, 110], [0, 1], "clamp"),
+  }));
+  const headerTitleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [80, 130], [0, 1], "clamp"),
+    transform: [
+      { translateY: interpolate(scrollY.value, [80, 130], [4, 0], "clamp") },
+    ],
+  }));
 
   useEffect(() => {
     const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
@@ -168,225 +205,235 @@ export function BuilderHome() {
   if (!data) return null;
 
   const firstName = user?.name?.split(" ")[0] ?? null;
-  const companyName = data.profile.companyName;
-  const headlineName = companyName ?? firstName;
+  const headlineName = data.profile.companyName ?? firstName;
 
   return (
-    <Screen variant="flat">
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 16,
-          paddingBottom: 56,
-        }}
+    <Screen variant="flat" edges={["top"]}>
+      <BlurHeader
+        hideBack
+        backdropStyle={headerBgStyle}
+        centerSlot={
+          <Animated.View style={headerTitleStyle}>
+            <HeaderTitle kicker="Dashboard" title={headlineName ?? "Home"} />
+          </Animated.View>
+        }
+      />
+
+      <AnimatedScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: 72,
+          paddingHorizontal: 20,
+          paddingBottom: 120,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#7ef5ed"
-            colors={["#7ef5ed"]}
-            progressBackgroundColor="#0c1726"
+            tintColor={colors.accentLight}
+            progressBackgroundColor={colors.bgRaised}
           />
         }
       >
         {/* Hero */}
         <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
-          <Text className="text-accent text-[10.5px] tracking-[0.24em] uppercase font-ui font-medium">
-            Dashboard
+          <Text
+            style={{
+              color: colors.accent,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10.5,
+              letterSpacing: 2.6,
+              textTransform: "uppercase",
+              fontWeight: "600",
+            }}
+          >
+            {greeting}
           </Text>
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
-          <Text className="text-text font-display tracking-[-0.018em] text-[44px] leading-[0.95] mt-3">
-            {greeting}
-            {headlineName ? (
-              <>
-                {", "}
-                <Text className="text-accent-light">{headlineName}</Text>
-              </>
-            ) : null}
-            <Text className="text-accent-light">.</Text>
+          <Text
+            style={{
+              color: colors.text,
+              fontFamily: "BebasNeue_400Regular",
+              fontSize: 44,
+              lineHeight: 46,
+              letterSpacing: -0.6,
+              marginTop: 6,
+            }}
+          >
+            {headlineName ?? "Builder"}
+            <Text style={{ color: colors.accentLight }}>.</Text>
           </Text>
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(160).duration(420).springify()}>
-          <Text className="text-text-muted text-[15px] leading-[22px] mt-3">
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontFamily: "DMSans_400Regular",
+              fontSize: 15,
+              lineHeight: 22,
+              marginTop: 8,
+            }}
+          >
             {subheadCopy(data)}
           </Text>
         </Animated.View>
 
-        {/* FBA strip */}
+        {/* FBA hero card */}
         <Animated.View
-          entering={FadeInUp.delay(220).duration(440).springify()}
-          className="mt-8"
+          entering={FadeInUp.delay(220).duration(460).springify()}
+          style={{ marginTop: 24 }}
         >
-          <FbaCard fba={data.fba} />
+          <FbaHeroCard fba={data.fba} />
         </Animated.View>
 
-        {/* Stat strip */}
+        {/* Secondary stats */}
         <Animated.View
           entering={FadeInUp.delay(280).duration(440).springify()}
-          className="mt-4"
+          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
         >
-          <View className="flex-row gap-3">
-            <StatTile
-              label="Active tenders"
-              value={data.stats.activeTenders}
-              tone={data.stats.activeTenders > 0 ? "accent" : "neutral"}
-            />
-            <StatTile
-              label="Unlocked"
-              value={data.stats.unlockedProjects}
-              tone="neutral"
-            />
-            <StatTile
-              label="Saved"
-              value={data.stats.savedProjects}
-              tone="neutral"
-            />
-          </View>
+          <MiniStat
+            label="Tenders"
+            value={data.stats.activeTenders}
+            accent={data.stats.activeTenders > 0}
+          />
+          <MiniStat label="Unlocked" value={data.stats.unlockedProjects} />
+          <MiniStat label="Saved" value={data.stats.savedProjects} />
         </Animated.View>
 
-        {/* New for you */}
+        {/* For you carousel */}
         <Animated.View
           entering={FadeInUp.delay(340).duration(440).springify()}
-          className="mt-10"
+          style={{ marginTop: 32 }}
         >
           <SectionHeader
             kicker="For you"
             title={
               data.suggested.length === 0
-                ? "Nothing in your area yet"
+                ? "Nothing matched"
                 : "New on the marketplace"
             }
             ctaLabel="Browse all"
-            ctaIcon={<Sparkles size={14} color="#031118" strokeWidth={2} />}
             onCta={() => {
               void haptics.tap();
               router.push("/(main)/browse");
             }}
           />
-          {data.suggested.length === 0 ? (
+        </Animated.View>
+
+        {data.suggested.length === 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(440).springify()}
+            style={{ marginTop: 14 }}
+          >
             <EmptyState
-              icon={<Sparkles size={20} color="#7ef5ed" strokeWidth={1.6} />}
+              icon={<Sparkles size={20} color={colors.accentLight} strokeWidth={1.6} />}
               title="No new matches"
               copy="Add or expand your service areas to see more projects here."
             />
-          ) : (
-            <View className="mt-4 gap-3">
-              {data.suggested.map((p, i) => (
-                <Animated.View
-                  key={p.id}
-                  entering={FadeInUp.delay(380 + i * 50)
-                    .duration(420)
-                    .springify()}
-                >
-                  <MarketProjectCard project={p} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
-        </Animated.View>
+          </Animated.View>
+        ) : (
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(440).springify()}
+            style={{ marginTop: 14, marginHorizontal: -20 }}
+          >
+            <ProjectCarousel projects={data.suggested} />
+          </Animated.View>
+        )}
 
         {/* My tenders */}
         <Animated.View
-          entering={FadeInUp.delay(440).duration(440).springify()}
-          className="mt-10"
+          entering={FadeInUp.delay(480).duration(440).springify()}
+          style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="My tenders"
             title={
               data.myTenders.length === 0
-                ? "No active submissions"
+                ? "No submissions yet"
                 : `${data.myTenders.length} in flight`
             }
           />
-          {data.myTenders.length === 0 ? (
-            <EmptyState
-              icon={<FileText size={18} color="#567080" strokeWidth={1.6} />}
-              copy="Tenders you draft or submit will appear here, ranked by status."
-            />
-          ) : (
-            <View className="mt-4 gap-2">
-              {data.myTenders.map((t, i) => (
-                <Animated.View
-                  key={t.id}
-                  entering={FadeInUp.delay(480 + i * 40)
-                    .duration(380)
-                    .springify()}
-                >
-                  <TenderRow tender={t} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
         </Animated.View>
+        {data.myTenders.length === 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(520).duration(440).springify()}
+            style={{ marginTop: 14 }}
+          >
+            <EmptyState
+              icon={<FileText size={18} color={colors.textDim} strokeWidth={1.6} />}
+              copy="Tenders you draft or submit will appear here, sorted by status."
+            />
+          </Animated.View>
+        ) : (
+          <View style={{ marginTop: 14, gap: 10 }}>
+            {data.myTenders.map((t, i) => (
+              <Animated.View
+                key={t.id}
+                entering={FadeInUp.delay(540 + i * 40).duration(380).springify()}
+              >
+                <TenderCard tender={t} />
+              </Animated.View>
+            ))}
+          </View>
+        )}
 
         {/* Recently unlocked */}
-        <Animated.View
-          entering={FadeInUp.delay(540).duration(440).springify()}
-          className="mt-10"
-        >
-          <SectionHeader
-            kicker="Recently unlocked"
-            title={
-              data.unlocked.length === 0
-                ? "Nothing yet"
-                : "Pick up where you left off"
-            }
-          />
-          {data.unlocked.length === 0 ? (
-            <EmptyState
-              icon={<Zap size={18} color="#567080" strokeWidth={1.6} />}
-              copy="Projects you unlock will live here for quick re-entry."
-            />
-          ) : (
-            <View className="mt-4 gap-3">
-              {data.unlocked.map((p, i) => (
-                <Animated.View
-                  key={p.id}
-                  entering={FadeInUp.delay(580 + i * 40)
-                    .duration(380)
-                    .springify()}
-                >
-                  <MarketProjectCard project={p} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
-        </Animated.View>
+        {data.unlocked.length > 0 ? (
+          <>
+            <Animated.View
+              entering={FadeInUp.delay(600).duration(440).springify()}
+              style={{ marginTop: 36 }}
+            >
+              <SectionHeader
+                kicker="Recently unlocked"
+                title="Pick up where you left off"
+              />
+            </Animated.View>
+            <Animated.View
+              entering={FadeInUp.delay(640).duration(440).springify()}
+              style={{ marginTop: 14, marginHorizontal: -20 }}
+            >
+              <ProjectCarousel projects={data.unlocked} />
+            </Animated.View>
+          </>
+        ) : null}
 
         {/* Activity */}
         <Animated.View
-          entering={FadeInUp.delay(640).duration(440).springify()}
-          className="mt-10"
+          entering={FadeInUp.delay(700).duration(440).springify()}
+          style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="Activity"
-            title={
-              data.activity.length === 0 ? "Quiet so far" : "Recent updates"
-            }
+            title={data.activity.length === 0 ? "Quiet so far" : "Latest updates"}
           />
-          {data.activity.length === 0 ? (
+        </Animated.View>
+        {data.activity.length === 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(740).duration(440).springify()}
+            style={{ marginTop: 14 }}
+          >
             <EmptyState
-              icon={<Inbox size={18} color="#567080" strokeWidth={1.6} />}
+              icon={<Inbox size={18} color={colors.textDim} strokeWidth={1.6} />}
               copy="Tender outcomes, new projects, and messages will land here."
             />
-          ) : (
-            <View className="mt-4">
-              {data.activity.map((a, i) => (
-                <Animated.View
-                  key={a.id}
-                  entering={FadeInUp.delay(680 + i * 30)
-                    .duration(360)
-                    .springify()}
-                >
-                  <ActivityRow item={a} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
-        </Animated.View>
-      </ScrollView>
+          </Animated.View>
+        ) : (
+          <View style={{ marginTop: 14, gap: 10 }}>
+            {data.activity.map((a, i) => (
+              <Animated.View
+                key={a.id}
+                entering={FadeInUp.delay(760 + i * 30).duration(360).springify()}
+              >
+                <ActivityRow item={a} />
+              </Animated.View>
+            ))}
+          </View>
+        )}
+      </AnimatedScrollView>
     </Screen>
   );
 }
@@ -401,12 +448,12 @@ function subheadCopy(data: BuilderDashboardPayload): string {
   if (data.stats.unlockedProjects > 0) {
     return "No new matches right now — your unlocked projects are below.";
   }
-  return "Stay tuned — new projects land here as soon as they go live.";
+  return "Stay tuned — new projects land here as soon as they're live.";
 }
 
-// ── FBA card ─────────────────────────────────────────────────────────
+// ── FBA hero ────────────────────────────────────────────────────────
 
-function FbaCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
+function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
   if (!fba.active) {
     const reason =
       fba.reason === "no_grant"
@@ -415,240 +462,555 @@ function FbaCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
           ? "Your Founding Builder Access has ended."
           : "Founding Builder Access was revoked.";
     return (
-      <View
-        className="rounded-xl border bg-surface-1/40 px-4 py-4"
-        style={{ borderColor: "rgba(100,180,255,0.10)" }}
-      >
-        <View className="flex-row items-center gap-2">
-          <Zap size={14} color="#567080" strokeWidth={1.6} />
-          <Text className="text-text-faint text-[10.5px] tracking-[0.22em] uppercase font-ui font-medium">
+      <GlassCard padding={22} radius={28}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Zap size={14} color={colors.textDim} strokeWidth={1.6} />
+          <Text
+            style={{
+              color: colors.textFaint,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10.5,
+              letterSpacing: 2.2,
+              textTransform: "uppercase",
+              fontWeight: "600",
+            }}
+          >
             Founding access
           </Text>
         </View>
-        <Text className="text-text-muted text-[13.5px] leading-[19px] mt-2.5">
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 13.5,
+            lineHeight: 19,
+            marginTop: 10,
+          }}
+        >
           {reason} Unlocks are charged per project.
         </Text>
-      </View>
+      </GlassCard>
     );
   }
 
-  // Active grant — show the headline number plus a refresh stat.
   return (
     <View
-      className="rounded-xl border px-4 py-4"
       style={{
-        backgroundColor: "rgba(0, 212, 200, 0.06)",
-        borderColor: "rgba(0, 212, 200, 0.30)",
+        borderRadius: 28,
+        overflow: "hidden",
+        shadowColor: colors.accent,
+        shadowOpacity: 0.40,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 12 },
+        elevation: 12,
       }}
     >
-      <View className="flex-row items-center gap-2">
-        <Zap size={14} color="#7ef5ed" strokeWidth={1.6} />
-        <Text className="text-accent text-[10.5px] tracking-[0.22em] uppercase font-ui font-medium">
-          Founding access
-        </Text>
-        <Text className="text-text-dim text-[10.5px]">·</Text>
-        <Text className="text-text-faint text-[10.5px] tracking-[0.16em] uppercase font-ui">
-          Cycle {fba.cycleIndex + 1} / {fba.totalCycles}
-        </Text>
-      </View>
+      <LinearGradient
+        colors={brandGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ padding: 22 }}
+      >
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.30)",
+          }}
+        />
+        <View
+          pointerEvents="none"
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            borderRadius: 28,
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.18)",
+          }}
+        />
 
-      <View className="flex-row items-end gap-4 mt-3">
-        <View>
-          <Text className="font-display text-[44px] leading-[0.9] text-accent-light tracking-[-0.005em]">
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Zap size={14} color={colors.textInverse} strokeWidth={2} />
+          <Text
+            style={{
+              color: "rgba(3, 17, 24, 0.75)",
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10.5,
+              letterSpacing: 2.2,
+              textTransform: "uppercase",
+              fontWeight: "700",
+            }}
+          >
+            Founding access · Cycle {fba.cycleIndex + 1}/{fba.totalCycles}
+          </Text>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            marginTop: 10,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.textInverse,
+              fontFamily: "BebasNeue_400Regular",
+              fontSize: 78,
+              lineHeight: 78,
+              letterSpacing: -1,
+            }}
+          >
             {fba.remainingThisCycle}
           </Text>
-          <Text className="text-text-muted text-[11.5px] mt-1">
-            of {fba.monthlyQuota} free unlocks left
+          <Text
+            style={{
+              color: "rgba(3, 17, 24, 0.65)",
+              fontFamily: "DMSans_400Regular",
+              fontSize: 13,
+              marginLeft: 8,
+              marginBottom: 10,
+            }}
+          >
+            / {fba.monthlyQuota} free unlocks left
           </Text>
         </View>
-        <View className="flex-1 items-end">
-          <Text className="text-text-faint text-[10px] tracking-[0.18em] uppercase font-ui">
-            Refresh in
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 8,
+          }}
+        >
+          <Text
+            style={{
+              color: "rgba(3, 17, 24, 0.72)",
+              fontFamily: "DMSans_400Regular",
+              fontSize: 12.5,
+            }}
+          >
+            Refresh in {fba.daysToRefresh} {fba.daysToRefresh === 1 ? "day" : "days"}
           </Text>
-          <Text className="text-text font-ui font-semibold text-[14.5px] mt-1">
-            {fba.daysToRefresh} {fba.daysToRefresh === 1 ? "day" : "days"}
-          </Text>
+          {fba.totalSavedAud > 0 ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <TrendingUp size={11} color="rgba(3, 17, 24, 0.65)" strokeWidth={2} />
+              <Text
+                style={{
+                  color: "rgba(3, 17, 24, 0.72)",
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 12.5,
+                }}
+              >
+                Saved ${fba.totalSavedAud.toLocaleString("en-AU")}
+              </Text>
+            </View>
+          ) : null}
         </View>
-      </View>
-
-      {fba.totalSavedAud > 0 ? (
-        <View className="flex-row items-center gap-1.5 mt-3">
-          <TrendingUp size={11} color="#86efac" strokeWidth={1.6} />
-          <Text className="text-text-muted text-[11.5px]">
-            Saved ${fba.totalSavedAud.toLocaleString("en-AU")} so far
-          </Text>
-        </View>
-      ) : null}
+      </LinearGradient>
     </View>
   );
 }
 
-// ── Section header ───────────────────────────────────────────────────
+// ── Secondary stat tile (glass) ─────────────────────────────────────
+
+function MiniStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
+  return (
+    <View style={{ flex: 1 }}>
+      <GlassCard variant={accent ? "accent" : "default"} padding={14} radius={18}>
+        <Text
+          style={{
+            color: colors.textFaint,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 9.5,
+            letterSpacing: 1.8,
+            textTransform: "uppercase",
+            fontWeight: "600",
+          }}
+        >
+          {label}
+        </Text>
+        <Text
+          style={{
+            color: accent ? colors.accentLight : colors.text,
+            fontFamily: "BebasNeue_400Regular",
+            fontSize: 32,
+            lineHeight: 34,
+            letterSpacing: -0.4,
+            marginTop: 6,
+          }}
+        >
+          {value}
+        </Text>
+      </GlassCard>
+    </View>
+  );
+}
+
+// ── Section header ──────────────────────────────────────────────────
 
 function SectionHeader({
   kicker,
   title,
   ctaLabel,
-  ctaIcon,
   onCta,
 }: {
   kicker: string;
   title: string;
   ctaLabel?: string;
-  ctaIcon?: React.ReactNode;
   onCta?: () => void;
 }) {
   return (
-    <View className="flex-row items-end justify-between">
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+      }}
+    >
       <View>
-        <Text className="text-accent text-[10px] tracking-[0.22em] uppercase font-ui font-medium">
+        <Text
+          style={{
+            color: colors.accent,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            letterSpacing: 2.2,
+            textTransform: "uppercase",
+            fontWeight: "600",
+          }}
+        >
           {kicker}
         </Text>
-        <Text className="text-text font-ui font-semibold text-[16px] tracking-[-0.005em] mt-1">
+        <Text
+          style={{
+            color: colors.text,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 18,
+            letterSpacing: -0.2,
+            fontWeight: "600",
+            marginTop: 4,
+          }}
+        >
           {title}
         </Text>
       </View>
       {ctaLabel && onCta ? (
         <Pressable
           onPress={onCta}
-          accessibilityRole="button"
-          accessibilityLabel={ctaLabel}
-          className="flex-row items-center gap-1.5 h-9 px-3 rounded-md bg-accent active:bg-accent-active"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            height: 32,
+            paddingHorizontal: 12,
+            borderRadius: 16,
+            backgroundColor: colors.accentMuted,
+            borderWidth: 1,
+            borderColor: colors.borderAccent,
+          }}
         >
-          {ctaIcon}
-          <Text className="text-accent-contrast font-ui font-semibold text-[12.5px]">
+          <Text
+            style={{
+              color: colors.accentLight,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 12,
+              fontWeight: "600",
+            }}
+          >
             {ctaLabel}
           </Text>
+          <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-// ── Stat tile ────────────────────────────────────────────────────────
+// ── Project carousel + card ─────────────────────────────────────────
 
-function StatTile({
-  label,
-  value,
-  tone,
+function ProjectCarousel({
+  projects,
 }: {
-  label: string;
-  value: number;
-  tone: "neutral" | "accent";
+  projects: BuilderProjectListItem[];
 }) {
-  const accent = tone === "accent";
+  const [page, setPage] = useState(0);
+  const onScrollEnd = useCallback(
+    (e: {
+      nativeEvent: {
+        contentOffset: { x: number };
+        layoutMeasurement: { width: number };
+      };
+    }) => {
+      const idx = Math.round(
+        e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
+      );
+      if (idx !== page) {
+        setPage(idx);
+        void haptics.select();
+      }
+    },
+    [page],
+  );
   return (
-    <View
-      className="flex-1 rounded-xl border bg-surface-1/40 px-3.5 py-3.5"
-      style={{
-        borderColor: accent
-          ? "rgba(0, 212, 200, 0.30)"
-          : "rgba(100, 180, 255, 0.10)",
-      }}
-    >
-      <Text className="text-text-faint text-[9px] tracking-[0.16em] uppercase font-ui font-medium">
-        {label}
-      </Text>
-      <Text
-        className="font-display text-[28px] leading-[1.0] mt-1.5 tracking-[-0.005em]"
-        style={{ color: accent ? "#7ef5ed" : "#eef6ff" }}
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToAlignment="start"
+        onMomentumScrollEnd={onScrollEnd}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
       >
-        {value}
-      </Text>
+        {projects.map((p) => (
+          <View key={p.id} style={{ width: 320 }}>
+            <BuilderProjectCard project={p} />
+          </View>
+        ))}
+      </ScrollView>
+      {projects.length > 1 ? (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 14,
+          }}
+        >
+          {projects.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: i === page ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor:
+                  i === page ? colors.accentLight : "rgba(255, 255, 255, 0.16)",
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-// ── Project card ─────────────────────────────────────────────────────
-
-function MarketProjectCard({ project }: { project: BuilderProjectListItem }) {
+function BuilderProjectCard({ project }: { project: BuilderProjectListItem }) {
   const isFull = project.unlockedCount >= 3;
-  const location = [project.suburb, project.state].filter(Boolean).join(", ");
   const typeLabel = TYPE_LABEL[project.type] ?? project.type;
   const budgetLabel = project.budgetBand
-    ? BUDGET_LABEL[project.budgetBand] ?? project.budgetBand
+    ? BUDGET_LABEL[project.budgetBand]
     : null;
+  const location = [project.suburb, project.state].filter(Boolean).join(", ");
 
   return (
-    <Pressable
+    <GlassCard
       onPress={() => navigateToProject(project.slug)}
-      accessibilityRole="button"
-      accessibilityLabel={`${project.title}, ${typeLabel}`}
-      className="rounded-xl border border-border bg-surface-1/40 px-4 py-4 active:bg-surface-1/70"
+      padding={18}
+      radius={24}
     >
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 min-w-0">
-          <View className="flex-row items-center gap-2">
-            {projectTypeIcon(project.type)}
-            <Text className="text-text-muted text-[11.5px] font-ui">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {projectTypeIcon(project.type, 12)}
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 11,
+              }}
+            >
               {typeLabel}
             </Text>
           </View>
           <Text
-            className="text-text font-ui font-semibold text-[16px] tracking-[-0.005em] mt-1.5"
-            numberOfLines={1}
+            numberOfLines={2}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 18,
+              fontWeight: "600",
+              letterSpacing: -0.2,
+              marginTop: 8,
+            }}
           >
             {project.title}
           </Text>
           {location ? (
-            <Text className="text-text-faint text-[12.5px] mt-0.5" numberOfLines={1}>
-              {location}
-            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: colors.textMuted,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 12.5,
+                }}
+              >
+                {location}
+              </Text>
+            </View>
           ) : null}
         </View>
 
-        {isFull ? (
-          <View
-            className="px-2.5 h-7 rounded-full justify-center border"
-            style={{
-              backgroundColor: "rgba(255, 122, 138, 0.10)",
-              borderColor: "rgba(255, 122, 138, 0.30)",
-            }}
-          >
-            <Text
-              className="text-[9.5px] tracking-[0.18em] uppercase font-ui font-semibold"
-              style={{ color: "#ff7a8a" }}
-            >
-              Full
-            </Text>
-          </View>
-        ) : (
-          <View
-            className="px-2.5 h-7 rounded-full justify-center border"
-            style={{
-              backgroundColor: "rgba(0, 212, 200, 0.10)",
-              borderColor: "rgba(0, 212, 200, 0.30)",
-            }}
-          >
-            <Text
-              className="text-[9.5px] tracking-[0.18em] uppercase font-ui font-semibold"
-              style={{ color: "#7ef5ed" }}
-            >
-              {project.unlockedCount}/3
-            </Text>
-          </View>
-        )}
+        {/* Slot pill */}
+        <SlotPill unlockedCount={project.unlockedCount} isFull={isFull} />
       </View>
 
-      <View className="flex-row items-center gap-4 mt-4">
-        {budgetLabel ? (
-          <ProjectStat label="Budget" value={budgetLabel} />
-        ) : null}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 14,
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: colors.borderSubtle,
+        }}
+      >
+        {budgetLabel ? <StatChip label="Budget" value={budgetLabel} /> : null}
         {project.bedrooms != null ? (
-          <ProjectStat label="Bed" value={project.bedrooms} />
+          <StatChip label="Bed" value={project.bedrooms} />
         ) : null}
         {project.bathrooms != null ? (
-          <ProjectStat label="Bath" value={project.bathrooms} />
+          <StatChip label="Bath" value={project.bathrooms} />
         ) : null}
-        <View className="ml-auto">
-          <ChevronRight size={16} color="#567080" strokeWidth={1.7} />
+        <View style={{ marginLeft: "auto" }}>
+          <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
         </View>
       </View>
-    </Pressable>
+    </GlassCard>
   );
 }
 
-function ProjectStat({
+function SlotPill({
+  unlockedCount,
+  isFull,
+}: {
+  unlockedCount: number;
+  isFull: boolean;
+}) {
+  if (isFull) {
+    return (
+      <View
+        style={{
+          borderRadius: 14,
+          overflow: "hidden",
+        }}
+      >
+        <LinearGradient
+          colors={["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.16)",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <Lock size={10} color={colors.danger} strokeWidth={2} />
+          <Text
+            style={{
+              color: colors.danger,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 9.5,
+              letterSpacing: 1.6,
+              textTransform: "uppercase",
+              fontWeight: "700",
+            }}
+          >
+            Full
+          </Text>
+        </LinearGradient>
+      </View>
+    );
+  }
+  return (
+    <View style={{ borderRadius: 14, overflow: "hidden" }}>
+      <LinearGradient
+        colors={["rgba(0, 212, 200, 0.20)", "rgba(0, 212, 200, 0.34)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: "rgba(255, 255, 255, 0.18)",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <View style={{ flexDirection: "row", gap: 3 }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: 2.5,
+                backgroundColor:
+                  i < unlockedCount
+                    ? colors.accentLight
+                    : "rgba(125, 245, 237, 0.25)",
+              }}
+            />
+          ))}
+        </View>
+        <Text
+          style={{
+            color: colors.accentLight,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 9.5,
+            letterSpacing: 1.6,
+            textTransform: "uppercase",
+            fontWeight: "700",
+          }}
+        >
+          {unlockedCount}/3
+        </Text>
+      </LinearGradient>
+    </View>
+  );
+}
+
+function StatChip({
   label,
   value,
 }: {
@@ -657,131 +1019,239 @@ function ProjectStat({
 }) {
   return (
     <View>
-      <Text className="text-text-faint text-[9px] tracking-[0.16em] uppercase font-ui">
+      <Text
+        style={{
+          color: colors.textFaint,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 8.5,
+          letterSpacing: 1.6,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </Text>
-      <Text className="font-ui font-semibold text-[12.5px] mt-0.5 text-text">
+      <Text
+        style={{
+          color: colors.text,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 12.5,
+          fontWeight: "600",
+          marginTop: 2,
+        }}
+      >
         {value}
       </Text>
     </View>
   );
 }
 
-// ── Tender row ───────────────────────────────────────────────────────
+// ── Tender card ─────────────────────────────────────────────────────
 
-function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
-  const tone = TENDER_TONE[tender.status] ?? TENDER_TONE.draft!;
+function TenderCard({ tender }: { tender: BuilderTenderListItem }) {
+  const grad = TENDER_GRAD[tender.status] ?? TENDER_GRAD.draft!;
+  const textColor = TENDER_TEXT[tender.status] ?? "#a8b3cf";
   const label = TENDER_LABEL[tender.status] ?? tender.status;
   return (
-    <Pressable
+    <GlassCard
       onPress={() => navigateToProject(tender.projectSlug)}
-      className="rounded-xl border border-border bg-surface-1/40 px-4 py-3.5 active:bg-surface-1/70"
+      padding={16}
+      radius={20}
     >
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 min-w-0">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text
-            className="text-text font-ui font-semibold text-[14px]"
             numberOfLines={1}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 14.5,
+              fontWeight: "600",
+            }}
           >
             {tender.projectTitle}
           </Text>
-          <View className="flex-row items-center gap-2 mt-1">
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 4,
+            }}
+          >
             {tender.totalPriceAud != null ? (
-              <Text className="text-text-faint text-[11.5px]">
+              <Text
+                style={{
+                  color: colors.textMuted,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 12,
+                }}
+              >
                 ${tender.totalPriceAud.toLocaleString("en-AU")}
               </Text>
             ) : null}
             {tender.durationWeeks != null ? (
               <>
                 {tender.totalPriceAud != null ? (
-                  <Text className="text-text-dim text-[11.5px]">·</Text>
+                  <Text style={{ color: colors.textDim, fontSize: 12 }}>·</Text>
                 ) : null}
-                <Text className="text-text-faint text-[11.5px]">
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    fontFamily: "DMSans_400Regular",
+                    fontSize: 12,
+                  }}
+                >
                   {tender.durationWeeks} wks
                 </Text>
               </>
             ) : null}
             {tender.submittedAt ? (
               <>
-                <Text className="text-text-dim text-[11.5px]">·</Text>
-                <Text className="text-text-faint text-[11.5px]">
+                <Text style={{ color: colors.textDim, fontSize: 12 }}>·</Text>
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    fontFamily: "DMSans_400Regular",
+                    fontSize: 12,
+                  }}
+                >
                   {relativeTime(tender.submittedAt)}
                 </Text>
               </>
             ) : null}
           </View>
         </View>
-        <View
-          className="px-2 h-6 rounded-full justify-center border"
-          style={{ backgroundColor: tone.bg, borderColor: tone.ring }}
-        >
-          <Text
-            className="text-[9.5px] tracking-[0.16em] uppercase font-ui font-semibold"
-            style={{ color: tone.text }}
+        <View style={{ borderRadius: 14, overflow: "hidden" }}>
+          <LinearGradient
+            colors={grad}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.16)",
+            }}
           >
-            {label}
-          </Text>
+            <Text
+              style={{
+                color: textColor,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 9.5,
+                letterSpacing: 1.6,
+                textTransform: "uppercase",
+                fontWeight: "700",
+              }}
+            >
+              {label}
+            </Text>
+          </LinearGradient>
         </View>
       </View>
-    </Pressable>
+    </GlassCard>
   );
 }
 
-// ── Activity row ─────────────────────────────────────────────────────
+// ── Activity ────────────────────────────────────────────────────────
 
 function ActivityRow({ item }: { item: ActivityItem }) {
   const unread = !item.readAt;
+  const Icon = useMemo(() => {
+    if (item.kind.includes("message")) return Bell;
+    if (item.kind.includes("tender") || item.kind.includes("award"))
+      return FileText;
+    if (item.kind.includes("unlock")) return Sparkles;
+    return Bell;
+  }, [item.kind]);
+
+  const onPress = useCallback(() => {
+    void haptics.tap();
+    if (!item.actionUrl) return;
+    try {
+      const u = new URL(item.actionUrl);
+      router.push(u.pathname as never);
+    } catch {}
+  }, [item.actionUrl]);
+
   return (
-    <Pressable
-      onPress={() => {
-        void haptics.tap();
-        if (!item.actionUrl) return;
-        try {
-          const u = new URL(item.actionUrl);
-          router.push(u.pathname as never);
-        } catch {}
-      }}
-      disabled={!item.actionUrl}
-      className="flex-row items-start gap-3 py-3 active:bg-surface-1/30 rounded-md"
+    <GlassCard
+      onPress={item.actionUrl ? onPress : undefined}
+      padding={14}
+      radius={18}
+      variant={unread ? "accent" : "default"}
     >
-      <View
-        className="size-7 rounded-full items-center justify-center border"
-        style={{
-          backgroundColor: unread
-            ? "rgba(0, 212, 200, 0.10)"
-            : "rgba(100, 180, 255, 0.04)",
-          borderColor: unread
-            ? "rgba(0, 212, 200, 0.30)"
-            : "rgba(100, 180, 255, 0.10)",
-        }}
-      >
-        <FileText size={14} color={unread ? "#7ef5ed" : "#98b8d0"} strokeWidth={1.6} />
-      </View>
-      <View className="flex-1 min-w-0">
-        <Text
-          className="text-text font-ui text-[13.5px] leading-[18px]"
-          numberOfLines={2}
-          style={{ fontWeight: unread ? "600" : "400" }}
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: unread
+              ? "rgba(0, 212, 200, 0.18)"
+              : "rgba(255, 255, 255, 0.05)",
+            borderWidth: 1,
+            borderColor: unread ? colors.borderAccent : colors.borderSubtle,
+          }}
         >
-          {item.title}
-        </Text>
-        {item.body ? (
+          <Icon
+            size={15}
+            color={unread ? colors.accentLight : colors.textMuted}
+            strokeWidth={1.6}
+          />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text
-            className="text-text-faint text-[12px] leading-[16px] mt-0.5"
-            numberOfLines={1}
+            numberOfLines={2}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 13.5,
+              lineHeight: 18,
+              fontWeight: unread ? "600" : "500",
+            }}
           >
-            {item.body}
+            {item.title}
           </Text>
-        ) : null}
+          {item.body ? (
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.textFaint,
+                fontFamily: "DMSans_400Regular",
+                fontSize: 12,
+                marginTop: 2,
+              }}
+            >
+              {item.body}
+            </Text>
+          ) : null}
+        </View>
+        <Text
+          style={{
+            color: colors.textDim,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 10.5,
+            marginTop: 2,
+          }}
+        >
+          {relativeTime(item.createdAt)}
+        </Text>
       </View>
-      <Text className="text-text-dim text-[10.5px] mt-1">
-        {relativeTime(item.createdAt)}
-      </Text>
-    </Pressable>
+    </GlassCard>
   );
 }
 
-// ── Empty state ──────────────────────────────────────────────────────
+// ── Empty state ─────────────────────────────────────────────────────
 
 function EmptyState({
   icon,
@@ -793,21 +1263,50 @@ function EmptyState({
   copy: string;
 }) {
   return (
-    <View className="mt-4 rounded-xl border border-border-subtle bg-surface-1/30 px-5 py-6 items-center">
-      <View
-        className="size-10 rounded-full border border-border-subtle items-center justify-center"
-        style={{ backgroundColor: "rgba(255,255,255,0.018)" }}
-      >
-        {icon}
-      </View>
-      {title ? (
-        <Text className="text-text font-display text-[18px] tracking-[-0.005em] uppercase mt-3">
-          {title}
+    <GlassCard padding={24} radius={20}>
+      <View style={{ alignItems: "center" }}>
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: colors.borderSubtle,
+            backgroundColor: "rgba(255, 255, 255, 0.04)",
+          }}
+        >
+          {icon}
+        </View>
+        {title ? (
+          <Text
+            style={{
+              color: colors.text,
+              fontFamily: "BebasNeue_400Regular",
+              fontSize: 22,
+              letterSpacing: -0.3,
+              marginTop: 12,
+              textTransform: "uppercase",
+            }}
+          >
+            {title}
+          </Text>
+        ) : null}
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 12.5,
+            lineHeight: 19,
+            textAlign: "center",
+            marginTop: 6,
+            maxWidth: 260,
+          }}
+        >
+          {copy}
         </Text>
-      ) : null}
-      <Text className="text-text-muted text-[12.5px] leading-[19px] text-center mt-2 max-w-[280px]">
-        {copy}
-      </Text>
-    </View>
+      </View>
+    </GlassCard>
   );
 }

@@ -19,7 +19,8 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#03090f" },
+        // Match the v2 canvas — slate-navy with a hair of warmth.
+        contentStyle: { backgroundColor: "#0a0d1a" },
         animation: "slide_from_right",
       }}
     />

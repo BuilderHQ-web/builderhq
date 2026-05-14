@@ -68,7 +68,10 @@ export function Screen(props: FlatProps | ScrollProps) {
     );
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={edges}>
+    // Transparent canvas — the parent (main)/_layout owns the
+    // page-level gradient so individual screens don't paint over it.
+    // The auth flow paints its own dark bg via its own layout.
+    <SafeAreaView style={{ flex: 1 }} edges={edges}>
       <StatusBar style="light" />
       {Platform.OS === "ios" ? (
         <KeyboardAvoidingView behavior="padding" className="flex-1">

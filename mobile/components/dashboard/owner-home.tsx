@@ -1,70 +1,78 @@
 /**
- * <OwnerHome /> — the project-owner mobile dashboard.
+ * <OwnerHome /> — v2 owner home.
  *
- * Hierarchy of attention (top to bottom):
- *   1. Hero — "Good morning, Aryan." Time-of-day-aware greeting in
- *      Bebas display so the surface feels editorial, not SaaS.
- *   2. Stat strip — 2×2 grid of the only four numbers an owner asks
- *      themselves: active projects, drafts, tenders received, unread
- *      messages. Tappable, with subtle gradient borders for the live
- *      teal one (unread > 0 / tenders > 0).
- *   3. Projects — vertical cards, each tap → project detail (route
- *      lands in the next pass). Status pill, suburb, three inline
- *      stats per card.
- *   4. Activity — timeline of the last 8-12 notifications. Soft
- *      icons per kind, relative time ("2h ago"), tap → action url.
+ * Premium glassmorphic dashboard. Layout:
+ *   1. Hero greeting — kicker + name in display type + status pill.
+ *   2. Brand-gradient hero stat card with the headline number (active
+ *      projects). Drop shadow + inner highlight read as "hero".
+ *   3. 3-up secondary stat tiles (glass cards) — drafts, tenders,
+ *      unread. Tap into the respective tab.
+ *   4. "Your projects" horizontal swipe carousel of glass cards —
+ *      premium-feel paging. Project title, status pill, three inline
+ *      stats. Pagination dots underneath.
+ *   5. "Recent activity" glass feed list.
  *
- * Native UX rituals baked in:
- *   · SafeArea on top + bottom (Screen wrapper)
- *   · Pull-to-refresh (RefreshControl + haptic burst on release)
- *   · Light haptic on every nav tap
- *   · Reanimated entrance — staggered FadeInUp on each section
- *   · prefers-reduced-motion friendly (animations short, idle state
- *     fully accessible)
- *   · Empty states: illustrative, never a blank screen
+ * UX rituals:
+ *   · Horizontal swipe on projects (Uber/Airbnb-style)
+ *   · Pull-to-refresh
+ *   · Light haptics on every tap
+ *   · Sticky animated BlurHeader (fills in as user scrolls past the
+ *     hero) with kicker + name in the centre slot
+ *   · Reanimated FadeInUp stagger on every section
  *
- * Data: useOwnerDashboard hook owns the fetch + refresh state. Empty
- * arrays render dedicated empty-state cards. No spinners — only
- * skeletons during initial load.
+ * Content padding accounts for the floating tab bar at the bottom
+ * (88px buffer).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import {
+  ArrowRight,
   Bell,
+  Building,
   ChevronRight,
   FileText,
   Home as HomeIcon,
   Inbox,
   Layers,
+  MapPin,
   MessageSquare,
-  Plus,
   Sparkles,
   Wrench,
-  Building,
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
+import { GlassCard } from "@/components/ui/glass-card";
+import { BlurHeader, HeaderTitle } from "@/components/ui/blur-header";
 import { useAuth } from "@/lib/auth";
 import { haptics } from "@/lib/haptics";
 import { useOwnerDashboard } from "@/lib/dashboard";
-
+import { brandGradient, colors } from "@/lib/theme";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
 import type {
   ActivityItem,
-  OwnerDashboardStats,
   OwnerProjectListItem,
 } from "./types";
 
-// ── Helpers ──────────────────────────────────────────────────────────
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+// ── Mapping tables ──────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -72,7 +80,6 @@ const TYPE_LABEL: Record<string, string> = {
   renovation: "Renovation",
   extension: "Extension",
 };
-
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   published: "Live",
@@ -81,39 +88,21 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Archived",
   rejected: "Rejected",
 };
-
-/** Status pill colour tokens. */
-const STATUS_TONE: Record<string, { bg: string; ring: string; text: string }> = {
-  draft: {
-    bg: "rgba(238, 246, 255, 0.06)",
-    ring: "rgba(238, 246, 255, 0.12)",
-    text: "#98b8d0",
-  },
-  published: {
-    bg: "rgba(0, 212, 200, 0.10)",
-    ring: "rgba(0, 212, 200, 0.30)",
-    text: "#7ef5ed",
-  },
-  tendering: {
-    bg: "rgba(0, 212, 200, 0.14)",
-    ring: "rgba(0, 212, 200, 0.45)",
-    text: "#00d4c8",
-  },
-  awarded: {
-    bg: "rgba(134, 239, 172, 0.10)",
-    ring: "rgba(134, 239, 172, 0.30)",
-    text: "#86efac",
-  },
-  archived: {
-    bg: "rgba(238, 246, 255, 0.04)",
-    ring: "rgba(238, 246, 255, 0.08)",
-    text: "#567080",
-  },
-  rejected: {
-    bg: "rgba(255, 122, 138, 0.10)",
-    ring: "rgba(255, 122, 138, 0.30)",
-    text: "#ff7a8a",
-  },
+const STATUS_GRAD: Record<string, [string, string]> = {
+  draft: ["rgba(168, 179, 207, 0.10)", "rgba(168, 179, 207, 0.18)"],
+  published: ["rgba(0, 212, 200, 0.18)", "rgba(0, 212, 200, 0.32)"],
+  tendering: ["rgba(0, 212, 200, 0.25)", "rgba(59, 130, 246, 0.30)"],
+  awarded: ["rgba(134, 239, 172, 0.20)", "rgba(134, 239, 172, 0.34)"],
+  archived: ["rgba(255, 255, 255, 0.06)", "rgba(255, 255, 255, 0.10)"],
+  rejected: ["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"],
+};
+const STATUS_TEXT: Record<string, string> = {
+  draft: "#a8b3cf",
+  published: "#7df5ed",
+  tendering: "#7df5ed",
+  awarded: "#86efac",
+  archived: "#697296",
+  rejected: "#ff7a8a",
 };
 
 function timeOfDayGreeting(now = new Date()): string {
@@ -125,47 +114,34 @@ function timeOfDayGreeting(now = new Date()): string {
 }
 
 function relativeTime(iso: string, now = Date.now()): string {
-  const diffSec = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
-  if (diffSec < 60) return "just now";
-  const m = Math.floor(diffSec / 60);
-  if (m < 60) return `${m}m ago`;
+  const diff = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
+  if (diff < 60) return "just now";
+  const m = Math.floor(diff / 60);
+  if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  const w = Math.floor(d / 7);
-  if (w < 5) return `${w}w ago`;
-  const mo = Math.floor(d / 30);
-  if (mo < 12) return `${mo}mo ago`;
-  return `${Math.floor(d / 365)}y ago`;
+  if (d < 7) return `${d}d`;
+  return `${Math.floor(d / 7)}w`;
 }
 
-function projectTypeIcon(type: string) {
-  const props = { size: 16, color: "#7ef5ed", strokeWidth: 1.6 };
+function projectTypeIcon(type: string, size = 14, color: string = colors.text) {
+  const p = { size, color, strokeWidth: 1.6 };
   switch (type) {
     case "single_dwelling":
-      return <HomeIcon {...props} />;
+      return <HomeIcon {...p} />;
     case "multi_dwelling":
-      return <Building {...props} />;
+      return <Building {...p} />;
     case "renovation":
-      return <Wrench {...props} />;
+      return <Wrench {...p} />;
     case "extension":
-      return <Layers {...props} />;
+      return <Layers {...p} />;
     default:
-      return <HomeIcon {...props} />;
+      return <HomeIcon {...p} />;
   }
 }
 
-function activityIcon(kind: string) {
-  const props = { size: 14, color: "#98b8d0", strokeWidth: 1.7 };
-  if (kind.includes("message")) return <MessageSquare {...props} />;
-  if (kind.includes("tender") || kind.includes("award"))
-    return <FileText {...props} />;
-  if (kind.includes("unlock")) return <Sparkles {...props} />;
-  return <Bell {...props} />;
-}
-
-// ── Screen ───────────────────────────────────────────────────────────
+// ── Screen ──────────────────────────────────────────────────────────
 
 export function OwnerHome() {
   const { user } = useAuth();
@@ -173,8 +149,24 @@ export function OwnerHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
 
-  // Recompute greeting every minute so it stays correct across the
-  // morning→afternoon→evening boundaries while the user has the app open.
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
+
+  // Sticky header materialises past 100px of scroll.
+  const headerBgStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [60, 110], [0, 1], "clamp"),
+  }));
+  const headerTitleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [80, 130], [0, 1], "clamp"),
+    transform: [
+      { translateY: interpolate(scrollY.value, [80, 130], [4, 0], "clamp") },
+    ],
+  }));
+
   useEffect(() => {
     const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
     return () => clearInterval(id);
@@ -190,7 +182,6 @@ export function OwnerHome() {
     }
   }, [refetch]);
 
-  // ── Initial load skeleton ──
   if (isLoading && !data) {
     return (
       <Screen variant="flat">
@@ -198,8 +189,6 @@ export function OwnerHome() {
       </Screen>
     );
   }
-
-  // ── Hard error ──
   if (error && !data) {
     return (
       <Screen variant="flat">
@@ -211,150 +200,380 @@ export function OwnerHome() {
   const stats = data?.stats;
   const projects = data?.projects ?? [];
   const activity = data?.activity ?? [];
-
   const firstName = user?.name?.split(" ")[0] ?? null;
 
   return (
-    <Screen variant="flat">
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 16,
-          paddingBottom: 56,
-        }}
+    <Screen variant="flat" edges={["top"]}>
+      <BlurHeader
+        hideBack
+        backdropStyle={headerBgStyle}
+        centerSlot={
+          <Animated.View style={headerTitleStyle}>
+            <HeaderTitle kicker="Dashboard" title={firstName ?? "Home"} />
+          </Animated.View>
+        }
+      />
+
+      <AnimatedScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: 72,
+          paddingHorizontal: 20,
+          paddingBottom: 120, // floating tab bar buffer
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#7ef5ed"
-            colors={["#7ef5ed"]}
-            progressBackgroundColor="#0c1726"
+            tintColor={colors.accentLight}
+            progressBackgroundColor={colors.bgRaised}
           />
         }
       >
         {/* Hero */}
         <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
-          <Text className="text-accent text-[10.5px] tracking-[0.24em] uppercase font-ui font-medium">
-            Dashboard
+          <Text
+            style={{
+              color: colors.accent,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10.5,
+              letterSpacing: 2.6,
+              textTransform: "uppercase",
+              fontWeight: "600",
+            }}
+          >
+            {greeting}
           </Text>
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
-          <Text className="text-text font-display tracking-[-0.018em] text-[44px] leading-[0.95] mt-3">
-            {greeting}
-            {firstName ? (
-              <>
-                {", "}
-                <Text className="text-accent-light">{firstName}</Text>
-              </>
-            ) : null}
-            <Text className="text-accent-light">.</Text>
+          <Text
+            style={{
+              color: colors.text,
+              fontFamily: "BebasNeue_400Regular",
+              fontSize: 48,
+              lineHeight: 50,
+              letterSpacing: -0.6,
+              marginTop: 6,
+            }}
+          >
+            {firstName ?? "Welcome"}
+            <Text style={{ color: colors.accentLight }}>.</Text>
           </Text>
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(160).duration(420).springify()}>
-          <Text className="text-text-muted text-[15px] leading-[22px] mt-3">
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontFamily: "DMSans_400Regular",
+              fontSize: 15,
+              lineHeight: 22,
+              marginTop: 8,
+            }}
+          >
             {projects.length === 0
               ? "Let's get your first project onboarded."
               : `${projects.length} ${projects.length === 1 ? "project" : "projects"} on the go.`}
           </Text>
         </Animated.View>
 
-        {/* Stat strip */}
+        {/* Hero stat card — brand gradient */}
         <Animated.View
-          entering={FadeInUp.delay(220).duration(440).springify()}
-          className="mt-8"
+          entering={FadeInUp.delay(220).duration(460).springify()}
+          style={{ marginTop: 24 }}
         >
-          <StatRow stats={stats} />
+          <HeroStatCard stats={stats} projects={projects} />
         </Animated.View>
 
-        {/* Projects */}
+        {/* Secondary stats */}
         <Animated.View
           entering={FadeInUp.delay(280).duration(440).springify()}
-          className="mt-10"
+          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
         >
-          <SectionHeader
-            kicker="Your projects"
-            title={
-              projects.length === 0 ? "Nothing here yet" : "Tap to dive in"
-            }
-            ctaLabel="New"
-            ctaIcon={<Plus size={14} color="#031118" strokeWidth={2.5} />}
-            onCta={() => {
+          <MiniStat
+            label="Drafts"
+            value={stats?.draftProjects ?? 0}
+            onPress={() => {
               void haptics.tap();
               router.push("/(main)/browse");
             }}
           />
-          {projects.length === 0 ? (
-            <EmptyProjects />
-          ) : (
-            <View className="mt-4 gap-3">
-              {projects.map((p, i) => (
-                <Animated.View
-                  key={p.id}
-                  entering={FadeInUp.delay(320 + i * 50)
-                    .duration(420)
-                    .springify()}
-                >
-                  <OwnerProjectCard project={p} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
+          <MiniStat
+            label="Tenders"
+            value={stats?.totalTenders ?? 0}
+            accent={(stats?.totalTenders ?? 0) > 0}
+          />
+          <MiniStat
+            label="Unread"
+            value={stats?.unreadMessages ?? 0}
+            accent={(stats?.unreadMessages ?? 0) > 0}
+            onPress={() => {
+              void haptics.tap();
+              router.push("/(main)/messages");
+            }}
+          />
         </Animated.View>
+
+        {/* Projects carousel */}
+        <Animated.View
+          entering={FadeInUp.delay(340).duration(440).springify()}
+          style={{ marginTop: 32 }}
+        >
+          <SectionHeader
+            kicker="Your projects"
+            title={projects.length === 0 ? "Start the first" : "Swipe through"}
+            ctaLabel={projects.length === 0 ? "New" : undefined}
+            onCta={
+              projects.length === 0
+                ? () => {
+                    void haptics.tap();
+                    router.push("/(main)/browse");
+                  }
+                : undefined
+            }
+          />
+        </Animated.View>
+
+        {projects.length === 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(440).springify()}
+            style={{ marginTop: 14 }}
+          >
+            <EmptyProjects />
+          </Animated.View>
+        ) : (
+          <Animated.View
+            entering={FadeInUp.delay(400).duration(440).springify()}
+            style={{ marginTop: 14, marginHorizontal: -20 }}
+          >
+            <ProjectCarousel projects={projects} />
+          </Animated.View>
+        )}
 
         {/* Activity */}
         <Animated.View
-          entering={FadeInUp.delay(380).duration(440).springify()}
-          className="mt-10"
+          entering={FadeInUp.delay(480).duration(440).springify()}
+          style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="Activity"
-            title={activity.length === 0 ? "Quiet so far" : "Recent updates"}
+            title={activity.length === 0 ? "Quiet so far" : "Latest updates"}
           />
-          {activity.length === 0 ? (
-            <EmptyActivity />
-          ) : (
-            <View className="mt-4">
-              {activity.map((a, i) => (
-                <Animated.View
-                  key={a.id}
-                  entering={FadeInUp.delay(420 + i * 30)
-                    .duration(360)
-                    .springify()}
-                >
-                  <ActivityRow item={a} />
-                </Animated.View>
-              ))}
-            </View>
-          )}
         </Animated.View>
-      </ScrollView>
+        {activity.length === 0 ? (
+          <Animated.View
+            entering={FadeInUp.delay(520).duration(440).springify()}
+            style={{ marginTop: 14 }}
+          >
+            <EmptyActivity />
+          </Animated.View>
+        ) : (
+          <View style={{ marginTop: 14, gap: 10 }}>
+            {activity.map((a, i) => (
+              <Animated.View
+                key={a.id}
+                entering={FadeInUp.delay(540 + i * 40).duration(380).springify()}
+              >
+                <ActivityRow item={a} />
+              </Animated.View>
+            ))}
+          </View>
+        )}
+      </AnimatedScrollView>
     </Screen>
   );
 }
 
-// ── Section header ───────────────────────────────────────────────────
+// ── Hero stat card (gradient) ───────────────────────────────────────
+
+function HeroStatCard({
+  stats,
+  projects,
+}: {
+  stats: { activeProjects: number } | undefined;
+  projects: OwnerProjectListItem[];
+}) {
+  // Sum across all live/tendering projects.
+  const tenderCount = projects.reduce((s, p) => s + p.stats.tenderCount, 0);
+  const builderCount = projects.reduce(
+    (s, p) => s + p.stats.unlockCount,
+    0,
+  );
+
+  return (
+    <View
+      style={{
+        borderRadius: 28,
+        overflow: "hidden",
+        shadowColor: colors.accent,
+        shadowOpacity: 0.4,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 12 },
+        elevation: 12,
+      }}
+    >
+      <LinearGradient
+        colors={brandGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ padding: 22 }}
+      >
+        {/* Inner highlight — gives the gradient depth */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.30)",
+          }}
+        />
+        <View
+          pointerEvents="none"
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            borderRadius: 28,
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.18)",
+          }}
+        />
+
+        <Text
+          style={{
+            color: "rgba(3, 17, 24, 0.65)",
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            fontWeight: "700",
+          }}
+        >
+          Active projects
+        </Text>
+        <Text
+          style={{
+            color: colors.textInverse,
+            fontFamily: "BebasNeue_400Regular",
+            fontSize: 78,
+            lineHeight: 78,
+            letterSpacing: -1,
+            marginTop: 6,
+          }}
+        >
+          {stats?.activeProjects ?? 0}
+        </Text>
+        <Text
+          style={{
+            color: "rgba(3, 17, 24, 0.72)",
+            fontFamily: "DMSans_400Regular",
+            fontSize: 13,
+            marginTop: 6,
+          }}
+        >
+          {tenderCount} tender{tenderCount === 1 ? "" : "s"} · {builderCount} builder{builderCount === 1 ? "" : "s"} engaged
+        </Text>
+      </LinearGradient>
+    </View>
+  );
+}
+
+// ── Mini stat (glass card) ──────────────────────────────────────────
+
+function MiniStat({
+  label,
+  value,
+  accent,
+  onPress,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <View style={{ flex: 1 }}>
+      <GlassCard
+        onPress={onPress}
+        variant={accent ? "accent" : "default"}
+        padding={14}
+        radius={18}
+      >
+        <Text
+          style={{
+            color: colors.textFaint,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 9.5,
+            letterSpacing: 1.8,
+            textTransform: "uppercase",
+            fontWeight: "600",
+          }}
+        >
+          {label}
+        </Text>
+        <Text
+          style={{
+            color: accent ? colors.accentLight : colors.text,
+            fontFamily: "BebasNeue_400Regular",
+            fontSize: 32,
+            lineHeight: 34,
+            letterSpacing: -0.4,
+            marginTop: 6,
+          }}
+        >
+          {value}
+        </Text>
+      </GlassCard>
+    </View>
+  );
+}
+
+// ── Section header ──────────────────────────────────────────────────
 
 function SectionHeader({
   kicker,
   title,
   ctaLabel,
-  ctaIcon,
   onCta,
 }: {
   kicker: string;
   title: string;
   ctaLabel?: string;
-  ctaIcon?: React.ReactNode;
   onCta?: () => void;
 }) {
   return (
-    <View className="flex-row items-end justify-between">
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+      }}
+    >
       <View>
-        <Text className="text-accent text-[10px] tracking-[0.22em] uppercase font-ui font-medium">
+        <Text
+          style={{
+            color: colors.accent,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            letterSpacing: 2.2,
+            textTransform: "uppercase",
+            fontWeight: "600",
+          }}
+        >
           {kicker}
         </Text>
-        <Text className="text-text font-ui font-semibold text-[16px] tracking-[-0.005em] mt-1">
+        <Text
+          style={{
+            color: colors.text,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 18,
+            letterSpacing: -0.2,
+            fontWeight: "600",
+            marginTop: 4,
+          }}
+        >
           {title}
         </Text>
       </View>
@@ -363,91 +582,104 @@ function SectionHeader({
           onPress={onCta}
           accessibilityRole="button"
           accessibilityLabel={ctaLabel}
-          className="flex-row items-center gap-1.5 h-9 px-3 rounded-md bg-accent active:bg-accent-active"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            height: 32,
+            paddingHorizontal: 12,
+            borderRadius: 16,
+            backgroundColor: colors.accentMuted,
+            borderWidth: 1,
+            borderColor: colors.borderAccent,
+          }}
         >
-          {ctaIcon}
-          <Text className="text-accent-contrast font-ui font-semibold text-[12.5px]">
+          <Text
+            style={{
+              color: colors.accentLight,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 12,
+              fontWeight: "600",
+            }}
+          >
             {ctaLabel}
           </Text>
+          <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-// ── Stat row ─────────────────────────────────────────────────────────
+// ── Project carousel (horizontal swipe) ─────────────────────────────
 
-function StatRow({ stats }: { stats: OwnerDashboardStats | undefined }) {
-  if (!stats) return null;
+function ProjectCarousel({ projects }: { projects: OwnerProjectListItem[] }) {
+  const [page, setPage] = useState(0);
+  const onScrollEnd = useCallback(
+    (e: { nativeEvent: { contentOffset: { x: number }; layoutMeasurement: { width: number } } }) => {
+      const idx = Math.round(
+        e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
+      );
+      if (idx !== page) {
+        setPage(idx);
+        void haptics.select();
+      }
+    },
+    [page],
+  );
+
   return (
     <View>
-      <View className="flex-row gap-3">
-        <StatTile
-          label="Active projects"
-          value={stats.activeProjects}
-          tone={stats.activeProjects > 0 ? "accent" : "neutral"}
-        />
-        <StatTile
-          label="Drafts"
-          value={stats.draftProjects}
-          tone="neutral"
-        />
-      </View>
-      <View className="flex-row gap-3 mt-3">
-        <StatTile
-          label="Tenders received"
-          value={stats.totalTenders}
-          tone={stats.totalTenders > 0 ? "accent" : "neutral"}
-        />
-        <StatTile
-          label="Unread messages"
-          value={stats.unreadMessages}
-          tone={stats.unreadMessages > 0 ? "accent" : "neutral"}
-        />
-      </View>
-    </View>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "neutral" | "accent";
-}) {
-  const accent = tone === "accent";
-  return (
-    <View
-      className="flex-1 rounded-xl border bg-surface-1/40 px-4 py-4"
-      style={{
-        borderColor: accent
-          ? "rgba(0, 212, 200, 0.30)"
-          : "rgba(100, 180, 255, 0.10)",
-      }}
-    >
-      <Text className="text-text-faint text-[9.5px] tracking-[0.18em] uppercase font-ui font-medium">
-        {label}
-      </Text>
-      <Text
-        className="font-display text-[36px] leading-[1.0] mt-2 tracking-[-0.005em]"
-        style={{ color: accent ? "#7ef5ed" : "#eef6ff" }}
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToAlignment="start"
+        onMomentumScrollEnd={onScrollEnd}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
       >
-        {value}
-      </Text>
+        {projects.map((p) => (
+          <View key={p.id} style={{ width: 320 }}>
+            <ProjectCard project={p} />
+          </View>
+        ))}
+      </ScrollView>
+
+      {projects.length > 1 ? (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 14,
+          }}
+        >
+          {projects.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: i === page ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor:
+                  i === page ? colors.accentLight : "rgba(255, 255, 255, 0.16)",
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-// ── Project card ─────────────────────────────────────────────────────
-
-function OwnerProjectCard({ project }: { project: OwnerProjectListItem }) {
-  const status = STATUS_TONE[project.status] ?? STATUS_TONE.archived!;
-  const location = [project.suburb, project.state].filter(Boolean).join(", ");
-  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
+function ProjectCard({ project }: { project: OwnerProjectListItem }) {
+  const statusGrad =
+    STATUS_GRAD[project.status] ?? STATUS_GRAD.archived!;
+  const statusText = STATUS_TEXT[project.status] ?? "#697296";
   const statusLabel = STATUS_LABEL[project.status] ?? project.status;
+  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
+  const location = [project.suburb, project.state].filter(Boolean).join(", ");
 
   const onPress = useCallback(() => {
     void haptics.tap();
@@ -455,66 +687,128 @@ function OwnerProjectCard({ project }: { project: OwnerProjectListItem }) {
   }, [project.slug]);
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${project.title}, ${statusLabel}`}
-      className="rounded-xl border border-border bg-surface-1/40 px-4 py-4 active:bg-surface-1/70"
-    >
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 min-w-0">
-          <View className="flex-row items-center gap-2">
-            {projectTypeIcon(project.type)}
-            <Text className="text-text-muted text-[11.5px] font-ui">
+    <GlassCard onPress={onPress} padding={18} radius={24}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {projectTypeIcon(project.type, 12, colors.accentLight)}
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 11,
+              }}
+            >
               {typeLabel}
             </Text>
           </View>
           <Text
-            className="text-text font-ui font-semibold text-[16px] tracking-[-0.005em] mt-1.5"
-            numberOfLines={1}
+            numberOfLines={2}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 18,
+              fontWeight: "600",
+              letterSpacing: -0.2,
+              marginTop: 8,
+            }}
           >
             {project.title}
           </Text>
           {location ? (
-            <Text className="text-text-faint text-[12.5px] mt-0.5" numberOfLines={1}>
-              {location}
-            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: colors.textMuted,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 12.5,
+                }}
+              >
+                {location}
+              </Text>
+            </View>
           ) : null}
         </View>
 
+        {/* Status pill — gradient fill */}
         <View
-          className="px-2.5 h-7 rounded-full justify-center border"
           style={{
-            backgroundColor: status.bg,
-            borderColor: status.ring,
+            borderRadius: 14,
+            overflow: "hidden",
           }}
         >
-          <Text
-            className="text-[9.5px] tracking-[0.18em] uppercase font-ui font-semibold"
-            style={{ color: status.text }}
+          <LinearGradient
+            colors={statusGrad}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.16)",
+            }}
           >
-            {statusLabel}
-          </Text>
+            <Text
+              style={{
+                color: statusText,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 9.5,
+                letterSpacing: 1.6,
+                textTransform: "uppercase",
+                fontWeight: "700",
+              }}
+            >
+              {statusLabel}
+            </Text>
+          </LinearGradient>
         </View>
       </View>
 
-      <View className="flex-row items-center gap-4 mt-4">
-        <ProjectStat label="Builders" value={`${project.stats.unlockCount}/3`} />
-        <ProjectStat label="Tenders" value={project.stats.tenderCount} />
-        <ProjectStat
+      {/* Inline stats */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 18,
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: colors.borderSubtle,
+        }}
+      >
+        <StatChip label="Builders" value={`${project.stats.unlockCount}/3`} />
+        <StatChip label="Tenders" value={project.stats.tenderCount} />
+        <StatChip
           label="Unread"
           value={project.stats.unreadMessages}
           highlight={project.stats.unreadMessages > 0}
         />
-        <View className="ml-auto">
-          <ChevronRight size={16} color="#567080" strokeWidth={1.7} />
+        <View style={{ marginLeft: "auto" }}>
+          <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
         </View>
       </View>
-    </Pressable>
+    </GlassCard>
   );
 }
 
-function ProjectStat({
+function StatChip({
   label,
   value,
   highlight,
@@ -525,12 +819,25 @@ function ProjectStat({
 }) {
   return (
     <View>
-      <Text className="text-text-faint text-[9px] tracking-[0.16em] uppercase font-ui">
+      <Text
+        style={{
+          color: colors.textFaint,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 8.5,
+          letterSpacing: 1.6,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </Text>
       <Text
-        className="font-ui font-semibold text-[14px] mt-0.5"
-        style={{ color: highlight ? "#7ef5ed" : "#eef6ff" }}
+        style={{
+          color: highlight ? colors.accentLight : colors.text,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 14,
+          fontWeight: "600",
+          marginTop: 2,
+        }}
       >
         {value}
       </Text>
@@ -538,97 +845,163 @@ function ProjectStat({
   );
 }
 
-// ── Activity row ─────────────────────────────────────────────────────
+// ── Activity ────────────────────────────────────────────────────────
 
 function ActivityRow({ item }: { item: ActivityItem }) {
   const unread = !item.readAt;
+  const Icon = useMemo(() => {
+    if (item.kind.includes("message")) return MessageSquare;
+    if (item.kind.includes("tender") || item.kind.includes("award"))
+      return FileText;
+    if (item.kind.includes("unlock")) return Sparkles;
+    return Bell;
+  }, [item.kind]);
 
   const onPress = useCallback(() => {
     void haptics.tap();
-    if (item.actionUrl) {
-      // For now we route by stripping the host; in the next pass we
-      // map kinds → typed routes. Activity rows without an actionUrl
-      // are non-interactive (status pings).
-      try {
-        const u = new URL(item.actionUrl);
-        router.push(u.pathname as never);
-      } catch {
-        /* malformed url — leave it */
-      }
-    }
+    if (!item.actionUrl) return;
+    try {
+      const u = new URL(item.actionUrl);
+      router.push(u.pathname as never);
+    } catch {}
   }, [item.actionUrl]);
 
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={!item.actionUrl}
-      className="flex-row items-start gap-3 py-3 active:bg-surface-1/30 rounded-md"
+    <GlassCard
+      onPress={item.actionUrl ? onPress : undefined}
+      padding={14}
+      radius={18}
+      variant={unread ? "accent" : "default"}
     >
-      <View
-        className="size-7 rounded-full items-center justify-center border"
-        style={{
-          backgroundColor: unread
-            ? "rgba(0, 212, 200, 0.10)"
-            : "rgba(100, 180, 255, 0.04)",
-          borderColor: unread
-            ? "rgba(0, 212, 200, 0.30)"
-            : "rgba(100, 180, 255, 0.10)",
-        }}
-      >
-        {activityIcon(item.kind)}
-      </View>
-      <View className="flex-1 min-w-0">
-        <Text
-          className="text-text font-ui text-[13.5px] leading-[18px]"
-          numberOfLines={2}
-          style={{ fontWeight: unread ? "600" : "400" }}
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: unread
+              ? "rgba(0, 212, 200, 0.18)"
+              : "rgba(255, 255, 255, 0.05)",
+            borderWidth: 1,
+            borderColor: unread ? colors.borderAccent : colors.borderSubtle,
+          }}
         >
-          {item.title}
-        </Text>
-        {item.body ? (
+          <Icon
+            size={15}
+            color={unread ? colors.accentLight : colors.textMuted}
+            strokeWidth={1.6}
+          />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text
-            className="text-text-faint text-[12px] leading-[16px] mt-0.5"
-            numberOfLines={1}
+            numberOfLines={2}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 13.5,
+              lineHeight: 18,
+              fontWeight: unread ? "600" : "500",
+            }}
           >
-            {item.body}
+            {item.title}
           </Text>
-        ) : null}
+          {item.body ? (
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.textFaint,
+                fontFamily: "DMSans_400Regular",
+                fontSize: 12,
+                marginTop: 2,
+              }}
+            >
+              {item.body}
+            </Text>
+          ) : null}
+        </View>
+        <Text
+          style={{
+            color: colors.textDim,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 10.5,
+            marginTop: 2,
+          }}
+        >
+          {relativeTime(item.createdAt)}
+        </Text>
       </View>
-      <Text className="text-text-dim text-[10.5px] mt-1">
-        {relativeTime(item.createdAt)}
-      </Text>
-    </Pressable>
+    </GlassCard>
   );
 }
 
-// ── Empty states ─────────────────────────────────────────────────────
+// ── Empty states ────────────────────────────────────────────────────
 
 function EmptyProjects() {
   return (
-    <View className="mt-4 rounded-xl border border-border-subtle bg-surface-1/30 px-5 py-8 items-center">
-      <View
-        className="size-12 rounded-full border border-border-accent items-center justify-center"
-        style={{ backgroundColor: "rgba(0, 212, 200, 0.06)" }}
-      >
-        <HomeIcon size={20} color="#7ef5ed" strokeWidth={1.6} />
+    <GlassCard padding={28} radius={24}>
+      <View style={{ alignItems: "center" }}>
+        <View
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: colors.borderAccent,
+            backgroundColor: colors.accentMuted,
+          }}
+        >
+          <HomeIcon size={22} color={colors.accentLight} strokeWidth={1.6} />
+        </View>
+        <Text
+          style={{
+            color: colors.text,
+            fontFamily: "BebasNeue_400Regular",
+            fontSize: 24,
+            letterSpacing: -0.3,
+            marginTop: 14,
+            textTransform: "uppercase",
+          }}
+        >
+          No projects yet
+        </Text>
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 13,
+            textAlign: "center",
+            lineHeight: 19,
+            marginTop: 6,
+            maxWidth: 240,
+          }}
+        >
+          Onboard your first project to start receiving tenders.
+        </Text>
       </View>
-      <Text className="text-text font-display text-[20px] tracking-[-0.005em] uppercase mt-4">
-        No projects yet
-      </Text>
-      <Text className="text-text-muted text-[13px] leading-[19px] text-center mt-2 max-w-[260px]">
-        Onboard your first project to start receiving tenders from vetted builders.
-      </Text>
-    </View>
+    </GlassCard>
   );
 }
 
 function EmptyActivity() {
   return (
-    <View className="mt-4 rounded-xl border border-border-subtle bg-surface-1/30 px-5 py-6 items-center">
-      <Inbox size={18} color="#567080" strokeWidth={1.5} />
-      <Text className="text-text-muted text-[12.5px] leading-[19px] text-center mt-2 max-w-[260px]">
-        No activity yet. When builders unlock, tender, or message you, it lands here.
-      </Text>
-    </View>
+    <GlassCard padding={22} radius={18}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Inbox size={16} color={colors.textDim} strokeWidth={1.5} />
+        <Text
+          style={{
+            color: colors.textMuted,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 12.5,
+            flex: 1,
+          }}
+        >
+          No activity yet. Builder unlocks, tenders, and messages land here.
+        </Text>
+      </View>
+    </GlassCard>
   );
 }
