@@ -34,9 +34,9 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { Frosted } from "./frosted";
 import { colors } from "@/lib/theme";
 
 type Variant = "default" | "accent" | "gradient";
@@ -94,14 +94,10 @@ export function GlassCard({
     [scale, noPressAnim, onPress, onPressOut],
   );
 
-  const blurIntensity =
-    intensity ?? (variant === "gradient" ? 20 : 40);
-  const tintFill =
-    variant === "accent"
-      ? colors.accentMuted
-      : variant === "gradient"
-        ? "transparent"
-        : colors.glass1;
+  // `intensity` is preserved on the API surface so future dev-client
+  // builds can swap Frosted for a real BlurView without changing
+  // callsites; today it's unused.
+  void intensity;
 
   const inner = (
     <Animated.View style={[anim]}>
@@ -113,14 +109,14 @@ export function GlassCard({
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-        ) : null}
-        <BlurView
-          intensity={blurIntensity}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: tintFill }]} />
+        ) : (
+          // Solid frosted-glass fill that survives every Expo Go SDK
+          // mismatch. Real BlurView returns in the dev-client build.
+          <Frosted
+            tint={variant === "accent" ? "accent" : "default"}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         {/* Inner top-edge highlight — the "glass" tell. 1px white
             top border catches the device tilt and reads as a polished
             piece of frosted glass rather than a flat translucent box. */}

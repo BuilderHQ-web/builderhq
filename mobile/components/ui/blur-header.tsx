@@ -15,12 +15,12 @@
  * eyebrow on tab roots (where the back button is hidden).
  */
 import { type ReactNode } from "react";
-import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
 import { ArrowLeft } from "lucide-react-native";
 
+import { Frosted } from "./frosted";
 import { colors } from "@/lib/theme";
 
 const BAR_HEIGHT = 52;
@@ -68,12 +68,7 @@ export function BlurHeader({
           backdropStyle,
         ]}
       >
-        <BlurView
-          intensity={Platform.OS === "ios" ? 70 : 90}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFill}
-        />
+        <Frosted tint="deep" style={StyleSheet.absoluteFill} />
         <View
           style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(10, 13, 26, 0.55)" }]}
         />

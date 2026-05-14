@@ -19,7 +19,7 @@
  * on the parent <Tabs /> component.
  */
 import { useEffect } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   type SharedValue,
   useAnimatedStyle,
@@ -27,10 +27,10 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
+import { Frosted } from "./frosted";
 import { brandGradient, colors } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
@@ -86,14 +86,10 @@ export function GlassTabBar({
           elevation: 12,
         }}
       >
-        {/* Blur backdrop */}
-        <BlurView
-          intensity={Platform.OS === "ios" ? 70 : 100}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Glass tint so colours don't get washed out */}
+        {/* Frosted-glass backdrop — solid tinted layer for now. When
+              we ship a dev-client build, swap to a real BlurView for
+              true backdrop blur. */}
+        <Frosted tint="deep" style={StyleSheet.absoluteFill} />
         <View
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.glass2 }]}
         />

@@ -77,9 +77,11 @@ export default function MainLayout() {
             tabBarIcon: ({ color, size }) => <User2 color={color} size={size} />,
           }}
         />
-        {/* Nested project routes — hidden from the tab bar but live
-              inside this stack so deep links land here. */}
-        <Tabs.Screen name="projects" options={{ href: null }} />
+        {/* Nested project routes (projects/[slug]/index, .../tender)
+              are auto-hidden from the tab bar because they don't have
+              a Tabs.Screen declaration with a tabBarIcon. Deep links
+              into those paths still work via expo-router's file-based
+              resolution. */}
       </Tabs>
     </View>
   );
