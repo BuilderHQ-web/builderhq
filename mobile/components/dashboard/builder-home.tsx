@@ -1,34 +1,20 @@
 /**
- * <BuilderHome /> — v2 builder home.
+ * <BuilderHome /> — premium builder dashboard.
  *
- * Premium glassmorphic dashboard for builders. Layout:
- *   1. Hero greeting + name (Bebas display).
- *   2. FBA gradient hero — the headline number on a brand-gradient
- *      card. Inactive grant shows a muted glass card with the reason.
- *   3. 3-up secondary stats — active tenders, unlocked, saved.
- *   4. "For you" horizontal swipe of service-area-matched projects.
- *   5. "My tenders" vertical glass-card list.
- *   6. Recent activity feed.
- *
- * Same UX rituals as OwnerHome: sticky BlurHeader, pull-to-refresh,
- * Reanimated stagger, haptics, floating tab bar buffer.
+ * Same architecture as owner-home (GlassHeader floats above scrollable
+ * content), but the hero stat is FBA credits + a tighter section
+ * sequence: FBA hero → 3 stats → For-you carousel → My tenders →
+ * Recently unlocked → Activity.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import Animated, {
-  FadeInUp,
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -38,7 +24,6 @@ import {
   ChevronRight,
   FileText,
   Home as HomeIcon,
-  Inbox,
   Layers,
   Lock,
   MapPin,
@@ -49,8 +34,10 @@ import {
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
-import { GlassCard } from "@/components/ui/glass-card";
-import { BlurHeader, HeaderTitle } from "@/components/ui/blur-header";
+import { Avatar } from "@/components/ui/avatar";
+import { GlassHeader, useGlassHeaderHeight } from "@/components/ui/glass-header";
+import { StatTile } from "@/components/ui/stat-tile";
+import { RadarPulse } from "@/components/ui/radar-pulse";
 import { useAuth } from "@/lib/auth";
 import { haptics } from "@/lib/haptics";
 import { useBuilderDashboard } from "@/lib/dashboard";
@@ -63,8 +50,6 @@ import type {
   BuilderProjectListItem,
   BuilderTenderListItem,
 } from "./types";
-
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 // ── Mappings ────────────────────────────────────────────────────────
 
@@ -81,23 +66,39 @@ const BUDGET_LABEL: Record<string, string> = {
   "1_5m_2m": "$1.5M – $2M",
   "2m_3m": "$2M – $3M",
   "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  over_5m: "$5M+",
 };
-const TENDER_GRAD: Record<string, [string, string]> = {
-  draft: ["rgba(168, 179, 207, 0.10)", "rgba(168, 179, 207, 0.18)"],
-  submitted: ["rgba(0, 212, 200, 0.20)", "rgba(0, 212, 200, 0.32)"],
-  shortlisted: ["rgba(125, 211, 252, 0.20)", "rgba(125, 211, 252, 0.32)"],
-  awarded: ["rgba(134, 239, 172, 0.22)", "rgba(134, 239, 172, 0.36)"],
-  rejected: ["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"],
-  withdrawn: ["rgba(255, 255, 255, 0.06)", "rgba(255, 255, 255, 0.10)"],
-};
-const TENDER_TEXT: Record<string, string> = {
-  draft: "#a8b3cf",
-  submitted: "#7df5ed",
-  shortlisted: "#7dd3fc",
-  awarded: "#86efac",
-  rejected: "#ff7a8a",
-  withdrawn: "#697296",
+const TENDER_COLOR: Record<string, { bg: string; ring: string; text: string }> = {
+  draft: {
+    bg: "rgba(168, 179, 207, 0.08)",
+    ring: "rgba(168, 179, 207, 0.18)",
+    text: "#a8b3cf",
+  },
+  submitted: {
+    bg: "rgba(0, 212, 200, 0.12)",
+    ring: "rgba(0, 212, 200, 0.36)",
+    text: "#7df5ed",
+  },
+  shortlisted: {
+    bg: "rgba(125, 211, 252, 0.12)",
+    ring: "rgba(125, 211, 252, 0.36)",
+    text: "#7dd3fc",
+  },
+  awarded: {
+    bg: "rgba(134, 239, 172, 0.14)",
+    ring: "rgba(134, 239, 172, 0.40)",
+    text: "#86efac",
+  },
+  rejected: {
+    bg: "rgba(255, 122, 138, 0.12)",
+    ring: "rgba(255, 122, 138, 0.32)",
+    text: "#ff7a8a",
+  },
+  withdrawn: {
+    bg: "rgba(255, 255, 255, 0.04)",
+    ring: "rgba(255, 255, 255, 0.10)",
+    text: "#697296",
+  },
 };
 const TENDER_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -128,7 +129,7 @@ function relativeTime(iso: string, now = Date.now()): string {
   return `${Math.floor(d / 7)}w`;
 }
 
-function projectTypeIcon(type: string, size = 14, color: string = colors.accentLight) {
+function typeIcon(type: string, size = 14, color: string = colors.accentLight) {
   const p = { size, color, strokeWidth: 1.6 };
   switch (type) {
     case "single_dwelling":
@@ -154,24 +155,9 @@ function navigateToProject(slug: string) {
 export function BuilderHome() {
   const { user } = useAuth();
   const { data, isLoading, error, refetch } = useBuilderDashboard();
+  const headerHeight = useGlassHeaderHeight();
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
-
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
-    },
-  });
-  const headerBgStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [60, 110], [0, 1], "clamp"),
-  }));
-  const headerTitleStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [80, 130], [0, 1], "clamp"),
-    transform: [
-      { translateY: interpolate(scrollY.value, [80, 130], [4, 0], "clamp") },
-    ],
-  }));
 
   useEffect(() => {
     const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
@@ -190,64 +176,103 @@ export function BuilderHome() {
 
   if (isLoading && !data) {
     return (
-      <Screen variant="flat">
+      <Screen variant="flat" edges={[]}>
         <DashboardSkeleton />
       </Screen>
     );
   }
   if (error && !data) {
     return (
-      <Screen variant="flat">
+      <Screen variant="flat" edges={[]}>
         <ErrorView message={error} onRetry={refetch} />
       </Screen>
     );
   }
   if (!data) return null;
 
-  // Always greet the human, not the company. Company names can be 30+
-  // chars (e.g. "Synergy Building Group - VIC Pty Ltd") and break the
-  // Bebas display headline. Company appears as a smaller subline.
   const firstName = user?.name?.split(" ")[0] ?? null;
-  const headlineName = firstName;
   const subCompany = data.profile.companyName;
 
   return (
-    <Screen variant="flat" edges={["top"]}>
-      <BlurHeader
-        hideBack
-        backdropStyle={headerBgStyle}
-        centerSlot={
-          <Animated.View style={headerTitleStyle}>
-            <HeaderTitle kicker="Dashboard" title={firstName ?? "Home"} />
-          </Animated.View>
+    <Screen variant="flat" edges={[]}>
+      <GlassHeader
+        left={
+          <Avatar
+            name={data.profile.companyName ?? user?.name}
+            size={36}
+          />
+        }
+        center={
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                color: colors.textFaint,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 9.5,
+                letterSpacing: 2.4,
+                textTransform: "uppercase",
+                fontWeight: "600",
+              }}
+            >
+              Dashboard
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.text,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 15,
+                fontWeight: "600",
+                letterSpacing: -0.1,
+                marginTop: 1,
+              }}
+            >
+              {firstName ?? "Home"}
+            </Text>
+          </View>
+        }
+        right={
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <Bell size={15} color={colors.textMuted} strokeWidth={1.7} />
+          </View>
         }
       />
 
-      <AnimatedScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
+      <ScrollView
         contentContainerStyle={{
-          paddingTop: 72,
+          paddingTop: headerHeight + 4,
           paddingHorizontal: 20,
-          paddingBottom: 120,
+          paddingBottom: 140,
         }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.accentLight}
             progressBackgroundColor={colors.bgRaised}
+            progressViewOffset={headerHeight}
           />
         }
       >
-        {/* Hero */}
+        {/* Hero greeting */}
         <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
           <Text
             style={{
               color: colors.accent,
               fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 10.5,
+              fontSize: 11,
               letterSpacing: 2.6,
               textTransform: "uppercase",
               fontWeight: "600",
@@ -264,28 +289,26 @@ export function BuilderHome() {
             style={{
               color: colors.text,
               fontFamily: "BebasNeue_400Regular",
-              fontSize: 48,
-              lineHeight: 50,
+              fontSize: 52,
+              lineHeight: 54,
               letterSpacing: -0.6,
               marginTop: 6,
             }}
           >
-            {headlineName ?? "Builder"}
+            {firstName ?? "Builder"}
             <Text style={{ color: colors.accentLight }}>.</Text>
           </Text>
         </Animated.View>
         {subCompany ? (
-          <Animated.View
-            entering={FadeInUp.delay(140).duration(420).springify()}
-          >
+          <Animated.View entering={FadeInUp.delay(140).duration(420).springify()}>
             <Text
               numberOfLines={1}
               style={{
                 color: colors.textFaint,
                 fontFamily: "SpaceGrotesk_500Medium",
                 fontSize: 12,
-                letterSpacing: 0.04,
                 fontWeight: "500",
+                letterSpacing: 0.04,
                 marginTop: 4,
               }}
             >
@@ -307,32 +330,32 @@ export function BuilderHome() {
           </Text>
         </Animated.View>
 
-        {/* FBA hero card */}
+        {/* FBA hero */}
         <Animated.View
-          entering={FadeInUp.delay(220).duration(460).springify()}
+          entering={FadeInUp.delay(240).duration(460).springify()}
           style={{ marginTop: 24 }}
         >
-          <FbaHeroCard fba={data.fba} />
+          <FbaHero fba={data.fba} />
         </Animated.View>
 
-        {/* Secondary stats */}
+        {/* Stat row */}
         <Animated.View
-          entering={FadeInUp.delay(280).duration(440).springify()}
+          entering={FadeInUp.delay(300).duration(440).springify()}
           style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
         >
-          <MiniStat
+          <StatTile
             label="Tenders"
             value={data.stats.activeTenders}
-            accent={data.stats.activeTenders > 0}
+            tone={data.stats.activeTenders > 0 ? "accent" : "neutral"}
           />
-          <MiniStat label="Unlocked" value={data.stats.unlockedProjects} />
-          <MiniStat label="Saved" value={data.stats.savedProjects} />
+          <StatTile label="Unlocked" value={data.stats.unlockedProjects} />
+          <StatTile label="Saved" value={data.stats.savedProjects} />
         </Animated.View>
 
-        {/* For you carousel */}
+        {/* For you */}
         <Animated.View
-          entering={FadeInUp.delay(340).duration(440).springify()}
-          style={{ marginTop: 32 }}
+          entering={FadeInUp.delay(360).duration(440).springify()}
+          style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="For you"
@@ -351,18 +374,14 @@ export function BuilderHome() {
 
         {data.suggested.length === 0 ? (
           <Animated.View
-            entering={FadeInUp.delay(400).duration(440).springify()}
+            entering={FadeInUp.delay(420).duration(440).springify()}
             style={{ marginTop: 14 }}
           >
-            <EmptyState
-              icon={<Sparkles size={20} color={colors.accentLight} strokeWidth={1.6} />}
-              title="No new matches"
-              copy="Add or expand your service areas to see more projects here."
-            />
+            <EmptyMatches />
           </Animated.View>
         ) : (
           <Animated.View
-            entering={FadeInUp.delay(400).duration(440).springify()}
+            entering={FadeInUp.delay(420).duration(440).springify()}
             style={{ marginTop: 14, marginHorizontal: -20 }}
           >
             <ProjectCarousel projects={data.suggested} />
@@ -371,7 +390,7 @@ export function BuilderHome() {
 
         {/* My tenders */}
         <Animated.View
-          entering={FadeInUp.delay(480).duration(440).springify()}
+          entering={FadeInUp.delay(500).duration(440).springify()}
           style={{ marginTop: 36 }}
         >
           <SectionHeader
@@ -385,10 +404,10 @@ export function BuilderHome() {
         </Animated.View>
         {data.myTenders.length === 0 ? (
           <Animated.View
-            entering={FadeInUp.delay(520).duration(440).springify()}
+            entering={FadeInUp.delay(540).duration(440).springify()}
             style={{ marginTop: 14 }}
           >
-            <EmptyState
+            <EmptyCard
               icon={<FileText size={18} color={colors.textDim} strokeWidth={1.6} />}
               copy="Tenders you draft or submit will appear here, sorted by status."
             />
@@ -398,7 +417,7 @@ export function BuilderHome() {
             {data.myTenders.map((t, i) => (
               <Animated.View
                 key={t.id}
-                entering={FadeInUp.delay(540 + i * 40).duration(380).springify()}
+                entering={FadeInUp.delay(560 + i * 40).duration(380).springify()}
               >
                 <TenderCard tender={t} />
               </Animated.View>
@@ -410,7 +429,7 @@ export function BuilderHome() {
         {data.unlocked.length > 0 ? (
           <>
             <Animated.View
-              entering={FadeInUp.delay(600).duration(440).springify()}
+              entering={FadeInUp.delay(620).duration(440).springify()}
               style={{ marginTop: 36 }}
             >
               <SectionHeader
@@ -419,7 +438,7 @@ export function BuilderHome() {
               />
             </Animated.View>
             <Animated.View
-              entering={FadeInUp.delay(640).duration(440).springify()}
+              entering={FadeInUp.delay(660).duration(440).springify()}
               style={{ marginTop: 14, marginHorizontal: -20 }}
             >
               <ProjectCarousel projects={data.unlocked} />
@@ -429,21 +448,23 @@ export function BuilderHome() {
 
         {/* Activity */}
         <Animated.View
-          entering={FadeInUp.delay(700).duration(440).springify()}
+          entering={FadeInUp.delay(720).duration(440).springify()}
           style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="Activity"
-            title={data.activity.length === 0 ? "Quiet so far" : "Latest updates"}
+            title={
+              data.activity.length === 0 ? "Quiet so far" : "Latest updates"
+            }
           />
         </Animated.View>
         {data.activity.length === 0 ? (
           <Animated.View
-            entering={FadeInUp.delay(740).duration(440).springify()}
+            entering={FadeInUp.delay(760).duration(440).springify()}
             style={{ marginTop: 14 }}
           >
-            <EmptyState
-              icon={<Inbox size={18} color={colors.textDim} strokeWidth={1.6} />}
+            <EmptyCard
+              icon={<Sparkles size={18} color={colors.textDim} strokeWidth={1.6} />}
               copy="Tender outcomes, new projects, and messages will land here."
             />
           </Animated.View>
@@ -452,14 +473,14 @@ export function BuilderHome() {
             {data.activity.map((a, i) => (
               <Animated.View
                 key={a.id}
-                entering={FadeInUp.delay(760 + i * 30).duration(360).springify()}
+                entering={FadeInUp.delay(780 + i * 30).duration(360).springify()}
               >
                 <ActivityRow item={a} />
               </Animated.View>
             ))}
           </View>
         )}
-      </AnimatedScrollView>
+      </ScrollView>
     </Screen>
   );
 }
@@ -479,7 +500,7 @@ function subheadCopy(data: BuilderDashboardPayload): string {
 
 // ── FBA hero ────────────────────────────────────────────────────────
 
-function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
+function FbaHero({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
   if (!fba.active) {
     const reason =
       fba.reason === "no_grant"
@@ -488,7 +509,27 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
           ? "Your Founding Builder Access has ended."
           : "Founding Builder Access was revoked.";
     return (
-      <GlassCard padding={22} radius={28}>
+      <View
+        style={{
+          padding: 22,
+          borderRadius: 28,
+          backgroundColor: "rgba(255, 255, 255, 0.035)",
+          borderWidth: 1,
+          borderColor: "rgba(255, 255, 255, 0.08)",
+          overflow: "hidden",
+        }}
+      >
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.10)",
+          }}
+        />
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Zap size={14} color={colors.textDim} strokeWidth={1.6} />
           <Text
@@ -510,12 +551,12 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
             fontFamily: "DMSans_400Regular",
             fontSize: 13.5,
             lineHeight: 19,
-            marginTop: 10,
+            marginTop: 12,
           }}
         >
           {reason} Unlocks are charged per project.
         </Text>
-      </GlassCard>
+      </View>
     );
   }
 
@@ -525,10 +566,10 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
         borderRadius: 28,
         overflow: "hidden",
         shadowColor: colors.accent,
-        shadowOpacity: 0.40,
-        shadowRadius: 24,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 12,
+        shadowOpacity: 0.32,
+        shadowRadius: 26,
+        shadowOffset: { width: 0, height: 14 },
+        elevation: 10,
       }}
     >
       <LinearGradient
@@ -557,9 +598,27 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
             borderColor: "rgba(255, 255, 255, 0.18)",
           }}
         />
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -60,
+            right: -40,
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            backgroundColor: "rgba(255, 255, 255, 0.10)",
+          }}
+        />
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Zap size={14} color={colors.textInverse} strokeWidth={2} />
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Zap size={13} color={colors.textInverse} strokeWidth={2} />
           <Text
             style={{
               color: "rgba(3, 17, 24, 0.75)",
@@ -573,6 +632,7 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
             Founding access · Cycle {fba.cycleIndex + 1}/{fba.totalCycles}
           </Text>
         </View>
+
         <View
           style={{
             flexDirection: "row",
@@ -584,9 +644,9 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
             style={{
               color: colors.textInverse,
               fontFamily: "BebasNeue_400Regular",
-              fontSize: 78,
-              lineHeight: 78,
-              letterSpacing: -1,
+              fontSize: 84,
+              lineHeight: 84,
+              letterSpacing: -1.2,
             }}
           >
             {fba.remainingThisCycle}
@@ -597,12 +657,13 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
               fontFamily: "DMSans_400Regular",
               fontSize: 13,
               marginLeft: 8,
-              marginBottom: 10,
+              marginBottom: 12,
             }}
           >
             / {fba.monthlyQuota} free unlocks left
           </Text>
         </View>
+
         <View
           style={{
             flexDirection: "row",
@@ -628,7 +689,11 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
                 gap: 4,
               }}
             >
-              <TrendingUp size={11} color="rgba(3, 17, 24, 0.65)" strokeWidth={2} />
+              <TrendingUp
+                size={11}
+                color="rgba(3, 17, 24, 0.65)"
+                strokeWidth={2}
+              />
               <Text
                 style={{
                   color: "rgba(3, 17, 24, 0.72)",
@@ -642,49 +707,6 @@ function FbaHeroCard({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
           ) : null}
         </View>
       </LinearGradient>
-    </View>
-  );
-}
-
-// ── Secondary stat tile (glass) ─────────────────────────────────────
-
-function MiniStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent?: boolean;
-}) {
-  return (
-    <View style={{ flex: 1 }}>
-      <GlassCard variant={accent ? "accent" : "default"} padding={14} radius={18}>
-        <Text
-          style={{
-            color: colors.textFaint,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 9.5,
-            letterSpacing: 1.8,
-            textTransform: "uppercase",
-            fontWeight: "600",
-          }}
-        >
-          {label}
-        </Text>
-        <Text
-          style={{
-            color: accent ? colors.accentLight : colors.text,
-            fontFamily: "BebasNeue_400Regular",
-            fontSize: 32,
-            lineHeight: 34,
-            letterSpacing: -0.4,
-            marginTop: 6,
-          }}
-        >
-          {value}
-        </Text>
-      </GlassCard>
     </View>
   );
 }
@@ -728,8 +750,8 @@ function SectionHeader({
             color: colors.text,
             fontFamily: "SpaceGrotesk_500Medium",
             fontSize: 18,
-            letterSpacing: -0.2,
             fontWeight: "600",
+            letterSpacing: -0.2,
             marginTop: 4,
           }}
         >
@@ -737,8 +759,7 @@ function SectionHeader({
         </Text>
       </View>
       {ctaLabel && onCta ? (
-        <Pressable
-          onPress={onCta}
+        <View
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -746,9 +767,9 @@ function SectionHeader({
             height: 32,
             paddingHorizontal: 12,
             borderRadius: 16,
-            backgroundColor: colors.accentMuted,
+            backgroundColor: "rgba(0, 212, 200, 0.10)",
             borderWidth: 1,
-            borderColor: colors.borderAccent,
+            borderColor: "rgba(0, 212, 200, 0.34)",
           }}
         >
           <Text
@@ -762,7 +783,7 @@ function SectionHeader({
             {ctaLabel}
           </Text>
           <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
-        </Pressable>
+        </View>
       ) : null}
     </View>
   );
@@ -846,96 +867,119 @@ function BuilderProjectCard({ project }: { project: BuilderProjectListItem }) {
   const location = [project.suburb, project.state].filter(Boolean).join(", ");
 
   return (
-    <GlassCard
-      onPress={() => navigateToProject(project.slug)}
-      padding={18}
-      radius={24}
+    <View
+      style={{
+        borderRadius: 24,
+        overflow: "hidden",
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: isFull
+          ? "rgba(255, 122, 138, 0.18)"
+          : "rgba(255, 255, 255, 0.08)",
+      }}
     >
       <View
+        pointerEvents="none"
         style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 10,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.12)",
         }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {projectTypeIcon(project.type, 12)}
-            <Text
-              style={{
-                color: colors.textMuted,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 11,
-              }}
-            >
-              {typeLabel}
-            </Text>
-          </View>
-          <Text
-            numberOfLines={2}
-            style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 18,
-              fontWeight: "600",
-              letterSpacing: -0.2,
-              marginTop: 8,
-            }}
-          >
-            {project.title}
-          </Text>
-          {location ? (
+      />
+      <View style={{ padding: 18 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <View style={{ flex: 1, minWidth: 0 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
-                marginTop: 4,
+                gap: 6,
               }}
             >
-              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              {typeIcon(project.type, 12)}
               <Text
-                numberOfLines={1}
                 style={{
                   color: colors.textMuted,
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 12.5,
+                  fontFamily: "SpaceGrotesk_500Medium",
+                  fontSize: 11,
                 }}
               >
-                {location}
+                {typeLabel}
               </Text>
             </View>
+            <Text
+              numberOfLines={2}
+              style={{
+                color: colors.text,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 18,
+                fontWeight: "600",
+                letterSpacing: -0.2,
+                marginTop: 8,
+              }}
+            >
+              {project.title}
+            </Text>
+            {location ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 4,
+                }}
+              >
+                <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: colors.textMuted,
+                    fontFamily: "DMSans_400Regular",
+                    fontSize: 12.5,
+                  }}
+                >
+                  {location}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <SlotPill unlockedCount={project.unlockedCount} isFull={isFull} />
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 14,
+            marginTop: 16,
+            paddingTop: 14,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255, 255, 255, 0.06)",
+          }}
+        >
+          {budgetLabel ? <Stat label="Budget" value={budgetLabel} /> : null}
+          {project.bedrooms != null ? (
+            <Stat label="Bed" value={project.bedrooms} />
           ) : null}
-        </View>
-
-        {/* Slot pill */}
-        <SlotPill unlockedCount={project.unlockedCount} isFull={isFull} />
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 14,
-          marginTop: 16,
-          paddingTop: 14,
-          borderTopWidth: 1,
-          borderTopColor: colors.borderSubtle,
-        }}
-      >
-        {budgetLabel ? <StatChip label="Budget" value={budgetLabel} /> : null}
-        {project.bedrooms != null ? (
-          <StatChip label="Bed" value={project.bedrooms} />
-        ) : null}
-        {project.bathrooms != null ? (
-          <StatChip label="Bath" value={project.bathrooms} />
-        ) : null}
-        <View style={{ marginLeft: "auto" }}>
-          <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
+          {project.bathrooms != null ? (
+            <Stat label="Bath" value={project.bathrooms} />
+          ) : null}
+          <View style={{ marginLeft: "auto" }}>
+            <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
+          </View>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
@@ -950,93 +994,79 @@ function SlotPill({
     return (
       <View
         style={{
-          borderRadius: 14,
-          overflow: "hidden",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          paddingHorizontal: 10,
+          height: 26,
+          borderRadius: 13,
+          backgroundColor: "rgba(255, 122, 138, 0.14)",
+          borderWidth: 1,
+          borderColor: "rgba(255, 122, 138, 0.32)",
         }}
       >
-        <LinearGradient
-          colors={["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <Lock size={10} color={colors.danger} strokeWidth={1.8} />
+        <Text
           style={{
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.16)",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
+            color: colors.danger,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.4,
+            textTransform: "uppercase",
           }}
         >
-          <Lock size={10} color={colors.danger} strokeWidth={2} />
-          <Text
-            style={{
-              color: colors.danger,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 9.5,
-              letterSpacing: 1.6,
-              textTransform: "uppercase",
-              fontWeight: "700",
-            }}
-          >
-            Full
-          </Text>
-        </LinearGradient>
+          Full
+        </Text>
       </View>
     );
   }
   return (
-    <View style={{ borderRadius: 14, overflow: "hidden" }}>
-      <LinearGradient
-        colors={["rgba(0, 212, 200, 0.20)", "rgba(0, 212, 200, 0.34)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 10,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: "rgba(0, 212, 200, 0.10)",
+        borderWidth: 1,
+        borderColor: "rgba(0, 212, 200, 0.30)",
+      }}
+    >
+      <View style={{ flexDirection: "row", gap: 3 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 2.5,
+              backgroundColor:
+                i < unlockedCount
+                  ? colors.accentLight
+                  : "rgba(125, 245, 237, 0.22)",
+            }}
+          />
+        ))}
+      </View>
+      <Text
         style={{
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.18)",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
+          color: colors.accentLight,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.4,
         }}
       >
-        <View style={{ flexDirection: "row", gap: 3 }}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <View
-              key={i}
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor:
-                  i < unlockedCount
-                    ? colors.accentLight
-                    : "rgba(125, 245, 237, 0.25)",
-              }}
-            />
-          ))}
-        </View>
-        <Text
-          style={{
-            color: colors.accentLight,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 9.5,
-            letterSpacing: 1.6,
-            textTransform: "uppercase",
-            fontWeight: "700",
-          }}
-        >
-          {unlockedCount}/3
-        </Text>
-      </LinearGradient>
+        {unlockedCount}/3
+      </Text>
     </View>
   );
 }
 
-function StatChip({
+function Stat({
   label,
   value,
 }: {
@@ -1049,7 +1079,7 @@ function StatChip({
         style={{
           color: colors.textFaint,
           fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 8.5,
+          fontSize: 9,
           letterSpacing: 1.6,
           textTransform: "uppercase",
         }}
@@ -1074,15 +1104,30 @@ function StatChip({
 // ── Tender card ─────────────────────────────────────────────────────
 
 function TenderCard({ tender }: { tender: BuilderTenderListItem }) {
-  const grad = TENDER_GRAD[tender.status] ?? TENDER_GRAD.draft!;
-  const textColor = TENDER_TEXT[tender.status] ?? "#a8b3cf";
+  const tone = TENDER_COLOR[tender.status] ?? TENDER_COLOR.draft!;
   const label = TENDER_LABEL[tender.status] ?? tender.status;
   return (
-    <GlassCard
-      onPress={() => navigateToProject(tender.projectSlug)}
-      padding={16}
-      radius={20}
+    <View
+      style={{
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+        overflow: "hidden",
+      }}
     >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
       <View
         style={{
           flexDirection: "row",
@@ -1154,39 +1199,37 @@ function TenderCard({ tender }: { tender: BuilderTenderListItem }) {
             ) : null}
           </View>
         </View>
-        <View style={{ borderRadius: 14, overflow: "hidden" }}>
-          <LinearGradient
-            colors={grad}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+        <View
+          style={{
+            paddingHorizontal: 10,
+            height: 26,
+            borderRadius: 13,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: tone.bg,
+            borderWidth: 1,
+            borderColor: tone.ring,
+          }}
+        >
+          <Text
             style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.16)",
+              color: tone.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
             }}
           >
-            <Text
-              style={{
-                color: textColor,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 9.5,
-                letterSpacing: 1.6,
-                textTransform: "uppercase",
-                fontWeight: "700",
-              }}
-            >
-              {label}
-            </Text>
-          </LinearGradient>
+            {label}
+          </Text>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
-// ── Activity ────────────────────────────────────────────────────────
+// ── Activity row ────────────────────────────────────────────────────
 
 function ActivityRow({ item }: { item: ActivityItem }) {
   const unread = !item.readAt;
@@ -1198,141 +1241,235 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     return Bell;
   }, [item.kind]);
 
-  const onPress = useCallback(() => {
-    void haptics.tap();
-    if (!item.actionUrl) return;
-    try {
-      const u = new URL(item.actionUrl);
-      router.push(u.pathname as never);
-    } catch {}
-  }, [item.actionUrl]);
-
   return (
-    <GlassCard
-      onPress={item.actionUrl ? onPress : undefined}
-      padding={14}
-      radius={18}
-      variant={unread ? "accent" : "default"}
+    <View
+      style={{
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: unread
+          ? "rgba(0, 212, 200, 0.06)"
+          : "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: unread
+          ? "rgba(0, 212, 200, 0.28)"
+          : "rgba(255, 255, 255, 0.07)",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        overflow: "hidden",
+      }}
     >
-      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-        <View
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: unread
+            ? "rgba(0, 212, 200, 0.18)"
+            : "rgba(255, 255, 255, 0.05)",
+          borderWidth: 1,
+          borderColor: unread
+            ? "rgba(0, 212, 200, 0.34)"
+            : "rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <Icon
+          size={15}
+          color={unread ? colors.accentLight : colors.textMuted}
+          strokeWidth={1.6}
+        />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          numberOfLines={2}
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: unread
-              ? "rgba(0, 212, 200, 0.18)"
-              : "rgba(255, 255, 255, 0.05)",
-            borderWidth: 1,
-            borderColor: unread ? colors.borderAccent : colors.borderSubtle,
+            color: colors.text,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 13.5,
+            lineHeight: 18,
+            fontWeight: unread ? "600" : "500",
           }}
         >
-          <Icon
-            size={15}
-            color={unread ? colors.accentLight : colors.textMuted}
-            strokeWidth={1.6}
-          />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
+          {item.title}
+        </Text>
+        {item.body ? (
           <Text
-            numberOfLines={2}
+            numberOfLines={1}
             style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 13.5,
-              lineHeight: 18,
-              fontWeight: unread ? "600" : "500",
+              color: colors.textFaint,
+              fontFamily: "DMSans_400Regular",
+              fontSize: 12,
+              marginTop: 2,
             }}
           >
-            {item.title}
+            {item.body}
           </Text>
-          {item.body ? (
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.textFaint,
-                fontFamily: "DMSans_400Regular",
-                fontSize: 12,
-                marginTop: 2,
-              }}
-            >
-              {item.body}
-            </Text>
-          ) : null}
-        </View>
-        <Text
-          style={{
-            color: colors.textDim,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 10.5,
-            marginTop: 2,
-          }}
-        >
-          {relativeTime(item.createdAt)}
-        </Text>
+        ) : null}
       </View>
-    </GlassCard>
+      <Text
+        style={{
+          color: colors.textDim,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 10.5,
+          marginTop: 2,
+        }}
+      >
+        {relativeTime(item.createdAt)}
+      </Text>
+    </View>
   );
 }
 
-// ── Empty state ─────────────────────────────────────────────────────
+// ── Empty states ────────────────────────────────────────────────────
 
-function EmptyState({
+function EmptyMatches() {
+  return (
+    <View
+      style={{
+        padding: 28,
+        borderRadius: 24,
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+        alignItems: "center",
+        overflow: "hidden",
+      }}
+    >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <RadarPulse size={96} />
+      <Text
+        style={{
+          color: colors.text,
+          fontFamily: "BebasNeue_400Regular",
+          fontSize: 26,
+          letterSpacing: -0.3,
+          marginTop: 18,
+          textTransform: "uppercase",
+        }}
+      >
+        No new matches
+      </Text>
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 13,
+          textAlign: "center",
+          lineHeight: 19,
+          marginTop: 8,
+          maxWidth: 260,
+        }}
+      >
+        Add or expand your service areas to see more projects here.
+      </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          height: 36,
+          paddingHorizontal: 16,
+          borderRadius: 18,
+          backgroundColor: "rgba(0, 212, 200, 0.14)",
+          borderWidth: 1,
+          borderColor: "rgba(0, 212, 200, 0.40)",
+          marginTop: 16,
+        }}
+      >
+        <Text
+          style={{
+            color: colors.accentLight,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 12.5,
+            fontWeight: "600",
+          }}
+        >
+          Expand service areas
+        </Text>
+        <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
+      </View>
+    </View>
+  );
+}
+
+function EmptyCard({
   icon,
-  title,
   copy,
 }: {
   icon: React.ReactNode;
-  title?: string;
   copy: string;
 }) {
   return (
-    <GlassCard padding={24} radius={20}>
-      <View style={{ alignItems: "center" }}>
-        <View
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: "center",
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: colors.borderSubtle,
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-          }}
-        >
-          {icon}
-        </View>
-        {title ? (
-          <Text
-            style={{
-              color: colors.text,
-              fontFamily: "BebasNeue_400Regular",
-              fontSize: 22,
-              letterSpacing: -0.3,
-              marginTop: 12,
-              textTransform: "uppercase",
-            }}
-          >
-            {title}
-          </Text>
-        ) : null}
-        <Text
-          style={{
-            color: colors.textMuted,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 12.5,
-            lineHeight: 19,
-            textAlign: "center",
-            marginTop: 6,
-            maxWidth: 260,
-          }}
-        >
-          {copy}
-        </Text>
+    <View
+      style={{
+        padding: 18,
+        borderRadius: 18,
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        overflow: "hidden",
+      }}
+    >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "rgba(255, 255, 255, 0.04)",
+        }}
+      >
+        {icon}
       </View>
-    </GlassCard>
+      <Text
+        style={{
+          flex: 1,
+          color: colors.textMuted,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 12.5,
+          lineHeight: 18,
+        }}
+      >
+        {copy}
+      </Text>
+    </View>
   );
 }

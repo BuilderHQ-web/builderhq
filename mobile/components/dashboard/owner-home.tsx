@@ -1,31 +1,26 @@
 /**
- * <OwnerHome /> — v2 owner home.
+ * <OwnerHome /> — premium owner dashboard.
  *
- * Premium glassmorphic dashboard. Layout:
- *   1. Hero greeting — kicker + name in display type + status pill.
- *   2. Brand-gradient hero stat card with the headline number (active
- *      projects). Drop shadow + inner highlight read as "hero".
- *   3. 3-up secondary stat tiles (glass cards) — drafts, tenders,
- *      unread. Tap into the respective tab.
- *   4. "Your projects" horizontal swipe carousel of glass cards —
- *      premium-feel paging. Project title, status pill, three inline
- *      stats. Pagination dots underneath.
- *   5. "Recent activity" glass feed list.
+ * Layout, top to bottom:
+ *   1. <GlassHeader /> — floating overlay; avatar left, greeting
+ *      centre, bell-notif on right. Extends behind the iOS status bar
+ *      and fades into the content (no hard horizontal break).
+ *   2. Hero greeting block — kicker + Bebas display name + one
+ *      sub-line ("3 projects on the go.").
+ *   3. Founding-access hero card — gradient with depth.
+ *      (Owner-side this lives on builder home; for owners we render
+ *      the headline-stat tile instead — Active Projects in display
+ *      type.)
+ *   4. 3-tile glass stat row — Drafts / Tenders / Unread.
+ *   5. Your projects — horizontal swipe carousel.
+ *   6. Activity — glass-card timeline.
  *
- * UX rituals:
- *   · Horizontal swipe on projects (Uber/Airbnb-style)
- *   · Pull-to-refresh
- *   · Light haptics on every tap
- *   · Sticky animated BlurHeader (fills in as user scrolls past the
- *     hero) with kicker + name in the centre slot
- *   · Reanimated FadeInUp stagger on every section
- *
- * Content padding accounts for the floating tab bar at the bottom
- * (88px buffer).
+ * Content scrolls UNDER the floating header. SafeArea is owned by
+ * the header — the screen itself uses edges={[]} so no top inset
+ * pushes the canvas down.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -34,10 +29,6 @@ import {
 } from "react-native";
 import Animated, {
   FadeInUp,
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
 } from "react-native-reanimated";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -48,17 +39,19 @@ import {
   ChevronRight,
   FileText,
   Home as HomeIcon,
-  Inbox,
   Layers,
   MapPin,
   MessageSquare,
+  Plus,
   Sparkles,
   Wrench,
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
-import { GlassCard } from "@/components/ui/glass-card";
-import { BlurHeader, HeaderTitle } from "@/components/ui/blur-header";
+import { Avatar } from "@/components/ui/avatar";
+import { GlassHeader, useGlassHeaderHeight } from "@/components/ui/glass-header";
+import { StatTile } from "@/components/ui/stat-tile";
+import { RadarPulse } from "@/components/ui/radar-pulse";
 import { useAuth } from "@/lib/auth";
 import { haptics } from "@/lib/haptics";
 import { useOwnerDashboard } from "@/lib/dashboard";
@@ -69,8 +62,6 @@ import type {
   ActivityItem,
   OwnerProjectListItem,
 } from "./types";
-
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 // ── Mapping tables ──────────────────────────────────────────────────
 
@@ -88,21 +79,37 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Archived",
   rejected: "Rejected",
 };
-const STATUS_GRAD: Record<string, [string, string]> = {
-  draft: ["rgba(168, 179, 207, 0.10)", "rgba(168, 179, 207, 0.18)"],
-  published: ["rgba(0, 212, 200, 0.18)", "rgba(0, 212, 200, 0.32)"],
-  tendering: ["rgba(0, 212, 200, 0.25)", "rgba(59, 130, 246, 0.30)"],
-  awarded: ["rgba(134, 239, 172, 0.20)", "rgba(134, 239, 172, 0.34)"],
-  archived: ["rgba(255, 255, 255, 0.06)", "rgba(255, 255, 255, 0.10)"],
-  rejected: ["rgba(255, 122, 138, 0.18)", "rgba(255, 122, 138, 0.30)"],
-};
-const STATUS_TEXT: Record<string, string> = {
-  draft: "#a8b3cf",
-  published: "#7df5ed",
-  tendering: "#7df5ed",
-  awarded: "#86efac",
-  archived: "#697296",
-  rejected: "#ff7a8a",
+const STATUS_COLOR: Record<string, { bg: string; ring: string; text: string }> = {
+  draft: {
+    bg: "rgba(168, 179, 207, 0.08)",
+    ring: "rgba(168, 179, 207, 0.18)",
+    text: "#a8b3cf",
+  },
+  published: {
+    bg: "rgba(0, 212, 200, 0.12)",
+    ring: "rgba(0, 212, 200, 0.36)",
+    text: "#7df5ed",
+  },
+  tendering: {
+    bg: "rgba(0, 212, 200, 0.18)",
+    ring: "rgba(0, 212, 200, 0.50)",
+    text: "#00d4c8",
+  },
+  awarded: {
+    bg: "rgba(134, 239, 172, 0.14)",
+    ring: "rgba(134, 239, 172, 0.36)",
+    text: "#86efac",
+  },
+  archived: {
+    bg: "rgba(255, 255, 255, 0.04)",
+    ring: "rgba(255, 255, 255, 0.10)",
+    text: "#697296",
+  },
+  rejected: {
+    bg: "rgba(255, 122, 138, 0.12)",
+    ring: "rgba(255, 122, 138, 0.32)",
+    text: "#ff7a8a",
+  },
 };
 
 function timeOfDayGreeting(now = new Date()): string {
@@ -125,7 +132,7 @@ function relativeTime(iso: string, now = Date.now()): string {
   return `${Math.floor(d / 7)}w`;
 }
 
-function projectTypeIcon(type: string, size = 14, color: string = colors.text) {
+function typeIcon(type: string, size = 14, color: string = colors.accentLight) {
   const p = { size, color, strokeWidth: 1.6 };
   switch (type) {
     case "single_dwelling":
@@ -146,26 +153,9 @@ function projectTypeIcon(type: string, size = 14, color: string = colors.text) {
 export function OwnerHome() {
   const { user } = useAuth();
   const { data, isLoading, error, refetch } = useOwnerDashboard();
+  const headerHeight = useGlassHeaderHeight();
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
-
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
-    },
-  });
-
-  // Sticky header materialises past 100px of scroll.
-  const headerBgStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [60, 110], [0, 1], "clamp"),
-  }));
-  const headerTitleStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [80, 130], [0, 1], "clamp"),
-    transform: [
-      { translateY: interpolate(scrollY.value, [80, 130], [4, 0], "clamp") },
-    ],
-  }));
 
   useEffect(() => {
     const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
@@ -184,14 +174,14 @@ export function OwnerHome() {
 
   if (isLoading && !data) {
     return (
-      <Screen variant="flat">
+      <Screen variant="flat" edges={[]}>
         <DashboardSkeleton />
       </Screen>
     );
   }
   if (error && !data) {
     return (
-      <Screen variant="flat">
+      <Screen variant="flat" edges={[]}>
         <ErrorView message={error} onRetry={refetch} />
       </Screen>
     );
@@ -201,44 +191,84 @@ export function OwnerHome() {
   const projects = data?.projects ?? [];
   const activity = data?.activity ?? [];
   const firstName = user?.name?.split(" ")[0] ?? null;
+  const tenderTotal = projects.reduce((s, p) => s + p.stats.tenderCount, 0);
+  const builderTotal = projects.reduce((s, p) => s + p.stats.unlockCount, 0);
 
   return (
-    <Screen variant="flat" edges={["top"]}>
-      <BlurHeader
-        hideBack
-        backdropStyle={headerBgStyle}
-        centerSlot={
-          <Animated.View style={headerTitleStyle}>
-            <HeaderTitle kicker="Dashboard" title={firstName ?? "Home"} />
-          </Animated.View>
+    <Screen variant="flat" edges={[]}>
+      <GlassHeader
+        left={<Avatar name={user?.name} size={36} />}
+        center={
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                color: colors.textFaint,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 9.5,
+                letterSpacing: 2.4,
+                textTransform: "uppercase",
+                fontWeight: "600",
+              }}
+            >
+              Dashboard
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.text,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 15,
+                fontWeight: "600",
+                letterSpacing: -0.1,
+                marginTop: 1,
+              }}
+            >
+              {firstName ?? "Home"}
+            </Text>
+          </View>
+        }
+        right={
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <Bell size={15} color={colors.textMuted} strokeWidth={1.7} />
+          </View>
         }
       />
 
-      <AnimatedScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
+      <ScrollView
         contentContainerStyle={{
-          paddingTop: 72,
+          paddingTop: headerHeight + 4,
           paddingHorizontal: 20,
-          paddingBottom: 120, // floating tab bar buffer
+          paddingBottom: 140,
         }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.accentLight}
             progressBackgroundColor={colors.bgRaised}
+            progressViewOffset={headerHeight}
           />
         }
       >
-        {/* Hero */}
+        {/* Hero greeting */}
         <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
           <Text
             style={{
               color: colors.accent,
               fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 10.5,
+              fontSize: 11,
               letterSpacing: 2.6,
               textTransform: "uppercase",
               fontWeight: "600",
@@ -255,8 +285,8 @@ export function OwnerHome() {
             style={{
               color: colors.text,
               fontFamily: "BebasNeue_400Regular",
-              fontSize: 48,
-              lineHeight: 50,
+              fontSize: 52,
+              lineHeight: 54,
               letterSpacing: -0.6,
               marginTop: 6,
             }}
@@ -270,62 +300,65 @@ export function OwnerHome() {
             style={{
               color: colors.textMuted,
               fontFamily: "DMSans_400Regular",
-              fontSize: 15,
-              lineHeight: 22,
+              fontSize: 14.5,
+              lineHeight: 21,
               marginTop: 8,
             }}
           >
             {projects.length === 0
               ? "Let's get your first project onboarded."
-              : `${projects.length} ${projects.length === 1 ? "project" : "projects"} on the go.`}
+              : `${projects.length} ${projects.length === 1 ? "project" : "projects"} on the go · ${tenderTotal} tender${tenderTotal === 1 ? "" : "s"} received`}
           </Text>
         </Animated.View>
 
-        {/* Hero stat card — brand gradient */}
+        {/* Hero stat — active projects (gradient) */}
         <Animated.View
           entering={FadeInUp.delay(220).duration(460).springify()}
           style={{ marginTop: 24 }}
         >
-          <HeroStatCard stats={stats} projects={projects} />
+          <HeroStat
+            label="Active projects"
+            value={stats?.activeProjects ?? 0}
+            sub={
+              builderTotal > 0
+                ? `${builderTotal} builder${builderTotal === 1 ? "" : "s"} engaged`
+                : "Onboard one to get started"
+            }
+          />
         </Animated.View>
 
-        {/* Secondary stats */}
+        {/* Stat row */}
         <Animated.View
           entering={FadeInUp.delay(280).duration(440).springify()}
           style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
         >
-          <MiniStat
+          <StatTile
             label="Drafts"
             value={stats?.draftProjects ?? 0}
-            onPress={() => {
-              void haptics.tap();
-              router.push("/(main)/browse");
-            }}
+            onPress={() => router.push("/(main)/browse")}
           />
-          <MiniStat
+          <StatTile
             label="Tenders"
             value={stats?.totalTenders ?? 0}
-            accent={(stats?.totalTenders ?? 0) > 0}
+            tone={(stats?.totalTenders ?? 0) > 0 ? "accent" : "neutral"}
           />
-          <MiniStat
+          <StatTile
             label="Unread"
             value={stats?.unreadMessages ?? 0}
-            accent={(stats?.unreadMessages ?? 0) > 0}
-            onPress={() => {
-              void haptics.tap();
-              router.push("/(main)/messages");
-            }}
+            tone={(stats?.unreadMessages ?? 0) > 0 ? "accent" : "neutral"}
+            onPress={() => router.push("/(main)/messages")}
           />
         </Animated.View>
 
-        {/* Projects carousel */}
+        {/* Projects */}
         <Animated.View
           entering={FadeInUp.delay(340).duration(440).springify()}
-          style={{ marginTop: 32 }}
+          style={{ marginTop: 36 }}
         >
           <SectionHeader
             kicker="Your projects"
             title={projects.length === 0 ? "Start the first" : "Swipe through"}
+            ctaIcon={<Plus size={13} color={colors.accentLight} strokeWidth={2} />}
             ctaLabel={projects.length === 0 ? "New" : undefined}
             onCta={
               projects.length === 0
@@ -383,37 +416,32 @@ export function OwnerHome() {
             ))}
           </View>
         )}
-      </AnimatedScrollView>
+      </ScrollView>
     </Screen>
   );
 }
 
-// ── Hero stat card (gradient) ───────────────────────────────────────
+// ── Hero stat (gradient card) ───────────────────────────────────────
 
-function HeroStatCard({
-  stats,
-  projects,
+function HeroStat({
+  label,
+  value,
+  sub,
 }: {
-  stats: { activeProjects: number } | undefined;
-  projects: OwnerProjectListItem[];
+  label: string;
+  value: number;
+  sub: string;
 }) {
-  // Sum across all live/tendering projects.
-  const tenderCount = projects.reduce((s, p) => s + p.stats.tenderCount, 0);
-  const builderCount = projects.reduce(
-    (s, p) => s + p.stats.unlockCount,
-    0,
-  );
-
   return (
     <View
       style={{
         borderRadius: 28,
         overflow: "hidden",
         shadowColor: colors.accent,
-        shadowOpacity: 0.4,
-        shadowRadius: 24,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 12,
+        shadowOpacity: 0.32,
+        shadowRadius: 26,
+        shadowOffset: { width: 0, height: 14 },
+        elevation: 10,
       }}
     >
       <LinearGradient
@@ -422,7 +450,7 @@ function HeroStatCard({
         end={{ x: 1, y: 1 }}
         style={{ padding: 22 }}
       >
-        {/* Inner highlight — gives the gradient depth */}
+        {/* Inner top highlight */}
         <View
           pointerEvents="none"
           style={{
@@ -434,6 +462,7 @@ function HeroStatCard({
             backgroundColor: "rgba(255, 255, 255, 0.30)",
           }}
         />
+        {/* Soft inner border */}
         <View
           pointerEvents="none"
           style={{
@@ -443,92 +472,55 @@ function HeroStatCard({
             borderColor: "rgba(255, 255, 255, 0.18)",
           }}
         />
+        {/* Soft light bloom — top-right */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -60,
+            right: -40,
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            backgroundColor: "rgba(255, 255, 255, 0.10)",
+          }}
+        />
 
-        <Text
-          style={{
-            color: "rgba(3, 17, 24, 0.65)",
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            letterSpacing: 2,
-            textTransform: "uppercase",
-            fontWeight: "700",
-          }}
-        >
-          Active projects
-        </Text>
-        <Text
-          style={{
-            color: colors.textInverse,
-            fontFamily: "BebasNeue_400Regular",
-            fontSize: 78,
-            lineHeight: 78,
-            letterSpacing: -1,
-            marginTop: 6,
-          }}
-        >
-          {stats?.activeProjects ?? 0}
-        </Text>
         <Text
           style={{
             color: "rgba(3, 17, 24, 0.72)",
-            fontFamily: "DMSans_400Regular",
-            fontSize: 13,
-            marginTop: 6,
-          }}
-        >
-          {tenderCount} tender{tenderCount === 1 ? "" : "s"} · {builderCount} builder{builderCount === 1 ? "" : "s"} engaged
-        </Text>
-      </LinearGradient>
-    </View>
-  );
-}
-
-// ── Mini stat (glass card) ──────────────────────────────────────────
-
-function MiniStat({
-  label,
-  value,
-  accent,
-  onPress,
-}: {
-  label: string;
-  value: number;
-  accent?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <View style={{ flex: 1 }}>
-      <GlassCard
-        onPress={onPress}
-        variant={accent ? "accent" : "default"}
-        padding={14}
-        radius={18}
-      >
-        <Text
-          style={{
-            color: colors.textFaint,
             fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 9.5,
-            letterSpacing: 1.8,
+            fontSize: 10.5,
+            letterSpacing: 2.2,
             textTransform: "uppercase",
-            fontWeight: "600",
+            fontWeight: "700",
           }}
         >
           {label}
         </Text>
         <Text
           style={{
-            color: accent ? colors.accentLight : colors.text,
+            color: colors.textInverse,
             fontFamily: "BebasNeue_400Regular",
-            fontSize: 32,
-            lineHeight: 34,
-            letterSpacing: -0.4,
-            marginTop: 6,
+            fontSize: 84,
+            lineHeight: 84,
+            letterSpacing: -1.2,
+            marginTop: 8,
           }}
         >
           {value}
         </Text>
-      </GlassCard>
+        <Text
+          style={{
+            color: "rgba(3, 17, 24, 0.72)",
+            fontFamily: "DMSans_400Regular",
+            fontSize: 13,
+            marginTop: 4,
+          }}
+        >
+          {sub}
+        </Text>
+      </LinearGradient>
     </View>
   );
 }
@@ -538,11 +530,13 @@ function MiniStat({
 function SectionHeader({
   kicker,
   title,
+  ctaIcon,
   ctaLabel,
   onCta,
 }: {
   kicker: string;
   title: string;
+  ctaIcon?: React.ReactNode;
   ctaLabel?: string;
   onCta?: () => void;
 }) {
@@ -572,8 +566,8 @@ function SectionHeader({
             color: colors.text,
             fontFamily: "SpaceGrotesk_500Medium",
             fontSize: 18,
-            letterSpacing: -0.2,
             fontWeight: "600",
+            letterSpacing: -0.2,
             marginTop: 4,
           }}
         >
@@ -581,10 +575,7 @@ function SectionHeader({
         </Text>
       </View>
       {ctaLabel && onCta ? (
-        <Pressable
-          onPress={onCta}
-          accessibilityRole="button"
-          accessibilityLabel={ctaLabel}
+        <View
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -592,11 +583,12 @@ function SectionHeader({
             height: 32,
             paddingHorizontal: 12,
             borderRadius: 16,
-            backgroundColor: colors.accentMuted,
+            backgroundColor: "rgba(0, 212, 200, 0.10)",
             borderWidth: 1,
-            borderColor: colors.borderAccent,
+            borderColor: "rgba(0, 212, 200, 0.34)",
           }}
         >
+          {ctaIcon}
           <Text
             style={{
               color: colors.accentLight,
@@ -607,19 +599,23 @@ function SectionHeader({
           >
             {ctaLabel}
           </Text>
-          <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
-        </Pressable>
+        </View>
       ) : null}
     </View>
   );
 }
 
-// ── Project carousel (horizontal swipe) ─────────────────────────────
+// ── Carousel + project card ─────────────────────────────────────────
 
 function ProjectCarousel({ projects }: { projects: OwnerProjectListItem[] }) {
   const [page, setPage] = useState(0);
   const onScrollEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { x: number }; layoutMeasurement: { width: number } } }) => {
+    (e: {
+      nativeEvent: {
+        contentOffset: { x: number };
+        layoutMeasurement: { width: number };
+      };
+    }) => {
       const idx = Math.round(
         e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
       );
@@ -644,7 +640,7 @@ function ProjectCarousel({ projects }: { projects: OwnerProjectListItem[] }) {
       >
         {projects.map((p) => (
           <View key={p.id} style={{ width: 320 }}>
-            <ProjectCard project={p} />
+            <OwnerProjectCard project={p} />
           </View>
         ))}
       </ScrollView>
@@ -676,142 +672,159 @@ function ProjectCarousel({ projects }: { projects: OwnerProjectListItem[] }) {
   );
 }
 
-function ProjectCard({ project }: { project: OwnerProjectListItem }) {
-  const statusGrad =
-    STATUS_GRAD[project.status] ?? STATUS_GRAD.archived!;
-  const statusText = STATUS_TEXT[project.status] ?? "#697296";
+function OwnerProjectCard({ project }: { project: OwnerProjectListItem }) {
+  const statusColor =
+    STATUS_COLOR[project.status] ?? STATUS_COLOR.archived!;
   const statusLabel = STATUS_LABEL[project.status] ?? project.status;
   const typeLabel = TYPE_LABEL[project.type] ?? project.type;
   const location = [project.suburb, project.state].filter(Boolean).join(", ");
 
-  const onPress = useCallback(() => {
-    void haptics.tap();
-    router.push(`/(main)/projects/${project.slug}` as never);
-  }, [project.slug]);
-
   return (
-    <GlassCard onPress={onPress} padding={18} radius={24}>
+    <View
+      style={{
+        borderRadius: 24,
+        overflow: "hidden",
+        backgroundColor: "rgba(255, 255, 255, 0.04)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+      }}
+    >
+      {/* Inner top highlight */}
       <View
+        pointerEvents="none"
         style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 10,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.12)",
         }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {projectTypeIcon(project.type, 12, colors.accentLight)}
-            <Text
-              style={{
-                color: colors.textMuted,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 11,
-              }}
-            >
-              {typeLabel}
-            </Text>
-          </View>
-          <Text
-            numberOfLines={2}
-            style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 18,
-              fontWeight: "600",
-              letterSpacing: -0.2,
-              marginTop: 8,
-            }}
-          >
-            {project.title}
-          </Text>
-          {location ? (
+      />
+      <View style={{ padding: 18 }}>
+        {/* Top row */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <View style={{ flex: 1, minWidth: 0 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
-                marginTop: 4,
+                gap: 6,
               }}
             >
-              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              {typeIcon(project.type, 12)}
               <Text
-                numberOfLines={1}
                 style={{
                   color: colors.textMuted,
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 12.5,
+                  fontFamily: "SpaceGrotesk_500Medium",
+                  fontSize: 11,
+                  fontWeight: "500",
                 }}
               >
-                {location}
+                {typeLabel}
               </Text>
             </View>
-          ) : null}
-        </View>
+            <Text
+              numberOfLines={2}
+              style={{
+                color: colors.text,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 18,
+                fontWeight: "600",
+                letterSpacing: -0.2,
+                marginTop: 8,
+              }}
+            >
+              {project.title}
+            </Text>
+            {location ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 4,
+                }}
+              >
+                <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: colors.textMuted,
+                    fontFamily: "DMSans_400Regular",
+                    fontSize: 12.5,
+                  }}
+                >
+                  {location}
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
-        {/* Status pill — gradient fill */}
-        <View
-          style={{
-            borderRadius: 14,
-            overflow: "hidden",
-          }}
-        >
-          <LinearGradient
-            colors={statusGrad}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          {/* Status chip */}
+          <View
             style={{
               paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 14,
+              height: 26,
+              borderRadius: 13,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: statusColor.bg,
               borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.16)",
+              borderColor: statusColor.ring,
             }}
           >
             <Text
               style={{
-                color: statusText,
+                color: statusColor.text,
                 fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 9.5,
-                letterSpacing: 1.6,
-                textTransform: "uppercase",
+                fontSize: 10,
                 fontWeight: "700",
+                letterSpacing: 1.4,
+                textTransform: "uppercase",
               }}
             >
               {statusLabel}
             </Text>
-          </LinearGradient>
+          </View>
         </View>
-      </View>
 
-      {/* Inline stats */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 18,
-          marginTop: 16,
-          paddingTop: 14,
-          borderTopWidth: 1,
-          borderTopColor: colors.borderSubtle,
-        }}
-      >
-        <StatChip label="Builders" value={`${project.stats.unlockCount}/3`} />
-        <StatChip label="Tenders" value={project.stats.tenderCount} />
-        <StatChip
-          label="Unread"
-          value={project.stats.unreadMessages}
-          highlight={project.stats.unreadMessages > 0}
-        />
-        <View style={{ marginLeft: "auto" }}>
-          <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
+        {/* Stats footer */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 16,
+            marginTop: 16,
+            paddingTop: 14,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255, 255, 255, 0.06)",
+          }}
+        >
+          <Stat label="Builders" value={`${project.stats.unlockCount}/3`} />
+          <Stat label="Tenders" value={project.stats.tenderCount} />
+          <Stat
+            label="Unread"
+            value={project.stats.unreadMessages}
+            highlight={project.stats.unreadMessages > 0}
+          />
+          <View style={{ marginLeft: "auto" }}>
+            <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
+          </View>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
-function StatChip({
+function Stat({
   label,
   value,
   highlight,
@@ -826,7 +839,7 @@ function StatChip({
         style={{
           color: colors.textFaint,
           fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 8.5,
+          fontSize: 9,
           letterSpacing: 1.6,
           textTransform: "uppercase",
         }}
@@ -854,88 +867,100 @@ function ActivityRow({ item }: { item: ActivityItem }) {
   const unread = !item.readAt;
   const Icon = useMemo(() => {
     if (item.kind.includes("message")) return MessageSquare;
-    if (item.kind.includes("tender") || item.kind.includes("award"))
-      return FileText;
+    if (item.kind.includes("tender") || item.kind.includes("award")) return FileText;
     if (item.kind.includes("unlock")) return Sparkles;
     return Bell;
   }, [item.kind]);
 
-  const onPress = useCallback(() => {
-    void haptics.tap();
-    if (!item.actionUrl) return;
-    try {
-      const u = new URL(item.actionUrl);
-      router.push(u.pathname as never);
-    } catch {}
-  }, [item.actionUrl]);
-
   return (
-    <GlassCard
-      onPress={item.actionUrl ? onPress : undefined}
-      padding={14}
-      radius={18}
-      variant={unread ? "accent" : "default"}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        padding: 14,
+        borderRadius: 18,
+        backgroundColor: unread
+          ? "rgba(0, 212, 200, 0.06)"
+          : "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: unread
+          ? "rgba(0, 212, 200, 0.28)"
+          : "rgba(255, 255, 255, 0.07)",
+        overflow: "hidden",
+      }}
     >
-      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-        <View
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: unread
+            ? "rgba(0, 212, 200, 0.18)"
+            : "rgba(255, 255, 255, 0.05)",
+          borderWidth: 1,
+          borderColor: unread
+            ? "rgba(0, 212, 200, 0.34)"
+            : "rgba(255, 255, 255, 0.08)",
+        }}
+      >
+        <Icon
+          size={15}
+          color={unread ? colors.accentLight : colors.textMuted}
+          strokeWidth={1.6}
+        />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          numberOfLines={2}
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: unread
-              ? "rgba(0, 212, 200, 0.18)"
-              : "rgba(255, 255, 255, 0.05)",
-            borderWidth: 1,
-            borderColor: unread ? colors.borderAccent : colors.borderSubtle,
+            color: colors.text,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 13.5,
+            lineHeight: 18,
+            fontWeight: unread ? "600" : "500",
           }}
         >
-          <Icon
-            size={15}
-            color={unread ? colors.accentLight : colors.textMuted}
-            strokeWidth={1.6}
-          />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
+          {item.title}
+        </Text>
+        {item.body ? (
           <Text
-            numberOfLines={2}
+            numberOfLines={1}
             style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 13.5,
-              lineHeight: 18,
-              fontWeight: unread ? "600" : "500",
+              color: colors.textFaint,
+              fontFamily: "DMSans_400Regular",
+              fontSize: 12,
+              marginTop: 2,
             }}
           >
-            {item.title}
+            {item.body}
           </Text>
-          {item.body ? (
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.textFaint,
-                fontFamily: "DMSans_400Regular",
-                fontSize: 12,
-                marginTop: 2,
-              }}
-            >
-              {item.body}
-            </Text>
-          ) : null}
-        </View>
-        <Text
-          style={{
-            color: colors.textDim,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 10.5,
-            marginTop: 2,
-          }}
-        >
-          {relativeTime(item.createdAt)}
-        </Text>
+        ) : null}
       </View>
-    </GlassCard>
+      <Text
+        style={{
+          color: colors.textDim,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 10.5,
+          marginTop: 2,
+        }}
+      >
+        {relativeTime(item.createdAt)}
+      </Text>
+    </View>
   );
 }
 
@@ -943,68 +968,134 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 function EmptyProjects() {
   return (
-    <GlassCard padding={28} radius={24}>
-      <View style={{ alignItems: "center" }}>
-        <View
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            alignItems: "center",
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: colors.borderAccent,
-            backgroundColor: colors.accentMuted,
-          }}
-        >
-          <HomeIcon size={22} color={colors.accentLight} strokeWidth={1.6} />
-        </View>
+    <View
+      style={{
+        padding: 28,
+        borderRadius: 24,
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+        alignItems: "center",
+        overflow: "hidden",
+      }}
+    >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <RadarPulse size={96} />
+      <Text
+        style={{
+          color: colors.text,
+          fontFamily: "BebasNeue_400Regular",
+          fontSize: 26,
+          letterSpacing: -0.3,
+          marginTop: 18,
+          textTransform: "uppercase",
+        }}
+      >
+        No projects yet
+      </Text>
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 13,
+          textAlign: "center",
+          lineHeight: 19,
+          marginTop: 8,
+          maxWidth: 240,
+        }}
+      >
+        Onboard your first project to start receiving tenders.
+      </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          height: 36,
+          paddingHorizontal: 16,
+          borderRadius: 18,
+          backgroundColor: "rgba(0, 212, 200, 0.14)",
+          borderWidth: 1,
+          borderColor: "rgba(0, 212, 200, 0.40)",
+          marginTop: 16,
+        }}
+      >
+        <Plus size={13} color={colors.accentLight} strokeWidth={2} />
         <Text
           style={{
-            color: colors.text,
-            fontFamily: "BebasNeue_400Regular",
-            fontSize: 24,
-            letterSpacing: -0.3,
-            marginTop: 14,
-            textTransform: "uppercase",
+            color: colors.accentLight,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 12.5,
+            fontWeight: "600",
           }}
         >
-          No projects yet
+          Onboard a project
         </Text>
-        <Text
-          style={{
-            color: colors.textMuted,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 13,
-            textAlign: "center",
-            lineHeight: 19,
-            marginTop: 6,
-            maxWidth: 240,
-          }}
-        >
-          Onboard your first project to start receiving tenders.
-        </Text>
+        <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
 function EmptyActivity() {
   return (
-    <GlassCard padding={22} radius={18}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Inbox size={16} color={colors.textDim} strokeWidth={1.5} />
-        <Text
-          style={{
-            color: colors.textMuted,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 12.5,
-            flex: 1,
-          }}
-        >
-          No activity yet. Builder unlocks, tenders, and messages land here.
-        </Text>
+    <View
+      style={{
+        padding: 18,
+        borderRadius: 18,
+        backgroundColor: "rgba(255, 255, 255, 0.035)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.07)",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        overflow: "hidden",
+      }}
+    >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 1,
+          backgroundColor: "rgba(255, 255, 255, 0.10)",
+        }}
+      />
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "rgba(255, 255, 255, 0.04)",
+        }}
+      >
+        <Sparkles size={14} color={colors.textDim} strokeWidth={1.6} />
       </View>
-    </GlassCard>
+      <Text
+        style={{
+          flex: 1,
+          color: colors.textMuted,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 12.5,
+          lineHeight: 18,
+        }}
+      >
+        No activity yet. Builder unlocks, tenders, and messages land here.
+      </Text>
+    </View>
   );
 }

@@ -1,28 +1,15 @@
 /**
- * <BuilderBrowse /> — the marketplace browse screen for builders.
+ * <BuilderBrowse /> — the marketplace browse for builders.
  *
- * Composition:
- *   1. Sticky header — title + saved count + filter glyph (with badge
- *      when filters are active).
- *   2. Persistent search field (TextInput, debounced through the hook).
- *   3. Horizontal scroll of "active filter chips" with clear taps.
- *   4. FlashList of project cards. Infinite scroll appends pages of
- *      12 as the user nears the bottom (~3 rows from end).
- *   5. Bottom sheet for advanced filters (Gorhom).
+ * Composition (top to bottom):
+ *   1. GlassHeader — title block + saved-count pill.
+ *   2. Search bar (Revolut-style) + circular glass filter button.
+ *   3. Horizontal scroll of active filter chips (tap to remove).
+ *   4. FlashList of premium <BrowseProjectCard /> rows.
+ *   5. Gorhom bottom sheet for the full filter editor.
  *
- * Native UX rituals:
- *   · SafeArea-aware (top inset on the header, bottom inset from the
- *     parent (main) layout).
- *   · Pull-to-refresh with teal tint.
- *   · Light haptic on chip taps, success haptic on save.
- *   · Skeleton placeholders mirror the final card shape during first
- *     load.
- *   · Empty states are dedicated per cause (no matches, no service
- *     areas, server error).
- *
- * FlashList is preferred over FlatList for the marketplace because
- * marketplace lists tend to be long-tail; FlashList recycles cell
- * heights and stays smooth past ~100 rows on cheaper Android.
+ * Content scrolls under the GlassHeader (which floats over the top).
+ * Pull-to-refresh + infinite scroll + skeleton on first load.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -31,7 +18,6 @@ import {
   Pressable,
   RefreshControl,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
@@ -39,22 +25,27 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   Bookmark,
-  Search,
+  Compass,
   SlidersHorizontal,
-  Sparkles,
   X,
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
+import {
+  GlassHeader,
+  useGlassHeaderHeight,
+} from "@/components/ui/glass-header";
+import { RadarPulse } from "@/components/ui/radar-pulse";
+import { SearchBar, FilterButton } from "@/components/ui/search-bar";
 import { useBrowse } from "@/lib/browse";
 import { haptics } from "@/lib/haptics";
+import { colors } from "@/lib/theme";
 import type {
   BrowseFilters,
   BrowseListItem,
 } from "@/components/dashboard/types";
 import { FilterSheet } from "./filter-sheet";
 import { BrowseProjectCard } from "./project-card";
-import { SkeletonBlock } from "@/components/dashboard/skeleton";
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -69,13 +60,19 @@ const BUDGET_LABEL: Record<string, string> = {
   "1_5m_2m": "$1.5M – $2M",
   "2m_3m": "$2M – $3M",
   "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  over_5m: "$5M+",
 };
+
+interface Chip {
+  key: string;
+  label: string;
+  onRemove: () => void;
+}
 
 export function BuilderBrowse() {
   const browse = useBrowse();
   const sheetRef = useRef<BottomSheetModal>(null);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const headerHeight = useGlassHeaderHeight();
 
   const openFilters = useCallback(() => {
     void haptics.tap();
@@ -83,8 +80,6 @@ export function BuilderBrowse() {
     sheetRef.current?.present();
   }, []);
 
-  // Build the active-chips array. Each chip carries its own remove
-  // handler so the ChipStrip stays dumb (just renders + calls back).
   const activeChips = useMemo<Chip[]>(() => {
     const chips: Chip[] = [];
     if (browse.filters.inMyArea) {
@@ -132,7 +127,7 @@ export function BuilderBrowse() {
 
   const renderItem: ListRenderItem<BrowseListItem> = useCallback(
     ({ item }) => (
-      <View className="px-6 pb-3">
+      <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
         <BrowseProjectCard
           item={item}
           isSaved={browse.savedIds.has(item.id)}
@@ -143,60 +138,194 @@ export function BuilderBrowse() {
     [browse.savedIds, browse.toggleSave],
   );
 
-  // Footer — load-more indicator or "end of list" hint.
   const renderFooter = useCallback(() => {
     if (browse.isLoadingMore) {
       return (
-        <View className="py-6 items-center">
-          <ActivityIndicator color="#7ef5ed" />
+        <View style={{ paddingVertical: 24, alignItems: "center" }}>
+          <ActivityIndicator color={colors.accentLight} />
         </View>
       );
     }
     if (!browse.hasMore && browse.items.length > 0) {
       return (
-        <View className="py-8 items-center">
-          <Text className="text-text-dim text-[11px] tracking-[0.16em] uppercase font-ui">
+        <View style={{ paddingVertical: 32, alignItems: "center" }}>
+          <Text
+            style={{
+              color: colors.textDim,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 10.5,
+              letterSpacing: 1.8,
+              textTransform: "uppercase",
+            }}
+          >
             You&rsquo;re all caught up
           </Text>
         </View>
       );
     }
-    return <View className="h-6" />;
+    return <View style={{ height: 16 }} />;
   }, [browse.isLoadingMore, browse.hasMore, browse.items.length]);
 
   return (
-    <Screen variant="flat">
-      {/* Header */}
-      <Header
-        savedCount={browse.mySavedCount}
-        filterCount={browse.activeFilterCount}
-        onOpenFilters={openFilters}
+    <Screen variant="flat" edges={[]}>
+      <GlassHeader
+        left={
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <Compass size={15} color={colors.textMuted} strokeWidth={1.7} />
+          </View>
+        }
+        center={
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                color: colors.textFaint,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 9.5,
+                letterSpacing: 2.4,
+                textTransform: "uppercase",
+                fontWeight: "600",
+              }}
+            >
+              Marketplace
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.text,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 15,
+                fontWeight: "600",
+                letterSpacing: -0.1,
+                marginTop: 1,
+              }}
+            >
+              Browse
+            </Text>
+          </View>
+        }
+        right={
+          browse.mySavedCount > 0 ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                height: 30,
+                paddingHorizontal: 10,
+                borderRadius: 15,
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.10)",
+              }}
+            >
+              <Bookmark
+                size={11}
+                color={colors.danger}
+                fill={colors.danger}
+                strokeWidth={0}
+              />
+              <Text
+                style={{
+                  color: colors.textMuted,
+                  fontFamily: "SpaceGrotesk_500Medium",
+                  fontSize: 11.5,
+                  fontWeight: "600",
+                }}
+              >
+                {browse.mySavedCount}
+              </Text>
+            </View>
+          ) : (
+            <View style={{ width: 36, height: 36 }} />
+          )
+        }
       />
 
-      {/* Search + chips strip — lives inside the list as a sticky-ish
-            ListHeader so it stays visually attached but scrolls with
-            the content. */}
       <FlashList
         data={browse.items}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
-          <View className="px-6 pb-3 pt-1">
-            <SearchField
+          <View
+            style={{
+              paddingTop: headerHeight + 8,
+              paddingHorizontal: 20,
+              paddingBottom: 12,
+            }}
+          >
+            <SearchBar
               value={browse.queryDraft}
               onChange={browse.setQueryDraft}
-              focused={searchFocused}
-              onFocusChange={setSearchFocused}
-              onClear={() => browse.setQueryDraft("")}
+              placeholder="Search projects"
+              trailing={
+                <FilterButton
+                  onPress={openFilters}
+                  accessibilityLabel="Open filters"
+                  badge={browse.activeFilterCount}
+                >
+                  <SlidersHorizontal
+                    size={15}
+                    color={colors.text}
+                    strokeWidth={1.7}
+                  />
+                </FilterButton>
+              }
             />
-            <ChipStrip
-              chips={activeChips}
-              onTapChip={(c) => {
-                void haptics.tap();
-                c.onRemove();
-              }}
-              onAddFilter={openFilters}
-            />
+            {activeChips.length > 0 ? (
+              <Animated.View
+                entering={FadeInUp.duration(200)}
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginTop: 12,
+                }}
+              >
+                {activeChips.map((c) => (
+                  <Pressable
+                    key={c.key}
+                    onPress={() => {
+                      void haptics.tap();
+                      c.onRemove();
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                      height: 30,
+                      paddingHorizontal: 11,
+                      borderRadius: 15,
+                      backgroundColor: "rgba(0, 212, 200, 0.10)",
+                      borderWidth: 1,
+                      borderColor: "rgba(0, 212, 200, 0.30)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.accentLight,
+                        fontFamily: "SpaceGrotesk_500Medium",
+                        fontSize: 11.5,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {c.label}
+                    </Text>
+                    <X size={10} color={colors.accentLight} strokeWidth={2.2} />
+                  </Pressable>
+                ))}
+              </Animated.View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -212,13 +341,13 @@ export function BuilderBrowse() {
               void haptics.tap();
               void browse.refresh();
             }}
-            tintColor="#7ef5ed"
-            colors={["#7ef5ed"]}
-            progressBackgroundColor="#0c1726"
+            tintColor={colors.accentLight}
+            progressBackgroundColor={colors.bgRaised}
+            progressViewOffset={headerHeight}
           />
         }
+        contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       />
@@ -233,179 +362,36 @@ export function BuilderBrowse() {
   );
 }
 
-// ── Header ──────────────────────────────────────────────────────────
-
-function Header({
-  savedCount,
-  filterCount,
-  onOpenFilters,
-}: {
-  savedCount: number;
-  filterCount: number;
-  onOpenFilters: () => void;
-}) {
-  return (
-    <View
-      className="px-6 pt-3 pb-2 border-b"
-      style={{ borderColor: "rgba(100, 180, 255, 0.06)" }}
-    >
-      <View className="flex-row items-center justify-between">
-        <View>
-          <Text className="text-accent text-[10.5px] tracking-[0.24em] uppercase font-ui font-medium">
-            Marketplace
-          </Text>
-          <Text className="text-text font-display tracking-[-0.018em] text-[28px] leading-[1.0] mt-0.5">
-            Browse
-          </Text>
-        </View>
-        <View className="flex-row items-center gap-2">
-          {savedCount > 0 ? (
-            <View className="flex-row items-center gap-1.5 h-9 px-3 rounded-full border border-border-subtle bg-surface-1/40">
-              <Bookmark size={12} color="#ff7a8a" fill="#ff7a8a" strokeWidth={0} />
-              <Text className="text-text-muted text-[11.5px] font-ui font-medium tabular-nums">
-                {savedCount}
-              </Text>
-            </View>
-          ) : null}
-          <Pressable
-            onPress={onOpenFilters}
-            accessibilityRole="button"
-            accessibilityLabel="Open filters"
-            hitSlop={8}
-            className="size-9 items-center justify-center rounded-full border border-border-subtle bg-surface-1/40 active:bg-surface-1/70"
-          >
-            <SlidersHorizontal size={15} color="#eef6ff" strokeWidth={1.7} />
-            {filterCount > 0 ? (
-              <View
-                className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full items-center justify-center"
-                style={{ backgroundColor: "#00d4c8" }}
-              >
-                <Text
-                  className="text-[9.5px] font-ui font-semibold tabular-nums"
-                  style={{ color: "#031118" }}
-                >
-                  {filterCount}
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// ── Search field ────────────────────────────────────────────────────
-
-function SearchField({
-  value,
-  onChange,
-  focused,
-  onFocusChange,
-  onClear,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  focused: boolean;
-  onFocusChange: (v: boolean) => void;
-  onClear: () => void;
-}) {
-  return (
-    <View
-      className="flex-row items-center gap-2 h-11 px-3.5 rounded-xl border"
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.02)",
-        borderColor: focused
-          ? "rgba(0, 212, 200, 0.40)"
-          : "rgba(100, 180, 255, 0.12)",
-      }}
-    >
-      <Search size={15} color={focused ? "#7ef5ed" : "#98b8d0"} strokeWidth={1.7} />
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        onFocus={() => onFocusChange(true)}
-        onBlur={() => onFocusChange(false)}
-        placeholder="Search projects"
-        placeholderTextColor="rgba(238, 246, 255, 0.42)"
-        autoCorrect={false}
-        autoCapitalize="none"
-        returnKeyType="search"
-        className="flex-1 text-text font-ui text-[14px]"
-        style={{ paddingVertical: 0 }}
-      />
-      {value.length > 0 ? (
-        <Pressable onPress={onClear} hitSlop={10} accessibilityLabel="Clear search">
-          <X size={14} color="#98b8d0" strokeWidth={1.8} />
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-// ── Active filter chip strip ────────────────────────────────────────
-
-interface Chip {
-  key: string;
-  label: string;
-  onRemove: () => void;
-}
-
-function ChipStrip({
-  chips,
-  onTapChip,
-  onAddFilter,
-}: {
-  chips: Chip[];
-  onTapChip: (c: Chip) => void;
-  onAddFilter: () => void;
-}) {
-  if (chips.length === 0) return null;
-  return (
-    <Animated.View
-      entering={FadeInUp.duration(200)}
-      className="flex-row flex-wrap gap-2 mt-3"
-    >
-      {chips.map((c) => (
-        <Pressable
-          key={c.key}
-          onPress={() => onTapChip(c)}
-          className="flex-row items-center gap-1.5 h-8 px-3 rounded-full border active:opacity-70"
-          style={{
-            backgroundColor: "rgba(0, 212, 200, 0.10)",
-            borderColor: "rgba(0, 212, 200, 0.30)",
-          }}
-        >
-          <Text
-            className="text-[11.5px] font-ui font-medium"
-            style={{ color: "#7ef5ed" }}
-          >
-            {c.label}
-          </Text>
-          <X size={11} color="#7ef5ed" strokeWidth={2.2} />
-        </Pressable>
-      ))}
-      <Pressable
-        onPress={onAddFilter}
-        accessibilityLabel="Add more filters"
-        hitSlop={4}
-        className="flex-row items-center gap-1 h-8 px-3 rounded-full border border-border-subtle active:bg-surface-1/40"
-      >
-        <SlidersHorizontal size={11} color="#98b8d0" strokeWidth={1.8} />
-        <Text className="text-text-muted text-[11.5px] font-ui">More</Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-// ── Skeleton + empty state ──────────────────────────────────────────
+// ── Skeleton + empty ────────────────────────────────────────────────
 
 function BrowseSkeleton() {
   return (
-    <View className="px-6 pt-3 gap-3">
-      <SkeletonBlock className="h-44" />
-      <SkeletonBlock className="h-44" />
-      <SkeletonBlock className="h-44" />
+    <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 12 }}>
+      {[0, 1, 2].map((i) => (
+        <View
+          key={i}
+          style={{
+            height: 220,
+            borderRadius: 22,
+            backgroundColor: "rgba(255, 255, 255, 0.035)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.07)",
+            overflow: "hidden",
+          }}
+        >
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              backgroundColor: "rgba(255, 255, 255, 0.10)",
+            }}
+          />
+        </View>
+      ))}
     </View>
   );
 }
@@ -414,7 +400,6 @@ function BrowseEmpty({ browse }: { browse: ReturnType<typeof useBrowse> }) {
   if (browse.error) {
     return (
       <EmptyState
-        icon={<Sparkles size={20} color="#7ef5ed" strokeWidth={1.6} />}
         title="Couldn't load"
         copy={browse.error}
         ctaLabel="Try again"
@@ -425,8 +410,7 @@ function BrowseEmpty({ browse }: { browse: ReturnType<typeof useBrowse> }) {
   if (browse.emptyReason === "no_service_areas") {
     return (
       <EmptyState
-        icon={<Sparkles size={20} color="#7ef5ed" strokeWidth={1.6} />}
-        title="Set your service areas"
+        title="Set service areas"
         copy="Add the suburbs you work in to see matching projects. Or clear the 'In my area' filter to browse everything."
         ctaLabel="Clear filter"
         onCta={() => browse.patchFilters({ inMyArea: false })}
@@ -436,7 +420,6 @@ function BrowseEmpty({ browse }: { browse: ReturnType<typeof useBrowse> }) {
   if (browse.activeFilterCount > 0 || browse.filters.q) {
     return (
       <EmptyState
-        icon={<Sparkles size={20} color="#7ef5ed" strokeWidth={1.6} />}
         title="No matches"
         copy="Nothing matches your filters yet. Loosen up — clear a chip or two."
         ctaLabel="Clear filters"
@@ -446,7 +429,6 @@ function BrowseEmpty({ browse }: { browse: ReturnType<typeof useBrowse> }) {
   }
   return (
     <EmptyState
-      icon={<Sparkles size={20} color="#7ef5ed" strokeWidth={1.6} />}
       title="Quiet for now"
       copy="No new projects on the marketplace. We'll surface them here as soon as they're live."
     />
@@ -454,30 +436,49 @@ function BrowseEmpty({ browse }: { browse: ReturnType<typeof useBrowse> }) {
 }
 
 function EmptyState({
-  icon,
   title,
   copy,
   ctaLabel,
   onCta,
 }: {
-  icon: React.ReactNode;
   title: string;
   copy: string;
   ctaLabel?: string;
   onCta?: () => void;
 }) {
   return (
-    <View className="px-8 py-16 items-center">
-      <View
-        className="size-14 rounded-full border border-border-accent items-center justify-center"
-        style={{ backgroundColor: "rgba(0, 212, 200, 0.06)" }}
+    <View
+      style={{
+        paddingHorizontal: 28,
+        paddingTop: 32,
+        paddingBottom: 24,
+        alignItems: "center",
+      }}
+    >
+      <RadarPulse size={104} />
+      <Text
+        style={{
+          color: colors.text,
+          fontFamily: "BebasNeue_400Regular",
+          fontSize: 28,
+          letterSpacing: -0.3,
+          marginTop: 20,
+          textTransform: "uppercase",
+        }}
       >
-        {icon}
-      </View>
-      <Text className="text-text font-display text-[28px] tracking-[-0.012em] uppercase mt-5">
         {title}
       </Text>
-      <Text className="text-text-muted text-[13.5px] leading-[20px] text-center mt-3 max-w-[280px]">
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontFamily: "DMSans_400Regular",
+          fontSize: 13,
+          textAlign: "center",
+          lineHeight: 19,
+          marginTop: 8,
+          maxWidth: 280,
+        }}
+      >
         {copy}
       </Text>
       {ctaLabel && onCta ? (
@@ -486,9 +487,27 @@ function EmptyState({
             void haptics.tap();
             onCta();
           }}
-          className="mt-6 h-11 px-6 rounded-md bg-accent active:bg-accent-active items-center justify-center"
+          style={{
+            marginTop: 18,
+            paddingHorizontal: 18,
+            height: 42,
+            borderRadius: 21,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 212, 200, 0.14)",
+            borderWidth: 1,
+            borderColor: "rgba(0, 212, 200, 0.40)",
+          }}
         >
-          <Text className="text-accent-contrast font-ui font-semibold text-[13.5px] tracking-[0.02em]">
+          <Text
+            style={{
+              color: colors.accentLight,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 13,
+              fontWeight: "600",
+              letterSpacing: 0.2,
+            }}
+          >
             {ctaLabel}
           </Text>
         </Pressable>

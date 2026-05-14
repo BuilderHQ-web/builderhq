@@ -1,21 +1,27 @@
 /**
- * <GlassTabBar /> — App Store / Revolut style frosted floating tab bar.
+ * <GlassTabBar /> — App Store / Revolut style floating tab bar.
  *
- * Pattern (matches iOS App Store):
- *   · Pill-shape with heavy backdrop blur — content scrolling under
- *     gets blurred behind it, so the bar reads as an overlay.
- *   · Every tab shows icon + label, always — no hiding-on-inactive
+ * Recipe (matches the iOS native pattern):
+ *   · Floating pill above the home indicator. Margins + bottom safe
+ *     area so it reads as an overlay, not docked.
+ *   · Heavy native backdrop blur — content scrolling under gets
+ *     properly blurred behind it. Combined with a dark glass tint so
+ *     the bar reads as foreground.
+ *   · Hairline outer border + 1px inner top highlight = the "glass"
+ *     tell. Holds together at any brightness.
+ *   · Active tab gets a soft white-glass *capsule* (not a loud
+ *     gradient pill) that slides between positions via a Reanimated
+ *     spring. Icon + label adopt the accent colour on active, dim on
+ *     inactive. Subtle accent glow under the capsule for that "iOS
+ *     control" lift.
+ *   · Every tab always shows icon + label — no hiding-on-inactive
  *     gymnastics that breaks layout.
- *   · Active tab gets a soft white-glass pill behind it (subtle, not
- *     a loud gradient) + the icon + label adopt the accent colour.
- *   · Inactive tabs are dim text + dim icon.
  *
- * Floats with a margin from the screen edges + the bottom safe area
- * so the gesture handler at the bottom of iPhones doesn't fight the
- * tap area.
+ * Wired via `tabBar={(props) => <GlassTabBar {...props} />}` on
+ * the parent <Tabs />.
  */
 import { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   type SharedValue,
   useAnimatedStyle,
@@ -23,15 +29,15 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
-import { Frosted } from "./frosted";
 import { colors } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
-const TAB_HEIGHT = 62;
-const PILL_HEIGHT = 46;
-const HORIZONTAL_MARGIN = 14;
+const TAB_HEIGHT = 60;
+const PILL_HEIGHT = 44;
+const HORIZONTAL_MARGIN = 18;
 
 export function GlassTabBar({
   state,
@@ -39,18 +45,18 @@ export function GlassTabBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  // Push the bar a little above the home indicator. iPhones with a
-  // notch get the safe area inset; older devices fall back to 12.
-  const bottomPad = Math.max(insets.bottom - 4, 12);
+  // Floats just above the home indicator. Tested values land cleanly
+  // on iPhone 15 / 16 + older non-notch devices via the Math.max.
+  const bottomPad = Math.max(insets.bottom - 6, 14);
 
   const tabCount = state.routes.length;
   const pillX = useSharedValue(state.index);
 
   useEffect(() => {
     pillX.value = withSpring(state.index, {
-      mass: 0.5,
+      mass: 0.55,
       damping: 16,
-      stiffness: 160,
+      stiffness: 170,
     });
   }, [state.index, pillX]);
 
@@ -64,20 +70,36 @@ export function GlassTabBar({
         right: HORIZONTAL_MARGIN,
       }}
     >
+      {/* The bar itself — clipped to a pill so the BlurView corners
+            don't bleed past the outer border. */}
       <View
         style={{
           height: TAB_HEIGHT,
           borderRadius: TAB_HEIGHT / 2,
           overflow: "hidden",
           shadowColor: "#000",
-          shadowOpacity: 0.45,
-          shadowRadius: 24,
-          shadowOffset: { width: 0, height: 12 },
-          elevation: 14,
+          shadowOpacity: 0.5,
+          shadowRadius: 26,
+          shadowOffset: { width: 0, height: 14 },
+          elevation: 16,
         }}
       >
-        <Frosted tint="deep" intensity={70} style={StyleSheet.absoluteFill} />
-        {/* Inner highlight on the top edge — the glass tell */}
+        {/* 1. Native backdrop blur */}
+        <BlurView
+          intensity={Platform.OS === "ios" ? 65 : 100}
+          tint="dark"
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+        {/* 2. Dark glass tint so foreground icons stay readable */}
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: "rgba(10, 13, 26, 0.42)" },
+          ]}
+        />
+        {/* 3. Top-edge highlight */}
         <View
           pointerEvents="none"
           style={{
@@ -86,24 +108,24 @@ export function GlassTabBar({
             left: 0,
             right: 0,
             height: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
+            backgroundColor: "rgba(255, 255, 255, 0.14)",
           }}
         />
-        {/* Outer hairline border */}
+        {/* 4. Outer hairline border */}
         <View
           pointerEvents="none"
           style={{
             ...StyleSheet.absoluteFillObject,
             borderRadius: TAB_HEIGHT / 2,
             borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.06)",
+            borderColor: "rgba(255, 255, 255, 0.07)",
           }}
         />
 
-        {/* The sliding active pill */}
-        <ActivePill pillX={pillX} tabCount={tabCount} />
+        {/* 5. Sliding active capsule (with soft accent glow halo) */}
+        <ActiveCapsule pillX={pillX} tabCount={tabCount} />
 
-        {/* Tab buttons */}
+        {/* 6. Tabs row */}
         <View style={{ flexDirection: "row", height: "100%" }}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key]!;
@@ -141,7 +163,7 @@ export function GlassTabBar({
                   flex: 1,
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 3,
+                  gap: 2,
                 }}
               >
                 {TabIcon ? (
@@ -156,7 +178,7 @@ export function GlassTabBar({
                   style={{
                     color: focused ? colors.accentLight : colors.textMuted,
                     fontFamily: "SpaceGrotesk_500Medium",
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: focused ? "600" : "500",
                     letterSpacing: 0.2,
                   }}
@@ -173,11 +195,13 @@ export function GlassTabBar({
 }
 
 /**
- * The active pill — a soft semi-transparent glass-on-glass surface
- * that slides between tab positions. Subtle on purpose; the icon +
- * label tint do most of the work.
+ * Sliding active capsule. Two layers:
+ *   · A diffuse accent glow underneath (no border, soft).
+ *   · A glass-on-glass pill on top — white at 8% with a hair-thin
+ *     accent border. Reads as a polished selection chip without
+ *     stealing focus.
  */
-function ActivePill({
+function ActiveCapsule({
   pillX,
   tabCount,
 }: {
@@ -197,20 +221,46 @@ function ActivePill({
           position: "absolute",
           top: (TAB_HEIGHT - PILL_HEIGHT) / 2,
           height: PILL_HEIGHT,
-          paddingHorizontal: 6,
+          paddingHorizontal: 5,
         },
         animatedStyle,
       ]}
     >
+      {/* Subtle accent glow halo */}
+      <View
+        style={{
+          position: "absolute",
+          top: 4,
+          left: 4,
+          right: 4,
+          bottom: 4,
+          borderRadius: PILL_HEIGHT / 2,
+          backgroundColor: "rgba(0, 212, 200, 0.10)",
+        }}
+      />
+      {/* Glass-on-glass capsule */}
       <View
         style={{
           flex: 1,
           borderRadius: PILL_HEIGHT / 2,
           backgroundColor: "rgba(255, 255, 255, 0.08)",
           borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.12)",
+          borderColor: "rgba(0, 212, 200, 0.30)",
+          overflow: "hidden",
         }}
-      />
+      >
+        {/* Inner top highlight */}
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.18)",
+          }}
+        />
+      </View>
     </Animated.View>
   );
 }

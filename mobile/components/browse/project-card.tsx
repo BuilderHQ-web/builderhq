@@ -1,31 +1,32 @@
 /**
- * <BrowseProjectCard /> — the marketplace card.
+ * <BrowseProjectCard /> — premium marketplace card.
  *
- * Designed to read at a glance + survive thumb-scroll without losing
- * meaningful information. The card is the single most important
- * surface in the builder app — everything else fans out from a tap on
- * one of these.
+ * Design language (matches the Revolut / Airbnb listing feel the
+ * brief asked for):
+ *   · Soft glass surface — semi-transparent navy with a 1px white
+ *     top-inner highlight and a hairline outer border. No harsh
+ *     outlines, no bright fills.
+ *   · Wide-aspect hero region at the top of the card so the eye
+ *     locks onto a status badge band before scanning details below.
+ *     (Future: replace the texture with a real project photo when
+ *     uploads ship.) For now: a subtle teal gradient texture matching
+ *     the brand canvas.
+ *   · Title in 17px semibold, suburb dim 12.5px directly below.
+ *     Right-aligned status chip (NEW / FULL / n/3 slots).
+ *   · Meta row (budget · beds · baths · size) tight to the title.
+ *   · Footer separator + posted-time + heart-save button.
+ *   · Press-scale spring on tap (UI-thread worklet) + haptic.
  *
- * Visual recipe:
- *   · Generous padding + 16px corner radius — feels premium, not
- *     spreadsheet-y.
- *   · Brand glow on accent borders when active (n/3 slots open).
- *   · Type icon + label in a kicker row.
- *   · Title in semibold ui font, then suburb/state in dim text.
- *   · Inline meta row (budget · bed · bath · build size) — only the
- *     pieces that exist, no "—" placeholders.
- *   · Right column has: NEW badge (when <24h old) above slot indicator
- *     (●●○ visual). Slot indicator is the focal cue — a glance tells
- *     the builder whether to tap.
- *   · Heart save button bottom-right with pulse animation on toggle.
- *   · Time since live in dim mono at bottom-left.
+ * Status treatment:
+ *   · `NEW` (posted <24h)         → teal chip with sparkle dot
+ *   · `n/3 BUILDERS`              → teal chip with filled-slot dots
+ *   · `FULL` (3/3)                → muted rose chip — clearly off-
+ *                                   limits, not alarming
  *
- * The card itself is a Pressable. Press-in nudges scale to 0.985 via
- * Reanimated for that "I'm responding" cue, then springs back on
- * release. No haptic on the press-in — the haptic fires inside the
- * tap handler so it's tied to the navigate, not the touch.
+ * Tap → project detail. Heart tap is separate (stops propagation via
+ * the heart's own Pressable swallowing the gesture).
  */
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -36,6 +37,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Bath,
   Bed,
@@ -45,9 +47,12 @@ import {
   Layers,
   Lock,
   MapPin,
+  Ruler,
+  Sparkles,
   Wrench,
 } from "lucide-react-native";
 
+import { colors } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 import type { BrowseListItem } from "@/components/dashboard/types";
 
@@ -64,7 +69,7 @@ const BUDGET_LABEL: Record<string, string> = {
   "1_5m_2m": "$1.5M – $2M",
   "2m_3m": "$2M – $3M",
   "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  over_5m: "$5M+",
 };
 const BUILD_LABEL: Record<string, string> = {
   under_100: "<100m²",
@@ -76,8 +81,8 @@ const BUILD_LABEL: Record<string, string> = {
   over_400: "400m²+",
 };
 
-function typeIcon(type: string, size = 14) {
-  const p = { size, color: "#7ef5ed", strokeWidth: 1.6 };
+function typeIcon(type: string, size = 13, color = colors.accentLight) {
+  const p = { size, color, strokeWidth: 1.6 };
   switch (type) {
     case "single_dwelling":
       return <HomeIcon {...p} />;
@@ -117,16 +122,21 @@ export function BrowseProjectCard({
   const typeLabel = TYPE_LABEL[item.type] ?? item.type;
   const budgetLabel = item.budgetBand ? BUDGET_LABEL[item.budgetBand] : null;
   const buildLabel = item.buildSizeBand ? BUILD_LABEL[item.buildSizeBand] : null;
-  const location = [item.suburb, item.state].filter(Boolean).join(", ");
+  const location = useMemo(
+    () => [item.suburb, item.state].filter(Boolean).join(", "),
+    [item.suburb, item.state],
+  );
 
-  // Press-scale spring.
+  // Press-scale spring (worklet on UI thread).
   const scale = useSharedValue(1);
-  const cardAnim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const cardAnim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
   const onPressIn = useCallback(() => {
-    scale.value = withSpring(0.985, { mass: 0.35, damping: 18 });
+    scale.value = withSpring(0.985, { mass: 0.4, damping: 18 });
   }, [scale]);
   const onPressOut = useCallback(() => {
-    scale.value = withSpring(1, { mass: 0.35, damping: 16 });
+    scale.value = withSpring(1, { mass: 0.4, damping: 16 });
   }, [scale]);
   const onPress = useCallback(() => {
     void haptics.tap();
@@ -141,148 +151,335 @@ export function BrowseProjectCard({
         onPressOut={onPressOut}
         accessibilityRole="button"
         accessibilityLabel={`${item.title}, ${typeLabel}, ${item.isFull ? "full" : `${item.unlockedCount} of 3 builders unlocked`}`}
-        className="rounded-2xl border bg-surface-1/40 px-4 py-4 overflow-hidden"
         style={{
+          borderRadius: 22,
+          overflow: "hidden",
+          backgroundColor: "rgba(255, 255, 255, 0.035)",
+          borderWidth: 1,
           borderColor: item.isFull
             ? "rgba(255, 122, 138, 0.18)"
-            : "rgba(0, 212, 200, 0.16)",
+            : "rgba(255, 255, 255, 0.07)",
         }}
       >
-        {/* Brand-tinted halo when active (open slots) — purely
-              decorative, dims the dark-card-on-dark-background look. */}
-        {!item.isFull ? (
-          <View
-            pointerEvents="none"
-            className="absolute -top-12 -right-12 size-32 rounded-full"
-            style={{ backgroundColor: "rgba(0, 212, 200, 0.05)" }}
+        {/* Inner top highlight — the glass tell */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.12)",
+            zIndex: 1,
+          }}
+        />
+
+        {/* Hero band — subtle teal gradient texture so the card has
+              presence even without project photos. Status chips sit
+              over this band. Will swap to a real hero image when
+              photo uploads ship. */}
+        <View style={{ height: 78, position: "relative", overflow: "hidden" }}>
+          <LinearGradient
+            colors={
+              item.isFull
+                ? [
+                    "rgba(255, 122, 138, 0.12)",
+                    "rgba(255, 122, 138, 0.04)",
+                    "rgba(7, 13, 24, 0)",
+                  ]
+                : [
+                    "rgba(0, 212, 200, 0.18)",
+                    "rgba(59, 130, 246, 0.10)",
+                    "rgba(7, 13, 24, 0)",
+                  ]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ position: "absolute", inset: 0 } as never}
           />
-        ) : null}
 
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1 min-w-0">
-            {/* Kicker */}
-            <View className="flex-row items-center gap-1.5">
-              {typeIcon(item.type, 13)}
-              <Text className="text-text-muted text-[11px] font-ui tracking-[0.005em]">
-                {typeLabel}
-              </Text>
-              {item.isNew ? <NewBadge /> : null}
-            </View>
-
-            {/* Title */}
+          {/* Type chip — top-left */}
+          <View
+            style={{
+              position: "absolute",
+              top: 14,
+              left: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              height: 24,
+              paddingHorizontal: 8,
+              borderRadius: 12,
+              backgroundColor: "rgba(7, 13, 24, 0.55)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.10)",
+            }}
+          >
+            {typeIcon(item.type, 11, colors.accentLight)}
             <Text
-              className="text-text font-ui font-semibold text-[16px] tracking-[-0.005em] mt-2"
-              numberOfLines={2}
+              style={{
+                color: colors.textMuted,
+                fontFamily: "SpaceGrotesk_500Medium",
+                fontSize: 10.5,
+                fontWeight: "600",
+                letterSpacing: 0.2,
+              }}
             >
-              {item.title}
+              {typeLabel}
             </Text>
+          </View>
 
-            {/* Location */}
-            {location ? (
-              <View className="flex-row items-center gap-1 mt-1">
-                <MapPin size={11} color="#98b8d0" strokeWidth={1.6} />
-                <Text
-                  className="text-text-muted text-[12px]"
-                  numberOfLines={1}
-                >
-                  {location}
-                </Text>
-              </View>
+          {/* Status chip — top-right (NEW / n/3 / FULL) */}
+          <View
+            style={{
+              position: "absolute",
+              top: 14,
+              right: 14,
+            }}
+          >
+            <StatusChip
+              isFull={item.isFull}
+              isNew={item.isNew}
+              unlockedCount={item.unlockedCount}
+            />
+          </View>
+
+          {/* Heart — bottom-right corner of the hero band */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 6,
+              right: 6,
+            }}
+          >
+            <HeartButton isSaved={isSaved} onToggle={onToggleSave} />
+          </View>
+        </View>
+
+        {/* Body */}
+        <View style={{ padding: 16, paddingTop: 14, paddingBottom: 14 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              color: colors.text,
+              fontFamily: "SpaceGrotesk_500Medium",
+              fontSize: 17,
+              fontWeight: "600",
+              letterSpacing: -0.2,
+            }}
+          >
+            {item.title}
+          </Text>
+          {location ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: colors.textMuted,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 12.5,
+                }}
+              >
+                {location}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Meta row */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 14,
+              marginTop: 12,
+            }}
+          >
+            {budgetLabel ? <Meta value={budgetLabel} bold /> : null}
+            {item.bedrooms != null ? (
+              <Meta
+                icon={<Bed size={11} color={colors.textMuted} strokeWidth={1.6} />}
+                value={item.bedrooms}
+              />
+            ) : null}
+            {item.bathrooms != null ? (
+              <Meta
+                icon={<Bath size={11} color={colors.textMuted} strokeWidth={1.6} />}
+                value={item.bathrooms}
+              />
+            ) : null}
+            {buildLabel ? (
+              <Meta
+                icon={<Ruler size={11} color={colors.textMuted} strokeWidth={1.6} />}
+                value={buildLabel}
+              />
             ) : null}
           </View>
 
-          {/* Right-side slot pill */}
-          <View className="items-end">
-            <SlotIndicator unlockedCount={item.unlockedCount} isFull={item.isFull} />
-          </View>
-        </View>
-
-        {/* Meta row */}
-        <View className="flex-row items-center flex-wrap gap-x-3 gap-y-1 mt-3">
-          {budgetLabel ? <Meta value={budgetLabel} /> : null}
-          {item.bedrooms != null ? (
-            <Meta icon={<Bed size={11} color="#98b8d0" strokeWidth={1.6} />} value={item.bedrooms} />
+          {/* Footer — separator + relative time */}
+          {item.publishedAt ? (
+            <View
+              style={{
+                marginTop: 14,
+                paddingTop: 12,
+                borderTopWidth: 1,
+                borderTopColor: "rgba(255, 255, 255, 0.05)",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.textFaint,
+                  fontFamily: "DMSans_400Regular",
+                  fontSize: 11,
+                }}
+              >
+                Posted {relativeTime(item.publishedAt)}
+              </Text>
+              {item.documentCount > 0 ? (
+                <Text
+                  style={{
+                    color: colors.textFaint,
+                    fontFamily: "DMSans_400Regular",
+                    fontSize: 11,
+                  }}
+                >
+                  {item.documentCount} doc{item.documentCount === 1 ? "" : "s"}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
-          {item.bathrooms != null ? (
-            <Meta icon={<Bath size={11} color="#98b8d0" strokeWidth={1.6} />} value={item.bathrooms} />
-          ) : null}
-          {buildLabel ? <Meta value={buildLabel} /> : null}
-        </View>
-
-        {/* Footer row — time + heart */}
-        <View className="flex-row items-center justify-between mt-3 -mb-1">
-          <Text className="text-text-faint text-[11px]" numberOfLines={1}>
-            {item.publishedAt ? relativeTime(item.publishedAt) : ""}
-          </Text>
-          <HeartButton isSaved={isSaved} onToggle={onToggleSave} />
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-// ── Slot indicator ──────────────────────────────────────────────────
+// ── Status chip ─────────────────────────────────────────────────────
 
-function SlotIndicator({
-  unlockedCount,
+function StatusChip({
   isFull,
+  isNew,
+  unlockedCount,
 }: {
-  unlockedCount: number;
   isFull: boolean;
+  isNew: boolean;
+  unlockedCount: number;
 }) {
   if (isFull) {
     return (
       <View
-        className="px-2.5 h-7 rounded-full justify-center border"
         style={{
-          backgroundColor: "rgba(255, 122, 138, 0.10)",
-          borderColor: "rgba(255, 122, 138, 0.30)",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          height: 24,
+          paddingHorizontal: 9,
+          borderRadius: 12,
+          backgroundColor: "rgba(255, 122, 138, 0.14)",
+          borderWidth: 1,
+          borderColor: "rgba(255, 122, 138, 0.32)",
         }}
       >
-        <View className="flex-row items-center gap-1">
-          <Lock size={9} color="#ff7a8a" strokeWidth={1.8} />
-          <Text
-            className="text-[9.5px] tracking-[0.18em] uppercase font-ui font-semibold"
-            style={{ color: "#ff7a8a" }}
-          >
-            Full
-          </Text>
-        </View>
+        <Lock size={10} color={colors.danger} strokeWidth={1.8} />
+        <Text
+          style={{
+            color: colors.danger,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.4,
+            textTransform: "uppercase",
+          }}
+        >
+          Full
+        </Text>
+      </View>
+    );
+  }
+  if (isNew) {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+          height: 24,
+          paddingHorizontal: 9,
+          borderRadius: 12,
+          backgroundColor: "rgba(0, 212, 200, 0.18)",
+          borderWidth: 1,
+          borderColor: "rgba(0, 212, 200, 0.40)",
+        }}
+      >
+        <Sparkles size={10} color={colors.accentLight} strokeWidth={1.8} />
+        <Text
+          style={{
+            color: colors.accentLight,
+            fontFamily: "SpaceGrotesk_500Medium",
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.4,
+            textTransform: "uppercase",
+          }}
+        >
+          New
+        </Text>
       </View>
     );
   }
   return (
     <View
-      className="flex-row items-center gap-2 px-2.5 h-7 rounded-full border"
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        height: 24,
+        paddingHorizontal: 9,
+        borderRadius: 12,
         backgroundColor: "rgba(0, 212, 200, 0.10)",
-        borderColor: "rgba(0, 212, 200, 0.30)",
+        borderWidth: 1,
+        borderColor: "rgba(0, 212, 200, 0.28)",
       }}
     >
-      <SlotDots filled={unlockedCount} total={3} />
+      <View style={{ flexDirection: "row", gap: 3 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 2.5,
+              backgroundColor:
+                i < unlockedCount
+                  ? colors.accentLight
+                  : "rgba(125, 245, 237, 0.22)",
+            }}
+          />
+        ))}
+      </View>
       <Text
-        className="text-[9.5px] tracking-[0.18em] uppercase font-ui font-semibold"
-        style={{ color: "#7ef5ed" }}
+        style={{
+          color: colors.accentLight,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.4,
+        }}
       >
         {unlockedCount}/3
       </Text>
-    </View>
-  );
-}
-
-function SlotDots({ filled, total }: { filled: number; total: number }) {
-  return (
-    <View className="flex-row gap-[3px]">
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          className="size-[5px] rounded-full"
-          style={{
-            backgroundColor:
-              i < filled ? "#7ef5ed" : "rgba(126, 245, 237, 0.25)",
-          }}
-        />
-      ))}
     </View>
   );
 }
@@ -292,34 +489,30 @@ function SlotDots({ filled, total }: { filled: number; total: number }) {
 function Meta({
   icon,
   value,
+  bold,
 }: {
   icon?: React.ReactNode;
   value: string | number;
+  bold?: boolean;
 }) {
   return (
-    <View className="flex-row items-center gap-1">
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       {icon}
-      <Text className="text-text-muted text-[11.5px] font-ui">{value}</Text>
-    </View>
-  );
-}
-
-// ── NEW badge ───────────────────────────────────────────────────────
-
-function NewBadge() {
-  return (
-    <View
-      className="px-1.5 h-4 rounded-sm justify-center"
-      style={{ backgroundColor: "#00d4c8" }}
-    >
-      <Text className="text-[8px] tracking-[0.16em] uppercase font-ui font-semibold text-accent-contrast">
-        New
+      <Text
+        style={{
+          color: bold ? colors.text : colors.textMuted,
+          fontFamily: "SpaceGrotesk_500Medium",
+          fontSize: 12.5,
+          fontWeight: bold ? "600" : "500",
+        }}
+      >
+        {value}
       </Text>
     </View>
   );
 }
 
-// ── Heart with pulse ────────────────────────────────────────────────
+// ── Heart with pulse-on-save ────────────────────────────────────────
 
 function HeartButton({
   isSaved,
@@ -329,10 +522,10 @@ function HeartButton({
   onToggle: () => void;
 }) {
   const scale = useSharedValue(1);
-  // Pulse — small grow + spring back. Fires when isSaved flips to true.
+
   useEffect(() => {
     if (isSaved) {
-      scale.value = withTiming(1.25, {
+      scale.value = withTiming(1.28, {
         duration: 140,
         easing: Easing.out(Easing.quad),
       });
@@ -347,9 +540,7 @@ function HeartButton({
     return () => cancelAnimation(scale);
   }, [isSaved, scale]);
 
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const onPress = useCallback(() => {
     void (isSaved ? haptics.tap() : haptics.success());
@@ -359,17 +550,26 @@ function HeartButton({
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={12}
+      hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={isSaved ? "Remove from saved" : "Save project"}
-      className="size-8 items-center justify-center rounded-full active:bg-surface-1/60"
+      style={{
+        width: 32,
+        height: 32,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 16,
+        backgroundColor: "rgba(7, 13, 24, 0.45)",
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.08)",
+      }}
     >
-      <Animated.View style={animStyle}>
+      <Animated.View style={anim}>
         <Heart
-          size={18}
-          color={isSaved ? "#ff7a8a" : "#567080"}
-          fill={isSaved ? "#ff7a8a" : "transparent"}
-          strokeWidth={isSaved ? 0 : 1.7}
+          size={15}
+          color={isSaved ? colors.danger : colors.text}
+          fill={isSaved ? colors.danger : "transparent"}
+          strokeWidth={isSaved ? 0 : 1.6}
         />
       </Animated.View>
     </Pressable>
