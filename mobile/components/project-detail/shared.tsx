@@ -198,11 +198,15 @@ export function SectionCard({
   kicker,
   icon,
   title,
+  action,
   children,
 }: {
   kicker: string;
   icon: React.ReactNode;
   title?: string;
+  /** Optional right-side affordance — e.g. "Compare" / "View all". Renders
+   *  with a chevron, signals the whole card is tappable. */
+  action?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -214,7 +218,7 @@ export function SectionCard({
         >
           {icon}
         </View>
-        <View>
+        <View className="flex-1">
           <Text className="text-accent text-[9.5px] tracking-[0.22em] uppercase font-ui font-medium">
             {kicker}
           </Text>
@@ -224,6 +228,14 @@ export function SectionCard({
             </Text>
           ) : null}
         </View>
+        {action ? (
+          <View className="flex-row items-center gap-1">
+            <Text className="text-accent-light text-[11px] font-ui font-semibold tracking-[0.04em]">
+              {action}
+            </Text>
+            <ChevronRight size={14} color="#7ef5ed" strokeWidth={1.7} />
+          </View>
+        ) : null}
       </View>
       <View className="mt-3">{children}</View>
     </View>

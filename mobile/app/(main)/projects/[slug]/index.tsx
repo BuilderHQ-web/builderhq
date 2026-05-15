@@ -453,17 +453,37 @@ function OwnerBody({ data }: { data: OwnerProjectDetailPayload }) {
       </Animated.View>
 
       <Animated.View entering={FadeInUp.delay(580).duration(440).springify()} className="mt-4">
-        <SectionCard kicker="Tenders" icon={<FileText size={14} color="#7ef5ed" strokeWidth={1.6} />} title={data.tenders.length === 0 ? "None received yet" : `${data.tenders.length} received`}>
-          {data.tenders.length === 0 ? (
-            <Text className="text-text-faint text-[13px] leading-[19px]">
-              Builders who unlock this project can submit tenders. They&apos;ll appear side-by-side here.
-            </Text>
-          ) : (
-            <View className="gap-2 mt-1">
-              {data.tenders.map((t) => <OwnerTenderRow key={t.id} tender={t} />)}
-            </View>
-          )}
-        </SectionCard>
+        <Pressable
+          onPress={() => {
+            if (data.tenders.length === 0) return;
+            void haptics.tap();
+            router.push(`/(main)/projects/${p.slug}/tenders` as never);
+          }}
+          accessibilityRole={data.tenders.length === 0 ? undefined : "button"}
+          accessibilityLabel="Compare tenders"
+        >
+          <SectionCard
+            kicker="Tenders"
+            icon={<FileText size={14} color="#7ef5ed" strokeWidth={1.6} />}
+            title={data.tenders.length === 0 ? "None received yet" : `${data.tenders.length} received`}
+            action={data.tenders.length > 0 ? "Compare" : undefined}
+          >
+            {data.tenders.length === 0 ? (
+              <Text className="text-text-faint text-[13px] leading-[19px]">
+                Builders who unlock this project can submit tenders. They&apos;ll appear side-by-side here.
+              </Text>
+            ) : (
+              <View className="gap-2 mt-1">
+                {data.tenders.slice(0, 3).map((t) => <OwnerTenderRow key={t.id} tender={t} />)}
+                {data.tenders.length > 3 ? (
+                  <Text className="text-text-faint text-[11.5px] mt-1">
+                    +{data.tenders.length - 3} more — tap to compare side-by-side
+                  </Text>
+                ) : null}
+              </View>
+            )}
+          </SectionCard>
+        </Pressable>
       </Animated.View>
 
       <Animated.View entering={FadeInUp.delay(640).duration(440).springify()} className="mt-4">
