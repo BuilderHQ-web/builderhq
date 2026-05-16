@@ -44,6 +44,7 @@ import { ProjectPublishedOpsEmail } from "@/emails/ProjectPublishedOpsEmail";
 import { UnlockOwnerEmail } from "@/emails/UnlockOwnerEmail";
 import { UnlockBuilderEmail } from "@/emails/UnlockBuilderEmail";
 import { UnlockOpsEmail } from "@/emails/UnlockOpsEmail";
+import { AdsFunnelMagicLinkEmail } from "@/emails/AdsFunnelMagicLinkEmail";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -1289,6 +1290,74 @@ export async function sendUnlockBuilderEmail(
   logger.info(
     { event: "email.unlock_builder.sent", to: input.to, resendId: data.id },
     "unlock (builder) email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── /start ads-funnel magic link ─────────────────────────────────────────
+
+interface SendAdsFunnelMagicLinkEmailInput {
+  to: string;
+  magicUrl: string;
+  firstName: string | null;
+  projectTitle: string;
+}
+
+/**
+ * Sends the magic-link email at the end of the /start funnel. The link
+ * verifies the email, publishes the draft project, and creates a
+ * dashboard session — all on click.
+ */
+export async function sendAdsFunnelMagicLinkEmail(
+  input: SendAdsFunnelMagicLinkEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Publish your project: ${input.projectTitle}`;
+  const props = {
+    magicUrl: input.magicUrl,
+    firstName: input.firstName,
+    projectTitle: input.projectTitle,
+  };
+
+  const [html, text] = await Promise.all([
+    render(AdsFunnelMagicLinkEmail(props)),
+    render(AdsFunnelMagicLinkEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.ads_funnel_magic.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "ads-funnel magic-link email send failed",
+    );
+    return fail(
+      "external_error",
+      "We couldn't send the link to your email. Try again in a moment.",
+    );
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    {
+      event: "email.ads_funnel_magic.sent",
+      to: input.to,
+      resendId: data.id,
+    },
+    "ads-funnel magic-link email sent",
   );
   return ok({ id: data.id });
 }

@@ -97,6 +97,11 @@ export const limiters = {
   verifyResend: make("verify_resend", 3, 600),
   /** Project unlock spam — per user. */
   unlock: make("unlock", 30, 60),
+  /** /start ads-funnel signup — per IP. Tighter than signUp because
+   *  the funnel runs on paid traffic and is a top target for bots. */
+  adsFunnelSignup: make("ads_funnel_signup", 5, 300),
+  /** /start ads-funnel magic-link resend — per email. */
+  adsFunnelResend: make("ads_funnel_resend", 3, 600),
 };
 
 /**

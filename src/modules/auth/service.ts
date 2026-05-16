@@ -127,6 +127,7 @@ export async function signUp(
   await db.insert(verificationTokens).values({
     identifier: email,
     token,
+    purpose: "verification",
     expires,
   });
 
@@ -154,7 +155,14 @@ export async function verifyEmail(
   const [vt] = await db
     .select()
     .from(verificationTokens)
-    .where(eq(verificationTokens.token, token))
+    .where(
+      and(
+        eq(verificationTokens.token, token),
+        // Scope to email-verification rows only — magic-link tokens live
+        // in the same table but redeem via /auth/magic, not here.
+        eq(verificationTokens.purpose, "verification"),
+      ),
+    )
     .limit(1);
 
   if (!vt) {
@@ -255,13 +263,20 @@ export async function resendVerificationEmail(
   const expires = new Date(Date.now() + VERIFY_TOKEN_TTL_HOURS * 60 * 60 * 1000);
 
   await db.transaction(async (tx) => {
-    // Invalidate prior tokens for this identifier.
+    // Invalidate prior verification tokens for this identifier. Scoped
+    // by purpose so a pending magic-link sign-in (different identifier
+    // shape but same email) survives a verification resend.
     await tx
       .delete(verificationTokens)
-      .where(eq(verificationTokens.identifier, email));
+      .where(
+        and(
+          eq(verificationTokens.identifier, email),
+          eq(verificationTokens.purpose, "verification"),
+        ),
+      );
     await tx
       .insert(verificationTokens)
-      .values({ identifier: email, token, expires });
+      .values({ identifier: email, token, purpose: "verification", expires });
   });
 
   const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email/${token}`;
@@ -322,7 +337,7 @@ export async function requestPasswordReset(raw: unknown): Promise<Result<{ ok: t
       .where(eq(verificationTokens.identifier, identifier));
     await tx
       .insert(verificationTokens)
-      .values({ identifier, token, expires });
+      .values({ identifier, token, purpose: "password_reset", expires });
   });
 
   const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password/${token}`;
@@ -357,6 +372,7 @@ export async function resetPassword(raw: unknown): Promise<Result<{ userId: stri
     .where(
       and(
         eq(verificationTokens.token, token),
+        eq(verificationTokens.purpose, "password_reset"),
         gt(verificationTokens.expires, new Date()),
       ),
     )

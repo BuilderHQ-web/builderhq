@@ -36,3 +36,15 @@ export {
   signUpSchema,
   type SignUpInput,
 } from "./service";
+
+// Ads-funnel magic-link (signup + login from /start). Issue + redeem
+// live in a separate file for module-graph clarity — the redemption
+// path doesn't pull in the password-auth code.
+export {
+  issueAdsFunnelMagicLink,
+  redeemAdsFunnelMagicLink,
+  mintHandoffProof,
+  verifyHandoffProof,
+  listAbandonedAdsFunnelDrafts,
+  type MagicLinkRedemption,
+} from "./magic-link";

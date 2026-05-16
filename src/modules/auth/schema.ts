@@ -19,6 +19,7 @@
 
 import { sql } from "drizzle-orm";
 import {
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -75,11 +76,34 @@ export const sessions = pgTable(
   (t) => [index("sessions_user_id_idx").on(t.userId)],
 );
 
+/**
+ * Token discriminator — every entry in `verification_tokens` carries
+ * one of these so we never confuse an email-verification click with
+ * a magic-link sign-in.
+ *
+ *   verification  — email confirmation after password signup (legacy)
+ *   password_reset — clicked from the forgot-password email
+ *   magic_link    — passwordless sign-in (cold ads funnel, etc.). The
+ *                   click verifies the email AND creates a session in
+ *                   one go, and (when paired with a draft project)
+ *                   publishes the project on redemption.
+ */
+export const verificationTokenPurposeEnum = pgEnum(
+  "verification_token_purpose",
+  ["verification", "password_reset", "magic_link"],
+);
+
 export const verificationTokens = pgTable(
   "verification_tokens",
   {
     identifier: text().notNull(),
     token: text().notNull(),
+    /**
+     * Defaults to "verification" so old rows (pre-purpose-column) keep
+     * working unchanged. New rows from sign-in flows pass the explicit
+     * purpose.
+     */
+    purpose: verificationTokenPurposeEnum().notNull().default("verification"),
     expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],

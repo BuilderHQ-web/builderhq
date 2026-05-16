@@ -61,7 +61,11 @@ const TYPE_LABEL: Record<Project["type"], string> = {
   extension: "Extension",
 };
 
-export default async function OwnerDashboard() {
+export default async function OwnerDashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ welcome?: string }>;
+}) {
   const session = await auth();
   const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
 
@@ -70,9 +74,16 @@ export default async function OwnerDashboard() {
     : EMPTY_DATA(firstName);
 
   const isFirstTime = data.projects.total === 0;
+  // After magic-link redemption, /auth/magic redirects here with
+  // ?welcome=published (project went live) or ?welcome=finish
+  // (still draft, needs more details). Used by the banner below.
+  const welcome = (await searchParams)?.welcome;
 
   return (
     <div>
+      {welcome === "published" || welcome === "finish" ? (
+        <AdsFunnelWelcomeBanner mode={welcome} />
+      ) : null}
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">
         <div
@@ -1059,6 +1070,39 @@ function humanAgoFromDate(d: Date): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return humanAgo(days);
+}
+
+/**
+ * One-shot welcome banner shown after the /start ads-funnel magic-
+ * link redemption. Two variants:
+ *   · "published" — project went live; celebrate + tell them what's next.
+ *   · "finish"    — wizard wasn't complete enough to publish; nudge
+ *                   them to keep going.
+ */
+function AdsFunnelWelcomeBanner({ mode }: { mode: "published" | "finish" }) {
+  const isPublished = mode === "published";
+  return (
+    <div className="px-4 sm:px-6 lg:px-10 pt-6">
+      <div className="mx-auto max-w-[860px] rounded-2xl border border-border-accent bg-accent-muted/50 backdrop-blur-sm px-5 py-4 flex items-start gap-4">
+        <span
+          aria-hidden
+          className="mt-0.5 inline-flex items-center justify-center size-8 rounded-full bg-accent/20 border border-border-accent-strong shrink-0"
+        >
+          <span className="size-2 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-accent-light text-[10px] tracking-[0.22em] uppercase font-ui font-semibold">
+            {isPublished ? "Project live" : "Almost there"}
+          </p>
+          <p className="mt-1 text-text text-[14px] sm:text-[14.5px] leading-[1.55] font-body">
+            {isPublished
+              ? "You're verified and your project is now visible to verified Australian builders. Tenders typically arrive within 3–7 days."
+              : "You're verified. A few more details on your project and we'll open it up to verified builders."}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function EMPTY_DATA(firstName: string): OwnerDashboardData {

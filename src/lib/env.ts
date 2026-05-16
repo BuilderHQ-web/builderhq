@@ -72,6 +72,22 @@ const serverSchema = z.object({
 
   ABR_GUID: z.string().optional(),
 
+  // ── Ads funnel (/start) — optional everywhere; the route guards
+  //    return a "not configured" error if Turnstile is missing.
+  /** Cloudflare Turnstile sitekey + secret. Used on the /start/contact
+   *  lead-capture form to block bot signups from paid traffic. Optional
+   *  in dev — server falls open with a console warning. */
+  TURNSTILE_SECRET_KEY: z.string().optional(),
+  /** HMAC secret used to sign the soft-auth cookie that pins an
+   *  unverified user to their draft project between /start/contact and
+   *  /auth/magic. Distinct from AUTH_SECRET so a rotation here doesn't
+   *  log every user out of the main app. Optional only because the
+   *  funnel itself is optional; once Turnstile is on, this MUST be set. */
+  ADS_FUNNEL_SOFT_AUTH_SECRET: z
+    .string()
+    .min(32, "Generate with: openssl rand -base64 32")
+    .optional(),
+
   // Verification proxy — Cloudflare Worker fronting ABR + state licence
   // registries. One base URL with two paths: `/?abn=...` for ABR,
   // `/vic/bpc?...` for VBA. As more states come online, add more paths
@@ -91,6 +107,14 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.url().optional().or(z.literal("")),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
+
+  /** Cloudflare Turnstile site key. Public — rendered into the
+   *  <Turnstile /> widget script on /start/contact. */
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+  /** Google Ads conversion ID + label (AW-XXX/yyy). When set, the
+   *  /auth/magic success page fires the conversion event. */
+  NEXT_PUBLIC_GOOGLE_ADS_ID: z.string().optional(),
+  NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: z.string().optional(),
 });
 
 /**
@@ -117,6 +141,9 @@ function loadEnv() {
         NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
         NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
         NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        NEXT_PUBLIC_GOOGLE_ADS_ID: process.env.NEXT_PUBLIC_GOOGLE_ADS_ID,
+        NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
       }) as z.infer<typeof serverSchema> & z.infer<typeof clientSchema>);
 
   return merged;

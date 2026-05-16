@@ -31,6 +31,7 @@ import {
   pgEnum,
   uuid,
   text,
+  boolean,
   integer,
   timestamp,
   uniqueIndex,
@@ -217,6 +218,28 @@ export const projects = pgTable(
      */
     legacyBubbleId: text("legacy_bubble_id"),
     legacySource: text("legacy_source"),
+
+    /**
+     * Ads-funnel projects: the owner started the project before
+     * verifying their email. The wizard runs to completion but the
+     * project is held back from the marketplace until the magic link
+     * in their inbox is clicked. Flips to FALSE on /auth/magic
+     * redemption, which is the same transaction that sets
+     * `publishedAt`. Default FALSE — projects created via the regular
+     * authenticated `/owner/projects/new` path skip this gate entirely.
+     */
+    awaitingOwnerVerification: boolean("awaiting_owner_verification")
+      .notNull()
+      .default(false),
+
+    /**
+     * Acquisition source for the project. NULL = legacy / created
+     * before tracking. New values: "ads_funnel" (came through the
+     * /start landing), "owner_app" (dashboard), "migration" (Bubble
+     * import). Drives campaign attribution + GC behaviour (only
+     * ads_funnel drafts get the 30-day prune).
+     */
+    acquisitionSource: text("acquisition_source"),
   },
   (t) => [
     uniqueIndex("projects_slug_idx").on(t.slug),
