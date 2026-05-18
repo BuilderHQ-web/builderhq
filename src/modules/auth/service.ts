@@ -467,6 +467,73 @@ export async function changePassword(
   return ok({ ok: true });
 }
 
+// ── set initial password (for users with passwordHash IS NULL) ──────────
+
+const setInitialPasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(10, "Password must be at least 10 characters")
+    .max(200),
+});
+
+/**
+ * Adds a password to an account that doesn't have one yet — the
+ * ads-funnel signup path leaves `users.passwordHash` NULL because
+ * authentication was via magic link only. This action lets a
+ * signed-in user voluntarily set one for faster sign-in on future
+ * devices.
+ *
+ * Authorisation: caller must already be authenticated (we trust
+ * `userId` from the session). No "current password" is required —
+ * there isn't one. If the account ALREADY has a password set, this
+ * refuses with `conflict` to avoid bypassing the regular change-
+ * password flow's current-password check.
+ */
+export async function setInitialPassword(
+  userId: string,
+  raw: unknown,
+): Promise<Result<{ ok: true }>> {
+  const parsed = setInitialPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Some fields need fixing.", {
+      issues: parsed.error.issues,
+    });
+  }
+  const { newPassword } = parsed.data;
+
+  const [user] = await db
+    .select({ passwordHash: users.passwordHash, status: users.status })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!user) {
+    return fail("not_found", "We couldn't verify your account.");
+  }
+  if (user.passwordHash) {
+    // A password already exists — refuse. Caller should use
+    // changePassword (which requires the current one).
+    return fail(
+      "conflict",
+      "This account already has a password. Use 'Change password' instead.",
+    );
+  }
+  if (user.status === "banned" || user.status === "suspended") {
+    return fail("forbidden", "This account can't update its credentials.");
+  }
+
+  const passwordHash = await hash(newPassword, PASSWORD_HASH_OPTS);
+  await db
+    .update(users)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+
+  logger.info(
+    { event: "auth.password.initial_set", userId },
+    "initial password set",
+  );
+  return ok({ ok: true });
+}
+
 // ── update profile (name) ────────────────────────────────────────────────
 
 const updateProfileSchema = z.object({

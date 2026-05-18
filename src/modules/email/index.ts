@@ -30,4 +30,5 @@ export {
   sendArchitectTenderOpsEmail,
   sendArchitectTenderConfirmationEmail,
   sendAdsFunnelMagicLinkEmail,
+  sendAuthSigninLinkEmail,
 } from "./service";

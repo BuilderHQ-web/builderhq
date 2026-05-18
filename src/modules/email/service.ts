@@ -45,6 +45,7 @@ import { UnlockOwnerEmail } from "@/emails/UnlockOwnerEmail";
 import { UnlockBuilderEmail } from "@/emails/UnlockBuilderEmail";
 import { UnlockOpsEmail } from "@/emails/UnlockOpsEmail";
 import { AdsFunnelMagicLinkEmail } from "@/emails/AdsFunnelMagicLinkEmail";
+import { AuthSigninLinkEmail } from "@/emails/AuthSigninLinkEmail";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -1358,6 +1359,67 @@ export async function sendAdsFunnelMagicLinkEmail(
       resendId: data.id,
     },
     "ads-funnel magic-link email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Sign-in magic link (returning users from /login) ────────────────
+
+interface SendAuthSigninLinkEmailInput {
+  to: string;
+  magicUrl: string;
+  firstName: string | null;
+}
+
+/**
+ * Passwordless sign-in link for returning users. 15-minute TTL. Sent
+ * from /api/auth/email-link when a user requests a sign-in link.
+ *
+ * Subject is intentionally short + recognisable so it threads cleanly
+ * in inbox previews and survives Gmail's clip-at-102KB rule.
+ */
+export async function sendAuthSigninLinkEmail(
+  input: SendAuthSigninLinkEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "Your BuilderHQ sign-in link";
+  const props = { magicUrl: input.magicUrl, firstName: input.firstName };
+
+  const [html, text] = await Promise.all([
+    render(AuthSigninLinkEmail(props)),
+    render(AuthSigninLinkEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.auth_signin_link.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "sign-in link email send failed",
+    );
+    return fail(
+      "external_error",
+      "We couldn't send the link. Try again in a moment.",
+    );
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    { event: "email.auth_signin_link.sent", to: input.to, resendId: data.id },
+    "sign-in link email sent",
   );
   return ok({ id: data.id });
 }

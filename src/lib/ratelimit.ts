@@ -102,6 +102,13 @@ export const limiters = {
   adsFunnelSignup: make("ads_funnel_signup", 5, 300),
   /** /start ads-funnel magic-link resend — per email. */
   adsFunnelResend: make("ads_funnel_resend", 3, 600),
+  /** Passwordless sign-in link request — per email. Prevents an
+   *  attacker from spam-mailing a specific user's inbox. */
+  authEmailLinkEmail: make("auth_email_link_email", 3, 600),
+  /** Passwordless sign-in link request — per IP. Prevents
+   *  account-existence brute force by an attacker trying many
+   *  emails from the same source. */
+  authEmailLinkIp: make("auth_email_link_ip", 10, 300),
 };
 
 /**

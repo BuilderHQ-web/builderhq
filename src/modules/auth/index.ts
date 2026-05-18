@@ -32,6 +32,7 @@ export {
   requestPasswordReset,
   resetPassword,
   changePassword,
+  setInitialPassword,
   updateProfile,
   signUpSchema,
   type SignUpInput,
@@ -48,3 +49,13 @@ export {
   listAbandonedAdsFunnelDrafts,
   type MagicLinkRedemption,
 } from "./magic-link";
+
+// Sign-in magic links (passwordless /login for returning users).
+// 15-minute TTL, identifier shape `signin:<email>`. The unified
+// /auth/magic route dispatches between these and ads-funnel tokens.
+export {
+  issueSigninMagicLink,
+  redeemSigninMagicLink,
+  isSigninIdentifier,
+  type SigninRedemption,
+} from "./signin-link";

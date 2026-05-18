@@ -41,6 +41,7 @@ export default async function SettingsPage() {
       firstName: users.firstName,
       lastName: users.lastName,
       phone: users.phone,
+      passwordHash: users.passwordHash,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -215,9 +216,13 @@ export default async function SettingsPage() {
               kicker="Security"
               icon={<Lock className="size-3.5" />}
               title="Password"
-              description="Choose a strong password — minimum 10 characters. You'll be signed out of this device after changing."
+              description={
+                user.passwordHash
+                  ? "Choose a strong password — minimum 10 characters. You'll be signed out of this device after changing."
+                  : "You signed in with a magic link. Optionally add a password for faster sign-in next time. Minimum 10 characters."
+              }
             >
-              <PasswordForm />
+              <PasswordForm hasPassword={Boolean(user.passwordHash)} />
             </SettingsSection>
           </Reveal>
 

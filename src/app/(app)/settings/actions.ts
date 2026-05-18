@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import {
   auth,
   changePassword,
+  setInitialPassword,
   signOut,
   unstable_update,
   updateProfile,
@@ -100,6 +101,50 @@ export async function changePasswordAction(
   // Sign out current device after password change. Other devices' JWTs
   // remain valid for up to 7d (architecture note in service.ts).
   await signOut({ redirectTo: "/login?password_changed=1" });
+  return { ok: true };
+}
+
+/**
+ * For users (typically ads-funnel signups) who never set a password.
+ * No "current password" required because there isn't one. Refuses if
+ * the user already has a password — they should use changePassword
+ * instead.
+ *
+ * Unlike changePassword, this does NOT sign the user out — they're
+ * adding a credential, not rotating one. The current session stays
+ * valid; future sign-ins on other devices can use either email link
+ * or password.
+ */
+export async function setInitialPasswordAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const userId = await requireUserId();
+  if (!userId) return { error: "Not authenticated." };
+
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  if (newPassword !== confirm) {
+    return { fieldErrors: { confirm: "Passwords don't match" } };
+  }
+
+  const result = await setInitialPassword(userId, { newPassword });
+
+  if (!result.ok) {
+    if (result.error.code === "validation" && result.error.details?.issues) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.details.issues as Array<{
+        path: (string | number)[];
+        message: string;
+      }>) {
+        const key = issue.path.join(".");
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      return { fieldErrors };
+    }
+    return { error: result.error.message };
+  }
+
   return { ok: true };
 }
 
