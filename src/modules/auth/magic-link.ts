@@ -2,7 +2,7 @@
  * Magic-link issue + redemption — powering the /start ads funnel.
  *
  * This is a passwordless signup/login path. The user submits email +
- * phone at /start/contact, we create a `pending_verification` user
+ * phone at /start/q/contact, we create a `pending_verification` user
  * and a `draft` project, then email them a link. The link click does
  * three things in one transaction:
  *
@@ -40,7 +40,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { sendAdsFunnelMagicLinkEmail } from "@/modules/email";
-import { projects, type ProjectRow } from "@/modules/projects";
+import { projects, publish as publishProject } from "@/modules/projects";
 import { users } from "@/modules/users";
 
 import { verificationTokens } from "./schema";
@@ -48,7 +48,7 @@ import { verificationTokens } from "./schema";
 const MAGIC_LINK_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const HANDOFF_TTL_SECONDS = 60; // 1 minute window between redeem → signIn
 
-// ── Issue (called from /api/start/contact + /api/start/resend) ───────
+// ── Issue (called from /api/start/q/plans + /api/start/resend) ──────
 
 interface IssueMagicLinkInput {
   email: string;
@@ -217,24 +217,19 @@ export async function redeemAdsFunnelMagicLink(
     return fail("not_found", "Invalid link.");
   }
 
-  // Decide upfront whether the project is publishable. We don't call
-  // the full publish() here because it lives in projects/service.ts
-  // (server-only) and we want this module to be self-contained for
-  // testing. publishability is checked by the route handler if
-  // needed; for now, we publish iff the publish gate passes inline.
-  const publishable = isProjectPublishable(project);
-
-  let published = false;
-
+  // Atomic verify + clear awaiting flag. We do NOT decide publish
+  // status inside the txn — publishProject() runs the full publish
+  // gate (including architectural-docs check) after the txn commits.
+  // If it passes, the dispatch fan-out fires natively from that
+  // function; if it doesn't, the project stays draft and the user
+  // lands on the wizard to finish.
   await db.transaction(async (tx) => {
-    // Re-read the token inside the txn to detect double-redemption.
     const [tok] = await tx
       .select({ token: verificationTokens.token })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, token))
       .limit(1);
     if (!tok) {
-      // Already consumed by a concurrent request.
       throw new Error("MAGIC_LINK_DOUBLE_REDEEM");
     }
 
@@ -242,7 +237,6 @@ export async function redeemAdsFunnelMagicLink(
       .delete(verificationTokens)
       .where(eq(verificationTokens.token, token));
 
-    // Idempotent: re-verifying an already-active account is a no-op.
     if (user.status !== "active") {
       await tx
         .update(users)
@@ -254,17 +248,14 @@ export async function redeemAdsFunnelMagicLink(
         .where(eq(users.id, user.id));
     }
 
-    if (project.awaitingOwnerVerification || (publishable && !project.publishedAt)) {
-      const next: Partial<ProjectRow> = {
-        awaitingOwnerVerification: false,
-        updatedAt: new Date(),
-      };
-      if (publishable && !project.publishedAt) {
-        next.status = "published";
-        next.publishedAt = new Date();
-        published = true;
-      }
-      await tx.update(projects).set(next).where(eq(projects.id, project.id));
+    if (project.awaitingOwnerVerification) {
+      await tx
+        .update(projects)
+        .set({
+          awaitingOwnerVerification: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, project.id));
     }
   }).catch((err) => {
     if (err instanceof Error && err.message === "MAGIC_LINK_DOUBLE_REDEEM") {
@@ -273,29 +264,33 @@ export async function redeemAdsFunnelMagicLink(
     throw err;
   });
 
-  // If we hit the double-redeem path, re-check whether the project
-  // already went live (the first-mover txn would have set this).
-  if (!published && publishable) {
-    const [fresh] = await db
-      .select({ publishedAt: projects.publishedAt })
-      .from(projects)
-      .where(eq(projects.id, project.id))
-      .limit(1);
-    if (fresh?.publishedAt) published = true;
-  }
-
-  // Post-publish fan-out — owner welcome, ops heads-up, builder blast.
-  // Same pattern as projects/service.ts:publish, lazy import to keep
-  // this module's dep graph small.
-  if (published) {
-    try {
-      const { dispatchProjectPublishedEvent } = await import(
-        "@/modules/projects/dispatch"
+  // Try to publish via the canonical service. Full gate (required
+  // fields + ≥1 architectural document). If it succeeds, dispatch
+  // (owner email + builder fan-out) fires inside publish() via
+  // next/server's `after()`. If it fails, the project stays draft.
+  let published = false;
+  if (!project.publishedAt) {
+    const pub = await publishProject(user.id, project.id);
+    if (pub.ok) {
+      published = true;
+    } else {
+      // Most common: code=validation, missing architectural docs or
+      // a required field. That's the "finish your project" path —
+      // we route the user to the wizard.
+      logger.info(
+        {
+          event: "auth.ads_funnel.publish_deferred",
+          userId: user.id,
+          projectId: project.id,
+          reason: pub.error.code,
+        },
+        "magic-link redemption: project not publishable yet",
       );
-      void dispatchProjectPublishedEvent(project.id);
-    } catch {
-      /* dispatch is best-effort; failures don't roll back the publish */
     }
+  } else {
+    // Project was already published — idempotent re-click on a magic
+    // link after the first redemption.
+    published = true;
   }
 
   logger.info(
@@ -332,49 +327,6 @@ function parseMagicLinkIdentifier(
   const email = rest.slice(sep + 1);
   if (!projectId || !email) return null;
   return { projectId, email };
-}
-
-// ── Publish gate (subset of projects/service.checkPublishability) ────
-
-/**
- * Inline copy of the publish gate. Kept here to avoid pulling the
- * full projects/service module (which has a heavier dep tree) into
- * the magic-link redemption path. The two MUST stay in lockstep —
- * if `projects/service.ts:checkPublishability` adds a check, mirror
- * it here.
- *
- * NOTE: We don't check for architectural docs inline because the
- * docs table is in another module and the join is non-trivial.
- * Instead we delegate that piece via a separate query.
- */
-function isProjectPublishable(project: ProjectRow): boolean {
-  if (project.status !== "draft") return false;
-  if (project.publishedAt) return false;
-  if (!project.title?.trim()) return false;
-  if (!project.addressLine1) return false;
-  if (!project.suburb) return false;
-  if (!project.state) return false;
-  if (!project.postcode || !/^\d{4}$/.test(project.postcode)) return false;
-  if (!project.budgetBand) return false;
-  // Per-type required fields — minimal sketch; the full service-side
-  // check covers more. The /start funnel's final step blocks submission
-  // when these are missing, so reaching the magic link with them
-  // unfilled is unlikely.
-  switch (project.type) {
-    case "single_dwelling":
-      if (!project.bedrooms || !project.bathrooms) return false;
-      break;
-    case "multi_dwelling":
-      if (!project.dwellingCount || project.dwellingCount < 2) return false;
-      break;
-    case "renovation":
-      if (!project.renovationScope) return false;
-      break;
-    case "extension":
-      if (!project.extensionType) return false;
-      break;
-  }
-  return true;
 }
 
 // ── Auth.js handoff proof ────────────────────────────────────────────

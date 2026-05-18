@@ -12,7 +12,7 @@
  * so LCP stays under 2s on mobile — a Quality Score win and a
  * conversion win.
  *
- * The hero CTA always points at /start/type to begin the funnel.
+ * The hero CTA always points at /start/q/type to begin the quiz.
  * Optional URL params (?utm_source=...) get preserved through every
  * step via the StartCta client component.
  */

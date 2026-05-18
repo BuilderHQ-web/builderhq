@@ -21,7 +21,7 @@ import { StartCtaInner } from "./start-cta-inner";
 
 interface Props {
   children: ReactNode;
-  /** Override the destination. Defaults to /start/type (begin funnel). */
+  /** Override the destination. Defaults to /start/q/type (begin funnel). */
   href?: string;
   /** Size variant. Default is the large hero size. */
   size?: "lg" | "md";
@@ -45,7 +45,7 @@ function ctaClassName({
 }
 
 export function StartCta(props: Props) {
-  const { children, href = "/start/type", size, variant } = props;
+  const { children, href = "/start/q/type", size, variant } = props;
   const className = ctaClassName({ size, variant });
   return (
     <Suspense fallback={<Link href={href} className={className}>{children}</Link>}>

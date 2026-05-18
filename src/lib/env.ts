@@ -74,12 +74,12 @@ const serverSchema = z.object({
 
   // ── Ads funnel (/start) — optional everywhere; the route guards
   //    return a "not configured" error if Turnstile is missing.
-  /** Cloudflare Turnstile sitekey + secret. Used on the /start/contact
+  /** Cloudflare Turnstile sitekey + secret. Used on the /start/q/contact
    *  lead-capture form to block bot signups from paid traffic. Optional
    *  in dev — server falls open with a console warning. */
   TURNSTILE_SECRET_KEY: z.string().optional(),
   /** HMAC secret used to sign the soft-auth cookie that pins an
-   *  unverified user to their draft project between /start/contact and
+   *  unverified user to their draft project between /start/q/contact and
    *  /auth/magic. Distinct from AUTH_SECRET so a rotation here doesn't
    *  log every user out of the main app. Optional only because the
    *  funnel itself is optional; once Turnstile is on, this MUST be set. */
@@ -87,6 +87,12 @@ const serverSchema = z.object({
     .string()
     .min(32, "Generate with: openssl rand -base64 32")
     .optional(),
+
+  /** Shared bearer token Vercel Cron sends in the Authorization header
+   *  when invoking scheduled endpoints. Endpoints under /api/cron/*
+   *  reject anything else. Optional in dev; auto-injected by Vercel
+   *  in production / preview. */
+  CRON_SECRET: z.string().min(16).optional(),
 
   // Verification proxy — Cloudflare Worker fronting ABR + state licence
   // registries. One base URL with two paths: `/?abn=...` for ABR,
@@ -109,7 +115,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
 
   /** Cloudflare Turnstile site key. Public — rendered into the
-   *  <Turnstile /> widget script on /start/contact. */
+   *  <Turnstile /> widget script on /start/q/contact. */
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
   /** Google Ads conversion ID + label (AW-XXX/yyy). When set, the
    *  /auth/magic success page fires the conversion event. */

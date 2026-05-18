@@ -27,7 +27,7 @@ interface Props {
   className: string;
 }
 
-export function StartCtaInner({ children, href = "/start/type", className }: Props) {
+export function StartCtaInner({ children, href = "/start/q/type", className }: Props) {
   const search = useSearchParams();
   const target = useMemo(() => {
     const params = new URLSearchParams();
