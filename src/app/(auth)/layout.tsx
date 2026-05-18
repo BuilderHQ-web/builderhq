@@ -30,7 +30,7 @@ export default function AuthLayout({
     <div className="relative h-dvh overflow-hidden bg-[#01040b] antialiased">
       {/* Brand silk backdrop. */}
       <Image
-        src="/brand/auth-silk.jpg"
+        src="/brand/auth-silk-v2.jpg"
         alt=""
         fill
         priority
