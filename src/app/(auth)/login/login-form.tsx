@@ -5,28 +5,31 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 import { loginAction, type LoginActionState } from "./actions";
 
 const initialState: LoginActionState = {};
 
 /**
- * Two paths on a single page:
+ * Login form — Resend-style composition.
  *
- *   1. **Passwordless (primary)** — user enters email, gets a 15-min
- *      sign-in link. Works for every account regardless of whether
- *      they've ever set a password. Submits to /api/auth/email-link
- *      and routes to /auth/email-sent.
+ *   · Brand wordmark on top, then a tight heading + signup CTA.
+ *   · Email field is always visible (both paths need it).
+ *   · Primary action: passwordless magic link — rendered as a big
+ *     glowing teal button so it draws the eye first.
+ *   · Soft "or" divider, then a low-key "Use password instead"
+ *     toggle that expands a password field + secondary submit when
+ *     clicked. Backing out collapses cleanly.
+ *   · Legal text sits at the bottom, faint enough to be present
+ *     without competing for attention.
  *
- *   2. **Password (secondary, collapsible)** — for users who set
- *      one in account settings. Same Auth.js Credentials flow as
- *      before, gated behind a "Use password instead" toggle.
- *
- * Both paths share the email input — clicking the password toggle
- * just reveals the password field below.
+ * The whole composition is kept short so it fits inside the auth
+ * shell's locked viewport (`h-dvh overflow-hidden`) on a typical
+ * phone height (~700px).
  */
 export function LoginForm() {
   const params = useSearchParams();
@@ -66,8 +69,7 @@ export function LoginForm() {
         body: JSON.stringify({ email: trimmed }),
       });
       // Always navigate to /auth/email-sent regardless of whether
-      // the email is registered (account-existence privacy). The
-      // sent page itself doesn't know either way.
+      // the email is registered (account-existence privacy).
       router.push(`/auth/email-sent?email=${encodeURIComponent(trimmed)}`);
     } catch {
       setLinkError("Something went wrong. Try again in a moment.");
@@ -75,31 +77,51 @@ export function LoginForm() {
     }
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      {accountDeleted ? (
-        <Banner tone="info">
-          Your account has been deleted. Personal details were scrubbed and
-          this account can no longer sign in.
-        </Banner>
-      ) : passwordChanged ? (
-        <Banner tone="success">
-          Password updated — sign in to continue.
-        </Banner>
-      ) : err === "expired" ? (
-        <Banner tone="warning">
-          That link expired. Enter your email and we&apos;ll send a fresh one.
-        </Banner>
-      ) : err === "invalid" || err === "session_failed" ? (
-        <Banner tone="warning">
-          That link is invalid or has already been used. Request a new one.
-        </Banner>
-      ) : null}
+  const banner = accountDeleted
+    ? { tone: "info" as const, msg: "Your account has been deleted. Personal details were scrubbed and this account can no longer sign in." }
+    : passwordChanged
+      ? { tone: "success" as const, msg: "Password updated — sign in to continue." }
+      : err === "expired"
+        ? { tone: "warning" as const, msg: "That link expired. Send yourself a fresh one." }
+        : err === "invalid" || err === "session_failed"
+          ? { tone: "warning" as const, msg: "That link is invalid or already used. Request a new one." }
+          : null;
 
-      {/* ── Path 1: passwordless ───────────────────────────────────── */}
-      <form onSubmit={sendLink} className="flex flex-col gap-3.5" noValidate>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+  return (
+    <div className="flex flex-col items-center text-center gap-7">
+      {/* ── Brand mark ─────────────────────────────────────────────── */}
+      <Logo height={22} className="mb-1" />
+
+      {/* ── Heading ────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-2">
+        <h1 className="font-display tracking-[-0.012em] text-[30px] sm:text-[34px] leading-[1.05] text-text">
+          Log in to BuilderHQ
+        </h1>
+        <p className="text-[13.5px] text-text-muted font-body">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-text font-semibold hover:text-accent-light transition-colors"
+          >
+            Sign up
+          </Link>
+          .
+        </p>
+      </div>
+
+      {/* ── Status banner (rare, but mounted above the form) ───────── */}
+      {banner ? <Banner tone={banner.tone}>{banner.msg}</Banner> : null}
+
+      {/* ── Path 1: passwordless (primary) ─────────────────────────── */}
+      <form
+        onSubmit={sendLink}
+        className="w-full flex flex-col gap-3.5"
+        noValidate
+      >
+        <div className="flex flex-col gap-1.5 text-left">
+          <Label htmlFor="email" className="text-[12px] tracking-[0.06em] text-text-muted">
+            Email
+          </Label>
           <Input
             id="email"
             name="email"
@@ -111,67 +133,84 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={linkSending}
+            className="h-11 bg-[rgba(255,255,255,0.04)] border-border-strong focus-visible:border-accent focus-visible:ring-accent/30"
           />
           {linkError ? <FieldError msg={linkError} /> : null}
         </div>
 
-        <Button
+        <button
           type="submit"
-          size="lg"
           disabled={linkSending || !email.trim()}
-          className="gap-2 w-full sm:w-auto"
+          className={cn(
+            "group relative w-full h-11 rounded-full inline-flex items-center justify-center gap-2",
+            "bg-accent text-accent-contrast text-[13.5px] font-semibold tracking-[0.02em] font-ui",
+            "transition-[transform,background-color,box-shadow] duration-[180ms]",
+            "shadow-[0_0_0_1px_rgba(0,212,200,0.45),0_0_28px_-4px_rgba(0,212,200,0.55),0_10px_30px_-12px_rgba(0,212,200,0.6)]",
+            "hover:bg-accent-hover hover:shadow-[0_0_0_1px_rgba(0,212,200,0.55),0_0_36px_-4px_rgba(0,212,200,0.75),0_14px_36px_-12px_rgba(0,212,200,0.75)]",
+            "disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-[0_0_0_1px_rgba(0,212,200,0.3)]",
+          )}
         >
           {linkSending ? (
-            <Loader2 className="size-4 animate-spin" />
+            <>
+              <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
+              Sending link…
+            </>
           ) : (
-            <ArrowRight className="size-4" strokeWidth={2.2} />
+            <>
+              Email me a sign-in link
+              <ArrowRight
+                className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5"
+                strokeWidth={2.4}
+              />
+            </>
           )}
-          {linkSending ? "Sending link…" : "Email me a sign-in link"}
-        </Button>
+        </button>
       </form>
 
-      {/* ── Divider ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
+      {/* ── Divider ────────────────────────────────────────────────── */}
+      <div className="w-full flex items-center gap-3">
         <span className="flex-1 h-px bg-border-subtle" />
-        <span className="text-[10px] tracking-[0.2em] uppercase text-text-faint font-ui font-semibold">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-text-faint font-ui font-semibold">
           or
         </span>
         <span className="flex-1 h-px bg-border-subtle" />
       </div>
 
-      {/* ── Path 2: password (collapsible) ──────────────────────────── */}
+      {/* ── Path 2: password (collapsible) ─────────────────────────── */}
       {!usePassword ? (
         <button
           type="button"
           onClick={() => setUsePassword(true)}
-          className="text-[13px] text-text-muted hover:text-text underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors self-start"
+          className="text-[13px] text-text-muted hover:text-text transition-colors font-ui inline-flex items-center gap-1.5"
         >
-          Use password instead
+          Sign in with password instead
         </button>
       ) : (
         <form
           action={(fd) => startTransition(() => formAction(fd))}
-          className="flex flex-col gap-4"
+          className="w-full flex flex-col gap-3.5"
           noValidate
         >
           <input type="hidden" name="next" value={next} />
-          {/* Email field for the password form — sync with the
-              passwordless email input so the user doesn't have to
-              retype. */}
           <input type="hidden" name="email" value={email} />
 
           {!email.trim() ? (
-            <p className="text-[12.5px] text-text-faint">
-              Enter your email above first, then a password below.
+            <p className="text-[12px] text-text-faint text-left">
+              Enter your email above first.
             </p>
           ) : null}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5 text-left">
             <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="password">Password</Label>
+              <Label
+                htmlFor="password"
+                className="text-[12px] tracking-[0.06em] text-text-muted"
+              >
+                Password
+              </Label>
               <Link
                 href="/forgot"
-                className="text-[12px] text-text-dim hover:text-accent-light transition-colors py-1 -my-1"
+                className="text-[11.5px] text-text-dim hover:text-accent-light transition-colors"
               >
                 Forgot?
               </Link>
@@ -183,6 +222,7 @@ export function LoginForm() {
               autoComplete="current-password"
               required
               disabled={isPending}
+              className="h-11 bg-[rgba(255,255,255,0.04)] border-border-strong focus-visible:border-accent focus-visible:ring-accent/30"
             />
             {fieldError("password") ? (
               <FieldError msg={fieldError("password")!} />
@@ -192,30 +232,53 @@ export function LoginForm() {
             ) : null}
           </div>
 
-          {state.error ? (
-            <Banner tone="error">{state.error}</Banner>
-          ) : null}
+          {state.error ? <Banner tone="error">{state.error}</Banner> : null}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
+          <div className="flex flex-col gap-2.5">
+            <button
               type="submit"
-              size="lg"
               disabled={isPending || !email.trim()}
-              className="gap-2"
+              className={cn(
+                "w-full h-11 rounded-full inline-flex items-center justify-center gap-2",
+                "bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.10)] text-text text-[13px] font-semibold font-ui",
+                "border border-border-strong hover:border-border-accent/60 transition-colors",
+                "disabled:opacity-60 disabled:cursor-not-allowed",
+              )}
             >
-              {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
+              ) : null}
               {isPending ? "Signing in…" : "Sign in with password"}
-            </Button>
+            </button>
             <button
               type="button"
               onClick={() => setUsePassword(false)}
-              className="text-[12.5px] text-text-dim hover:text-text transition-colors"
+              className="text-[11.5px] text-text-dim hover:text-text transition-colors font-ui"
             >
               Back to email link
             </button>
           </div>
         </form>
       )}
+
+      {/* ── Legal footer ───────────────────────────────────────────── */}
+      <p className="text-[11px] text-text-faint leading-[1.5] font-body mt-1">
+        By signing in, you agree to our{" "}
+        <Link
+          href="/terms"
+          className="underline underline-offset-2 decoration-text-faint/40 hover:text-text-muted hover:decoration-text-muted transition-colors"
+        >
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="underline underline-offset-2 decoration-text-faint/40 hover:text-text-muted hover:decoration-text-muted transition-colors"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </div>
   );
 }
@@ -238,7 +301,10 @@ function Banner({
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-md border px-3.5 py-2.5 text-[13px] ${styles[tone]}`}
+      className={cn(
+        "w-full rounded-md border px-3.5 py-2.5 text-[12.5px] text-left font-body",
+        styles[tone],
+      )}
     >
       {children}
     </div>
@@ -246,5 +312,5 @@ function Banner({
 }
 
 function FieldError({ msg }: { msg: string }) {
-  return <p className="text-[12px] text-danger">{msg}</p>;
+  return <p className="text-[12px] text-danger text-left">{msg}</p>;
 }
