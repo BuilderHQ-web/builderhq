@@ -219,7 +219,14 @@ export default async function OwnerDashboard({
         {session?.user?.id ? (
           <Reveal immediate delay={0.06}>
             <Suspense fallback={null}>
-              <NextActions userId={session.user.id} />
+              <NextActions
+                userId={session.user.id}
+                totalProjects={data.projects.total}
+                tendersAwaitingDecision={data.tenders.awaitingDecision}
+                firstWaitingProjectSlug={
+                  data.decisionsWaiting[0]?.projectSlug ?? null
+                }
+              />
             </Suspense>
           </Reveal>
         ) : null}
