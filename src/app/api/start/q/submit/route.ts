@@ -102,7 +102,7 @@ const QuizPayload = z
     bathrooms: z.number().int().min(1).max(50).optional(),
     floors: z.number().int().min(1).max(10).optional(),
     dwellingCount: z.number().int().min(2).max(50).optional(),
-    renovationScope: RenovationScope.optional(),
+    renovationScopeTags: z.array(RenovationScope).max(6).optional(),
     extensionType: ExtensionType.optional(),
     timeline: Timeline,
     budgetBand: BudgetBand,
@@ -131,8 +131,11 @@ const QuizPayload = z
         ctx.addIssue({ code: "custom", message: "Missing dwelling count." });
       }
     } else if (q.type === "renovation") {
-      if (!q.renovationScope) {
-        ctx.addIssue({ code: "custom", message: "Missing renovation scope." });
+      if (!q.renovationScopeTags || q.renovationScopeTags.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Pick at least one renovation scope.",
+        });
       }
     } else if (q.type === "extension") {
       if (!q.extensionType) {
@@ -162,12 +165,42 @@ function normalisePhone(input: string): string {
   return digits;
 }
 
+// Priority order for collapsing a multi-select renovation tags array
+// down to the legacy single-value `renovation_scope` column. Higher
+// index = more encompassing. Mirror of the same helper in
+// _lib/quiz-state.ts (inlined here to avoid pulling client-side
+// localStorage code into a server route).
+const RENO_SCOPE_PRIORITY: z.infer<typeof RenovationScope>[] = [
+  "kitchen",
+  "bathroom",
+  "kitchen_and_bathroom",
+  "full_internal",
+  "full_internal_and_external",
+  "structural",
+];
+
+function deriveRenovationScope(
+  tags: z.infer<typeof RenovationScope>[] | null,
+): z.infer<typeof RenovationScope> | null {
+  if (!tags || tags.length === 0) return null;
+  let best: z.infer<typeof RenovationScope> | null = null;
+  let bestIdx = -1;
+  for (const tag of tags) {
+    const i = RENO_SCOPE_PRIORITY.indexOf(tag);
+    if (i > bestIdx) {
+      best = tag;
+      bestIdx = i;
+    }
+  }
+  return best;
+}
+
 function defaultTitleFor(type: z.infer<typeof ProjectType>): string {
   switch (type) {
     case "single_dwelling":
-      return "New home build";
+      return "Single dwelling build";
     case "multi_dwelling":
-      return "New multi-dwelling build";
+      return "Multi-dwelling build";
     case "renovation":
       return "Home renovation";
     case "extension":
@@ -369,11 +402,18 @@ export async function POST(request: NextRequest) {
   try {
     // Sanitize scope fields by project type so stale localStorage
     // (e.g. user tested renovation, then went back and picked
-    // multi-dwelling, leaving renovationScope set) can't pollute
-    // the row. Belt-and-braces: zod already gates submission, but
-    // the DB row should only have fields relevant to the picked
-    // type.
+    // multi-dwelling, leaving renovationScopeTags set) can't
+    // pollute the row. Belt-and-braces: zod already gates
+    // submission, but the DB row should only have fields relevant
+    // to the picked type.
     const t = body.quiz.type;
+    const renovationTags =
+      t === "renovation" ? (body.quiz.renovationScopeTags ?? []) : [];
+    // Derive the legacy single-value column from the highest-
+    // priority tag in the array (kept populated for backwards
+    // compatibility with reports + the marketplace filter).
+    const renovationScope =
+      t === "renovation" ? deriveRenovationScope(renovationTags) : null;
     const insertValues = {
       ownerId: userId,
       title,
@@ -397,8 +437,8 @@ export async function POST(request: NextRequest) {
         t === "single_dwelling" ? (body.quiz.floors ?? null) : null,
       dwellingCount:
         t === "multi_dwelling" ? (body.quiz.dwellingCount ?? null) : null,
-      renovationScope:
-        t === "renovation" ? (body.quiz.renovationScope ?? null) : null,
+      renovationScope,
+      renovationScopeTags: renovationTags,
       extensionType:
         t === "extension" ? (body.quiz.extensionType ?? null) : null,
       budgetBand: body.quiz.budgetBand,

@@ -112,11 +112,23 @@ export async function update(
     nextSlug = await uniqueSlug(patch.title.trim(), existing.id);
   }
 
+  // When the patch updates renovationScopeTags (multi-select), also
+  // derive the legacy single-value column from it so any callers
+  // still reading `renovationScope` get a sensible value. Highest-
+  // priority tag wins.
+  const derivedSingleScope =
+    patch.renovationScopeTags !== undefined
+      ? deriveRenovationScopeFromTags(patch.renovationScopeTags)
+      : undefined;
+
   const [updated] = await db
     .update(projects)
     .set({
       ...patch,
       ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+      ...(derivedSingleScope !== undefined
+        ? { renovationScope: derivedSingleScope }
+        : {}),
       slug: nextSlug,
       updatedAt: new Date(),
     })
@@ -124,6 +136,31 @@ export async function update(
     .returning();
 
   return ok(updated!);
+}
+
+const RENO_SCOPE_PRIORITY = [
+  "kitchen",
+  "bathroom",
+  "kitchen_and_bathroom",
+  "full_internal",
+  "full_internal_and_external",
+  "structural",
+] as const;
+
+function deriveRenovationScopeFromTags(
+  tags: NonNullable<ProjectRow["renovationScope"]>[],
+): ProjectRow["renovationScope"] {
+  if (!tags || tags.length === 0) return null;
+  let best: ProjectRow["renovationScope"] = null;
+  let bestIdx = -1;
+  for (const tag of tags) {
+    const i = RENO_SCOPE_PRIORITY.indexOf(tag);
+    if (i > bestIdx) {
+      best = tag;
+      bestIdx = i;
+    }
+  }
+  return best;
 }
 
 /**
@@ -616,7 +653,11 @@ function validateTypeRequired(p: ProjectRow): string[] {
       if (!p.bathrooms) out.push("Set total bathrooms.");
       break;
     case "renovation":
-      if (!p.renovationScope) out.push("Pick the renovation scope.");
+      // Source of truth: the multi-select tags array. The legacy
+      // single-value column is auto-derived from the array.
+      if (!p.renovationScopeTags || p.renovationScopeTags.length === 0) {
+        out.push("Pick at least one renovation scope.");
+      }
       break;
     case "extension":
       if (!p.extensionType) out.push("Pick the extension type.");
@@ -663,6 +704,13 @@ function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   }
   if (nextType !== "renovation" && patch.renovationScope != null) {
     out.push("Renovation scope only applies to renovations.");
+  }
+  if (
+    nextType !== "renovation" &&
+    patch.renovationScopeTags != null &&
+    patch.renovationScopeTags.length > 0
+  ) {
+    out.push("Renovation scope tags only apply to renovations.");
   }
   if (nextType !== "extension" && patch.extensionType != null) {
     out.push("Extension type only applies to extensions.");

@@ -132,6 +132,13 @@ export type UpdateProjectInput = Partial<{
   buildSizeBand: ProjectRow["buildSizeBand"] | null;
   dwellingCount: number | null;
   renovationScope: ProjectRow["renovationScope"] | null;
+  /**
+   * Multi-select renovation scope tags. Source of truth for new
+   * writes; the legacy single-value `renovationScope` is derived
+   * from this array on save (highest-priority tag wins). Empty
+   * array clears the renovation scope entirely.
+   */
+  renovationScopeTags: NonNullable<ProjectRow["renovationScope"]>[];
   existingAgeBand: ProjectRow["existingAgeBand"] | null;
   extensionType: ProjectRow["extensionType"] | null;
   extensionSizeBand: ProjectRow["extensionSizeBand"] | null;

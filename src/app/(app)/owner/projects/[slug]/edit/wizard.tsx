@@ -821,12 +821,9 @@ function Step2Build({
 
           {t === "renovation" && (
             <>
-              <DropdownField
-                label="Renovation scope"
-                required
-                options={RENO_SCOPES}
-                value={project.renovationScope}
-                onChange={(v) => setField("renovationScope", v)}
+              <RenovationScopeMultiSelect
+                tags={project.renovationScopeTags ?? []}
+                onChange={(next) => setField("renovationScopeTags", next)}
                 disabled={disabled}
               />
               <DropdownField
@@ -1444,6 +1441,60 @@ function Field({
   );
 }
 
+/**
+ * Multi-select renovation scope. Owners often want multiple scopes
+ * (kitchen + bathroom + structural). Renders the RENO_SCOPES options
+ * as toggle chips; selected ones get the accent treatment.
+ */
+function RenovationScopeMultiSelect({
+  tags,
+  onChange,
+  disabled,
+}: {
+  tags: NonNullable<Project["renovationScope"]>[];
+  onChange: (next: NonNullable<Project["renovationScope"]>[]) => void;
+  disabled?: boolean;
+}) {
+  function toggle(id: NonNullable<Project["renovationScope"]>) {
+    if (disabled) return;
+    const next = tags.includes(id)
+      ? tags.filter((t) => t !== id)
+      : [...tags, id];
+    onChange(next);
+  }
+  return (
+    <Field label="Renovation scope" required>
+      <p className="text-text-faint text-[11.5px] font-body mb-2.5 mt-0.5">
+        Tick every part of the home that&apos;s in scope. You can pick more
+        than one.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {RENO_SCOPES.map((o) => {
+          const selected = tags.includes(o.id);
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => toggle(o.id)}
+              disabled={disabled}
+              aria-pressed={selected}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-full px-3.5 h-9 text-[12.5px] font-ui font-semibold transition-colors disabled:opacity-50",
+                selected
+                  ? "border border-accent bg-accent-muted text-accent-light"
+                  : "border border-border-strong bg-surface-1/40 text-text hover:border-border-accent",
+              ].join(" ")}
+            >
+              {selected ? "✓ " : ""}
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </Field>
+  );
+}
+
 function DropdownField<T extends string | number>({
   label,
   required,
@@ -1594,7 +1645,10 @@ function checkBuildStepDone(p: Project): boolean {
     case "multi_dwelling":
       return !!p.dwellingCount && p.dwellingCount >= 2 && !!p.bedrooms && !!p.bathrooms;
     case "renovation":
-      return !!p.renovationScope;
+      // Multi-select: complete if at least one scope tag is picked.
+      // The legacy `renovationScope` is derived from the tags array
+      // on save, so the array is the source of truth here.
+      return (p.renovationScopeTags?.length ?? 0) > 0;
     case "extension":
       return !!p.extensionType && !!p.extensionSizeBand;
     default:

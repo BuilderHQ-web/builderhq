@@ -30,12 +30,12 @@ import {
  */
 
 const RENO_SCOPES: { id: RenovationScope; label: string; copy: string }[] = [
-  { id: "kitchen", label: "Kitchen", copy: "Replacing the kitchen only." },
-  { id: "bathroom", label: "Bathroom", copy: "Replacing one or more bathrooms." },
+  { id: "kitchen", label: "Kitchen", copy: "Replace or reconfigure the kitchen." },
+  { id: "bathroom", label: "Bathroom", copy: "One or more bathrooms updated." },
   {
     id: "kitchen_and_bathroom",
-    label: "Kitchen + bathroom",
-    copy: "Both rooms redone in one go.",
+    label: "Kitchen + bathroom combo",
+    copy: "Both rooms tackled together.",
   },
   {
     id: "full_internal",
@@ -188,16 +188,26 @@ function ScopeBody({
   }
 
   if (type === "renovation") {
+    const tags = state.renovationScopeTags ?? [];
+    function toggle(id: RenovationScope) {
+      const next = tags.includes(id)
+        ? tags.filter((t) => t !== id)
+        : [...tags, id];
+      update({ renovationScopeTags: next });
+    }
     return (
       <div className="grid grid-cols-1 gap-2 max-w-[640px]">
+        <p className="text-text-faint text-[11.5px] font-body mb-1">
+          Pick everything that applies — owners often combine more than one.
+        </p>
         {RENO_SCOPES.map((s) => (
           <OptionCard
             key={s.id}
             variant="row"
             title={s.label}
             copy={s.copy}
-            selected={state.renovationScope === s.id}
-            onSelect={() => update({ renovationScope: s.id })}
+            selected={tags.includes(s.id)}
+            onSelect={() => toggle(s.id)}
           />
         ))}
       </div>
@@ -342,7 +352,9 @@ function isFilled(state: QuizState): boolean {
           state.bathrooms,
       );
     case "renovation":
-      return Boolean(state.renovationScope);
+      return Boolean(
+        state.renovationScopeTags && state.renovationScopeTags.length > 0,
+      );
     case "extension":
       return Boolean(state.extensionType);
   }

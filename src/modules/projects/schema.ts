@@ -182,7 +182,27 @@ export const projects = pgTable(
     dwellingCount: integer(),
 
     // Renovation specific.
+    /**
+     * Legacy single-value scope. Kept for backwards compatibility
+     * with reports + the marketplace filter; new writes also
+     * populate `renovationScopeTags` (the source of truth for
+     * multi-select). Derived from the highest-priority tag in the
+     * array on every write.
+     */
     renovationScope: renovationScopeEnum(),
+    /**
+     * Multi-select renovation scope. Owners commonly want more than
+     * one scope (e.g. kitchen + bathroom + structural). Array of
+     * the same enum-string values used by `renovationScope`.
+     * Default `{}` (empty array) on non-renovation projects.
+     *
+     * Typed via the renovation_scope enum so Drizzle infers
+     * `("kitchen" | "bathroom" | …)[]` rather than `string[]`.
+     */
+    renovationScopeTags: renovationScopeEnum("renovation_scope_tags")
+      .array()
+      .notNull()
+      .default([]),
     existingAgeBand: existingAgeBandEnum(),
 
     // Extension specific.

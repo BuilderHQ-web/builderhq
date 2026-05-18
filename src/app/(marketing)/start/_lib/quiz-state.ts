@@ -36,7 +36,8 @@ export type BudgetBand =
   | "3m_5m"
   | "over_5m";
 
-/** Values match `renovationScopeEnum` in projects/schema.ts. */
+/** Values match `renovationScopeEnum` in projects/schema.ts. Used
+ *  as the atomic units for multi-select renovation scope. */
 export type RenovationScope =
   | "kitchen"
   | "bathroom"
@@ -44,6 +45,36 @@ export type RenovationScope =
   | "full_internal"
   | "full_internal_and_external"
   | "structural";
+
+/**
+ * Priority order for collapsing a multi-select tags array down to
+ * the legacy single-value `renovation_scope` column. Higher index
+ * = more encompassing. The highest-priority tag wins.
+ */
+const RENOVATION_SCOPE_PRIORITY: RenovationScope[] = [
+  "kitchen",
+  "bathroom",
+  "kitchen_and_bathroom",
+  "full_internal",
+  "full_internal_and_external",
+  "structural",
+];
+
+export function deriveRenovationScope(
+  tags: RenovationScope[] | undefined,
+): RenovationScope | null {
+  if (!tags || tags.length === 0) return null;
+  let best: RenovationScope | null = null;
+  let bestIdx = -1;
+  for (const t of tags) {
+    const i = RENOVATION_SCOPE_PRIORITY.indexOf(t);
+    if (i > bestIdx) {
+      best = t;
+      bestIdx = i;
+    }
+  }
+  return best;
+}
 
 /** Values match `extensionTypeEnum` in projects/schema.ts. */
 export type ExtensionType =
@@ -72,7 +103,13 @@ export interface QuizState {
   bathrooms?: number;
   floors?: number;
   dwellingCount?: number;
-  renovationScope?: RenovationScope;
+  /**
+   * Renovation scope is multi-select: owners can pick any combination
+   * of the atomic tags (kitchen / bathroom / structural / etc.).
+   * The API derives the legacy single-value `renovation_scope` from
+   * this array on submit.
+   */
+  renovationScopeTags?: RenovationScope[];
   extensionType?: ExtensionType;
   // Step 4
   timeline?: TimelineBand;
@@ -234,7 +271,9 @@ function scopeFilled(state: QuizState): boolean {
     case "multi_dwelling":
       return Boolean(state.dwellingCount && state.dwellingCount >= 2);
     case "renovation":
-      return Boolean(state.renovationScope);
+      return Boolean(
+        state.renovationScopeTags && state.renovationScopeTags.length > 0,
+      );
     case "extension":
       return Boolean(state.extensionType);
   }

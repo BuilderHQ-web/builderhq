@@ -77,7 +77,7 @@ export function TypeStep() {
             bathrooms: undefined,
             floors: undefined,
             dwellingCount: undefined,
-            renovationScope: undefined,
+            renovationScopeTags: undefined,
             extensionType: undefined,
           }
         : {}),
