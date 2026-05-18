@@ -33,9 +33,11 @@ import {
   initUpload,
   documents,
 } from "@/modules/documents";
-import { projects } from "@/modules/projects";
+import { humanProjectTypeLabel, projects, type ProjectRow } from "@/modules/projects";
 import { users } from "@/modules/users";
 import { issueAdsFunnelMagicLink } from "@/modules/auth";
+
+type ProjectType = ProjectRow["type"];
 
 export const runtime = "nodejs";
 
@@ -103,12 +105,17 @@ export async function POST(request: NextRequest) {
 
   // Confirm the project still exists + belongs to this user. Defensive —
   // the cookie shouldn't lie, but database state is the source of truth.
+  // We pull suburb + type too so the email greeting can read "Your
+  // Brunswick single dwelling is ready to publish" instead of using
+  // the auto-generated default title.
   const [project] = await db
     .select({
       id: projects.id,
       ownerId: projects.ownerId,
       title: projects.title,
       slug: projects.slug,
+      suburb: projects.suburb,
+      type: projects.type,
     })
     .from(projects)
     .where(eq(projects.id, body.projectId))
@@ -185,7 +192,8 @@ export async function POST(request: NextRequest) {
     await sendMagicLink({
       userId,
       projectId: body.projectId,
-      projectTitle: project.title,
+      suburb: project.suburb,
+      type: project.type,
     });
 
     return NextResponse.json({ ok: true });
@@ -195,7 +203,8 @@ export async function POST(request: NextRequest) {
   await sendMagicLink({
     userId,
     projectId: body.projectId,
-    projectTitle: project.title,
+    suburb: project.suburb,
+    type: project.type,
   });
 
   return NextResponse.json({ ok: true });
@@ -206,7 +215,8 @@ export async function POST(request: NextRequest) {
 async function sendMagicLink(input: {
   userId: string;
   projectId: string;
-  projectTitle: string;
+  suburb: string | null;
+  type: ProjectType;
 }): Promise<void> {
   const [user] = await db
     .select({ email: users.email, firstName: users.firstName })
@@ -224,7 +234,10 @@ async function sendMagicLink(input: {
     email: user.email,
     firstName: user.firstName,
     projectId: input.projectId,
-    projectTitle: input.projectTitle,
+    // Funnel always collects a suburb (step 2), so this is non-null
+    // in practice. Fall back gracefully if it ever isn't.
+    suburb: input.suburb ?? "your",
+    projectTypeLabel: humanProjectTypeLabel(input.type),
   });
   if (!issued.ok) {
     logger.warn(

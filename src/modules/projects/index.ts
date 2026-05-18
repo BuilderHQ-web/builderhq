@@ -41,7 +41,7 @@ export type {
 // exported here for convenience. Client components are still expected
 // to import from `@/modules/projects/pricing` to avoid pulling the
 // service module into client bundles.
-export { UNLOCK_PRICE_AUD, unlockPriceFor } from "./pricing";
+export { UNLOCK_PRICE_AUD, unlockPriceFor, humanProjectTypeLabel } from "./pricing";
 
 // Service.
 export {

@@ -17,8 +17,10 @@ export const metadata = { title: "Edit project" };
  */
 export default async function EditProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ welcome?: string }>;
 }) {
   const { slug } = await params;
   const session = await auth();
@@ -35,11 +37,20 @@ export default async function EditProjectPage({
   const docs = await listForProject(session.user.id!, project.id);
   const report = await checkPublishability(session.user.id!, project.id);
 
+  // `?welcome=finish` lands here from the ads-funnel magic-link click
+  // when the project couldn't auto-publish (e.g. missing street
+  // address). In that case we flag missing required fields with a
+  // red error state on first paint so the user instantly sees what's
+  // outstanding.
+  const sp = (await searchParams) ?? {};
+  const flagMissingRequired = sp.welcome === "finish";
+
   return (
     <ProjectWizard
       initialProject={project}
       initialDocs={docs}
       initialReport={report.ok ? report.value : null}
+      flagMissingRequired={flagMissingRequired}
     />
   );
 }

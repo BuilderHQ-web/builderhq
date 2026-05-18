@@ -34,6 +34,7 @@ import { setAdsFunnelCookie } from "@/lib/ads-funnel-cookie";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { users } from "@/modules/users";
 import { projects } from "@/modules/projects";
+import { completeOwnerOnboarding, upsertOwnerProfile } from "@/modules/profiles";
 
 export const runtime = "nodejs";
 
@@ -478,6 +479,54 @@ export async function POST(request: NextRequest) {
       "project create failed",
     );
     return jsonError(500, "internal", "Couldn't create your project.");
+  }
+
+  // ── Auto-bootstrap owner profile ───────────────────────────────────
+  // The `(app)` layout guard redirects users without a completed
+  // `project_owner_profiles` row to /onboarding — that flow asks for
+  // entity type, default suburb/state/postcode, and contact pref.
+  //
+  // Funnel users already gave us those signals via the quiz (suburb,
+  // state, postcode) + sensible defaults for the rest. We pre-fill
+  // the profile here and mark onboarding complete so they land
+  // straight on the wizard after their magic-link click — no
+  // double-onboarding. The dashboard's Next Actions surfaces a
+  // "Polish your profile" prompt for users to refine entity type +
+  // contact pref later.
+  //
+  // Best-effort: a failure here doesn't roll back the user/project
+  // creation. The worst-case fallback is the regular /onboarding
+  // flow when they sign in.
+  try {
+    const profileResult = await upsertOwnerProfile(userId, {
+      entityType: "homeowner",
+      companyName: null,
+      defaultSuburb: body.quiz.suburb,
+      defaultState: body.quiz.state,
+      defaultPostcode: body.quiz.postcode,
+      contactPref: "email",
+    });
+    if (profileResult.ok) {
+      await completeOwnerOnboarding(userId);
+    } else {
+      logger.warn(
+        {
+          event: "ads_funnel.profile_bootstrap_failed",
+          userId,
+          err: profileResult.error.message,
+        },
+        "owner profile bootstrap failed",
+      );
+    }
+  } catch (err) {
+    logger.warn(
+      {
+        event: "ads_funnel.profile_bootstrap_threw",
+        userId,
+        err: err instanceof Error ? err.message : String(err),
+      },
+      "owner profile bootstrap threw",
+    );
   }
 
   // ── Soft-auth cookie ──────────────────────────────────────────────

@@ -21,7 +21,7 @@ import { logger } from "@/lib/logger";
 import { limiters } from "@/lib/ratelimit";
 import { issueAdsFunnelMagicLink } from "@/modules/auth";
 import { users } from "@/modules/users";
-import { projects } from "@/modules/projects";
+import { humanProjectTypeLabel, projects } from "@/modules/projects";
 
 export const runtime = "nodejs";
 
@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
   const [project] = await db
     .select({
       id: projects.id,
-      title: projects.title,
+      suburb: projects.suburb,
+      type: projects.type,
       awaitingOwnerVerification: projects.awaitingOwnerVerification,
     })
     .from(projects)
@@ -95,7 +96,8 @@ export async function POST(request: NextRequest) {
     email: user.email,
     firstName: user.firstName,
     projectId: project.id,
-    projectTitle: project.title,
+    suburb: project.suburb ?? "your",
+    projectTypeLabel: humanProjectTypeLabel(project.type),
   });
   if (!issued.ok) {
     logger.warn(

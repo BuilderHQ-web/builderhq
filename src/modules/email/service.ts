@@ -1301,22 +1301,31 @@ interface SendAdsFunnelMagicLinkEmailInput {
   to: string;
   magicUrl: string;
   firstName: string | null;
-  projectTitle: string;
+  /** Project suburb — used to personalise both subject + body
+   *  ("Your Brunswick single dwelling is ready"). */
+  suburb: string;
+  /** Humanised project type label ("single dwelling", "multi-dwelling
+   *  build", "renovation", "extension"). */
+  projectTypeLabel: string;
 }
 
 /**
  * Sends the magic-link email at the end of the /start funnel. The link
- * verifies the email, publishes the draft project, and creates a
- * dashboard session — all on click.
+ * verifies the email, publishes the draft project (when all required
+ * fields + plans are in place), and creates a dashboard session — all
+ * on click. When required fields are missing, the click still lands
+ * the user in their dashboard with the wizard pre-flagged for finish.
  */
 export async function sendAdsFunnelMagicLinkEmail(
   input: SendAdsFunnelMagicLinkEmailInput,
 ): Promise<Result<{ id: string }>> {
-  const subject = `Publish your project: ${input.projectTitle}`;
+  const projectPhrase = `${input.suburb} ${input.projectTypeLabel}`;
+  const subject = `Your ${projectPhrase} is ready to publish`;
   const props = {
     magicUrl: input.magicUrl,
     firstName: input.firstName,
-    projectTitle: input.projectTitle,
+    suburb: input.suburb,
+    projectTypeLabel: input.projectTypeLabel,
   };
 
   const [html, text] = await Promise.all([

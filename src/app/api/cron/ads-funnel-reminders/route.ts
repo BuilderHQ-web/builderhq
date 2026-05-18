@@ -25,7 +25,7 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { issueAdsFunnelMagicLink } from "@/modules/auth";
-import { projects } from "@/modules/projects";
+import { humanProjectTypeLabel, projects } from "@/modules/projects";
 import { users } from "@/modules/users";
 
 export const runtime = "nodejs";
@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
   const rows = await db
     .select({
       projectId: projects.id,
-      projectTitle: projects.title,
+      projectSuburb: projects.suburb,
+      projectType: projects.type,
       userId: users.id,
       email: users.email,
       firstName: users.firstName,
@@ -89,7 +90,8 @@ export async function GET(request: NextRequest) {
       email: row.email,
       firstName: row.firstName,
       projectId: row.projectId,
-      projectTitle: row.projectTitle,
+      suburb: row.projectSuburb ?? "your",
+      projectTypeLabel: humanProjectTypeLabel(row.projectType),
     });
     if (issued.ok) {
       sent += 1;

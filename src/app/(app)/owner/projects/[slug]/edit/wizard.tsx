@@ -252,10 +252,18 @@ export function ProjectWizard({
   initialProject,
   initialDocs,
   initialReport,
+  flagMissingRequired = false,
 }: {
   initialProject: Project;
   initialDocs: Document[];
   initialReport: PublishabilityReport | null;
+  /**
+   * When true (arrived here via ads-funnel magic link without a
+   * publishable project), each unfilled required field renders with
+   * a red error state on first paint so the user instantly sees what
+   * to add. The flag clears as soon as they edit any field.
+   */
+  flagMissingRequired?: boolean;
 }) {
   const router = useRouter();
   const [project, setProject] = useState<Project>(initialProject);
@@ -428,12 +436,14 @@ export function ProjectWizard({
               project={project}
               setField={setField}
               disabled={isPublished}
+              flagMissingRequired={flagMissingRequired}
             />
           ) : step === 2 ? (
             <Step2Build
               project={project}
               setField={setField}
               disabled={isPublished}
+              flagMissingRequired={flagMissingRequired}
             />
           ) : (
             <Step3Documents
@@ -576,31 +586,84 @@ function Step1Basics({
   project,
   setField,
   disabled,
+  flagMissingRequired = false,
 }: {
   project: Project;
   setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
   disabled: boolean;
+  flagMissingRequired?: boolean;
 }) {
+  const titleMissing = flagMissingRequired && !project.title?.trim();
   return (
     <div className="space-y-5">
       <SectionTitle title="About the project" sub="A clear title and address — that's it for this step." />
 
+      {flagMissingRequired ? (
+        <FinishBanner project={project} />
+      ) : null}
+
       <Card>
-        <Field label="Project title" required>
+        <Field label="Project title" required error={titleMissing ? "Required to publish your project." : null}>
           <input
             type="text"
             defaultValue={project.title}
             disabled={disabled}
             onChange={(e) => setField("title", e.target.value)}
             placeholder="e.g. Niddrie townhouse"
-            className={inputCls}
+            className={titleMissing ? inputClsErr : inputCls}
           />
         </Field>
       </Card>
 
       <Card icon={<MapPin className="size-4" />} title="Where is it?" sub="Australian addresses only.">
-        <AddressFields project={project} setField={setField} disabled={disabled} />
+        <AddressFields
+          project={project}
+          setField={setField}
+          disabled={disabled}
+          flagMissingRequired={flagMissingRequired}
+        />
       </Card>
+    </div>
+  );
+}
+
+/**
+ * Welcome banner shown at the top of step 1 when the user landed
+ * here via the ads-funnel magic-link click but couldn't auto-publish.
+ * Lists what's still needed, sourced from the project state.
+ */
+function FinishBanner({ project }: { project: Project }) {
+  const missing: string[] = [];
+  if (!project.title?.trim()) missing.push("title");
+  if (
+    !project.addressLine1 ||
+    !project.suburb ||
+    !project.state ||
+    !project.postcode
+  ) {
+    missing.push("street address");
+  }
+  if (project.type === "extension" && !project.extensionSizeBand) {
+    missing.push("extension size");
+  }
+  if (missing.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-[rgba(251,184,64,0.30)] bg-[rgba(251,184,64,0.06)] px-4 py-3 flex items-start gap-3">
+      <span
+        aria-hidden
+        className="mt-0.5 inline-flex items-center justify-center size-5 rounded-full bg-[rgba(251,184,64,0.18)] text-warning text-[11px] font-ui font-semibold"
+      >
+        !
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-warning text-[10px] tracking-[0.18em] uppercase font-ui font-semibold">
+          Almost ready to publish
+        </p>
+        <p className="mt-1 text-[13px] leading-[1.55] text-text">
+          We just need a {missing.join(", ")} before your project goes live to verified builders.
+        </p>
+      </div>
     </div>
   );
 }
@@ -609,11 +672,21 @@ function AddressFields({
   project,
   setField,
   disabled,
+  flagMissingRequired = false,
 }: {
   project: Project;
   setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
   disabled: boolean;
+  flagMissingRequired?: boolean;
 }) {
+  // Highlight unfilled required fields with red when arriving via the
+  // ads-funnel magic-link click that couldn't auto-publish. The flag
+  // is at-mount; the user's edits naturally remove the flag because
+  // the field is no longer empty.
+  const streetMissing = flagMissingRequired && !project.addressLine1;
+  const postcodeMissing = flagMissingRequired && !project.postcode;
+  const suburbMissing = flagMissingRequired && !project.suburb;
+  const stateMissing = flagMissingRequired && !project.state;
   const [postcode, setPostcode] = useState(project.postcode ?? "");
   const [suburbOptions, setSuburbOptions] = useState<
     Array<{ suburb: string; state: string }>
@@ -658,19 +731,27 @@ function AddressFields({
 
   return (
     <div className="space-y-4">
-      <Field label="Street address" required>
+      <Field
+        label="Street address"
+        required
+        error={streetMissing ? "We need this to publish your project." : null}
+      >
         <input
           type="text"
           defaultValue={project.addressLine1 ?? ""}
           disabled={disabled}
           onChange={(e) => setField("addressLine1", e.target.value || null)}
           placeholder="14 Treadwell Road"
-          className={inputCls}
+          className={streetMissing ? inputClsErr : inputCls}
         />
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_120px] gap-3">
-        <Field label="Postcode" required>
+        <Field
+          label="Postcode"
+          required
+          error={postcodeMissing ? "Required" : null}
+        >
           <input
             type="text"
             inputMode="numeric"
@@ -683,10 +764,17 @@ function AddressFields({
               setField("postcode", v || null);
             }}
             placeholder="3042"
-            className={cn(inputCls, "font-mono tabular-nums")}
+            className={cn(
+              postcodeMissing ? inputClsErr : inputCls,
+              "font-mono tabular-nums",
+            )}
           />
         </Field>
-        <Field label="Suburb" required>
+        <Field
+          label="Suburb"
+          required
+          error={suburbMissing ? "Required" : null}
+        >
           {suburbOptions.length > 1 ? (
             <select
               value={project.suburb ?? ""}
@@ -716,13 +804,20 @@ function AddressFields({
             />
           )}
         </Field>
-        <Field label="State" required>
+        <Field
+          label="State"
+          required
+          error={stateMissing ? "Required" : null}
+        >
           <input
             type="text"
             value={project.state ?? ""}
             disabled
             placeholder="Auto"
-            className={cn(inputCls, "opacity-80 text-center font-semibold")}
+            className={cn(
+              stateMissing ? inputClsErr : inputCls,
+              "opacity-80 text-center font-semibold",
+            )}
           />
         </Field>
       </div>
@@ -740,12 +835,21 @@ function Step2Build({
   project,
   setField,
   disabled,
+  flagMissingRequired = false,
 }: {
   project: Project;
   setField: <K extends keyof UpdateProjectInput>(k: K, v: UpdateProjectInput[K]) => void;
   disabled: boolean;
+  flagMissingRequired?: boolean;
 }) {
   const t = project.type;
+  // The funnel scope step doesn't collect extension size band for
+  // extension projects — flag it as missing on first paint so the
+  // owner sees what to fill in. All other type-specific fields
+  // (bedrooms / dwelling count / renovation scope) are collected by
+  // the funnel, so they're populated by the time the user gets here.
+  const extSizeMissing =
+    flagMissingRequired && t === "extension" && !project.extensionSizeBand;
 
   return (
     <div className="space-y-5">
@@ -854,6 +958,7 @@ function Step2Build({
                   value={project.extensionSizeBand}
                   onChange={(v) => setField("extensionSizeBand", v)}
                   disabled={disabled}
+                  error={extSizeMissing ? "Required to publish." : null}
                 />
               </div>
             </>
@@ -1421,22 +1526,45 @@ function Card({
 const inputCls =
   "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
 
+/**
+ * Same as inputCls but with a red border to flag a missing required
+ * field. Used when ?welcome=finish lands a user from the ads-funnel
+ * magic-link click before all required fields are filled.
+ */
+const inputClsErr =
+  "w-full h-11 px-3.5 rounded-md border border-[rgba(255,80,80,0.55)] bg-[rgba(255,80,80,0.04)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-danger focus:bg-[rgba(255,80,80,0.06)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
+
 function Field({
   label,
   required,
+  error,
   children,
 }: {
   label: string;
   required?: boolean;
+  /** When provided, renders below the field in danger color. Used
+   *  to flag missing-but-required state from ?welcome=finish. */
+  error?: string | null;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="block text-[10.5px] tracking-[0.18em] uppercase text-text-dim mb-1.5">
         {label}
-        {required ? <span className="text-accent ml-1">*</span> : null}
+        {required ? (
+          <span
+            className={error ? "text-danger ml-1" : "text-accent ml-1"}
+          >
+            *
+          </span>
+        ) : null}
       </span>
       {children}
+      {error ? (
+        <span className="mt-1.5 block text-[11.5px] text-danger font-body">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -1502,6 +1630,7 @@ function DropdownField<T extends string | number>({
   value,
   onChange,
   disabled,
+  error,
 }: {
   label: string;
   required?: boolean;
@@ -1509,9 +1638,11 @@ function DropdownField<T extends string | number>({
   value: T | null | undefined;
   onChange: (v: T | null) => void;
   disabled?: boolean;
+  /** Optional error string to flag a missing-but-required field. */
+  error?: string | null;
 }) {
   return (
-    <Field label={label} required={required}>
+    <Field label={label} required={required} error={error}>
       <select
         value={value ?? ""}
         disabled={disabled}
@@ -1527,7 +1658,7 @@ function DropdownField<T extends string | number>({
             (Number.isFinite(num) && String(num) === raw ? num : raw) as T,
           );
         }}
-        className={inputCls}
+        className={error ? inputClsErr : inputCls}
       >
         <option value="">Select…</option>
         {options.map((o) => (

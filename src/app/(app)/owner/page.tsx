@@ -22,7 +22,10 @@
  * not just data.
  */
 
+import { Suspense } from "react";
 import Link from "next/link";
+
+import { NextActions } from "./next-actions";
 import {
   Plus,
   ArrowUpRight,
@@ -83,6 +86,12 @@ export default async function OwnerDashboard({
     <div>
       {welcome === "published" || welcome === "finish" ? (
         <AdsFunnelWelcomeBanner mode={welcome} />
+      ) : null}
+      {/* ── Next Actions ─────────────────────────────────────────────── */}
+      {session?.user?.id ? (
+        <Suspense fallback={null}>
+          <NextActions userId={session.user.id} />
+        </Suspense>
       ) : null}
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">

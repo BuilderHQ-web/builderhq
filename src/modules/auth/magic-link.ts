@@ -55,7 +55,12 @@ interface IssueMagicLinkInput {
   /** First name as supplied — embedded in the email greeting. */
   firstName: string | null;
   projectId: string;
-  projectTitle: string;
+  /** Project suburb — used to personalise the email subject + body.
+   *  e.g. "Your Brunswick single dwelling is ready to publish." */
+  suburb: string;
+  /** Humanised project type label. e.g. "single dwelling", "renovation",
+   *  "multi-dwelling build", "extension". */
+  projectTypeLabel: string;
 }
 
 /**
@@ -101,7 +106,8 @@ export async function issueAdsFunnelMagicLink(
     to: input.email,
     magicUrl,
     firstName: input.firstName,
-    projectTitle: input.projectTitle,
+    suburb: input.suburb,
+    projectTypeLabel: input.projectTypeLabel,
   });
   if (!emailResult.ok) {
     // Token is already persisted — the user can request a resend. We

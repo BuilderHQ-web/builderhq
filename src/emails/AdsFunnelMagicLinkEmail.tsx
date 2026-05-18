@@ -1,14 +1,16 @@
 /**
  * AdsFunnelMagicLinkEmail — sent at the end of the /start funnel.
  *
- * The link does three things in one click:
+ * One click does three things:
  *   1. Verifies the recipient's email
- *   2. Publishes their draft project to the marketplace
+ *   2. Publishes their draft project (if all required fields are
+ *      filled and architectural plans uploaded — otherwise lands
+ *      on the wizard to finish)
  *   3. Signs them into the dashboard
  *
- * Copy emphasises that the project isn't live yet — gives owners a
- * concrete reason to click rather than treating it as a generic
- * "confirm your email" they can put off.
+ * Copy is built around the user's actual project — suburb + project
+ * type — so it reads as "their" project, not "a" project. e.g.
+ * "Your Brunswick single dwelling is ready to go."
  */
 
 import {
@@ -23,35 +25,40 @@ import {
 interface AdsFunnelMagicLinkEmailProps {
   magicUrl: string;
   firstName: string | null;
-  projectTitle: string;
+  /** e.g. "Brunswick" — the project's suburb from the funnel. */
+  suburb: string;
+  /** Humanised project type. e.g. "single dwelling", "renovation". */
+  projectTypeLabel: string;
 }
 
 export function AdsFunnelMagicLinkEmail({
   magicUrl,
   firstName,
-  projectTitle,
+  suburb,
+  projectTypeLabel,
 }: AdsFunnelMagicLinkEmailProps) {
   const greeting = firstName ? `Hi ${firstName},` : "Welcome to BuilderHQ.";
+  const projectPhrase = `${suburb} ${projectTypeLabel}`;
 
   return (
     <EmailShell
-      preview={`Confirm your email to publish ${projectTitle} — link expires in 7 days.`}
+      preview={`Your ${projectPhrase} is ready — confirm to go live.`}
       kicker="One click to publish"
-      heading="Confirm your project to go live"
+      heading="Your project is ready"
       whyReceiving="You uploaded a project on BuilderHQ and we need to confirm your email before verified builders can tender. If that wasn't you, you can ignore this email."
     >
       <BodyText>{greeting}</BodyText>
       <BodyText>
-        Your project <strong>{projectTitle}</strong> is ready to go. One click
-        confirms your email and publishes it to verified Australian builders
-        — you&apos;ll be signed straight into your dashboard.
+        Your <strong>{projectPhrase}</strong> is ready to go. One click
+        confirms your email and opens it up to verified Australian
+        builders — you&apos;ll be signed straight into your dashboard.
       </BodyText>
 
-      <PrimaryButton href={magicUrl}>Publish my project</PrimaryButton>
+      <PrimaryButton href={magicUrl}>Confirm and publish</PrimaryButton>
 
       <Caption>
-        This link expires in 7 days. If the button doesn&apos;t work, paste this
-        URL into your browser:
+        This link expires in 7 days. If the button doesn&apos;t work, paste
+        this URL into your browser:
         <br />
         <InlineLink href={magicUrl}>{magicUrl}</InlineLink>
       </Caption>
@@ -59,9 +66,9 @@ export function AdsFunnelMagicLinkEmail({
       <Divider space="28px" />
 
       <Caption>
-        Your project stays private — and out of the marketplace — until you
-        click. We never share your address, contact details, or plans with
-        any builder before that point.
+        Your project stays private — and out of the marketplace — until
+        you click. We never share your address, contact details, or
+        plans with any builder before that point.
       </Caption>
     </EmailShell>
   );
