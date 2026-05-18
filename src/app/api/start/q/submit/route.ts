@@ -367,33 +367,47 @@ export async function POST(request: NextRequest) {
   let projectId: string;
   let projectSlug: string;
   try {
+    // Sanitize scope fields by project type so stale localStorage
+    // (e.g. user tested renovation, then went back and picked
+    // multi-dwelling, leaving renovationScope set) can't pollute
+    // the row. Belt-and-braces: zod already gates submission, but
+    // the DB row should only have fields relevant to the picked
+    // type.
+    const t = body.quiz.type;
+    const insertValues = {
+      ownerId: userId,
+      title,
+      slug,
+      type: t,
+      status: "draft" as const,
+      awaitingOwnerVerification: true,
+      acquisitionSource: "ads_funnel",
+      suburb: body.quiz.suburb,
+      state: body.quiz.state,
+      postcode: body.quiz.postcode,
+      bedrooms:
+        t === "single_dwelling" || t === "multi_dwelling"
+          ? (body.quiz.bedrooms ?? null)
+          : null,
+      bathrooms:
+        t === "single_dwelling" || t === "multi_dwelling"
+          ? (body.quiz.bathrooms ?? null)
+          : null,
+      floors:
+        t === "single_dwelling" ? (body.quiz.floors ?? null) : null,
+      dwellingCount:
+        t === "multi_dwelling" ? (body.quiz.dwellingCount ?? null) : null,
+      renovationScope:
+        t === "renovation" ? (body.quiz.renovationScope ?? null) : null,
+      extensionType:
+        t === "extension" ? (body.quiz.extensionType ?? null) : null,
+      budgetBand: body.quiz.budgetBand,
+      targetStartMonth,
+    };
+
     const [row] = await db
       .insert(projects)
-      .values({
-        ownerId: userId,
-        title,
-        slug,
-        type: body.quiz.type,
-        status: "draft",
-        awaitingOwnerVerification: true,
-        acquisitionSource: "ads_funnel",
-        // Address fragments. We have suburb/state/postcode but no
-        // street line — that's collected by the owner in the wizard
-        // post-verification.
-        suburb: body.quiz.suburb,
-        state: body.quiz.state,
-        postcode: body.quiz.postcode,
-        // Scope (type-specific).
-        bedrooms: body.quiz.bedrooms ?? null,
-        bathrooms: body.quiz.bathrooms ?? null,
-        floors: body.quiz.floors ?? null,
-        dwellingCount: body.quiz.dwellingCount ?? null,
-        renovationScope: body.quiz.renovationScope ?? null,
-        extensionType: body.quiz.extensionType ?? null,
-        // Budget + timeline.
-        budgetBand: body.quiz.budgetBand,
-        targetStartMonth,
-      })
+      .values(insertValues)
       .returning({ id: projects.id, slug: projects.slug });
     if (!row) {
       return jsonError(500, "internal", "Couldn't create your project.");
@@ -401,11 +415,25 @@ export async function POST(request: NextRequest) {
     projectId = row.id;
     projectSlug = row.slug;
   } catch (err) {
+    // Drizzle wraps the pg error — surface the cause too so we can
+    // diagnose without expanding three layers in the log viewer.
+    const message = err instanceof Error ? err.message : String(err);
+    const cause =
+      err instanceof Error && err.cause instanceof Error
+        ? err.cause.message
+        : null;
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? (err as { code: unknown }).code
+        : null;
     logger.error(
       {
         event: "ads_funnel.project_create_failed",
-        err: err instanceof Error ? err.message : String(err),
+        err: message,
+        cause,
+        pgCode: code,
         userId,
+        projectType: body.quiz.type,
       },
       "project create failed",
     );

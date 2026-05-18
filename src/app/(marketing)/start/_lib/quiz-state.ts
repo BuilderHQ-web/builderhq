@@ -111,12 +111,21 @@ export function readQuizState(): QuizState {
 
 /**
  * Merge a partial patch into the current state and write back.
+ * Passing `undefined` for a key DELETES that key from state (used by
+ * the type-step to wipe scope fields when project type changes).
  * Returns the merged result for the caller to use immediately
  * (avoids a re-read round-trip).
  */
 export function patchQuizState(patch: Partial<QuizState>): QuizState {
   const current = readQuizState();
-  const next: QuizState = { ...current, ...patch };
+  const next: QuizState = { ...current };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) {
+      delete (next as Record<string, unknown>)[k];
+    } else {
+      (next as Record<string, unknown>)[k] = v;
+    }
+  }
   // Special-case utm: merge keys rather than replace.
   if (patch.utm) {
     next.utm = { ...(current.utm ?? {}), ...patch.utm };

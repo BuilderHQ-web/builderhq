@@ -63,7 +63,25 @@ export function TypeStep() {
 
   function pick(id: ProjectType) {
     setSelected(id);
-    patchQuizState({ type: id });
+    // If the user is changing type (vs picking for the first time),
+    // wipe scope fields that only apply to the previous type. Without
+    // this, a "renovation → multi-dwelling" pivot would leave
+    // renovationScope set, polluting the eventual project insert.
+    const prev = readQuizState();
+    const typeChanged = prev.type && prev.type !== id;
+    patchQuizState({
+      type: id,
+      ...(typeChanged
+        ? {
+            bedrooms: undefined,
+            bathrooms: undefined,
+            floors: undefined,
+            dwellingCount: undefined,
+            renovationScope: undefined,
+            extensionType: undefined,
+          }
+        : {}),
+    });
   }
 
   function advance() {
