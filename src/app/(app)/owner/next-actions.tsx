@@ -1,28 +1,26 @@
 /**
- * Next Actions — surfaces pending tasks for the user in a compact
- * banner row near the top of the dashboard.
+ * Next Actions — surfaces pending tasks for the user as a styled
+ * section between "At a glance" and "Decisions waiting".
  *
  * Source signals:
  *   · Drafts owned by the user (status=draft, publishedAt=null) →
- *     "Finish [project title]" with a count of what's missing
+ *     "Finish [project title]" card with a count of what's missing
  *     (street address / extension size / architectural plan).
  *   · users.signupSource = 'ads_funnel' AND profile updatedAt is
  *     within ~5s of createdAt → "Polish your profile" prompt to
  *     refine the auto-filled entity type + contact preference.
  *
- * Renders nothing when there are no actions — the user has a clean
- * dashboard.
+ * Visual signature mirrors PulseTile (the at-a-glance row) — same
+ * gradient tile + corner glow + hairline-accent border treatment —
+ * so the dashboard reads as one cohesive composition rather than
+ * stacking discrete widgets.
+ *
+ * Renders nothing when there are no actions (clean dashboard).
  */
 
 import Link from "next/link";
 import { and, eq, isNull } from "drizzle-orm";
-import {
-  ArrowRight,
-  FileText,
-  Settings,
-  Sparkles,
-  Upload,
-} from "lucide-react";
+import { ArrowRight, FileText, Settings, Sparkles } from "lucide-react";
 
 import { db } from "@/lib/db";
 import {
@@ -33,6 +31,7 @@ import {
 import { getOwnerProfile } from "@/modules/profiles";
 import { users } from "@/modules/users";
 import { cn } from "@/lib/utils";
+import { SectionKicker } from "@/components/app/section-kicker";
 
 interface DraftAction {
   kind: "finish_draft";
@@ -40,7 +39,8 @@ interface DraftAction {
   projectSlug: string;
   title: string;
   typeLabel: string;
-  missing: string[];
+  missingCount: number;
+  primaryMissing: string | null;
 }
 
 interface ProfileAction {
@@ -58,25 +58,12 @@ export async function NextActions({ userId }: { userId: string }) {
   if (actions.length === 0) return null;
 
   return (
-    <section className="px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8">
-      <div className="mx-auto max-w-[1080px]">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <Sparkles size={14} strokeWidth={1.8} className="text-accent-light" />
-            <h2 className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold">
-              Next actions
-            </h2>
-            <span className="text-[10.5px] text-text-dim font-ui tabular-nums">
-              {actions.length}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {actions.map((a, i) => (
-            <ActionCard key={i} action={a} />
-          ))}
-        </div>
+    <section>
+      <SectionKicker>Next actions</SectionKicker>
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {actions.map((a, i) => (
+          <ActionTile key={i} action={a} />
+        ))}
       </div>
     </section>
   );
@@ -86,14 +73,11 @@ export async function NextActions({ userId }: { userId: string }) {
 
 async function collectActions(userId: string): Promise<Action[]> {
   const [user] = await db
-    .select({
-      signupSource: users.signupSource,
-    })
+    .select({ signupSource: users.signupSource })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  // Parallel: drafts + profile
   const [drafts, profile] = await Promise.all([
     db
       .select({
@@ -116,9 +100,6 @@ async function collectActions(userId: string): Promise<Action[]> {
 
   const out: Action[] = [];
 
-  // One "Finish [project]" task per draft. We resolve the missing
-  // bits via checkPublishability so we can render a count of
-  // outstanding items per card.
   for (const draft of drafts) {
     const report = await checkPublishability(userId, draft.id);
     if (!report.ok || report.value.canPublish) continue;
@@ -128,12 +109,11 @@ async function collectActions(userId: string): Promise<Action[]> {
       projectSlug: draft.slug,
       title: draft.title,
       typeLabel: humanProjectTypeLabel(draft.type),
-      missing: report.value.reasons,
+      missingCount: report.value.reasons.length,
+      primaryMissing: shortenReason(report.value.reasons[0] ?? null),
     });
   }
 
-  // Polish-profile prompt for funnel users whose profile is in its
-  // auto-filled default state.
   if (
     user?.signupSource === "ads_funnel" &&
     profile &&
@@ -147,81 +127,154 @@ async function collectActions(userId: string): Promise<Action[]> {
   return out;
 }
 
-// ── Card component ─────────────────────────────────────────────────
+/** Strip trailing punctuation from a publishability reason so it
+ *  reads as a short chip. e.g. "Complete the project address." →
+ *  "Complete the project address". */
+function shortenReason(reason: string | null): string | null {
+  if (!reason) return null;
+  return reason.replace(/[.!?]+\s*$/, "");
+}
 
-function ActionCard({ action }: { action: Action }) {
+// ── Action tile ─────────────────────────────────────────────────────
+
+function ActionTile({ action }: { action: Action }) {
   if (action.kind === "finish_draft") {
-    const missingCount = action.missing.length;
     return (
-      <Link
+      <Tile
         href={`/owner/projects/${action.projectSlug}/edit?welcome=finish`}
-        className={cn(
-          "group flex items-start gap-3 rounded-xl border border-border bg-surface-1/40 hover:border-border-accent hover:bg-surface-1/70",
-          "transition-colors p-4 sm:p-5",
-        )}
-      >
-        <span className="inline-flex items-center justify-center size-9 rounded-lg border border-border-accent bg-accent-muted shrink-0">
+        kicker="Finish your draft"
+        title={action.title}
+        sub={
+          action.primaryMissing
+            ? `${capitalise(action.typeLabel)} · ${action.primaryMissing}${
+                action.missingCount > 1
+                  ? ` and ${action.missingCount - 1} more`
+                  : ""
+              }`
+            : `${capitalise(action.typeLabel)} · finish to publish`
+        }
+        icon={
           <FileText
-            size={16}
+            size={15}
             strokeWidth={1.8}
             className="text-accent-light"
           />
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] tracking-[0.18em] uppercase text-text-faint font-ui font-semibold">
-            Finish your draft
-          </p>
-          <p className="mt-1 text-text font-ui font-semibold text-[14px] tracking-[-0.005em] truncate">
-            {action.title}
-          </p>
-          <p className="mt-0.5 text-text-muted text-[12px] font-body">
-            {action.typeLabel.charAt(0).toUpperCase() +
-              action.typeLabel.slice(1)}{" "}
-            · {missingCount} item{missingCount === 1 ? "" : "s"} left to
-            publish
-          </p>
-        </div>
-        <ArrowRight
-          size={14}
-          strokeWidth={1.8}
-          className="mt-1 text-text-faint group-hover:text-accent-light group-hover:translate-x-0.5 transition-all"
-        />
-      </Link>
+        }
+        tone="teal"
+      />
     );
   }
 
   // polish_profile
   return (
-    <Link
+    <Tile
       href="/settings#account"
+      kicker="Polish your profile"
+      title="Tell us about you"
+      sub="Confirm your role, default area, and contact preference."
+      icon={<Settings size={15} strokeWidth={1.8} className="text-text" />}
+      tone="muted"
+    />
+  );
+}
+
+// ── Shared tile primitive ───────────────────────────────────────────
+
+type Tone = "teal" | "muted";
+
+function Tile({
+  href,
+  kicker,
+  title,
+  sub,
+  icon,
+  tone,
+}: {
+  href: string;
+  kicker: string;
+  title: string;
+  sub: string;
+  icon: React.ReactNode;
+  tone: Tone;
+}) {
+  const styles: Record<
+    Tone,
+    { bg: string; ring: string; glow: string; kickerColor: string }
+  > = {
+    teal: {
+      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+      ring: "border-border-accent/40 hover:border-accent/60",
+      glow: "rgba(0,212,200,0.18)",
+      kickerColor: "text-accent-light",
+    },
+    muted: {
+      bg: "linear-gradient(180deg,rgba(255,255,255,0.02),rgba(6,18,30,0.6))",
+      ring: "border-border-subtle hover:border-border-accent/40",
+      glow: "rgba(120,180,255,0.10)",
+      kickerColor: "text-text-muted",
+    },
+  };
+  const t = styles[tone];
+
+  return (
+    <Link
+      href={href}
       className={cn(
-        "group flex items-start gap-3 rounded-xl border border-border bg-surface-1/40 hover:border-border-accent hover:bg-surface-1/70",
-        "transition-colors p-4 sm:p-5",
+        "group relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
+        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "transition-colors",
+        t.ring,
       )}
+      style={{ background: t.bg }}
     >
-      <span className="inline-flex items-center justify-center size-9 rounded-lg border border-border-subtle bg-surface-0/60 shrink-0">
-        <Settings size={16} strokeWidth={1.8} className="text-text-muted" />
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] tracking-[0.18em] uppercase text-text-faint font-ui font-semibold">
-          Polish your profile
-        </p>
-        <p className="mt-1 text-text font-ui font-semibold text-[14px] tracking-[-0.005em]">
-          Tell us about you
-        </p>
-        <p className="mt-0.5 text-text-muted text-[12px] font-body">
-          Confirm your role, default area, and contact preference.
-        </p>
-      </div>
-      <ArrowRight
-        size={14}
-        strokeWidth={1.8}
-        className="mt-1 text-text-faint group-hover:text-accent-light group-hover:translate-x-0.5 transition-all"
+      {/* Corner glow — matches PulseTile language. */}
+      <span
+        aria-hidden
+        className="absolute -top-12 -right-12 size-40 rounded-full opacity-50 pointer-events-none group-hover:opacity-80 transition-opacity"
+        style={{
+          background: `radial-gradient(circle, ${t.glow}, transparent 70%)`,
+        }}
       />
+      {/* Hairline sparkle at top — premium signal. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent"
+      />
+
+      <div className="relative flex items-start gap-3">
+        <span className="size-9 rounded-lg border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center shrink-0">
+          {icon}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p
+            className={cn(
+              "text-[10px] tracking-[0.18em] uppercase font-ui font-semibold inline-flex items-center gap-1.5",
+              t.kickerColor,
+            )}
+          >
+            <Sparkles size={10} strokeWidth={2} />
+            {kicker}
+          </p>
+          <p className="mt-1 text-text font-ui font-semibold text-[15px] tracking-[-0.005em] truncate">
+            {title}
+          </p>
+          <p className="mt-1 text-text-muted text-[12.5px] leading-[1.5] font-body line-clamp-1">
+            {sub}
+          </p>
+        </div>
+        <ArrowRight
+          size={14}
+          strokeWidth={1.8}
+          className="relative mt-1 text-text-faint group-hover:text-accent-light group-hover:translate-x-0.5 transition-all"
+        />
+      </div>
     </Link>
   );
 }
 
-// ── Quiet unused-import shim ────────────────────────────────────────
-// Kept for future "upload your first project" empty-state action.
-void Upload;
+// ── helpers ─────────────────────────────────────────────────────────
+
+function capitalise(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}

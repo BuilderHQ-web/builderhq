@@ -87,12 +87,6 @@ export default async function OwnerDashboard({
       {welcome === "published" || welcome === "finish" ? (
         <AdsFunnelWelcomeBanner mode={welcome} />
       ) : null}
-      {/* ── Next Actions ─────────────────────────────────────────────── */}
-      {session?.user?.id ? (
-        <Suspense fallback={null}>
-          <NextActions userId={session.user.id} />
-        </Suspense>
-      ) : null}
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">
         <div
@@ -218,6 +212,15 @@ export default async function OwnerDashboard({
                 />
               </div>
             </section>
+          </Reveal>
+        ) : null}
+
+        {/* ── Next Actions ──────────────────────────────────────────── */}
+        {session?.user?.id ? (
+          <Reveal immediate delay={0.06}>
+            <Suspense fallback={null}>
+              <NextActions userId={session.user.id} />
+            </Suspense>
           </Reveal>
         ) : null}
 
