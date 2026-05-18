@@ -1,25 +1,33 @@
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 
+import { FibreCanvas } from "@/components/landing/fibre-canvas";
+import { GridOverlay } from "@/components/landing/grid-overlay";
+
 /**
- * Auth shell — silk composition over a brand-rendered backdrop.
+ * Auth shell — same atmospheric recipe as the landing hero.
  *
- * The backdrop is a single high-resolution JPG (`/brand/auth-silk.jpg`)
- * — photographic-quality teal silk drapes anchored in the top-right
- * and bottom-left corners with a dark dialogue space through the
- * middle for the form. Pre-rendered images are the right tool for
- * this look: CSS gradients and SVG can fake the *shape* of silk but
- * not the sub-surface light scattering and micro-texture that make
- * real fabric feel physical.
+ * Four layered components sit behind the form:
  *
- * Next.js's `<Image fill priority />` ensures the image loads first-
- * paint and is served in optimised formats (AVIF/WebP) per device.
- * `object-cover` keeps both drapes in frame across aspect ratios.
+ *   1. **AuthAmbient** — two faint corner orbs (teal bottom-left,
+ *      blue bottom-right). Same colour pulse as the landing's
+ *      ambient, but tucked at the base of the viewport so they
+ *      frame the centred form rather than crowd it.
+ *   2. **FibreCanvas** — the optic-fibre sparkle canvas, imported
+ *      directly from the landing. Respects prefers-reduced-motion.
+ *   3. **GridOverlay** — the blueprint grid with the radial fade,
+ *      imported directly. Gives the canvas a sense of depth.
+ *   4. **NoiseLayer** — the inline fractal-noise overlay at 2.2%
+ *      opacity. Adds the same fine grain the landing has so the
+ *      page reads as part of the same product.
  *
- * Locked to `h-dvh overflow-hidden` so the silk never crops or
- * scrolls — every auth page composes itself to fit a single screen.
+ * Base colour is a touch deeper than the landing's `#03090f` —
+ * auth wants the form to feel like the focal point, so the canvas
+ * drops a stop or two below the hero's brightness.
+ *
+ * Locked to `h-dvh overflow-hidden` so the composition stays put
+ * — every auth page fits a single screen.
  */
 export default function AuthLayout({
   children,
@@ -27,29 +35,11 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#01040b] antialiased">
-      {/* Brand silk backdrop. */}
-      <Image
-        src="/brand/auth-silk-v3.jpg"
-        alt=""
-        fill
-        priority
-        quality={95}
-        sizes="100vw"
-        className="object-cover pointer-events-none select-none"
-        aria-hidden
-      />
-
-      {/* Subtle inner vignette — pushes the form a touch further
-          into the dialogue space without dulling the silk peaks. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 42% 48% at 50% 50%, rgba(0,0,0,0.42), transparent 78%)",
-        }}
-      />
+    <div className="relative h-dvh overflow-hidden bg-[#020610] antialiased">
+      <AuthAmbient />
+      <FibreCanvas />
+      <GridOverlay />
+      <NoiseLayer />
 
       {/* Top-left back-to-home affordance. */}
       <Link
@@ -66,5 +56,56 @@ export default function AuthLayout({
         <div className="w-full max-w-[420px] reveal">{children}</div>
       </main>
     </div>
+  );
+}
+
+/**
+ * Auth-tuned variant of the landing's <Ambient />. Same colour
+ * pulses (teal + brand blue), but both orbs sit at the base of
+ * the viewport — left for teal, right for blue — and opacity is
+ * roughly half the landing's so they whisper rather than glow.
+ */
+function AuthAmbient() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    >
+      <div
+        className="absolute -left-[12vw] -bottom-[14vw] w-[42vw] h-[42vw] rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.30), transparent 60%)",
+          filter: "blur(80px)",
+          opacity: 0.22,
+          animation: "ambFloat 22s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="absolute -right-[12vw] -bottom-[14vw] w-[42vw] h-[42vw] rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(26,95,212,0.30), transparent 60%)",
+          filter: "blur(80px)",
+          opacity: 0.20,
+          animation: "ambFloat 18s ease-in-out infinite reverse",
+        }}
+      />
+    </div>
+  );
+}
+
+/** Same fractal-noise overlay the landing hero uses. */
+function NoiseLayer() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[1] opacity-[0.022]"
+      style={{
+        backgroundImage:
+          'url("data:image/svg+xml,%3Csvg viewBox=%270 0 200 200%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.75%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E")',
+        backgroundSize: "220px 220px",
+      }}
+    />
   );
 }
