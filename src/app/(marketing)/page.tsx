@@ -1,5 +1,6 @@
 import { Ambient } from "@/components/landing/ambient";
 import { GridOverlay } from "@/components/landing/grid-overlay";
+import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { CustomCursor } from "@/components/landing/cursor";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
@@ -40,6 +41,7 @@ export default async function MarketingHome() {
     <>
       {/* Backdrop layers — fixed, behind everything (z-0). */}
       <Ambient />
+      <FibreCanvas />
       <GridOverlay />
       <NoiseLayer />
       <CustomCursor />

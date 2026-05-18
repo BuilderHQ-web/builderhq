@@ -2,20 +2,23 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
+import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
 
 /**
  * Auth shell — same atmospheric recipe as the landing.
  *
- * Three layered components sit behind the form:
+ * Four layered components sit behind the form:
  *
  *   1. **AuthAmbient** — two faint corner orbs (teal bottom-left,
  *      blue bottom-right). Same colour pulse as the landing's
  *      ambient, but tucked at the base of the viewport so they
  *      frame the centred form rather than crowd it.
- *   2. **GridOverlay** — the blueprint grid with the radial fade,
+ *   2. **FibreCanvas** — the optic-fibre sparkle canvas, imported
+ *      directly from the landing. Respects prefers-reduced-motion.
+ *   3. **GridOverlay** — the blueprint grid with the radial fade,
  *      imported directly from the landing.
- *   3. **NoiseLayer** — the inline fractal-noise overlay at 2.2%
+ *   4. **NoiseLayer** — the inline fractal-noise overlay at 2.2%
  *      opacity. Same fine grain the landing has so the page reads
  *      as part of the same product.
  *
@@ -34,6 +37,7 @@ export default function AuthLayout({
   return (
     <div className="relative h-dvh overflow-hidden bg-[#03080e] antialiased">
       <AuthAmbient />
+      <FibreCanvas />
       <GridOverlay />
       <NoiseLayer />
 

@@ -89,6 +89,14 @@ export default async function OwnerDashboard({
       ) : null}
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
+          }}
+        />
         <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
             <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
