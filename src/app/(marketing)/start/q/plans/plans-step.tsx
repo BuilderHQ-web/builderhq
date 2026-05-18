@@ -223,7 +223,7 @@ export function PlansStep() {
       }
       sub="Builders bid better — and faster — with plans in hand. Don't have any yet? Skip this and add them later from your dashboard."
     >
-      <div className="max-w-[640px]">
+      <div>
         <DropZone
           file={file}
           progress={progress}

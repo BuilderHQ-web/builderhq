@@ -113,24 +113,30 @@ export function LocationStep() {
       }
       sub="Builders bid more confidently when they know the suburb. We never share your exact address until you award a tender."
     >
-      <div className="max-w-[420px]">
-        <TextField
-          label="Postcode"
-          value={postcode}
-          onChange={onPostcodeChange}
-          inputMode="numeric"
-          placeholder="e.g. 3041"
-          autoComplete="postal-code"
-          maxLength={4}
-          error={error}
-        />
+      <div>
+        {/* Postcode is naturally narrow — give it its own max-w so it
+            doesn't stretch all the way across the 720 container and
+            look comical. The suburbs list + Continue below it use the
+            full container width to balance the visual block. */}
+        <div className="max-w-[320px]">
+          <TextField
+            label="Postcode"
+            value={postcode}
+            onChange={onPostcodeChange}
+            inputMode="numeric"
+            placeholder="e.g. 3041"
+            autoComplete="postal-code"
+            maxLength={4}
+            error={error}
+          />
+        </div>
 
         {suburbs.length > 1 ? (
           <div className="mt-6">
             <p className="text-[10px] tracking-[0.18em] uppercase text-text-faint font-ui font-semibold mb-3">
               Pick your suburb
             </p>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {suburbs.map((s) => (
                 <OptionCard
                   key={`${s.suburb}-${s.state}`}
@@ -147,7 +153,7 @@ export function LocationStep() {
             </div>
           </div>
         ) : suburbs.length === 1 ? (
-          <div className="mt-6 flex items-center gap-2.5 rounded-lg border border-border-subtle bg-surface-1/30 px-4 py-3">
+          <div className="mt-6 inline-flex items-center gap-2.5 rounded-lg border border-border-subtle bg-surface-1/30 px-4 py-3">
             <MapPin size={14} strokeWidth={1.7} className="text-accent-light" />
             <span className="text-[13.5px] font-ui text-text">
               {suburbs[0]!.suburb}, {suburbs[0]!.state}

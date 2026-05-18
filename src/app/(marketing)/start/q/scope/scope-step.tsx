@@ -132,7 +132,7 @@ function ScopeBody({
 }) {
   if (type === "single_dwelling") {
     return (
-      <div className="space-y-7 max-w-[520px]">
+      <div className="space-y-7">
         <Stepper
           label="Bedrooms"
           value={state.bedrooms ?? 0}
@@ -160,7 +160,7 @@ function ScopeBody({
 
   if (type === "multi_dwelling") {
     return (
-      <div className="space-y-7 max-w-[520px]">
+      <div className="space-y-7">
         <Stepper
           label="How many dwellings"
           value={state.dwellingCount ?? 0}
@@ -196,7 +196,7 @@ function ScopeBody({
       update({ renovationScopeTags: next });
     }
     return (
-      <div className="grid grid-cols-1 gap-2 max-w-[640px]">
+      <div className="grid grid-cols-1 gap-2">
         <p className="text-text-faint text-[11.5px] font-body mb-1">
           Pick everything that applies — owners often combine more than one.
         </p>

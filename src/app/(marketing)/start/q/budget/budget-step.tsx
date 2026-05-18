@@ -63,7 +63,7 @@ export function BudgetStep() {
       }
       sub="A band — not a precise number. Builders use this to decide whether to tender. Wide bands keep options open."
     >
-      <div className="flex flex-wrap gap-2 max-w-[640px]">
+      <div className="flex flex-wrap gap-2">
         {OPTIONS.map((o) => (
           <OptionCard
             key={o.id}
@@ -75,7 +75,7 @@ export function BudgetStep() {
         ))}
       </div>
 
-      <p className="mt-6 text-text-faint text-[12px] font-body max-w-[460px]">
+      <p className="mt-6 text-text-faint text-[12px] font-body max-w-[520px]">
         Indicative only. Final cost depends on plans, finishes, and the builder you
         choose. Use this to filter who tenders — you&apos;re not committing to a
         number.

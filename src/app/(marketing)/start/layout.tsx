@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import * as React from "react";
 
 import { Ambient } from "@/components/landing/ambient";
-import { GridOverlay } from "@/components/landing/grid-overlay";
 
 /**
  * /start route group — conversion funnel layout for Google Ads.
@@ -38,14 +37,48 @@ export default function StartLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-svh bg-bg text-text overflow-hidden">
+    // No `overflow-hidden` on the outermost element — that breaks
+    // position: sticky on every descendant header. The Ambient + grid
+    // are themselves `pointer-events-none fixed` so they don't need
+    // a clip on the parent.
+    //
+    // `flex flex-col` on the inner shell + `flex-1` on <main> gives
+    // every page (landing + every quiz step) a full-viewport flex
+    // container to vertically centre its content in.
+    <div className="relative min-h-svh bg-bg text-text">
       <Ambient />
-      <GridOverlay />
+      <FunnelGrid />
       <div className="relative z-10 min-h-svh flex flex-col">
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 flex flex-col">{children}</main>
         <FunnelFooter />
       </div>
     </div>
+  );
+}
+
+/**
+ * Funnel-local grid overlay. The shared marketing GridOverlay has a
+ * radial mask centred at 50%/30% of the viewport — which "wanders"
+ * as the user scrolls past short content (visible as a colour shift
+ * on every quiz step). This version uses a much softer, edge-only
+ * mask and tighter spacing so the texture stays consistent at every
+ * scroll position.
+ */
+function FunnelGrid() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-0"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(120,200,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(120,200,255,0.035) 1px, transparent 1px)",
+        backgroundSize: "64px 64px",
+        maskImage:
+          "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+      }}
+    />
   );
 }
 

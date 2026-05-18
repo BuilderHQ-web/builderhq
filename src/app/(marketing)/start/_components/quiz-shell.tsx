@@ -54,65 +54,61 @@ export function QuizShell({ step, title, sub, children, aside }: Props) {
   }, [router, stepIndex]);
 
   return (
-    <div className="min-h-svh flex flex-col">
+    <>
       <StickyGlassHeader
         percent={progress}
         stepLabel={`${stepIndex + 1} / ${total}`}
       />
 
-      <main className="flex-1 flex flex-col">
-        <div className="flex-1 flex items-center px-5 md:px-10 pt-6 pb-8">
-          <div className="mx-auto max-w-[1240px] w-full">
-            {stepIndex > 0 ? (
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="inline-flex items-center gap-1.5 text-text-faint hover:text-text text-[12px] font-ui transition-colors mb-6"
-              >
-                <ArrowLeft size={13} strokeWidth={1.8} />
-                Back
-              </button>
-            ) : (
-              <Link
-                href="/start"
-                className="inline-flex items-center gap-1.5 text-text-faint hover:text-text text-[12px] font-ui transition-colors mb-6"
-              >
-                <ArrowLeft size={13} strokeWidth={1.8} />
-                Back
-              </Link>
-            )}
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className={
-                aside
-                  ? "grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center"
-                  : "max-w-[760px] mx-auto"
-              }
+      <div className="flex-1 flex items-center px-5 md:px-10 py-8">
+        <div className="mx-auto w-full max-w-[1240px]">
+          {stepIndex > 0 ? (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-1.5 text-text-faint hover:text-text text-[12px] font-ui transition-colors mb-7"
             >
-              <div>
-                <h1 className="font-display uppercase tracking-[-0.014em] leading-[0.92] text-[clamp(2rem,4.2vw+0.8rem,3.4rem)] text-text">
-                  {title}
-                </h1>
-                {sub ? (
-                  <p className="mt-3 text-text-muted text-[14.5px] sm:text-[15.5px] leading-[1.55] max-w-[520px] font-body">
-                    {sub}
-                  </p>
-                ) : null}
+              <ArrowLeft size={13} strokeWidth={1.8} />
+              Back
+            </button>
+          ) : (
+            <Link
+              href="/start"
+              className="inline-flex items-center gap-1.5 text-text-faint hover:text-text text-[12px] font-ui transition-colors mb-7"
+            >
+              <ArrowLeft size={13} strokeWidth={1.8} />
+              Back
+            </Link>
+          )}
 
-                <div className="mt-7">{children}</div>
-              </div>
-
-              {aside ? (
-                <div className="hidden lg:block">{aside}</div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className={
+              aside
+                ? "grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center"
+                : "mx-auto max-w-[720px]"
+            }
+          >
+            <div>
+              <h1 className="font-display uppercase tracking-[-0.014em] leading-[0.92] text-[clamp(2rem,4.2vw+0.8rem,3.4rem)] text-text">
+                {title}
+              </h1>
+              {sub ? (
+                <p className="mt-3 text-text-muted text-[14.5px] sm:text-[15.5px] leading-[1.55] max-w-[520px] font-body">
+                  {sub}
+                </p>
               ) : null}
-            </motion.div>
-          </div>
+
+              <div className="mt-8">{children}</div>
+            </div>
+
+            {aside ? <div className="hidden lg:block">{aside}</div> : null}
+          </motion.div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
 

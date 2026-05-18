@@ -82,7 +82,7 @@ export function TimelineStep() {
       }
       sub="A rough timeline helps builders flag if they're available. You can change this later."
     >
-      <div className="grid grid-cols-1 gap-2 max-w-[640px]">
+      <div className="grid grid-cols-1 gap-2">
         {OPTIONS.map((o) => (
           <OptionCard
             key={o.id}
