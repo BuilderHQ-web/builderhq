@@ -209,7 +209,11 @@
 }
 
 html, body {
-  background-color: #060f19;
+  /* Landing / global base. Sits a shade darker than the brand
+     `--color-bg-deep` token so the hero canvas reads as deeper
+     night, but stays brighter than the auth shell (`#020610`) so
+     the two surfaces have a clear hierarchy. */
+  background-color: #03080e;
 }
 
 html {
