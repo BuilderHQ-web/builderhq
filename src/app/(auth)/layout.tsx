@@ -3,20 +3,16 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
 /**
- * Auth shell — Resend-inspired silk composition.
+ * Auth shell — single-viewport silk composition.
  *
- * Single locked viewport, no scroll. Two soft silk highlights drape
- * the corners (top-right brighter, bottom-left subtler) over a near-
- * black field, with a faint teal tint that reads as our brand rather
- * than a generic monochrome login. A tiny "Home" affordance sits
- * top-left so users can back out without hunting for a logo click
- * target.
+ * Two large silk drapes anchor the corners of the screen — a primary
+ * bright drape from the top-right and a quieter mirrored one from the
+ * bottom-left — over a near-black field with a centred vignette that
+ * keeps the form readable. Tints lean white with deliberate teal
+ * pulses so the silk feels branded rather than generic.
  *
- * Layout intentionally fixes `h-dvh overflow-hidden` so the silk
- * never crops or repeats on scroll — every auth page is composed to
- * fit a single screen. Pages with denser content (signup, settings-
- * adjacent flows) should keep their own internal layout tight enough
- * to honour that contract.
+ * Locked to `h-dvh overflow-hidden` so the silk never crops or
+ * scrolls — every auth page composes itself to fit a single screen.
  */
 export default function AuthLayout({
   children,
@@ -24,17 +20,17 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#050a10]">
+    <div className="relative h-dvh overflow-hidden bg-[#03070d] antialiased">
       <SilkBackdrop />
 
       {/* Top-left back-to-home affordance. */}
       <Link
         href="/"
         aria-label="Back to home"
-        className="absolute z-20 top-5 left-5 sm:top-7 sm:left-8 inline-flex items-center gap-1.5 text-[12.5px] sm:text-[13px] text-text-muted hover:text-text transition-colors font-ui"
+        className="absolute z-20 top-5 left-5 sm:top-7 sm:left-8 inline-flex items-center gap-1.5 text-[13px] text-text-muted hover:text-text transition-colors font-ui font-medium"
         style={{ paddingTop: "max(0px, env(safe-area-inset-top))" }}
       >
-        <ChevronLeft size={14} strokeWidth={2} />
+        <ChevronLeft size={15} strokeWidth={2.2} />
         Home
       </Link>
 
@@ -46,17 +42,21 @@ export default function AuthLayout({
 }
 
 /**
- * Silk backdrop — three layered gradients to imitate draped fabric.
+ * Silk backdrop — two draped highlights plus fold streaks.
  *
- *   1. A wide top-right conic, rotated slightly, gives the bright
- *      diagonal fold-and-highlight that defines the look.
- *   2. A subtler mirrored bottom-left conic balances the composition.
- *   3. A soft inner vignette darkens the centre just enough to keep
- *      typography readable without dulling the silk.
+ *   1. **Top-right drape** — a large bright radial gradient with a
+ *      teal-tinted secondary glow. This is the primary visual mass.
+ *   2. **Top-right folds** — diagonal linear-gradient striations laid
+ *      over the drape with `mix-blend-mode: screen` so they read as
+ *      fabric highlights rather than opaque overlays. Sells the silk.
+ *   3. **Bottom-left drape** — mirrored, softer, dimmer. Balances
+ *      the composition without competing with the primary.
+ *   4. **Centre vignette** — a soft inner darkening that pushes the
+ *      form into the spotlight against the silk.
  *
- * Heavy blur on the conic layers turns the discrete colour stops into
- * smooth, organic shading. Tints are predominantly white with small
- * pulses of brand teal so it reads as ours, not Resend's.
+ * Heavy Gaussian blur turns the discrete colour stops into organic
+ * shading. All layers are absolute-positioned within the locked
+ * viewport so nothing scrolls.
  */
 function SilkBackdrop() {
   return (
@@ -64,54 +64,82 @@ function SilkBackdrop() {
       aria-hidden
       className="absolute inset-0 overflow-hidden pointer-events-none"
     >
-      {/* Top-right silk — primary highlight. */}
+      {/* Top-right drape body — bright peak fading out. */}
       <div
-        className="absolute -top-[30%] -right-[25%] w-[110vmax] h-[110vmax]"
+        className="absolute -top-[15%] -right-[10%] w-[72vw] h-[125vh]"
         style={{
-          background: `conic-gradient(from 210deg at 50% 50%,
-            transparent 0deg,
-            rgba(255,255,255,0.14) 25deg,
-            rgba(255,255,255,0.05) 60deg,
-            transparent 95deg,
-            rgba(0,212,200,0.08) 130deg,
-            transparent 170deg,
-            rgba(255,255,255,0.12) 215deg,
-            rgba(255,255,255,0.04) 255deg,
-            transparent 300deg,
-            rgba(0,212,200,0.05) 335deg,
-            transparent 360deg
-          )`,
-          filter: "blur(70px)",
-          transform: "rotate(-18deg)",
-          opacity: 0.95,
+          background: `
+            radial-gradient(ellipse 48% 58% at 52% 38%, rgba(255,255,255,0.32), transparent 65%),
+            radial-gradient(ellipse 34% 42% at 60% 48%, rgba(0,212,200,0.10), transparent 60%),
+            radial-gradient(ellipse 80% 90% at 50% 50%, rgba(255,255,255,0.05), transparent 70%)
+          `,
+          filter: "blur(48px)",
+          transform: "rotate(18deg)",
         }}
       />
 
-      {/* Bottom-left silk — mirrored, dimmer. */}
+      {/* Top-right fold streaks — diagonal highlight bands. */}
       <div
-        className="absolute -bottom-[35%] -left-[30%] w-[100vmax] h-[100vmax]"
+        className="absolute -top-[15%] -right-[10%] w-[72vw] h-[125vh]"
         style={{
-          background: `conic-gradient(from 30deg at 50% 50%,
-            transparent 0deg,
-            rgba(255,255,255,0.08) 35deg,
-            transparent 80deg,
-            rgba(0,212,200,0.05) 120deg,
-            transparent 160deg,
-            rgba(255,255,255,0.06) 210deg,
-            transparent 260deg
+          background: `linear-gradient(122deg,
+            transparent 28%,
+            rgba(255,255,255,0.10) 33%,
+            rgba(255,255,255,0.03) 38%,
+            transparent 42%,
+            transparent 54%,
+            rgba(255,255,255,0.07) 59%,
+            transparent 63%,
+            transparent 72%,
+            rgba(255,255,255,0.05) 76%,
+            transparent 80%,
+            transparent 88%,
+            rgba(0,212,200,0.05) 92%,
+            transparent 96%
           )`,
-          filter: "blur(80px)",
-          transform: "rotate(14deg)",
-          opacity: 0.55,
+          filter: "blur(22px)",
+          transform: "rotate(18deg)",
+          mixBlendMode: "screen",
         }}
       />
 
-      {/* Inner vignette to anchor the form against the silk. */}
+      {/* Bottom-left drape body — mirrored, softer. */}
+      <div
+        className="absolute -bottom-[25%] -left-[15%] w-[55vw] h-[105vh]"
+        style={{
+          background: `
+            radial-gradient(ellipse 50% 60% at 50% 55%, rgba(255,255,255,0.18), transparent 65%),
+            radial-gradient(ellipse 32% 42% at 45% 60%, rgba(0,212,200,0.06), transparent 60%)
+          `,
+          filter: "blur(56px)",
+          transform: "rotate(-14deg)",
+        }}
+      />
+
+      {/* Bottom-left fold streaks. */}
+      <div
+        className="absolute -bottom-[25%] -left-[15%] w-[55vw] h-[105vh]"
+        style={{
+          background: `linear-gradient(132deg,
+            transparent 28%,
+            rgba(255,255,255,0.06) 36%,
+            transparent 44%,
+            transparent 58%,
+            rgba(255,255,255,0.04) 66%,
+            transparent 74%
+          )`,
+          filter: "blur(18px)",
+          transform: "rotate(-14deg)",
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* Centre vignette — spotlight effect on the form. */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 55% 60% at 50% 50%, rgba(0,0,0,0.45), transparent 70%)",
+            "radial-gradient(ellipse 50% 55% at 50% 50%, rgba(0,0,0,0.55), transparent 75%)",
         }}
       />
     </div>
