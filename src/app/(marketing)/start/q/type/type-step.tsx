@@ -22,7 +22,7 @@ const OPTIONS: {
 }[] = [
   {
     id: "single_dwelling",
-    title: "New home",
+    title: "Single dwelling",
     copy: "Custom build, knock-down rebuild, or new home on vacant land.",
     icon: <Home size={20} strokeWidth={1.6} />,
   },

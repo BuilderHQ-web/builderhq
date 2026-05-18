@@ -41,31 +41,24 @@ export default function StartLayout({
     <div className="relative min-h-svh bg-bg text-text overflow-hidden">
       <Ambient />
       <GridOverlay />
-      <main className="relative z-10">{children}</main>
-      <FunnelFooter />
+      <div className="relative z-10 min-h-svh flex flex-col">
+        <main className="flex-1">{children}</main>
+        <FunnelFooter />
+      </div>
     </div>
   );
 }
 
 function FunnelFooter() {
   return (
-    <footer className="relative z-10 mt-20 px-5 md:px-10 pb-10">
-      <div className="mx-auto max-w-[1320px] flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-6 text-[11px] text-text-faint">
-        <span className="font-ui">
-          © {new Date().getFullYear()} BuilderHQ Pty Ltd · Australia-wide
-          residential tendering
-        </span>
-        <nav className="flex items-center gap-5">
-          <a
-            href="/privacy"
-            className="hover:text-text transition-colors"
-          >
+    <footer className="px-5 md:px-10 pb-6 pt-4">
+      <div className="mx-auto max-w-[1240px] flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-text-faint font-ui">
+        <span>© {new Date().getFullYear()} BuilderHQ Pty Ltd</span>
+        <nav className="flex items-center gap-4">
+          <a href="/privacy" className="hover:text-text transition-colors">
             Privacy
           </a>
-          <a
-            href="/terms"
-            className="hover:text-text transition-colors"
-          >
+          <a href="/terms" className="hover:text-text transition-colors">
             Terms
           </a>
           <a
