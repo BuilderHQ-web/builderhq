@@ -38,7 +38,7 @@ export function LandingHero() {
         {...ENTER}
         transition={{ duration: 0.6, delay: 0, ease: EASE }}
       >
-        <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.26em] uppercase text-accent font-ui font-semibold">
+        <span className="inline-flex items-center gap-2 sm:gap-2.5 text-[9.5px] sm:text-[10px] tracking-[0.24em] sm:tracking-[0.26em] uppercase text-accent font-ui font-semibold">
           <span className="relative flex size-1.5">
             <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
             <span className="relative size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
@@ -47,7 +47,7 @@ export function LandingHero() {
         </span>
       </motion.div>
 
-      <h1 className="mt-6 font-display uppercase tracking-[-0.02em] leading-[0.88] text-[clamp(3rem,7vw+1rem,6.4rem)]">
+      <h1 className="mt-4 sm:mt-6 font-display uppercase tracking-[-0.02em] leading-[0.88] text-[clamp(2.6rem,7vw+0.4rem,6.4rem)]">
         <motion.span
           {...ENTER}
           transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
@@ -67,16 +67,16 @@ export function LandingHero() {
       <motion.p
         {...ENTER}
         transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
-        className="mt-7 text-text-muted text-[16px] sm:text-[17px] leading-[1.55] max-w-[460px] font-body"
+        className="mt-5 sm:mt-7 text-text-muted text-[14.5px] sm:text-[17px] leading-[1.55] max-w-[460px] font-body"
       >
-        Upload your project once. Three vetted Australian builders compete.
-        Free for owners.
+        Three vetted Australian builders compete on your project.
+        <span className="text-text"> Free for owners.</span>
       </motion.p>
 
       <motion.div
         {...ENTER}
         transition={{ duration: 0.6, delay: 0.75, ease: EASE }}
-        className="mt-10 flex flex-col sm:flex-row gap-3 sm:items-center"
+        className="mt-7 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:items-center"
       >
         <Suspense fallback={null}>
           <StartCta>
@@ -84,7 +84,7 @@ export function LandingHero() {
             <ArrowRight size={16} strokeWidth={2.2} className="ml-0.5" />
           </StartCta>
         </Suspense>
-        <span className="text-text-faint text-[12px] font-ui tracking-wide">
+        <span className="text-text-faint text-[11.5px] sm:text-[12px] font-ui tracking-wide">
           90 seconds · no card · no spam
         </span>
       </motion.div>

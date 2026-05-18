@@ -123,28 +123,34 @@ function StickyGlassHeader({
 }) {
   return (
     <header className="sticky top-0 z-40">
-      {/* Glass underlay — backdrop blur + tinted gradient + hairline. */}
+      {/* Glass underlay spans the full header including the iOS safe
+              area at the top — no break between the status bar and the
+              progress chrome. */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-bg/72 backdrop-blur-xl"
+        className="absolute inset-0 bg-bg/68 backdrop-blur-xl"
         style={{
           maskImage:
-            "linear-gradient(to bottom, black 70%, transparent 100%)",
+            "linear-gradient(to bottom, black 76%, transparent 100%)",
           WebkitMaskImage:
-            "linear-gradient(to bottom, black 70%, transparent 100%)",
+            "linear-gradient(to bottom, black 76%, transparent 100%)",
         }}
       />
-      <div className="relative px-5 md:px-10 pt-5 pb-3">
-        <div className="mx-auto max-w-[1240px] flex items-center gap-5">
+      <div
+        className="relative px-5 md:px-10 pb-3"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
+        }}
+      >
+        <div className="mx-auto max-w-[1240px] flex items-center gap-4 sm:gap-5">
           <Link
             href="/start"
             aria-label="BuilderHQ"
             className="shrink-0 inline-flex items-center"
           >
-            <Logo height={22} />
+            <Logo height={20} />
           </Link>
 
-          {/* Hairline progress track with animated fill + soft glow. */}
           <div className="flex-1 h-[2px] relative rounded-full bg-border-subtle/80 overflow-hidden">
             <motion.span
               aria-hidden

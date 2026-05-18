@@ -35,9 +35,9 @@ export default function StartLandingPage() {
         <ErrorBanner />
       </Suspense>
 
-      <section className="flex-1 flex items-center px-5 md:px-10 pt-4 sm:pt-10 pb-12">
+      <section className="flex-1 flex flex-col justify-center px-5 md:px-10 pt-2 sm:pt-10 pb-10 sm:pb-12">
         <div className="mx-auto max-w-[1280px] w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.85fr] gap-12 lg:gap-20 items-center min-h-[58vh]">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.85fr] gap-10 sm:gap-12 lg:gap-20 items-center lg:min-h-[58vh]">
             <LandingHero />
             <div className="relative">
               <LiveTenderCard />
@@ -56,18 +56,28 @@ export default function StartLandingPage() {
 function LandingHeader() {
   return (
     <header className="sticky top-0 z-40">
+      {/* Glass underlay spans the full header including the iOS safe
+              area at the top — no break between the status bar and the
+              header chrome. The bottom edge fades into the page so
+              there's no hard line. */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-bg/72 backdrop-blur-xl"
+        className="absolute inset-0 bg-bg/68 backdrop-blur-xl"
         style={{
-          maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
+          maskImage:
+            "linear-gradient(to bottom, black 76%, transparent 100%)",
           WebkitMaskImage:
-            "linear-gradient(to bottom, black 70%, transparent 100%)",
+            "linear-gradient(to bottom, black 76%, transparent 100%)",
         }}
       />
-      <div className="relative px-5 md:px-10 pt-5 pb-3">
+      <div
+        className="relative px-5 md:px-10 pb-3"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
+        }}
+      >
         <div className="mx-auto max-w-[1280px] flex items-center justify-between gap-5">
-          <Logo height={22} />
+          <Logo height={20} className="sm:[height:22px]" />
           <Suspense fallback={null}>
             <StartCta size="md">
               Get started

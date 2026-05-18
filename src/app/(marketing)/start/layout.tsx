@@ -29,6 +29,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // Draw the page under the iOS notch + dynamic island so the sticky
+  // glass header can extend continuously from the very top of the
+  // screen. We add `env(safe-area-inset-top)` padding inside the
+  // header so the logo + CTA still sit below the notch.
+  viewportFit: "cover",
 };
 
 export default function StartLayout({
