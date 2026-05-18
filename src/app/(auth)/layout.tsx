@@ -2,29 +2,26 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
-import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
 
 /**
- * Auth shell — same atmospheric recipe as the landing hero.
+ * Auth shell — same atmospheric recipe as the landing.
  *
- * Four layered components sit behind the form:
+ * Three layered components sit behind the form:
  *
  *   1. **AuthAmbient** — two faint corner orbs (teal bottom-left,
  *      blue bottom-right). Same colour pulse as the landing's
  *      ambient, but tucked at the base of the viewport so they
  *      frame the centred form rather than crowd it.
- *   2. **FibreCanvas** — the optic-fibre sparkle canvas, imported
- *      directly from the landing. Respects prefers-reduced-motion.
- *   3. **GridOverlay** — the blueprint grid with the radial fade,
- *      imported directly. Gives the canvas a sense of depth.
- *   4. **NoiseLayer** — the inline fractal-noise overlay at 2.2%
- *      opacity. Adds the same fine grain the landing has so the
- *      page reads as part of the same product.
+ *   2. **GridOverlay** — the blueprint grid with the radial fade,
+ *      imported directly from the landing.
+ *   3. **NoiseLayer** — the inline fractal-noise overlay at 2.2%
+ *      opacity. Same fine grain the landing has so the page reads
+ *      as part of the same product.
  *
- * Base colour is a touch deeper than the landing's `#03090f` —
- * auth wants the form to feel like the focal point, so the canvas
- * drops a stop or two below the hero's brightness.
+ * Base colour matches the landing (`#03080e`) so the auth surface
+ * and the marketing surface share one canvas — login should feel
+ * like a step inward, not a different building.
  *
  * Locked to `h-dvh overflow-hidden` so the composition stays put
  * — every auth page fits a single screen.
@@ -35,9 +32,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#020610] antialiased">
+    <div className="relative h-dvh overflow-hidden bg-[#03080e] antialiased">
       <AuthAmbient />
-      <FibreCanvas />
       <GridOverlay />
       <NoiseLayer />
 
