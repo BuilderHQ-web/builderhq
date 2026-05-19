@@ -65,9 +65,10 @@ export default async function MarketingHome() {
         <SectionFrame full>
           <Features />
         </SectionFrame>
-        <SectionFrame full>
-          <HowItWorks />
-        </SectionFrame>
+        {/* HowItWorks is a pinned-scroll narrative — controls its own
+            420vh height + sticky pin, so it lives outside the
+            SectionFrame pacing wrapper. */}
+        <HowItWorks />
         <SectionFrame full>
           <Showcase />
         </SectionFrame>
