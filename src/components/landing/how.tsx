@@ -364,8 +364,13 @@ function VisualCard({ ref, index, children }: VisualCardProps) {
       style={{
         transform: `translateY(${initialY}%)`,
         zIndex: index + 1,
-        background:
-          "linear-gradient(180deg, rgba(0,212,200,0.045), rgba(6,18,30,0.7))",
+        // Fully OPAQUE gradient. The previous rgba(*, 0.7) bottom
+        // stop left a 30% transparency window through which the
+        // card beneath was visible — the "stacking but see-through"
+        // bug. Solid colour endpoints kill that. The brand teal
+        // tint at top is preserved by mixing it into the start
+        // colour rather than using an rgba overlay.
+        background: "linear-gradient(180deg, #0a1f29 0%, #06121e 100%)",
         willChange: "transform",
       }}
       className="absolute inset-0 overflow-hidden p-5 sm:p-7 lg:p-10 flex items-center justify-center"
