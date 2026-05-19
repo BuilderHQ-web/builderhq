@@ -2,11 +2,19 @@
 
 import { useActionState, useTransition } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { AuthBanner, AuthFieldError } from "../../_components/auth-atoms";
+import { AuthHeader } from "../../_components/auth-header";
+import {
+  AUTH_CONTAINER_CLS,
+  AUTH_INPUT_CLS,
+  AUTH_LABEL_CLS,
+  AUTH_PRIMARY_BUTTON_CLS,
+} from "../../_lib/auth-styles";
 
 import { resetPasswordAction, type ResetActionState } from "./actions";
 
@@ -19,62 +27,89 @@ export function ResetForm({ token }: { token: string }) {
   const fieldError = (key: string) => state.fieldErrors?.[key];
 
   return (
-    <form
-      action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-6"
-      noValidate
-    >
-      <input type="hidden" name="token" value={token} />
+    <div className={AUTH_CONTAINER_CLS}>
+      <AuthHeader
+        title={<>Set a new password</>}
+        subtitle={
+          <>
+            Pick a fresh password — you&apos;ll be signed out of this device
+            after. Log in again with the new one.
+          </>
+        }
+      />
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">New password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={10}
-          required
-        />
-        <p className="text-[12px] text-text-dim">Minimum 10 characters.</p>
-        {fieldError("password") ? <p className="text-[12px] text-danger">{fieldError("password")}</p> : null}
-      </div>
+      <form
+        action={(fd) => startTransition(() => formAction(fd))}
+        className="w-full flex flex-col gap-4"
+        noValidate
+      >
+        <input type="hidden" name="token" value={token} />
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="confirm">Confirm password</Label>
-        <Input
-          id="confirm"
-          name="confirm"
-          type="password"
-          autoComplete="new-password"
-          minLength={10}
-          required
-        />
-        {fieldError("confirm") ? <p className="text-[12px] text-danger">{fieldError("confirm")}</p> : null}
-      </div>
-
-      {state.error ? (
-        <div
-          role="alert"
-          className="rounded-md border border-[rgba(255,80,80,0.20)] bg-[rgba(255,80,80,0.04)] px-3.5 py-2.5 text-[13px] text-danger"
-        >
-          {state.error}
+        <div className="flex flex-col gap-2 text-left">
+          <Label htmlFor="password" className={AUTH_LABEL_CLS}>
+            New password
+          </Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            minLength={10}
+            required
+            className={AUTH_INPUT_CLS}
+          />
+          <p className="text-[11.5px] text-text-faint text-left">
+            Minimum 10 characters.
+          </p>
+          {fieldError("password") ? <AuthFieldError msg={fieldError("password")!} /> : null}
         </div>
-      ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 gap-2 w-full sm:w-auto">
-        {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-        {isPending ? "Setting new password…" : "Set new password"}
-      </Button>
+        <div className="flex flex-col gap-2 text-left">
+          <Label htmlFor="confirm" className={AUTH_LABEL_CLS}>
+            Confirm password
+          </Label>
+          <Input
+            id="confirm"
+            name="confirm"
+            type="password"
+            autoComplete="new-password"
+            minLength={10}
+            required
+            className={AUTH_INPUT_CLS}
+          />
+          {fieldError("confirm") ? <AuthFieldError msg={fieldError("confirm")!} /> : null}
+        </div>
 
-      <p className="text-[13px] text-text-dim">
-        <Link
-          href="/login"
-          className="hover:text-accent-light transition-colors"
+        {state.error ? <AuthBanner tone="error">{state.error}</AuthBanner> : null}
+
+        <button
+          type="submit"
+          disabled={isPending}
+          className={AUTH_PRIMARY_BUTTON_CLS}
         >
-          ← Back to log in
-        </Link>
-      </p>
-    </form>
+          {isPending ? (
+            <>
+              <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
+              Setting new password…
+            </>
+          ) : (
+            <>
+              Set new password
+              <ArrowRight
+                className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5"
+                strokeWidth={2.6}
+              />
+            </>
+          )}
+        </button>
+      </form>
+
+      <Link
+        href="/login"
+        className="text-[13px] text-text-dim hover:text-accent-light transition-colors font-ui"
+      >
+        ← Back to log in
+      </Link>
+    </div>
   );
 }

@@ -11,13 +11,18 @@
  * email or role — the server-rendered preview is the ground truth.
  *
  * No layout customisation — inherits the (auth) group's centred
- * shell (logo top-left, form centred, footer).
+ * shell.
  */
 
 import Link from "next/link";
 
 import { lookupClaimToken } from "@/modules/users/account";
-import { Logo } from "@/components/brand/logo";
+
+import { AuthHeader, BrandWord } from "../../_components/auth-header";
+import {
+  AUTH_CONTAINER_CLS,
+  AUTH_PRIMARY_BUTTON_CLS,
+} from "../../_lib/auth-styles";
 
 import { ClaimForm } from "./claim-form";
 
@@ -34,48 +39,37 @@ export default async function ClaimPage(props: {
   const { token } = await props.params;
   const result = await lookupClaimToken(token);
 
-  // Not found / expired / already claimed — render the inert message
-  // states without exposing a form.
+  // ── Error states — token expired / invalid / already-claimed ───
   if (!result.ok) {
     const message = result.error.message;
     const code = result.error.code;
-    return (
-      <div className="flex flex-col gap-7">
-        <div className="flex flex-col gap-3">
-          <span className="text-[11px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
-            Claim · BuilderHQ
-          </span>
-          <h1 className="font-display uppercase tracking-[-0.02em] text-[36px] sm:text-[48px] leading-[0.92] text-text">
-            {code === "conflict"
-              ? "Already claimed"
-              : code === "rate_limited"
-                ? "Link expired"
-                : "Link not valid"}
-          </h1>
-          <p className="text-[14px] leading-[22px] text-text-muted">
-            {message}
-          </p>
-        </div>
+    const title =
+      code === "conflict"
+        ? "Already claimed"
+        : code === "rate_limited"
+          ? "Link expired"
+          : "Link not valid";
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
+    return (
+      <div className={AUTH_CONTAINER_CLS}>
+        <AuthHeader title={title} subtitle={message} />
+
+        <div className="w-full flex flex-col gap-2.5">
           {code === "conflict" ? (
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors w-full sm:w-auto"
-            >
+            <Link href="/login" className={AUTH_PRIMARY_BUTTON_CLS}>
               Sign in
             </Link>
           ) : (
             <a
               href="mailto:info@builderhq.com.au?subject=Account%20claim%20link%20expired"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-ui font-semibold tracking-[0.04em] uppercase hover:bg-accent-hover transition-colors w-full sm:w-auto"
+              className={AUTH_PRIMARY_BUTTON_CLS}
             >
               Email support
             </a>
           )}
           <Link
             href="/"
-            className="text-[13px] text-text-dim hover:text-text-muted transition-colors py-2 -my-2 sm:py-0 sm:my-0"
+            className="text-[13px] text-text-dim hover:text-text-muted transition-colors py-2 -my-2"
           >
             Back home
           </Link>
@@ -84,50 +78,46 @@ export default async function ClaimPage(props: {
     );
   }
 
+  // ── Valid + unclaimed — render the form. ───────────────────────
   const { email, firstName, expiresAt } = result.value;
-  const greeting = firstName ? `Welcome back, ${firstName}.` : "Welcome back.";
+  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
   const daysLeft = Math.max(
     1,
     Math.ceil((expiresAt.getTime() - Date.now()) / 86_400_000),
   );
 
   return (
-    <div className="flex flex-col gap-7 sm:gap-8">
-      <div className="flex flex-col gap-3">
-        <span className="inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
-          <Logo height={14} />
-          <span aria-hidden className="text-text-dim">·</span>
-          Claim your account
-        </span>
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[40px] sm:text-[52px] leading-[0.92] text-text">
-          {greeting}
-        </h1>
-        <p className="text-[14px] leading-[22px] text-text-muted">
-          We&apos;ve rebuilt BuilderHQ from the ground up. Your projects,
-          tenders and history are waiting — set a fresh password and you&apos;re
-          straight in.
-        </p>
-      </div>
+    <div className={AUTH_CONTAINER_CLS}>
+      <AuthHeader
+        title={greeting}
+        subtitle={
+          <>
+            We&apos;ve rebuilt <BrandWord /> from the ground up. Your
+            projects, tenders and history are waiting — set a fresh
+            password and you&apos;re straight in.
+          </>
+        }
+      />
 
-      <div className="rounded-md border border-border-subtle bg-surface-1/60 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
+      <div className="w-full rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.025)] px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-0.5 min-w-0 flex-1 text-left">
+          <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
             Claiming
           </span>
           <span className="text-[13px] text-text truncate">{email}</span>
         </div>
-        <span className="text-[10.5px] tracking-[0.14em] uppercase text-text-dim font-ui shrink-0">
+        <span className="text-[10.5px] tracking-[0.14em] uppercase text-text-faint font-ui shrink-0">
           {daysLeft}d to use
         </span>
       </div>
 
       <ClaimForm token={token} />
 
-      <p className="text-[12px] text-text-dim leading-[1.6]">
+      <p className="text-[12px] text-text-faint leading-[1.6]">
         Wrong email?{" "}
         <a
           href="mailto:info@builderhq.com.au?subject=Wrong%20email%20on%20claim%20link"
-          className="text-text hover:text-accent-light underline underline-offset-4 decoration-border-strong hover:decoration-accent-light transition-colors"
+          className="text-text font-semibold hover:text-accent-light transition-colors"
         >
           Tell support
         </a>{" "}

@@ -8,19 +8,5 @@ export default async function ResetPasswordPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-
-  return (
-    <div className="flex flex-col gap-8 sm:gap-10">
-      <div className="flex flex-col gap-3">
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[38px] sm:text-[52px] leading-[0.92] text-text">
-          Set new password
-        </h1>
-        <p className="text-[14px] sm:text-[15px] leading-[22px] sm:leading-[24px] text-text-muted">
-          Choose a new password. You&apos;ll be signed out of this device after — log in again with the new one.
-        </p>
-      </div>
-
-      <ResetForm token={token} />
-    </div>
-  );
+  return <ResetForm token={token} />;
 }

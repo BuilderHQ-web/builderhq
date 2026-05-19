@@ -5,30 +5,39 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-import { Logo } from "@/components/brand/logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+
+import { AuthBanner, AuthFieldError } from "../_components/auth-atoms";
+import { AuthHeader, BrandWord } from "../_components/auth-header";
+import {
+  AUTH_CONTAINER_CLS,
+  AUTH_DIVIDER_CLS,
+  AUTH_DIVIDER_LINE_CLS,
+  AUTH_DIVIDER_TEXT_CLS,
+  AUTH_INPUT_CLS,
+  AUTH_LABEL_CLS,
+  AUTH_LEGAL_CLS,
+  AUTH_LEGAL_LINK_CLS,
+  AUTH_PRIMARY_BUTTON_CLS,
+  AUTH_SECONDARY_BUTTON_CLS,
+} from "../_lib/auth-styles";
 
 import { loginAction, type LoginActionState } from "./actions";
 
 const initialState: LoginActionState = {};
 
 /**
- * Login form — Resend-style single-screen composition.
+ * Login form — passwordless primary, password collapsible secondary.
  *
- *   · Brand wordmark on top, then heading in mixed-case sans with
- *     "HQ" rendered heavier so the brand convention reads correctly.
- *   · Email is always visible (both paths need it).
- *   · Primary: passwordless magic link — a glowing teal pill that
- *     draws the eye first.
- *   · Quiet "or" divider, then a low-key "Sign in with password
- *     instead" toggle that expands cleanly.
- *   · Legal footer sits at the base, present without competing.
+ *   1. Email field (shared by both paths)
+ *   2. Glowing teal primary button → magic link
+ *   3. "or" divider
+ *   4. Low-key "Sign in with password instead" toggle → reveals
+ *      password field + secondary submit + "Back to email link"
  *
- * Typography is tight and high-contrast — headings at 600/800 weight,
- * inputs with crisp borders, button text in semibold + slight tracking.
- * The whole composition fits within the auth shell's locked viewport.
+ * Composition + style primitives live in `../_lib/auth-styles` and
+ * `../_components/auth-header` so every auth page reads the same.
  */
 export function LoginForm() {
   const params = useSearchParams();
@@ -85,41 +94,29 @@ export function LoginForm() {
           : null;
 
   return (
-    <div className="flex flex-col items-center text-center gap-7">
-      {/* ── Brand mark ─────────────────────────────────────────────── */}
-      <Logo height={25} className="mb-1" />
+    <div className={AUTH_CONTAINER_CLS}>
+      <AuthHeader
+        title={<>Log in to <BrandWord /></>}
+        subtitle={
+          <>
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/signup"
+              className="text-text font-semibold hover:text-accent-light transition-colors"
+            >
+              Sign up
+            </Link>
+            .
+          </>
+        }
+      />
 
-      {/* ── Heading ────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2.5">
-        <h1 className="font-ui font-semibold tracking-[-0.022em] text-[28px] sm:text-[31px] leading-[1.1] text-text">
-          Log in to Builder<span className="font-extrabold">HQ</span>
-        </h1>
-        <p className="text-[13.5px] text-text-muted font-body leading-[1.5]">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/signup"
-            className="text-text font-semibold hover:text-accent-light transition-colors"
-          >
-            Sign up
-          </Link>
-          .
-        </p>
-      </div>
-
-      {/* ── Status banner ──────────────────────────────────────────── */}
-      {banner ? <Banner tone={banner.tone}>{banner.msg}</Banner> : null}
+      {banner ? <AuthBanner tone={banner.tone}>{banner.msg}</AuthBanner> : null}
 
       {/* ── Path 1: passwordless (primary) ─────────────────────────── */}
-      <form
-        onSubmit={sendLink}
-        className="w-full flex flex-col gap-4"
-        noValidate
-      >
+      <form onSubmit={sendLink} className="w-full flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-2 text-left">
-          <Label
-            htmlFor="email"
-            className="text-[12.5px] font-ui font-medium tracking-[0.005em] text-text-muted"
-          >
+          <Label htmlFor="email" className={AUTH_LABEL_CLS}>
             Email
           </Label>
           <Input
@@ -133,23 +130,15 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={linkSending}
-            className="h-11 px-3.5 text-[14px] bg-[rgba(255,255,255,0.035)] border-[rgba(255,255,255,0.10)] hover:border-[rgba(255,255,255,0.16)] focus-visible:border-accent focus-visible:ring-accent/30 placeholder:text-text-faint transition-colors"
+            className={AUTH_INPUT_CLS}
           />
-          {linkError ? <FieldError msg={linkError} /> : null}
+          {linkError ? <AuthFieldError msg={linkError} /> : null}
         </div>
 
         <button
           type="submit"
           disabled={linkSending || !email.trim()}
-          className={cn(
-            "group relative w-full h-11 rounded-full inline-flex items-center justify-center gap-2",
-            "bg-accent text-accent-contrast text-[13.5px] font-ui font-semibold tracking-[0.005em]",
-            "transition-[background-color,box-shadow,transform] duration-[180ms]",
-            "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_1px_0_0_rgba(0,0,0,0.4),0_8px_24px_-8px_rgba(0,212,200,0.55)]",
-            "hover:bg-accent-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35),0_1px_0_0_rgba(0,0,0,0.4),0_12px_28px_-8px_rgba(0,212,200,0.7)]",
-            "active:translate-y-[0.5px]",
-            "disabled:opacity-55 disabled:cursor-not-allowed disabled:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]",
-          )}
+          className={AUTH_PRIMARY_BUTTON_CLS}
         >
           {linkSending ? (
             <>
@@ -169,12 +158,10 @@ export function LoginForm() {
       </form>
 
       {/* ── Divider ────────────────────────────────────────────────── */}
-      <div className="w-full flex items-center gap-3">
-        <span className="flex-1 h-px bg-[rgba(255,255,255,0.08)]" />
-        <span className="text-[10px] tracking-[0.24em] uppercase text-text-faint font-ui font-semibold">
-          or
-        </span>
-        <span className="flex-1 h-px bg-[rgba(255,255,255,0.08)]" />
+      <div className={AUTH_DIVIDER_CLS}>
+        <span className={AUTH_DIVIDER_LINE_CLS} />
+        <span className={AUTH_DIVIDER_TEXT_CLS}>or</span>
+        <span className={AUTH_DIVIDER_LINE_CLS} />
       </div>
 
       {/* ── Path 2: password (collapsible) ─────────────────────────── */}
@@ -182,7 +169,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => setUsePassword(true)}
-          className="text-[13px] text-text-muted hover:text-text transition-colors font-ui font-medium inline-flex items-center gap-1.5"
+          className="text-[13px] text-text-muted hover:text-text transition-colors font-ui font-medium"
         >
           Sign in with password instead
         </button>
@@ -203,10 +190,7 @@ export function LoginForm() {
 
           <div className="flex flex-col gap-2 text-left">
             <div className="flex items-center justify-between gap-3">
-              <Label
-                htmlFor="password"
-                className="text-[12.5px] font-ui font-medium tracking-[0.005em] text-text-muted"
-              >
+              <Label htmlFor="password" className={AUTH_LABEL_CLS}>
                 Password
               </Label>
               <Link
@@ -223,33 +207,21 @@ export function LoginForm() {
               autoComplete="current-password"
               required
               disabled={isPending}
-              className="h-11 px-3.5 text-[14px] bg-[rgba(255,255,255,0.035)] border-[rgba(255,255,255,0.10)] hover:border-[rgba(255,255,255,0.16)] focus-visible:border-accent focus-visible:ring-accent/30 transition-colors"
+              className={AUTH_INPUT_CLS}
             />
-            {fieldError("password") ? (
-              <FieldError msg={fieldError("password")!} />
-            ) : null}
-            {fieldError("email") ? (
-              <FieldError msg={fieldError("email")!} />
-            ) : null}
+            {fieldError("password") ? <AuthFieldError msg={fieldError("password")!} /> : null}
+            {fieldError("email") ? <AuthFieldError msg={fieldError("email")!} /> : null}
           </div>
 
-          {state.error ? <Banner tone="error">{state.error}</Banner> : null}
+          {state.error ? <AuthBanner tone="error">{state.error}</AuthBanner> : null}
 
           <div className="flex flex-col gap-2.5">
             <button
               type="submit"
               disabled={isPending || !email.trim()}
-              className={cn(
-                "w-full h-11 rounded-full inline-flex items-center justify-center gap-2",
-                "bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.10)] text-text text-[13px] font-ui font-semibold",
-                "border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.22)] transition-colors",
-                "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]",
-                "disabled:opacity-55 disabled:cursor-not-allowed",
-              )}
+              className={AUTH_SECONDARY_BUTTON_CLS}
             >
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
-              ) : null}
+              {isPending ? <Loader2 className="size-4 animate-spin" strokeWidth={2.6} /> : null}
               {isPending ? "Signing in…" : "Sign in with password"}
             </button>
             <button
@@ -264,19 +236,13 @@ export function LoginForm() {
       )}
 
       {/* ── Legal footer ───────────────────────────────────────────── */}
-      <p className="text-[11.5px] text-text-faint leading-[1.5] font-body mt-1">
+      <p className={AUTH_LEGAL_CLS}>
         By signing in, you agree to our{" "}
-        <Link
-          href="/terms"
-          className="underline underline-offset-2 decoration-[rgba(255,255,255,0.18)] hover:text-text-muted hover:decoration-text-muted transition-colors"
-        >
+        <Link href="/terms" className={AUTH_LEGAL_LINK_CLS}>
           Terms
         </Link>{" "}
         and{" "}
-        <Link
-          href="/privacy"
-          className="underline underline-offset-2 decoration-[rgba(255,255,255,0.18)] hover:text-text-muted hover:decoration-text-muted transition-colors"
-        >
+        <Link href="/privacy" className={AUTH_LEGAL_LINK_CLS}>
           Privacy Policy
         </Link>
         .
@@ -285,34 +251,3 @@ export function LoginForm() {
   );
 }
 
-function Banner({
-  tone,
-  children,
-}: {
-  tone: "info" | "success" | "warning" | "error";
-  children: React.ReactNode;
-}) {
-  const styles = {
-    info: "border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] text-text-muted",
-    success: "border-accent/25 bg-accent-muted/50 text-accent-light",
-    warning:
-      "border-[rgba(251,184,64,0.30)] bg-[rgba(251,184,64,0.06)] text-warning",
-    error:
-      "border-[rgba(255,80,80,0.22)] bg-[rgba(255,80,80,0.04)] text-danger",
-  } as const;
-  return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
-      className={cn(
-        "w-full rounded-md border px-3.5 py-2.5 text-[12.5px] text-left font-body leading-[1.5]",
-        styles[tone],
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-function FieldError({ msg }: { msg: string }) {
-  return <p className="text-[12px] text-danger text-left">{msg}</p>;
-}

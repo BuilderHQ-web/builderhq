@@ -3,18 +3,23 @@
 /**
  * ClaimForm — password-set form for migrated Bubble users.
  *
- * Mirrors the password-change form's shape: two password fields,
- * client-side match check, server-side validation. On success the
- * server action signs the user in (NEXT_REDIRECT) — we never see a
- * "success" state on the client side.
+ * Mirrors the reset-password form: two password fields, server-side
+ * validation. On success the server action signs the user in
+ * (NEXT_REDIRECT) — we never see a "success" state on the client.
  */
 
 import { useActionState, useTransition } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { AuthBanner, AuthFieldError } from "../../_components/auth-atoms";
+import {
+  AUTH_INPUT_CLS,
+  AUTH_LABEL_CLS,
+  AUTH_PRIMARY_BUTTON_CLS,
+} from "../../_lib/auth-styles";
 
 import { claimAccountAction, type ClaimActionState } from "./actions";
 
@@ -29,13 +34,15 @@ export function ClaimForm({ token }: { token: string }) {
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5"
+      className="w-full flex flex-col gap-4"
       noValidate
     >
       <input type="hidden" name="token" value={token} />
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">New password</Label>
+      <div className="flex flex-col gap-2 text-left">
+        <Label htmlFor="password" className={AUTH_LABEL_CLS}>
+          New password
+        </Label>
         <Input
           id="password"
           name="password"
@@ -44,16 +51,21 @@ export function ClaimForm({ token }: { token: string }) {
           minLength={10}
           required
           aria-invalid={Boolean(fieldError("password"))}
+          className={AUTH_INPUT_CLS}
         />
         {fieldError("password") ? (
-          <p className="text-[12px] text-danger">{fieldError("password")}</p>
+          <AuthFieldError msg={fieldError("password")!} />
         ) : (
-          <p className="text-[11px] text-text-dim">At least 10 characters.</p>
+          <p className="text-[11.5px] text-text-faint text-left">
+            At least 10 characters.
+          </p>
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="confirm">Confirm password</Label>
+      <div className="flex flex-col gap-2 text-left">
+        <Label htmlFor="confirm" className={AUTH_LABEL_CLS}>
+          Confirm password
+        </Label>
         <Input
           id="confirm"
           name="confirm"
@@ -62,29 +74,25 @@ export function ClaimForm({ token }: { token: string }) {
           minLength={10}
           required
           aria-invalid={Boolean(fieldError("confirm"))}
+          className={AUTH_INPUT_CLS}
         />
-        {fieldError("confirm") ? (
-          <p className="text-[12px] text-danger">{fieldError("confirm")}</p>
-        ) : null}
+        {fieldError("confirm") ? <AuthFieldError msg={fieldError("confirm")!} /> : null}
       </div>
 
-      {state.error ? (
-        <div
-          role="alert"
-          className="rounded-md border border-[rgba(255,80,80,0.20)] bg-[rgba(255,80,80,0.04)] px-3.5 py-2.5 text-[13px] text-danger"
-        >
-          {state.error}
-        </div>
-      ) : null}
+      {state.error ? <AuthBanner tone="error">{state.error}</AuthBanner> : null}
 
-      <Button type="submit" size="lg" disabled={pending} className="mt-1 gap-2 w-full sm:w-auto">
+      <button
+        type="submit"
+        disabled={pending}
+        className={AUTH_PRIMARY_BUTTON_CLS}
+      >
         {pending ? (
-          <Loader2 className="size-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" strokeWidth={2.6} />
         ) : (
-          <Sparkles className="size-4" />
+          <Sparkles className="size-4" strokeWidth={2.6} />
         )}
         {pending ? "Claiming…" : "Claim my account"}
-      </Button>
+      </button>
     </form>
   );
 }
