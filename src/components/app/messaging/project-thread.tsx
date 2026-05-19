@@ -535,6 +535,7 @@ function MessageScroll({
     >
       <div
         ref={ref}
+        data-lenis-prevent
         className="absolute inset-0 overflow-y-auto px-4 py-5"
         style={{
           backgroundImage:

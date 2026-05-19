@@ -169,6 +169,7 @@ export function LandingNav() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            data-lenis-prevent
             className={cn(
               "fixed inset-x-0 top-[68px] z-40 md:hidden",
               "bg-bg/95 backdrop-blur-xl border-b border-border-subtle",

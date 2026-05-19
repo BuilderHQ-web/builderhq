@@ -247,7 +247,10 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
         </div>
 
         {/* Scrollable nav body. */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <nav
+          data-lenis-prevent
+          className="flex-1 overflow-y-auto py-4 px-3"
+        >
           {sections.map((section, i) => (
             <div key={i} className={cn(i > 0 && "mt-6")}>
               {section.title ? (

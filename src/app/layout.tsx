@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Space_Grotesk, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+import { SmoothScroll } from "@/components/smooth-scroll";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgress } from "@/components/app/route-progress";
 
@@ -92,12 +93,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans text-text">
-        <ToastProvider>
-          <Suspense fallback={null}>
-            <RouteProgress />
-          </Suspense>
-          {children}
-        </ToastProvider>
+        <SmoothScroll>
+          <ToastProvider>
+            <Suspense fallback={null}>
+              <RouteProgress />
+            </Suspense>
+            {children}
+          </ToastProvider>
+        </SmoothScroll>
       </body>
     </html>
   );

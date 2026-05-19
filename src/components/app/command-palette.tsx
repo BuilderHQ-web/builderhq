@@ -315,6 +315,7 @@ export function CommandPalette({ role }: Props) {
             {/* List */}
             <div
               ref={listRef}
+              data-lenis-prevent
               className="relative max-h-[420px] overflow-y-auto py-2"
             >
               {flat.length === 0 ? (

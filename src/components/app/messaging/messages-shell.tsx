@@ -370,7 +370,7 @@ function ListPane({
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div data-lenis-prevent className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <ListEmpty scope={scope} hasItems={items.length > 0} query={q} />
         ) : (
@@ -771,6 +771,7 @@ function MessageScroll({
     <div className="relative flex-1 min-h-0">
       <div
         ref={ref}
+        data-lenis-prevent
         className="absolute inset-0 overflow-y-auto px-4 sm:px-8 py-6"
         style={{
           backgroundImage:

@@ -145,7 +145,10 @@ export function Sidebar({ role, initialUnreadMessages = 0 }: SidebarProps) {
       </div>
 
       {/* Nav body — generous breathing between sections. */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav
+        data-lenis-prevent
+        className="flex-1 overflow-y-auto py-4 px-3"
+      >
         {sections.map((section, i) => (
           <div key={i} className={cn(i > 0 && "mt-7")}>
             {section.title ? (

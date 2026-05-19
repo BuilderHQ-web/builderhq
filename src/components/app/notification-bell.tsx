@@ -188,7 +188,10 @@ export function NotificationBell({ initialUnreadCount }: Props) {
         </div>
 
         {/* Feed */}
-        <div className="overflow-y-auto flex-1 min-h-[120px]">
+        <div
+          data-lenis-prevent
+          className="overflow-y-auto flex-1 min-h-[120px]"
+        >
           {loading && !items ? (
             <div className="flex items-center justify-center py-12 text-text-dim">
               <Loader2 className="size-4 animate-spin" />
