@@ -8,7 +8,7 @@ import { Marquee } from "@/components/landing/marquee";
 import { ByTheNumbers } from "@/components/landing/by-the-numbers";
 import { Problem } from "@/components/landing/problem";
 import { Features } from "@/components/landing/features";
-import { HowItWorksWithBoundary } from "@/components/landing/how-boundary";
+import { HowItWorks } from "@/components/landing/how";
 import { Showcase } from "@/components/landing/showcase";
 import { Testimonials } from "@/components/landing/testimonials";
 import { FAQ } from "@/components/landing/faq";
@@ -65,12 +65,9 @@ export default async function MarketingHome() {
         <SectionFrame full>
           <Features />
         </SectionFrame>
-        {/* HowItWorks is a pinned-scroll narrative — controls its own
-            420vh height + sticky pin, so it lives outside the
-            SectionFrame pacing wrapper. Wrapped in its own error
-            boundary so a crash inside it falls back to a static
-            section without taking down the whole landing page. */}
-        <HowItWorksWithBoundary />
+        <SectionFrame full>
+          <HowItWorks />
+        </SectionFrame>
         <SectionFrame full>
           <Showcase />
         </SectionFrame>
