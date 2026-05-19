@@ -16,81 +16,70 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * HowItWorks — Base44-style stack-slide pinned narrative (v4).
+ * HowItWorks v5 — Base44-style layout.
  *
- * After v2 and v3 both crashed in production despite passing every
- * local build / curl test, this version takes a totally different
- * implementation approach: NO Motion library hooks anywhere in the
- * scroll path. Pure imperative DOM mutation inside one
- * `requestAnimationFrame` loop, driven off `getBoundingClientRect`.
+ * Layout (desktop)
+ * ────────────────
+ *   Sticky pinned panel filling the viewport. Three vertical zones:
  *
- * Mechanics
+ *     · TOP    — section heading, centred. Kicker + display headline.
+ *     · MIDDLE — card stack centred horizontally. Numbered progress
+ *                rail floats absolute to the left of the card so the
+ *                card itself stays optically centred.
+ *     · The numbers light teal as the matching card becomes active.
+ *
+ * Layout (mobile)
+ * ───────────────
+ *   Same vertical zones but the number rail collapses to a compact
+ *   four-dot horizontal indicator above the card. Card takes full
+ *   width with safe-area padding.
+ *
+ * Animation
  * ─────────
- *   1. Section is `500vh` tall with a `sticky top-0 h-dvh` panel.
- *   2. A single RAF loop on mount measures the section's position
- *      every frame and computes a progress value 0→1 (top of
- *      section at top of viewport → bottom of section at bottom
- *      of viewport).
- *   3. From that progress:
- *      · Progress bar `scaleX` is set imperatively on its DOM node.
- *      · Each step's `data-active` attribute is toggled, and CSS
- *        handles the opacity / badge transitions via
- *        `group-data-[active=true]:` selectors.
- *      · Each visual card's `transform: translateY()` is set
- *        imperatively, using percentage so the card always starts
- *        100% below its own height (fully off-screen) regardless
- *        of viewport size. Card 0 stays at 0%; cards 1–3 slide up
- *        from 100% to 0% over a fixed 10% progress window each,
- *        landing on top of the previous card.
+ *   Pure imperative DOM mutation inside one requestAnimationFrame
+ *   loop. No Motion hooks. Same approach as v4 that finally shipped
+ *   without crashing in production.
  *
- * Why this should survive prod
- * ────────────────────────────
- *   · No Motion hooks (`useScroll`, `useTransform`, `useMotionValue`,
- *     `useMotionTemplate`) at all — eliminates Motion's entire
- *     production-runtime surface area as a crash source.
- *   · No React state updates per frame — RAF mutates DOM directly,
- *     so React's reconciler doesn't run on scroll. Zero hydration
- *     risk, zero re-render cost.
- *   · The error boundary in `how-boundary.tsx` still wraps this
- *     component as a safety net.
- *
- * The visual result is unchanged from the v2/v3 intent — cards
- * stack-slide through a pinned canvas as the user scrolls; steps
- * on the left light up bidirectionally; progress bar fills in
- * lockstep. It's just driven by vanilla DOM instead of Motion.
+ *   The RAF reads section position via `getBoundingClientRect`,
+ *   computes progress 0→1, then writes:
+ *     · `transform: translateY(N%)` on each card (stack-slide).
+ *     · `data-active` attribute on each step (CSS handles fade).
+ *     · `transform: scaleX(progress)` on the progress fill rail.
  */
 
 const STEPS = [
   {
     n: "01",
     title: "Upload your project",
-    desc: "Drag plans, scope, and survey. We extract address, type, and budget — automatically.",
+    desc: "Drop your plans. We pull the address and budget for you.",
   },
   {
     n: "02",
     title: "Verified builders match",
-    desc: "ABN + state-register checked. Filtered by suburb, type, and capacity. No tyre-kickers.",
+    desc: "Real builders. ABN and licence checked. No tyre-kickers.",
   },
   {
     n: "03",
-    title: "Compare side-by-side",
-    desc: "Median, spread, line-items. See where they agree and where they differ — at a glance.",
+    title: "Compare side by side",
+    desc: "Every tender lined up. Price timing scope all in one view.",
   },
   {
     n: "04",
-    title: "Award. Build. Done.",
-    desc: "One click awards the winner, opens the contract, and kicks off the build.",
+    title: "Award the winner",
+    desc: "One click. The contract opens and the build begins.",
   },
 ];
 
 const TOTAL = STEPS.length;
-/** Fraction of total scroll one card takes to slide in. */
 const SLIDE_WINDOW = 0.1;
 
 export function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null);
   const fillRef = useRef<HTMLSpanElement>(null);
   const stepRefs = useRef<Array<HTMLDivElement | null>>(
+    Array(TOTAL).fill(null),
+  );
+  const dotRefs = useRef<Array<HTMLSpanElement | null>>(
     Array(TOTAL).fill(null),
   );
   const cardRefs = useRef<Array<HTMLDivElement | null>>(
@@ -108,8 +97,6 @@ export function HowItWorks() {
 
       const rect = section.getBoundingClientRect();
       const vh = window.innerHeight;
-
-      // Skip work when the section is entirely out of view.
       if (rect.bottom < 0 || rect.top > vh) return;
 
       const scrollableDist = section.offsetHeight - vh;
@@ -118,34 +105,28 @@ export function HowItWorks() {
       const scrolled = -rect.top;
       const progress = Math.max(0, Math.min(1, scrolled / scrollableDist));
 
-      // 1) Progress bar — scaleX 0→1.
+      // Progress rail fill
       const fill = fillRef.current;
       if (fill) {
-        fill.style.transform = `scaleX(${progress})`;
+        fill.style.transform = `scaleY(${progress})`;
       }
 
-      // 2) Active step — data attribute toggled, CSS handles the rest.
-      //    `lastActive` cache keeps us from re-touching the DOM when
-      //    the active index hasn't changed across frames.
+      // Active step
       const activeIndex = Math.min(
         TOTAL - 1,
         Math.max(0, Math.floor(progress * TOTAL + 1e-6)),
       );
       if (activeIndex !== lastActive) {
         for (let i = 0; i < TOTAL; i++) {
-          const node = stepRefs.current[i];
-          if (node) {
-            node.dataset.active = i === activeIndex ? "true" : "false";
-          }
+          const step = stepRefs.current[i];
+          if (step) step.dataset.active = i === activeIndex ? "true" : "false";
+          const dot = dotRefs.current[i];
+          if (dot) dot.dataset.active = i === activeIndex ? "true" : "false";
         }
         lastActive = activeIndex;
       }
 
-      // 3) Card stack-slide — translateY in percentages.
-      //    Each card slides from y=100% (below the canvas, fully
-      //    hidden) up to y=0% over its own 10% progress window.
-      //    Card 0's window ends at progress 0 so it's already at
-      //    y=0% when the user arrives.
+      // Card stack-slide
       for (let i = 0; i < TOTAL; i++) {
         const card = cardRefs.current[i];
         if (!card) continue;
@@ -174,47 +155,81 @@ export function HowItWorks() {
       }}
     >
       <div className="sticky top-0 h-dvh flex flex-col overflow-hidden">
-        <div className="flex-1 max-w-[1320px] w-full mx-auto px-5 md:px-10 lg:px-16 grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-20 items-center pt-20 sm:pt-24 lg:pt-28 pb-12 sm:pb-16 lg:pb-20">
-          {/* ── Left: header + steps ─────────────────────────────── */}
-          <div className="order-2 lg:order-1 flex flex-col gap-8 lg:gap-10">
-            <Header fillRef={fillRef} />
-            <StepList stepRefs={stepRefs} />
+        {/* ── Heading at top ─────────────────────────────────────── */}
+        <header className="px-5 md:px-10 pt-12 sm:pt-16 lg:pt-20 pb-6 sm:pb-8 max-w-3xl mx-auto w-full text-center">
+          <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.28em] uppercase text-accent font-ui font-semibold mb-5">
+            <span className="relative flex size-1.5">
+              <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
+              <span className="relative size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
+            </span>
+            How BuilderHQ works
+          </span>
+
+          <h2 className="font-display uppercase tracking-[-0.014em] leading-[0.92] text-[clamp(2.25rem,4vw+0.75rem,4.5rem)] text-text">
+            From plans to{" "}
+            <span
+              className="text-accent-light"
+              style={{
+                textShadow:
+                  "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
+              }}
+            >
+              builder
+            </span>
+            .
+            <span className="block">In days. Not months.</span>
+          </h2>
+        </header>
+
+        {/* ── Card area + side rail ──────────────────────────────── */}
+        <div className="flex-1 relative w-full max-w-[1280px] mx-auto px-5 md:px-10 pb-10 sm:pb-12 lg:pb-16 flex items-center">
+          {/* Desktop: numbered rail floats absolute to the left so
+              the card stays optically centred. Hidden under lg. */}
+          <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-10">
+            <NumberRail stepRefs={stepRefs} fillRef={fillRef} />
           </div>
 
-          {/* ── Right: stack-slide canvas ────────────────────────── */}
-          <div className="order-1 lg:order-2 relative w-full aspect-[4/3] sm:aspect-[5/4] lg:aspect-[4/3] rounded-2xl border border-[rgba(0,212,200,0.18)] overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-            <VisualCard
-              ref={(el) => {
-                cardRefs.current[0] = el;
-              }}
-              index={0}
-            >
-              <UploadContent />
-            </VisualCard>
-            <VisualCard
-              ref={(el) => {
-                cardRefs.current[1] = el;
-              }}
-              index={1}
-            >
-              <MatchContent />
-            </VisualCard>
-            <VisualCard
-              ref={(el) => {
-                cardRefs.current[2] = el;
-              }}
-              index={2}
-            >
-              <CompareContent />
-            </VisualCard>
-            <VisualCard
-              ref={(el) => {
-                cardRefs.current[3] = el;
-              }}
-              index={3}
-            >
-              <AwardContent />
-            </VisualCard>
+          {/* Mobile: compact horizontal dot indicator above the card. */}
+          <div className="lg:hidden absolute left-1/2 -translate-x-1/2 top-0 z-10">
+            <DotIndicator dotRefs={dotRefs} />
+          </div>
+
+          {/* Card stack — centred. */}
+          <div className="mx-auto w-full max-w-[640px] mt-10 lg:mt-0">
+            <div className="relative w-full aspect-[5/4] sm:aspect-[5/4] rounded-2xl border border-[rgba(0,212,200,0.18)] overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+              <VisualCard
+                ref={(el) => {
+                  cardRefs.current[0] = el;
+                }}
+                index={0}
+              >
+                <UploadContent />
+              </VisualCard>
+              <VisualCard
+                ref={(el) => {
+                  cardRefs.current[1] = el;
+                }}
+                index={1}
+              >
+                <MatchContent />
+              </VisualCard>
+              <VisualCard
+                ref={(el) => {
+                  cardRefs.current[2] = el;
+                }}
+                index={2}
+              >
+                <CompareContent />
+              </VisualCard>
+              <VisualCard
+                ref={(el) => {
+                  cardRefs.current[3] = el;
+                }}
+                index={3}
+              >
+                <AwardContent />
+              </VisualCard>
+            </div>
           </div>
         </div>
       </div>
@@ -222,72 +237,39 @@ export function HowItWorks() {
   );
 }
 
-// ── Header ────────────────────────────────────────────────────────
+// ── Numbered rail (desktop) ───────────────────────────────────────
 
-function Header({
+function NumberRail({
+  stepRefs,
   fillRef,
 }: {
+  stepRefs: React.RefObject<Array<HTMLDivElement | null>>;
   fillRef: React.RefObject<HTMLSpanElement | null>;
 }) {
   return (
-    <div className="flex flex-col gap-5 sm:gap-6">
-      <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-        <span className="relative flex size-1.5">
-          <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
-          <span className="relative size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
-        </span>
-        How BuilderHQ works
-      </span>
+    <div className="relative flex flex-col gap-9 pl-6">
+      {/* Vertical track + scroll-progress fill */}
+      <span
+        aria-hidden
+        className="absolute left-[15px] top-2 bottom-2 w-px bg-[rgba(255,255,255,0.08)]"
+      />
+      <span
+        ref={fillRef}
+        aria-hidden
+        className="absolute left-[15px] top-2 bottom-2 w-px bg-accent origin-top"
+        style={{
+          transform: "scaleY(0)",
+          boxShadow: "0 0 12px rgba(0,212,200,0.55)",
+          willChange: "transform",
+        }}
+      />
 
-      <h2 className="font-display uppercase tracking-[-0.014em] leading-[0.9] text-[clamp(2.25rem,4.5vw+0.75rem,4.25rem)] text-text">
-        From plans to{" "}
-        <span
-          className="text-accent-light"
-          style={{
-            textShadow:
-              "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
-          }}
-        >
-          builder
-        </span>
-        .
-        <span className="block text-text">In days, not months.</span>
-      </h2>
-
-      <p className="text-[14.5px] sm:text-[15px] leading-[1.65] text-text-subtle max-w-[28rem]">
-        Four steps, modelled on how Australian residential projects actually
-        tender. Scroll to walk through.
-      </p>
-
-      <div className="relative h-px w-full bg-[rgba(255,255,255,0.08)] max-w-[22rem] mt-1 overflow-hidden">
-        <span
-          ref={fillRef}
-          className="absolute inset-y-0 left-0 right-0 bg-accent origin-left"
-          style={{
-            transform: "scaleX(0)",
-            boxShadow: "0 0 12px rgba(0,212,200,0.55)",
-            willChange: "transform",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Step list ─────────────────────────────────────────────────────
-
-function StepList({
-  stepRefs,
-}: {
-  stepRefs: React.RefObject<Array<HTMLDivElement | null>>;
-}) {
-  return (
-    <div className="flex flex-col gap-4 sm:gap-5">
       {STEPS.map((step, i) => (
-        <Step
+        <RailStep
           key={i}
-          index={i}
-          {...step}
+          n={step.n}
+          title={step.title}
+          desc={step.desc}
           assignRef={(el) => {
             stepRefs.current[i] = el;
           }}
@@ -297,14 +279,12 @@ function StepList({
   );
 }
 
-function Step({
-  index: _index,
+function RailStep({
   n,
   title,
   desc,
   assignRef,
 }: {
-  index: number;
   n: string;
   title: string;
   desc: string;
@@ -314,34 +294,59 @@ function Step({
     <div
       ref={assignRef}
       data-active="false"
-      className={cn(
-        "group flex items-start gap-4 sm:gap-5",
-        // Dim inactive; full opacity active. CSS-driven, no JS state.
-        "opacity-[0.32] data-[active=true]:opacity-100 transition-opacity duration-300 ease-out",
-      )}
+      className="group relative flex items-start gap-4 pl-2 transition-opacity duration-300 ease-out opacity-[0.4] data-[active=true]:opacity-100"
     >
-      <div className="relative shrink-0">
-        {/* Outline (always rendered, sits behind). */}
-        <span className="size-10 sm:size-11 rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.025)] flex items-center justify-center text-[11px] sm:text-[12px] tracking-[0.04em] font-ui font-semibold text-text-muted">
+      {/* Number dot — outline by default, fills teal when active. */}
+      <div className="relative shrink-0 -ml-6">
+        <span className="size-9 rounded-full border border-[rgba(255,255,255,0.18)] bg-[#06121e] flex items-center justify-center text-[11px] tracking-[0.05em] font-ui font-semibold text-text-muted">
           {n}
         </span>
-        {/* Filled teal halo — fades in when parent is data-active. */}
         <span
           aria-hidden
-          className="absolute inset-0 size-10 sm:size-11 rounded-full bg-accent text-[11px] sm:text-[12px] tracking-[0.04em] font-ui font-semibold text-accent-contrast flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_0_0_1px_rgba(0,212,200,0.45),0_0_28px_-2px_rgba(0,212,200,0.65)] opacity-0 group-data-[active=true]:opacity-100 transition-opacity duration-300 ease-out"
+          className="absolute inset-0 size-9 rounded-full bg-accent text-[11px] tracking-[0.05em] font-ui font-semibold text-accent-contrast flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_0_0_1px_rgba(0,212,200,0.45),0_0_24px_-2px_rgba(0,212,200,0.7)] opacity-0 group-data-[active=true]:opacity-100 transition-opacity duration-300 ease-out"
         >
           {n}
         </span>
       </div>
 
-      <div className="flex-1 min-w-0 pt-1">
-        <h3 className="font-ui font-semibold text-[17px] sm:text-[19px] tracking-[-0.008em] text-text leading-[1.25]">
+      <div className="pt-1 max-w-[180px]">
+        <h3 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text leading-[1.3]">
           {title}
         </h3>
-        <p className="mt-1.5 text-[13px] sm:text-[13.5px] text-text-muted leading-[1.55]">
+        <p className="mt-1 text-[12px] text-text-muted leading-[1.45]">
           {desc}
         </p>
       </div>
+    </div>
+  );
+}
+
+// ── Compact dot indicator (mobile) ────────────────────────────────
+
+function DotIndicator({
+  dotRefs,
+}: {
+  dotRefs: React.RefObject<Array<HTMLSpanElement | null>>;
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-full px-3 py-1.5">
+      {STEPS.map((step, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span
+            ref={(el) => {
+              dotRefs.current[i] = el;
+            }}
+            data-active="false"
+            className="size-1.5 rounded-full bg-[rgba(255,255,255,0.18)] data-[active=true]:bg-accent data-[active=true]:shadow-[0_0_8px_rgba(0,212,200,0.7)] transition-colors duration-300"
+          />
+          {i < STEPS.length - 1 ? (
+            <span className="size-0.5 rounded-full bg-[rgba(255,255,255,0.15)]" />
+          ) : null}
+        </div>
+      ))}
+      <span className="ml-1 text-[9px] tracking-[0.18em] uppercase text-text-faint font-ui font-semibold">
+        {STEPS.length} steps
+      </span>
     </div>
   );
 }
@@ -355,8 +360,6 @@ interface VisualCardProps {
 }
 
 function VisualCard({ ref, index, children }: VisualCardProps) {
-  // Initial transform: card 0 visible at 0%, cards 1–3 start fully
-  // below the canvas at 100%. The RAF loop updates these every frame.
   const initialY = index === 0 ? 0 : 100;
   return (
     <div
@@ -364,18 +367,11 @@ function VisualCard({ ref, index, children }: VisualCardProps) {
       style={{
         transform: `translateY(${initialY}%)`,
         zIndex: index + 1,
-        // Fully OPAQUE gradient. The previous rgba(*, 0.7) bottom
-        // stop left a 30% transparency window through which the
-        // card beneath was visible — the "stacking but see-through"
-        // bug. Solid colour endpoints kill that. The brand teal
-        // tint at top is preserved by mixing it into the start
-        // colour rather than using an rgba overlay.
         background: "linear-gradient(180deg, #0a1f29 0%, #06121e 100%)",
         willChange: "transform",
       }}
-      className="absolute inset-0 overflow-hidden p-5 sm:p-7 lg:p-10 flex items-center justify-center"
+      className="absolute inset-0 overflow-hidden p-5 sm:p-7 lg:p-8 flex flex-col"
     >
-      {/* Corner glow */}
       <span
         aria-hidden
         className="absolute -top-24 -right-24 size-96 rounded-full opacity-60 pointer-events-none"
@@ -384,64 +380,65 @@ function VisualCard({ ref, index, children }: VisualCardProps) {
             "radial-gradient(circle, rgba(0,212,200,0.22), transparent 70%)",
         }}
       />
-      {/* Top hairline */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/14 to-transparent"
       />
-      {/* Step chip */}
-      <span className="absolute top-4 left-4 sm:top-5 sm:left-5 text-[9.5px] tracking-[0.22em] uppercase text-text-faint font-ui font-semibold">
-        {STEPS[index]?.n} / {String(TOTAL).padStart(2, "0")}
-      </span>
 
-      <div className="relative w-full max-w-md">{children}</div>
+      <div className="relative w-full h-full flex flex-col">{children}</div>
     </div>
   );
 }
 
-// ── Card content — Upload ─────────────────────────────────────────
+// ── Card 1 — Upload ───────────────────────────────────────────────
 
 function UploadContent() {
   return (
-    <div className="flex flex-col gap-3.5">
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
-          <MapPin size={10} strokeWidth={2} />
-          Brunswick · VIC
-        </span>
-        <span className="text-[10px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
-          Single dwelling
-        </span>
-      </div>
+    <>
+      <CardHeader
+        left={
+          <>
+            <MapPin size={11} strokeWidth={2} />
+            Brunswick VIC
+          </>
+        }
+        right="Single dwelling"
+      />
 
-      <div className="rounded-xl border border-dashed border-[rgba(0,212,200,0.3)] bg-[rgba(0,212,200,0.04)] p-4 sm:p-5 flex flex-col items-center gap-1">
-        <div className="size-9 rounded-full bg-[rgba(0,212,200,0.10)] flex items-center justify-center text-accent-light">
-          <Upload size={15} strokeWidth={2} />
+      <div className="mt-4 rounded-xl border border-dashed border-[rgba(0,212,200,0.35)] bg-[rgba(0,212,200,0.05)] p-5 sm:p-6 flex flex-col items-center gap-2">
+        <div className="size-11 rounded-full bg-[rgba(0,212,200,0.12)] flex items-center justify-center text-accent-light">
+          <Upload size={17} strokeWidth={2} />
         </div>
-        <p className="text-[12.5px] text-text font-ui font-semibold mt-1">
-          Drop your plans + scope
+        <p className="text-[13.5px] text-text font-ui font-semibold mt-1">
+          Drop your plans here
         </p>
-        <p className="text-[10.5px] text-text-dim">
-          PDF, DWG, DOC · up to 50 MB
+        <p className="text-[11px] text-text-dim">
+          PDF DWG DOC. Up to 50 MB.
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="mt-3 flex flex-col gap-1.5">
         <FileChip name="architectural-plans-v3.pdf" size="12.4 MB" />
         <FileChip name="site-survey.pdf" size="2.1 MB" />
         <FileChip name="scope-of-works.docx" size="188 KB" />
       </div>
 
-      <div className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5">
-        <div className="flex items-center gap-1.5 text-[9.5px] tracking-[0.18em] uppercase text-accent-light font-ui font-semibold mb-1.5">
-          <Sparkles size={10} strokeWidth={2.4} />
-          Auto-extracted
+      <div className="mt-auto pt-3 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 flex items-start gap-2.5">
+        <Sparkles
+          size={13}
+          strokeWidth={2.4}
+          className="text-accent-light mt-0.5 shrink-0"
+        />
+        <div>
+          <div className="text-[9.5px] tracking-[0.18em] uppercase text-accent-light font-ui font-semibold mb-0.5">
+            Auto-extracted
+          </div>
+          <p className="text-[11.5px] text-text-muted leading-[1.5]">
+            45 Sydney Rd Brunswick VIC. 450 m². Budget $500k to $750k.
+          </p>
         </div>
-        <p className="text-[11.5px] text-text-muted leading-[1.5]">
-          45 Sydney Rd, Brunswick VIC · Land 450 m² · Budget $500k–$750k
-        </p>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -449,60 +446,73 @@ function FileChip({ name, size }: { name: string; size: string }) {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
       <div className="flex items-center gap-2.5 min-w-0">
-        <FileCheck size={13} strokeWidth={2} className="text-accent-light shrink-0" />
+        <FileCheck
+          size={13}
+          strokeWidth={2}
+          className="text-accent-light shrink-0"
+        />
         <span className="text-[11.5px] text-text font-ui truncate">{name}</span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[10px] text-text-dim font-mono tabular-nums">{size}</span>
+        <span className="text-[10px] text-text-dim font-mono tabular-nums">
+          {size}
+        </span>
         <CheckCircle2 size={12} strokeWidth={2.2} className="text-accent-light" />
       </div>
     </div>
   );
 }
 
-// ── Card content — Match ──────────────────────────────────────────
+// ── Card 2 — Match ────────────────────────────────────────────────
 
 function MatchContent() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
-          3 verified builders matched
-        </span>
-        <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
-          <span className="relative flex size-1.5">
-            <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
-            <span className="relative size-1.5 rounded-full bg-accent" />
-          </span>
-          Live
-        </span>
+    <>
+      <CardHeader
+        left="3 verified builders matched"
+        right={
+          <>
+            <span className="relative flex size-1.5">
+              <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
+              <span className="relative size-1.5 rounded-full bg-accent" />
+            </span>
+            Live
+          </>
+        }
+      />
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        <BuilderCard
+          initials="AB"
+          gradient="from-[#00d4c8] to-[#1a5fd4]"
+          name="Atlas Build Co"
+          area="Inner West VIC. 6 km away."
+          badge="verified"
+          stats="5 active projects. 95% on-time."
+        />
+        <BuilderCard
+          initials="NB"
+          gradient="from-[#7ef5ed] to-[#00d4c8]"
+          name="Northline Builders"
+          area="Brunswick. 4 km away."
+          badge="verified"
+          stats="12 won. 100% on-time."
+        />
+        <BuilderCard
+          initials="HG"
+          gradient="from-[#1a5fd4] to-[#7ef5ed]"
+          name="Heritage Group"
+          area="CBD and North. 8 km away."
+          badge="founding"
+          stats="Founding builder."
+        />
       </div>
 
-      <BuilderCard
-        initials="AB"
-        gradient="from-[#00d4c8] to-[#1a5fd4]"
-        name="Atlas Build Co"
-        area="Inner West VIC · 6 km"
-        badge="verified"
-        stats="5 active · 95% on-time"
-      />
-      <BuilderCard
-        initials="NB"
-        gradient="from-[#7ef5ed] to-[#00d4c8]"
-        name="Northline Builders"
-        area="Brunswick · 4 km"
-        badge="verified"
-        stats="12 won · 100% on-time"
-      />
-      <BuilderCard
-        initials="HG"
-        gradient="from-[#1a5fd4] to-[#7ef5ed]"
-        name="Heritage Group"
-        area="CBD + North · 8 km"
-        badge="founding"
-        stats="Founding builder"
-      />
-    </div>
+      <div className="mt-auto pt-4 flex items-center gap-2 text-[10.5px] text-text-dim">
+        <ShieldCheck size={12} strokeWidth={2} className="text-accent-light" />
+        Every match passes ABN and state register checks.
+      </div>
+    </>
   );
 }
 
@@ -522,10 +532,10 @@ function BuilderCard({
   stats: string;
 }) {
   return (
-    <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)]">
+    <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)]">
       <div
         className={cn(
-          "size-9 sm:size-10 rounded-full bg-gradient-to-br flex items-center justify-center text-[11px] sm:text-[12px] font-bold text-accent-contrast shrink-0",
+          "size-10 rounded-full bg-gradient-to-br flex items-center justify-center text-[12px] font-bold text-accent-contrast shrink-0",
           gradient,
         )}
       >
@@ -533,7 +543,7 @@ function BuilderCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[12.5px] sm:text-[13px] font-ui font-semibold text-text truncate">
+          <span className="text-[13px] font-ui font-semibold text-text truncate">
             {name}
           </span>
           {badge === "verified" ? (
@@ -547,65 +557,89 @@ function BuilderCard({
             </span>
           )}
         </div>
-        <p className="text-[10px] sm:text-[10.5px] text-text-dim mt-0.5 truncate">
-          {area} · {stats}
+        <p className="text-[10.5px] text-text-dim mt-0.5 truncate">
+          {area} {stats}
         </p>
       </div>
+      <ArrowRight
+        size={12}
+        strokeWidth={2}
+        className="text-text-faint shrink-0"
+      />
     </div>
   );
 }
 
-// ── Card content — Compare ────────────────────────────────────────
+// ── Card 3 — Compare ──────────────────────────────────────────────
 
 function CompareContent() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
-          Tender comparison · 3 received
-        </span>
-        <span className="text-[10px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
-          Median $1.86M
-        </span>
-      </div>
+    <>
+      <CardHeader
+        left="Tender comparison. 3 received."
+        right="Median $1.86M"
+      />
 
-      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-3.5">
+      <div className="mt-4 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
             Price distribution
           </span>
           <span className="text-[10px] text-accent-light font-ui font-semibold">
-            7% spread · tight
+            7% spread. Tight.
           </span>
         </div>
         <div className="relative h-1.5 rounded-full bg-[rgba(255,255,255,0.05)]">
           <div className="absolute inset-y-0 left-[8%] right-[16%] rounded-full bg-gradient-to-r from-[rgba(0,212,200,0.25)] via-accent/80 to-[rgba(0,212,200,0.25)]" />
           <span className="absolute top-1/2 -translate-y-1/2 left-[8%] -translate-x-1/2 size-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.8)]" />
-          <span className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 size-3.5 rounded-full bg-accent border-2 border-[rgba(6,18,30,1)] shadow-[0_0_14px_rgba(0,212,200,1)]" />
+          <span className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 size-3.5 rounded-full bg-accent border-2 border-[#06121e] shadow-[0_0_14px_rgba(0,212,200,1)]" />
           <span className="absolute top-1/2 -translate-y-1/2 right-[16%] translate-x-1/2 size-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.8)]" />
         </div>
         <div className="flex items-center justify-between mt-2 text-[10px] tabular-nums">
           <span className="text-text-dim font-mono">$1.78M</span>
           <span className="text-accent-light font-mono font-semibold">
-            $1.86M ←
+            $1.86M
           </span>
           <span className="text-text-dim font-mono">$1.91M</span>
         </div>
       </div>
 
-      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] overflow-hidden">
+      <div className="mt-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] overflow-hidden">
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-3.5 py-2 border-b border-[rgba(255,255,255,0.04)] items-center bg-[rgba(255,255,255,0.012)]">
           <span />
-          <span className="text-[9px] tracking-[0.10em] uppercase text-text-dim font-ui w-12 text-right">AB</span>
-          <span className="text-[9px] tracking-[0.10em] uppercase text-accent-light font-ui w-12 text-right">NB</span>
-          <span className="text-[9px] tracking-[0.10em] uppercase text-text-dim font-ui w-12 text-right">HG</span>
+          <span className="text-[9px] tracking-[0.10em] uppercase text-text-dim font-ui w-14 text-right">
+            AB
+          </span>
+          <span className="text-[9px] tracking-[0.10em] uppercase text-accent-light font-ui w-14 text-right">
+            NB
+          </span>
+          <span className="text-[9px] tracking-[0.10em] uppercase text-text-dim font-ui w-14 text-right">
+            HG
+          </span>
         </div>
-        <ComparisonRow label="ABN + Licence" values={["✓", "✓", "✓"]} highlight={1} accent />
-        <ComparisonRow label="Start date" values={["Sep 26", "Sep 26", "Oct 26"]} highlight={1} />
-        <ComparisonRow label="Validity" values={["28d", "30d", "25d"]} highlight={1} />
-        <ComparisonRow label="Allowances" values={["3", "5", "2"]} highlight={1} />
+        <ComparisonRow
+          label="ABN and licence"
+          values={["Yes", "Yes", "Yes"]}
+          highlight={1}
+        />
+        <ComparisonRow
+          label="Start date"
+          values={["Sep 26", "Sep 26", "Oct 26"]}
+          highlight={1}
+        />
+        <ComparisonRow
+          label="Validity"
+          values={["28 d", "30 d", "25 d"]}
+          highlight={1}
+        />
+        <ComparisonRow
+          label="Total"
+          values={["$1.78M", "$1.86M", "$1.91M"]}
+          highlight={1}
+          accent
+        />
       </div>
-    </div>
+    </>
   );
 }
 
@@ -621,7 +655,7 @@ function ComparisonRow({
   accent?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-3.5 py-2 border-b border-[rgba(255,255,255,0.04)] last:border-b-0 items-center">
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-3.5 py-2.5 border-b border-[rgba(255,255,255,0.04)] last:border-b-0 items-center">
       <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim font-ui">
         {label}
       </span>
@@ -629,9 +663,9 @@ function ComparisonRow({
         <span
           key={i}
           className={cn(
-            "text-[11px] font-mono tabular-nums w-12 text-right",
+            "text-[11px] font-mono tabular-nums w-14 text-right",
             i === highlight ? "text-accent-light font-semibold" : "text-text",
-            accent && "text-accent-light",
+            accent && i === highlight && "text-accent-light font-bold",
           )}
         >
           {v}
@@ -641,23 +675,23 @@ function ComparisonRow({
   );
 }
 
-// ── Card content — Award ──────────────────────────────────────────
+// ── Card 4 — Award ────────────────────────────────────────────────
 
 function AwardContent() {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium">
-          Decision made
-        </span>
-        <span className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
-          <Trophy size={10} strokeWidth={2.4} />
-          Awarded
-        </span>
-      </div>
+    <>
+      <CardHeader
+        left="Decision made"
+        right={
+          <>
+            <Trophy size={11} strokeWidth={2.4} />
+            Awarded
+          </>
+        }
+      />
 
       <div
-        className="relative rounded-xl border border-[rgba(0,212,200,0.45)] p-4 overflow-hidden"
+        className="mt-4 relative rounded-xl border border-[rgba(0,212,200,0.45)] p-4 overflow-hidden"
         style={{
           background:
             "linear-gradient(180deg, rgba(0,212,200,0.10), rgba(6,18,30,0.6))",
@@ -682,7 +716,7 @@ function AwardContent() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[14px] font-ui font-semibold text-text">
+              <span className="text-[14.5px] font-ui font-semibold text-text">
                 Northline Builders
               </span>
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.10em] uppercase text-accent-light">
@@ -690,13 +724,13 @@ function AwardContent() {
                 Winner
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[11px] text-text-muted">
-              <Wallet size={10} strokeWidth={2} className="text-accent-light" />
+            <div className="mt-1 flex items-center gap-2 text-[11.5px] text-text-muted flex-wrap">
+              <Wallet size={11} strokeWidth={2} className="text-accent-light" />
               <span className="font-mono tabular-nums text-text font-semibold">
                 $1.86M
               </span>
               <span className="text-text-faint">·</span>
-              <span>30d validity</span>
+              <span>30 day validity</span>
               <span className="text-text-faint">·</span>
               <span>Sep 26 start</span>
             </div>
@@ -704,18 +738,18 @@ function AwardContent() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-3.5">
+      <div className="mt-3 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-4">
         <span className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold mb-3 block">
           Next steps
         </span>
         <div className="flex flex-col gap-2.5">
-          <TimelineRow status="done" text="Tender awarded · 12:32 PM" />
-          <TimelineRow status="active" text="Contract drafting" />
-          <TimelineRow status="pending" text="Site visit · scheduled" />
-          <TimelineRow status="pending" text="Build kick-off · TBD" />
+          <TimelineRow status="done" text="Tender awarded. 12:32 PM." />
+          <TimelineRow status="active" text="Contract drafting." />
+          <TimelineRow status="pending" text="Site visit scheduled." />
+          <TimelineRow status="pending" text="Build kick-off." />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -733,8 +767,7 @@ function TimelineRow({
           "size-4 rounded-full flex items-center justify-center shrink-0",
           status === "done" &&
             "bg-accent text-accent-contrast shadow-[0_0_8px_rgba(0,212,200,0.6)]",
-          status === "active" &&
-            "border border-accent bg-accent-muted/40",
+          status === "active" && "border border-accent bg-accent-muted/40",
           status === "pending" &&
             "border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.02)]",
         )}
@@ -747,7 +780,7 @@ function TimelineRow({
       </span>
       <span
         className={cn(
-          "text-[11.5px] font-ui",
+          "text-[12px] font-ui",
           status === "done" || status === "active"
             ? "text-text"
             : "text-text-dim",
@@ -762,6 +795,27 @@ function TimelineRow({
           className="text-accent-light ml-auto"
         />
       ) : null}
+    </div>
+  );
+}
+
+// ── Shared card header ────────────────────────────────────────────
+
+function CardHeader({
+  left,
+  right,
+}: {
+  left: React.ReactNode;
+  right: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-[10px] tracking-[0.18em] uppercase font-ui font-semibold">
+      <span className="inline-flex items-center gap-1.5 text-text-dim">
+        {left}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-accent">
+        {right}
+      </span>
     </div>
   );
 }
