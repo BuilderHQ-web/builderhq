@@ -1,1166 +1,648 @@
 "use client";
 
 /**
- * BuildingReveal — Real 3D cinematic hero (Three.js / React-Three-Fiber).
+ * BuildingReveal — Hero centrepiece.
  *
- * A procedural dual-occupancy townhouse rendered with Three.js
- * primitives. Real PBR materials, real lights (ambient + key
- * directional + four warm point lights inside the building shining
- * through window glass), real soft shadows beneath the structure,
- * gentle camera orbit, and an 18-second cinematic loop with four
- * acts:
+ * Despite the legacy filename, this is the *live dashboard card* —
+ * a single, beautifully framed glass card showing the BuilderHQ
+ * tender comparison product. It's the most direct way to answer
+ * "what is this product?" in the hero: by showing it.
  *
- *   Act 1 · Construct   ( 0.0s –  7.0s )  walls rise floor by floor
- *   Act 2 · Settle      ( 7.0s –  9.0s )  roof drops on, edges crisp up
- *   Act 3 · Illuminate  ( 9.0s – 14.0s )  interior lights fade in,
- *                                         windows glow warm, gentle
- *                                         breath; camera orbits
- *   Act 4 · Dissolve   (14.0s – 17.5s )  building scales down, particle
- *                                         field bursts out and fades
- *   Act 5 · Reset      (17.5s – 18.0s )  back to start
+ * Composition
+ * ───────────
+ *   · Glass card with deep multi-layer shadow, hairline top-edge
+ *     accent, soft corner glow, inner highlight stroke.
+ *   · Header row: project name + live pulse + "comparing" badge.
+ *   · KPI strip: tenders / median / spread (live).
+ *   · Three tender rows: builder avatar, name, verified chips,
+ *     price (live-ticking on the active row), delta vs median,
+ *     "Best value" pill on the winning row.
+ *   · Sparkline footer: tiny line chart drawing the price
+ *     distribution, animates on mount.
+ *   · "New tender just arrived" notification toast that slides
+ *     in from the top every ~9 seconds, reshuffles the rankings
+ *     subtly, then slides out.
  *
- * Implementation notes
- * ────────────────────
- *   · Pure procedural geometry — no GLB model required. All meshes are
- *     primitives (box/plane) so the bundle includes only the three.js
- *     core, R3F, and a handful of drei helpers.
- *   · Construction "rises" via group `scale.y` from 0→1, anchored at
- *     the floor so each band grows up from the foundation, not from
- *     its centre.
- *   · Window lighting uses emissive material on the glass + a
- *     proportional point-light intensity inside each unit so the
- *     warm glow also tints the surrounding wall surfaces.
- *   · ContactShadows under the building handles the soft floor shadow.
- *   · Particles are simple meshes inside a single group, animated each
- *     frame with seeded jitter so the dissolution looks chaotic
- *     without being random per render.
- *   · prefers-reduced-motion freezes the scene at the "Illuminate" beat.
+ * Interaction
+ * ───────────
+ *   · Cursor-tracked 3D tilt (rotateX / rotateY) with smooth
+ *     lerp via requestAnimationFrame. Hovering the card feels
+ *     like holding a real object.
+ *   · A peek of a second card behind suggests there's more to
+ *     the product than this one moment.
+ *
+ * No 3D, no WebGL, no abstract metaphor. The card sells the
+ * actual product.
  */
 
 import * as React from "react";
-import { Suspense, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows, Environment } from "@react-three/drei";
-import * as THREE from "three";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Sparkles, ShieldCheck, Trophy, TrendingUp, ArrowDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// ── World dimensions ──────────────────────────────────────────────
-// Conceptually metres. Camera and floor adjusted to suit.
+// ── Source data ───────────────────────────────────────────────────
+// The tender data we render. The active row's price ticks live, and
+// every cycle the "new tender" toast may shift the ranking. Source-
+// of-truth here so the card stays self-contained.
 
-const W = 5.4; // total building width (X)
-const D = 3.2; // total building depth (Z)
-const H_GF = 1.55; // ground floor height
-const H_F1 = 1.45; // first floor height
-const H_PARAPET = 0.20; // parapet edge cap
-const GAP = 0.10; // party-wall gap
-
-const UA_HALF = (W - GAP) / 4; // half width of unit A from its centre
-const UA_CX = -(GAP / 2 + UA_HALF); // unit A centre X
-const UB_CX = +(GAP / 2 + UA_HALF); // unit B centre X
-const UNIT_W = UA_HALF * 2; // each unit width
-
-// ── Master loop length (seconds) ──────────────────────────────────
-const LOOP = 18;
-
-// ── Animation curve helpers ───────────────────────────────────────
-function smoothstep(edge0: number, edge1: number, x: number) {
-  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-}
-function easeOut(t: number) {
-  return 1 - Math.pow(1 - t, 3);
-}
-function easeInOut(t: number) {
-  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-}
-function clamp01(t: number) {
-  return Math.max(0, Math.min(1, t));
-}
-
-// ── Phase windows on the master loop (in seconds) ────────────────
-const PHASE = {
-  groundStart: 0.4,
-  groundEnd: 2.4,
-  firstStart: 2.0,
-  firstEnd: 4.2,
-  parapetStart: 4.0,
-  parapetEnd: 5.0,
-  roofStart: 5.0,
-  roofEnd: 6.8,
-  apertureStart: 6.6,
-  apertureEnd: 8.4,
-  lightsStart: 9.0,
-  lightsEnd: 10.8,
-  holdEnd: 14.0,
-  dissolveStart: 14.0,
-  dissolveEnd: 17.5,
-  reset: 17.5,
+type Tender = {
+  initials: string;
+  name: string;
+  basePriceM: number;
+  deltaPct: number;
+  verified: boolean;
+  winner?: boolean;
 };
+
+const TENDERS: Tender[] = [
+  {
+    initials: "NB",
+    name: "Northline Builders",
+    basePriceM: 1.78,
+    deltaPct: -4,
+    verified: true,
+    winner: true,
+  },
+  {
+    initials: "AC",
+    name: "Atlas Build Co",
+    basePriceM: 1.86,
+    deltaPct: 0,
+    verified: true,
+  },
+  {
+    initials: "HG",
+    name: "Heritage Group",
+    basePriceM: 1.91,
+    deltaPct: 3,
+    verified: true,
+  },
+];
+
+// Notifications that slide in over the card on cycle, alternating
+// to keep the "live" feel without becoming noisy.
+const NOTIFICATIONS = [
+  { actor: "Chen Construction", action: "submitted $1.84M tender", tone: "tender" as const },
+  { actor: "Roberts & Co", action: "unlocked your project", tone: "unlock" as const },
+  { actor: "Smith Builders", action: "verified ABN + Licence", tone: "verify" as const },
+];
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function BuildingReveal() {
   return (
     <div
-      className="building-reveal relative mx-auto [--cube-size:300px] sm:[--cube-size:360px] lg:[--cube-size:480px]"
-      style={{
-        width: "var(--cube-size)",
-        height: "calc(var(--cube-size) * 1.05)",
-      }}
+      className="relative mx-auto w-full max-w-[460px] [--card-h:480px] sm:[--card-h:540px] lg:[--card-h:580px]"
+      style={{ perspective: 1800 }}
     >
-      {/* Halo behind the scene */}
+      {/* Ambient halo behind the card */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -inset-12 rounded-full"
+        className="pointer-events-none absolute -inset-12 rounded-[40px]"
         style={{
           background:
-            "radial-gradient(circle, rgba(0,212,200,0.20) 0%, rgba(0,212,200,0.06) 32%, transparent 65%)",
+            "radial-gradient(circle at 50% 40%, rgba(0,212,200,0.22) 0%, rgba(0,212,200,0.07) 28%, transparent 60%)",
         }}
       />
 
-      <PhaseIndicator />
+      {/* Peek of a second card behind the front one — suggests
+          depth and that there's more to the product. */}
+      <PeekCard />
 
-      <div className="absolute inset-0">
-        <Canvas
-          shadows
-          dpr={[1, 2]}
-          gl={{
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance",
-            preserveDrawingBuffer: false,
-          }}
-          camera={{ position: [6.5, 5, 6.5], fov: 28, near: 0.1, far: 60 }}
-          // Transparent background so the page bg shows through.
-          onCreated={({ gl }) => {
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.05;
-          }}
-        >
-          <Suspense fallback={null}>
-            <Scene />
-          </Suspense>
-        </Canvas>
+      {/* The main interactive dashboard card. */}
+      <DashboardCard />
+    </div>
+  );
+}
+
+// ── The peek card (sits behind the front card) ────────────────────
+
+function PeekCard() {
+  return (
+    <div
+      aria-hidden
+      className="absolute left-6 right-6 top-12 rounded-2xl border border-[rgba(100,180,255,0.10)] overflow-hidden"
+      style={{
+        height: "calc(var(--card-h) - 0px)",
+        background: "linear-gradient(180deg, rgba(8,22,36,0.85), rgba(4,14,24,0.92))",
+        transform: "translateY(18px) scale(0.96)",
+        opacity: 0.45,
+        filter: "blur(0.5px)",
+        boxShadow: "0 30px 80px -30px rgba(0,0,0,0.6)",
+      }}
+    >
+      {/* Top hairline */}
+      <span
+        aria-hidden
+        className="absolute top-0 inset-x-10 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(126,245,237,0.35), transparent)",
+        }}
+      />
+      <div className="p-5 opacity-60">
+        <div className="text-[10px] tracking-[0.22em] uppercase text-text-dim">
+          Builder verified
+        </div>
+        <div className="mt-3 flex items-center gap-3">
+          <span
+            className="size-9 rounded-full border border-border-accent text-accent-light flex items-center justify-center text-[11px] font-semibold"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(0,212,200,0.20), rgba(26,95,212,0.20))",
+            }}
+          >
+            JS
+          </span>
+          <div>
+            <div className="text-[12px] font-medium text-text">Smith Builders</div>
+            <div className="text-[10px] text-text-dim">ABN ✓ · Licence ✓</div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── 3D Scene ─────────────────────────────────────────────────────
+// ── The main card ────────────────────────────────────────────────
 
-function Scene() {
-  // Single clock for the whole scene. Loops every LOOP seconds.
-  const clockRef = useRef({ t: 0 });
-  // Phase progress refs — updated each frame, read by all children
-  // via React refs to avoid React renders per frame.
-  const phase = useRef({
-    groundY: 0,
-    firstY: 0,
-    parapetY: 0,
-    roofY: 0,
-    roofOpacity: 0,
-    apertureOpacity: 0,
-    lightsIntensity: 0,
-    buildingOpacity: 1,
-    buildingScale: 1,
-    particles: 0, // 0–1 progress through dissolution
-  });
+function DashboardCard() {
+  // Cursor-tracked tilt
+  const ref = useRef<HTMLDivElement>(null);
+  const rotXRef = useRef(0);
+  const rotYRef = useRef(0);
+  const targetXRef = useRef(0);
+  const targetYRef = useRef(0);
+  const hoveringRef = useRef(false);
 
-  useFrame((state) => {
-    // Advance the loop
-    clockRef.current.t = (state.clock.elapsedTime % LOOP);
-    const t = clockRef.current.t;
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = requestAnimationFrame(update);
+      // Smooth lerp toward target
+      rotXRef.current += (targetXRef.current - rotXRef.current) * 0.08;
+      rotYRef.current += (targetYRef.current - rotYRef.current) * 0.08;
+      const el = ref.current;
+      if (el) {
+        el.style.transform = `rotateX(${rotXRef.current.toFixed(2)}deg) rotateY(${rotYRef.current.toFixed(2)}deg)`;
+      }
+    };
+    raf = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-    // Compute phase progress values
-    phase.current.groundY = easeOut(
-      smoothstep(PHASE.groundStart, PHASE.groundEnd, t),
-    );
-    phase.current.firstY = easeOut(
-      smoothstep(PHASE.firstStart, PHASE.firstEnd, t),
-    );
-    phase.current.parapetY = easeOut(
-      smoothstep(PHASE.parapetStart, PHASE.parapetEnd, t),
-    );
-    phase.current.roofY = easeOut(
-      smoothstep(PHASE.roofStart, PHASE.roofEnd, t),
-    );
-    phase.current.roofOpacity = smoothstep(
-      PHASE.roofStart - 0.2,
-      PHASE.roofEnd,
-      t,
-    );
-    phase.current.apertureOpacity = smoothstep(
-      PHASE.apertureStart,
-      PHASE.apertureEnd,
-      t,
-    );
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    // Map to ± 6deg
+    targetYRef.current = (px - 0.5) * 12;
+    targetXRef.current = -(py - 0.5) * 10;
+  };
+  const onMouseLeave = () => {
+    targetXRef.current = 0;
+    targetYRef.current = 0;
+    hoveringRef.current = false;
+  };
+  const onMouseEnter = () => {
+    hoveringRef.current = true;
+  };
 
-    // Lights fade in then breath gently through the Illuminate beat.
-    const lightOn = smoothstep(PHASE.lightsStart, PHASE.lightsEnd, t);
-    const breath =
-      t > PHASE.lightsEnd && t < PHASE.dissolveStart
-        ? 0.82 + 0.18 * (0.5 + 0.5 * Math.sin((t - PHASE.lightsEnd) * 1.4))
-        : 1;
-    phase.current.lightsIntensity = lightOn * 3.4 * breath;
+  // Live price ticker for the winning row
+  const [winnerPrice, setWinnerPrice] = useState(TENDERS[0]!.basePriceM);
+  useEffect(() => {
+    let raf = 0;
+    let t = 0;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      t += 0.016;
+      // Tiny breath ± $5k around the base — keeps the number
+      // moving without becoming spammy.
+      const drift = Math.sin(t * 0.6) * 0.005;
+      setWinnerPrice(TENDERS[0]!.basePriceM + drift);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-    // Dissolve — building scales down + fades; particles erupt out.
-    const dissolve = smoothstep(PHASE.dissolveStart, PHASE.dissolveEnd, t);
-    phase.current.particles = dissolve;
-    phase.current.buildingOpacity = 1 - dissolve;
-    phase.current.buildingScale = 1 - dissolve * 0.05;
-
-    // Hard reset before the loop restarts — collapse everything so the
-    // ground floor doesn't pop up at full height for one frame.
-    if (t < PHASE.groundStart || t > PHASE.reset) {
-      phase.current.groundY = 0;
-      phase.current.firstY = 0;
-      phase.current.parapetY = 0;
-      phase.current.roofY = 0;
-      phase.current.roofOpacity = 0;
-      phase.current.apertureOpacity = 0;
-      phase.current.lightsIntensity = 0;
-      phase.current.buildingOpacity = 0;
-      phase.current.buildingScale = 1;
-      phase.current.particles = 0;
-    }
-  });
-
-  return (
-    <>
-      {/* HDRI environment for proper PBR reflections. "night" gives
-          us a low-key blue ambient that matches the brand palette. */}
-      <Environment preset="night" environmentIntensity={0.6} />
-
-      {/* Ambient cool moonlight to keep shadows from going pure-black. */}
-      <ambientLight intensity={0.45} color="#7aa0d8" />
-
-      {/* Key directional light from upper-right. Casts shadow onto
-          the ground via ContactShadows beneath. */}
-      <directionalLight
-        position={[8, 9, 4]}
-        intensity={1.4}
-        color="#e8f0ff"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-left={-6}
-        shadow-camera-right={6}
-        shadow-camera-top={6}
-        shadow-camera-bottom={-6}
-        shadow-camera-near={0.5}
-        shadow-camera-far={20}
-        shadow-bias={-0.0005}
-      />
-
-      {/* Teal rim light from the back-left to separate the silhouette
-          from the page. */}
-      <directionalLight
-        position={[-5, 3, -4]}
-        intensity={0.5}
-        color="#7ef5ed"
-      />
-
-      {/* Soft contact shadow under the building. */}
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={0.55}
-        scale={12}
-        blur={2.2}
-        far={4}
-        resolution={512}
-        color="#000"
-      />
-
-      {/* Slow camera orbit + light parallax. */}
-      <CameraRig />
-
-      {/* The townhouse. */}
-      <Townhouse phase={phase} />
-
-      {/* Particle dissolution field — only visible during dissolve. */}
-      <Particles phase={phase} />
-    </>
-  );
-}
-
-// ── Camera rig ────────────────────────────────────────────────────
-
-function CameraRig() {
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    // Camera framing — radius/height tuned so foundation to roof
-    // fits inside the canvas with a touch of headroom. Subtle orbit
-    // (~2° / sec) and vertical bob give the scene a cinematic float
-    // without losing the composition.
-    const r = 9.2;
-    const baseAngle = Math.PI * 0.30;
-    const angle = baseAngle + t * 0.025;
-    const y = 5.0 + Math.sin(t * 0.32) * 0.15;
-    state.camera.position.set(
-      Math.cos(angle) * r,
-      y,
-      Math.sin(angle) * r,
-    );
-    state.camera.lookAt(0, 1.4, 0);
-  });
-  return null;
-}
-
-// ── Townhouse ─────────────────────────────────────────────────────
-
-function Townhouse({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-
-  useFrame(() => {
-    if (groupRef.current) {
-      groupRef.current.scale.setScalar(phase.current.buildingScale);
-    }
-  });
+  // Rotating notifications. One slides in every ~6.5s, shows for
+  // 3.5s, then slides out.
+  const [notifIndex, setNotifIndex] = useState(-1);
+  useEffect(() => {
+    let mounted = true;
+    let cancel: ReturnType<typeof setTimeout> | undefined;
+    const step = (i: number) => {
+      if (!mounted) return;
+      setNotifIndex(i);
+      cancel = setTimeout(() => {
+        if (!mounted) return;
+        setNotifIndex(-1);
+        cancel = setTimeout(() => step((i + 1) % NOTIFICATIONS.length), 3000);
+      }, 3500);
+    };
+    cancel = setTimeout(() => step(0), 2000);
+    return () => {
+      mounted = false;
+      if (cancel) clearTimeout(cancel);
+    };
+  }, []);
 
   return (
-    <group ref={groupRef}>
-      {/* Foundation slab — slightly larger than building footprint. */}
-      <Foundation />
-
-      {/* Ground floor walls (per unit so the gap shows in the front). */}
-      <FloorBand
-        cx={UA_CX}
-        width={UNIT_W}
-        height={H_GF}
-        depth={D}
-        yBase={0}
-        material={WALL_MAT}
-        scaleRef={phase}
-        scaleKey="groundY"
+    <div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className="relative z-[2] rounded-[20px] overflow-hidden"
+      style={{
+        height: "var(--card-h)",
+        background:
+          "linear-gradient(160deg, rgba(10,30,48,0.94) 0%, rgba(6,18,30,0.97) 100%)",
+        border: "1px solid rgba(100,180,255,0.16)",
+        boxShadow: [
+          "inset 0 1px 0 0 rgba(255,255,255,0.06)",
+          "0 1px 0 0 rgba(0,212,200,0.08)",
+          "0 30px 80px -30px rgba(0,0,0,0.65)",
+          "0 60px 140px -40px rgba(0,212,200,0.15)",
+        ].join(", "),
+        transformStyle: "preserve-3d",
+        willChange: "transform",
+        transition: "box-shadow 300ms ease",
+      }}
+    >
+      {/* Top hairline accent — catches "light" along the upper edge */}
+      <span
+        aria-hidden
+        className="absolute top-0 inset-x-8 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(126,245,237,0.6), transparent)",
+        }}
       />
-      <FloorBand
-        cx={UB_CX}
-        width={UNIT_W}
-        height={H_GF}
-        depth={D}
-        yBase={0}
-        material={WALL_MAT}
-        scaleRef={phase}
-        scaleKey="groundY"
+      {/* Inner top highlight (1px brighter line just below the border) */}
+      <span
+        aria-hidden
+        className="absolute top-[1px] inset-x-0 h-px opacity-30"
+        style={{ background: "rgba(255,255,255,0.10)" }}
       />
-
-      {/* First floor walls — slightly inset for a modern stepped look. */}
-      <FloorBand
-        cx={UA_CX}
-        width={UNIT_W}
-        height={H_F1}
-        depth={D - 0.1}
-        yBase={H_GF}
-        material={WALL_MAT_LIGHT}
-        scaleRef={phase}
-        scaleKey="firstY"
+      {/* Corner accent glow — top-right */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full opacity-70"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.18) 0%, transparent 60%)",
+        }}
       />
-      <FloorBand
-        cx={UB_CX}
-        width={UNIT_W}
-        height={H_F1}
-        depth={D - 0.1}
-        yBase={H_GF}
-        material={WALL_MAT_LIGHT}
-        scaleRef={phase}
-        scaleKey="firstY"
-      />
-
-      {/* Parapet cap (full width) — places after both floors. */}
-      <FloorBand
-        cx={0}
-        width={W + 0.05}
-        height={H_PARAPET}
-        depth={D + 0.04}
-        yBase={H_GF + H_F1}
-        material={PARAPET_MAT}
-        scaleRef={phase}
-        scaleKey="parapetY"
+      {/* Subtle grid texture inside the card */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(126,245,237,1) 1px, transparent 1px), linear-gradient(90deg, rgba(126,245,237,1) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
       />
 
-      {/* First-floor balcony overhang — extends in front of the
-          first floor, creates a real architectural step on the
-          front facade and casts a subtle shadow on the ground
-          floor below. */}
-      <BalconyOverhang phase={phase} />
+      <div className="relative h-full flex flex-col">
+        {/* ── Header row ───────────────────────────────────── */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(255,255,255,0.05)]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="relative flex size-2 shrink-0">
+              <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
+              <span className="relative size-2 rounded-full bg-accent-light shadow-[0_0_10px_rgba(0,212,200,0.7)]" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-medium text-text truncate">
+                Niddrie Townhouse
+              </div>
+              <div className="text-[10.5px] tracking-[0.12em] text-text-dim font-mono tabular-nums whitespace-nowrap">
+                3 tenders · Brunswick
+              </div>
+            </div>
+          </div>
+          <span className="shrink-0 px-2.5 py-1 border border-border-accent rounded-full text-[9.5px] tracking-[0.18em] uppercase text-accent">
+            Comparing
+          </span>
+        </div>
 
-      {/* Roof slab. */}
-      <Roof phase={phase} />
+        {/* ── KPI strip ────────────────────────────────────── */}
+        <div className="grid grid-cols-3 divide-x divide-[rgba(255,255,255,0.05)] border-b border-[rgba(255,255,255,0.05)]">
+          <KpiCell label="Tenders" value="3" sub="2 unique" />
+          <KpiCell label="Median" value="$1.86M" sub="tight 7%" />
+          <KpiCell label="Verified" value="100%" sub="ABN + L" accent />
+        </div>
 
-      {/* Floor-line accent hairlines — bright teal pinstripes at
-          each storey boundary. Defines the building's silhouette
-          even at distance. */}
-      <FloorLines phase={phase} />
-
-      {/* Apertures: windows, garage doors, entry doors with warm lit
-          glass. */}
-      <Apertures phase={phase} />
-
-      {/* Interior point lights — one per unit, two per floor. */}
-      <InteriorLights phase={phase} />
-
-      {/* Landscape — small planter boxes with leafy blobs in front. */}
-      <Landscape phase={phase} />
-    </group>
-  );
-}
-
-// ── Foundation ────────────────────────────────────────────────────
-
-function Foundation() {
-  return (
-    <mesh receiveShadow position={[0, -0.05, 0]}>
-      <boxGeometry args={[W + 0.6, 0.10, D + 0.6]} />
-      <meshStandardMaterial
-        color="#0a1825"
-        roughness={0.95}
-        metalness={0.05}
-      />
-    </mesh>
-  );
-}
-
-// ── Floor band (rises from yBase upward) ──────────────────────────
-
-type PhaseState = {
-  groundY: number;
-  firstY: number;
-  parapetY: number;
-  roofY: number;
-  roofOpacity: number;
-  apertureOpacity: number;
-  lightsIntensity: number;
-  buildingOpacity: number;
-  buildingScale: number;
-  particles: number;
-};
-
-function FloorBand({
-  cx,
-  width,
-  height,
-  depth,
-  yBase,
-  material,
-  scaleRef,
-  scaleKey,
-}: {
-  cx: number;
-  width: number;
-  height: number;
-  depth: number;
-  yBase: number;
-  material: THREE.Material;
-  scaleRef: React.MutableRefObject<PhaseState>;
-  scaleKey: keyof PhaseState;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-
-  useFrame(() => {
-    if (groupRef.current) {
-      const s = scaleRef.current[scaleKey] as number;
-      groupRef.current.scale.y = Math.max(s, 0.001);
-    }
-  });
-
-  return (
-    // Wrap in a group so scale.y pivot is at the band's BASE (yBase).
-    <group ref={groupRef} position={[0, yBase, 0]}>
-      <mesh
-        position={[cx, height / 2, 0]}
-        castShadow
-        receiveShadow
-        material={material}
-      >
-        <boxGeometry args={[width, height, depth]} />
-      </mesh>
-    </group>
-  );
-}
-
-// ── Roof slab ─────────────────────────────────────────────────────
-
-function Roof({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null!);
-
-  useFrame(() => {
-    if (meshRef.current) {
-      const drop = (1 - phase.current.roofY) * 0.6;
-      meshRef.current.position.y =
-        H_GF + H_F1 + H_PARAPET + 0.05 + drop;
-      const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-      if (mat) mat.opacity = phase.current.roofOpacity;
-    }
-  });
-
-  return (
-    <mesh ref={meshRef} castShadow receiveShadow>
-      <boxGeometry args={[W + 0.12, 0.08, D + 0.12]} />
-      <meshStandardMaterial
-        color="#091a2c"
-        roughness={0.75}
-        metalness={0.1}
-        transparent
-        opacity={0}
-      />
-    </mesh>
-  );
-}
-
-// ── Balcony overhang ──────────────────────────────────────────────
-
-function BalconyOverhang({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-  useFrame(() => {
-    if (groupRef.current) {
-      const s = phase.current.firstY;
-      groupRef.current.scale.set(1, Math.max(s, 0.001), 1);
-      groupRef.current.visible = s > 0.01;
-    }
-  });
-  return (
-    <group ref={groupRef} position={[0, H_GF, 0]}>
-      {/* Overhang slab projecting forward of the first floor. */}
-      <mesh position={[0, 0.06, D / 2 + 0.18]} castShadow receiveShadow>
-        <boxGeometry args={[W + 0.10, 0.12, 0.50]} />
-        <meshStandardMaterial color="#0e2034" roughness={0.7} metalness={0.18} />
-      </mesh>
-      {/* Glass balustrade in front of the balcony. */}
-      <mesh position={[0, 0.30, D / 2 + 0.42]} castShadow>
-        <boxGeometry args={[W + 0.0, 0.45, 0.04]} />
-        <meshStandardMaterial
-          color="#16385a"
-          roughness={0.2}
-          metalness={0.3}
-          transparent
-          opacity={0.55}
-        />
-      </mesh>
-      {/* Balustrade top rail (catches the light). */}
-      <mesh position={[0, 0.54, D / 2 + 0.42]}>
-        <boxGeometry args={[W + 0.02, 0.04, 0.06]} />
-        <meshStandardMaterial color="#7ef5ed" emissive="#7ef5ed" emissiveIntensity={0.4} />
-      </mesh>
-    </group>
-  );
-}
-
-// ── Floor-line accent hairlines ──────────────────────────────────
-
-function FloorLines({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-  useFrame(() => {
-    if (groupRef.current) {
-      const s = Math.min(phase.current.firstY, phase.current.parapetY);
-      const mat = (groupRef.current.children[0] as THREE.Mesh)
-        ?.material as THREE.MeshStandardMaterial | undefined;
-      groupRef.current.visible = phase.current.firstY > 0.05;
-      // No additional fade — relies on the parent's roof opacity.
-      if (mat) mat.opacity = Math.min(1, phase.current.firstY * 2);
-    }
-  });
-  return (
-    <group ref={groupRef}>
-      {/* Line between ground floor and first floor (front edge). */}
-      <mesh position={[0, H_GF, D / 2 + 0.012]}>
-        <boxGeometry args={[W + 0.02, 0.025, 0.01]} />
-        <meshStandardMaterial
-          color="#7ef5ed"
-          emissive="#7ef5ed"
-          emissiveIntensity={0.6}
-        />
-      </mesh>
-      {/* Line at top of first floor (under the parapet). */}
-      <mesh position={[0, H_GF + H_F1, D / 2 + 0.012]}>
-        <boxGeometry args={[W + 0.02, 0.020, 0.01]} />
-        <meshStandardMaterial
-          color="#7ef5ed"
-          emissive="#7ef5ed"
-          emissiveIntensity={0.5}
-        />
-      </mesh>
-      {/* Right-face vertical seam at the front corner. */}
-      <mesh position={[W / 2 + 0.012, (H_GF + H_F1) / 2, 0]}>
-        <boxGeometry args={[0.01, H_GF + H_F1, 0.020]} />
-        <meshStandardMaterial
-          color="#7ef5ed"
-          emissive="#7ef5ed"
-          emissiveIntensity={0.4}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// ── Apertures (windows, doors, garage doors) ──────────────────────
-
-/**
- * Apertures are thin meshes placed slightly in front of the wall
- * surface. Glass uses an emissive material whose intensity is driven
- * by `phase.lightsIntensity`. Doors and garage are non-emissive solid
- * panels. All apertures share their own group so their opacity can
- * fade in together once walls are up.
- */
-function Apertures({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-  const litRefs = useRef<THREE.MeshStandardMaterial[]>([]);
-
-  useFrame(() => {
-    if (groupRef.current) {
-      groupRef.current.visible = phase.current.apertureOpacity > 0.02;
-      groupRef.current.scale.setScalar(
-        0.95 + 0.05 * phase.current.apertureOpacity,
-      );
-    }
-    for (const mat of litRefs.current) {
-      if (mat) mat.emissiveIntensity = phase.current.lightsIntensity;
-    }
-  });
-
-  // Window/door definitions per unit. Coordinates in unit-local
-  // space (cx-relative). Picture windows now span ~75% of the front
-  // face width of each unit, with floor-to-ceiling proportions on
-  // the first floor (this is the bit that makes the building read
-  // as a modern townhouse, not a featureless box).
-  const windows = useMemo(
-    () => [
-      // Front face — first floor: 1 wide picture window per unit
-      { face: "front" as const, ux: 0, y: H_GF + H_F1 / 2 + 0.05, w: UNIT_W * 0.78, h: H_F1 * 0.78 },
-      // Right face — first floor (visible on Unit B side, since Unit A's right is hidden by Unit B)
-      { face: "right" as const, ux: -D * 0.22, y: H_GF + H_F1 / 2 + 0.05, w: D * 0.32, h: H_F1 * 0.65 },
-      { face: "right" as const, ux: +D * 0.22, y: H_GF + H_F1 / 2 + 0.05, w: D * 0.32, h: H_F1 * 0.65 },
-    ],
-    [],
-  );
-
-  const doorsGround = useMemo(
-    () => [
-      // Garage door (large) + entry door (narrow) on the FRONT of each unit's ground floor
-      { kind: "garage" as const, ux: -UA_HALF * 0.38, y: H_GF * 0.48, w: UNIT_W * 0.46, h: H_GF * 0.82 },
-      { kind: "door" as const, ux: +UA_HALF * 0.62, y: H_GF * 0.46, w: UNIT_W * 0.16, h: H_GF * 0.74 },
-      // Sidelight window beside the entry door
-      { kind: "garage" as const, ux: +UA_HALF * 0.28, y: H_GF * 0.50, w: UNIT_W * 0.18, h: H_GF * 0.60 },
-    ],
-    [],
-  );
-
-  litRefs.current = [];
-
-  return (
-    <group ref={groupRef}>
-      {/* Apertures on Unit A (cx=UA_CX) */}
-      {windows.filter((w) => w.face === "front" || (w.face === "right" && !("sideUnit" in w))).map((w, i) => (
-        <Window
-          key={`a-w-${i}`}
-          face={w.face}
-          ux={UA_CX + w.ux}
-          y={w.y}
-          w={w.w}
-          h={w.h}
-          unitCx={UA_CX}
-          materialRefs={litRefs}
-        />
-      ))}
-      {doorsGround.map((d, i) => (
-        <FrontPanel
-          key={`a-d-${i}`}
-          kind={d.kind}
-          ux={UA_CX + d.ux}
-          y={d.y}
-          w={d.w}
-          h={d.h}
-        />
-      ))}
-
-      {/* Apertures on Unit B (cx=UB_CX) — mirror of A */}
-      {windows.filter((w) => w.face === "front").map((w, i) => (
-        <Window
-          key={`b-w-${i}`}
-          face={w.face}
-          ux={UB_CX + w.ux}
-          y={w.y}
-          w={w.w}
-          h={w.h}
-          unitCx={UB_CX}
-          materialRefs={litRefs}
-        />
-      ))}
-      {/* Right-face windows (only the right side of unit B is visible) */}
-      {windows.filter((w) => w.face === "right").map((w, i) => (
-        <Window
-          key={`b-rw-${i}`}
-          face={w.face}
-          ux={w.ux}
-          y={w.y}
-          w={w.w}
-          h={w.h}
-          unitCx={UB_CX}
-          materialRefs={litRefs}
-        />
-      ))}
-      {doorsGround.map((d, i) => (
-        <FrontPanel
-          key={`b-d-${i}`}
-          kind={d.kind}
-          ux={UB_CX + d.ux}
-          y={d.y}
-          w={d.w}
-          h={d.h}
-        />
-      ))}
-
-      {/* Vertical seam between Unit A and Unit B — dark accent strip. */}
-      <mesh position={[0, (H_GF + H_F1) / 2, D / 2 + 0.006]}>
-        <boxGeometry args={[0.06, H_GF + H_F1, 0.01]} />
-        <meshStandardMaterial color="#0a1726" roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-function Window({
-  face,
-  ux,
-  y,
-  w,
-  h,
-  unitCx,
-  materialRefs,
-}: {
-  face: "front" | "right";
-  ux: number;
-  y: number;
-  w: number;
-  h: number;
-  unitCx: number;
-  materialRefs: React.MutableRefObject<THREE.MeshStandardMaterial[]>;
-}) {
-  const matRef = useRef<THREE.MeshStandardMaterial>(null!);
-  React.useEffect(() => {
-    if (matRef.current) materialRefs.current.push(matRef.current);
-  });
-
-  if (face === "front") {
-    return (
-      <group position={[ux, y, D / 2 + 0.012]}>
-        {/* Window frame (slightly larger, darker than the glass). */}
-        <mesh position={[0, 0, -0.005]}>
-          <boxGeometry args={[w + 0.08, h + 0.08, 0.015]} />
-          <meshStandardMaterial color="#0a1c30" roughness={0.5} />
-        </mesh>
-        {/* Glass — emissive material lights up during Act 3. */}
-        <mesh castShadow={false}>
-          <boxGeometry args={[w, h, 0.025]} />
-          <meshStandardMaterial
-            ref={matRef}
-            color="#1f4870"
-            emissive="#ffd49a"
-            emissiveIntensity={0}
-            roughness={0.18}
-            metalness={0.15}
-            transparent
-            opacity={0.95}
+        {/* ── Tender rows ──────────────────────────────────── */}
+        <div className="flex-1 px-5 py-5 flex flex-col gap-2.5 relative">
+          <TenderRow
+            tender={TENDERS[0]!}
+            livePrice={winnerPrice}
+            isWinner
           />
-        </mesh>
-        {/* Centre mullion */}
-        <mesh position={[0, 0, 0.014]}>
-          <boxGeometry args={[0.04, h, 0.005]} />
-          <meshStandardMaterial color="#0a1c30" roughness={0.6} />
-        </mesh>
-      </group>
-    );
-  }
-  // face = right
+          <TenderRow tender={TENDERS[1]!} />
+          <TenderRow tender={TENDERS[2]!} />
+
+          {/* Notification toast — slides in from top */}
+          <AnimatePresence>
+            {notifIndex >= 0 ? (
+              <NotificationToast
+                key={notifIndex}
+                index={notifIndex}
+              />
+            ) : null}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Footer: sparkline + spread label ─────────────── */}
+        <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.05)]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9.5px] tracking-[0.22em] uppercase text-text-dim font-medium">
+              Price distribution
+            </span>
+            <span className="text-[10.5px] text-accent-light font-mono tabular-nums">
+              $1.78M – $1.91M
+            </span>
+          </div>
+          <Sparkline />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── KPI cell ──────────────────────────────────────────────────────
+
+function KpiCell({
+  label,
+  value,
+  sub,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent?: boolean;
+}) {
   return (
-    <group position={[unitCx + UA_HALF + 0.012, y, ux]}>
-      <mesh position={[-0.005, 0, 0]}>
-        <boxGeometry args={[0.015, h + 0.06, w + 0.06]} />
-        <meshStandardMaterial color="#0a1c30" roughness={0.5} />
-      </mesh>
-      <mesh castShadow={false}>
-        <boxGeometry args={[0.025, h, w]} />
-        <meshStandardMaterial
-          ref={matRef}
-          color="#1f4870"
-          emissive="#ffd49a"
-          emissiveIntensity={0}
-          roughness={0.18}
-          metalness={0.15}
-          transparent
-          opacity={0.95}
+    <div className="px-4 py-4">
+      <div className="text-[9px] tracking-[0.22em] uppercase text-text-dim mb-1.5">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "font-mono tabular-nums leading-none",
+          accent ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 22 }}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] text-text-dim mt-1.5">{sub}</div>
+    </div>
+  );
+}
+
+// ── Tender row ───────────────────────────────────────────────────
+
+function TenderRow({
+  tender,
+  livePrice,
+  isWinner = false,
+}: {
+  tender: Tender;
+  livePrice?: number;
+  isWinner?: boolean;
+}) {
+  const displayedPriceM =
+    typeof livePrice === "number" ? livePrice : tender.basePriceM;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        "relative flex items-center gap-3 px-3.5 py-3 rounded-lg border transition-colors",
+        isWinner
+          ? "border-border-accent/70 bg-[rgba(0,212,200,0.045)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      {isWinner ? (
+        <span
+          aria-hidden
+          className="absolute -top-px inset-x-6 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(126,245,237,0.55), transparent)",
+          }}
         />
-      </mesh>
-    </group>
+      ) : null}
+
+      {/* Avatar */}
+      <span
+        className="size-9 rounded-full flex items-center justify-center text-[11px] font-semibold border border-border-accent text-accent-light shrink-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+        }}
+      >
+        {tender.initials}
+      </span>
+
+      {/* Builder block */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[13px] font-medium text-text truncate">
+            {tender.name}
+          </span>
+          {isWinner ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.14em] uppercase text-accent-light font-semibold">
+              <Trophy size={9} strokeWidth={2.5} />
+              Best value
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-text-dim">
+          {tender.verified ? (
+            <span className="inline-flex items-center gap-1">
+              <ShieldCheck size={10} strokeWidth={2.5} className="text-accent-light" />
+              ABN + L
+            </span>
+          ) : null}
+          <span className="opacity-40">·</span>
+          <span>12 won</span>
+        </div>
+      </div>
+
+      {/* Price + delta */}
+      <div className="text-right shrink-0">
+        <div
+          className={cn(
+            "font-mono tabular-nums leading-none",
+            isWinner ? "text-accent-light" : "text-text",
+          )}
+          style={{ fontSize: 17 }}
+        >
+          $
+          {displayedPriceM.toFixed(2)}
+          M
+        </div>
+        <div
+          className={cn(
+            "text-[10px] mt-1 tabular-nums inline-flex items-center gap-1",
+            tender.deltaPct < 0
+              ? "text-accent-light"
+              : tender.deltaPct > 0
+                ? "text-text-dim"
+                : "text-text-dim",
+          )}
+        >
+          {tender.deltaPct < 0 ? (
+            <ArrowDown size={9} strokeWidth={2.5} />
+          ) : tender.deltaPct > 0 ? (
+            <TrendingUp size={9} strokeWidth={2.5} />
+          ) : null}
+          {tender.deltaPct === 0
+            ? "median"
+            : `${tender.deltaPct > 0 ? "+" : ""}${tender.deltaPct}% median`}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
-function FrontPanel({
-  kind,
-  ux,
-  y,
-  w,
-  h,
-}: {
-  kind: "garage" | "door";
-  ux: number;
-  y: number;
-  w: number;
-  h: number;
-}) {
-  const color = kind === "garage" ? "#0e1a26" : "#3a2616";
-  const roughness = kind === "garage" ? 0.55 : 0.85;
+// ── Notification toast (slides in from top) ──────────────────────
+
+function NotificationToast({ index }: { index: number }) {
+  const n = NOTIFICATIONS[index]!;
+  const Icon =
+    n.tone === "tender"
+      ? Sparkles
+      : n.tone === "verify"
+        ? ShieldCheck
+        : TrendingUp;
   return (
-    <mesh position={[ux, y, D / 2 + 0.012]}>
-      <boxGeometry args={[w, h, 0.02]} />
-      <meshStandardMaterial color={color} roughness={roughness} metalness={0.05} />
-    </mesh>
+    <motion.div
+      initial={{ opacity: 0, y: -18, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.98 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-2 left-3 right-3 z-[5] rounded-xl border border-border-accent/60 backdrop-blur-md overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(10,30,48,0.96) 0%, rgba(6,18,30,0.97) 100%)",
+        boxShadow:
+          "0 20px 50px -20px rgba(0,212,200,0.45), 0 0 0 1px rgba(0,212,200,0.10) inset",
+      }}
+    >
+      <span
+        aria-hidden
+        className="absolute top-0 inset-x-6 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(126,245,237,0.65), transparent)",
+        }}
+      />
+      <div className="px-3.5 py-2.5 flex items-center gap-3">
+        <span className="size-8 rounded-full border border-border-accent bg-accent-muted text-accent-light flex items-center justify-center shrink-0">
+          <Icon size={14} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-medium text-text truncate">
+            {n.actor}
+          </div>
+          <div className="text-[10.5px] text-text-dim">{n.action}</div>
+        </div>
+        <span className="text-[9.5px] tracking-[0.18em] uppercase text-accent-light font-semibold shrink-0">
+          Just now
+        </span>
+      </div>
+    </motion.div>
   );
 }
 
-// ── Interior lights ───────────────────────────────────────────────
+// ── Sparkline (animated SVG line chart) ──────────────────────────
 
-function InteriorLights({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const refs = useRef<THREE.PointLight[]>([]);
-
-  useFrame(() => {
-    const intensity = phase.current.lightsIntensity * 0.7;
-    for (const l of refs.current) {
-      if (l) l.intensity = intensity;
-    }
-  });
-
-  const positions: [number, number, number][] = [
-    // Each unit gets 2 interior lights, ground + first floor
-    [UA_CX, H_GF * 0.55, 0],
-    [UA_CX, H_GF + H_F1 * 0.55, 0],
-    [UB_CX, H_GF * 0.55, 0],
-    [UB_CX, H_GF + H_F1 * 0.55, 0],
+function Sparkline() {
+  // 24-point synthetic series with the three tender prices visible
+  // as markers. Animates the stroke draw on mount, then breathes
+  // gently via opacity.
+  const points: number[] = [
+    1.92, 1.90, 1.89, 1.88, 1.87, 1.86, 1.85, 1.84, 1.83, 1.82, 1.81, 1.80,
+    1.81, 1.82, 1.81, 1.80, 1.79, 1.78, 1.80, 1.82, 1.84, 1.86, 1.88, 1.91,
+  ];
+  const min = 1.74;
+  const max = 1.94;
+  const W = 100;
+  const H = 28;
+  const toY = (v: number) => H - ((v - min) / (max - min)) * H;
+  const stepX = W / (points.length - 1);
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(2)} ${toY(p).toFixed(2)}`)
+    .join(" ");
+  // Markers for the three tenders on the line
+  const markers = [
+    { x: stepX * 17, y: toY(1.78), accent: true }, // Northline winner
+    { x: stepX * 5, y: toY(1.86) }, // Atlas median
+    { x: stepX * 23, y: toY(1.91) }, // Heritage
   ];
 
-  refs.current = [];
-
   return (
-    <>
-      {positions.map((p, i) => (
-        <pointLight
+    <svg
+      viewBox={`0 -2 ${W} ${H + 4}`}
+      className="w-full block"
+      preserveAspectRatio="none"
+      style={{ height: 36 }}
+    >
+      <defs>
+        <linearGradient id="bhq-spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="rgba(0,212,200,0.28)" />
+          <stop offset="1" stopColor="rgba(0,212,200,0)" />
+        </linearGradient>
+        <linearGradient id="bhq-spark-stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="rgba(126,245,237,0.7)" />
+          <stop offset="1" stopColor="rgba(126,245,237,1)" />
+        </linearGradient>
+      </defs>
+      {/* Area under the curve */}
+      <motion.path
+        d={`${d} L ${W} ${H} L 0 ${H} Z`}
+        fill="url(#bhq-spark-fill)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.8 }}
+      />
+      {/* Stroke */}
+      <motion.path
+        d={d}
+        fill="none"
+        stroke="url(#bhq-spark-stroke)"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+      />
+      {/* Markers */}
+      {markers.map((m, i) => (
+        <motion.circle
           key={i}
-          ref={(l) => {
-            if (l) refs.current[i] = l;
-          }}
-          position={p}
-          color="#ffd49a"
-          intensity={0}
-          distance={5}
-          decay={1.8}
+          cx={m.x}
+          cy={m.y}
+          r={m.accent ? 2.4 : 1.6}
+          fill={m.accent ? "rgb(126,245,237)" : "rgba(255,255,255,0.5)"}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1.4 + i * 0.1, duration: 0.5, ease: "easeOut" }}
         />
       ))}
-    </>
+    </svg>
   );
 }
-
-// ── Landscape — planter boxes with leafy blobs ────────────────────
-
-function Landscape({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-  useFrame(() => {
-    if (groupRef.current) {
-      groupRef.current.visible = phase.current.apertureOpacity > 0.4;
-      groupRef.current.scale.setScalar(
-        Math.max(0.001, phase.current.apertureOpacity),
-      );
-    }
-  });
-
-  const items = useMemo(() => {
-    const out: Array<{ x: number; z: number; s: number }> = [];
-    // 3 trees in front of unit A, 3 in front of unit B
-    for (let unit = 0; unit < 2; unit++) {
-      const baseX = unit === 0 ? UA_CX : UB_CX;
-      for (let k = 0; k < 3; k++) {
-        out.push({
-          x: baseX + (k - 1) * UNIT_W * 0.32,
-          z: D / 2 + 0.55,
-          s: 0.32 + (k % 2) * 0.05,
-        });
-      }
-    }
-    // 2 corner trees
-    out.push({ x: -W / 2 - 0.4, z: D / 2 + 0.2, s: 0.40 });
-    out.push({ x: +W / 2 + 0.4, z: D / 2 + 0.2, s: 0.40 });
-    return out;
-  }, []);
-
-  return (
-    <group ref={groupRef}>
-      {items.map((t, i) => (
-        <group key={i} position={[t.x, 0, t.z]}>
-          {/* Planter box */}
-          <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.4, 0.24, 0.4]} />
-            <meshStandardMaterial color="#1a2030" roughness={0.9} />
-          </mesh>
-          {/* Trunk */}
-          <mesh position={[0, t.s + 0.24, 0]} castShadow>
-            <cylinderGeometry args={[0.04, 0.06, t.s * 0.7, 8]} />
-            <meshStandardMaterial color="#5a3e25" roughness={0.95} />
-          </mesh>
-          {/* Foliage */}
-          <mesh position={[0, t.s + 0.5, 0]} castShadow>
-            <sphereGeometry args={[t.s * 0.8, 12, 10]} />
-            <meshStandardMaterial color="#244435" roughness={0.85} />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-// ── Particle dissolution ──────────────────────────────────────────
-
-/**
- * A field of small spheres distributed inside the building's volume.
- * Sit invisible most of the loop, then burst upward + outward during
- * the dissolve beat and fade. Stagger by Y position so the top
- * dissolves first.
- */
-function Particles({
-  phase,
-}: {
-  phase: React.MutableRefObject<PhaseState>;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-
-  // Generate particle starts deterministically.
-  const particles = useMemo(() => {
-    let s = 17;
-    const rand = () => {
-      s = (s * 9301 + 49297) % 233280;
-      return s / 233280;
-    };
-    const out: Array<{
-      px: number;
-      py: number;
-      pz: number;
-      drift: [number, number, number];
-      delay: number;
-      size: number;
-    }> = [];
-    const COUNT = 140;
-    for (let i = 0; i < COUNT; i++) {
-      // Sample positions on the visible faces of the building.
-      const face = rand();
-      let x: number, y: number, z: number;
-      if (face < 0.5) {
-        // front face
-        x = (rand() - 0.5) * W;
-        y = rand() * (H_GF + H_F1 + H_PARAPET);
-        z = D / 2 + 0.02;
-      } else if (face < 0.85) {
-        // right face
-        x = W / 2 + 0.02;
-        y = rand() * (H_GF + H_F1 + H_PARAPET);
-        z = (rand() - 0.5) * D;
-      } else {
-        // top
-        x = (rand() - 0.5) * W;
-        y = H_GF + H_F1 + H_PARAPET + 0.05;
-        z = (rand() - 0.5) * D;
-      }
-      out.push({
-        px: x,
-        py: y,
-        pz: z,
-        drift: [
-          (rand() - 0.5) * 1.6,
-          rand() * 1.6 + 0.4,
-          (rand() - 0.5) * 1.4,
-        ],
-        // Delay scales with inverse Y so top particles dissolve first.
-        delay:
-          (1 - y / (H_GF + H_F1 + H_PARAPET)) * 0.45 + rand() * 0.15,
-        size: 0.018 + rand() * 0.022,
-      });
-    }
-    return out;
-  }, []);
-
-  // Pre-allocated reusable colour + opacity attributes managed via
-  // per-mesh refs. We don't reuse instanced mesh here because we want
-  // per-particle opacity (which InstancedMesh can't do without a
-  // custom shader). 140 spheres is fine performance-wise on desktop.
-
-  const meshRefs = useRef<THREE.Mesh[]>([]);
-  meshRefs.current = [];
-
-  useFrame(() => {
-    const p = phase.current.particles;
-    if (p <= 0.001) {
-      // Hide all particles
-      for (const m of meshRefs.current) {
-        if (m) m.visible = false;
-      }
-      return;
-    }
-    for (let i = 0; i < particles.length; i++) {
-      const mesh = meshRefs.current[i];
-      const def = particles[i]!;
-      if (!mesh) continue;
-      // Per-particle progress: 0 until p > delay, then ramps to 1.
-      const local = clamp01((p - def.delay) / (1 - def.delay));
-      mesh.visible = local > 0;
-      if (local <= 0) continue;
-      const e = easeInOut(local);
-      mesh.position.set(
-        def.px + def.drift[0] * e,
-        def.py + def.drift[1] * e,
-        def.pz + def.drift[2] * e,
-      );
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.opacity = 1 - local;
-      mat.emissiveIntensity = (1 - local) * 1.2;
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      {particles.map((def, i) => (
-        <mesh
-          key={i}
-          ref={(m) => {
-            if (m) meshRefs.current[i] = m;
-          }}
-          position={[def.px, def.py, def.pz]}
-          visible={false}
-        >
-          <sphereGeometry args={[def.size, 6, 6]} />
-          <meshStandardMaterial
-            color="#7ef5ed"
-            emissive="#7ef5ed"
-            emissiveIntensity={1.2}
-            transparent
-            opacity={0}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ── Materials (instantiated once and reused across walls) ─────────
-
-// Wall materials — brand-on dark navy with a hint of warmth. Lighter
-// than the page bg so the silhouette reads against the dark canvas.
-const WALL_MAT = new THREE.MeshStandardMaterial({
-  color: "#2a4866",
-  roughness: 0.78,
-  metalness: 0.12,
-});
-const WALL_MAT_LIGHT = new THREE.MeshStandardMaterial({
-  color: "#34557a",
-  roughness: 0.72,
-  metalness: 0.12,
-});
-const PARAPET_MAT = new THREE.MeshStandardMaterial({
-  color: "#1e3a58",
-  roughness: 0.65,
-  metalness: 0.18,
-});
-
-// ── Phase indicator (HTML overlay) ────────────────────────────────
-
-function PhaseIndicator() {
-  return (
-    <div className="absolute top-0 left-0 z-10 pointer-events-none">
-      <div
-        className="inline-flex items-center gap-2 pl-2.5 pr-3 py-1 rounded-full backdrop-blur-sm border border-[rgba(126,245,237,0.18)] bg-[rgba(6,18,30,0.7)]"
-        style={{ fontFamily: "var(--font-geist, system-ui)" }}
-      >
-        <span className="relative flex size-1.5">
-          <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
-          <span className="relative size-1.5 rounded-full bg-accent" />
-        </span>
-        <span className="relative min-w-[6.5rem] h-3 text-[9.5px] tracking-[0.18em] uppercase text-text-muted font-semibold">
-          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-1">
-            01 · Building
-          </span>
-          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-2">
-            02 · Settling
-          </span>
-          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-3">
-            03 · Lights on
-          </span>
-          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-4">
-            04 · Looping
-          </span>
-        </span>
-      </div>
-      <style>{`
-        .bhq-phase { opacity: 0; }
-        .bhq-phase-1 { animation: bhq-phase-1 18s linear infinite; }
-        .bhq-phase-2 { animation: bhq-phase-2 18s linear infinite; }
-        .bhq-phase-3 { animation: bhq-phase-3 18s linear infinite; }
-        .bhq-phase-4 { animation: bhq-phase-4 18s linear infinite; }
-        /* 01 Building — 0s to 7s (39%) */
-        @keyframes bhq-phase-1 {
-          0%   { opacity: 0; }
-          1%   { opacity: 1; }
-          37%  { opacity: 1; }
-          39%  { opacity: 0; }
-          100% { opacity: 0; }
-        }
-        /* 02 Settling — 7s to 9s (39% to 50%) */
-        @keyframes bhq-phase-2 {
-          0%, 38%  { opacity: 0; }
-          40%      { opacity: 1; }
-          49%      { opacity: 1; }
-          50%      { opacity: 0; }
-          100%     { opacity: 0; }
-        }
-        /* 03 Lights on — 9s to 14s (50% to 78%) */
-        @keyframes bhq-phase-3 {
-          0%, 49%  { opacity: 0; }
-          51%      { opacity: 1; }
-          77%      { opacity: 1; }
-          78%      { opacity: 0; }
-          100%     { opacity: 0; }
-        }
-        /* 04 Looping — 14s to 18s (78% to 100%) */
-        @keyframes bhq-phase-4 {
-          0%, 77%  { opacity: 0; }
-          80%      { opacity: 1; }
-          99%      { opacity: 1; }
-          100%     { opacity: 0; }
-        }
-      `}</style>
-    </div>
-  );
-}
-

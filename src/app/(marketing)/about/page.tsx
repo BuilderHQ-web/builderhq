@@ -36,7 +36,7 @@ export default function AboutPage() {
         <span className="relative text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
           Our mission
         </span>
-        <h2 className="relative mt-4 font-display uppercase tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+        <h2 className="relative mt-4 font-display tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
           To make building a home in Australia
           <br />
           <span className="text-accent-light">feel less like chasing</span>.
@@ -57,7 +57,7 @@ export default function AboutPage() {
         <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
           What we believe
         </span>
-        <h2 className="mt-4 font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
+        <h2 className="mt-4 font-display tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
           Four principles, no compromise.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -103,7 +103,7 @@ export default function AboutPage() {
               Built with industry experts
             </span>
           </div>
-          <h2 className="mt-5 font-display uppercase tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+          <h2 className="mt-5 font-display tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
             Shaped by the people who actually
             <br />
             <span className="text-accent-light">build, design, and own</span>.
@@ -138,7 +138,7 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="mt-12 sm:mt-16 text-center">
-        <h2 className="font-display uppercase tracking-[-0.012em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
+        <h2 className="font-display tracking-[-0.012em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
           Ready to{" "}
           <span
             className="text-accent-light"

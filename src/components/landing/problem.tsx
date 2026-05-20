@@ -32,14 +32,23 @@ export function Problem() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The problem
             </span>
-            <h2 className="mt-4 lg:mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.5rem,5vw+1rem,5.75rem)] leading-[0.92]">
-              <span
-                className="text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
-              >
+            <h2 className="mt-4 lg:mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,5vw+1rem,5.5rem)] leading-[0.98]">
+              <span className="text-text">
                 Tendering shouldn&apos;t feel like
               </span>{" "}
-              <span className="text-accent-light">chasing</span>.
+              <span
+                className="italic"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                chasing
+              </span>
+              .
             </h2>
             <p className="mt-5 lg:mt-7 mx-auto max-w-[60ch] text-[14.5px] sm:text-[15.5px] leading-[1.6] sm:leading-[1.7] text-text-subtle">
               Finding the right builder is the most consequential step of a

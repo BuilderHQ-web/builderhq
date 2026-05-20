@@ -78,14 +78,21 @@ export function Features() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The platform
             </span>
-            <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4.2vw+1rem,5rem)] leading-[0.98]">
+              <span className="text-text">Built for the</span>{" "}
               <span
-                className="text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
+                className="italic"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
               >
-                Built for the
-              </span>{" "}
-              <span className="text-accent-light">work</span>.
+                work
+              </span>
+              .
             </h2>
           </Reveal>
           <Reveal delay={0.1}>

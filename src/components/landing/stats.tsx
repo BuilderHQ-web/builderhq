@@ -26,7 +26,7 @@ export function Stats() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               By design
             </span>
-            <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
+            <h2 className="mt-5 font-display tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
               Numbers that <span className="text-accent-light">matter</span>.
             </h2>
           </Reveal>

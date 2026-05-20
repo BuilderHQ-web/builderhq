@@ -44,7 +44,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-20 lg:pt-32 pb-16 lg:pb-32 px-5 md:px-10 overflow-hidden"
+      className="relative isolate pt-20 lg:pt-32 pb-16 lg:pb-32 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
     >
       {/* Single scan-line sweep on mount — subtle premium signal */}
       <motion.span
@@ -64,7 +64,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-20 items-center">
         {/* Visual — building reveal. Order is intentional: on mobile +
             tablet (single-column) the visual leads, just like Resend's
             cube-on-top hero. On desktop (lg grid) it sits on the
@@ -99,7 +99,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
 
           {/* Headline — Instrument Serif with right-side fade. */}
           <h1
-            className="mt-5 lg:mt-8 tracking-[-0.025em] leading-[1.0] text-[clamp(3rem,7vw+1rem,6.5rem)]"
+            className="mt-5 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.75rem,5vw+1rem,4.75rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
           >
             <FadeRow delay={0}>

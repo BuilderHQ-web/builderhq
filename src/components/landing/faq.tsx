@@ -116,14 +116,21 @@ export function FAQ() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               Common questions
             </span>
-            <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.5rem,4.2vw+1rem,4.5rem)] leading-[0.92]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4.2vw+1rem,4.5rem)] leading-[0.98]">
+              <span className="text-text">The honest</span>{" "}
               <span
-                className="text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
+                className="italic"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
               >
-                The honest
-              </span>{" "}
-              <span className="text-accent-light">answers</span>.
+                answers
+              </span>
+              .
             </h2>
             <p className="mt-7 text-[14.5px] leading-[1.7] text-text-subtle max-w-[36ch]">
               Real questions from owners, builders, and architects. If

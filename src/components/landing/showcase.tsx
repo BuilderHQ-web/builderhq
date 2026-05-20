@@ -61,14 +61,21 @@ export function Showcase() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               See it in motion
             </span>
-            <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4.2vw+1rem,5rem)] leading-[0.98]">
+              <span className="text-text">The actual</span>{" "}
               <span
-                className="text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
+                className="italic"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
               >
-                The actual
-              </span>{" "}
-              <span className="text-accent-light">interface</span>.
+                interface
+              </span>
+              .
             </h2>
             <p className="mt-7 mx-auto max-w-[60ch] text-[15px] leading-[1.7] text-text-subtle">
               Not stylised mockups. The screens here are the screens you sign

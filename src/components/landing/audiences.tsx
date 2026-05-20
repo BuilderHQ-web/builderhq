@@ -18,7 +18,7 @@ export function Audiences({ cta }: { cta: CtaLinks }) {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               Both sides
             </span>
-            <h2 className="mt-5 font-display uppercase tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
+            <h2 className="mt-5 font-display tracking-[-0.02em] text-[clamp(2.75rem,4.5vw+1rem,5.5rem)] leading-[0.92]">
               Pick your <span className="text-accent-light">side</span>.
             </h2>
             <p className="mt-7 mx-auto max-w-[58ch] text-[15px] leading-[1.7] text-text-subtle">

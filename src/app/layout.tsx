@@ -1,9 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import {
-  Bebas_Neue,
-  Space_Grotesk,
-  DM_Sans,
   JetBrains_Mono,
   Instrument_Serif,
   Geist,
@@ -14,41 +11,13 @@ import { SmoothScroll } from "@/components/smooth-scroll";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgress } from "@/components/app/route-progress";
 
-// Display — Bebas Neue. Tall, condensed, dramatic. Brand-locked for hero
-// titles and section headlines (rendered ALL CAPS).
-const bebas = Bebas_Neue({
-  variable: "--font-bebas-neue",
-  subsets: ["latin"],
-  display: "swap",
-  weight: "400",
-});
+// Brand typography is two families end-to-end:
+//   • Instrument Serif (display) — section headlines, hero, "editorial"
+//     moments. Resend-tier serif voice.
+//   • Geist Sans (UI + body) — Vercel's open-source UI sans, same
+//     family as Linear / Resend / Vercel. Buttons, labels, copy.
+//   • JetBrains Mono — tabular figures (prices, ABNs, IDs).
 
-// UI — Space Grotesk. Geometric. Used for headings under display, button
-// text, labels, mid-size copy in cards.
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
-
-// Body — DM Sans. Optimized for long-form readability.
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// Mono — JetBrains. Tabular figures: ABNs, prices, IDs.
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// Serif display — Instrument Serif. Premium, Resend-grade. Used for the
-// marketing hero headline and any moments that benefit from a softer,
-// more "editorial" tone than Bebas Neue's all-caps display.
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   subsets: ["latin"],
@@ -56,11 +25,14 @@ const instrumentSerif = Instrument_Serif({
   weight: "400",
 });
 
-// Geist Sans — Vercel's open-source UI sans. Same family as Linear /
-// Resend / Vercel / v0. Used alongside Instrument Serif for the new
-// premium hero treatment.
 const geistSans = Geist({
   variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -119,7 +91,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebas.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${geistSans.variable} antialiased`}
+      className={`${instrumentSerif.variable} ${geistSans.variable} ${jetbrains.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans text-text">

@@ -73,7 +73,7 @@ export function MarketingPageShell({
               <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
               {kicker}
             </span>
-            <h1 className="mt-6 font-display uppercase tracking-[-0.018em] leading-[0.95] text-[clamp(2.5rem,5.5vw+1rem,5.5rem)] break-words">
+            <h1 className="mt-6 font-display tracking-[-0.018em] leading-[1.0] text-[clamp(2.5rem,5.5vw+1rem,5.5rem)] break-words">
               {title}
             </h1>
             {sub ? (

@@ -47,7 +47,7 @@ export function LandingHero() {
         </span>
       </motion.div>
 
-      <h1 className="mt-4 sm:mt-6 font-display uppercase tracking-[-0.02em] leading-[0.88] text-[clamp(2.6rem,7vw+0.4rem,6.4rem)]">
+      <h1 className="mt-4 sm:mt-6 font-display tracking-[-0.02em] leading-[0.88] text-[clamp(2.6rem,7vw+0.4rem,6.4rem)]">
         <motion.span
           {...ENTER}
           transition={{ duration: 0.7, delay: 0.15, ease: EASE }}

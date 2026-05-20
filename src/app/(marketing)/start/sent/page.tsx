@@ -91,7 +91,7 @@ export default async function StartSentPage({ searchParams }: PageProps) {
           <Mail size={26} strokeWidth={1.6} className="text-accent-light" />
         </div>
 
-        <h1 className="mt-7 font-display uppercase tracking-[-0.014em] leading-[0.95] text-[clamp(2.4rem,5vw+0.8rem,4rem)]">
+        <h1 className="mt-7 font-display tracking-[-0.014em] leading-[0.95] text-[clamp(2.4rem,5vw+0.8rem,4rem)]">
           <span className="text-text">Check your</span>{" "}
           <span className="text-accent">inbox.</span>
         </h1>

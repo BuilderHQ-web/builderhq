@@ -92,7 +92,7 @@ export function QuizShell({ step, title, sub, children, aside }: Props) {
             }
           >
             <div>
-              <h1 className="font-display uppercase tracking-[-0.014em] leading-[0.92] text-[clamp(2rem,4.2vw+0.8rem,3.4rem)] text-text">
+              <h1 className="font-display tracking-[-0.014em] leading-[0.92] text-[clamp(2rem,4.2vw+0.8rem,3.4rem)] text-text">
                 {title}
               </h1>
               {sub ? (

@@ -448,7 +448,7 @@ export function LegalDocument({
       <div className="min-w-0">
         {sections.map((s) => (
           <section key={s.id} id={s.id} className="mb-10 sm:mb-12 scroll-mt-28 last:mb-0">
-            <h2 className="font-display uppercase tracking-[-0.012em] text-[clamp(1.4rem,2.2vw+0.5rem,2.1rem)] leading-[1.1] text-text mb-4 sm:mb-5 break-words">
+            <h2 className="font-display tracking-[-0.012em] text-[clamp(1.4rem,2.2vw+0.5rem,2.1rem)] leading-[1.1] text-text mb-4 sm:mb-5 break-words">
               {s.title}
             </h2>
             <div className="text-[14.5px] leading-[1.85] text-text-subtle space-y-4 max-w-[68ch] [overflow-wrap:anywhere]">

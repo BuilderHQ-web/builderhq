@@ -413,7 +413,7 @@ function FAQContent() {
             className="scroll-mt-28"
           >
             <h2
-              className="font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
+              className="font-display tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
               dangerouslySetInnerHTML={{ __html: cat.label }}
             />
             <ul className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))] overflow-hidden divide-y divide-border-subtle/60">
