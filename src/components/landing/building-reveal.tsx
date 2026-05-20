@@ -226,6 +226,11 @@ export function BuildingReveal() {
             once, fades with the scene. */}
         <GroundGrid />
 
+        {/* Foundation slab — slightly larger than the building
+            footprint, fades in early so the floor plan appears to
+            sit on solid ground. */}
+        <Foundation />
+
         {/* ── PHASE 1 — Floor plan drawing ─────────────────────── */}
         <FloorPlan />
 
@@ -235,8 +240,14 @@ export function BuildingReveal() {
         {/* ── PHASE 2b — Roof descending ───────────────────────── */}
         <Roof />
 
+        {/* ── PHASE 2c — Crisp accent edges where walls meet ──── */}
+        <CornerEdges />
+
         {/* ── PHASE 3 — Windows lighting up ─────────────────────── */}
         <Windows />
+
+        {/* ── PHASE 3b — Architectural title block, bottom corner */}
+        <TitleBlock />
 
         {/* Static SVG defs — gradients used by all layers. */}
         <defs>
@@ -331,6 +342,43 @@ function GroundGrid() {
   );
 }
 
+/**
+ * A subtle foundation slab — parallelogram slightly larger than the
+ * building footprint that fades in before the floor plan draws.
+ * Gives the whole composition a sense of weight and "ground."
+ */
+function Foundation() {
+  // Slightly inflate the building footprint outward from centre.
+  const center = { x: 180, y: 190 };
+  const scale = 1.12;
+  const expand = (p: { x: number; y: number }) => ({
+    x: center.x + (p.x - center.x) * scale,
+    y: center.y + (p.y - center.y) * scale,
+  });
+  const A2 = expand(A);
+  const B2 = expand(B);
+  const C2 = expand(C);
+  const D2 = expand(D);
+
+  return (
+    <motion.path
+      d={quad(A2, B2, C2, D2)}
+      fill="rgba(0,212,200,0.04)"
+      stroke="rgba(126,245,237,0.18)"
+      strokeWidth="0.6"
+      strokeDasharray="3 5"
+      initial={false}
+      animate={{ opacity: [0, 0, 1, 1, 0] }}
+      transition={{
+        duration: LOOP,
+        times: [0, t(0.3), t(0.9), t(12.8), t(13.7)],
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
+
 /** Phase 1 — the floor plan draws itself line by line. */
 function FloorPlan() {
   // Each outer edge as a separate animated line for sequential
@@ -411,30 +459,158 @@ function FloorPlan() {
         }}
       />
 
-      {/* Dimension labels along the front and right edges. */}
-      <DimensionLabel
-        x={(A.x + B.x) / 2 + 18}
-        y={(A.y + B.y) / 2 + 18}
+      {/* Dimension callouts along the front and right edges with
+          architectural-standard end-caps and parallel measurement
+          lines. */}
+      <Dimension
+        from={A}
+        to={B}
+        offset={26}
         text="10 m"
         t0={3.2}
         fadeAt={5.5}
       />
-      <DimensionLabel
-        x={(B.x + C.x) / 2 + 22}
-        y={(B.y + C.y) / 2 - 4}
+      <Dimension
+        from={B}
+        to={C}
+        offset={26}
         text="12 m"
         t0={3.4}
         fadeAt={5.5}
       />
       <DimensionLabel
         x={180}
-        y={A.y + 30}
+        y={A.y + 38}
         text="Single dwelling"
         t0={3.6}
         fadeAt={5.5}
         accent
       />
     </g>
+  );
+}
+
+/**
+ * Architectural dimension callout. Draws a parallel measurement
+ * line offset from the wall it's labelling, with perpendicular
+ * end-caps and a centred text label. Mimics how real drafting
+ * software (Revit, AutoCAD) renders dimensions.
+ */
+function Dimension({
+  from,
+  to,
+  offset,
+  text,
+  t0,
+  fadeAt,
+}: {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  offset: number;
+  text: string;
+  t0: number;
+  fadeAt: number;
+}) {
+  // Perpendicular unit vector pointing "outside" the building.
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  // Perp vector (rotate 90° clockwise) — points "down/out" relative
+  // to the wall in our isometric view.
+  const px = dy / len;
+  const py = -dx / len;
+  // Push outward by `offset`.
+  const ox = -px * offset;
+  const oy = -py * offset;
+  const f = { x: from.x + ox, y: from.y + oy };
+  const tt = { x: to.x + ox, y: to.y + oy };
+  // End-cap tick perpendicular to the dim line, 4px each direction.
+  const tickHalf = 3.5;
+  // Text sits at the midpoint of the dim line.
+  const mx = (f.x + tt.x) / 2;
+  const my = (f.y + tt.y) / 2;
+  // Text offset slightly outward so it doesn't sit on the line.
+  const tox = -px * 8;
+  const toy = -py * 8;
+  // Compute angle for text rotation (in degrees). Flip by 180° when
+  // the natural angle would read the label upside-down, so all
+  // labels read left-to-right regardless of which edge they belong
+  // to (architectural-drafting convention).
+  let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+  if (angleDeg > 90 || angleDeg < -90) angleDeg += 180;
+
+  return (
+    <motion.g
+      initial={false}
+      animate={{ opacity: [0, 0, 1, 1, 0] }}
+      transition={{
+        duration: LOOP,
+        times: [0, t(t0), t(t0 + 0.4), t(fadeAt), t(fadeAt + 0.6)],
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    >
+      {/* Connector ticks from wall to dim line at each end. */}
+      <line
+        x1={from.x}
+        y1={from.y}
+        x2={f.x}
+        y2={f.y}
+        stroke="rgba(126,245,237,0.35)"
+        strokeWidth="0.6"
+      />
+      <line
+        x1={to.x}
+        y1={to.y}
+        x2={tt.x}
+        y2={tt.y}
+        stroke="rgba(126,245,237,0.35)"
+        strokeWidth="0.6"
+      />
+      {/* The main dim line. */}
+      <line
+        x1={f.x}
+        y1={f.y}
+        x2={tt.x}
+        y2={tt.y}
+        stroke="rgba(126,245,237,0.55)"
+        strokeWidth="0.9"
+      />
+      {/* End-cap ticks (perpendicular to dim line). */}
+      <line
+        x1={f.x - py * tickHalf}
+        y1={f.y + px * tickHalf}
+        x2={f.x + py * tickHalf}
+        y2={f.y - px * tickHalf}
+        stroke="rgba(126,245,237,0.7)"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      <line
+        x1={tt.x - py * tickHalf}
+        y1={tt.y + px * tickHalf}
+        x2={tt.x + py * tickHalf}
+        y2={tt.y - px * tickHalf}
+        stroke="rgba(126,245,237,0.7)"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      {/* Label, rotated parallel to the dim line, sitting on the
+          outward side so it never overlaps the building. */}
+      <text
+        x={mx + tox}
+        y={my + toy}
+        fill="rgba(126,245,237,0.85)"
+        fontSize="9"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        textAnchor="middle"
+        dominantBaseline="central"
+        letterSpacing="0.06em"
+        transform={`rotate(${angleDeg} ${mx + tox} ${my + toy})`}
+      >
+        {text}
+      </text>
+    </motion.g>
   );
 }
 
@@ -613,46 +789,188 @@ function Roof() {
   );
 }
 
-/** Phase 3 — windows fade in with warm light. */
+/**
+ * Phase 2c — vertical accent lines highlighting the visible corner
+ * edges where walls meet (A-corner, B-corner). Draws once walls are
+ * up, gives the building structure a defined silhouette.
+ */
+function CornerEdges() {
+  const edges = [
+    { from: A, to: A_top },
+    { from: B, to: B_top },
+    { from: D, to: D_top },
+  ];
+  return (
+    <g>
+      {edges.map((e, i) => (
+        <motion.line
+          key={`edge-${i}`}
+          x1={e.from.x}
+          y1={e.from.y}
+          x2={e.to.x}
+          y2={e.to.y}
+          stroke="rgba(126,245,237,0.85)"
+          strokeWidth="1"
+          strokeLinecap="round"
+          initial={false}
+          animate={{
+            pathLength: [0, 0, 1, 1, 0],
+            opacity: [0, 0, 1, 1, 0],
+          }}
+          transition={{
+            duration: LOOP,
+            times: [0, t(6.5 + i * 0.15), t(7.0 + i * 0.15), t(12.8), t(13.7)],
+            repeat: Infinity,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </g>
+  );
+}
+
+/**
+ * A small architectural title block in the bottom-right corner that
+ * fades in during the "Complete" phase. Mimics the title-block
+ * convention on real architectural drawings (project, scale, date).
+ */
+function TitleBlock() {
+  return (
+    <motion.g
+      initial={false}
+      animate={{ opacity: [0, 0, 1, 1, 0] }}
+      transition={{
+        duration: LOOP,
+        times: [0, t(8.5), t(9.2), t(12.8), t(13.7)],
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    >
+      {/* Background plate. */}
+      <rect
+        x={232}
+        y={278}
+        width={120}
+        height={34}
+        rx={2}
+        fill="rgba(6,18,30,0.85)"
+        stroke="rgba(126,245,237,0.25)"
+        strokeWidth="0.6"
+      />
+      {/* Top hairline accent. */}
+      <line
+        x1={236}
+        y1={282}
+        x2={348}
+        y2={282}
+        stroke="rgba(126,245,237,0.5)"
+        strokeWidth="0.4"
+      />
+      {/* Project name. */}
+      <text
+        x={238}
+        y={293}
+        fill="rgba(126,245,237,0.85)"
+        fontSize="7.5"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        letterSpacing="0.18em"
+        style={{ textTransform: "uppercase" }}
+      >
+        45 Sydney Rd
+      </text>
+      {/* Sub line. */}
+      <text
+        x={238}
+        y={302}
+        fill="rgba(238,246,255,0.6)"
+        fontSize="6.5"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        letterSpacing="0.10em"
+      >
+        Brunswick · VIC
+      </text>
+      {/* Scale + status. */}
+      <text
+        x={238}
+        y={310}
+        fill="rgba(126,245,237,0.55)"
+        fontSize="6"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        letterSpacing="0.10em"
+      >
+        Scale 1:100
+      </text>
+      <text
+        x={348}
+        y={310}
+        fill="rgba(126,245,237,0.7)"
+        fontSize="6"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        letterSpacing="0.18em"
+        textAnchor="end"
+        style={{ textTransform: "uppercase" }}
+      >
+        Built
+      </text>
+    </motion.g>
+  );
+}
+
+/**
+ * Phase 3 — windows light up with a brief "powering on" flicker
+ * (fade in → quick dim → settle to full), then hold through the
+ * Complete phase before fading with the rest of the scene.
+ */
 function Windows() {
   return (
     <g>
-      {WINDOWS.map((w, i) => (
-        <motion.g key={i}>
-          {/* The window glass with warm gradient. */}
-          <motion.path
-            d={windowPath(w)}
-            fill="url(#windowGlow)"
-            stroke="rgba(255,220,140,0.4)"
-            strokeWidth="0.6"
-            initial={false}
-            animate={{
-              opacity: [0, 0, 1, 1, 0],
-            }}
-            transition={{
-              duration: LOOP,
-              times: [0, t(7.7 + i * 0.18), t(8.3 + i * 0.18), t(12.8), t(13.7)],
-              repeat: Infinity,
-              ease: "easeOut",
-            }}
-          />
-          {/* Soft glow behind window for "lit from within" feel. */}
-          <motion.path
-            d={windowPath(w)}
-            fill="rgba(255,200,120,0.18)"
-            initial={false}
-            animate={{
-              opacity: [0, 0, 1, 1, 0],
-            }}
-            style={{ filter: "blur(3px)" }}
-            transition={{
-              duration: LOOP,
-              times: [0, t(7.7 + i * 0.18), t(8.3 + i * 0.18), t(12.8), t(13.7)],
-              repeat: Infinity,
-            }}
-          />
-        </motion.g>
-      ))}
+      {WINDOWS.map((w, i) => {
+        const start = 7.7 + i * 0.18;
+        // Each window animates through: invisible → flicker on → settle.
+        const opacityKeys = [0, 0, 1, 0.55, 1, 1, 0];
+        const timeKeys = [
+          0,
+          t(start),
+          t(start + 0.18),
+          t(start + 0.3),
+          t(start + 0.5),
+          t(12.8),
+          t(13.7),
+        ];
+        return (
+          <motion.g key={i}>
+            {/* The window glass with warm gradient. */}
+            <motion.path
+              d={windowPath(w)}
+              fill="url(#windowGlow)"
+              stroke="rgba(255,220,140,0.45)"
+              strokeWidth="0.6"
+              initial={false}
+              animate={{ opacity: opacityKeys }}
+              transition={{
+                duration: LOOP,
+                times: timeKeys,
+                repeat: Infinity,
+                ease: "easeOut",
+              }}
+            />
+            {/* Soft glow behind window for "lit from within" feel. */}
+            <motion.path
+              d={windowPath(w)}
+              fill="rgba(255,200,120,0.22)"
+              initial={false}
+              animate={{ opacity: opacityKeys }}
+              style={{ filter: "blur(3px)" }}
+              transition={{
+                duration: LOOP,
+                times: timeKeys,
+                repeat: Infinity,
+                ease: "easeOut",
+              }}
+            />
+          </motion.g>
+        );
+      })}
     </g>
   );
 }
