@@ -197,6 +197,18 @@ export function BuildingReveal() {
       {/* Phase indicator chip — top-left. */}
       <PhaseIndicator />
 
+      {/* Inner wrapper carries a continuous gentle float so the
+          whole composition feels alive even between phases. */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{ y: [0, -4, 0] }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+
       <svg
         viewBox="0 0 360 320"
         className="relative w-full h-full"
@@ -270,6 +282,7 @@ export function BuildingReveal() {
           </linearGradient>
         </defs>
       </svg>
+      </motion.div>
     </div>
   );
 }
@@ -926,15 +939,31 @@ function Windows() {
     <g>
       {WINDOWS.map((w, i) => {
         const start = 7.7 + i * 0.18;
-        // Each window animates through: invisible → flicker on → settle.
-        const opacityKeys = [0, 0, 1, 0.55, 1, 1, 0];
+        // Each window animates through: invisible → flicker on →
+        // settle. Then two gentle "breaths" during the Complete
+        // phase so the lights feel inhabited instead of static.
+        const opacityKeys = [
+          0,
+          0,
+          1,
+          0.55,
+          1, // settled bright
+          0.88, // breath dim 1
+          1,
+          0.88, // breath dim 2
+          1,
+          0,
+        ];
         const timeKeys = [
           0,
           t(start),
           t(start + 0.18),
           t(start + 0.3),
           t(start + 0.5),
-          t(12.8),
+          t(9.2),
+          t(10.2),
+          t(11.4),
+          t(12.4),
           t(13.7),
         ];
         return (
