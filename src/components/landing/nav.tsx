@@ -81,7 +81,7 @@ export function LandingNav() {
         )}
         style={{
           background:
-            "linear-gradient(180deg, #060f19 0%, #060f19 55%, rgba(6,15,25,0) 100%)",
+            "linear-gradient(180deg, #03090f 0%, #03090f 55%, rgba(3,9,15,0) 100%)",
         }}
       />
       <nav
@@ -93,7 +93,7 @@ export function LandingNav() {
           // mobile menu is open we paint a solid plate so the panel
           // beneath us has something to anchor to visually.
           mobileOpen
-            ? "bg-[#060f19] border-b border-border-subtle py-3"
+            ? "bg-[#03090f] border-b border-border-subtle py-3"
             : scrolled
               ? "bg-transparent py-3"
               : "bg-transparent py-5",
@@ -138,29 +138,28 @@ export function LandingNav() {
             </Link>
           </div>
 
-          {/* Right side — mobile actions: Get started button + hamburger */}
-          <div className="flex md:hidden items-center gap-2">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center px-4 h-11 rounded-full leading-none bg-accent text-accent-contrast text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms]"
-            >
-              Get started
-            </Link>
+          {/* Right side — mobile actions: hamburger only. The Get
+              started CTA is promoted to the top of the slide-down panel
+              so the header itself stays minimal and uncluttered. */}
+          <div className="flex md:hidden items-center">
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="size-11 rounded-md border border-border-subtle text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)] transition-colors flex items-center justify-center"
+              className="size-11 -mr-2 rounded-md text-text hover:text-accent-light hover:bg-[rgba(126,245,237,0.06)] transition-colors flex items-center justify-center"
             >
-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile slide-down panel — full-width, dark glass, centered
-           link list. Sits below the nav bar with a subtle reveal. */}
+      {/* Mobile slide-down panel — full-width, solid dark plate (no
+          glass — keeps the iOS status-bar colour seamless with the
+          page below). The Get started CTA leads at the top, links sit
+          below it, and Log in plus quick utility links anchor the
+          panel at the bottom. */}
       <AnimatePresence>
         {mobileOpen ? (
           <motion.div
@@ -172,38 +171,68 @@ export function LandingNav() {
             data-lenis-prevent
             className={cn(
               "fixed inset-x-0 top-[68px] z-40 md:hidden",
-              "bg-bg/95 backdrop-blur-xl border-b border-border-subtle",
+              "border-b border-border-subtle",
               "max-h-[calc(100dvh-68px)] overflow-y-auto",
             )}
             style={{
+              background: "#03090f",
               paddingBottom: "env(safe-area-inset-bottom)",
             }}
           >
-            <div className="px-5 py-5 flex flex-col gap-1">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-3 rounded-md text-[14px] tracking-[0.04em] text-text hover:bg-[rgba(255,255,255,0.04)] transition-colors"
-                >
-                  {l.label}
-                </Link>
-              ))}
-              <div className="mt-2 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+            <div className="px-5 pt-5 pb-7 flex flex-col">
+              {/* Primary CTA — promoted from the header. Full-width on
+                  mobile so it reads as the obvious next step. */}
+              <Link
+                href="/signup"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 h-14 rounded-full",
+                  "bg-accent text-accent-contrast text-[15px] font-semibold tracking-[0.02em]",
+                  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_0_0_1px_rgba(0,212,200,0.45),0_0_28px_-4px_rgba(0,212,200,0.55)]",
+                  "transition-[background-color] duration-[160ms] hover:bg-accent-hover",
+                )}
+              >
+                Get started
+              </Link>
+
+              {/* Section anchors */}
+              <ul className="mt-5 flex flex-col gap-1">
+                {links.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center min-h-12 px-3 rounded-md text-[15px] text-text hover:bg-[rgba(126,245,237,0.06)] transition-colors"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Secondary row — Log in left, utility links right. */}
+              <div className="mt-5 pt-4 border-t border-border-subtle/70 flex items-center justify-between">
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2 text-[13px] tracking-[0.04em] text-text-muted hover:text-text transition-colors"
+                  className="inline-flex items-center min-h-11 px-3 text-[14px] tracking-[0.04em] text-text-muted hover:text-text transition-colors"
                 >
                   Log in
                 </Link>
-                <div className="flex items-center gap-3 text-[11px] text-text-dim">
-                  <Link href="/about" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
+                <div className="flex items-center gap-4 text-[12px] text-text-dim">
+                  <Link
+                    href="/about"
+                    onClick={() => setMobileOpen(false)}
+                    className="hover:text-text transition-colors"
+                  >
                     About
                   </Link>
-                  <span className="text-text-faint/50">·</span>
-                  <Link href="/faq" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
+                  <span aria-hidden className="text-text-faint/40">·</span>
+                  <Link
+                    href="/faq"
+                    onClick={() => setMobileOpen(false)}
+                    className="hover:text-text transition-colors"
+                  >
                     FAQ
                   </Link>
                 </div>

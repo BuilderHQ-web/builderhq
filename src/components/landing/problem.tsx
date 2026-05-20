@@ -1,3 +1,4 @@
+import { ArrowDown } from "lucide-react";
 import { Reveal } from "./reveal";
 
 const rows: Array<{ then: string; now: string }> = [
@@ -40,7 +41,7 @@ export function Problem() {
               </span>{" "}
               <span className="text-accent-light">chasing</span>.
             </h2>
-            <p className="mt-5 lg:mt-7 mx-auto max-w-[60ch] text-[14.5px] sm:text-[15.5px] leading-[1.65] sm:leading-[1.7] text-text-subtle">
+            <p className="mt-5 lg:mt-7 mx-auto max-w-[60ch] text-[14.5px] sm:text-[15.5px] leading-[1.6] sm:leading-[1.7] text-text-subtle">
               Finding the right builder is the most consequential step of a
               residential build. We fixed the structure of the conversation,
               not just the inbox.
@@ -48,9 +49,26 @@ export function Problem() {
           </div>
         </Reveal>
 
-        <div className="mt-10 lg:mt-20">
-          {/* Header row */}
-          <div className="hidden md:grid grid-cols-[1fr_auto_1fr] gap-8 items-center px-6 mb-4">
+        {/* ── Mobile (and tablet portrait): stacked transformation cards.
+            Each row becomes a self-contained "Before / After" card with
+            its own glow, an arrow break between halves, and a numeric
+            chip in the corner. Reads as a series of small product
+            moments instead of a dense list. */}
+        <div className="mt-10 lg:hidden flex flex-col gap-4">
+          {rows.map((r, i) => (
+            <Reveal key={i} delay={i * 0.06}>
+              <MobileTransformCard
+                index={i + 1}
+                then={r.then}
+                now={r.now}
+              />
+            </Reveal>
+          ))}
+        </div>
+
+        {/* ── Desktop: original two-column comparison table. ──── */}
+        <div className="mt-10 lg:mt-20 hidden lg:block">
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center px-6 mb-4">
             <span className="text-[10px] tracking-[0.24em] uppercase text-text-dim">
               Today
             </span>
@@ -63,7 +81,11 @@ export function Problem() {
           <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))] backdrop-blur-sm overflow-hidden">
             {rows.map((r, i) => (
               <Reveal key={i} delay={i * 0.05}>
-                <Row then={r.then} now={r.now} last={i === rows.length - 1} />
+                <DesktopRow
+                  then={r.then}
+                  now={r.now}
+                  last={i === rows.length - 1}
+                />
               </Reveal>
             ))}
           </div>
@@ -73,7 +95,115 @@ export function Problem() {
   );
 }
 
-function Row({
+/**
+ * Mobile-only transformation card. Two stacked panels — a faded
+ * "today" half on top with a red dot, and a bright "BuilderHQ" half
+ * underneath with the teal glow. A small chevron sits between them
+ * so the eye reads "this becomes that." The card itself has a soft
+ * accent halo behind it and a glass-style edge to feel like a real
+ * product surface, not a list item.
+ */
+function MobileTransformCard({
+  index,
+  then,
+  now,
+}: {
+  index: number;
+  then: string;
+  now: string;
+}) {
+  const label = String(index).padStart(2, "0");
+  return (
+    <article className="group relative rounded-2xl overflow-hidden">
+      {/* Soft accent halo bleeding off the bottom-right corner. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -bottom-16 -right-16 size-44 rounded-full opacity-70"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
+        }}
+      />
+      <div
+        className="relative rounded-2xl border border-border bg-[linear-gradient(180deg,rgba(9,27,42,0.85),rgba(5,16,28,0.95))] backdrop-blur-sm overflow-hidden"
+      >
+        {/* Top hairline — catches "light", same trick as the hero cards. */}
+        <span
+          aria-hidden
+          className="absolute top-0 inset-x-6 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(126,245,237,0.5), transparent)",
+          }}
+        />
+
+        {/* Index chip — sits top-right so the eye finds the sequence
+            without us writing "Step 1 of 4" anywhere. */}
+        <span
+          aria-hidden
+          className="absolute top-4 right-4 inline-flex items-center justify-center min-w-9 h-6 px-2 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.025)] text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-medium tabular-nums"
+        >
+          {label}
+        </span>
+
+        {/* Before panel */}
+        <div className="px-5 pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              aria-hidden
+              className="size-1.5 rounded-full bg-[rgba(255,120,120,0.7)] shadow-[0_0_8px_rgba(255,120,120,0.5)]"
+            />
+            <span className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui font-medium">
+              Today
+            </span>
+          </div>
+          <p className="text-[14.5px] leading-[1.55] text-text-muted/85 line-through decoration-[rgba(255,255,255,0.18)] decoration-1">
+            {then}
+          </p>
+        </div>
+
+        {/* Divider — short hairline with a soft chevron sitting on it.
+            Visual punctuation between "today" and "with BuilderHQ". */}
+        <div className="relative h-7 flex items-center justify-center">
+          <span
+            aria-hidden
+            className="absolute inset-x-5 top-1/2 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(126,245,237,0.25), transparent)",
+            }}
+          />
+          <span
+            aria-hidden
+            className="relative size-7 rounded-full border border-border-accent bg-[rgba(6,18,30,0.95)] flex items-center justify-center text-accent-light shadow-[0_0_18px_rgba(0,212,200,0.25)]"
+          >
+            <ArrowDown size={12} strokeWidth={2.4} />
+          </span>
+        </div>
+
+        {/* After panel — slightly brighter background tint so the
+            "with BuilderHQ" half visibly carries more weight. */}
+        <div className="relative px-5 pt-3 pb-5 bg-[linear-gradient(180deg,rgba(0,212,200,0.045),rgba(0,212,200,0))]">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              aria-hidden
+              className="size-1.5 rounded-full bg-accent-light shadow-[0_0_10px_rgba(0,212,200,0.7)]"
+            />
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-semibold">
+              With BuilderHQ
+            </span>
+          </div>
+          <p className="text-[15px] leading-[1.55] text-text font-medium">
+            {now}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/** Desktop row — unchanged from the original two-column comparison. */
+function DesktopRow({
   then,
   now,
   last,
@@ -85,36 +215,28 @@ function Row({
   return (
     <div
       className={[
-        // Mobile: a single column with the "before" greyed out and the
-        // "after" right under it — visually a stacked beat, not two
-        // crammed columns side-by-side. Desktop keeps the wide row.
-        "grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-8 items-start md:items-center px-5 md:px-8 py-5 md:py-7",
+        "grid grid-cols-[1fr_auto_1fr] gap-8 items-center px-8 py-7",
         last ? "" : "border-b border-border-subtle",
         "transition-colors duration-[400ms] hover:bg-[rgba(0,212,200,0.025)]",
       ].join(" ")}
     >
-      {/* Then */}
-      <div className="flex items-start gap-2.5 md:gap-3">
+      <div className="flex items-start gap-3">
         <span className="mt-[6px] size-1.5 rounded-full bg-[rgba(255,120,120,0.55)] shrink-0" />
-        <p className="text-[13px] sm:text-[14px] leading-[1.55] sm:leading-[1.6] text-text-muted line-through decoration-[rgba(255,255,255,0.18)] decoration-1">
+        <p className="text-[14px] leading-[1.6] text-text-muted line-through decoration-[rgba(255,255,255,0.18)] decoration-1">
           {then}
         </p>
       </div>
 
-      {/* Arrow / divider. Tighter on mobile so the "before / after" pair
-          reads as one tight beat rather than two paragraphs. */}
-      <span aria-hidden className="hidden md:flex w-8 justify-center text-accent text-[14px]">
+      <span aria-hidden className="flex w-8 justify-center text-accent text-[14px]">
         →
       </span>
-      <span aria-hidden className="md:hidden h-px bg-border-subtle w-8 ml-4" />
 
-      {/* Now */}
-      <div className="flex items-start gap-2.5 md:gap-3">
+      <div className="flex items-start gap-3">
         <span
           className="mt-[6px] size-1.5 rounded-full bg-accent-light shrink-0"
           style={{ boxShadow: "0 0 8px rgba(0,212,200,0.6)" }}
         />
-        <p className="text-[13.5px] sm:text-[14px] leading-[1.55] sm:leading-[1.6] text-text font-medium">
+        <p className="text-[14px] leading-[1.6] text-text font-medium">
           {now}
         </p>
       </div>

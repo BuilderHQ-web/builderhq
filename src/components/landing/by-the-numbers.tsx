@@ -60,13 +60,13 @@ export function ByTheNumbers() {
     <section
       id="by-the-numbers"
       aria-label="Platform facts at a glance"
-      className="relative px-5 md:px-10 py-12 lg:py-16"
+      className="relative px-5 md:px-10 py-14 lg:py-16"
     >
       <div className="mx-auto max-w-[1320px]">
         <Reveal>
           <div
             className={[
-              "relative rounded-md border border-border-subtle overflow-hidden",
+              "relative rounded-2xl lg:rounded-md border border-border-subtle overflow-hidden",
               "bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))]",
             ].join(" ")}
           >
@@ -80,7 +80,16 @@ export function ByTheNumbers() {
                   "radial-gradient(circle, rgba(0,212,200,0.16), transparent 70%)",
               }}
             />
-            <div className="relative grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-subtle/60">
+            {/* Top hairline accent — matches the comparison cards. */}
+            <span
+              aria-hidden
+              className="absolute top-0 inset-x-10 h-px"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(126,245,237,0.45), transparent)",
+              }}
+            />
+            <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x lg:divide-y-0 lg:divide-x divide-border-subtle/60">
               {ITEMS.map((item) => (
                 <Tile key={item.label} item={item} />
               ))}
@@ -94,7 +103,7 @@ export function ByTheNumbers() {
 
 function Tile({ item }: { item: Item }) {
   return (
-    <div className="px-5 lg:px-8 py-6 lg:py-8 flex flex-col gap-2">
+    <div className="px-5 lg:px-8 py-7 lg:py-8 flex flex-col items-center text-center gap-2 lg:items-start lg:text-left">
       {item.numeric ? (
         <CountUp
           to={item.numeric.to}
@@ -104,10 +113,10 @@ function Tile({ item }: { item: Item }) {
       ) : (
         <SoftReveal>{item.value}</SoftReveal>
       )}
-      <span className="text-[11px] tracking-[0.18em] uppercase text-text-muted font-ui font-medium mt-1">
+      <span className="text-[10.5px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold mt-1.5">
         {item.label}
       </span>
-      <span className="text-[12px] leading-[1.55] text-text-dim max-w-[28ch]">
+      <span className="text-[12.5px] leading-[1.55] text-text-dim max-w-[28ch]">
         {item.sub}
       </span>
     </div>
@@ -147,7 +156,7 @@ function CountUp({
       ref={ref}
       className="font-display tracking-[-0.005em] tabular-nums leading-none text-accent-light"
       style={{
-        fontSize: "clamp(2.25rem, 2.4vw + 1rem, 3rem)",
+        fontSize: "clamp(3rem, 5vw + 1.25rem, 3.25rem)",
         textShadow:
           "0 0 60px rgba(0,212,200,0.25), 0 0 120px rgba(0,212,200,0.08)",
       }}
@@ -179,7 +188,7 @@ function SoftReveal({ children }: { children: React.ReactNode }) {
           : "opacity-0 tracking-[0.06em] [filter:blur(6px)]",
       ].join(" ")}
       style={{
-        fontSize: "clamp(2.25rem, 2.4vw + 1rem, 3rem)",
+        fontSize: "clamp(3rem, 5vw + 1.25rem, 3.25rem)",
         textShadow:
           "0 0 60px rgba(0,212,200,0.25), 0 0 120px rgba(0,212,200,0.08)",
       }}

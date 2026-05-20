@@ -64,10 +64,23 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-20 items-center">
-        {/* Left — copy. */}
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-20 items-center">
+        {/* Visual — building reveal. Order is intentional: on mobile +
+            tablet (single-column) the visual leads, just like Resend's
+            cube-on-top hero. On desktop (lg grid) it sits on the
+            right via `lg:order-2` so the headline reads first L→R. */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+          className="flex justify-center order-1 lg:order-2 mt-2 lg:mt-0"
+        >
+          <BuildingReveal />
+        </motion.div>
+
+        {/* Copy. Centred on mobile + tablet, left-aligned on desktop. */}
         <div
-          className="text-center lg:text-left"
+          className="text-center lg:text-left order-2 lg:order-1"
           style={{ fontFamily: "var(--font-geist)" }}
         >
           {/* Live badge */}
@@ -86,7 +99,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
 
           {/* Headline — Instrument Serif with right-side fade. */}
           <h1
-            className="mt-6 lg:mt-8 tracking-[-0.025em] leading-[1.0] text-[clamp(3rem,7vw+1rem,6.5rem)]"
+            className="mt-5 lg:mt-8 tracking-[-0.025em] leading-[1.0] text-[clamp(3rem,7vw+1rem,6.5rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
           >
             <FadeRow delay={0}>
@@ -102,7 +115,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-7 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[16px] sm:text-[17px] leading-[1.55] text-text-subtle"
+            className="mt-5 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[15.5px] sm:text-[17px] leading-[1.55] text-text-subtle"
           >
             Upload your plans. We match verified builders. You pick the winner.
           </motion.p>
@@ -112,13 +125,13 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 lg:mt-10 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-3 sm:gap-5"
+            className="mt-7 lg:mt-10 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-3 sm:gap-5"
           >
             <Link
               href={cta.primary.href}
               className={cn(
-                "group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full",
-                "bg-accent text-accent-contrast text-[14px] font-semibold tracking-[0.01em]",
+                "group inline-flex items-center justify-center gap-2 h-[52px] sm:h-12 px-7 rounded-full",
+                "bg-accent text-accent-contrast text-[15px] sm:text-[14px] font-semibold tracking-[0.01em]",
                 "transition-[background-color,box-shadow,transform] duration-[180ms]",
                 "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_0_0_1px_rgba(0,212,200,0.45),0_0_28px_-4px_rgba(0,212,200,0.55),0_10px_28px_-8px_rgba(0,212,200,0.5)]",
                 "hover:bg-accent-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35),0_0_0_1px_rgba(0,212,200,0.55),0_0_36px_-4px_rgba(0,212,200,0.75),0_14px_32px_-8px_rgba(0,212,200,0.65)]",
@@ -140,20 +153,6 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
           </motion.div>
         </div>
-
-        {/* Right column — the building-reveal animation. SVG-driven
-            14-second cinematic loop: floor plan drafts itself, walls
-            rise, roof drops on, windows light up. Sized responsively
-            via its own `--cube-size` CSS var. On mobile the grid
-            stacks so it falls below the CTA strip. */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-          className="flex justify-center mt-14 lg:mt-0"
-        >
-          <BuildingReveal />
-        </motion.div>
       </div>
     </section>
   );

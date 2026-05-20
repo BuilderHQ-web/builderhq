@@ -107,6 +107,10 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
+  // Extend the page behind the notch and home indicator so the body
+  // background colour bleeds into the iOS safe-area chrome — no visible
+  // band between the page and the status bar.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
