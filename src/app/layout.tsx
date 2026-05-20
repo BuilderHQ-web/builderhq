@@ -1,6 +1,13 @@
 import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Space_Grotesk, DM_Sans, JetBrains_Mono } from "next/font/google";
+import {
+  Bebas_Neue,
+  Space_Grotesk,
+  DM_Sans,
+  JetBrains_Mono,
+  Instrument_Serif,
+  Geist,
+} from "next/font/google";
 import "./globals.css";
 
 import { SmoothScroll } from "@/components/smooth-scroll";
@@ -35,6 +42,25 @@ const dmSans = DM_Sans({
 // Mono — JetBrains. Tabular figures: ABNs, prices, IDs.
 const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Serif display — Instrument Serif. Premium, Resend-grade. Used for the
+// marketing hero headline and any moments that benefit from a softer,
+// more "editorial" tone than Bebas Neue's all-caps display.
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  display: "swap",
+  weight: "400",
+});
+
+// Geist Sans — Vercel's open-source UI sans. Same family as Linear /
+// Resend / Vercel / v0. Used alongside Instrument Serif for the new
+// premium hero treatment.
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
 });
@@ -89,7 +115,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebas.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${jetbrains.variable} antialiased`}
+      className={`${bebas.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${geistSans.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans text-text">

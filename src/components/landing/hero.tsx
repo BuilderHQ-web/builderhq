@@ -63,71 +63,47 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-20 items-center">
-        {/* Left — copy. Centred on mobile, left-aligned from lg+. */}
-        <div className="text-center lg:text-left">
-          {/* Mobile-only single card above the headline — keeps the
-              hero short on phones. Hidden at lg+ where the full
-              card stack takes over on the right. */}
-          <div className="lg:hidden mb-10 flex justify-center">
-            <MobileHeroCard />
-          </div>
-
-          {/* Live badge — pulse dot + announcement. */}
+      <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-20 items-center">
+        {/* Left — copy. */}
+        <div
+          className="text-center lg:text-left"
+          style={{ fontFamily: "var(--font-geist)" }}
+        >
+          {/* Live badge */}
           <motion.span
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="inline-flex items-center gap-2.5 pl-2.5 pr-4 py-1.5 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.025)] backdrop-blur-sm text-[12px] text-text-muted font-ui"
+            className="inline-flex items-center gap-2.5 pl-2.5 pr-4 py-1.5 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.025)] backdrop-blur-sm text-[12px] text-text-muted"
           >
             <span className="relative flex size-2">
               <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
               <span className="relative size-2 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
             </span>
-            <span>
-              <span className="text-accent-light font-semibold tracking-[0.04em]">
-                Now open
-              </span>
-              <span className="mx-2 text-text-faint">·</span>
-              <span>Australian residential projects</span>
-            </span>
+            <span className="text-accent-light font-medium">Now live in Australia</span>
           </motion.span>
 
-          {/* Headline */}
-          <h1 className="mt-6 lg:mt-7 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(2.75rem,7.5vw+1rem,7rem)]">
-            <Row delay={0}>
-              <span className="block text-text">Tender</span>
-            </Row>
-            <Row delay={0.08}>
-              <span
-                className="block text-transparent"
-                style={{ WebkitTextStroke: "1.2px rgba(142,252,244,0.55)" }}
-              >
-                your build.
-              </span>
-            </Row>
-            <Row delay={0.16}>
-              <span
-                className="block text-accent-light"
-                style={{
-                  textShadow:
-                    "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
-                }}
-              >
-                In days.
-              </span>
-            </Row>
+          {/* Headline — Instrument Serif with right-side fade. */}
+          <h1
+            className="mt-6 lg:mt-8 tracking-[-0.025em] leading-[1.0] text-[clamp(3rem,7vw+1rem,6.5rem)]"
+            style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
+          >
+            <FadeRow delay={0}>
+              <span className="block">Tender your build.</span>
+            </FadeRow>
+            <FadeRow delay={0.12} faded>
+              <span className="block">In days.</span>
+            </FadeRow>
           </h1>
 
-          {/* Subhead */}
+          {/* Subhead — short, declarative. No em dashes. */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.38, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 lg:mt-9 mx-auto lg:mx-0 max-w-[34rem] text-[15px] sm:text-[16px] leading-[1.6] sm:leading-[1.7] text-text-subtle"
+            transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-7 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[16px] sm:text-[17px] leading-[1.55] text-text-subtle"
           >
-            Upload your project once. Get matched with verified builders,
-            compare tenders side-by-side — all in one place.
+            Upload your plans. We match verified builders. You pick the winner.
           </motion.p>
 
           {/* Primary CTA + ghost secondary */}
@@ -141,7 +117,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
               href={cta.primary.href}
               className={cn(
                 "group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full",
-                "bg-accent text-accent-contrast text-[13.5px] font-semibold tracking-[0.02em] font-ui",
+                "bg-accent text-accent-contrast text-[14px] font-semibold tracking-[0.01em]",
                 "transition-[background-color,box-shadow,transform] duration-[180ms]",
                 "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_0_0_1px_rgba(0,212,200,0.45),0_0_28px_-4px_rgba(0,212,200,0.55),0_10px_28px_-8px_rgba(0,212,200,0.5)]",
                 "hover:bg-accent-hover hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35),0_0_0_1px_rgba(0,212,200,0.55),0_0_36px_-4px_rgba(0,212,200,0.75),0_14px_32px_-8px_rgba(0,212,200,0.65)]",
@@ -156,17 +132,16 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             </Link>
             <Link
               href={cta.secondary.href}
-              className="group inline-flex items-center justify-center sm:justify-start gap-1.5 px-2 py-3 text-[13.5px] text-text-muted hover:text-text transition-colors font-ui"
+              className="group inline-flex items-center justify-center sm:justify-start gap-1.5 px-2 py-3 text-[14px] text-text-muted hover:text-text transition-colors"
             >
               {cta.secondary.label}
-              <ArrowUpRight
-                className="size-3.5 opacity-60 transition-all duration-[180ms] group-hover:translate-x-0.5 group-hover:opacity-100"
-              />
+              <ArrowUpRight className="size-3.5 opacity-60 transition-all duration-[180ms] group-hover:translate-x-0.5 group-hover:opacity-100" />
             </Link>
           </motion.div>
         </div>
 
-        {/* Right — desktop card stack (hidden on mobile). */}
+        {/* Right — card stack. Visible on lg+. On mobile a compact
+            single-card cycler renders below the CTA strip. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -175,8 +150,54 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         >
           <HeroCardStack />
         </motion.div>
+
+        {/* Mobile-only compact card, below CTAs. Cleaner than the
+            previous "above headline" placement which crowded the
+            top of the phone screen. */}
+        <div className="lg:hidden mt-4 flex justify-center">
+          <MobileHeroCard />
+        </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Headline row with optional right-side fade. Uses Tailwind's
+ * background-clip:text to fade the second line into the page, the
+ * Resend signature treatment on their "developers" word.
+ */
+function FadeRow({
+  children,
+  delay,
+  faded,
+}: {
+  children: React.ReactNode;
+  delay: number;
+  faded?: boolean;
+}) {
+  return (
+    <span className="block overflow-hidden">
+      <motion.span
+        className={cn("block", faded && "bg-clip-text text-transparent")}
+        initial={{ y: "105%", opacity: 0 }}
+        animate={{ y: "0%", opacity: 1 }}
+        transition={{ delay, duration: 0.95, ease: [0.16, 1, 0.3, 1] }}
+        style={
+          faded
+            ? {
+                // Fade right edge into muted, evoking Resend's
+                // "developers" gradient ghost effect — done in our
+                // teal-tinted palette so it stays on-brand.
+                backgroundImage:
+                  "linear-gradient(110deg, #eef6ff 0%, #eef6ff 35%, rgba(126,245,237,0.55) 90%)",
+              }
+            : { color: "#eef6ff" }
+        }
+      >
+        {children}
+      </motion.span>
+    </span>
   );
 }
 
@@ -192,19 +213,32 @@ const STACK_LEN = STACK_CARDS.length;
 const ROTATE_MS = 5000;
 
 /**
- * Three product cards stacked in perspective. Front card is fully
- * visible; the two behind it sit offset down + right at smaller
- * scale and lower opacity. Every 5s the front card flicks to the
- * back and the others shift forward. Hover pauses the rotation and
- * lifts the front card with a stronger glow; click anywhere on the
- * stack to advance manually.
+ * Stack of three uniform-sized product cards in perspective.
+ *
+ *   · All cards share a fixed `h-[480px]` container so they look
+ *     visually identical in size — only the content inside differs.
+ *   · Front card sits flat, sharp, opaque.
+ *   · Two cards behind sit offset down + right at smaller scale +
+ *     lower opacity + slight blur. Reads as a real deck.
+ *   · Auto-rotates every 5s. Front card flicks to the back; the
+ *     others step forward one position.
+ *   · Continuous gentle float (y oscillation) on the whole stack
+ *     so it feels alive even at rest, similar to Resend's cube.
+ *   · Mouse-tracking tilt: as the cursor moves over the stack, the
+ *     deck tilts a few degrees in response. Subtle premium signal.
+ *   · Hover pauses the auto-rotate, intensifies the halo, lifts
+ *     the front card 6px and scales it 1.015.
+ *   · Click / Enter / Space advances manually. Cursor is pointer.
  */
 function HeroCardStack() {
   const [frontIdx, setFrontIdx] = useState(0);
   const [hovering, setHovering] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-rotate (paused on hover).
   useEffect(() => {
-    if (hovering) return; // pause auto-rotate on hover
+    if (hovering) return;
     const id = window.setInterval(() => {
       setFrontIdx((i) => (i + 1) % STACK_LEN);
     }, ROTATE_MS);
@@ -213,10 +247,26 @@ function HeroCardStack() {
 
   const advance = () => setFrontIdx((i) => (i + 1) % STACK_LEN);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    // -1..1 across the element, then scaled to a few degrees.
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    setTilt({ x: -ny * 3, y: nx * 4 });
+  };
+  const handleMouseLeave = () => {
+    setHovering(false);
+    setTilt({ x: 0, y: 0 });
+  };
+
   return (
     <div
+      ref={containerRef}
       onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
       onClick={advance}
       role="button"
       aria-label="Cycle product preview"
@@ -227,62 +277,79 @@ function HeroCardStack() {
           advance();
         }
       }}
-      className="relative w-full max-w-[540px] mx-auto h-[520px] cursor-pointer select-none [perspective:1500px]"
+      className="relative w-full max-w-[520px] mx-auto h-[480px] cursor-pointer select-none [perspective:1600px]"
     >
       {/* Ambient halo behind the stack — intensifies on hover. */}
       <motion.span
         aria-hidden
         className="pointer-events-none absolute -inset-12 rounded-[40px]"
-        animate={{
-          opacity: hovering ? 1 : 0.75,
-        }}
+        animate={{ opacity: hovering ? 1 : 0.7 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         style={{
           background:
-            "radial-gradient(ellipse at 50% 40%, rgba(0,212,200,0.18), transparent 65%)",
+            "radial-gradient(ellipse at 50% 45%, rgba(0,212,200,0.22), transparent 65%)",
         }}
       />
 
-      {STACK_CARDS.map(({ Component, key }, i) => {
-        const order = (i - frontIdx + STACK_LEN) % STACK_LEN;
-        // order 0 = front, 1 = mid, 2 = back
-        return (
-          <motion.div
-            key={key}
-            initial={false}
-            animate={{
-              x: order * 20,
-              y: order * 22 + (order === 0 && hovering ? -6 : 0),
-              scale:
-                order === 0
-                  ? hovering
-                    ? 1.015
-                    : 1
-                  : 1 - order * 0.045,
-              opacity: order === 0 ? 1 : order === 1 ? 0.68 : 0.36,
-              rotateY: order * -3,
-              zIndex: STACK_LEN - order,
-              filter: order === 0 ? "blur(0px)" : `blur(${order * 0.5}px)`,
-            }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0"
-            style={{
-              transformOrigin: "50% 100%",
-              willChange: "transform, opacity",
-            }}
-          >
-            <Component />
-          </motion.div>
-        );
-      })}
+      {/* Continuous gentle float — wraps all three cards. */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{ y: [0, -8, 0] }}
+        transition={{
+          duration: 6,
+          ease: "easeInOut",
+          repeat: Infinity,
+        }}
+        style={{
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          transition: "transform 400ms cubic-bezier(0.22, 1, 0.36, 1)",
+          transformStyle: "preserve-3d",
+        }}
+      >
+        {STACK_CARDS.map(({ Component, key }, i) => {
+          const order = (i - frontIdx + STACK_LEN) % STACK_LEN;
+          // order 0 = front, 1 = mid, 2 = back
+          return (
+            <motion.div
+              key={key}
+              initial={false}
+              animate={{
+                x: order * 22,
+                y: order * 24 + (order === 0 && hovering ? -6 : 0),
+                scale:
+                  order === 0
+                    ? hovering
+                      ? 1.015
+                      : 1
+                    : 1 - order * 0.05,
+                opacity: order === 0 ? 1 : order === 1 ? 0.7 : 0.4,
+                rotateY: order * -3,
+                rotateZ: order * -1.5,
+                zIndex: STACK_LEN - order,
+                filter: order === 0 ? "blur(0px)" : `blur(${order * 0.6}px)`,
+              }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0"
+              style={{
+                transformOrigin: "50% 100%",
+                willChange: "transform, opacity",
+              }}
+            >
+              <FixedHeightCard>
+                <Component />
+              </FixedHeightCard>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Stack indicator — three dots showing which card is front. */}
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+      <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
         {STACK_CARDS.map((_, i) => (
           <motion.span
             key={i}
             animate={{
-              width: i === frontIdx ? 18 : 6,
+              width: i === frontIdx ? 20 : 6,
               opacity: i === frontIdx ? 1 : 0.4,
             }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -301,9 +368,19 @@ function HeroCardStack() {
 }
 
 /**
- * Mobile-only single card. Shows whichever card is currently "front"
- * via the same rotation timer as the desktop stack, but rendered
- * solo (no stack) so the hero stays compact on phones.
+ * Forces every card to render at the same 100% width / 100% height
+ * of the stack slot. The card's internal layout flows naturally
+ * inside; if a card is content-shorter than the slot, empty space
+ * sits at the bottom — visually all three reads as the same object.
+ */
+function FixedHeightCard({ children }: { children: React.ReactNode }) {
+  return <div className="w-full h-full [&>*]:h-full">{children}</div>;
+}
+
+/**
+ * Mobile-only single card cycler. Renders solo (no stack) so the
+ * phone hero stays compact. Cross-fades through the same three
+ * cards on the 5s rotation.
  */
 function MobileHeroCard() {
   const [idx, setIdx] = useState(0);
@@ -316,7 +393,7 @@ function MobileHeroCard() {
   }, []);
 
   return (
-    <div className="relative w-full max-w-[420px]">
+    <div className="relative w-full max-w-[380px] h-[440px]">
       <span
         aria-hidden
         className="pointer-events-none absolute -inset-8 rounded-3xl"
@@ -332,12 +409,14 @@ function MobileHeroCard() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -12, scale: 0.98 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
+          className="absolute inset-0"
         >
-          {(() => {
-            const Card = STACK_CARDS[idx]!.Component;
-            return <Card />;
-          })()}
+          <FixedHeightCard>
+            {(() => {
+              const Card = STACK_CARDS[idx]!.Component;
+              return <Card />;
+            })()}
+          </FixedHeightCard>
         </motion.div>
       </AnimatePresence>
     </div>
@@ -1027,10 +1106,10 @@ function TenderInProgressCard() {
 function CardShell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="relative rounded-lg border border-[rgba(100,180,255,0.12)] backdrop-blur-xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.55)]"
+      className="relative h-full flex flex-col rounded-lg border border-[rgba(100,180,255,0.12)] backdrop-blur-xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.55)]"
       style={{
         background:
-          "linear-gradient(160deg, rgba(10,30,48,0.92), rgba(6,18,30,0.96))",
+          "linear-gradient(160deg, rgba(10,30,48,0.94), rgba(6,18,30,0.97))",
       }}
     >
       <span
@@ -1049,7 +1128,7 @@ function CardShell({ children }: { children: React.ReactNode }) {
             "radial-gradient(ellipse at top right, rgba(0,212,200,0.12), transparent 60%)",
         }}
       />
-      <div className="relative">{children}</div>
+      <div className="relative flex-1 flex flex-col">{children}</div>
     </div>
   );
 }
