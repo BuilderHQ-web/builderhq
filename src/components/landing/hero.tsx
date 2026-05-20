@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CtaLinks } from "./cta-links";
+import { BuildingReveal } from "./building-reveal";
 
 /**
  * Hero — horizontal composition: copy left, card-stack right.
@@ -140,17 +141,18 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           </motion.div>
         </div>
 
-        {/* Right column — the 3D cube. Renders once; sized
-            responsively via the cube's own `--cube-size` CSS var.
-            On mobile the grid stacks so the cube falls below the
-            CTA strip with comfortable top margin. */}
+        {/* Right column — the building-reveal animation. SVG-driven
+            14-second cinematic loop: floor plan drafts itself, walls
+            rise, roof drops on, windows light up. Sized responsively
+            via its own `--cube-size` CSS var. On mobile the grid
+            stacks so it falls below the CTA strip. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
           className="flex justify-center mt-14 lg:mt-0"
         >
-          <HeroCube />
+          <BuildingReveal />
         </motion.div>
       </div>
     </section>
