@@ -140,23 +140,18 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           </motion.div>
         </div>
 
-        {/* Right — card stack. Visible on lg+. On mobile a compact
-            single-card cycler renders below the CTA strip. */}
+        {/* Right column — the 3D cube. Renders once; sized
+            responsively via the cube's own `--cube-size` CSS var.
+            On mobile the grid stacks so the cube falls below the
+            CTA strip with comfortable top margin. */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:block"
+          className="flex justify-center mt-14 lg:mt-0"
         >
-          <HeroCardStack />
+          <HeroCube />
         </motion.div>
-
-        {/* Mobile-only compact card, below CTAs. Cleaner than the
-            previous "above headline" placement which crowded the
-            top of the phone screen. */}
-        <div className="lg:hidden mt-4 flex justify-center">
-          <MobileHeroCard />
-        </div>
       </div>
     </section>
   );
@@ -201,224 +196,644 @@ function FadeRow({
   );
 }
 
-// ── Card stack — 3 previews shuffling in perspective ──────────────
-
-const STACK_CARDS = [
-  { Component: PulseCard, key: "pulse" },
-  { Component: BuilderVerifyCard, key: "verify" },
-  { Component: CompareCard, key: "compare" },
-] as const;
-
-const STACK_LEN = STACK_CARDS.length;
-const ROTATE_MS = 5000;
+// ── HeroCube — 6-faced 3D rotating product preview ────────────────
 
 /**
- * Stack of three uniform-sized product cards in perspective.
+ * The hero centrepiece. A true 3D cube with six BuilderHQ product
+ * faces, slowly auto-rotating around the Y axis at a -16° tilt so
+ * the top face is partially visible. Hover pauses the rotation and
+ * the cursor controls a responsive tilt — like grabbing a tangible
+ * object.
  *
- *   · All cards share a fixed `h-[480px]` container so they look
- *     visually identical in size — only the content inside differs.
- *   · Front card sits flat, sharp, opaque.
- *   · Two cards behind sit offset down + right at smaller scale +
- *     lower opacity + slight blur. Reads as a real deck.
- *   · Auto-rotates every 5s. Front card flicks to the back; the
- *     others step forward one position.
- *   · Continuous gentle float (y oscillation) on the whole stack
- *     so it feels alive even at rest, similar to Resend's cube.
- *   · Mouse-tracking tilt: as the cursor moves over the stack, the
- *     deck tilts a few degrees in response. Subtle premium signal.
- *   · Hover pauses the auto-rotate, intensifies the halo, lifts
- *     the front card 6px and scales it 1.015.
- *   · Click / Enter / Space advances manually. Cursor is pointer.
+ * Built with pure CSS 3D transforms (`transform: rotateX/Y` +
+ * `transform-style: preserve-3d` + `backface-visibility: hidden`).
+ * Driven by an imperative requestAnimationFrame loop — the same
+ * proven-stable pattern from HowItWorks v4. No Motion useScroll
+ * hooks in the rotation path, zero production crash surface.
+ *
+ * Six faces, in rotation order (front first, then right, back,
+ * left as the cube spins; top + bottom visible at the tilt):
+ *
+ *   front   Tender comparison bars (3 builders, winner highlighted)
+ *   right   Verified builder profile (avatar, ABN+L checks)
+ *   back    Project pulse KPIs (4 tiles)
+ *   left    Live activity feed (recent events)
+ *   top     Floor plan thumbnail (SVG architectural sketch)
+ *   bottom  Awarded state (trophy + signed contract)
+ *
+ * Sized through the `--cube-size` CSS variable so the cube responds
+ * to breakpoint changes purely from CSS — no resize listeners,
+ * no rerenders.
  */
-function HeroCardStack() {
-  const [frontIdx, setFrontIdx] = useState(0);
-  const [hovering, setHovering] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+function HeroCube() {
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const cubeRef = useRef<HTMLDivElement>(null);
+  const hoveringRef = useRef(false);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
-  // Auto-rotate (paused on hover).
   useEffect(() => {
-    if (hovering) return;
-    const id = window.setInterval(() => {
-      setFrontIdx((i) => (i + 1) % STACK_LEN);
-    }, ROTATE_MS);
-    return () => window.clearInterval(id);
-  }, [hovering]);
+    let raf = 0;
+    let lastTime = performance.now();
+    let autoY = -22;
+    let currentX = -16;
+    let currentY = autoY;
 
-  const advance = () => setFrontIdx((i) => (i + 1) % STACK_LEN);
+    const update = (now: number) => {
+      raf = requestAnimationFrame(update);
+      const delta = now - lastTime;
+      lastTime = now;
+
+      let targetX: number;
+      let targetY: number;
+
+      if (hoveringRef.current) {
+        // Mouse controls tilt. Auto-rotate frozen so the cube
+        // doesn't drift while the user is inspecting it.
+        targetX = -16 + mouseRef.current.y * -22;
+        targetY = autoY + mouseRef.current.x * 38;
+      } else {
+        // Auto-rotate — about 18 degrees per second on Y.
+        autoY += delta * 0.018;
+        targetX = -16;
+        targetY = autoY;
+      }
+
+      // Lerp toward target — smooth transitions between modes.
+      currentX += (targetX - currentX) * 0.09;
+      currentY += (targetY - currentY) * 0.09;
+
+      const cube = cubeRef.current;
+      if (cube) {
+        cube.style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+      }
+    };
+
+    raf = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = containerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    // -1..1 across the element, then scaled to a few degrees.
-    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
-    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
-    setTilt({ x: -ny * 3, y: nx * 4 });
-  };
-  const handleMouseLeave = () => {
-    setHovering(false);
-    setTilt({ x: 0, y: 0 });
+    const rect = sceneRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseRef.current = {
+      x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      y: ((e.clientY - rect.top) / rect.height) * 2 - 1,
+    };
   };
 
   return (
     <div
-      ref={containerRef}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
-      onClick={advance}
-      role="button"
-      aria-label="Cycle product preview"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          advance();
-        }
+      ref={sceneRef}
+      onMouseEnter={() => {
+        hoveringRef.current = true;
       }}
-      className="relative w-full max-w-[520px] mx-auto h-[480px] cursor-pointer select-none [perspective:1600px]"
+      onMouseLeave={() => {
+        hoveringRef.current = false;
+        mouseRef.current = { x: 0, y: 0 };
+      }}
+      onMouseMove={handleMouseMove}
+      className={cn(
+        "relative mx-auto",
+        // Cube size — CSS variable adjusts at breakpoints.
+        "[--cube-size:240px] sm:[--cube-size:300px] lg:[--cube-size:400px]",
+      )}
+      style={{
+        width: "var(--cube-size)",
+        height: "var(--cube-size)",
+        perspective: 1400,
+        cursor: "grab",
+      }}
     >
-      {/* Ambient halo behind the stack — intensifies on hover. */}
-      <motion.span
+      {/* Ambient halo behind the cube. */}
+      <span
         aria-hidden
-        className="pointer-events-none absolute -inset-12 rounded-[40px]"
-        animate={{ opacity: hovering ? 1 : 0.7 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="pointer-events-none absolute -inset-16 rounded-full"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 45%, rgba(0,212,200,0.22), transparent 65%)",
+            "radial-gradient(circle, rgba(0,212,200,0.22) 0%, rgba(0,212,200,0.06) 32%, transparent 65%)",
         }}
       />
 
-      {/* Continuous gentle float — wraps all three cards. */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ y: [0, -8, 0] }}
-        transition={{
-          duration: 6,
-          ease: "easeInOut",
-          repeat: Infinity,
-        }}
+      {/* Soft floor shadow — ellipse below the cube. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2"
         style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          transition: "transform 400ms cubic-bezier(0.22, 1, 0.36, 1)",
+          width: "calc(var(--cube-size) * 0.85)",
+          height: "calc(var(--cube-size) * 0.08)",
+          bottom: "calc(var(--cube-size) * -0.18)",
+          background:
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)",
+          filter: "blur(14px)",
+        }}
+      />
+
+      {/* The cube. */}
+      <div
+        ref={cubeRef}
+        className="absolute inset-0"
+        style={{
           transformStyle: "preserve-3d",
+          willChange: "transform",
+          transform: "rotateX(-16deg) rotateY(-22deg)",
         }}
       >
-        {STACK_CARDS.map(({ Component, key }, i) => {
-          const order = (i - frontIdx + STACK_LEN) % STACK_LEN;
-          // order 0 = front, 1 = mid, 2 = back
-          return (
-            <motion.div
-              key={key}
-              initial={false}
-              animate={{
-                x: order * 22,
-                y: order * 24 + (order === 0 && hovering ? -6 : 0),
-                scale:
-                  order === 0
-                    ? hovering
-                      ? 1.015
-                      : 1
-                    : 1 - order * 0.05,
-                opacity: order === 0 ? 1 : order === 1 ? 0.7 : 0.4,
-                rotateY: order * -3,
-                rotateZ: order * -1.5,
-                zIndex: STACK_LEN - order,
-                filter: order === 0 ? "blur(0px)" : `blur(${order * 0.6}px)`,
-              }}
-              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0"
-              style={{
-                transformOrigin: "50% 100%",
-                willChange: "transform, opacity",
-              }}
-            >
-              <FixedHeightCard>
-                <Component />
-              </FixedHeightCard>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {/* Stack indicator — three dots showing which card is front. */}
-      <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-        {STACK_CARDS.map((_, i) => (
-          <motion.span
-            key={i}
-            animate={{
-              width: i === frontIdx ? 20 : 6,
-              opacity: i === frontIdx ? 1 : 0.4,
-            }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="h-1.5 rounded-full bg-accent"
-            style={{
-              boxShadow:
-                i === frontIdx
-                  ? "0 0 8px rgba(0,212,200,0.7)"
-                  : "0 0 4px rgba(0,212,200,0.3)",
-            }}
-          />
-        ))}
+        <CubeFace position="front">
+          <FaceTender />
+        </CubeFace>
+        <CubeFace position="back">
+          <FacePulse />
+        </CubeFace>
+        <CubeFace position="right">
+          <FaceVerified />
+        </CubeFace>
+        <CubeFace position="left">
+          <FaceActivity />
+        </CubeFace>
+        <CubeFace position="top">
+          <FaceFloor />
+        </CubeFace>
+        <CubeFace position="bottom">
+          <FaceAward />
+        </CubeFace>
       </div>
     </div>
   );
 }
 
-/**
- * Forces every card to render at the same 100% width / 100% height
- * of the stack slot. The card's internal layout flows naturally
- * inside; if a card is content-shorter than the slot, empty space
- * sits at the bottom — visually all three reads as the same object.
- */
-function FixedHeightCard({ children }: { children: React.ReactNode }) {
-  return <div className="w-full h-full [&>*]:h-full">{children}</div>;
-}
+// ── Cube face shell ──────────────────────────────────────────────
 
-/**
- * Mobile-only single card cycler. Renders solo (no stack) so the
- * phone hero stays compact. Cross-fades through the same three
- * cards on the 5s rotation.
- */
-function MobileHeroCard() {
-  const [idx, setIdx] = useState(0);
+type CubePosition = "front" | "back" | "right" | "left" | "top" | "bottom";
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setIdx((i) => (i + 1) % STACK_LEN);
-    }, ROTATE_MS);
-    return () => window.clearInterval(id);
-  }, []);
+function CubeFace({
+  position,
+  children,
+}: {
+  position: CubePosition;
+  children: React.ReactNode;
+}) {
+  const half = "calc(var(--cube-size) / 2)";
+  const transforms: Record<CubePosition, string> = {
+    front: `translateZ(${half})`,
+    back: `rotateY(180deg) translateZ(${half})`,
+    right: `rotateY(90deg) translateZ(${half})`,
+    left: `rotateY(-90deg) translateZ(${half})`,
+    top: `rotateX(90deg) translateZ(${half})`,
+    bottom: `rotateX(-90deg) translateZ(${half})`,
+  };
 
   return (
-    <div className="relative w-full max-w-[380px] h-[440px]">
+    <div
+      className="absolute inset-0 overflow-hidden"
+      style={{
+        transform: transforms[position],
+        backfaceVisibility: "hidden",
+        background:
+          "linear-gradient(155deg, rgba(8,28,42,0.97) 0%, rgba(4,14,24,0.99) 100%)",
+        border: "1px solid rgba(0,212,200,0.20)",
+        borderRadius: 14,
+        boxShadow:
+          "inset 0 1px 0 0 rgba(255,255,255,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.4)",
+      }}
+    >
+      {/* Top edge hairline — catches "light". */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -inset-8 rounded-3xl"
+        className="pointer-events-none absolute top-0 inset-x-3 h-px"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 40%, rgba(0,212,200,0.16), transparent 70%)",
+            "linear-gradient(90deg, transparent, rgba(126,245,237,0.5), transparent)",
         }}
       />
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={STACK_CARDS[idx]!.key}
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -12, scale: 0.98 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0"
+      {/* Soft corner glow. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-16 -right-16 w-44 h-44 rounded-full opacity-60"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.20), transparent 70%)",
+        }}
+      />
+      <div className="relative w-full h-full p-4 sm:p-5 flex flex-col">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Face contents ────────────────────────────────────────────────
+
+function FaceHeader({
+  left,
+  right,
+}: {
+  left: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+      <span className="inline-flex items-center gap-1.5 text-[9.5px] tracking-[0.16em] uppercase font-semibold text-text-muted">
+        {left}
+      </span>
+      {right ? (
+        <span className="text-[9.5px] tracking-[0.16em] uppercase font-semibold text-accent-light">
+          {right}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+// Front — tender comparison bars
+function FaceTender() {
+  return (
+    <>
+      <FaceHeader
+        left={
+          <>
+            <Activity size={10} strokeWidth={2.4} />
+            Tender
+          </>
+        }
+        right="3 received"
+      />
+      <div className="flex-1 flex flex-col justify-center gap-2.5 mt-2">
+        <TenderBar name="Atlas Build Co" price="$1.78M" pct={88} note="-4% median" />
+        <TenderBar name="Northline Builders" price="$1.86M" pct={94} note="median" winner />
+        <TenderBar name="Heritage Group" price="$1.91M" pct={97} note="+3% median" />
+      </div>
+      <div className="mt-2 pt-2 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between text-[9.5px] uppercase tracking-[0.16em]">
+        <span className="text-text-dim">Spread 7%</span>
+        <span className="text-accent-light font-semibold">Tight</span>
+      </div>
+    </>
+  );
+}
+
+function TenderBar({
+  name,
+  price,
+  pct,
+  note,
+  winner,
+}: {
+  name: string;
+  price: string;
+  pct: number;
+  note: string;
+  winner?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={cn(
+            "text-[10.5px] truncate",
+            winner ? "text-text font-semibold" : "text-text-muted",
+          )}
         >
-          <FixedHeightCard>
-            {(() => {
-              const Card = STACK_CARDS[idx]!.Component;
-              return <Card />;
-            })()}
-          </FixedHeightCard>
-        </motion.div>
-      </AnimatePresence>
+          {name}
+        </span>
+        <span
+          className={cn(
+            "text-[10px] font-mono tabular-nums shrink-0",
+            winner ? "text-accent-light font-semibold" : "text-text-muted",
+          )}
+        >
+          {price}
+        </span>
+      </div>
+      <div className="relative h-1 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 rounded-full",
+            winner
+              ? "bg-accent shadow-[0_0_6px_rgba(0,212,200,0.55)]"
+              : "bg-[rgba(255,255,255,0.15)]",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span
+        className={cn(
+          "text-[8.5px] tracking-[0.04em]",
+          winner ? "text-accent-light" : "text-text-dim",
+        )}
+      >
+        {note}
+      </span>
+    </div>
+  );
+}
+
+// Back — project pulse KPIs
+function FacePulse() {
+  return (
+    <>
+      <FaceHeader
+        left={
+          <>
+            <Activity size={10} strokeWidth={2.4} />
+            Project pulse
+          </>
+        }
+        right="live"
+      />
+      <div className="flex-1 grid grid-cols-2 gap-2 mt-2">
+        <PulseStat label="Tenders" value="3" sub="2 unique" />
+        <PulseStat label="Median" value="$1.86M" sub="$1.78M to $1.91M" />
+        <PulseStat label="Verified" value="100%" sub="ABN + L" accent />
+        <PulseStat label="Spread" value="7%" sub="Tight" accent />
+      </div>
+    </>
+  );
+}
+
+function PulseStat({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-md border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.018)] p-2.5 flex flex-col justify-between">
+      <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "font-mono tabular-nums leading-none mt-1",
+          accent ? "text-accent-light" : "text-text",
+        )}
+        style={{ fontSize: 17 }}
+      >
+        {value}
+      </div>
+      <div className="text-[8.5px] text-text-dim mt-1.5">{sub}</div>
+    </div>
+  );
+}
+
+// Right — verified builder profile
+function FaceVerified() {
+  return (
+    <>
+      <FaceHeader
+        left={
+          <>
+            <ShieldCheck size={10} strokeWidth={2.4} />
+            Verified
+          </>
+        }
+        right="ABN + L"
+      />
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 mt-2">
+        <div
+          className="size-14 rounded-full flex items-center justify-center text-[15px] font-bold text-accent-contrast shadow-[0_0_0_2px_rgba(0,212,200,0.4),0_0_24px_-2px_rgba(0,212,200,0.5)]"
+          style={{
+            background:
+              "linear-gradient(135deg, #7ef5ed, #00d4c8 50%, #1a5fd4)",
+          }}
+        >
+          NB
+        </div>
+        <div>
+          <div className="text-[13px] font-semibold text-text">
+            Northline Builders
+          </div>
+          <div className="text-[9.5px] text-text-dim mt-0.5">
+            Brunswick · 4 km
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 text-left mt-0.5">
+          <VerifyCheck label="ABN active" />
+          <VerifyCheck label="Builder licence" />
+          <VerifyCheck label="Insurance current" />
+        </div>
+      </div>
+      <div className="mt-2 pt-2 border-t border-[rgba(255,255,255,0.06)] text-center text-[9px] uppercase tracking-[0.16em] text-text-dim">
+        12 won · 100% on-time
+      </div>
+    </>
+  );
+}
+
+function VerifyCheck({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] text-text-muted">
+      <CheckCircle2
+        size={10}
+        strokeWidth={2.5}
+        className="text-accent-light shrink-0"
+      />
+      {label}
+    </div>
+  );
+}
+
+// Left — live activity feed
+function FaceActivity() {
+  return (
+    <>
+      <FaceHeader
+        left={
+          <>
+            <span className="relative flex size-1.5">
+              <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
+              <span className="relative size-1.5 rounded-full bg-accent" />
+            </span>
+            Activity
+          </>
+        }
+        right="3 now"
+      />
+      <div className="flex-1 flex flex-col justify-center gap-2.5 mt-2">
+        <ActivityRow
+          time="2m"
+          actor="Northline"
+          action="submitted $1.86M tender"
+        />
+        <ActivityRow
+          time="18m"
+          actor="Atlas"
+          action="unlocked Brunswick project"
+        />
+        <ActivityRow time="1h" actor="Heritage" action="matched 3 projects" />
+        <ActivityRow time="2h" actor="Chen" action="completed verification" />
+      </div>
+    </>
+  );
+}
+
+function ActivityRow({
+  time,
+  actor,
+  action,
+}: {
+  time: string;
+  actor: string;
+  action: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="text-[9px] font-mono tabular-nums text-text-dim mt-0.5 w-6 shrink-0">
+        {time}
+      </span>
+      <span className="size-1.5 rounded-full bg-accent mt-1.5 shrink-0 shadow-[0_0_6px_rgba(0,212,200,0.5)]" />
+      <div className="text-[10.5px] leading-[1.4]">
+        <span className="text-text font-semibold">{actor}</span>{" "}
+        <span className="text-text-dim">{action}</span>
+      </div>
+    </div>
+  );
+}
+
+// Top — floor plan SVG
+function FaceFloor() {
+  return (
+    <>
+      <FaceHeader
+        left={
+          <>
+            <Files size={10} strokeWidth={2.4} />
+            Floor plan
+          </>
+        }
+        right="450 m²"
+      />
+      <div className="flex-1 flex items-center justify-center mt-2 mb-2">
+        <svg
+          viewBox="0 0 200 160"
+          className="w-full h-full max-h-[140px]"
+          fill="none"
+          stroke="rgba(126,245,237,0.55)"
+          strokeWidth="1.5"
+        >
+          {/* Outer walls */}
+          <rect x="10" y="10" width="180" height="140" />
+          {/* Interior walls */}
+          <line x1="100" y1="10" x2="100" y2="80" />
+          <line x1="10" y1="80" x2="190" y2="80" />
+          <line x1="60" y1="80" x2="60" y2="150" />
+          <line x1="130" y1="80" x2="130" y2="150" />
+          {/* Door openings — match the face background to "cut" the wall */}
+          <line
+            x1="55"
+            y1="10"
+            x2="65"
+            y2="10"
+            stroke="rgba(8,28,42,0.97)"
+            strokeWidth="3"
+          />
+          <line
+            x1="95"
+            y1="80"
+            x2="105"
+            y2="80"
+            stroke="rgba(8,28,42,0.97)"
+            strokeWidth="3"
+          />
+          <line
+            x1="55"
+            y1="80"
+            x2="65"
+            y2="80"
+            stroke="rgba(8,28,42,0.97)"
+            strokeWidth="3"
+          />
+          {/* Room labels */}
+          <text
+            x="55"
+            y="50"
+            fill="rgba(255,255,255,0.5)"
+            fontSize="8"
+            fontFamily="monospace"
+            textAnchor="middle"
+          >
+            BED 1
+          </text>
+          <text
+            x="145"
+            y="50"
+            fill="rgba(255,255,255,0.5)"
+            fontSize="8"
+            fontFamily="monospace"
+            textAnchor="middle"
+          >
+            BED 2
+          </text>
+          <text
+            x="35"
+            y="120"
+            fill="rgba(255,255,255,0.5)"
+            fontSize="8"
+            fontFamily="monospace"
+            textAnchor="middle"
+          >
+            LIVING
+          </text>
+          <text
+            x="95"
+            y="120"
+            fill="rgba(255,255,255,0.5)"
+            fontSize="8"
+            fontFamily="monospace"
+            textAnchor="middle"
+          >
+            KITCHEN
+          </text>
+          <text
+            x="160"
+            y="120"
+            fill="rgba(255,255,255,0.5)"
+            fontSize="8"
+            fontFamily="monospace"
+            textAnchor="middle"
+          >
+            DECK
+          </text>
+        </svg>
+      </div>
+      <div className="text-center text-[9px] uppercase tracking-[0.16em] text-text-dim border-t border-[rgba(255,255,255,0.06)] pt-2">
+        45 Sydney Rd · Brunswick VIC
+      </div>
+    </>
+  );
+}
+
+// Bottom — awarded
+function FaceAward() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center gap-2.5">
+      <div
+        className="size-12 rounded-full flex items-center justify-center text-accent-light shadow-[0_0_0_2px_rgba(0,212,200,0.4),0_0_28px_rgba(0,212,200,0.55)]"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(0,212,200,0.25) 0%, rgba(0,212,200,0.05) 70%)",
+          border: "1px solid rgba(0,212,200,0.5)",
+        }}
+      >
+        <Trophy size={20} strokeWidth={1.8} />
+      </div>
+      <div>
+        <div className="text-[9px] tracking-[0.22em] uppercase text-accent-light font-semibold mb-1">
+          Awarded
+        </div>
+        <div className="text-[13px] font-semibold text-text">
+          Northline Builders
+        </div>
+        <div className="text-[11px] text-text-dim mt-1 font-mono tabular-nums">
+          $1.86M
+        </div>
+      </div>
+      <div className="text-[9px] text-text-dim border-t border-[rgba(255,255,255,0.06)] pt-2 mt-1 w-full uppercase tracking-[0.16em]">
+        Contract signed · Sep 26
+      </div>
     </div>
   );
 }
