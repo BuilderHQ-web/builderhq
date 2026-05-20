@@ -9,18 +9,8 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 
 /**
- * Sticky landing nav. Transparent at top of page, glass blur once
- * scrolled. Center menu shows section anchors; right side has
- * Log in + Get started.
- *
- * Section anchors are absolute (`/#owners` etc.) so they work from
- * /about, /faq, /terms, /privacy, etc. — clicking takes the user
- * back to the homepage and scrolls to the section. On the homepage
- * itself, browsers strip the leading "/" for the same-page jump.
- *
- * `items-center` on the inner flex row + `flex items-center` on the
- * absolutely-positioned <ul> guarantees the centre menu sits on the
- * exact baseline as the logo and the right-side actions.
+ * Premium minimal nav — Resend-inspired.
+ * Clean, transparent, no visual noise.
  */
 export function LandingNav() {
   const [scrolled, setScrolled] = React.useState(false);
@@ -35,15 +25,10 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the mobile menu whenever we navigate away. usePathname
-  // updates on route change, so this handler clears the panel without
-  // any extra wiring on every Link.
   React.useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Lock body scroll while the mobile menu is open so the user
-  // can't accidentally scroll the page underneath it.
   React.useEffect(() => {
     if (typeof document === "undefined") return;
     const prev = document.body.style.overflow;
@@ -53,64 +38,54 @@ export function LandingNav() {
     };
   }, [mobileOpen]);
 
-  // From the homepage we want the in-page anchor jump. From any other
-  // page we route to "/" + the hash so Next handles the navigation
-  // and the browser handles the scroll.
   const anchor = (id: string) => (isHome ? `#${id}` : `/#${id}`);
 
   const links = [
-    { label: "For owners", href: anchor("owners") },
-    { label: "For builders", href: anchor("builders") },
+    { label: "Features", href: anchor("features") },
     { label: "How it works", href: anchor("how") },
-    { label: "Platform", href: anchor("features") },
+    { label: "FAQ", href: anchor("faq") },
   ] as const;
 
   return (
     <>
-      {/* Soft gradient mask that fades the page bg into the nav so
-          content scrolling underneath doesn't poke through the nav
-          plate, without creating a visible "stripe" at the top. Sits
-          BEHIND the nav, in front of the page. Resend uses the same
-          trick — the top edge feels like one continuous canvas. */}
+      {/* Subtle top gradient fade for scroll separation */}
       <div
         aria-hidden
         className={cn(
-          "fixed top-0 inset-x-0 z-40 h-24 pointer-events-none",
-          "transition-opacity duration-[420ms] ease-[var(--ease-out)]",
+          "fixed top-0 inset-x-0 z-40 h-20 pointer-events-none",
+          "transition-opacity duration-500",
           scrolled ? "opacity-100" : "opacity-0",
         )}
         style={{
           background:
-            "linear-gradient(180deg, #060f19 0%, #060f19 55%, rgba(6,15,25,0) 100%)",
+            "linear-gradient(180deg, rgba(5,10,15,0.95) 0%, rgba(5,10,15,0.8) 50%, transparent 100%)",
         }}
       />
+
       <nav
         className={cn(
           "fixed top-0 left-0 right-0 z-50",
-          "transition-[padding] duration-[420ms] ease-[var(--ease-out)]",
-          // No background, no border — the gradient mask behind us
-          // does the work of separating from page content. When the
-          // mobile menu is open we paint a solid plate so the panel
-          // beneath us has something to anchor to visually.
-          mobileOpen
-            ? "bg-[#060f19] border-b border-border-subtle py-3"
-            : scrolled
-              ? "bg-transparent py-3"
-              : "bg-transparent py-5",
+          "transition-all duration-500",
+          scrolled ? "py-4" : "py-6",
         )}
       >
-        <div className="relative mx-auto max-w-[1320px] px-6 md:px-10 flex items-center justify-between">
-          <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
-            <Logo height={26} />
+        <div className="mx-auto max-w-[1200px] px-6 flex items-center justify-between">
+          {/* Logo */}
+          <Link
+            href="/"
+            aria-label="BuilderHQ home"
+            className="relative z-10"
+          >
+            <Logo height={24} />
           </Link>
 
-          {/* Desktop nav (md+): centred section anchors */}
-          <ul className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          {/* Desktop: Center links */}
+          <ul className="hidden md:flex items-center gap-8">
             {links.map((l) => (
-              <li key={l.href} className="flex items-center">
+              <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="inline-flex items-center text-[10px] tracking-[0.2em] uppercase text-text-faint hover:text-text px-3 py-2 rounded-md transition-colors duration-[160ms] leading-none"
+                  className="text-[14px] text-text-muted hover:text-text transition-colors duration-200"
                 >
                   {l.label}
                 </Link>
@@ -118,31 +93,31 @@ export function LandingNav() {
             ))}
           </ul>
 
-          {/* Right side — desktop actions */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Desktop: Right actions */}
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/login"
-              className="inline-flex items-center text-[11px] tracking-[0.16em] uppercase text-text-muted hover:text-text px-3 h-9 transition-colors leading-none"
+              className="text-[14px] text-text-muted hover:text-text transition-colors duration-200"
             >
               Log in
             </Link>
             <Link
               href="/signup"
               className={cn(
-                "inline-flex items-center justify-center px-4 h-9 rounded-full leading-none",
-                "bg-accent text-accent-contrast text-[12px] font-medium tracking-[0.04em]",
-                "hover:bg-accent-hover transition-colors duration-[160ms]",
+                "inline-flex items-center justify-center px-5 h-10 rounded-full",
+                "bg-text text-bg text-[14px] font-medium",
+                "hover:bg-text/90 transition-colors duration-200",
               )}
             >
               Get started
             </Link>
           </div>
 
-          {/* Right side — mobile actions: Get started button + hamburger */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile: Actions */}
+          <div className="flex md:hidden items-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center px-4 h-11 rounded-full leading-none bg-accent text-accent-contrast text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-hover transition-colors duration-[160ms]"
+              className="inline-flex items-center justify-center px-4 h-10 rounded-full bg-text text-bg text-[13px] font-medium"
             >
               Get started
             </Link>
@@ -151,66 +126,48 @@ export function LandingNav() {
               onClick={() => setMobileOpen((v) => !v)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="size-11 rounded-md border border-border-subtle text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)] transition-colors flex items-center justify-center"
+              className="size-10 flex items-center justify-center text-text-muted hover:text-text transition-colors"
             >
-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile slide-down panel — full-width, dark glass, centered
-           link list. Sits below the nav bar with a subtle reveal. */}
+      {/* Mobile menu */}
       <AnimatePresence>
-        {mobileOpen ? (
+        {mobileOpen && (
           <motion.div
             key="mobile-menu"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            data-lenis-prevent
-            className={cn(
-              "fixed inset-x-0 top-[68px] z-40 md:hidden",
-              "bg-bg/95 backdrop-blur-xl border-b border-border-subtle",
-              "max-h-[calc(100dvh-68px)] overflow-y-auto",
-            )}
-            style={{
-              paddingBottom: "env(safe-area-inset-bottom)",
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 md:hidden bg-bg/98 backdrop-blur-xl"
           >
-            <div className="px-5 py-5 flex flex-col gap-1">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-3 rounded-md text-[14px] tracking-[0.04em] text-text hover:bg-[rgba(255,255,255,0.04)] transition-colors"
-                >
-                  {l.label}
-                </Link>
-              ))}
-              <div className="mt-2 pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+            <div className="pt-24 px-6">
+              <div className="flex flex-col gap-1">
+                {links.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="py-4 text-[18px] text-text border-b border-border-subtle"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2 text-[13px] tracking-[0.04em] text-text-muted hover:text-text transition-colors"
+                  className="py-4 text-[18px] text-text-muted"
                 >
                   Log in
                 </Link>
-                <div className="flex items-center gap-3 text-[11px] text-text-dim">
-                  <Link href="/about" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
-                    About
-                  </Link>
-                  <span className="text-text-faint/50">·</span>
-                  <Link href="/faq" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
-                    FAQ
-                  </Link>
-                </div>
               </div>
             </div>
           </motion.div>
-        ) : null}
+        )}
       </AnimatePresence>
     </>
   );

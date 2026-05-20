@@ -1,12 +1,6 @@
-import { Ambient } from "@/components/landing/ambient";
-import { GridOverlay } from "@/components/landing/grid-overlay";
-import { FibreCanvas } from "@/components/landing/fibre-canvas";
-import { CustomCursor } from "@/components/landing/cursor";
 import { LandingNav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
-import { Marquee } from "@/components/landing/marquee";
-import { ByTheNumbers } from "@/components/landing/by-the-numbers";
-import { Problem } from "@/components/landing/problem";
+import { StatsStrip } from "@/components/landing/stats-strip";
 import { Features } from "@/components/landing/features";
 import { HowItWorks } from "@/components/landing/how";
 import { Showcase } from "@/components/landing/showcase";
@@ -17,67 +11,55 @@ import { Footer } from "@/components/landing/footer";
 import { resolveCtaLinks } from "@/components/landing/cta-links";
 
 /**
- * Marketing landing page section flow — sharpened from the original
- * 11 sections to 9. Cut from the lineup:
- *
- *   - Stats (replaced by <ByTheNumbers/>: tighter, four hard facts in
- *     one row, no animated counter drama competing with the headline).
- *   - Audiences (the owner-vs-builder split was already implicit in
- *     <Problem/>, <HowItWorks/>, and the dual CTAs everywhere; making
- *     it a section repeated the same beat).
- *
- * Added:
- *   - <FAQ/> — six honest answers to the questions every prospect
- *     thinks but doesn't ask: cost, verification, control, etc.
- *
- * The narrative now reads: hook → marquee texture → quick proof →
- * pain → product → flow → real screens → human proof → objection
- * answers → close. Tight, calm, no filler.
+ * Premium landing page — Resend-style minimal dark aesthetic.
+ * 
+ * Section flow:
+ * 1. Hero — massive headline, single CTA, floating product card
+ * 2. Stats Strip — elegant social proof with animated numbers
+ * 3. Features — clean horizontal cards + large product screenshot
+ * 4. How It Works — scroll-linked sticky section (Base44-style)
+ * 5. Showcase — simplified product visuals
+ * 6. Testimonials — static 3-card grid
+ * 7. FAQ — clean accordion
+ * 8. CTA + Footer — final conversion
  */
 export default async function MarketingHome() {
   const cta = await resolveCtaLinks();
 
   return (
     <>
-      {/* Backdrop layers — fixed, behind everything (z-0). */}
-      <Ambient />
-      <FibreCanvas />
-      <GridOverlay />
-      <NoiseLayer />
-      <CustomCursor />
-
       <LandingNav />
 
       <main className="relative z-10">
-        {/* Each major section is wrapped in a min-h-screen container so
-              the page reads one-section-at-a-time. Marquee, ByTheNumbers,
-              Testimonials, and the closer don't need full viewport — they
-              read better as transitions / accents. The wrappers here are
-              only for sections that benefit from full-screen breathing. */}
-        <SectionFrame full>
+        <section>
           <Hero cta={cta} />
-        </SectionFrame>
-        <Marquee />
-        <ByTheNumbers />
-        <SectionFrame full>
-          <Problem />
-        </SectionFrame>
-        <SectionFrame full>
+        </section>
+        
+        <StatsStrip />
+        
+        <section className="py-24 lg:py-32">
           <Features />
-        </SectionFrame>
-        <SectionFrame full>
+        </section>
+        
+        <section>
           <HowItWorks />
-        </SectionFrame>
-        <SectionFrame full>
+        </section>
+        
+        <section className="py-24 lg:py-32">
           <Showcase />
-        </SectionFrame>
-        <Testimonials />
-        <SectionFrame full>
+        </section>
+        
+        <section className="py-24 lg:py-32">
+          <Testimonials />
+        </section>
+        
+        <section className="py-24 lg:py-32">
           <FAQ />
-        </SectionFrame>
-        <SectionFrame>
+        </section>
+        
+        <section className="py-24 lg:py-32">
           <CTA cta={cta} />
-        </SectionFrame>
+        </section>
       </main>
 
       <Footer />
