@@ -1,386 +1,428 @@
 "use client";
 
 /**
- * BuildingReveal — Hero centrepiece.
+ * BuildingReveal — Floating gallery hero centrepiece.
  *
- * Despite the legacy filename, this is the *live dashboard card* —
- * a single, beautifully framed glass card showing the BuilderHQ
- * tender comparison product. It's the most direct way to answer
- * "what is this product?" in the hero: by showing it.
+ * Four glass cards arranged in a fanned-out composition in 3D space.
+ * Each card is a different product moment — tender comparison,
+ * verified builder, project pulse, awarded contract — so the hero
+ * shows the surface area of BuilderHQ in a single glance rather
+ * than abstracting it with an animation.
  *
  * Composition
  * ───────────
- *   · Glass card with deep multi-layer shadow, hairline top-edge
- *     accent, soft corner glow, inner highlight stroke.
- *   · Header row: project name + live pulse + "comparing" badge.
- *   · KPI strip: tenders / median / spread (live).
- *   · Three tender rows: builder avatar, name, verified chips,
- *     price (live-ticking on the active row), delta vs median,
- *     "Best value" pill on the winning row.
- *   · Sparkline footer: tiny line chart drawing the price
- *     distribution, animates on mount.
- *   · "New tender just arrived" notification toast that slides
- *     in from the top every ~9 seconds, reshuffles the rankings
- *     subtly, then slides out.
+ *   ┌───────── COMPARE ─────────┐   front-centre, full-size,
+ *   │  live winner price ticks  │   carries the live ping +
+ *   │  notification toast,      │   live data so the gallery
+ *   │  best-value pill          │   feels alive.
+ *   └───────────────────────────┘
+ *      ↖ VERIFIED         PULSE ↗   left + right back, half-shown
+ *      ↖ AWARDED ↑                  peeks from the very back
  *
- * Interaction
- * ───────────
- *   · Cursor-tracked 3D tilt (rotateX / rotateY) with smooth
- *     lerp via requestAnimationFrame. Hovering the card feels
- *     like holding a real object.
- *   · A peek of a second card behind suggests there's more to
- *     the product than this one moment.
+ * Each card:
+ *   · Sits absolute in 3D space with its own rotateZ + translateZ
+ *   · Drifts on a slow per-card sine-wave breath (Motion infinite
+ *     animate, different period per card so they never feel
+ *     synchronised)
+ *   · Lifts forward + brightens on hover (whileHover)
+ *   · Has premium glass chrome — top-edge gradient hairline,
+ *     corner halo, multi-layer shadow, inner highlight, accent
+ *     gradient unique per card type
  *
- * No 3D, no WebGL, no abstract metaphor. The card sells the
- * actual product.
+ * The master container tilts with the cursor (spring physics) so
+ * the whole composition feels like a single physical object you
+ * can almost reach out and rotate.
  */
 
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ShieldCheck, Trophy, TrendingUp, ArrowDown } from "lucide-react";
+import { motion } from "motion/react";
+import { Trophy, ShieldCheck, Activity, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// ── Source data ───────────────────────────────────────────────────
-// The tender data we render. The active row's price ticks live, and
-// every cycle the "new tender" toast may shift the ranking. Source-
-// of-truth here so the card stays self-contained.
-
-type Tender = {
-  initials: string;
-  name: string;
-  basePriceM: number;
-  deltaPct: number;
-  verified: boolean;
-  winner?: boolean;
-};
-
-const TENDERS: Tender[] = [
-  {
-    initials: "NB",
-    name: "Northline Builders",
-    basePriceM: 1.78,
-    deltaPct: -4,
-    verified: true,
-    winner: true,
-  },
-  {
-    initials: "AC",
-    name: "Atlas Build Co",
-    basePriceM: 1.86,
-    deltaPct: 0,
-    verified: true,
-  },
-  {
-    initials: "HG",
-    name: "Heritage Group",
-    basePriceM: 1.91,
-    deltaPct: 3,
-    verified: true,
-  },
-];
-
-// Notifications that slide in over the card on cycle, alternating
-// to keep the "live" feel without becoming noisy.
-const NOTIFICATIONS = [
-  { actor: "Chen Construction", action: "submitted $1.84M tender", tone: "tender" as const },
-  { actor: "Roberts & Co", action: "unlocked your project", tone: "unlock" as const },
-  { actor: "Smith Builders", action: "verified ABN + Licence", tone: "verify" as const },
-];
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function BuildingReveal() {
-  return (
-    <div
-      className="relative mx-auto w-full max-w-[460px] [--card-h:480px] sm:[--card-h:540px] lg:[--card-h:580px]"
-      style={{ perspective: 1800 }}
-    >
-      {/* Ambient halo behind the card */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -inset-12 rounded-[40px]"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 40%, rgba(0,212,200,0.22) 0%, rgba(0,212,200,0.07) 28%, transparent 60%)",
-        }}
-      />
-
-      {/* Peek of a second card behind the front one — suggests
-          depth and that there's more to the product. */}
-      <PeekCard />
-
-      {/* The main interactive dashboard card. */}
-      <DashboardCard />
-    </div>
-  );
-}
-
-// ── The peek card (sits behind the front card) ────────────────────
-
-function PeekCard() {
-  return (
-    <div
-      aria-hidden
-      className="absolute left-6 right-6 top-12 rounded-2xl border border-[rgba(100,180,255,0.10)] overflow-hidden"
-      style={{
-        height: "calc(var(--card-h) - 0px)",
-        background: "linear-gradient(180deg, rgba(8,22,36,0.85), rgba(4,14,24,0.92))",
-        transform: "translateY(18px) scale(0.96)",
-        opacity: 0.45,
-        filter: "blur(0.5px)",
-        boxShadow: "0 30px 80px -30px rgba(0,0,0,0.6)",
-      }}
-    >
-      {/* Top hairline */}
-      <span
-        aria-hidden
-        className="absolute top-0 inset-x-10 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.35), transparent)",
-        }}
-      />
-      <div className="p-5 opacity-60">
-        <div className="text-[10px] tracking-[0.22em] uppercase text-text-dim">
-          Builder verified
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <span
-            className="size-9 rounded-full border border-border-accent text-accent-light flex items-center justify-center text-[11px] font-semibold"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(0,212,200,0.20), rgba(26,95,212,0.20))",
-            }}
-          >
-            JS
-          </span>
-          <div>
-            <div className="text-[12px] font-medium text-text">Smith Builders</div>
-            <div className="text-[10px] text-text-dim">ABN ✓ · Licence ✓</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── The main card ────────────────────────────────────────────────
-
-function DashboardCard() {
-  // Cursor-tracked tilt
-  const ref = useRef<HTMLDivElement>(null);
-  const rotXRef = useRef(0);
-  const rotYRef = useRef(0);
-  const targetXRef = useRef(0);
-  const targetYRef = useRef(0);
-  const hoveringRef = useRef(false);
-
-  useEffect(() => {
-    let raf = 0;
-    const update = () => {
-      raf = requestAnimationFrame(update);
-      // Smooth lerp toward target
-      rotXRef.current += (targetXRef.current - rotXRef.current) * 0.08;
-      rotYRef.current += (targetYRef.current - rotYRef.current) * 0.08;
-      const el = ref.current;
-      if (el) {
-        el.style.transform = `rotateX(${rotXRef.current.toFixed(2)}deg) rotateY(${rotYRef.current.toFixed(2)}deg)`;
-      }
-    };
-    raf = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = ref.current?.getBoundingClientRect();
+    const r = wrapRef.current?.getBoundingClientRect();
     if (!r) return;
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
-    // Map to ± 6deg
-    targetYRef.current = (px - 0.5) * 12;
-    targetXRef.current = -(py - 0.5) * 10;
+    // ±5° tilt feels alive without being dramatic
+    setTilt({
+      x: -(py - 0.5) * 8,
+      y: (px - 0.5) * 10,
+    });
   };
-  const onMouseLeave = () => {
-    targetXRef.current = 0;
-    targetYRef.current = 0;
-    hoveringRef.current = false;
-  };
-  const onMouseEnter = () => {
-    hoveringRef.current = true;
-  };
+  const onMouseLeave = () => setTilt({ x: 0, y: 0 });
 
-  // Live price ticker for the winning row
-  const [winnerPrice, setWinnerPrice] = useState(TENDERS[0]!.basePriceM);
+  return (
+    <div
+      ref={wrapRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className={cn(
+        "relative mx-auto w-full",
+        // Container sizes per breakpoint — the cards' inline pixel
+        // positions are tuned to this fixed canvas.
+        "h-[440px] sm:h-[480px] lg:h-[540px]",
+        "max-w-[420px] sm:max-w-[460px] lg:max-w-[520px]",
+      )}
+      style={{ perspective: 1800 }}
+    >
+      {/* Ambient halo behind the whole gallery. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -inset-16 rounded-[40px]"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 45%, rgba(0,212,200,0.20) 0%, rgba(0,212,200,0.06) 30%, transparent 65%)",
+        }}
+      />
+
+      {/* The 3D stage. rotateX/rotateY driven by cursor tilt above
+          via Motion spring so the whole composition responds to the
+          mouse.
+          On mobile (< sm), the back cards are hidden — the front
+          Compare card carries the hero alone. The floating gallery
+          composition only works at tablet+ widths where the canvas
+          is wide enough to fan four cards. */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+        transition={{ type: "spring", stiffness: 80, damping: 18, mass: 0.6 }}
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* Awarded — peeks from above on every breakpoint. */}
+        <AwardedCard />
+
+        {/* Pulse + Verified — hidden on mobile, fan out on tablet+. */}
+        <div className="hidden sm:contents">
+          <PulseCard />
+          <VerifiedCard />
+        </div>
+
+        {/* Front-centre card — always visible, the main moment. */}
+        <CompareCard />
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Compare card (front, main) ───────────────────────────────────
+
+function CompareCard() {
+  const [winnerPrice, setWinnerPrice] = useState(1.78);
   useEffect(() => {
     let raf = 0;
     let t = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
       t += 0.016;
-      // Tiny breath ± $5k around the base — keeps the number
-      // moving without becoming spammy.
-      const drift = Math.sin(t * 0.6) * 0.005;
-      setWinnerPrice(TENDERS[0]!.basePriceM + drift);
+      setWinnerPrice(1.78 + Math.sin(t * 0.6) * 0.006);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Rotating notifications. One slides in every ~6.5s, shows for
-  // 3.5s, then slides out.
-  const [notifIndex, setNotifIndex] = useState(-1);
-  useEffect(() => {
-    let mounted = true;
-    let cancel: ReturnType<typeof setTimeout> | undefined;
-    const step = (i: number) => {
-      if (!mounted) return;
-      setNotifIndex(i);
-      cancel = setTimeout(() => {
-        if (!mounted) return;
-        setNotifIndex(-1);
-        cancel = setTimeout(() => step((i + 1) % NOTIFICATIONS.length), 3000);
-      }, 3500);
-    };
-    cancel = setTimeout(() => step(0), 2000);
-    return () => {
-      mounted = false;
-      if (cancel) clearTimeout(cancel);
-    };
-  }, []);
-
   return (
-    <div
-      ref={ref}
-      onMouseMove={onMouseMove}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className="relative z-[2] rounded-[20px] overflow-hidden"
+    <motion.div
+      className="absolute inset-x-0 mx-auto bottom-0"
       style={{
-        height: "var(--card-h)",
-        background:
-          "linear-gradient(160deg, rgba(10,30,48,0.94) 0%, rgba(6,18,30,0.97) 100%)",
-        border: "1px solid rgba(100,180,255,0.16)",
-        boxShadow: [
-          "inset 0 1px 0 0 rgba(255,255,255,0.06)",
-          "0 1px 0 0 rgba(0,212,200,0.08)",
-          "0 30px 80px -30px rgba(0,0,0,0.65)",
-          "0 60px 140px -40px rgba(0,212,200,0.15)",
-        ].join(", "),
-        transformStyle: "preserve-3d",
-        willChange: "transform",
-        transition: "box-shadow 300ms ease",
+        // Front, centre.
+        width: "min(360px, 88%)",
+        zIndex: 30,
+        transformOrigin: "50% 80%",
+      }}
+      initial={{ opacity: 0, y: 32, scale: 0.95 }}
+      animate={{
+        opacity: 1,
+        y: [0, -6, 0, 4, 0],
+        scale: 1,
+        rotateZ: [-1.6, -1.2, -1.6, -2, -1.6],
+      }}
+      transition={{
+        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+        scale: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+        y: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
+        rotateZ: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
+      }}
+      whileHover={{
+        scale: 1.025,
+        rotateZ: 0,
+        y: -8,
+        transition: { type: "spring", stiffness: 200, damping: 22 },
       }}
     >
-      {/* Top hairline accent — catches "light" along the upper edge */}
-      <span
-        aria-hidden
-        className="absolute top-0 inset-x-8 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.6), transparent)",
-        }}
-      />
-      {/* Inner top highlight (1px brighter line just below the border) */}
-      <span
-        aria-hidden
-        className="absolute top-[1px] inset-x-0 h-px opacity-30"
-        style={{ background: "rgba(255,255,255,0.10)" }}
-      />
-      {/* Corner accent glow — top-right */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full opacity-70"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(0,212,200,0.18) 0%, transparent 60%)",
-        }}
-      />
-      {/* Subtle grid texture inside the card */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(126,245,237,1) 1px, transparent 1px), linear-gradient(90deg, rgba(126,245,237,1) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      <div className="relative h-full flex flex-col">
-        {/* ── Header row ───────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(255,255,255,0.05)]">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="relative flex size-2 shrink-0">
+      <GlassCard accent="teal" elevated>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)]">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="relative flex size-1.5 shrink-0">
               <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
-              <span className="relative size-2 rounded-full bg-accent-light shadow-[0_0_10px_rgba(0,212,200,0.7)]" />
+              <span className="relative size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
             </span>
             <div className="min-w-0">
-              <div className="text-[12.5px] font-medium text-text truncate">
+              <div className="text-[11.5px] font-medium text-text truncate leading-tight">
                 Niddrie Townhouse
               </div>
-              <div className="text-[10.5px] tracking-[0.12em] text-text-dim font-mono tabular-nums whitespace-nowrap">
+              <div className="text-[9px] tracking-[0.12em] text-text-dim font-mono tabular-nums whitespace-nowrap mt-0.5">
                 3 tenders · Brunswick
               </div>
             </div>
           </div>
-          <span className="shrink-0 px-2.5 py-1 border border-border-accent rounded-full text-[9.5px] tracking-[0.18em] uppercase text-accent">
-            Comparing
+          <span className="shrink-0 px-2 py-0.5 border border-border-accent rounded-full text-[8.5px] tracking-[0.18em] uppercase text-accent">
+            Live
           </span>
         </div>
 
-        {/* ── KPI strip ────────────────────────────────────── */}
-        <div className="grid grid-cols-3 divide-x divide-[rgba(255,255,255,0.05)] border-b border-[rgba(255,255,255,0.05)]">
-          <KpiCell label="Tenders" value="3" sub="2 unique" />
-          <KpiCell label="Median" value="$1.86M" sub="tight 7%" />
-          <KpiCell label="Verified" value="100%" sub="ABN + L" accent />
-        </div>
-
-        {/* ── Tender rows ──────────────────────────────────── */}
-        <div className="flex-1 px-5 py-5 flex flex-col gap-2.5 relative">
-          <TenderRow
-            tender={TENDERS[0]!}
-            livePrice={winnerPrice}
-            isWinner
+        {/* Tender rows */}
+        <div className="px-3 py-3 space-y-1.5">
+          <CompareRow
+            initials="NB"
+            name="Northline Builders"
+            price={`$${winnerPrice.toFixed(2)}M`}
+            delta="-4% median"
+            winner
           />
-          <TenderRow tender={TENDERS[1]!} />
-          <TenderRow tender={TENDERS[2]!} />
-
-          {/* Notification toast — slides in from top */}
-          <AnimatePresence>
-            {notifIndex >= 0 ? (
-              <NotificationToast
-                key={notifIndex}
-                index={notifIndex}
-              />
-            ) : null}
-          </AnimatePresence>
+          <CompareRow
+            initials="AC"
+            name="Atlas Build Co"
+            price="$1.86M"
+            delta="median"
+          />
+          <CompareRow
+            initials="HG"
+            name="Heritage Group"
+            price="$1.91M"
+            delta="+3%"
+          />
         </div>
+      </GlassCard>
+    </motion.div>
+  );
+}
 
-        {/* ── Footer: sparkline + spread label ─────────────── */}
-        <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.05)]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[9.5px] tracking-[0.22em] uppercase text-text-dim font-medium">
-              Price distribution
+function CompareRow({
+  initials,
+  name,
+  price,
+  delta,
+  winner,
+}: {
+  initials: string;
+  name: string;
+  price: string;
+  delta: string;
+  winner?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md border",
+        winner
+          ? "border-border-accent/60 bg-[rgba(0,212,200,0.05)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      <span
+        className="size-7 rounded-full flex items-center justify-center text-[9.5px] font-semibold border border-border-accent text-accent-light shrink-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
+        }}
+      >
+        {initials}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11.5px] font-medium text-text truncate">
+            {name}
+          </span>
+          {winner ? (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-border-accent bg-accent-muted/40 text-[7.5px] tracking-[0.12em] uppercase text-accent-light font-semibold">
+              <Trophy size={8} strokeWidth={2.5} />
+              Best
             </span>
-            <span className="text-[10.5px] text-accent-light font-mono tabular-nums">
-              $1.78M – $1.91M
-            </span>
-          </div>
-          <Sparkline />
+          ) : null}
+        </div>
+        <div className="text-[9.5px] text-text-dim mt-0.5">ABN ✓ · Licence ✓</div>
+      </div>
+      <div className="text-right shrink-0">
+        <div
+          className={cn(
+            "font-mono tabular-nums leading-none",
+            winner ? "text-accent-light" : "text-text",
+          )}
+          style={{ fontSize: 13.5 }}
+        >
+          {price}
+        </div>
+        <div
+          className={cn(
+            "text-[9px] mt-0.5 tabular-nums",
+            winner ? "text-accent-light/80" : "text-text-dim",
+          )}
+        >
+          {delta}
         </div>
       </div>
     </div>
   );
 }
 
-// ── KPI cell ──────────────────────────────────────────────────────
+// ── Verified card (back-right) ────────────────────────────────────
 
-function KpiCell({
+function VerifiedCard() {
+  return (
+    <motion.div
+      className="absolute"
+      style={{
+        // Right of centre, slightly higher.
+        right: "-4%",
+        top: "8%",
+        width: "min(260px, 62%)",
+        zIndex: 18,
+        transformOrigin: "50% 80%",
+      }}
+      initial={{ opacity: 0, x: 20, y: 12, rotateZ: 8 }}
+      animate={{
+        opacity: 0.95,
+        x: 0,
+        y: [0, -5, 0, 7, 0],
+        rotateZ: [8, 7.4, 8, 8.6, 8],
+      }}
+      transition={{
+        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 },
+        x: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 },
+        y: { duration: 5.4, repeat: Infinity, ease: "easeInOut" },
+        rotateZ: { duration: 5.4, repeat: Infinity, ease: "easeInOut" },
+      }}
+      whileHover={{
+        scale: 1.05,
+        rotateZ: 4,
+        opacity: 1,
+        zIndex: 40,
+        transition: { type: "spring", stiffness: 200, damping: 22 },
+      }}
+    >
+      <GlassCard accent="green">
+        <div className="px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)] flex items-center gap-2.5">
+          <ShieldCheck size={12} strokeWidth={2.4} className="text-accent-light" />
+          <span className="text-[9.5px] tracking-[0.2em] uppercase text-text-muted font-semibold">
+            Verified Builder
+          </span>
+        </div>
+
+        <div className="px-4 py-3.5">
+          <div className="flex items-center gap-2.5 mb-3">
+            <span
+              className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold text-accent-contrast"
+              style={{
+                background:
+                  "linear-gradient(135deg, #7ef5ed, #00d4c8 50%, #1a5fd4)",
+              }}
+            >
+              NB
+            </span>
+            <div className="min-w-0">
+              <div className="text-[12px] font-semibold text-text truncate">
+                Northline Builders
+              </div>
+              <div className="text-[9.5px] text-text-dim mt-0.5">
+                Brunswick · 12 won
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <VerifyChip label="ABN active" />
+            <VerifyChip label="Builder licence" />
+            <VerifyChip label="Insurance current" />
+          </div>
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
+}
+
+function VerifyChip({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.04)]">
+      <span className="size-4 rounded-sm border border-border-accent bg-accent-muted text-accent-light flex items-center justify-center shrink-0">
+        <CheckCircle2 size={9} strokeWidth={2.7} />
+      </span>
+      <span className="text-[10.5px] text-text">{label}</span>
+    </div>
+  );
+}
+
+// ── Pulse card (back-left) ────────────────────────────────────────
+
+function PulseCard() {
+  return (
+    <motion.div
+      className="absolute"
+      style={{
+        left: "-4%",
+        top: "14%",
+        width: "min(260px, 62%)",
+        zIndex: 16,
+        transformOrigin: "50% 80%",
+      }}
+      initial={{ opacity: 0, x: -20, y: 12, rotateZ: -8 }}
+      animate={{
+        opacity: 0.92,
+        x: 0,
+        y: [0, -7, 0, 5, 0],
+        rotateZ: [-8, -7.4, -8, -8.6, -8],
+      }}
+      transition={{
+        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 },
+        x: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 },
+        y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+        rotateZ: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+      }}
+      whileHover={{
+        scale: 1.05,
+        rotateZ: -4,
+        opacity: 1,
+        zIndex: 40,
+        transition: { type: "spring", stiffness: 200, damping: 22 },
+      }}
+    >
+      <GlassCard accent="blue">
+        <div className="px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Activity size={12} strokeWidth={2.4} className="text-accent-light" />
+            <span className="text-[9.5px] tracking-[0.2em] uppercase text-text-muted font-semibold">
+              Project pulse
+            </span>
+          </div>
+          <span className="text-[8.5px] tracking-[0.18em] uppercase text-accent-light">
+            Live
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 divide-x divide-y divide-[rgba(255,255,255,0.04)]">
+          <PulseStat label="Tenders" value="3" sub="2 unique" />
+          <PulseStat label="Median" value="$1.86M" sub="±$70k" />
+          <PulseStat label="Spread" value="7%" sub="tight" accent />
+          <PulseStat label="Verified" value="100%" sub="ABN + L" accent />
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
+}
+
+function PulseStat({
   label,
   value,
   sub,
-  accent = false,
+  accent,
 }: {
   label: string;
   value: string;
@@ -388,8 +430,8 @@ function KpiCell({
   accent?: boolean;
 }) {
   return (
-    <div className="px-4 py-4">
-      <div className="text-[9px] tracking-[0.22em] uppercase text-text-dim mb-1.5">
+    <div className="px-3 py-2.5">
+      <div className="text-[8px] tracking-[0.2em] uppercase text-text-dim mb-1">
         {label}
       </div>
       <div
@@ -397,252 +439,179 @@ function KpiCell({
           "font-mono tabular-nums leading-none",
           accent ? "text-accent-light" : "text-text",
         )}
-        style={{ fontSize: 22 }}
+        style={{ fontSize: 15 }}
       >
         {value}
       </div>
-      <div className="text-[10px] text-text-dim mt-1.5">{sub}</div>
+      <div className="text-[9px] text-text-dim mt-1">{sub}</div>
     </div>
   );
 }
 
-// ── Tender row ───────────────────────────────────────────────────
+// ── Awarded card (far back, peeks from above) ────────────────────
 
-function TenderRow({
-  tender,
-  livePrice,
-  isWinner = false,
-}: {
-  tender: Tender;
-  livePrice?: number;
-  isWinner?: boolean;
-}) {
-  const displayedPriceM =
-    typeof livePrice === "number" ? livePrice : tender.basePriceM;
-
+function AwardedCard() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "relative flex items-center gap-3 px-3.5 py-3 rounded-lg border transition-colors",
-        isWinner
-          ? "border-border-accent/70 bg-[rgba(0,212,200,0.045)]"
-          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
-      )}
-    >
-      {isWinner ? (
-        <span
-          aria-hidden
-          className="absolute -top-px inset-x-6 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(126,245,237,0.55), transparent)",
-          }}
-        />
-      ) : null}
-
-      {/* Avatar */}
-      <span
-        className="size-9 rounded-full flex items-center justify-center text-[11px] font-semibold border border-border-accent text-accent-light shrink-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-        }}
-      >
-        {tender.initials}
-      </span>
-
-      {/* Builder block */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[13px] font-medium text-text truncate">
-            {tender.name}
-          </span>
-          {isWinner ? (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border-accent bg-accent-muted/40 text-[8.5px] tracking-[0.14em] uppercase text-accent-light font-semibold">
-              <Trophy size={9} strokeWidth={2.5} />
-              Best value
-            </span>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-text-dim">
-          {tender.verified ? (
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck size={10} strokeWidth={2.5} className="text-accent-light" />
-              ABN + L
-            </span>
-          ) : null}
-          <span className="opacity-40">·</span>
-          <span>12 won</span>
-        </div>
-      </div>
-
-      {/* Price + delta */}
-      <div className="text-right shrink-0">
-        <div
-          className={cn(
-            "font-mono tabular-nums leading-none",
-            isWinner ? "text-accent-light" : "text-text",
-          )}
-          style={{ fontSize: 17 }}
-        >
-          $
-          {displayedPriceM.toFixed(2)}
-          M
-        </div>
-        <div
-          className={cn(
-            "text-[10px] mt-1 tabular-nums inline-flex items-center gap-1",
-            tender.deltaPct < 0
-              ? "text-accent-light"
-              : tender.deltaPct > 0
-                ? "text-text-dim"
-                : "text-text-dim",
-          )}
-        >
-          {tender.deltaPct < 0 ? (
-            <ArrowDown size={9} strokeWidth={2.5} />
-          ) : tender.deltaPct > 0 ? (
-            <TrendingUp size={9} strokeWidth={2.5} />
-          ) : null}
-          {tender.deltaPct === 0
-            ? "median"
-            : `${tender.deltaPct > 0 ? "+" : ""}${tender.deltaPct}% median`}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ── Notification toast (slides in from top) ──────────────────────
-
-function NotificationToast({ index }: { index: number }) {
-  const n = NOTIFICATIONS[index]!;
-  const Icon =
-    n.tone === "tender"
-      ? Sparkles
-      : n.tone === "verify"
-        ? ShieldCheck
-        : TrendingUp;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -18, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.98 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-2 left-3 right-3 z-[5] rounded-xl border border-border-accent/60 backdrop-blur-md overflow-hidden"
+      className="absolute"
       style={{
-        background:
-          "linear-gradient(180deg, rgba(10,30,48,0.96) 0%, rgba(6,18,30,0.97) 100%)",
-        boxShadow:
-          "0 20px 50px -20px rgba(0,212,200,0.45), 0 0 0 1px rgba(0,212,200,0.10) inset",
+        left: "18%",
+        right: "18%",
+        top: "-2%",
+        width: "min(220px, 55%)",
+        marginLeft: "auto",
+        marginRight: "auto",
+        zIndex: 10,
+        transformOrigin: "50% 100%",
+      }}
+      initial={{ opacity: 0, y: -8, scale: 0.9, rotateZ: 2 }}
+      animate={{
+        opacity: 0.78,
+        y: [0, -3, 0, 5, 0],
+        scale: 0.92,
+        rotateZ: [2, 1.4, 2, 2.6, 2],
+      }}
+      transition={{
+        opacity: { duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
+        scale: { duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
+        y: { duration: 7.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+        rotateZ: { duration: 7.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+      }}
+      whileHover={{
+        opacity: 1,
+        scale: 0.98,
+        rotateZ: 0,
+        zIndex: 40,
+        transition: { type: "spring", stiffness: 200, damping: 22 },
       }}
     >
-      <span
-        aria-hidden
-        className="absolute top-0 inset-x-6 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.65), transparent)",
-        }}
-      />
-      <div className="px-3.5 py-2.5 flex items-center gap-3">
-        <span className="size-8 rounded-full border border-border-accent bg-accent-muted text-accent-light flex items-center justify-center shrink-0">
-          <Icon size={14} strokeWidth={2.2} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-medium text-text truncate">
-            {n.actor}
+      <GlassCard accent="gold">
+        <div className="px-4 py-3 flex items-center gap-2.5">
+          <span
+            className="size-8 rounded-full flex items-center justify-center text-accent-light shrink-0"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255,210,120,0.20) 0%, rgba(0,212,200,0.05) 70%)",
+              border: "1px solid rgba(255,210,120,0.45)",
+            }}
+          >
+            <Trophy size={13} strokeWidth={2.1} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[8px] tracking-[0.22em] uppercase font-semibold mb-0.5"
+              style={{
+                color: "#ffd49a",
+              }}
+            >
+              Awarded
+            </div>
+            <div className="text-[11.5px] font-semibold text-text leading-tight">
+              Northline Builders
+            </div>
           </div>
-          <div className="text-[10.5px] text-text-dim">{n.action}</div>
+          <div className="text-right shrink-0">
+            <div className="text-[12px] font-mono tabular-nums text-accent-light leading-none">
+              $1.86M
+            </div>
+            <div className="text-[8.5px] text-text-dim mt-0.5">Sep 26</div>
+          </div>
         </div>
-        <span className="text-[9.5px] tracking-[0.18em] uppercase text-accent-light font-semibold shrink-0">
-          Just now
-        </span>
-      </div>
+      </GlassCard>
     </motion.div>
   );
 }
 
-// ── Sparkline (animated SVG line chart) ──────────────────────────
+// ── Shared glass card chrome ─────────────────────────────────────
 
-function Sparkline() {
-  // 24-point synthetic series with the three tender prices visible
-  // as markers. Animates the stroke draw on mount, then breathes
-  // gently via opacity.
-  const points: number[] = [
-    1.92, 1.90, 1.89, 1.88, 1.87, 1.86, 1.85, 1.84, 1.83, 1.82, 1.81, 1.80,
-    1.81, 1.82, 1.81, 1.80, 1.79, 1.78, 1.80, 1.82, 1.84, 1.86, 1.88, 1.91,
-  ];
-  const min = 1.74;
-  const max = 1.94;
-  const W = 100;
-  const H = 28;
-  const toY = (v: number) => H - ((v - min) / (max - min)) * H;
-  const stepX = W / (points.length - 1);
-  const d = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(2)} ${toY(p).toFixed(2)}`)
-    .join(" ");
-  // Markers for the three tenders on the line
-  const markers = [
-    { x: stepX * 17, y: toY(1.78), accent: true }, // Northline winner
-    { x: stepX * 5, y: toY(1.86) }, // Atlas median
-    { x: stepX * 23, y: toY(1.91) }, // Heritage
-  ];
-
+/**
+ * Glass card chrome shared by every gallery card. Each variant
+ * carries its own accent (teal / green / blue / gold) which colours
+ * the top-edge hairline, the corner halo, and the bottom-right glow.
+ */
+function GlassCard({
+  children,
+  accent,
+  elevated,
+}: {
+  children: React.ReactNode;
+  accent: "teal" | "green" | "blue" | "gold";
+  elevated?: boolean;
+}) {
+  const accentColors: Record<typeof accent, { hairline: string; halo: string; glow: string }> = {
+    teal: {
+      hairline: "rgba(126,245,237,0.65)",
+      halo: "rgba(0,212,200,0.18)",
+      glow: "0 30px 80px -30px rgba(0,212,200,0.45)",
+    },
+    green: {
+      hairline: "rgba(120,255,170,0.55)",
+      halo: "rgba(60,220,140,0.16)",
+      glow: "0 24px 60px -24px rgba(60,200,140,0.35)",
+    },
+    blue: {
+      hairline: "rgba(140,200,255,0.55)",
+      halo: "rgba(80,140,255,0.16)",
+      glow: "0 24px 60px -24px rgba(60,140,255,0.30)",
+    },
+    gold: {
+      hairline: "rgba(255,210,120,0.55)",
+      halo: "rgba(255,180,80,0.16)",
+      glow: "0 24px 60px -24px rgba(255,180,80,0.28)",
+    },
+  } as const;
+  const a = accentColors[accent];
   return (
-    <svg
-      viewBox={`0 -2 ${W} ${H + 4}`}
-      className="w-full block"
-      preserveAspectRatio="none"
-      style={{ height: 36 }}
+    <div
+      className="relative rounded-2xl overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(160deg, rgba(10,30,48,0.94) 0%, rgba(6,18,30,0.97) 100%)",
+        border: "1px solid rgba(100,180,255,0.16)",
+        boxShadow: [
+          "inset 0 1px 0 0 rgba(255,255,255,0.06)",
+          "0 1px 0 0 rgba(0,212,200,0.06)",
+          elevated
+            ? "0 24px 64px -24px rgba(0,0,0,0.65)"
+            : "0 16px 44px -16px rgba(0,0,0,0.55)",
+          a.glow,
+        ].join(", "),
+      }}
     >
-      <defs>
-        <linearGradient id="bhq-spark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgba(0,212,200,0.28)" />
-          <stop offset="1" stopColor="rgba(0,212,200,0)" />
-        </linearGradient>
-        <linearGradient id="bhq-spark-stroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgba(126,245,237,0.7)" />
-          <stop offset="1" stopColor="rgba(126,245,237,1)" />
-        </linearGradient>
-      </defs>
-      {/* Area under the curve */}
-      <motion.path
-        d={`${d} L ${W} ${H} L 0 ${H} Z`}
-        fill="url(#bhq-spark-fill)"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.8 }}
+      {/* Top-edge hairline accent */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-0 inset-x-6 h-px"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${a.hairline}, transparent)`,
+        }}
       />
-      {/* Stroke */}
-      <motion.path
-        d={d}
-        fill="none"
-        stroke="url(#bhq-spark-stroke)"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+      {/* Inner 1px highlight just below the border */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-[1px] inset-x-0 h-px opacity-30"
+        style={{ background: "rgba(255,255,255,0.10)" }}
       />
-      {/* Markers */}
-      {markers.map((m, i) => (
-        <motion.circle
-          key={i}
-          cx={m.x}
-          cy={m.y}
-          r={m.accent ? 2.4 : 1.6}
-          fill={m.accent ? "rgb(126,245,237)" : "rgba(255,255,255,0.5)"}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.4 + i * 0.1, duration: 0.5, ease: "easeOut" }}
-        />
-      ))}
-    </svg>
+      {/* Corner halo, top-right */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full"
+        style={{
+          background: `radial-gradient(circle, ${a.halo} 0%, transparent 70%)`,
+          opacity: 0.85,
+        }}
+      />
+      {/* Faint grid texture inside the card */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(126,245,237,1) 1px, transparent 1px), linear-gradient(90deg, rgba(126,245,237,1) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      <div className="relative">{children}</div>
+    </div>
   );
 }
+

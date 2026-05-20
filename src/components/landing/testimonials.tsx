@@ -59,7 +59,7 @@ export function Testimonials() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               Built with industry experts
             </span>
-            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4.2vw+1rem,5rem)] leading-[0.98]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[0.98]">
               <span className="text-text">Shaped by real</span>{" "}
               <span
                 className="italic"
