@@ -1,99 +1,58 @@
 "use client";
 
-import { motion } from "motion/react";
-
 /**
- * BuildingReveal — Hero centrepiece animation.
+ * BuildingReveal — Hero centrepiece.
  *
- * A continuous 14-second cinematic loop, rendered entirely in SVG
- * with motion-library path interpolation. The story:
+ * An always-visible isometric house with a 14-second cinematic
+ * overlay loop. The building itself is rendered statically so
+ * there is never a blank state: every visitor lands on a complete
+ * scene from frame one. On top of that base we cycle three
+ * "moments" via pure CSS keyframes:
  *
- *   Phase 1  · Drafting   (0.0s –  4.5s)   The floor plan draws
- *                                          itself. Outer walls
- *                                          first, interior walls,
- *                                          dimension labels.
- *   Phase 2  · Building   (4.5s –  7.7s)   Walls extrude up from
- *                                          the lines. Roof drops on.
- *   Phase 3  · Complete   (7.7s – 13.5s)   Windows light up. The
- *                                          building holds in view.
- *   Phase 4  · Reset      (13.5s – 14s)    Fade. Loop.
+ *   01 Drafting   Dimension callouts, ground grid, a sweeping
+ *                 measurement line travel across the building.
+ *   02 Building   A bright construction sweep washes upward,
+ *                 wall edges pulse, roof ridge catches light.
+ *   03 Complete   Windows glow warm, the title-block fades in,
+ *                 the whole scene breathes.
  *
- * Implementation notes
- * ────────────────────
- *   · Pure SVG + Motion. No CSS 3D, no WebGL, no Three.js.
- *   · Walls extrude by animating the `d` attribute through Motion's
- *     path interpolation — initial path has top corners collapsed
- *     onto the bottom corners (zero height), final path has them at
- *     proper top positions. Motion interpolates the strings frame
- *     by frame.
- *   · Every animated element uses a 14s duration with a per-element
- *     `times` array so they all loop in sync without any external
- *     clock or interval timer.
- *   · Isometric projection at 30° (the architectural standard) —
- *     all geometry computed up-front as constants for predictable
- *     rendering.
- *   · Sized through the `--cube-size` CSS variable inherited from
- *     wherever it's mounted — same approach as HeroCube so the
- *     hero layout is interchangeable.
+ * Implementation
+ * ──────────────
+ * · The SVG is pure static markup. Animations are CSS keyframes
+ *   attached via className and class-scoped `animation-delay`s.
+ * · No Motion path interpolation, no JS-driven RAF, no useEffect
+ *   timers. The browser handles everything, which means the
+ *   animation cannot get stuck in a `opacity: 0` initial state on
+ *   any production build — there is no JS in the rendering path.
+ * · Sized through the `--cube-size` CSS variable so the hero
+ *   layout stays interchangeable with the other variants.
  */
 
 // ── Isometric geometry ────────────────────────────────────────────
-// Reference axes: X = +right/forward, Y = +back/forward, Z = +up.
-// Projection: 30° standard isometric. Each world unit projects to
-// (x_screen, y_screen) = (X*cos30 - Y*cos30, -X*sin30 - Y*sin30 - Z).
+// 30° standard isometric, viewBox 360 × 320. World axes:
+//   X = +right/forward, Y = +back/forward, Z = +up.
 
-// Floor (Z=0) corners — viewBox is 360 wide, 320 tall.
-const A = { x: 180, y: 250 }; // front
-const B = { x: 290, y: 190 }; // right
-const C = { x: 180, y: 130 }; // back
-const D = { x: 70, y: 190 }; //  left
+const A = { x: 180, y: 250 }; // floor — front
+const B = { x: 290, y: 190 }; // floor — right
+const C = { x: 180, y: 130 }; // floor — back
+const D = { x: 70, y: 190 }; //  floor — left
 
-// Wall top (Z=3.6 → 58 px up in screen space).
 const WALL_H = 58;
 const A_top = { x: A.x, y: A.y - WALL_H };
 const B_top = { x: B.x, y: B.y - WALL_H };
 const C_top = { x: C.x, y: C.y - WALL_H };
 const D_top = { x: D.x, y: D.y - WALL_H };
 
-// Roof apex sits above the centre of the building top.
+// Hip-roof apex sits above the centre of the building top.
 const ROOF_RISE = 32;
-const peak = { x: 180, y: A_top.y - ROOF_RISE - 60 };
-// Wait — peak should be centred over the building. Re-derive:
-// centre of building top = average of all 4 top corners.
-// (180+290+180+70)/4 = 180, (192+132+72+132)/4 = 132
-const PEAK = { x: 180, y: 132 - ROOF_RISE };
+const PEAK = { x: 180, y: C_top.y - ROOF_RISE };
 
-// Floor-plan helpers — midpoints of each outer edge, used for the
-// interior wall cross (two diagonals forming four rooms).
+// Floor midpoints — used by the interior wall cross.
 const midAB = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
 const midBC = { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 };
 const midCD = { x: (C.x + D.x) / 2, y: (C.y + D.y) / 2 };
 const midDA = { x: (D.x + A.x) / 2, y: (D.y + A.y) / 2 };
 
-/** Linearly interpolate between two points. */
-function lerp(p: { x: number; y: number }, q: { x: number; y: number }, t: number) {
-  return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
-}
-
-/**
- * Position a point on a wall plane given (u, v) where u is the
- * normalised distance along the wall from bottom-left to bottom-right
- * and v is the normalised height from bottom to top.
- */
-function wallPoint(
-  bl: { x: number; y: number },
-  br: { x: number; y: number },
-  tl: { x: number; y: number },
-  tr: { x: number; y: number },
-  u: number,
-  v: number,
-) {
-  const bottom = lerp(bl, br, u);
-  const top = lerp(tl, tr, u);
-  return lerp(bottom, top, v);
-}
-
-// Build a quadrilateral path from 4 corners.
 const quad = (
   p1: { x: number; y: number },
   p2: { x: number; y: number },
@@ -102,51 +61,48 @@ const quad = (
 ) =>
   `M ${p1.x},${p1.y} L ${p2.x},${p2.y} L ${p3.x},${p3.y} L ${p4.x},${p4.y} Z`;
 
-// ── Pre-computed paths ────────────────────────────────────────────
+const FRONT_WALL = quad(A, B, B_top, A_top);
+const RIGHT_WALL = quad(B, C, C_top, B_top);
+const LEFT_WALL = quad(D, A, A_top, D_top);
 
-// Collapsed walls (top corners at bottom positions, zero height).
-const FRONT_WALL_COLLAPSED = quad(A, B, B, A);
-const FRONT_WALL_FULL = quad(A, B, B_top, A_top);
-
-const RIGHT_WALL_COLLAPSED = quad(B, C, C, B);
-const RIGHT_WALL_FULL = quad(B, C, C_top, B_top);
-
-const LEFT_WALL_COLLAPSED = quad(D, A, A, D);
-const LEFT_WALL_FULL = quad(D, A, A_top, D_top);
-
-// Roof faces (hip roof, all triangles meeting at peak).
 const ROOF_FRONT = `M ${A_top.x},${A_top.y} L ${B_top.x},${B_top.y} L ${PEAK.x},${PEAK.y} Z`;
 const ROOF_RIGHT = `M ${B_top.x},${B_top.y} L ${C_top.x},${C_top.y} L ${PEAK.x},${PEAK.y} Z`;
 const ROOF_LEFT = `M ${D_top.x},${D_top.y} L ${A_top.x},${A_top.y} L ${PEAK.x},${PEAK.y} Z`;
 
-// Window positions on the front and right walls, in (u, v) space.
+// Window placement on the front and right walls in (u, v) space.
+function lerp(p: { x: number; y: number }, q: { x: number; y: number }, t: number) {
+  return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
+}
+function wallPoint(
+  bl: { x: number; y: number },
+  br: { x: number; y: number },
+  tl: { x: number; y: number },
+  tr: { x: number; y: number },
+  u: number,
+  v: number,
+) {
+  return lerp(lerp(bl, br, u), lerp(tl, tr, u), v);
+}
+
 const WINDOWS: Array<{
   wall: "front" | "right";
-  u: number; // along wall, 0 to 1
-  v: number; // up wall, 0 to 1 (bottom-left of window)
-  w: number; // width as fraction of wall length
-  h: number; // height as fraction of wall height
+  u: number;
+  v: number;
+  w: number;
+  h: number;
+  kind: "window" | "door";
 }> = [
-  { wall: "front", u: 0.12, v: 0.28, w: 0.18, h: 0.42 },
-  { wall: "front", u: 0.66, v: 0.28, w: 0.18, h: 0.42 },
-  { wall: "right", u: 0.18, v: 0.28, w: 0.20, h: 0.42 },
-  { wall: "right", u: 0.62, v: 0.05, w: 0.16, h: 0.55 }, // door
+  { wall: "front", u: 0.12, v: 0.28, w: 0.18, h: 0.42, kind: "window" },
+  { wall: "front", u: 0.66, v: 0.28, w: 0.18, h: 0.42, kind: "window" },
+  { wall: "right", u: 0.18, v: 0.28, w: 0.20, h: 0.42, kind: "window" },
+  { wall: "right", u: 0.62, v: 0.05, w: 0.16, h: 0.62, kind: "door" },
 ];
 
 function windowPath(w: (typeof WINDOWS)[number]) {
   const corners =
-    w.wall === "front"
-      ? [A, B, A_top, B_top]
-      : ([B, C, B_top, C_top] as const);
+    w.wall === "front" ? [A, B, A_top, B_top] : ([B, C, B_top, C_top] as const);
   const bl = wallPoint(corners[0], corners[1], corners[2], corners[3], w.u, w.v);
-  const br = wallPoint(
-    corners[0],
-    corners[1],
-    corners[2],
-    corners[3],
-    w.u + w.w,
-    w.v,
-  );
+  const br = wallPoint(corners[0], corners[1], corners[2], corners[3], w.u + w.w, w.v);
   const tr = wallPoint(
     corners[0],
     corners[1],
@@ -155,35 +111,23 @@ function windowPath(w: (typeof WINDOWS)[number]) {
     w.u + w.w,
     w.v + w.h,
   );
-  const tl = wallPoint(
-    corners[0],
-    corners[1],
-    corners[2],
-    corners[3],
-    w.u,
-    w.v + w.h,
-  );
+  const tl = wallPoint(corners[0], corners[1], corners[2], corners[3], w.u, w.v + w.h);
   return quad(bl, br, tr, tl);
 }
-
-// ── Animation timings ─────────────────────────────────────────────
-// All values are fractions of the 14s loop. Keep these in one block
-// so the timeline is easy to read end to end.
-
-const LOOP = 14;
-const t = (s: number) => s / LOOP;
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function BuildingReveal() {
   return (
     <div
-      className="relative mx-auto [--cube-size:260px] sm:[--cube-size:320px] lg:[--cube-size:440px]"
+      className="building-reveal relative mx-auto [--cube-size:260px] sm:[--cube-size:320px] lg:[--cube-size:440px]"
       style={{
         width: "var(--cube-size)",
         height: "calc(var(--cube-size) * 0.92)",
       }}
     >
+      <BuildingRevealStyles />
+
       {/* Ambient halo behind the scene. */}
       <span
         aria-hidden
@@ -194,107 +138,204 @@ export function BuildingReveal() {
         }}
       />
 
-      {/* Phase indicator chip — top-left. */}
       <PhaseIndicator />
-
-      {/* Inner wrapper carries a continuous gentle float so the
-          whole composition feels alive even between phases. */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ y: [0, -4, 0] }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      >
 
       <svg
         viewBox="0 0 360 320"
-        className="relative w-full h-full"
+        className="relative block w-full h-full bhq-float"
         fill="none"
         style={{ overflow: "visible" }}
       >
-        {/* Soft floor shadow under the building. */}
-        <motion.ellipse
-          cx={180}
-          cy={252}
-          rx={120}
-          ry={14}
-          fill="url(#shadowGrad)"
-          initial={false}
-          animate={{
-            opacity: [0, 0, 0.55, 0.55, 0],
-          }}
-          transition={{
-            duration: LOOP,
-            times: [0, t(5.5), t(7.7), t(12.5), t(13.7)],
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-
-        {/* Faint isometric ground grid behind the building. Drawn
-            once, fades with the scene. */}
-        <GroundGrid />
-
-        {/* Foundation slab — slightly larger than the building
-            footprint, fades in early so the floor plan appears to
-            sit on solid ground. */}
-        <Foundation />
-
-        {/* ── PHASE 1 — Floor plan drawing ─────────────────────── */}
-        <FloorPlan />
-
-        {/* ── PHASE 2 — Walls extruding up ─────────────────────── */}
-        <Walls />
-
-        {/* ── PHASE 2b — Roof descending ───────────────────────── */}
-        <Roof />
-
-        {/* ── PHASE 2c — Crisp accent edges where walls meet ──── */}
-        <CornerEdges />
-
-        {/* ── PHASE 3 — Windows lighting up ─────────────────────── */}
-        <Windows />
-
-        {/* ── PHASE 3b — Architectural title block, bottom corner */}
-        <TitleBlock />
-
-        {/* Static SVG defs — gradients used by all layers. */}
         <defs>
-          <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="rgba(8,30,44,0.95)" />
-            <stop offset="1" stopColor="rgba(4,16,28,0.98)" />
+          <linearGradient id="bhq-wallGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="rgba(10,34,50,0.96)" />
+            <stop offset="1" stopColor="rgba(4,14,24,0.99)" />
           </linearGradient>
-          <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="rgba(12,40,58,0.96)" />
-            <stop offset="1" stopColor="rgba(6,22,36,0.99)" />
+          <linearGradient id="bhq-wallGradLeft" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="rgba(6,22,36,0.97)" />
+            <stop offset="1" stopColor="rgba(3,10,18,0.99)" />
           </linearGradient>
-          <radialGradient id="shadowGrad" cx="0.5" cy="0.5" r="0.5">
+          <linearGradient id="bhq-roofGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="rgba(14,46,66,0.98)" />
+            <stop offset="1" stopColor="rgba(8,28,44,0.99)" />
+          </linearGradient>
+          <linearGradient id="bhq-roofGradDark" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="rgba(6,22,36,0.98)" />
+            <stop offset="1" stopColor="rgba(4,14,24,0.99)" />
+          </linearGradient>
+          <radialGradient id="bhq-shadow" cx="0.5" cy="0.5" r="0.5">
             <stop offset="0" stopColor="rgba(0,0,0,0.7)" />
             <stop offset="0.4" stopColor="rgba(0,0,0,0.25)" />
             <stop offset="1" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
-          <linearGradient id="windowGlow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="rgba(255,220,140,0.95)" />
-            <stop offset="1" stopColor="rgba(255,180,80,0.75)" />
+          <linearGradient id="bhq-windowGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="rgba(255,224,150,1)" />
+            <stop offset="1" stopColor="rgba(255,184,90,0.9)" />
           </linearGradient>
+          <linearGradient id="bhq-sweep" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stopColor="rgba(126,245,237,0)" />
+            <stop offset="0.5" stopColor="rgba(126,245,237,0.55)" />
+            <stop offset="1" stopColor="rgba(126,245,237,0)" />
+          </linearGradient>
+          {/* Clip the construction sweep to the building footprint so
+              the glowing band visually fills the volume. */}
+          <clipPath id="bhq-building-clip">
+            <path
+              d={`M ${D.x},${D.y} L ${A.x},${A.y} L ${B.x},${B.y} L ${PEAK.x},${PEAK.y} L ${D_top.x},${D_top.y} Z`}
+            />
+          </clipPath>
         </defs>
+
+        {/* Soft floor shadow. */}
+        <ellipse
+          cx={180}
+          cy={252}
+          rx={130}
+          ry={15}
+          fill="url(#bhq-shadow)"
+          opacity={0.55}
+        />
+
+        {/* Faint ground grid — drafting moment fades it in. */}
+        <GroundGrid />
+
+        {/* Foundation outline — a dashed parallelogram around the
+            footprint, sitting beneath the building. Always visible. */}
+        <Foundation />
+
+        {/* ── Static building (always visible) ──────────────────── */}
+        {/* Walls — drawn back-to-front so the front wall sits on top. */}
+        <path
+          d={LEFT_WALL}
+          fill="url(#bhq-wallGradLeft)"
+          stroke="rgba(126,245,237,0.50)"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d={RIGHT_WALL}
+          fill="url(#bhq-wallGrad)"
+          stroke="rgba(126,245,237,0.55)"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d={FRONT_WALL}
+          fill="url(#bhq-wallGrad)"
+          stroke="rgba(126,245,237,0.70)"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+
+        {/* Roof — left/right back faces first, front face on top. */}
+        <path
+          d={ROOF_LEFT}
+          fill="url(#bhq-roofGradDark)"
+          stroke="rgba(126,245,237,0.55)"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+        />
+        <path
+          d={ROOF_RIGHT}
+          fill="url(#bhq-roofGrad)"
+          stroke="rgba(126,245,237,0.65)"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+        />
+        <path
+          d={ROOF_FRONT}
+          fill="url(#bhq-roofGrad)"
+          stroke="rgba(126,245,237,0.80)"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+        />
+
+        {/* Peak ridge accent line. */}
+        <line
+          x1={PEAK.x}
+          y1={PEAK.y}
+          x2={(A_top.x + B_top.x) / 2}
+          y2={(A_top.y + B_top.y) / 2}
+          stroke="rgba(126,245,237,0.85)"
+          strokeWidth="1"
+          strokeLinecap="round"
+        />
+
+        {/* Vertical corner edge accents. */}
+        <CornerEdges />
+
+        {/* Static windows — always visible, then a CSS pulse lights
+            them up during the Complete phase. */}
+        {WINDOWS.map((w, i) => (
+          <g key={i} className={`bhq-window bhq-window-${i}`}>
+            <path
+              d={windowPath(w)}
+              fill="url(#bhq-windowGlow)"
+              stroke="rgba(255,220,140,0.55)"
+              strokeWidth="0.7"
+              className="bhq-window-glass"
+            />
+            <path
+              d={windowPath(w)}
+              fill="rgba(255,200,120,0.30)"
+              className="bhq-window-aura"
+              style={{ filter: "blur(3px)" }}
+            />
+          </g>
+        ))}
+
+        {/* ── Drafting overlay ──────────────────────────────────── */}
+        {/* Floor-plan trace lines on the building's footprint. They
+            "redraw" themselves on each loop via stroke-dashoffset. */}
+        <FloorPlanTrace />
+
+        {/* Dimension callouts along the front and right edges. */}
+        <Dimension from={A} to={B} offset={26} text="10 m" delay={0} />
+        <Dimension from={B} to={C} offset={26} text="12 m" delay={0.18} />
+
+        {/* Construction sweep — a glowing band that rises from the
+            foundation to the roof apex during the Building moment. */}
+        <g clipPath="url(#bhq-building-clip)" className="bhq-sweep">
+          <rect
+            x={50}
+            y={A.y - 14}
+            width={260}
+            height={26}
+            fill="url(#bhq-sweep)"
+          />
+        </g>
+
+        {/* Scan dot — a single bright dot that traces the floor-plan
+            perimeter during the Drafting moment, like a CAD cursor
+            placing points. SVG-native <animateMotion> handles the
+            path traversal so the dot lands exactly on the polygon. */}
+        <g className="bhq-scan-dot">
+          <circle r={6} fill="rgba(126,245,237,0.45)" />
+          <circle r={3} fill="rgba(126,245,237,1)" />
+          <animateMotion
+            dur="14s"
+            repeatCount="indefinite"
+            keyTimes="0; 0.04; 0.28; 1"
+            keyPoints="0; 0; 1; 1"
+            calcMode="linear"
+            path={`M ${A.x},${A.y} L ${B.x},${B.y} L ${C.x},${C.y} L ${D.x},${D.y} L ${A.x},${A.y}`}
+          />
+        </g>
+
+        {/* Title block — bottom-right, fades in during Complete. */}
+        <TitleBlock />
       </svg>
-      </motion.div>
     </div>
   );
 }
 
 // ── Sub-components ────────────────────────────────────────────────
 
-/** Faint dotted isometric grid extending around the building. */
+/** Faint isometric ground grid behind the building. Pure static SVG. */
 function GroundGrid() {
   const lines: React.ReactElement[] = [];
-  const gridSize = 10;
+  const gridSize = 9;
   const step = 22;
-  // X-axis grid lines (parallel to A-B edge).
   for (let i = -gridSize; i <= gridSize; i++) {
     const x1 = 180 - 110 + i * (step * 0.866);
     const y1 = 190 + 60 + i * (step * 0.5);
@@ -307,13 +348,12 @@ function GroundGrid() {
         y1={y1}
         x2={x2}
         y2={y2}
-        stroke="rgba(126,245,237,0.06)"
+        stroke="rgba(126,245,237,0.07)"
         strokeWidth="0.5"
         strokeDasharray="2 4"
       />,
     );
   }
-  // Y-axis grid lines.
   for (let i = -gridSize; i <= gridSize; i++) {
     const x1 = 180 + 110 + i * (-step * 0.866);
     const y1 = 190 + 60 + i * (step * 0.5);
@@ -326,24 +366,15 @@ function GroundGrid() {
         y1={y1}
         x2={x2}
         y2={y2}
-        stroke="rgba(126,245,237,0.06)"
+        stroke="rgba(126,245,237,0.07)"
         strokeWidth="0.5"
         strokeDasharray="2 4"
       />,
     );
   }
   return (
-    <motion.g
-      initial={false}
-      animate={{ opacity: [0, 0, 0.6, 0.6, 0] }}
-      transition={{
-        duration: LOOP,
-        times: [0, t(0.3), t(2), t(12.8), t(13.7)],
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-      // Clip to a circle around the building so the grid fades at
-      // the edges and doesn't visually compete with the building.
+    <g
+      className="bhq-grid"
       style={{
         mask: "radial-gradient(ellipse at 50% 65%, black 30%, transparent 70%)",
         WebkitMask:
@@ -351,219 +382,124 @@ function GroundGrid() {
       }}
     >
       {lines}
-    </motion.g>
+    </g>
   );
 }
 
-/**
- * A subtle foundation slab — parallelogram slightly larger than the
- * building footprint that fades in before the floor plan draws.
- * Gives the whole composition a sense of weight and "ground."
- */
+/** Dashed foundation parallelogram around the footprint. */
 function Foundation() {
-  // Slightly inflate the building footprint outward from centre.
   const center = { x: 180, y: 190 };
-  const scale = 1.12;
+  const scale = 1.14;
   const expand = (p: { x: number; y: number }) => ({
     x: center.x + (p.x - center.x) * scale,
     y: center.y + (p.y - center.y) * scale,
   });
-  const A2 = expand(A);
-  const B2 = expand(B);
-  const C2 = expand(C);
-  const D2 = expand(D);
-
   return (
-    <motion.path
-      d={quad(A2, B2, C2, D2)}
+    <path
+      d={quad(expand(A), expand(B), expand(C), expand(D))}
       fill="rgba(0,212,200,0.04)"
-      stroke="rgba(126,245,237,0.18)"
+      stroke="rgba(126,245,237,0.22)"
       strokeWidth="0.6"
       strokeDasharray="3 5"
-      initial={false}
-      animate={{ opacity: [0, 0, 1, 1, 0] }}
-      transition={{
-        duration: LOOP,
-        times: [0, t(0.3), t(0.9), t(12.8), t(13.7)],
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
     />
   );
 }
 
-/** Phase 1 — the floor plan draws itself line by line. */
-function FloorPlan() {
-  // Each outer edge as a separate animated line for sequential
-  // draw-in via stroke-dashoffset.
+/** Vertical accent edges where walls meet. */
+function CornerEdges() {
   const edges = [
-    { from: A, to: B, t0: 0.5, label: "10 m" },
-    { from: B, to: C, t0: 0.7, label: "12 m" },
-    { from: C, to: D, t0: 0.9, label: "" },
-    { from: D, to: A, t0: 1.1, label: "" },
+    { from: A, to: A_top },
+    { from: B, to: B_top },
+    { from: D, to: D_top },
   ];
-
   return (
     <g>
-      {/* Outer floor outline — 4 lines staggered. */}
       {edges.map((e, i) => (
-        <motion.line
-          key={`out-${i}`}
+        <line
+          key={`edge-${i}`}
           x1={e.from.x}
           y1={e.from.y}
           x2={e.to.x}
           y2={e.to.y}
-          stroke="rgba(126,245,237,0.65)"
-          strokeWidth="1.6"
+          stroke="rgba(126,245,237,0.85)"
+          strokeWidth="1"
           strokeLinecap="round"
-          initial={false}
-          animate={{
-            pathLength: [0, 0, 1, 1, 0],
-            opacity: [0, 0, 1, 1, 0],
-          }}
-          transition={{
-            duration: LOOP,
-            times: [0, t(e.t0), t(e.t0 + 0.5), t(12.8), t(13.7)],
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         />
       ))}
-
-      {/* Interior walls — two diagonals forming a cross. */}
-      <motion.line
-        x1={midAB.x}
-        y1={midAB.y}
-        x2={midCD.x}
-        y2={midCD.y}
-        stroke="rgba(126,245,237,0.5)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        initial={false}
-        animate={{
-          pathLength: [0, 0, 1, 1, 0],
-          opacity: [0, 0, 1, 1, 0],
-        }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(2.0), t(2.7), t(12.8), t(13.7)],
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.line
-        x1={midDA.x}
-        y1={midDA.y}
-        x2={midBC.x}
-        y2={midBC.y}
-        stroke="rgba(126,245,237,0.5)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        initial={false}
-        animate={{
-          pathLength: [0, 0, 1, 1, 0],
-          opacity: [0, 0, 1, 1, 0],
-        }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(2.3), t(3.0), t(12.8), t(13.7)],
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Dimension callouts along the front and right edges with
-          architectural-standard end-caps and parallel measurement
-          lines. */}
-      <Dimension
-        from={A}
-        to={B}
-        offset={26}
-        text="10 m"
-        t0={3.2}
-        fadeAt={5.5}
-      />
-      <Dimension
-        from={B}
-        to={C}
-        offset={26}
-        text="12 m"
-        t0={3.4}
-        fadeAt={5.5}
-      />
-      <DimensionLabel
-        x={180}
-        y={A.y + 38}
-        text="Single dwelling"
-        t0={3.6}
-        fadeAt={5.5}
-        accent
-      />
     </g>
   );
 }
 
 /**
- * Architectural dimension callout. Draws a parallel measurement
- * line offset from the wall it's labelling, with perpendicular
- * end-caps and a centred text label. Mimics how real drafting
- * software (Revit, AutoCAD) renders dimensions.
+ * Floor-plan trace lines drawn on the building's footprint. They use
+ * stroke-dasharray + animated stroke-dashoffset (pure CSS) so they
+ * appear to "redraw" on each loop. Always visible (subtle teal) when
+ * not actively drawing.
  */
+function FloorPlanTrace() {
+  return (
+    <g className="bhq-trace">
+      {/* Interior wall cross — two diagonals between mid-edge points. */}
+      <line
+        x1={midAB.x}
+        y1={midAB.y}
+        x2={midCD.x}
+        y2={midCD.y}
+        stroke="rgba(126,245,237,0.55)"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        pathLength={1}
+        strokeDasharray={1}
+        className="bhq-trace-line bhq-trace-1"
+      />
+      <line
+        x1={midDA.x}
+        y1={midDA.y}
+        x2={midBC.x}
+        y2={midBC.y}
+        stroke="rgba(126,245,237,0.55)"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        pathLength={1}
+        strokeDasharray={1}
+        className="bhq-trace-line bhq-trace-2"
+      />
+    </g>
+  );
+}
+
 function Dimension({
   from,
   to,
   offset,
   text,
-  t0,
-  fadeAt,
+  delay,
 }: {
   from: { x: number; y: number };
   to: { x: number; y: number };
   offset: number;
   text: string;
-  t0: number;
-  fadeAt: number;
+  delay: number;
 }) {
-  // Perpendicular unit vector pointing "outside" the building.
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const len = Math.sqrt(dx * dx + dy * dy);
-  // Perp vector (rotate 90° clockwise) — points "down/out" relative
-  // to the wall in our isometric view.
   const px = dy / len;
   const py = -dx / len;
-  // Push outward by `offset`.
   const ox = -px * offset;
   const oy = -py * offset;
   const f = { x: from.x + ox, y: from.y + oy };
   const tt = { x: to.x + ox, y: to.y + oy };
-  // End-cap tick perpendicular to the dim line, 4px each direction.
   const tickHalf = 3.5;
-  // Text sits at the midpoint of the dim line.
   const mx = (f.x + tt.x) / 2;
   const my = (f.y + tt.y) / 2;
-  // Text offset slightly outward so it doesn't sit on the line.
   const tox = -px * 8;
   const toy = -py * 8;
-  // Compute angle for text rotation (in degrees). Flip by 180° when
-  // the natural angle would read the label upside-down, so all
-  // labels read left-to-right regardless of which edge they belong
-  // to (architectural-drafting convention).
   let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
   if (angleDeg > 90 || angleDeg < -90) angleDeg += 180;
 
   return (
-    <motion.g
-      initial={false}
-      animate={{ opacity: [0, 0, 1, 1, 0] }}
-      transition={{
-        duration: LOOP,
-        times: [0, t(t0), t(t0 + 0.4), t(fadeAt), t(fadeAt + 0.6)],
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    >
-      {/* Connector ticks from wall to dim line at each end. */}
+    <g className="bhq-dim" style={{ animationDelay: `${delay}s` }}>
       <line
         x1={from.x}
         y1={from.y}
@@ -580,7 +516,6 @@ function Dimension({
         stroke="rgba(126,245,237,0.35)"
         strokeWidth="0.6"
       />
-      {/* The main dim line. */}
       <line
         x1={f.x}
         y1={f.y}
@@ -589,7 +524,6 @@ function Dimension({
         stroke="rgba(126,245,237,0.55)"
         strokeWidth="0.9"
       />
-      {/* End-cap ticks (perpendicular to dim line). */}
       <line
         x1={f.x - py * tickHalf}
         y1={f.y + px * tickHalf}
@@ -608,12 +542,10 @@ function Dimension({
         strokeWidth="1"
         strokeLinecap="round"
       />
-      {/* Label, rotated parallel to the dim line, sitting on the
-          outward side so it never overlaps the building. */}
       <text
         x={mx + tox}
         y={my + toy}
-        fill="rgba(126,245,237,0.85)"
+        fill="rgba(126,245,237,0.9)"
         fontSize="9"
         fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
         textAnchor="middle"
@@ -623,243 +555,14 @@ function Dimension({
       >
         {text}
       </text>
-    </motion.g>
-  );
-}
-
-function DimensionLabel({
-  x,
-  y,
-  text,
-  t0,
-  fadeAt,
-  accent,
-}: {
-  x: number;
-  y: number;
-  text: string;
-  t0: number;
-  fadeAt: number;
-  accent?: boolean;
-}) {
-  return (
-    <motion.text
-      x={x}
-      y={y}
-      fill={accent ? "rgba(126,245,237,0.85)" : "rgba(126,245,237,0.55)"}
-      fontSize={accent ? "9.5" : "8.5"}
-      fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
-      textAnchor="middle"
-      letterSpacing={accent ? "0.18em" : "0.08em"}
-      style={{ textTransform: accent ? "uppercase" : "none" }}
-      initial={false}
-      animate={{ opacity: [0, 0, 1, 1, 0] }}
-      transition={{
-        duration: LOOP,
-        times: [0, t(t0), t(t0 + 0.4), t(fadeAt), t(fadeAt + 0.6)],
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    >
-      {text}
-    </motion.text>
-  );
-}
-
-/** Phase 2 — walls extrude upward from the floor lines. */
-function Walls() {
-  const wallSpec = [
-    {
-      key: "front",
-      collapsed: FRONT_WALL_COLLAPSED,
-      full: FRONT_WALL_FULL,
-      t0: 5.5,
-    },
-    {
-      key: "right",
-      collapsed: RIGHT_WALL_COLLAPSED,
-      full: RIGHT_WALL_FULL,
-      t0: 5.7,
-    },
-    {
-      key: "left",
-      collapsed: LEFT_WALL_COLLAPSED,
-      full: LEFT_WALL_FULL,
-      t0: 5.9,
-    },
-  ];
-
-  return (
-    <g>
-      {wallSpec.map((w) => (
-        <motion.path
-          key={w.key}
-          fill="url(#wallGrad)"
-          stroke="rgba(126,245,237,0.55)"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-          initial={false}
-          animate={{
-            d: [
-              w.collapsed,
-              w.collapsed,
-              w.full,
-              w.full,
-              w.collapsed,
-            ],
-            opacity: [0, 0, 1, 1, 0],
-          }}
-          transition={{
-            duration: LOOP,
-            times: [0, t(w.t0), t(w.t0 + 1.0), t(12.8), t(13.7)],
-            repeat: Infinity,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        />
-      ))}
     </g>
   );
 }
 
-/** Phase 2b — three roof faces drop down to land on top of the walls. */
-function Roof() {
-  return (
-    <g>
-      {/* Left roof face — drawn first so right + front sit on top. */}
-      <motion.path
-        d={ROOF_LEFT}
-        fill="url(#roofGrad)"
-        stroke="rgba(126,245,237,0.6)"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-        initial={false}
-        animate={{
-          opacity: [0, 0, 1, 1, 0],
-          y: [-16, -16, 0, 0, -16],
-        }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(6.7), t(7.6), t(12.8), t(13.7)],
-          repeat: Infinity,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      />
-      <motion.path
-        d={ROOF_RIGHT}
-        fill="url(#roofGrad)"
-        stroke="rgba(126,245,237,0.7)"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-        initial={false}
-        animate={{
-          opacity: [0, 0, 1, 1, 0],
-          y: [-16, -16, 0, 0, -16],
-        }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(6.7), t(7.7), t(12.8), t(13.7)],
-          repeat: Infinity,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      />
-      <motion.path
-        d={ROOF_FRONT}
-        fill="url(#roofGrad)"
-        stroke="rgba(126,245,237,0.8)"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-        initial={false}
-        animate={{
-          opacity: [0, 0, 1, 1, 0],
-          y: [-16, -16, 0, 0, -16],
-        }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(6.7), t(7.7), t(12.8), t(13.7)],
-          repeat: Infinity,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      />
-
-      {/* Peak ridge accent line — catches "light". */}
-      <motion.line
-        x1={PEAK.x}
-        y1={PEAK.y}
-        x2={(A_top.x + B_top.x) / 2}
-        y2={(A_top.y + B_top.y) / 2}
-        stroke="rgba(126,245,237,0.85)"
-        strokeWidth="1"
-        strokeLinecap="round"
-        initial={false}
-        animate={{ opacity: [0, 0, 1, 1, 0] }}
-        transition={{
-          duration: LOOP,
-          times: [0, t(7.4), t(8.0), t(12.8), t(13.7)],
-          repeat: Infinity,
-        }}
-      />
-    </g>
-  );
-}
-
-/**
- * Phase 2c — vertical accent lines highlighting the visible corner
- * edges where walls meet (A-corner, B-corner). Draws once walls are
- * up, gives the building structure a defined silhouette.
- */
-function CornerEdges() {
-  const edges = [
-    { from: A, to: A_top },
-    { from: B, to: B_top },
-    { from: D, to: D_top },
-  ];
-  return (
-    <g>
-      {edges.map((e, i) => (
-        <motion.line
-          key={`edge-${i}`}
-          x1={e.from.x}
-          y1={e.from.y}
-          x2={e.to.x}
-          y2={e.to.y}
-          stroke="rgba(126,245,237,0.85)"
-          strokeWidth="1"
-          strokeLinecap="round"
-          initial={false}
-          animate={{
-            pathLength: [0, 0, 1, 1, 0],
-            opacity: [0, 0, 1, 1, 0],
-          }}
-          transition={{
-            duration: LOOP,
-            times: [0, t(6.5 + i * 0.15), t(7.0 + i * 0.15), t(12.8), t(13.7)],
-            repeat: Infinity,
-            ease: "easeOut",
-          }}
-        />
-      ))}
-    </g>
-  );
-}
-
-/**
- * A small architectural title block in the bottom-right corner that
- * fades in during the "Complete" phase. Mimics the title-block
- * convention on real architectural drawings (project, scale, date).
- */
+/** Architectural title block — bottom-right, fades in during Complete. */
 function TitleBlock() {
   return (
-    <motion.g
-      initial={false}
-      animate={{ opacity: [0, 0, 1, 1, 0] }}
-      transition={{
-        duration: LOOP,
-        times: [0, t(8.5), t(9.2), t(12.8), t(13.7)],
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    >
-      {/* Background plate. */}
+    <g className="bhq-title">
       <rect
         x={232}
         y={278}
@@ -870,7 +573,6 @@ function TitleBlock() {
         stroke="rgba(126,245,237,0.25)"
         strokeWidth="0.6"
       />
-      {/* Top hairline accent. */}
       <line
         x1={236}
         y1={282}
@@ -879,7 +581,6 @@ function TitleBlock() {
         stroke="rgba(126,245,237,0.5)"
         strokeWidth="0.4"
       />
-      {/* Project name. */}
       <text
         x={238}
         y={293}
@@ -891,7 +592,6 @@ function TitleBlock() {
       >
         45 Sydney Rd
       </text>
-      {/* Sub line. */}
       <text
         x={238}
         y={302}
@@ -902,7 +602,6 @@ function TitleBlock() {
       >
         Brunswick · VIC
       </text>
-      {/* Scale + status. */}
       <text
         x={238}
         y={310}
@@ -925,93 +624,16 @@ function TitleBlock() {
       >
         Built
       </text>
-    </motion.g>
-  );
-}
-
-/**
- * Phase 3 — windows light up with a brief "powering on" flicker
- * (fade in → quick dim → settle to full), then hold through the
- * Complete phase before fading with the rest of the scene.
- */
-function Windows() {
-  return (
-    <g>
-      {WINDOWS.map((w, i) => {
-        const start = 7.7 + i * 0.18;
-        // Each window animates through: invisible → flicker on →
-        // settle. Then two gentle "breaths" during the Complete
-        // phase so the lights feel inhabited instead of static.
-        const opacityKeys = [
-          0,
-          0,
-          1,
-          0.55,
-          1, // settled bright
-          0.88, // breath dim 1
-          1,
-          0.88, // breath dim 2
-          1,
-          0,
-        ];
-        const timeKeys = [
-          0,
-          t(start),
-          t(start + 0.18),
-          t(start + 0.3),
-          t(start + 0.5),
-          t(9.2),
-          t(10.2),
-          t(11.4),
-          t(12.4),
-          t(13.7),
-        ];
-        return (
-          <motion.g key={i}>
-            {/* The window glass with warm gradient. */}
-            <motion.path
-              d={windowPath(w)}
-              fill="url(#windowGlow)"
-              stroke="rgba(255,220,140,0.45)"
-              strokeWidth="0.6"
-              initial={false}
-              animate={{ opacity: opacityKeys }}
-              transition={{
-                duration: LOOP,
-                times: timeKeys,
-                repeat: Infinity,
-                ease: "easeOut",
-              }}
-            />
-            {/* Soft glow behind window for "lit from within" feel. */}
-            <motion.path
-              d={windowPath(w)}
-              fill="rgba(255,200,120,0.22)"
-              initial={false}
-              animate={{ opacity: opacityKeys }}
-              style={{ filter: "blur(3px)" }}
-              transition={{
-                duration: LOOP,
-                times: timeKeys,
-                repeat: Infinity,
-                ease: "easeOut",
-              }}
-            />
-          </motion.g>
-        );
-      })}
     </g>
   );
 }
 
-/** Small chip in the corner showing which phase we're in. */
+/**
+ * The phase chip in the top-left of the animation area. Three labels
+ * cycle through every 14 seconds, synchronised with the SVG overlays.
+ * Pure CSS animation-delay — no JS state.
+ */
 function PhaseIndicator() {
-  const phases = [
-    { label: "01 · Drafting", at: 0.5, until: 4.5 },
-    { label: "02 · Building", at: 4.5, until: 7.7 },
-    { label: "03 · Complete", at: 7.7, until: 12.8 },
-  ];
-
   return (
     <div className="absolute top-0 left-0 z-10 pointer-events-none">
       <div
@@ -1022,32 +644,189 @@ function PhaseIndicator() {
           <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
           <span className="relative size-1.5 rounded-full bg-accent" />
         </span>
-        <span className="relative min-w-[5.5rem] h-3 text-[9.5px] tracking-[0.18em] uppercase text-text-muted font-semibold">
-          {phases.map((p, i) => (
-            <motion.span
-              key={i}
-              className="absolute inset-0 whitespace-nowrap"
-              initial={false}
-              animate={{ opacity: [0, 0, 1, 1, 0, 0] }}
-              transition={{
-                duration: LOOP,
-                times: [
-                  0,
-                  t(p.at),
-                  t(p.at + 0.3),
-                  t(p.until - 0.3),
-                  t(p.until),
-                  1,
-                ],
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              {p.label}
-            </motion.span>
-          ))}
+        <span className="relative min-w-[6rem] h-3 text-[9.5px] tracking-[0.18em] uppercase text-text-muted font-semibold">
+          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-1">
+            01 · Drafting
+          </span>
+          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-2">
+            02 · Building
+          </span>
+          <span className="absolute inset-0 whitespace-nowrap bhq-phase bhq-phase-3">
+            03 · Complete
+          </span>
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * All animation keyframes live in one inlined <style> block so the
+ * component is self-contained and styles cannot be tree-shaken away
+ * by an over-aggressive CSS prune. The whole timeline is 14 seconds.
+ *
+ *   Drafting   0.0s –  4.5s
+ *   Building   4.5s –  8.0s
+ *   Complete   8.0s – 12.5s
+ *   Settle    12.5s – 14.0s
+ */
+function BuildingRevealStyles() {
+  return (
+    <style>{`
+      .building-reveal .bhq-float {
+        animation: bhq-float 7s ease-in-out infinite;
+        transform-origin: 50% 70%;
+      }
+      @keyframes bhq-float {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-4px); }
+      }
+
+      /* Ground grid — gently breathes through the loop. */
+      .building-reveal .bhq-grid {
+        animation: bhq-grid 14s ease-in-out infinite;
+      }
+      @keyframes bhq-grid {
+        0%, 100% { opacity: 0.55; }
+        45%      { opacity: 0.55; }
+        58%      { opacity: 0.25; }
+        85%      { opacity: 0.40; }
+      }
+
+      /* Interior wall trace — redraws itself on the Drafting beat. */
+      .building-reveal .bhq-trace-line {
+        animation: bhq-trace 14s ease-in-out infinite;
+      }
+      .building-reveal .bhq-trace-2 { animation-delay: 0.4s; }
+      @keyframes bhq-trace {
+        0%   { stroke-dashoffset: 1; opacity: 0; }
+        2%   { stroke-dashoffset: 1; opacity: 1; }
+        18%  { stroke-dashoffset: 0; opacity: 1; }
+        96%  { stroke-dashoffset: 0; opacity: 1; }
+        100% { stroke-dashoffset: 1; opacity: 0; }
+      }
+
+      /* Dimension callouts — fade in during Drafting, fade out at
+         the start of the Building beat. */
+      .building-reveal .bhq-dim {
+        opacity: 0;
+        animation: bhq-dim 14s ease-in-out infinite;
+      }
+      @keyframes bhq-dim {
+        0%   { opacity: 0; }
+        15%  { opacity: 0; }
+        22%  { opacity: 1; }
+        45%  { opacity: 1; }
+        52%  { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      /* Construction sweep — clipped to the building footprint, the
+         band rises from foundation height to roof apex, then fades. */
+      .building-reveal .bhq-sweep {
+        opacity: 0;
+        animation: bhq-sweep 14s ease-in-out infinite;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      @keyframes bhq-sweep {
+        0%   { opacity: 0; transform: translateY(0); }
+        30%  { opacity: 0; transform: translateY(0); }
+        34%  { opacity: 1; transform: translateY(0); }
+        52%  { opacity: 1; transform: translateY(-145px); }
+        58%  { opacity: 0; transform: translateY(-160px); }
+        100% { opacity: 0; transform: translateY(-160px); }
+      }
+
+      /* Scan dot — visibility envelope. Position is handled by the
+         <animateMotion> child element inside the group, so this
+         keyframe only controls when the dot fades in and out. */
+      .building-reveal .bhq-scan-dot {
+        opacity: 0;
+        animation: bhq-scan 14s ease-in-out infinite;
+      }
+      @keyframes bhq-scan {
+        0%   { opacity: 0; }
+        4%   { opacity: 1; }
+        28%  { opacity: 1; }
+        32%  { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      /* Windows — always faintly visible, then a warm pulse during
+         the Complete beat. Two breaths give the lights a "lived-in"
+         feel before the loop resets. */
+      .building-reveal .bhq-window {
+        opacity: 0.18;
+        animation: bhq-window 14s ease-in-out infinite;
+      }
+      .building-reveal .bhq-window-0 { animation-delay: 0s; }
+      .building-reveal .bhq-window-1 { animation-delay: 0.12s; }
+      .building-reveal .bhq-window-2 { animation-delay: 0.24s; }
+      .building-reveal .bhq-window-3 { animation-delay: 0.06s; }
+      @keyframes bhq-window {
+        0%   { opacity: 0.10; }
+        55%  { opacity: 0.10; }
+        62%  { opacity: 1; }
+        70%  { opacity: 0.72; }
+        76%  { opacity: 1; }
+        84%  { opacity: 0.72; }
+        90%  { opacity: 1; }
+        96%  { opacity: 0.6; }
+        100% { opacity: 0.10; }
+      }
+
+      /* Title block — fades in mid-Complete, lingers until the
+         loop reset. */
+      .building-reveal .bhq-title {
+        opacity: 0;
+        animation: bhq-title 14s ease-in-out infinite;
+      }
+      @keyframes bhq-title {
+        0%   { opacity: 0; }
+        66%  { opacity: 0; }
+        72%  { opacity: 1; }
+        94%  { opacity: 1; }
+        98%  { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      /* Phase chip labels — three labels share the same min-width
+         box. Each fades in for its window then out so only one is
+         visible at a time. */
+      .building-reveal .bhq-phase {
+        opacity: 0;
+        animation: bhq-phase 14s ease-in-out infinite;
+      }
+      .building-reveal .bhq-phase-1 { animation-delay: 0s; }
+      .building-reveal .bhq-phase-2 { animation-delay: 4.5s; }
+      .building-reveal .bhq-phase-3 { animation-delay: 8s; }
+      @keyframes bhq-phase {
+        0%   { opacity: 0; }
+        3%   { opacity: 1; }
+        28%  { opacity: 1; }
+        32%  { opacity: 0; }
+        100% { opacity: 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .building-reveal .bhq-float,
+        .building-reveal .bhq-grid,
+        .building-reveal .bhq-trace-line,
+        .building-reveal .bhq-dim,
+        .building-reveal .bhq-sweep,
+        .building-reveal .bhq-scan-dot,
+        .building-reveal .bhq-window,
+        .building-reveal .bhq-title,
+        .building-reveal .bhq-phase {
+          animation: none;
+        }
+        .building-reveal .bhq-trace-line { stroke-dashoffset: 0; opacity: 1; }
+        .building-reveal .bhq-dim,
+        .building-reveal .bhq-title { opacity: 1; }
+        .building-reveal .bhq-window { opacity: 1; }
+        .building-reveal .bhq-phase-1 { opacity: 1; }
+      }
+    `}</style>
   );
 }
