@@ -651,8 +651,20 @@ function TenderRow({
           >
             {name}
           </span>
-          {verified ? <Pill tone="verified">Verified</Pill> : null}
-          {tag ? <Pill tone="best">{tag}</Pill> : null}
+          {/* Pills hidden on mobile — at the narrow card width they
+              wrap onto their own lines, making rows 2-3x taller. The
+              winner is still visually distinguished via the filled
+              teal rank circle + the row's accent border + glow. */}
+          {verified ? (
+            <span className="hidden sm:inline-flex">
+              <Pill tone="verified">Verified</Pill>
+            </span>
+          ) : null}
+          {tag ? (
+            <span className="hidden sm:inline-flex">
+              <Pill tone="best">{tag}</Pill>
+            </span>
+          ) : null}
         </div>
       </div>
       <div className="text-right shrink-0">
