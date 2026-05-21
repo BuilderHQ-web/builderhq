@@ -1,6 +1,7 @@
 "use client";
 
 import { Reveal } from "./reveal";
+import { WordsReveal } from "./words-reveal";
 
 type Review = {
   initials: string;
@@ -60,8 +61,11 @@ export function Testimonials() {
               Built with industry experts
             </span>
             <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto max-w-[20ch]">
-              <span className="text-text">Shaped by real</span>{" "}
-              <span className="accent-italic">feedback</span>.
+              <WordsReveal className="text-text">Shaped by real</WordsReveal>{" "}
+              <WordsReveal className="accent-italic" startIndex={3}>
+                feedback
+              </WordsReveal>
+              .
             </h2>
             <p className="mt-7 mx-auto max-w-[60ch] text-[15px] leading-[1.7] text-text-subtle">
               Built alongside people who understand residential

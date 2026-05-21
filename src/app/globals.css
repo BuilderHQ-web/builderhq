@@ -346,6 +346,13 @@ html.custom-cursor body.cursor-hovering .cursor-dot {
   width: 5px;
   height: 5px;
 }
+html.custom-cursor body.cursor-hovering .cursor-blend {
+  /* The blend disc grows to "swallow" the hovered element — the
+     mix-blend-difference invert-effect becomes the dominant visual
+     during hover. */
+  width: 48px;
+  height: 48px;
+}
 html.custom-cursor body.cursor-hovering .cursor-ring {
   width: 64px;
   height: 64px;

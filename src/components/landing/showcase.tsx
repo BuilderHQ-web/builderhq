@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Reveal } from "./reveal";
+import { WordsReveal } from "./words-reveal";
 import { cn } from "@/lib/utils";
 import { LineChart, Folder, FileSpreadsheet } from "lucide-react";
 
@@ -62,8 +63,11 @@ export function Showcase() {
               See it in motion
             </span>
             <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto max-w-[20ch]">
-              <span className="text-text">The actual</span>{" "}
-              <span className="accent-italic">interface</span>.
+              <WordsReveal className="text-text">The actual</WordsReveal>{" "}
+              <WordsReveal className="accent-italic" startIndex={2}>
+                interface
+              </WordsReveal>
+              .
             </h2>
             <p className="mt-7 mx-auto max-w-[60ch] text-[15px] leading-[1.7] text-text-subtle">
               Not stylised mockups. The screens here are the screens you sign

@@ -14,6 +14,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus } from "lucide-react";
 import { Reveal } from "./reveal";
+import { WordsReveal } from "./words-reveal";
 import { cn } from "@/lib/utils";
 
 type QA = {
@@ -117,8 +118,11 @@ export function FAQ() {
               Common questions
             </span>
             <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
-              <span className="text-text">The honest</span>{" "}
-              <span className="accent-italic">answers</span>.
+              <WordsReveal className="text-text">The honest</WordsReveal>{" "}
+              <WordsReveal className="accent-italic" startIndex={2}>
+                answers
+              </WordsReveal>
+              .
             </h2>
             <p className="mt-7 text-[14.5px] leading-[1.7] text-text-subtle max-w-[36ch]">
               Real questions from owners, builders, and architects. If

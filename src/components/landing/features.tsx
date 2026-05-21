@@ -1,6 +1,7 @@
 "use client";
 
 import { Reveal } from "./reveal";
+import { WordsReveal } from "./words-reveal";
 
 /**
  * Features — bento grid with asymmetric tiles. Each tile carries a
@@ -79,8 +80,11 @@ export function Features() {
               The platform
             </span>
             <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
-              <span className="text-text">Built for the</span>{" "}
-              <span className="accent-italic">work</span>.
+              <WordsReveal className="text-text">Built for the</WordsReveal>{" "}
+              <WordsReveal className="accent-italic" startIndex={3}>
+                work
+              </WordsReveal>
+              .
             </h2>
           </Reveal>
           <Reveal delay={0.1}>

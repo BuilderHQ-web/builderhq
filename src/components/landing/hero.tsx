@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { CtaLinks } from "./cta-links";
 import { BuildingReveal } from "./building-reveal";
+import { WordsReveal } from "./words-reveal";
 
 /**
  * Hero — horizontal composition: copy left, card-stack right.
@@ -107,12 +108,14 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             className="mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(2.75rem,5.5vw+1rem,5.75rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 500 }}
           >
-            <FadeRow delay={0}>
-              <span className="block">Tender your build.</span>
-            </FadeRow>
-            <FadeRow delay={0.12}>
-              <span className="block accent-italic">In days.</span>
-            </FadeRow>
+            <span className="block">
+              <WordsReveal>Tender your build.</WordsReveal>
+            </span>
+            <span className="block">
+              <WordsReveal className="accent-italic" startIndex={3}>
+                In days.
+              </WordsReveal>
+            </span>
           </h1>
 
           {/* Subhead — short, declarative. No em dashes. */}
