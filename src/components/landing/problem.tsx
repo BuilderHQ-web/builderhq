@@ -32,7 +32,7 @@ export function Problem() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The problem
             </span>
-            <h2 className="mt-4 lg:mt-5 mx-auto max-w-[18ch] font-display tracking-[-0.018em] text-[clamp(2.5rem,4.5vw+0.5rem,4.5rem)] leading-[1.02]">
+            <h2 className="mt-4 lg:mt-5 mx-auto max-w-[18ch] font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1.02]">
               <span className="text-text">Tendering shouldn&apos;t feel like</span>{" "}
               <span
                 className="italic"

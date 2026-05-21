@@ -57,20 +57,21 @@ import { cn } from "@/lib/utils";
 const CYCLE_MS = 4500;
 const FLICK_MS = 1500;
 
-// 3 card slots — defines how each card sits at positions 0 (front),
-// 1 (middle), 2 (back) in the stack. Tuned for a tight "deck spread"
-// silhouette so the back two cards peek without dominating.
+// 3 card slots — the back cards peek UP+RIGHT of the front, like
+// a hand of cards spreading from the top-left. Scale + brightness +
+// blur sell the depth (never just vertical offset). The front card
+// is the bottom-most one visually (closest to viewer), so back cards
+// appear smaller and higher.
 //
 // Cards stay fully OPAQUE (no see-through) — the "back" look comes
-// from filter: brightness + blur, not opacity. This keeps each card's
-// content visually self-contained even when stacked.
+// from filter: brightness + blur, not opacity.
 const SLOTS = [
   // Front — fully bright, no rotation, no blur.
   { y: 0, x: 0, rotate: 0, scale: 1, brightness: 1, blur: 0, z: 30 },
-  // Middle — small offset down/right, subtle rotation, dimmed + tiny blur.
-  { y: 18, x: 24, rotate: 3.5, scale: 0.96, brightness: 0.68, blur: 1, z: 20 },
-  // Back — further offset, more rotation, more dim + blur.
-  { y: 38, x: 46, rotate: 7, scale: 0.92, brightness: 0.42, blur: 2.2, z: 10 },
+  // Middle — slightly up + right, small rotation, dimmed.
+  { y: -12, x: 14, rotate: 2.5, scale: 0.96, brightness: 0.72, blur: 0.6, z: 20 },
+  // Back — further up + right, more rotation, dimmer.
+  { y: -24, x: 28, rotate: 5, scale: 0.93, brightness: 0.48, blur: 1.6, z: 10 },
 ] as const;
 
 // ── Card type definitions ────────────────────────────────────────
@@ -145,12 +146,8 @@ export function BuildingReveal() {
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={cn(
-        "relative mx-auto w-full",
-        // Container sized to fit the cards' content + spread offset.
-        // On mobile the deck is significantly smaller so the rest of
-        // the hero (headline + subhead + CTA) lives above the fold.
-        "h-[268px] sm:h-[340px] lg:h-[400px]",
-        "max-w-[340px] sm:max-w-[480px] lg:max-w-[560px]",
+        "relative mx-auto w-full flex flex-col items-center",
+        "max-w-[320px] sm:max-w-[470px] lg:max-w-[560px]",
       )}
       style={{ perspective: 1800 }}
     >
@@ -164,14 +161,18 @@ export function BuildingReveal() {
         }}
       />
 
-      {/* 3D stage — applies cursor parallax tilt to the whole deck */}
+      {/* Deck stage — fixed height per breakpoint, contains the
+          3D-positioned cards. Cards anchor at `top: 100` so the
+          lift arc (max -90) stays inside the stage and never clips. */}
       <motion.div
-        className="absolute inset-0"
+        className={cn(
+          "relative w-full",
+          "h-[360px] sm:h-[420px] lg:h-[470px]",
+        )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
         style={{ transformStyle: "preserve-3d" }}
       >
-        {/* The cards */}
         {CARDS.map((card, i) => {
           const slot = (i - active + CARDS.length) % CARDS.length;
           const isActive = slot === 0;
@@ -192,21 +193,22 @@ export function BuildingReveal() {
         })}
       </motion.div>
 
-      {/* Dot indicators */}
-      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
+      {/* Dot indicators — sit BELOW the deck stage as a sibling, so
+          they never overlap any card content during the cycle. */}
+      <div className="relative mt-5 sm:mt-6 flex items-center gap-1.5 z-50">
         {CARDS.map((card, i) => (
           <button
             key={card.id}
             type="button"
             onClick={() => advanceTo(i)}
             aria-label={`Show card ${i + 1}`}
-            className="group inline-flex items-center justify-center h-9 px-1.5"
+            className="group inline-flex items-center justify-center h-7 px-1.5"
           >
             <span
               className={cn(
                 "relative block h-1.5 rounded-full overflow-hidden transition-[width,background-color] duration-[420ms] ease-[var(--ease-out)]",
                 i === active
-                  ? "w-7 bg-[rgba(0,212,200,0.16)]"
+                  ? "w-8 bg-[rgba(0,212,200,0.16)]"
                   : "w-1.5 bg-text-faint group-hover:bg-text-dim",
               )}
             >
@@ -253,33 +255,37 @@ function DeckCard({
 }) {
   const target = SLOTS[slot]!;
 
-  // Arc animation for the card that just left position 0.
-  // Y arc: 0 → -90 (lift) → -90 (hold) → 28 (descend) → target.y
-  // RotateZ: subtle wobble during the arc
-  // RotateX: deeper tilt as it descends behind
-  // Brightness: stays bright through the arc, dims at the end
-  // Z index: starts high, dips through the deck on the way down
+  // Arc for the card leaving position 0 — designed so the card is
+  // ALWAYS fully visible above the deck, never below it, never
+  // clipped. Reads as:
+  //
+  //   1. Lift straight up (y goes from 0 to -90, scale stays 1)
+  //   2. Hover briefly at apex (lets the eye catch up)
+  //   3. Recede backwards (scale shrinks, opacity dims, blurs in,
+  //      slides slightly right toward the back-slot column)
+  //   4. Settle into the back-slot position from above
+  //
+  // The Z index drops mid-arc so the card visibly passes BEHIND the
+  // new front card during its descent.
   const leavingKeyframes = {
-    y: [0, -90, -90, 28, target.y],
-    x: [0, 4, 6, 18, target.x],
-    rotate: [0, -2.5, 3, 1.5, target.rotate],
-    rotateX: [0, -10, -4, 14, 18],
-    scale: [1, 0.98, 0.95, 0.9, target.scale],
+    y: [0, -90, -90, -50, target.y],
+    x: [0, 8, 18, 24, target.x],
+    rotate: [0, -1.5, 2, 4, target.rotate],
+    scale: [1, 1, 0.96, 0.94, target.scale],
     filter: [
       "blur(0px) brightness(1)",
       "blur(0px) brightness(1)",
-      "blur(0.4px) brightness(0.95)",
-      "blur(1.5px) brightness(0.7)",
+      "blur(0.4px) brightness(0.88)",
+      "blur(1px) brightness(0.7)",
       `blur(${target.blur}px) brightness(${target.brightness})`,
     ],
-    zIndex: [40, 40, 28, 14, target.z],
+    zIndex: [40, 40, 25, 12, target.z],
   };
 
   const restingState = {
     y: target.y,
     x: target.x,
     rotate: target.rotate,
-    rotateX: 0,
     scale: target.scale,
     filter: `blur(${target.blur}px) brightness(${target.brightness})`,
     zIndex: target.z,
@@ -287,8 +293,12 @@ function DeckCard({
 
   return (
     <motion.div
-      className="absolute left-0 right-0 top-0"
+      className="absolute left-0 right-0"
       style={{
+        // Cards sit 100px down from container top. That gap is the
+        // lift headroom so the upward arc (max -90) stays inside the
+        // container and never clips.
+        top: 100,
         transformOrigin: "50% 80%",
         transformStyle: "preserve-3d",
         pointerEvents: isActive ? "auto" : "none",

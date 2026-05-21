@@ -67,7 +67,7 @@ export function HowItWorks() {
               <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
                 How it works
               </span>
-              <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[0.98]">
+              <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[16ch]">
                 <span className="text-text">Three steps,</span>{" "}
                 <span
                   className="italic"

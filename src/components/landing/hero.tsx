@@ -64,7 +64,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-7 sm:gap-10 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-4 sm:gap-10 lg:gap-20 items-center">
         {/* Visual — building reveal. Order is intentional: on mobile +
             tablet (single-column) the visual leads, just like Resend's
             cube-on-top hero. On desktop (lg grid) it sits on the
@@ -97,16 +97,31 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             <span className="text-accent-light font-medium">Now live in Australia</span>
           </motion.span>
 
-          {/* Headline — Instrument Serif with right-side fade. */}
+          {/* Headline — Instrument Serif. Bigger than the section
+              headlines (this is THE hero) and "In days." gets the
+              same italic + teal-gradient mask treatment as the
+              accent word in every section heading, so the brand
+              voice is consistent end to end. */}
           <h1
-            className="mt-4 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.5rem,5vw+1rem,4.75rem)]"
+            className="mt-4 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.75rem,5.5vw+1rem,5.5rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
           >
             <FadeRow delay={0}>
               <span className="block">Tender your build.</span>
             </FadeRow>
-            <FadeRow delay={0.12} faded>
-              <span className="block">In days.</span>
+            <FadeRow delay={0.12}>
+              <span
+                className="block italic"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                In days.
+              </span>
             </FadeRow>
           </h1>
 
