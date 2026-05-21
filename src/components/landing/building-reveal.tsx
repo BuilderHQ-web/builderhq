@@ -172,10 +172,11 @@ export function BuildingReveal() {
       <motion.div
         className={cn(
           "relative w-full",
-          // Mobile stage compressed further so the deck is supporting
-          // cast, not the lead. Cards anchor at top:70 (less lift
-          // headroom, smaller arc on mobile too).
-          "h-[240px] sm:h-[420px] lg:h-[470px]",
+          // Mobile stage tall enough to contain the cards' content
+          // (header + project info + 3 rows ≈ 210px) plus 70px lift
+          // headroom = 280px minimum. The visual "shrink" comes from
+          // narrower max-w (245), not from cropping content.
+          "h-[290px] sm:h-[420px] lg:h-[470px]",
         )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
