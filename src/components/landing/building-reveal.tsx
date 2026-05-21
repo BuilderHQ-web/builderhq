@@ -147,10 +147,10 @@ export function BuildingReveal() {
       onMouseLeave={onMouseLeave}
       className={cn(
         "relative mx-auto w-full flex flex-col items-center",
-        // Mobile card 15% smaller than before (320 → 272) so the
-        // hero "I'm a builder" link is no longer hidden under the
-        // mobile URL bar. Desktop sizes unchanged.
-        "max-w-[272px] sm:max-w-[470px] lg:max-w-[560px]",
+        // Mobile card sized so the headline is the main character —
+        // cards are now ~25% smaller than launch (320 → 272 → 245).
+        // Desktop sizes unchanged.
+        "max-w-[245px] sm:max-w-[470px] lg:max-w-[560px]",
       )}
       style={{ perspective: 1800 }}
     >
@@ -172,9 +172,10 @@ export function BuildingReveal() {
       <motion.div
         className={cn(
           "relative w-full",
-          // Mobile stage compressed 15% (340 → 290) to match the
-          // narrower card width and shift the hero text up.
-          "h-[290px] sm:h-[420px] lg:h-[470px]",
+          // Mobile stage compressed further so the deck is supporting
+          // cast, not the lead. Cards anchor at top:70 (less lift
+          // headroom, smaller arc on mobile too).
+          "h-[240px] sm:h-[420px] lg:h-[470px]",
         )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
@@ -277,8 +278,8 @@ function DeckCard({
   // The Z index drops mid-arc so the card visibly passes BEHIND the
   // new front card during its descent.
   const leavingKeyframes = {
-    y: [0, -85, -85, -50, target.y],
-    x: [0, 8, 18, 24, target.x],
+    y: [0, -65, -65, -40, target.y],
+    x: [0, 6, 14, 20, target.x],
     rotate: [0, -1.5, 2, 4, target.rotate],
     scale: [1, 1, 0.96, 0.94, target.scale],
     filter: [
@@ -304,10 +305,11 @@ function DeckCard({
     <motion.div
       className="absolute left-0 right-0"
       style={{
-        // Cards sit 90px down from container top. That gap is the
-        // lift headroom so the upward arc (max -85) stays inside the
-        // container and never clips.
-        top: 90,
+        // Cards sit 70px down from container top. That gap is the
+        // lift headroom so the upward arc (max -65) stays inside the
+        // container and never clips. Tighter than before so the
+        // overall deck sits higher and gives the badge below room.
+        top: 70,
         transformOrigin: "50% 80%",
         transformStyle: "preserve-3d",
         pointerEvents: isActive ? "auto" : "none",
@@ -546,7 +548,7 @@ function TenderCard() {
       <CardHeader title="Tender Comparison" status="Live" />
       <div className="px-3.5 sm:px-5 pt-3 sm:pt-4 pb-2.5 sm:pb-4">
         <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
-          Hampton Residence — New Build
+          Hampton Residence · New Build
         </div>
         <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
           4 bed · 3 bath · 320m² · Hampton East

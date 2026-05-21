@@ -49,7 +49,7 @@ const ITEMS: Item[] = [
   },
   {
     value: "Free",
-    label: "For owners — forever",
+    label: "For owners, forever",
     sub: "No fees, no commission on awards.",
     // No numeric target — uses the soft-reveal path.
   },

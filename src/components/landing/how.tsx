@@ -32,7 +32,7 @@ const steps: Array<{
       "Matched builders preview, then unlock the full package to tender.",
     points: [
       "Filtered by suburb, type, licence",
-      "Founding access — first 50 builders free",
+      "Founding access. First 50 builders free",
       "Paid unlocks after launch",
     ],
   },

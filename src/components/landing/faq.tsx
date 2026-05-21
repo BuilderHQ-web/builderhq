@@ -26,11 +26,11 @@ const QAS: QA[] = [
     q: "Is it really free for project owners?",
     a: (
       <>
-        Yes — owners pay nothing to upload, match with builders, receive
+        Yes. Owners pay nothing to upload, match with builders, receive
         tenders, or award a build. No fees, no commission on the awarded
         contract. The marketplace is funded by builders paying a small
         amount to unlock private project details (address, owner contact,
-        documents) — never by you.
+        documents). Never by you.
       </>
     ),
   },
@@ -53,8 +53,8 @@ const QAS: QA[] = [
     a: (
       <>
         Standardise tenders. When three builders quote a job in three
-        different formats — different scope assumptions, different exclusion
-        lists, different schedule shapes — you can&apos;t actually compare
+        different formats, different scope assumptions, different exclusion
+        lists, different schedule shapes, you can&apos;t actually compare
         them. BuilderHQ asks every builder for the same fields, in the same
         format, with the same scope tree, so &quot;cheaper&quot; and
         &quot;better value&quot; mean what you think they mean.
@@ -67,7 +67,7 @@ const QAS: QA[] = [
       <>
         Builders pay a small unlock fee per project to access the address,
         owner contact, and downloadable documents. Founding builders get
-        complimentary unlocks for the launch period — a hand-picked cohort
+        complimentary unlocks for the launch period. A hand-picked cohort
         we work with directly. After that, unlocks are priced per project
         type (a single-dwelling reno is cheaper to unlock than a multi-unit
         build).
@@ -78,7 +78,7 @@ const QAS: QA[] = [
     q: "Who owns the project once I award a builder?",
     a: (
       <>
-        You do — entirely. BuilderHQ doesn&apos;t take a cut of the contract,
+        You do, entirely. BuilderHQ doesn&apos;t take a cut of the contract,
         doesn&apos;t insert itself into the build, and doesn&apos;t hold the
         money. The award email shares the builder&apos;s contact with you;
         the contract conversation moves off-platform from there. Your
@@ -92,9 +92,9 @@ const QAS: QA[] = [
     a: (
       <>
         Median response time from matched builders is around 24 hours, with
-        full tenders typically landing within 5–10 days of publish.
+        full tenders typically landing within 5 to 10 days of publish.
         It&apos;s slower than &quot;phone three mates&quot; but faster than
-        you&apos;ll get going through a broker — and the tenders are
+        you&apos;ll get going through a broker. And the tenders are
         directly comparable when they arrive.
       </>
     ),
@@ -111,20 +111,23 @@ export function FAQ() {
     >
       <div className="mx-auto max-w-[1080px]">
         <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-16 items-start">
-          {/* Header column — sticks to the left while the user reads through */}
+          {/* Header column. Centred on mobile (block stacks above
+              the accordion list), left-aligned on desktop. */}
           <Reveal>
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              Common questions
-            </span>
-            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
-              <span className="text-text">The honest</span>{" "}
-              <span className="accent-italic">answers</span>.
-            </h2>
-            <p className="mt-7 text-[14.5px] leading-[1.7] text-text-subtle max-w-[36ch]">
-              Real questions from owners, builders, and architects. If
-              something here doesn&apos;t answer yours, get in touch —
-              we&apos;ll add it.
-            </p>
+            <div className="text-center lg:text-left">
+              <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
+                Common questions
+              </span>
+              <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
+                <span className="text-text">The honest</span>{" "}
+                <span className="accent-italic">answers</span>.
+              </h2>
+              <p className="mt-7 mx-auto lg:mx-0 max-w-[42ch] text-[14.5px] leading-[1.7] text-text-subtle">
+                Real questions from owners, builders, and architects. If
+                something here doesn&apos;t answer yours, get in touch.
+                We&apos;ll add it.
+              </p>
+            </div>
           </Reveal>
 
           {/* Accordion column */}

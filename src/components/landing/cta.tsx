@@ -81,7 +81,7 @@ export function CTA({ cta }: { cta: CtaLinks }) {
                 className="size-[5px] rounded-full bg-accent-light"
                 style={{ boxShadow: "0 0 8px rgba(0,212,200,0.55)" }}
               />
-              Free for owners — forever
+              Free for owners, forever
             </li>
             <li className="inline-flex items-center gap-2">
               <span

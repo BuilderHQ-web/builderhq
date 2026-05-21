@@ -55,7 +55,7 @@ const TILES: Tile[] = [
     n: "05",
     name: "Verified profiles",
     description:
-      "ABN, ACN, state licence, insurance, and scoring — all in the open.",
+      "ABN, ACN, state licence, insurance, and scoring. All in the open.",
     span: "small",
     visual: <BadgeVisual />,
   },
@@ -89,7 +89,7 @@ export function Features() {
           <Reveal delay={0.1}>
             <p className="mt-6 lg:mt-7 mx-auto lg:mx-0 max-w-[55ch] text-[15px] leading-[1.7] text-text-subtle">
               Every feature is sized to the rhythm of an Australian residential
-              build — not a generic marketplace.
+              build. Not a generic marketplace.
             </p>
           </Reveal>
         </div>
@@ -258,7 +258,7 @@ function ThreadVisual() {
         <span className="block text-[8.5px] tracking-[0.16em] uppercase text-text-dim mb-0.5">
           Owner
         </span>
-        Beam over the kitchen — laminated or steel?
+        Beam over the kitchen. Laminated or steel?
       </div>
       <div className="px-3 py-2 rounded-sm rounded-br-none border border-border-accent/50 bg-[rgba(0,212,200,0.04)] text-[11px] text-accent-light leading-snug max-w-[88%] ml-auto">
         <span className="block text-[8.5px] tracking-[0.16em] uppercase text-accent mb-0.5">
