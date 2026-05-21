@@ -1,586 +1,392 @@
 "use client";
 
 /**
- * BuildingReveal — Floating gallery hero centrepiece.
+ * BuildingReveal — Luxury 3-card deck.
  *
- * Four glass cards arranged in a fanned-out composition in 3D space.
- * Each card is a different product moment — tender comparison,
- * verified builder, project pulse, awarded contract — so the hero
- * shows the surface area of BuilderHQ in a single glance rather
- * than abstracting it with an animation.
+ * Three product-moment cards stacked like the start of a hand of
+ * cards. Front card auto-cycles to the back every 4.5 seconds via
+ * a cinematic arc transition. The whole deck floats in 3D space
+ * and responds to the cursor with a soft parallax + spotlight.
  *
- * Composition
- * ───────────
- *   ┌───────── COMPARE ─────────┐   front-centre, full-size,
- *   │  live winner price ticks  │   carries the live ping +
- *   │  notification toast,      │   live data so the gallery
- *   │  best-value pill          │   feels alive.
- *   └───────────────────────────┘
- *      ↖ VERIFIED         PULSE ↗   left + right back, half-shown
- *      ↖ AWARDED ↑                  peeks from the very back
+ * Cards in order:
+ *   1. Tender comparison — Hampton Residence, three builders ranked
+ *      by price with verified pills, potential savings + avg
+ *      response time footer. The owner moment.
+ *   2. Project workspace — activity feed for the same project with
+ *      plans uploaded, RFIs answered, site visit scheduled. The
+ *      collaboration moment.
+ *   3. Browse projects — builder side, three projects with match
+ *      scores, locations, budgets. The discovery moment.
  *
- * Each card:
- *   · Sits absolute in 3D space with its own rotateZ + translateZ
- *   · Drifts on a slow per-card sine-wave breath (Motion infinite
- *     animate, different period per card so they never feel
- *     synchronised)
- *   · Lifts forward + brightens on hover (whileHover)
- *   · Has premium glass chrome — top-edge gradient hairline,
- *     corner halo, multi-layer shadow, inner highlight, accent
- *     gradient unique per card type
+ * Together they tell the platform story from both sides of the
+ * marketplace plus the central workspace.
  *
- * The master container tilts with the cursor (spring physics) so
- * the whole composition feels like a single physical object you
- * can almost reach out and rotate.
+ * Implementation notes
+ * ────────────────────
+ *   · A single useFrame loop drives the cycle clock and the cursor
+ *     parallax interpolation so all motion is synced.
+ *   · The "leaving" card (the one that just left the front) uses
+ *     an arc animation: lift up, hold at apex briefly, descend
+ *     behind the others. Other cards interpolate smoothly to
+ *     their new slot positions.
+ *   · Back cards get a CSS blur filter so they look genuinely
+ *     fogged, not just dimmed.
+ *   · Each card carries its own continuous micro-animation
+ *     (price ticker / status pulse / match-score breath) so the
+ *     deck feels alive even between cycles.
+ *   · A shine sweep runs across the front card every 9s — the
+ *     luxury-watch hand-glint signature.
  */
 
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Trophy, ShieldCheck, Activity, CheckCircle2 } from "lucide-react";
+import {
+  ShieldCheck,
+  FileText,
+  MessageSquare,
+  CalendarDays,
+  Flag,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ── Configuration ────────────────────────────────────────────────
+
+const CYCLE_MS = 4500;
+const FLICK_MS = 1500;
+
+// 3 card slots — defines how each card sits at positions 0 (front),
+// 1 (middle), 2 (back) in the stack. Tuned for a tight "deck spread"
+// silhouette so the back two cards peek without dominating.
+//
+// Cards stay fully OPAQUE (no see-through) — the "back" look comes
+// from filter: brightness + blur, not opacity. This keeps each card's
+// content visually self-contained even when stacked.
+const SLOTS = [
+  // Front — fully bright, no rotation, no blur.
+  { y: 0, x: 0, rotate: 0, scale: 1, brightness: 1, blur: 0, z: 30 },
+  // Middle — small offset down/right, subtle rotation, dimmed + tiny blur.
+  { y: 18, x: 24, rotate: 3.5, scale: 0.96, brightness: 0.68, blur: 1, z: 20 },
+  // Back — further offset, more rotation, more dim + blur.
+  { y: 38, x: 46, rotate: 7, scale: 0.92, brightness: 0.42, blur: 2.2, z: 10 },
+] as const;
+
+// ── Card type definitions ────────────────────────────────────────
+
+type CardId = "tender" | "workspace" | "browse";
+
+const CARDS: Array<{ id: CardId; accent: "teal" | "blue" | "amber" }> = [
+  { id: "tender", accent: "teal" },
+  { id: "workspace", accent: "blue" },
+  { id: "browse", accent: "amber" },
+];
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function BuildingReveal() {
+  const [active, setActive] = useState(0);
+  const [leaving, setLeaving] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [tilt, setTilt] = useState<{ x: number; y: number; px: number; py: number; hov: boolean }>({
+    x: 0, y: 0, px: 0.5, py: 0.5, hov: false,
+  });
+
+  // Auto-cycle
+  useEffect(() => {
+    if (paused) return;
+    const id = window.setInterval(() => {
+      setActive((cur) => {
+        const next = (cur + 1) % CARDS.length;
+        setLeaving(cur);
+        window.setTimeout(() => {
+          setLeaving((v) => (v === cur ? null : v));
+        }, FLICK_MS + 60);
+        return next;
+      });
+    }, CYCLE_MS);
+    return () => window.clearInterval(id);
+  }, [paused]);
+
+  const advanceTo = (i: number) => {
+    if (i === active) return;
+    setLeaving(active);
+    setActive(i);
+    window.setTimeout(() => {
+      setLeaving((v) => (v === active ? null : v));
+    }, FLICK_MS + 60);
+  };
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = wrapRef.current?.getBoundingClientRect();
     if (!r) return;
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
-    // ±5° tilt feels alive without being dramatic
     setTilt({
-      x: -(py - 0.5) * 8,
-      y: (px - 0.5) * 10,
+      x: -(py - 0.5) * 6,
+      y: (px - 0.5) * 9,
+      px,
+      py,
+      hov: true,
     });
   };
-  const onMouseLeave = () => setTilt({ x: 0, y: 0 });
+  const onMouseLeave = () => {
+    setTilt((s) => ({ ...s, x: 0, y: 0, hov: false }));
+    setPaused(false);
+  };
+  const onMouseEnter = () => setPaused(true);
 
   return (
     <div
       ref={wrapRef}
       onMouseMove={onMouseMove}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={cn(
         "relative mx-auto w-full",
-        // Container sizes per breakpoint — the cards' inline pixel
-        // positions are tuned to this fixed canvas.
-        "h-[440px] sm:h-[480px] lg:h-[540px]",
-        "max-w-[420px] sm:max-w-[460px] lg:max-w-[520px]",
+        // Container sized to fit the cards' content + spread offset.
+        // On mobile the deck is significantly smaller so the rest of
+        // the hero (headline + subhead + CTA) lives above the fold.
+        "h-[268px] sm:h-[340px] lg:h-[400px]",
+        "max-w-[340px] sm:max-w-[480px] lg:max-w-[560px]",
       )}
       style={{ perspective: 1800 }}
     >
-      {/* Ambient halo behind the whole gallery. */}
+      {/* Ambient halo behind the deck */}
       <span
         aria-hidden
         className="pointer-events-none absolute -inset-16 rounded-[40px]"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 45%, rgba(0,212,200,0.20) 0%, rgba(0,212,200,0.06) 30%, transparent 65%)",
+            "radial-gradient(ellipse at 50% 50%, rgba(0,212,200,0.22) 0%, rgba(0,212,200,0.07) 32%, transparent 65%)",
         }}
       />
 
-      {/* The 3D stage. rotateX/rotateY driven by cursor tilt above
-          via Motion spring so the whole composition responds to the
-          mouse.
-          On mobile (< sm), the back cards are hidden — the front
-          Compare card carries the hero alone. The floating gallery
-          composition only works at tablet+ widths where the canvas
-          is wide enough to fan four cards. */}
+      {/* 3D stage — applies cursor parallax tilt to the whole deck */}
       <motion.div
         className="absolute inset-0"
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
-        transition={{ type: "spring", stiffness: 80, damping: 18, mass: 0.6 }}
+        transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
         style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Awarded — peeks from above on every breakpoint. */}
-        <AwardedCard />
-
-        {/* Pulse + Verified — hidden on mobile, fan out on tablet+. */}
-        <div className="hidden sm:contents">
-          <PulseCard />
-          <VerifiedCard />
-        </div>
-
-        {/* Front-centre card — always visible, the main moment. */}
-        <CompareCard />
+        {/* The cards */}
+        {CARDS.map((card, i) => {
+          const slot = (i - active + CARDS.length) % CARDS.length;
+          const isActive = slot === 0;
+          const isLeaving = i === leaving;
+          return (
+            <DeckCard
+              key={card.id}
+              id={card.id}
+              accent={card.accent}
+              slot={slot}
+              isActive={isActive}
+              isLeaving={isLeaving}
+              cursorPx={tilt.px}
+              cursorPy={tilt.py}
+              cursorHov={tilt.hov}
+            />
+          );
+        })}
       </motion.div>
-    </div>
-  );
-}
 
-// ── Compare card (front, main) ───────────────────────────────────
-
-function CompareCard() {
-  const [winnerPrice, setWinnerPrice] = useState(1.78);
-  useEffect(() => {
-    let raf = 0;
-    let t = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      t += 0.016;
-      setWinnerPrice(1.78 + Math.sin(t * 0.6) * 0.006);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  return (
-    <motion.div
-      className="absolute inset-x-0 mx-auto bottom-0"
-      style={{
-        // Front, centre.
-        width: "min(360px, 88%)",
-        zIndex: 30,
-        transformOrigin: "50% 80%",
-      }}
-      initial={{ opacity: 0, y: 32, scale: 0.95 }}
-      animate={{
-        opacity: 1,
-        y: [0, -6, 0, 4, 0],
-        scale: 1,
-        rotateZ: [-1.6, -1.2, -1.6, -2, -1.6],
-      }}
-      transition={{
-        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-        scale: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-        y: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
-        rotateZ: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
-      }}
-      whileHover={{
-        scale: 1.025,
-        rotateZ: 0,
-        y: -8,
-        transition: { type: "spring", stiffness: 200, damping: 22 },
-      }}
-    >
-      <GlassCard accent="teal" elevated>
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)]">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="relative flex size-1.5 shrink-0">
-              <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
-              <span className="relative size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-[11.5px] font-medium text-text truncate leading-tight">
-                Niddrie Townhouse
-              </div>
-              <div className="text-[9px] tracking-[0.12em] text-text-dim font-mono tabular-nums whitespace-nowrap mt-0.5">
-                3 tenders · Brunswick
-              </div>
-            </div>
-          </div>
-          <span className="shrink-0 px-2 py-0.5 border border-border-accent rounded-full text-[8.5px] tracking-[0.18em] uppercase text-accent">
-            Live
-          </span>
-        </div>
-
-        {/* Tender rows */}
-        <div className="px-3 py-3 space-y-1.5">
-          <CompareRow
-            initials="NB"
-            name="Northline Builders"
-            price={`$${winnerPrice.toFixed(2)}M`}
-            delta="-4% median"
-            winner
-          />
-          <CompareRow
-            initials="AC"
-            name="Atlas Build Co"
-            price="$1.86M"
-            delta="median"
-          />
-          <CompareRow
-            initials="HG"
-            name="Heritage Group"
-            price="$1.91M"
-            delta="+3%"
-          />
-        </div>
-      </GlassCard>
-    </motion.div>
-  );
-}
-
-function CompareRow({
-  initials,
-  name,
-  price,
-  delta,
-  winner,
-}: {
-  initials: string;
-  name: string;
-  price: string;
-  delta: string;
-  winner?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "relative flex items-center gap-2.5 px-2.5 py-2 rounded-md border",
-        winner
-          ? "border-border-accent/60 bg-[rgba(0,212,200,0.05)]"
-          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
-      )}
-    >
-      <span
-        className="size-7 rounded-full flex items-center justify-center text-[9.5px] font-semibold border border-border-accent text-accent-light shrink-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-        }}
-      >
-        {initials}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11.5px] font-medium text-text truncate">
-            {name}
-          </span>
-          {winner ? (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-border-accent bg-accent-muted/40 text-[7.5px] tracking-[0.12em] uppercase text-accent-light font-semibold">
-              <Trophy size={8} strokeWidth={2.5} />
-              Best
-            </span>
-          ) : null}
-        </div>
-        <div className="text-[9.5px] text-text-dim mt-0.5">ABN ✓ · Licence ✓</div>
-      </div>
-      <div className="text-right shrink-0">
-        <div
-          className={cn(
-            "font-mono tabular-nums leading-none",
-            winner ? "text-accent-light" : "text-text",
-          )}
-          style={{ fontSize: 13.5 }}
-        >
-          {price}
-        </div>
-        <div
-          className={cn(
-            "text-[9px] mt-0.5 tabular-nums",
-            winner ? "text-accent-light/80" : "text-text-dim",
-          )}
-        >
-          {delta}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Verified card (back-right) ────────────────────────────────────
-
-function VerifiedCard() {
-  return (
-    <motion.div
-      className="absolute"
-      style={{
-        // Right of centre, slightly higher.
-        right: "-4%",
-        top: "8%",
-        width: "min(260px, 62%)",
-        zIndex: 18,
-        transformOrigin: "50% 80%",
-      }}
-      initial={{ opacity: 0, x: 20, y: 12, rotateZ: 8 }}
-      animate={{
-        opacity: 0.95,
-        x: 0,
-        y: [0, -5, 0, 7, 0],
-        rotateZ: [8, 7.4, 8, 8.6, 8],
-      }}
-      transition={{
-        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 },
-        x: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 },
-        y: { duration: 5.4, repeat: Infinity, ease: "easeInOut" },
-        rotateZ: { duration: 5.4, repeat: Infinity, ease: "easeInOut" },
-      }}
-      whileHover={{
-        scale: 1.05,
-        rotateZ: 4,
-        opacity: 1,
-        zIndex: 40,
-        transition: { type: "spring", stiffness: 200, damping: 22 },
-      }}
-    >
-      <GlassCard accent="green">
-        <div className="px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)] flex items-center gap-2.5">
-          <ShieldCheck size={12} strokeWidth={2.4} className="text-accent-light" />
-          <span className="text-[9.5px] tracking-[0.2em] uppercase text-text-muted font-semibold">
-            Verified Builder
-          </span>
-        </div>
-
-        <div className="px-4 py-3.5">
-          <div className="flex items-center gap-2.5 mb-3">
-            <span
-              className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold text-accent-contrast"
-              style={{
-                background:
-                  "linear-gradient(135deg, #7ef5ed, #00d4c8 50%, #1a5fd4)",
-              }}
-            >
-              NB
-            </span>
-            <div className="min-w-0">
-              <div className="text-[12px] font-semibold text-text truncate">
-                Northline Builders
-              </div>
-              <div className="text-[9.5px] text-text-dim mt-0.5">
-                Brunswick · 12 won
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <VerifyChip label="ABN active" />
-            <VerifyChip label="Builder licence" />
-            <VerifyChip label="Insurance current" />
-          </div>
-        </div>
-      </GlassCard>
-    </motion.div>
-  );
-}
-
-function VerifyChip({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.04)]">
-      <span className="size-4 rounded-sm border border-border-accent bg-accent-muted text-accent-light flex items-center justify-center shrink-0">
-        <CheckCircle2 size={9} strokeWidth={2.7} />
-      </span>
-      <span className="text-[10.5px] text-text">{label}</span>
-    </div>
-  );
-}
-
-// ── Pulse card (back-left) ────────────────────────────────────────
-
-function PulseCard() {
-  return (
-    <motion.div
-      className="absolute"
-      style={{
-        left: "-4%",
-        top: "14%",
-        width: "min(260px, 62%)",
-        zIndex: 16,
-        transformOrigin: "50% 80%",
-      }}
-      initial={{ opacity: 0, x: -20, y: 12, rotateZ: -8 }}
-      animate={{
-        opacity: 0.92,
-        x: 0,
-        y: [0, -7, 0, 5, 0],
-        rotateZ: [-8, -7.4, -8, -8.6, -8],
-      }}
-      transition={{
-        opacity: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 },
-        x: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 },
-        y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
-        rotateZ: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
-      }}
-      whileHover={{
-        scale: 1.05,
-        rotateZ: -4,
-        opacity: 1,
-        zIndex: 40,
-        transition: { type: "spring", stiffness: 200, damping: 22 },
-      }}
-    >
-      <GlassCard accent="blue">
-        <div className="px-4 pt-3.5 pb-3 border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Activity size={12} strokeWidth={2.4} className="text-accent-light" />
-            <span className="text-[9.5px] tracking-[0.2em] uppercase text-text-muted font-semibold">
-              Project pulse
-            </span>
-          </div>
-          <span className="text-[8.5px] tracking-[0.18em] uppercase text-accent-light">
-            Live
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 divide-x divide-y divide-[rgba(255,255,255,0.04)]">
-          <PulseStat label="Tenders" value="3" sub="2 unique" />
-          <PulseStat label="Median" value="$1.86M" sub="±$70k" />
-          <PulseStat label="Spread" value="7%" sub="tight" accent />
-          <PulseStat label="Verified" value="100%" sub="ABN + L" accent />
-        </div>
-      </GlassCard>
-    </motion.div>
-  );
-}
-
-function PulseStat({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="px-3 py-2.5">
-      <div className="text-[8px] tracking-[0.2em] uppercase text-text-dim mb-1">
-        {label}
-      </div>
-      <div
-        className={cn(
-          "font-mono tabular-nums leading-none",
-          accent ? "text-accent-light" : "text-text",
-        )}
-        style={{ fontSize: 15 }}
-      >
-        {value}
-      </div>
-      <div className="text-[9px] text-text-dim mt-1">{sub}</div>
-    </div>
-  );
-}
-
-// ── Awarded card (far back, peeks from above) ────────────────────
-
-function AwardedCard() {
-  return (
-    <motion.div
-      className="absolute"
-      style={{
-        left: "18%",
-        right: "18%",
-        top: "-2%",
-        width: "min(220px, 55%)",
-        marginLeft: "auto",
-        marginRight: "auto",
-        zIndex: 10,
-        transformOrigin: "50% 100%",
-      }}
-      initial={{ opacity: 0, y: -8, scale: 0.9, rotateZ: 2 }}
-      animate={{
-        opacity: 0.78,
-        y: [0, -3, 0, 5, 0],
-        scale: 0.92,
-        rotateZ: [2, 1.4, 2, 2.6, 2],
-      }}
-      transition={{
-        opacity: { duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
-        scale: { duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
-        y: { duration: 7.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
-        rotateZ: { duration: 7.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
-      }}
-      whileHover={{
-        opacity: 1,
-        scale: 0.98,
-        rotateZ: 0,
-        zIndex: 40,
-        transition: { type: "spring", stiffness: 200, damping: 22 },
-      }}
-    >
-      <GlassCard accent="gold">
-        <div className="px-4 py-3 flex items-center gap-2.5">
-          <span
-            className="size-8 rounded-full flex items-center justify-center text-accent-light shrink-0"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,210,120,0.20) 0%, rgba(0,212,200,0.05) 70%)",
-              border: "1px solid rgba(255,210,120,0.45)",
-            }}
+      {/* Dot indicators */}
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-40">
+        {CARDS.map((card, i) => (
+          <button
+            key={card.id}
+            type="button"
+            onClick={() => advanceTo(i)}
+            aria-label={`Show card ${i + 1}`}
+            className="group inline-flex items-center justify-center h-9 px-1.5"
           >
-            <Trophy size={13} strokeWidth={2.1} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[8px] tracking-[0.22em] uppercase font-semibold mb-0.5"
-              style={{
-                color: "#ffd49a",
-              }}
+            <span
+              className={cn(
+                "relative block h-1.5 rounded-full overflow-hidden transition-[width,background-color] duration-[420ms] ease-[var(--ease-out)]",
+                i === active
+                  ? "w-7 bg-[rgba(0,212,200,0.16)]"
+                  : "w-1.5 bg-text-faint group-hover:bg-text-dim",
+              )}
             >
-              Awarded
-            </div>
-            <div className="text-[11.5px] font-semibold text-text leading-tight">
-              Northline Builders
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-[12px] font-mono tabular-nums text-accent-light leading-none">
-              $1.86M
-            </div>
-            <div className="text-[8.5px] text-text-dim mt-0.5">Sep 26</div>
-          </div>
-        </div>
-      </GlassCard>
+              {i === active ? (
+                <motion.span
+                  key={`${active}-${paused}`}
+                  className="absolute inset-y-0 left-0 bg-accent shadow-[0_0_10px_rgba(0,212,200,0.7)]"
+                  initial={{ width: "0%" }}
+                  animate={{ width: paused ? "0%" : "100%" }}
+                  transition={{
+                    duration: paused ? 0 : CYCLE_MS / 1000,
+                    ease: "linear",
+                  }}
+                />
+              ) : null}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── DeckCard — wrapper that handles position + transitions ───────
+
+function DeckCard({
+  id,
+  accent,
+  slot,
+  isActive,
+  isLeaving,
+  cursorPx,
+  cursorPy,
+  cursorHov,
+}: {
+  id: CardId;
+  accent: "teal" | "blue" | "amber";
+  slot: number;
+  isActive: boolean;
+  isLeaving: boolean;
+  cursorPx: number;
+  cursorPy: number;
+  cursorHov: boolean;
+}) {
+  const target = SLOTS[slot]!;
+
+  // Arc animation for the card that just left position 0.
+  // Y arc: 0 → -90 (lift) → -90 (hold) → 28 (descend) → target.y
+  // RotateZ: subtle wobble during the arc
+  // RotateX: deeper tilt as it descends behind
+  // Brightness: stays bright through the arc, dims at the end
+  // Z index: starts high, dips through the deck on the way down
+  const leavingKeyframes = {
+    y: [0, -90, -90, 28, target.y],
+    x: [0, 4, 6, 18, target.x],
+    rotate: [0, -2.5, 3, 1.5, target.rotate],
+    rotateX: [0, -10, -4, 14, 18],
+    scale: [1, 0.98, 0.95, 0.9, target.scale],
+    filter: [
+      "blur(0px) brightness(1)",
+      "blur(0px) brightness(1)",
+      "blur(0.4px) brightness(0.95)",
+      "blur(1.5px) brightness(0.7)",
+      `blur(${target.blur}px) brightness(${target.brightness})`,
+    ],
+    zIndex: [40, 40, 28, 14, target.z],
+  };
+
+  const restingState = {
+    y: target.y,
+    x: target.x,
+    rotate: target.rotate,
+    rotateX: 0,
+    scale: target.scale,
+    filter: `blur(${target.blur}px) brightness(${target.brightness})`,
+    zIndex: target.z,
+  };
+
+  return (
+    <motion.div
+      className="absolute left-0 right-0 top-0"
+      style={{
+        transformOrigin: "50% 80%",
+        transformStyle: "preserve-3d",
+        pointerEvents: isActive ? "auto" : "none",
+        willChange: "transform, opacity, filter",
+      }}
+      animate={isLeaving ? leavingKeyframes : restingState}
+      transition={
+        isLeaving
+          ? {
+              duration: FLICK_MS / 1000,
+              times: [0, 0.22, 0.42, 0.78, 1],
+              ease: [0.4, 0.05, 0.25, 1],
+            }
+          : { duration: 0.9, ease: [0.16, 1, 0.3, 1] }
+      }
+    >
+      <CardShell
+        accent={accent}
+        isActive={isActive}
+        cursorPx={cursorPx}
+        cursorPy={cursorPy}
+        cursorHov={cursorHov}
+      >
+        {id === "tender" ? <TenderCard /> : null}
+        {id === "workspace" ? <WorkspaceCard /> : null}
+        {id === "browse" ? <BrowseCard /> : null}
+      </CardShell>
     </motion.div>
   );
 }
 
-// ── Shared glass card chrome ─────────────────────────────────────
+// ── CardShell — premium glass chrome shared by all cards ─────────
 
-/**
- * Glass card chrome shared by every gallery card. Each variant
- * carries its own accent (teal / green / blue / gold) which colours
- * the top-edge hairline, the corner halo, and the bottom-right glow.
- */
-function GlassCard({
+function CardShell({
   children,
   accent,
-  elevated,
+  isActive,
+  cursorPx,
+  cursorPy,
+  cursorHov,
 }: {
   children: React.ReactNode;
-  accent: "teal" | "green" | "blue" | "gold";
-  elevated?: boolean;
+  accent: "teal" | "blue" | "amber";
+  isActive: boolean;
+  cursorPx: number;
+  cursorPy: number;
+  cursorHov: boolean;
 }) {
-  const accentColors: Record<typeof accent, { hairline: string; halo: string; glow: string }> = {
+  const accents = {
     teal: {
       hairline: "rgba(126,245,237,0.65)",
       halo: "rgba(0,212,200,0.18)",
-      glow: "0 30px 80px -30px rgba(0,212,200,0.45)",
-    },
-    green: {
-      hairline: "rgba(120,255,170,0.55)",
-      halo: "rgba(60,220,140,0.16)",
-      glow: "0 24px 60px -24px rgba(60,200,140,0.35)",
+      glow: "0 30px 80px -28px rgba(0,212,200,0.45)",
     },
     blue: {
       hairline: "rgba(140,200,255,0.55)",
       halo: "rgba(80,140,255,0.16)",
-      glow: "0 24px 60px -24px rgba(60,140,255,0.30)",
+      glow: "0 30px 80px -28px rgba(60,140,255,0.35)",
     },
-    gold: {
+    amber: {
       hairline: "rgba(255,210,120,0.55)",
       halo: "rgba(255,180,80,0.16)",
-      glow: "0 24px 60px -24px rgba(255,180,80,0.28)",
+      glow: "0 30px 80px -28px rgba(255,180,80,0.30)",
     },
   } as const;
-  const a = accentColors[accent];
+  const a = accents[accent];
+
+  // Spotlight follows the cursor across the active card.
+  const spotlightX = cursorPx * 100;
+  const spotlightY = cursorPy * 100;
+
   return (
     <div
       className="relative rounded-2xl overflow-hidden"
       style={{
+        // FULLY opaque background so cards stacked behind don't
+        // bleed their content through the front card. The glass
+        // feel comes from the backdrop-blur (for any page content
+        // behind the deck) plus the surface gradient + inner
+        // highlight stroke + accent hairline.
         background:
-          "linear-gradient(160deg, rgba(10,30,48,0.94) 0%, rgba(6,18,30,0.97) 100%)",
+          "linear-gradient(160deg, #0c1f33 0%, #060f1a 100%)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         border: "1px solid rgba(100,180,255,0.16)",
         boxShadow: [
           "inset 0 1px 0 0 rgba(255,255,255,0.06)",
+          "inset 0 -1px 0 0 rgba(0,0,0,0.3)",
           "0 1px 0 0 rgba(0,212,200,0.06)",
-          elevated
-            ? "0 24px 64px -24px rgba(0,0,0,0.65)"
-            : "0 16px 44px -16px rgba(0,0,0,0.55)",
+          "0 22px 56px -22px rgba(0,0,0,0.65)",
           a.glow,
         ].join(", "),
       }}
     >
-      {/* Top-edge hairline accent */}
+      {/* Top hairline accent */}
       <span
         aria-hidden
-        className="pointer-events-none absolute top-0 inset-x-6 h-px"
+        className="pointer-events-none absolute top-0 inset-x-8 h-px"
         style={{
           background: `linear-gradient(90deg, transparent, ${a.hairline}, transparent)`,
         }}
@@ -594,16 +400,41 @@ function GlassCard({
       {/* Corner halo, top-right */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full"
+        className="pointer-events-none absolute -top-12 -right-10 size-44 rounded-full"
         style={{
           background: `radial-gradient(circle, ${a.halo} 0%, transparent 70%)`,
           opacity: 0.85,
         }}
       />
-      {/* Faint grid texture inside the card */}
+      {/* Cursor spotlight — only on the active card to keep effect tasteful */}
+      {isActive && cursorHov ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 transition-opacity duration-[300ms]"
+          style={{
+            background: `radial-gradient(circle 200px at ${spotlightX}% ${spotlightY}%, rgba(126,245,237,0.10), transparent 60%)`,
+          }}
+        />
+      ) : null}
+      {/* Shine sweep — runs across the active card every ~9s */}
+      {isActive ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <span
+            className="absolute top-0 bottom-0 w-[40%] -left-[60%] bhq-shine"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 55%, transparent 100%)",
+            }}
+          />
+        </span>
+      ) : null}
+      {/* Faint inner grid texture */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
           backgroundImage:
             "linear-gradient(rgba(126,245,237,1) 1px, transparent 1px), linear-gradient(90deg, rgba(126,245,237,1) 1px, transparent 1px)",
@@ -611,7 +442,489 @@ function GlassCard({
         }}
       />
       <div className="relative">{children}</div>
+
+      <style>{`
+        @keyframes bhq-shine-sweep {
+          0%,   72% { transform: translateX(0); opacity: 0; }
+          78%        { opacity: 1; }
+          92%        { opacity: 1; }
+          100%      { transform: translateX(400%); opacity: 0; }
+        }
+        .bhq-shine {
+          animation: bhq-shine-sweep 9s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
 
+// ── Card header — macOS-style traffic lights + title + status ────
+
+function CardHeader({
+  title,
+  status,
+  statusTone = "live",
+  rightSlot,
+}: {
+  title: string;
+  status?: string;
+  statusTone?: "live" | "neutral";
+  rightSlot?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between px-3.5 sm:px-5 py-2.5 sm:py-3.5 border-b border-[rgba(255,255,255,0.05)]">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <span className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <span className="size-1.5 sm:size-2 rounded-full bg-[#ff5f56]" />
+          <span className="size-1.5 sm:size-2 rounded-full bg-[#febc2e]" />
+          <span className="size-1.5 sm:size-2 rounded-full bg-[#28c840]" />
+        </span>
+        <span className="text-[10.5px] sm:text-[12px] text-text-muted font-medium truncate">
+          {title}
+        </span>
+      </div>
+      {rightSlot ? (
+        rightSlot
+      ) : status ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          {statusTone === "live" ? (
+            <span className="relative flex size-1.5">
+              <span className="absolute inset-0 rounded-full bg-accent-light opacity-75 animate-ping" />
+              <span className="relative size-1.5 rounded-full bg-accent-light" />
+            </span>
+          ) : null}
+          <span className="text-[9.5px] sm:text-[10.5px] text-accent-light tracking-[0.04em]">
+            {status}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Card 1: Tender Comparison ────────────────────────────────────
+
+function TenderCard() {
+  const [winnerPrice, setWinnerPrice] = useState(1780000);
+  useEffect(() => {
+    let raf = 0;
+    let t = 0;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      t += 0.016;
+      // ±$500 breath so the headline number is visibly alive
+      setWinnerPrice(Math.round(1780000 + Math.sin(t * 0.55) * 500));
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const formatPrice = (n: number) =>
+    "$" + n.toLocaleString("en-AU", { maximumFractionDigits: 0 });
+
+  return (
+    <>
+      <CardHeader title="Tender Comparison" status="Live" />
+      <div className="px-3.5 sm:px-5 pt-3 sm:pt-4 pb-2.5 sm:pb-4">
+        <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
+          Hampton Residence — New Build
+        </div>
+        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+          4 bed · 3 bath · 320m² · Hampton East
+        </div>
+
+        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+          <TenderRow
+            rank={1}
+            name="Smith & Co Builders"
+            verified
+            tag="Best value"
+            price={formatPrice(winnerPrice)}
+            delta="-4.2%"
+            winner
+          />
+          <TenderRow
+            rank={2}
+            name="Precision Homes"
+            verified
+            price="$1,825,000"
+            delta="-1.8%"
+          />
+          <TenderRow
+            rank={3}
+            name="Bay Constructions"
+            verified
+            price="$1,858,000"
+            delta="Base"
+          />
+        </div>
+      </div>
+
+      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-end justify-between">
+        <div>
+          <div className="text-[7.5px] sm:text-[9px] tracking-[0.2em] uppercase text-text-dim">
+            Potential savings
+          </div>
+          <div className="mt-0.5 sm:mt-1 font-mono tabular-nums text-accent-light text-[14px] sm:text-[18px] leading-none">
+            $78,000
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[7.5px] sm:text-[9px] tracking-[0.2em] uppercase text-text-dim">
+            Avg response
+          </div>
+          <div className="mt-0.5 sm:mt-1 font-mono tabular-nums text-text text-[12.5px] sm:text-[15px] leading-none">
+            4.2 days
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TenderRow({
+  rank,
+  name,
+  verified,
+  tag,
+  price,
+  delta,
+  winner,
+}: {
+  rank: number;
+  name: string;
+  verified?: boolean;
+  tag?: string;
+  price: string;
+  delta: string;
+  winner?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg border",
+        winner
+          ? "border-border-accent/60 bg-[rgba(0,212,200,0.05)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      <span
+        className={cn(
+          "size-5 sm:size-7 rounded-full flex items-center justify-center text-[9px] sm:text-[11px] font-mono tabular-nums shrink-0",
+          winner
+            ? "bg-accent text-accent-contrast"
+            : "border border-border-subtle text-text-dim",
+        )}
+      >
+        {rank}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+          <span
+            className={cn(
+              "text-[10.5px] sm:text-[12.5px] font-medium truncate",
+              winner ? "text-text" : "text-text-muted",
+            )}
+          >
+            {name}
+          </span>
+          {verified ? <Pill tone="verified">Verified</Pill> : null}
+          {tag ? <Pill tone="best">{tag}</Pill> : null}
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <div
+          className={cn(
+            "font-mono tabular-nums leading-none text-[11px] sm:text-[13px]",
+            winner ? "text-text" : "text-text-muted",
+          )}
+        >
+          {price}
+        </div>
+        <div
+          className={cn(
+            "text-[9px] sm:text-[10px] mt-0.5 sm:mt-1 tabular-nums",
+            delta.startsWith("-") ? "text-accent-light" : "text-text-dim",
+          )}
+        >
+          {delta}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Pill({
+  tone,
+  children,
+}: {
+  tone: "verified" | "best";
+  children: React.ReactNode;
+}) {
+  if (tone === "verified") {
+    return (
+      <span className="inline-flex items-center px-1.5 py-px rounded-full border border-border-accent/50 bg-accent-muted/40 text-[8.5px] sm:text-[9px] tracking-[0.06em] text-accent-light">
+        {children}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center px-1.5 py-px rounded-full border border-border-accent bg-accent-muted text-[8.5px] sm:text-[9px] tracking-[0.06em] text-accent-light font-semibold">
+      {children}
+    </span>
+  );
+}
+
+// ── Card 2: Project Workspace ────────────────────────────────────
+
+function WorkspaceCard() {
+  return (
+    <>
+      <CardHeader title="Hampton Residence" status="3 active" statusTone="live" />
+      <div className="px-3.5 sm:px-5 pt-3 sm:pt-4 pb-2.5 sm:pb-3.5">
+        <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
+          Workspace
+        </div>
+        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+          Plans v3 · Scope frozen · Tender stage
+        </div>
+
+        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+          <ActivityRow
+            icon={<FileText className="size-3 sm:size-3.5" strokeWidth={2.2} />}
+            title="Architectural plans v3.pdf"
+            sub="Uploaded · Smith & Co · 2.4 MB"
+            time="2h"
+            tone="accent"
+          />
+          <ActivityRow
+            icon={<MessageSquare className="size-3 sm:size-3.5" strokeWidth={2.2} />}
+            title="Smith & Co replied to RFI #12"
+            sub="Scope clarification · resolved"
+            time="4h"
+          />
+          <ActivityRow
+            icon={<CalendarDays className="size-3 sm:size-3.5" strokeWidth={2.2} />}
+            title="Site visit · Smith & Co"
+            sub="Thursday · 10:00 AM · Hampton East"
+            time="1d"
+          />
+        </div>
+      </div>
+
+      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-4 text-[9.5px] sm:text-[10.5px] text-text-dim font-mono tabular-nums">
+          <span>5 docs</span>
+          <span>·</span>
+          <span>8 messages</span>
+          <span>·</span>
+          <span>3 RFIs</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
+          <span className="text-[9px] sm:text-[10px] text-accent-light tracking-[0.04em]">
+            Live
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ActivityRow({
+  icon,
+  title,
+  sub,
+  time,
+  tone = "neutral",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  sub: string;
+  time: string;
+  tone?: "neutral" | "accent";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg border",
+        tone === "accent"
+          ? "border-border-accent/50 bg-[rgba(0,212,200,0.04)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      <span
+        className={cn(
+          "size-6 sm:size-8 rounded-md flex items-center justify-center shrink-0",
+          tone === "accent"
+            ? "border border-border-accent bg-accent-muted text-accent-light"
+            : "border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+        )}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10.5px] sm:text-[12.5px] font-medium text-text truncate">
+          {title}
+        </div>
+        <div className="text-[9px] sm:text-[10.5px] text-text-dim truncate mt-0.5">
+          {sub}
+        </div>
+      </div>
+      <div className="text-[9.5px] sm:text-[10.5px] font-mono tabular-nums text-text-dim shrink-0">
+        {time}
+      </div>
+    </div>
+  );
+}
+
+// ── Card 3: Browse Projects ──────────────────────────────────────
+
+function BrowseCard() {
+  // Match scores breathe gently — tiny visible motion on the lead row
+  const [leadScore, setLeadScore] = useState(96);
+  useEffect(() => {
+    let raf = 0;
+    let t = 0;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      t += 0.016;
+      // ±1% breath
+      setLeadScore(Math.round(96 + Math.sin(t * 0.5)));
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <>
+      <CardHeader
+        title="Browse Projects"
+        rightSlot={
+          <div className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-full border border-border-subtle text-[9px] sm:text-[10px] text-text-dim font-mono">
+            <MapPin className="size-2.5 sm:size-3" strokeWidth={2.2} />
+            Within 25km
+          </div>
+        }
+      />
+      <div className="px-3.5 sm:px-5 pt-3 sm:pt-4 pb-2.5 sm:pb-3.5">
+        <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
+          12 new this week
+        </div>
+        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+          87 active · 32 in your area
+        </div>
+
+        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+          <ProjectRow
+            name="Niddrie Townhouse Development"
+            sub="Brunswick · 4 bed · Frame stage"
+            budget="$1.8M"
+            score={leadScore}
+            top
+          />
+          <ProjectRow
+            name="Coastal Family Home"
+            sub="Mornington · 5 bed · Tender"
+            budget="$2.4M"
+            score={91}
+          />
+          <ProjectRow
+            name="Heritage Renovation"
+            sub="Carlton · 3 bed · Plans approved"
+            budget="$850K"
+            score={88}
+          />
+        </div>
+      </div>
+
+      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+        <div className="text-[9px] sm:text-[10px] text-text-dim tracking-[0.06em]">
+          Match score based on your profile
+        </div>
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          <ShieldCheck className="size-2.5 sm:size-3 text-accent-light" strokeWidth={2.4} />
+          <span className="text-[9px] sm:text-[10px] text-accent-light tracking-[0.04em]">
+            Verified
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ProjectRow({
+  name,
+  sub,
+  budget,
+  score,
+  top,
+}: {
+  name: string;
+  sub: string;
+  budget: string;
+  score: number;
+  top?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg border",
+        top
+          ? "border-border-accent/55 bg-[rgba(0,212,200,0.045)]"
+          : "border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.012)]",
+      )}
+    >
+      <span
+        className={cn(
+          "size-6 sm:size-8 rounded-md flex items-center justify-center shrink-0",
+          top
+            ? "border border-border-accent bg-accent-muted text-accent-light"
+            : "border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+        )}
+      >
+        <Sparkles className="size-3 sm:size-3.5" strokeWidth={2.2} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "text-[10.5px] sm:text-[12.5px] font-medium truncate",
+            top ? "text-text" : "text-text-muted",
+          )}
+        >
+          {name}
+        </div>
+        <div className="text-[9px] sm:text-[10.5px] text-text-dim truncate mt-0.5">
+          {sub}
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <div
+          className={cn(
+            "font-mono tabular-nums leading-none text-[11px] sm:text-[12.5px]",
+            top ? "text-text" : "text-text-muted",
+          )}
+        >
+          {budget}
+        </div>
+        <div className="flex items-center gap-1 mt-0.5 sm:mt-1 justify-end">
+          <Flag
+            className={cn(
+              "size-2 sm:size-2.5",
+              top ? "text-accent-light" : "text-text-dim",
+            )}
+            strokeWidth={2.4}
+          />
+          <span
+            className={cn(
+              "text-[9px] sm:text-[10px] tabular-nums",
+              top ? "text-accent-light" : "text-text-dim",
+            )}
+          >
+            {score}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -44,7 +44,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-20 lg:pt-32 pb-16 lg:pb-32 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
+      className="relative isolate pt-16 lg:pt-32 pb-10 lg:pb-32 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
     >
       {/* Single scan-line sweep on mount — subtle premium signal */}
       <motion.span
@@ -64,7 +64,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
         }}
       />
 
-      <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-20 items-center">
+      <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-7 sm:gap-10 lg:gap-20 items-center">
         {/* Visual — building reveal. Order is intentional: on mobile +
             tablet (single-column) the visual leads, just like Resend's
             cube-on-top hero. On desktop (lg grid) it sits on the
@@ -73,7 +73,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-          className="flex justify-center order-1 lg:order-2 mt-2 lg:mt-0"
+          className="flex justify-center order-1 lg:order-2 mt-1 sm:mt-2 lg:mt-0"
         >
           <BuildingReveal />
         </motion.div>
@@ -99,7 +99,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
 
           {/* Headline — Instrument Serif with right-side fade. */}
           <h1
-            className="mt-5 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.75rem,5vw+1rem,4.75rem)]"
+            className="mt-4 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.5rem,5vw+1rem,4.75rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
           >
             <FadeRow delay={0}>
@@ -115,7 +115,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-5 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[15.5px] sm:text-[17px] leading-[1.55] text-text-subtle"
+            className="mt-4 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[15px] sm:text-[17px] leading-[1.55] text-text-subtle"
           >
             Upload your plans. We match verified builders. You pick the winner.
           </motion.p>
@@ -125,7 +125,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-7 lg:mt-10 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-3 sm:gap-5"
+            className="mt-5 lg:mt-10 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-3 sm:gap-5"
           >
             <Link
               href={cta.primary.href}
