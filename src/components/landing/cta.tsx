@@ -34,16 +34,11 @@ export function CTA({ cta }: { cta: CtaLinks }) {
           </span>
         </Reveal>
         <Reveal delay={0.05}>
-          <h2 className="font-display tracking-[-0.02em] text-[clamp(2.5rem,6vw+1rem,6.25rem)] leading-[0.95]">
+          <h2 className="font-display tracking-[-0.018em] mx-auto max-w-[20ch] text-[clamp(2.25rem,4.5vw+0.5rem,4.5rem)] leading-[1.02]">
             Your build is{" "}
             <span
-              className="italic"
+              className="accent-italic"
               style={{
-                backgroundImage:
-                  "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
                 textShadow:
                   "0 0 60px rgba(0,212,200,0.28), 0 0 120px rgba(0,212,200,0.10)",
               }}

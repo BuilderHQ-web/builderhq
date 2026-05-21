@@ -99,29 +99,19 @@ export function Hero({ cta }: { cta: CtaLinks }) {
 
           {/* Headline — Instrument Serif. Bigger than the section
               headlines (this is THE hero) and "In days." gets the
-              same italic + teal-gradient mask treatment as the
-              accent word in every section heading, so the brand
-              voice is consistent end to end. */}
+              same accent-italic gradient treatment (now with a more
+              dominant teal). font-weight 500 nudges Instrument Serif
+              slightly heavier via faux-bold so the whole headline
+              feels more present. */}
           <h1
-            className="mt-4 lg:mt-8 tracking-[-0.018em] leading-[1.02] text-[clamp(2.75rem,5.5vw+1rem,5.5rem)]"
-            style={{ fontFamily: "var(--font-serif)", fontWeight: 400 }}
+            className="mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(2.75rem,5.5vw+1rem,5.75rem)]"
+            style={{ fontFamily: "var(--font-serif)", fontWeight: 500 }}
           >
             <FadeRow delay={0}>
               <span className="block">Tender your build.</span>
             </FadeRow>
             <FadeRow delay={0.12}>
-              <span
-                className="block italic"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                In days.
-              </span>
+              <span className="block accent-italic">In days.</span>
             </FadeRow>
           </h1>
 

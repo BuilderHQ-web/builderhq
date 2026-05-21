@@ -163,11 +163,13 @@ export function BuildingReveal() {
 
       {/* Deck stage — fixed height per breakpoint, contains the
           3D-positioned cards. Cards anchor at `top: 100` so the
-          lift arc (max -90) stays inside the stage and never clips. */}
+          lift arc (max -90) stays inside the stage and never clips.
+          Mobile stage is significantly smaller so the headline +
+          subhead + CTA all live above the fold (Resend layout). */}
       <motion.div
         className={cn(
           "relative w-full",
-          "h-[360px] sm:h-[420px] lg:h-[470px]",
+          "h-[340px] sm:h-[420px] lg:h-[470px]",
         )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
@@ -194,8 +196,10 @@ export function BuildingReveal() {
       </motion.div>
 
       {/* Dot indicators — sit BELOW the deck stage as a sibling, so
-          they never overlap any card content during the cycle. */}
-      <div className="relative mt-5 sm:mt-6 flex items-center gap-1.5 z-50">
+          they never overlap any card content during the cycle.
+          Hidden on mobile to keep the hero composition tighter (the
+          deck still auto-cycles on its own clock). */}
+      <div className="relative mt-5 sm:mt-6 hidden sm:flex items-center gap-1.5 z-50">
         {CARDS.map((card, i) => (
           <button
             key={card.id}
@@ -268,7 +272,7 @@ function DeckCard({
   // The Z index drops mid-arc so the card visibly passes BEHIND the
   // new front card during its descent.
   const leavingKeyframes = {
-    y: [0, -90, -90, -50, target.y],
+    y: [0, -85, -85, -50, target.y],
     x: [0, 8, 18, 24, target.x],
     rotate: [0, -1.5, 2, 4, target.rotate],
     scale: [1, 1, 0.96, 0.94, target.scale],
@@ -295,10 +299,10 @@ function DeckCard({
     <motion.div
       className="absolute left-0 right-0"
       style={{
-        // Cards sit 100px down from container top. That gap is the
-        // lift headroom so the upward arc (max -90) stays inside the
+        // Cards sit 90px down from container top. That gap is the
+        // lift headroom so the upward arc (max -85) stays inside the
         // container and never clips.
-        top: 100,
+        top: 90,
         transformOrigin: "50% 80%",
         transformStyle: "preserve-3d",
         pointerEvents: isActive ? "auto" : "none",
@@ -570,7 +574,7 @@ function TenderCard() {
         </div>
       </div>
 
-      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-end justify-between">
+      <div className="hidden sm:flex px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] items-end justify-between">
         <div>
           <div className="text-[7.5px] sm:text-[9px] tracking-[0.2em] uppercase text-text-dim">
             Potential savings
@@ -722,7 +726,7 @@ function WorkspaceCard() {
         </div>
       </div>
 
-      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+      <div className="hidden sm:flex px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-4 text-[9.5px] sm:text-[10.5px] text-text-dim font-mono tabular-nums">
           <span>5 docs</span>
           <span>·</span>
@@ -848,7 +852,7 @@ function BrowseCard() {
         </div>
       </div>
 
-      <div className="px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between">
+      <div className="hidden sm:flex px-3.5 sm:px-5 pt-2 sm:pt-3 pb-2.5 sm:pb-3.5 border-t border-[rgba(255,255,255,0.05)] items-center justify-between">
         <div className="text-[9px] sm:text-[10px] text-text-dim tracking-[0.06em]">
           Match score based on your profile
         </div>

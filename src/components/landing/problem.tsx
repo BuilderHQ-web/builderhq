@@ -32,21 +32,9 @@ export function Problem() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The problem
             </span>
-            <h2 className="mt-4 lg:mt-5 mx-auto max-w-[18ch] font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1.02]">
+            <h2 className="mt-4 lg:mt-5 mx-auto max-w-[20ch] font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1.02]">
               <span className="text-text">Tendering shouldn&apos;t feel like</span>{" "}
-              <span
-                className="italic"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(110deg, #eef6ff 0%, #7ef5ed 90%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                chasing
-              </span>
-              .
+              <span className="accent-italic">chasing</span>.
             </h2>
             <p className="mt-5 lg:mt-7 mx-auto max-w-[60ch] text-[14.5px] sm:text-[15.5px] leading-[1.6] sm:leading-[1.7] text-text-subtle">
               Finding the right builder is the most consequential step of a
