@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "./reveal";
-import { WordsReveal } from "./words-reveal";
 import type { CtaLinks } from "./cta-links";
 
 /**
@@ -36,15 +35,17 @@ export function CTA({ cta }: { cta: CtaLinks }) {
         </Reveal>
         <Reveal delay={0.05}>
           <h2 className="font-display tracking-[-0.018em] mx-auto max-w-[20ch] text-[clamp(2.25rem,4.5vw+0.5rem,4.5rem)] leading-[1.02]">
-            <WordsReveal>Your build is</WordsReveal>{" "}
-            <WordsReveal
+            Your build is{" "}
+            <span
               className="accent-italic"
-              startIndex={3}
-              // Inline text-shadow so the gradient text still glows.
+              style={{
+                textShadow:
+                  "0 0 60px rgba(0,212,200,0.28), 0 0 120px rgba(0,212,200,0.10)",
+              }}
             >
               one upload
-            </WordsReveal>{" "}
-            <WordsReveal startIndex={5}>away.</WordsReveal>
+            </span>{" "}
+            away.
           </h2>
         </Reveal>
         <Reveal delay={0.12}>

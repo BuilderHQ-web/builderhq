@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload, Users, FileSpreadsheet } from "lucide-react";
 import { Reveal } from "./reveal";
-import { WordsReveal } from "./words-reveal";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -69,11 +68,8 @@ export function HowItWorks() {
                 How it works
               </span>
               <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
-                <WordsReveal className="text-text">Three steps,</WordsReveal>{" "}
-                <WordsReveal className="accent-italic" startIndex={2}>
-                  no chasing
-                </WordsReveal>
-                .
+                <span className="text-text">Three steps,</span>{" "}
+                <span className="accent-italic">no chasing</span>.
               </h2>
             </div>
           </Reveal>
