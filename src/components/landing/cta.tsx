@@ -34,7 +34,7 @@ export function CTA({ cta }: { cta: CtaLinks }) {
           </span>
         </Reveal>
         <Reveal delay={0.05}>
-          <h2 className="font-display tracking-[-0.018em] mx-auto max-w-[20ch] text-[clamp(2.25rem,4.5vw+0.5rem,4.5rem)] leading-[1.02]">
+          <h2 className="font-display tracking-[-0.018em] mx-auto max-w-[20ch] text-[clamp(2.5rem,4.8vw+0.5rem,5rem)] leading-[1.02]">
             Your build is{" "}
             <span
               className="accent-italic"

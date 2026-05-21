@@ -147,7 +147,10 @@ export function BuildingReveal() {
       onMouseLeave={onMouseLeave}
       className={cn(
         "relative mx-auto w-full flex flex-col items-center",
-        "max-w-[320px] sm:max-w-[470px] lg:max-w-[560px]",
+        // Mobile card 15% smaller than before (320 → 272) so the
+        // hero "I'm a builder" link is no longer hidden under the
+        // mobile URL bar. Desktop sizes unchanged.
+        "max-w-[272px] sm:max-w-[470px] lg:max-w-[560px]",
       )}
       style={{ perspective: 1800 }}
     >
@@ -169,7 +172,9 @@ export function BuildingReveal() {
       <motion.div
         className={cn(
           "relative w-full",
-          "h-[340px] sm:h-[420px] lg:h-[470px]",
+          // Mobile stage compressed 15% (340 → 290) to match the
+          // narrower card width and shift the hero text up.
+          "h-[290px] sm:h-[420px] lg:h-[470px]",
         )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}

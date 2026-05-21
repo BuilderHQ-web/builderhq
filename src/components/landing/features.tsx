@@ -73,18 +73,21 @@ export function Features() {
   return (
     <section id="features" className="relative px-5 md:px-10 py-20 lg:py-32">
       <div className="mx-auto max-w-[1320px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] gap-8 lg:gap-16 items-end">
+        {/* Heading + subheading stacked — left-aligned on desktop,
+            centred on mobile (matches the rest of the section
+            headings' mobile treatment). */}
+        <div className="text-center lg:text-left">
           <Reveal>
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               The platform
             </span>
-            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
               <span className="text-text">Built for the</span>{" "}
               <span className="accent-italic">work</span>.
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="max-w-prose text-[15px] leading-[1.7] text-text-subtle">
+            <p className="mt-6 lg:mt-7 mx-auto lg:mx-0 max-w-[55ch] text-[15px] leading-[1.7] text-text-subtle">
               Every feature is sized to the rhythm of an Australian residential
               build — not a generic marketplace.
             </p>

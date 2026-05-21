@@ -61,7 +61,7 @@ export function Showcase() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               See it in motion
             </span>
-            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto max-w-[20ch]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[1] mx-auto max-w-[20ch]">
               <span className="text-text">The actual</span>{" "}
               <span className="accent-italic">interface</span>.
             </h2>

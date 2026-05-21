@@ -116,7 +116,7 @@ export function FAQ() {
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
               Common questions
             </span>
-            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.25rem,3.6vw+0.5rem,4rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
+            <h2 className="mt-5 font-display tracking-[-0.018em] text-[clamp(2.5rem,4vw+0.5rem,4.5rem)] leading-[1] mx-auto lg:mx-0 max-w-[18ch]">
               <span className="text-text">The honest</span>{" "}
               <span className="accent-italic">answers</span>.
             </h2>
