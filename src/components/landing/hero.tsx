@@ -83,12 +83,13 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           className="text-center lg:text-left order-2 lg:order-1"
           style={{ fontFamily: "var(--font-geist)" }}
         >
-          {/* Live badge */}
+          {/* Live badge. Hidden on mobile (the deck above is the
+              focal element there); shown from sm: up. */}
           <motion.span
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="inline-flex items-center gap-2.5 pl-2.5 pr-4 py-1.5 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.025)] backdrop-blur-sm text-[12px] text-text-muted"
+            className="hidden sm:inline-flex items-center gap-2.5 pl-2.5 pr-4 py-1.5 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.025)] backdrop-blur-sm text-[12px] text-text-muted"
           >
             <span className="relative flex size-2">
               <span className="absolute inset-0 rounded-full bg-accent opacity-75 animate-ping" />
@@ -104,7 +105,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
               slightly heavier via faux-bold so the whole headline
               feels more present. */}
           <h1
-            className="mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(3rem,6vw+1rem,6.25rem)]"
+            className="mt-2 sm:mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(3.25rem,6.5vw+1rem,7rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 500 }}
           >
             <FadeRow delay={0}>
