@@ -147,10 +147,11 @@ export function BuildingReveal() {
       onMouseLeave={onMouseLeave}
       className={cn(
         "relative mx-auto w-full flex flex-col items-center",
-        // Mobile card sized so the headline is the main character —
-        // cards are now ~25% smaller than launch (320 → 272 → 245).
-        // Desktop sizes unchanged.
-        "max-w-[245px] sm:max-w-[470px] lg:max-w-[560px]",
+        // Mobile card sized so the headline is the main character.
+        // Width reduced another 10% (245 → 220) and content tightened
+        // (subtitle hidden, row padding minimised) so the whole deck
+        // sits comfortably above the badge with breathing room.
+        "max-w-[220px] sm:max-w-[470px] lg:max-w-[560px]",
       )}
       style={{ perspective: 1800 }}
     >
@@ -172,11 +173,11 @@ export function BuildingReveal() {
       <motion.div
         className={cn(
           "relative w-full",
-          // Mobile stage tall enough to contain the cards' content
-          // (header + project info + 3 rows ≈ 210px) plus 70px lift
-          // headroom = 280px minimum. The visual "shrink" comes from
-          // narrower max-w (245), not from cropping content.
-          "h-[290px] sm:h-[420px] lg:h-[470px]",
+          // Mobile stage: 55px lift headroom + ~190px tightened
+          // content + 15px buffer = 260px. Cards' subtitle line is
+          // hidden on mobile and row padding is minimised so the
+          // total content footprint shrinks ~25-30px.
+          "h-[260px] sm:h-[420px] lg:h-[470px]",
         )}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.6 }}
@@ -279,8 +280,8 @@ function DeckCard({
   // The Z index drops mid-arc so the card visibly passes BEHIND the
   // new front card during its descent.
   const leavingKeyframes = {
-    y: [0, -65, -65, -40, target.y],
-    x: [0, 6, 14, 20, target.x],
+    y: [0, -50, -50, -30, target.y],
+    x: [0, 5, 12, 18, target.x],
     rotate: [0, -1.5, 2, 4, target.rotate],
     scale: [1, 1, 0.96, 0.94, target.scale],
     filter: [
@@ -306,11 +307,11 @@ function DeckCard({
     <motion.div
       className="absolute left-0 right-0"
       style={{
-        // Cards sit 70px down from container top. That gap is the
-        // lift headroom so the upward arc (max -65) stays inside the
-        // container and never clips. Tighter than before so the
-        // overall deck sits higher and gives the badge below room.
-        top: 70,
+        // Cards sit 55px down from container top. That gap is the
+        // lift headroom so the upward arc (max -50) stays inside the
+        // container and never clips. Tight headroom keeps the deck
+        // compact on mobile so it doesn't dominate the headline.
+        top: 55,
         transformOrigin: "50% 80%",
         transformStyle: "preserve-3d",
         pointerEvents: isActive ? "auto" : "none",
@@ -551,11 +552,11 @@ function TenderCard() {
         <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
           Hampton Residence · New Build
         </div>
-        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+        <div className="hidden sm:block text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
           4 bed · 3 bath · 320m² · Hampton East
         </div>
 
-        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+        <div className="mt-2 sm:mt-4 space-y-0.5 sm:space-y-2">
           <TenderRow
             rank={1}
             name="Smith & Co Builders"
@@ -707,11 +708,11 @@ function WorkspaceCard() {
         <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
           Workspace
         </div>
-        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+        <div className="hidden sm:block text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
           Plans v3 · Scope frozen · Tender stage
         </div>
 
-        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+        <div className="mt-2 sm:mt-4 space-y-0.5 sm:space-y-2">
           <ActivityRow
             icon={<FileText className="size-3 sm:size-3.5" strokeWidth={2.2} />}
             title="Architectural plans v3.pdf"
@@ -833,11 +834,11 @@ function BrowseCard() {
         <div className="text-[12px] sm:text-[14px] font-medium text-text leading-tight">
           12 new this week
         </div>
-        <div className="text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
+        <div className="hidden sm:block text-[9.5px] sm:text-[11px] text-text-dim mt-0.5 sm:mt-1 font-mono">
           87 active · 32 in your area
         </div>
 
-        <div className="mt-2.5 sm:mt-4 space-y-1 sm:space-y-2">
+        <div className="mt-2 sm:mt-4 space-y-0.5 sm:space-y-2">
           <ProjectRow
             name="Niddrie Townhouse Development"
             sub="Brunswick · 4 bed · Frame stage"
