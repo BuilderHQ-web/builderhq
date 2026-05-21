@@ -105,7 +105,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
               slightly heavier via faux-bold so the whole headline
               feels more present. */}
           <h1
-            className="mt-2 sm:mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(3.25rem,6.5vw+1rem,7rem)]"
+            className="mt-6 sm:mt-4 lg:mt-8 tracking-[-0.02em] leading-[1.02] text-[clamp(3.25rem,6.5vw+1rem,7rem)]"
             style={{ fontFamily: "var(--font-serif)", fontWeight: 500 }}
           >
             <FadeRow delay={0}>

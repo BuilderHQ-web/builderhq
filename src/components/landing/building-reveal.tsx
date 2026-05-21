@@ -307,11 +307,10 @@ function DeckCard({
     <motion.div
       className="absolute left-0 right-0"
       style={{
-        // Cards sit 55px down from container top. That gap is the
-        // lift headroom so the upward arc (max -50) stays inside the
-        // container and never clips. Tight headroom keeps the deck
-        // compact on mobile so it doesn't dominate the headline.
-        top: 55,
+        // Cards sit 40px down from container top — tighter headroom
+        // so the deck sits visibly higher on mobile (gives the
+        // headline below clear room without overlap).
+        top: 40,
         transformOrigin: "50% 80%",
         transformStyle: "preserve-3d",
         pointerEvents: isActive ? "auto" : "none",
@@ -836,7 +835,9 @@ function BrowseCard() {
       <CardHeader
         title="Browse Projects"
         rightSlot={
-          <div className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-full border border-border-subtle text-[9px] sm:text-[10px] text-text-dim font-mono">
+          // Hidden on mobile (the pill wraps inside its own bounds at
+          // the narrow card width, making the header 2 lines tall).
+          <div className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-full border border-border-subtle text-[9px] sm:text-[10px] text-text-dim font-mono whitespace-nowrap">
             <MapPin className="size-2.5 sm:size-3" strokeWidth={2.2} />
             Within 25km
           </div>
