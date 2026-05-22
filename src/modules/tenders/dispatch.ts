@@ -41,6 +41,7 @@ import { users } from "@/modules/users/schema";
 import { builderProfiles, projectOwnerProfiles } from "@/modules/profiles/schema";
 
 import { create as createNotification } from "@/modules/notifications";
+import { sendToUser as sendPushToUser } from "@/modules/push";
 import {
   sendTenderSubmittedEmail,
   sendTenderSubmittedBuilderEmail,
@@ -204,7 +205,7 @@ export async function dispatchTenderEvent(
             ? formatAud(ctx.tender.totalPriceAud)
             : "Tender submitted";
         await Promise.allSettled([
-          // Owner — bell + email
+          // Owner — bell + email + mobile push
           createNotification({
             userId: ctx.owner.id,
             kind: "tender_submitted",
@@ -213,6 +214,16 @@ export async function dispatchTenderEvent(
             actionUrl: reviewUrl,
             projectId: ctx.project.id,
             tenderId: ctx.tender.id,
+          }),
+          sendPushToUser(ctx.owner.id, {
+            title: `${ctx.builder.company} sent you a tender`,
+            body: `${ctx.project.title} · ${priceLabel}`,
+            data: {
+              kind: "tender_submitted",
+              projectSlug: ctx.project.slug,
+              tenderId: ctx.tender.id,
+              url: `/(main)/projects/${ctx.project.slug}/tenders`,
+            },
           }),
           sendTenderSubmittedEmail({
             to: ctx.owner.email,
@@ -261,6 +272,16 @@ export async function dispatchTenderEvent(
             projectId: ctx.project.id,
             tenderId: ctx.tender.id,
           }),
+          sendPushToUser(ctx.owner.id, {
+            title: `${ctx.builder.company} withdrew their tender`,
+            body: ctx.project.title,
+            data: {
+              kind: "tender_withdrawn",
+              projectSlug: ctx.project.slug,
+              tenderId: ctx.tender.id,
+              url: `/(main)/projects/${ctx.project.slug}/tenders`,
+            },
+          }),
           sendTenderWithdrawnEmail({
             to: ctx.owner.email,
             ownerFirstName: ctx.owner.firstName,
@@ -282,6 +303,16 @@ export async function dispatchTenderEvent(
             projectId: ctx.project.id,
             tenderId: ctx.tender.id,
           }),
+          sendPushToUser(ctx.builder.id, {
+            title: `Shortlisted on ${ctx.project.title}`,
+            body: "You're now one of the contenders.",
+            data: {
+              kind: "tender_shortlisted",
+              projectSlug: ctx.project.slug,
+              tenderId: ctx.tender.id,
+              url: `/(main)/tenders/${ctx.tender.id}`,
+            },
+          }),
           sendTenderShortlistedEmail({
             to: ctx.builder.email,
             builderFirstName: ctx.builder.firstName,
@@ -302,6 +333,16 @@ export async function dispatchTenderEvent(
             actionUrl: tenderUrl,
             projectId: ctx.project.id,
             tenderId: ctx.tender.id,
+          }),
+          sendPushToUser(ctx.builder.id, {
+            title: `You won ${ctx.project.title}!`,
+            body: "Owner has shared their contact details.",
+            data: {
+              kind: "tender_awarded",
+              projectSlug: ctx.project.slug,
+              tenderId: ctx.tender.id,
+              url: `/(main)/tenders/${ctx.tender.id}`,
+            },
           }),
           sendTenderAwardedEmail({
             to: ctx.builder.email,
@@ -325,6 +366,16 @@ export async function dispatchTenderEvent(
             actionUrl: browseUrl,
             projectId: ctx.project.id,
             tenderId: ctx.tender.id,
+          }),
+          sendPushToUser(ctx.builder.id, {
+            title: `Decision made on ${ctx.project.title}`,
+            body: "Owner is moving forward with another builder.",
+            data: {
+              kind: "tender_rejected",
+              projectSlug: ctx.project.slug,
+              tenderId: ctx.tender.id,
+              url: `/(main)/browse`,
+            },
           }),
           sendTenderRejectedEmail({
             to: ctx.builder.email,

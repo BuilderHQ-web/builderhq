@@ -48,3 +48,8 @@ export type {
 
 // Policies
 export { canRead, canPost, canMarkRead } from "./policies";
+
+// Dispatch (called by service after a successful insert; also
+// exported so other entrypoints can fire push for messages they
+// post through alternative paths).
+export { dispatchUserMessage } from "./dispatch";

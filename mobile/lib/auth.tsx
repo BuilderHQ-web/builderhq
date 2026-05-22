@@ -47,6 +47,10 @@ import {
   registerForcedLogoutHandler,
   type Result,
 } from "./api";
+import {
+  registerForPushNotifications,
+  unregisterPushNotifications,
+} from "./push";
 import * as secureStore from "./secure-store";
 
 export type Role = "project_owner" | "builder" | "admin";
@@ -100,6 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const r = await api.get<MeResponse>("/api/mobile/auth/me");
     if (r.ok) {
       setUser(r.value.user);
+      // Refresh the push token on every successful boot. Fire-and-forget
+      // because the permission prompt (if needed) shouldn't block the
+      // app from rendering — and if push registration fails for any
+      // reason the user can still use everything else.
+      void registerForPushNotifications();
     } else if (r.error.code === "unauthorized") {
       // Both access and refresh chains dead. Wipe everything.
       await secureStore.clearAll();
@@ -143,12 +152,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await secureStore.set("access_expires_at", r.value.accessExpiresAt);
       await secureStore.set("user_id", r.value.user.id);
       setUser(r.value.user);
+      // Register this device for push. Fire-and-forget — the OS
+      // permission prompt is the slowest leg and we don't want to
+      // stall the post-login navigation behind it.
+      void registerForPushNotifications();
       return { ok: true, value: r.value.user };
     },
     [],
   );
 
   const signOut = useCallback(async () => {
+    // Clear the server-side push token FIRST while we still have a
+    // valid access token to authenticate the call. Awaited (briefly)
+    // because otherwise a shared device keeps pushing to the
+    // signed-out user until their token rotates or goes stale.
+    await unregisterPushNotifications();
+
     // Fire-and-forget server-side invalidation. Carries the refresh
     // token in the body so the server can pin the revocation to this
     // device (vs. wiping every device for the user).

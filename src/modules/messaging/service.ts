@@ -37,6 +37,8 @@ import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users/schema";
 import { builderProfiles } from "@/modules/profiles/schema";
 
+import { dispatchUserMessage } from "./dispatch";
+
 const PREVIEW_LEN = 140;
 const MAX_BODY_LEN = 4000;
 
@@ -161,7 +163,7 @@ export async function postUserMessage(
     return fail("forbidden", "Not your conversation.");
   }
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(messages)
       .values({
@@ -183,6 +185,22 @@ export async function postUserMessage(
 
     return ok(row);
   });
+
+  // Side-effect AFTER the transaction commits so a flaky Expo Push
+  // call can't roll back a successful message insert. We AWAIT (vs
+  // fire-and-forget) because Vercel kills the function the moment the
+  // response is sent — and dispatch is internally try/catch'd, so
+  // awaiting it can't propagate a failure to the caller.
+  if (result.ok) {
+    await dispatchUserMessage({
+      conversationId: result.value.conversationId,
+      messageId: result.value.id,
+      senderId,
+      body: trimmed,
+    });
+  }
+
+  return result;
 }
 
 /**

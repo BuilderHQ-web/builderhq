@@ -34,6 +34,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
+import {
+  handleColdStartNotificationTap,
+  subscribeToNotificationTaps,
+} from "@/lib/push";
 import { initSounds } from "@/lib/sounds";
 
 /**
@@ -100,6 +104,18 @@ function RootStack() {
     if (!isLoading) {
       SplashScreen.hideAsync().catch(() => {});
     }
+  }, [isLoading]);
+
+  // Notification tap routing. Sets up the listener for taps that
+  // happen while the JS runtime is alive, then handles the
+  // cold-start case (app launched FROM a tap) once the router is
+  // mounted. The auth gate above guarantees the router is ready
+  // before this effect runs.
+  useEffect(() => {
+    if (isLoading) return;
+    const unsubscribe = subscribeToNotificationTaps();
+    void handleColdStartNotificationTap();
+    return unsubscribe;
   }, [isLoading]);
 
   return (

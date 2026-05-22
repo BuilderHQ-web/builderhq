@@ -70,6 +70,19 @@ const serverSchema = z.object({
   ONESIGNAL_APP_ID: z.string().optional(),
   ONESIGNAL_REST_API_KEY: z.string().optional(),
 
+  /**
+   * Expo Push API access token. Optional but strongly recommended
+   * in production: when set, requests to https://exp.host/--/api/v2/push/send
+   * carry an `Authorization: Bearer <token>` header, giving the
+   * project the higher rate limit + enabling the security feature
+   * "Enhanced security for push notifications" in the Expo dashboard.
+   *
+   * Generate via: https://expo.dev/accounts/<account>/settings/access-tokens
+   * When unset, requests go through unauthenticated (works for low
+   * volume; same as the legacy contract).
+   */
+  EXPO_ACCESS_TOKEN: z.string().optional(),
+
   ABR_GUID: z.string().optional(),
 
   // ── Ads funnel (/start) — optional everywhere; the route guards

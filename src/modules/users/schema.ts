@@ -116,6 +116,20 @@ export const users = pgTable(
      */
     legacyBubbleId: text("legacy_bubble_id"),
     legacySource: text("legacy_source"),
+
+    /**
+     * Expo push notification token for the user's most recent mobile
+     * device. Single-device for now — last-registered wins. When users
+     * start running BuilderHQ on multiple devices (phone + tablet) we
+     * promote this to a separate `user_devices` table keyed on
+     * (user_id, expo_push_token) so notifications fan out to all
+     * registered devices. NULL = no mobile app session registered.
+     */
+    expoPushToken: text("expo_push_token"),
+    expoPushTokenUpdatedAt: timestamp("expo_push_token_updated_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
   },
   (t) => [
     uniqueIndex("users_email_unique").on(t.email),
