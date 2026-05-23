@@ -135,7 +135,7 @@ export function LaunchScreen({ launchAt }: Props) {
           transition={{ duration: 0.6, delay: 0.85 }}
           className="text-[10.5px] tracking-[0.34em] uppercase text-text-dim font-ui font-medium mb-3"
         >
-          {isLaunched ? "Now Live" : "Dropping In"}
+          {isLaunched ? "Now Live" : "Live In"}
         </motion.span>
 
         {/* Animated big DAYS */}

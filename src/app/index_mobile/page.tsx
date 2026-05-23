@@ -49,7 +49,7 @@ export default function IndexMobilePage() {
   //
   // Time zone: AEST (UTC+10) so "DAYS" rolls over at midnight AU not
   // midnight UTC.
-  const launchAt = "2026-05-21T10:00:00+10:00";
+  const launchAt = "2026-06-03T10:00:00+10:00";
 
   return <LaunchScreen launchAt={launchAt} />;
 }
