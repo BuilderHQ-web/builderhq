@@ -34,6 +34,7 @@ import "server-only";
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 
@@ -247,8 +248,8 @@ async function postChunk(
         "Content-Type": "application/json",
         Accept: "application/json",
         "Accept-Encoding": "gzip, deflate",
-        ...(process.env.EXPO_ACCESS_TOKEN
-          ? { Authorization: `Bearer ${process.env.EXPO_ACCESS_TOKEN}` }
+        ...(env.EXPO_ACCESS_TOKEN
+          ? { Authorization: `Bearer ${env.EXPO_ACCESS_TOKEN}` }
           : {}),
       },
       body: JSON.stringify(messages),
