@@ -13,6 +13,46 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // ── v4 PALETTE — strict 13-color premium system ───────────────
+        //
+        // The single source of truth for the BuilderHQ mobile rebuild.
+        // Keep in lockstep with `lib/theme.ts` palette. Three depths,
+        // two border tones, three text tones, four accent shades,
+        // three semantic. That's the system — anything outside it has
+        // drifted from the brand.
+        canvas: "#06080F",
+        surface: "#0E131F",
+        "surface-elev": "#141A2A",
+
+        hairline: "rgba(255, 255, 255, 0.06)",
+        "hairline-strong": "rgba(255, 255, 255, 0.12)",
+        "hairline-accent": "rgba(0, 212, 200, 0.30)",
+
+        // v4 accent — same teal, sharper naming
+        "accent-4": "#00D4C8",
+        "accent-4-light": "#7EF5ED",
+        "accent-4-muted": "rgba(0, 212, 200, 0.08)",
+        "accent-4-glow": "rgba(0, 212, 200, 0.40)",
+        "accent-4-contrast": "#031118",
+
+        // v4 text — three tones, full stop
+        "text-4": "#F5F7FF",
+        "text-4-muted": "#8E9BB8",
+        "text-4-dim": "#5A6789",
+
+        // v4 semantic — tuned to harmonize with the teal accent
+        "success-4": "#5EEAD4",
+        "success-4-muted": "rgba(94, 234, 212, 0.10)",
+        "warning-4": "#FBBF24",
+        "warning-4-muted": "rgba(251, 191, 36, 0.10)",
+        "danger-4": "#FB7185",
+        "danger-4-muted": "rgba(251, 113, 133, 0.10)",
+
+        // ── LEGACY v2/v3 — kept until every screen is ported ─────────
+        //
+        // Browse, messages, project detail, and tender flow still
+        // import these. Phase 3 of the rebuild sweeps them. When all
+        // legacy references are gone this block deletes wholesale.
         // ── Dark canvas (v2 — warmer, deeper, gradient-friendly) ──────
         //
         // The base sits between Starlink's near-black and Revolut's
@@ -87,12 +127,28 @@ module.exports = {
         "info-muted": "rgba(125, 211, 252, 0.14)",
       },
       fontFamily: {
-        // Loaded in app/_layout.tsx via expo-font. SF / Roboto fallback
-        // for boot frames before the custom faces hydrate.
-        sans: ["DMSans_400Regular", "System"],
-        ui: ["SpaceGrotesk_500Medium", "System"],
-        display: ["BebasNeue_400Regular", "Impact", "System"],
-        mono: ["JetBrainsMono_400Regular", "Menlo"],
+        // ── v4 — two faces, optical-size aware ──────────────────────
+        //
+        // Display: Instrument Serif — the landing's voice carried into
+        // mobile. Loaded in app/_layout.tsx. Used in italic form only,
+        // and only on screen titles (via the accent-italic device).
+        //
+        // System: SF Pro on iOS, Roboto on Android. No JS load needed
+        // — the OS supplies it. Premium native rendering for free,
+        // with perfect optical sizing at every weight + true tabular
+        // nums for prices.
+        serif: ["InstrumentSerif_400Regular", "serif"],
+        "serif-italic": ["InstrumentSerif_400Regular_Italic", "serif"],
+
+        // ── LEGACY v2/v3 fonts — kept for un-ported screens. These
+        //    never actually loaded in the old app (no useFonts call
+        //    existed), so they silently fell back to System. We keep
+        //    the names so legacy screens don't crash; they'll continue
+        //    to render in System until each is ported to v4.
+        sans: ["System"],
+        ui: ["System"],
+        display: ["System"],
+        mono: ["System"],
       },
       borderRadius: {
         tight: "3px",

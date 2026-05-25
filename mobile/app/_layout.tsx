@@ -32,6 +32,11 @@ import { Fragment, useEffect, type ReactElement, type ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import {
+  InstrumentSerif_400Regular,
+  InstrumentSerif_400Regular_Italic,
+  useFonts,
+} from "@expo-google-fonts/instrument-serif";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
 import {
@@ -71,6 +76,15 @@ const KeyboardProvider: ({
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  // Load Instrument Serif — the landing's display face, now mobile's.
+  // Used in italic form on screen titles via the accent-italic device.
+  // Body / UI / numeric typography uses the iOS system font (SF Pro)
+  // which needs no loading.
+  const [fontsLoaded] = useFonts({
+    InstrumentSerif_400Regular,
+    InstrumentSerif_400Regular_Italic,
+  });
+
   // Boot-time: prime the sounds preference flag (silent until the user
   // opts in from Settings — see lib/sounds.ts).
   useEffect(() => {
@@ -78,12 +92,12 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#03090f" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#06080F" }}>
       <KeyboardProvider>
         <SafeAreaProvider>
           <BottomSheetModalProvider>
             <AuthProvider>
-              <RootStack />
+              <RootStack fontsLoaded={fontsLoaded} />
             </AuthProvider>
           </BottomSheetModalProvider>
         </SafeAreaProvider>
@@ -97,14 +111,15 @@ export default function RootLayout() {
  * signed in). Split out so it can read `useAuth()` — the provider sits
  * above it.
  */
-function RootStack() {
+function RootStack({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { isLoading } = useAuth();
+  const ready = !isLoading && fontsLoaded;
 
   useEffect(() => {
-    if (!isLoading) {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [isLoading]);
+  }, [ready]);
 
   // Notification tap routing. Sets up the listener for taps that
   // happen while the JS runtime is alive, then handles the
@@ -112,11 +127,11 @@ function RootStack() {
   // mounted. The auth gate above guarantees the router is ready
   // before this effect runs.
   useEffect(() => {
-    if (isLoading) return;
+    if (!ready) return;
     const unsubscribe = subscribeToNotificationTaps();
     void handleColdStartNotificationTap();
     return unsubscribe;
-  }, [isLoading]);
+  }, [ready]);
 
   return (
     <Stack

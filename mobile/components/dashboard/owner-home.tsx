@@ -1,69 +1,56 @@
 /**
- * <OwnerHome /> — premium owner dashboard.
+ * <OwnerHome /> — v4 premium owner dashboard.
  *
- * Layout, top to bottom:
- *   1. <GlassHeader /> — floating overlay; avatar left, greeting
- *      centre, bell-notif on right. Extends behind the iOS status bar
- *      and fades into the content (no hard horizontal break).
- *   2. Hero greeting block — kicker + Bebas display name + one
- *      sub-line ("3 projects on the go.").
- *   3. Founding-access hero card — gradient with depth.
- *      (Owner-side this lives on builder home; for owners we render
- *      the headline-stat tile instead — Active Projects in display
- *      type.)
- *   4. 3-tile glass stat row — Drafts / Tenders / Unread.
- *   5. Your projects — horizontal swipe carousel.
- *   6. Activity — glass-card timeline.
+ * Composition top-to-bottom:
  *
- * Content scrolls UNDER the floating header. SafeArea is owned by
- * the header — the screen itself uses edges={[]} so no top inset
- * pushes the canvas down.
+ *   1. ScreenHeader — collapsible "Home" title with bell trailing
+ *   2. Hero block — kicker (greeting) + plain display title + Instrument
+ *      Serif italic accent ("Your projects.")
+ *   3. HeroNumberCard — the day's most-actionable metric front and
+ *      centre (tenders to review · projects live · or onboarding CTA)
+ *   4. StatRow — three quiet stat tiles (Active / Drafts / Unread)
+ *   5. Projects section — Surface-wrapped Row list with status pills
+ *   6. Activity section — recent timeline rows
+ *
+ * v4 design choices in this screen:
+ *   · One canvas, no gradients. All surfaces are solid #0E131F.
+ *   · Hero NUMBER is the focal point — Revolut/Robinhood pattern.
+ *   · Instrument Serif italic on ONE word per screen. Here: "projects."
+ *   · Press feedback uses haptics throughout; rows soft-tap, CTAs select.
+ *   · No floating glass header — iOS large-title-on-scroll pattern.
+ *
+ * Data shape unchanged from the legacy version — this is a pure UI
+ * rewrite. `useOwnerDashboard()` returns the same OwnerDashboardPayload.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import Animated, {
-  FadeInUp,
-} from "react-native-reanimated";
-import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  ArrowRight,
-  Bell,
-  Building,
-  ChevronRight,
-  FileText,
-  Home as HomeIcon,
-  Layers,
-  MapPin,
-  MessageSquare,
-  Plus,
-  Sparkles,
-  Wrench,
-} from "lucide-react-native";
 
-import { Screen } from "@/components/ui/screen";
-import { Avatar } from "@/components/ui/avatar";
-import { GlassHeader, useGlassHeaderHeight } from "@/components/ui/glass-header";
-import { StatTile } from "@/components/ui/stat-tile";
-import { RadarPulse } from "@/components/ui/radar-pulse";
+import * as React from "react";
+import { Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { router } from "expo-router";
+import { useSharedValue } from "react-native-reanimated";
+
 import { useAuth } from "@/lib/auth";
-import { haptics } from "@/lib/haptics";
 import { useOwnerDashboard } from "@/lib/dashboard";
-import { brandGradient, colors } from "@/lib/theme";
+import { Icon } from "@/lib/icons";
+import { palette, type } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
+
+import {
+  AvatarV4,
+  BigNumber,
+  Hero,
+  Pill,
+  Press,
+  Row,
+  ScreenHeader,
+  ScreenV4,
+  Surface,
+} from "@/components/ui/v4";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
-import type {
-  ActivityItem,
-  OwnerProjectListItem,
-} from "./types";
+import type { ActivityItem, OwnerProjectListItem } from "./types";
 
-// ── Mapping tables ──────────────────────────────────────────────────
+// ── Mapping tables ──────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -71,6 +58,7 @@ const TYPE_LABEL: Record<string, string> = {
   renovation: "Renovation",
   extension: "Extension",
 };
+
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   published: "Live",
@@ -79,37 +67,17 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Archived",
   rejected: "Rejected",
 };
-const STATUS_COLOR: Record<string, { bg: string; ring: string; text: string }> = {
-  draft: {
-    bg: "rgba(168, 179, 207, 0.08)",
-    ring: "rgba(168, 179, 207, 0.18)",
-    text: "#a8b3cf",
-  },
-  published: {
-    bg: "rgba(0, 212, 200, 0.12)",
-    ring: "rgba(0, 212, 200, 0.36)",
-    text: "#7df5ed",
-  },
-  tendering: {
-    bg: "rgba(0, 212, 200, 0.18)",
-    ring: "rgba(0, 212, 200, 0.50)",
-    text: "#00d4c8",
-  },
-  awarded: {
-    bg: "rgba(134, 239, 172, 0.14)",
-    ring: "rgba(134, 239, 172, 0.36)",
-    text: "#86efac",
-  },
-  archived: {
-    bg: "rgba(255, 255, 255, 0.04)",
-    ring: "rgba(255, 255, 255, 0.10)",
-    text: "#697296",
-  },
-  rejected: {
-    bg: "rgba(255, 122, 138, 0.12)",
-    ring: "rgba(255, 122, 138, 0.32)",
-    text: "#ff7a8a",
-  },
+
+const STATUS_TONE: Record<
+  string,
+  "neutral" | "accent" | "success" | "warning" | "danger"
+> = {
+  draft: "neutral",
+  published: "accent",
+  tendering: "accent",
+  awarded: "success",
+  archived: "neutral",
+  rejected: "danger",
 };
 
 function timeOfDayGreeting(now = new Date()): string {
@@ -120,982 +88,669 @@ function timeOfDayGreeting(now = new Date()): string {
   return "Good evening";
 }
 
-function relativeTime(iso: string, now = Date.now()): string {
-  const diff = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
-  if (diff < 60) return "just now";
-  const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  return `${Math.floor(d / 7)}w`;
+function firstName(name: string | null | undefined): string {
+  if (!name) return "there";
+  return name.split(/\s+/)[0] ?? name;
 }
 
-function typeIcon(type: string, size = 14, color: string = colors.accentLight) {
-  const p = { size, color, strokeWidth: 1.6 };
-  switch (type) {
-    case "single_dwelling":
-      return <HomeIcon {...p} />;
-    case "multi_dwelling":
-      return <Building {...p} />;
-    case "renovation":
-      return <Wrench {...p} />;
-    case "extension":
-      return <Layers {...p} />;
-    default:
-      return <HomeIcon {...p} />;
-  }
+function suburbLine(p: OwnerProjectListItem): string {
+  const parts = [p.suburb, p.state, p.postcode].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : TYPE_LABEL[p.type] ?? p.type;
 }
 
-// ── Screen ──────────────────────────────────────────────────────────
+function relativeTime(iso: string): string {
+  const diffSec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (diffSec < 60) return "just now";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}d`;
+  return new Date(iso).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+// ── Component ───────────────────────────────────────────────────────────
 
 export function OwnerHome() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { data, isLoading, error, refetch } = useOwnerDashboard();
-  const headerHeight = useGlassHeaderHeight();
-  const [refreshing, setRefreshing] = useState(false);
-  const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
+  const [refreshing, setRefreshing] = React.useState(false);
+  const scrollY = useSharedValue(0);
 
-  useEffect(() => {
-    const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const onRefresh = useCallback(async () => {
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     void haptics.tap();
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
+    await refetch();
+    setRefreshing(false);
   }, [refetch]);
 
   if (isLoading && !data) {
     return (
-      <Screen variant="flat" edges={[]}>
+      <ScreenV4 variant="flat">
         <DashboardSkeleton />
-      </Screen>
+      </ScreenV4>
     );
   }
+
   if (error && !data) {
     return (
-      <Screen variant="flat" edges={[]}>
-        <ErrorView message={error} onRetry={refetch} />
-      </Screen>
+      <ScreenV4 variant="flat">
+        <ErrorView message={error} onRetry={() => void refetch()} />
+      </ScreenV4>
     );
   }
 
-  const stats = data?.stats;
-  const projects = data?.projects ?? [];
-  const activity = data?.activity ?? [];
-  const firstName = user?.name?.split(" ")[0] ?? null;
-  const tenderTotal = projects.reduce((s, p) => s + p.stats.tenderCount, 0);
-  const builderTotal = projects.reduce((s, p) => s + p.stats.unlockCount, 0);
+  if (!data) {
+    return <ScreenV4 variant="flat"><View /></ScreenV4>;
+  }
+
+  const greeting = timeOfDayGreeting();
+  const fName = firstName(user?.name);
+  const stats = data.stats;
+  const projects = data.projects;
+  const activity = data.activity;
 
   return (
-    <Screen variant="flat" edges={[]}>
-      <GlassHeader
-        left={<Avatar name={user?.name} size={36} />}
-        center={
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                color: colors.textFaint,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 9.5,
-                letterSpacing: 2.4,
-                textTransform: "uppercase",
-                fontWeight: "600",
-              }}
-            >
-              Dashboard
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 15,
-                fontWeight: "600",
-                letterSpacing: -0.1,
-                marginTop: 1,
-              }}
-            >
-              {firstName ?? "Home"}
-            </Text>
-          </View>
-        }
-        right={
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.08)",
-            }}
+    <ScreenV4
+      variant="scroll"
+      scrollY={scrollY}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
+    >
+      <ScreenHeader
+        title="Home"
+        scrollY={scrollY}
+        trailing={
+          <Press
+            onPress={() => router.push("/(main)/profile")}
+            haptic="tap"
+            accessibilityLabel="Open profile"
           >
-            <Bell size={15} color={colors.textMuted} strokeWidth={1.7} />
-          </View>
+            <AvatarV4 name={user?.name ?? "BuilderHQ"} size={36} />
+          </Press>
         }
       />
 
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: headerHeight + 4,
-          paddingHorizontal: 20,
-          paddingBottom: 140,
-        }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.accentLight}
-            progressBackgroundColor={colors.bgRaised}
-            progressViewOffset={headerHeight}
-          />
-        }
+      {/* Hero — kicker + plain display + Instrument Serif italic accent.
+          The accent word ties this screen to the landing's voice. */}
+      <Animated.View entering={FadeInDown.duration(420).delay(40)}>
+        <Hero
+          kicker={`${greeting.toUpperCase()}, ${fName.toUpperCase()}`}
+          title="Your"
+          accent="projects."
+          sub={projectsSub(stats.activeProjects, stats.totalTenders)}
+        />
+      </Animated.View>
+
+      {/* Hero number — the day's main thing. Tenders if any, else
+          a smart fallback. */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(160)}
+        style={{ marginTop: 28 }}
       >
-        {/* Hero greeting */}
-        <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
-          <Text
-            style={{
-              color: colors.accent,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 11,
-              letterSpacing: 2.6,
-              textTransform: "uppercase",
-              fontWeight: "600",
-            }}
-          >
-            {greeting}
-          </Text>
-        </Animated.View>
-        <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-            style={{
-              color: colors.text,
-              fontFamily: "BebasNeue_400Regular",
-              fontSize: 52,
-              lineHeight: 54,
-              letterSpacing: -0.6,
-              marginTop: 6,
-            }}
-          >
-            {firstName ?? "Welcome"}
-            <Text style={{ color: colors.accentLight }}>.</Text>
-          </Text>
-        </Animated.View>
-        <Animated.View entering={FadeInUp.delay(160).duration(420).springify()}>
-          <Text
-            style={{
-              color: colors.textMuted,
-              fontFamily: "DMSans_400Regular",
-              fontSize: 14.5,
-              lineHeight: 21,
-              marginTop: 8,
-            }}
-          >
-            {projects.length === 0
-              ? "Let's get your first project onboarded."
-              : `${projects.length} ${projects.length === 1 ? "project" : "projects"} on the go · ${tenderTotal} tender${tenderTotal === 1 ? "" : "s"} received`}
-          </Text>
-        </Animated.View>
-
-        {/* Hero stat — active projects (gradient) */}
-        <Animated.View
-          entering={FadeInUp.delay(220).duration(460).springify()}
-          style={{ marginTop: 24 }}
-        >
-          <HeroStat
-            label="Active projects"
-            value={stats?.activeProjects ?? 0}
-            sub={
-              builderTotal > 0
-                ? `${builderTotal} builder${builderTotal === 1 ? "" : "s"} engaged`
-                : "Onboard one to get started"
+        <HeroNumberCard
+          tenderCount={stats.totalTenders}
+          activeProjects={stats.activeProjects}
+          draftProjects={stats.draftProjects}
+          onPressTenders={() => {
+            const target = projects.find(
+              (p) => p.stats.tenderCount > 0,
+            );
+            if (target) {
+              void haptics.select();
+              router.push(`/(main)/projects/${target.slug}`);
             }
-          />
-        </Animated.View>
+          }}
+          onPressCreate={() => {
+            void haptics.select();
+            // No native create flow yet — push to web.
+            router.push("/(main)/browse");
+          }}
+        />
+      </Animated.View>
 
-        {/* Stat row */}
-        <Animated.View
-          entering={FadeInUp.delay(280).duration(440).springify()}
-          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
-        >
-          <StatTile
-            label="Drafts"
-            value={stats?.draftProjects ?? 0}
-            onPress={() => router.push("/(main)/browse")}
-          />
-          <StatTile
-            label="Tenders"
-            value={stats?.totalTenders ?? 0}
-            tone={(stats?.totalTenders ?? 0) > 0 ? "accent" : "neutral"}
-          />
-          <StatTile
-            label="Unread"
-            value={stats?.unreadMessages ?? 0}
-            tone={(stats?.unreadMessages ?? 0) > 0 ? "accent" : "neutral"}
-            onPress={() => router.push("/(main)/messages")}
-          />
-        </Animated.View>
+      {/* Stat row */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(260)}
+        style={{ marginTop: 16, flexDirection: "row", gap: 10 }}
+      >
+        <StatTile label="Active" value={stats.activeProjects} />
+        <StatTile label="Drafts" value={stats.draftProjects} />
+        <StatTile
+          label="Unread"
+          value={stats.unreadMessages}
+          accent={stats.unreadMessages > 0}
+          onPress={() => router.push("/(main)/messages")}
+        />
+      </Animated.View>
 
-        {/* Projects */}
-        <Animated.View
-          entering={FadeInUp.delay(340).duration(440).springify()}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader
-            kicker="Your projects"
-            title={projects.length === 0 ? "Start the first" : "Swipe through"}
-            ctaIcon={<Plus size={13} color={colors.accentLight} strokeWidth={2} />}
-            ctaLabel={projects.length === 0 ? "New" : undefined}
-            onCta={
-              projects.length === 0
-                ? () => {
-                    void haptics.tap();
-                    router.push("/(main)/browse");
-                  }
-                : undefined
-            }
-          />
-        </Animated.View>
-
+      {/* Projects */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(360)}
+        style={{ marginTop: 40 }}
+      >
+        <SectionHeader
+          title="Your projects"
+          meta={`${projects.length} ${projects.length === 1 ? "project" : "projects"}`}
+        />
         {projects.length === 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(400).duration(440).springify()}
-            style={{ marginTop: 14 }}
-          >
-            <EmptyProjects />
-          </Animated.View>
+          <EmptyProjects />
         ) : (
-          <Animated.View
-            entering={FadeInUp.delay(400).duration(440).springify()}
-            style={{ marginTop: 14, marginHorizontal: -20 }}
-          >
-            <ProjectCarousel projects={projects} />
-          </Animated.View>
-        )}
-
-        {/* Activity */}
-        <Animated.View
-          entering={FadeInUp.delay(480).duration(440).springify()}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader
-            kicker="Activity"
-            title={activity.length === 0 ? "Quiet so far" : "Latest updates"}
-          />
-        </Animated.View>
-        {activity.length === 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(520).duration(440).springify()}
-            style={{ marginTop: 14 }}
-          >
-            <EmptyActivity />
-          </Animated.View>
-        ) : (
-          <View style={{ marginTop: 14, gap: 10 }}>
-            {activity.map((a, i) => (
-              <Animated.View
-                key={a.id}
-                entering={FadeInUp.delay(540 + i * 40).duration(380).springify()}
-              >
-                <ActivityRow item={a} />
-              </Animated.View>
+          <Surface padding={0} style={{ marginTop: 14, gap: 0 }}>
+            {projects.map((p, i) => (
+              <View key={p.id}>
+                <Press
+                  onPress={() => router.push(`/(main)/projects/${p.slug}`)}
+                  haptic="soft"
+                  scaleTo={0.99}
+                >
+                  <ProjectRow project={p} />
+                </Press>
+                {i < projects.length - 1 ? <RowDivider /> : null}
+              </View>
             ))}
-          </View>
+          </Surface>
         )}
-      </ScrollView>
-    </Screen>
-  );
-}
+      </Animated.View>
 
-// ── Hero stat (gradient card) ───────────────────────────────────────
+      {/* Activity */}
+      {activity.length > 0 ? (
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(460)}
+          style={{ marginTop: 40 }}
+        >
+          <SectionHeader title="Recent activity" />
+          <Surface padding={0} style={{ marginTop: 14 }}>
+            {activity.slice(0, 6).map((a, i) => (
+              <View key={a.id}>
+                <ActivityRow item={a} />
+                {i < Math.min(activity.length, 6) - 1 ? (
+                  <RowDivider />
+                ) : null}
+              </View>
+            ))}
+          </Surface>
+        </Animated.View>
+      ) : null}
 
-function HeroStat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: number;
-  sub: string;
-}) {
-  return (
-    <View
-      style={{
-        borderRadius: 28,
-        overflow: "hidden",
-        shadowColor: colors.accent,
-        shadowOpacity: 0.32,
-        shadowRadius: 26,
-        shadowOffset: { width: 0, height: 14 },
-        elevation: 10,
-      }}
-    >
-      <LinearGradient
-        colors={brandGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ padding: 22 }}
+      {/* Sign out — quiet, at the very bottom. Temporary until the
+          profile tab lands proper. */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(560)}
+        style={{ marginTop: 48, alignItems: "center" }}
       >
-        {/* Inner top highlight */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.30)",
+        <Press
+          onPress={async () => {
+            void haptics.tap();
+            await signOut();
+            router.replace("/(auth)/login");
           }}
-        />
-        {/* Soft inner border */}
-        <View
-          pointerEvents="none"
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            borderRadius: 28,
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.18)",
-          }}
-        />
-        {/* Soft light bloom — top-right */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: -60,
-            right: -40,
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
-          }}
-        />
-
-        <Text
-          style={{
-            color: "rgba(3, 17, 24, 0.72)",
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10.5,
-            letterSpacing: 2.2,
-            textTransform: "uppercase",
-            fontWeight: "700",
-          }}
+          haptic="none"
+          style={{ paddingVertical: 12, paddingHorizontal: 24 }}
         >
-          {label}
-        </Text>
-        <Text
-          style={{
-            color: colors.textInverse,
-            fontFamily: "BebasNeue_400Regular",
-            fontSize: 84,
-            lineHeight: 84,
-            letterSpacing: -1.2,
-            marginTop: 8,
-          }}
-        >
-          {value}
-        </Text>
-        <Text
-          style={{
-            color: "rgba(3, 17, 24, 0.72)",
-            fontFamily: "DMSans_400Regular",
-            fontSize: 13,
-            marginTop: 4,
-          }}
-        >
-          {sub}
-        </Text>
-      </LinearGradient>
-    </View>
-  );
-}
-
-// ── Section header ──────────────────────────────────────────────────
-
-function SectionHeader({
-  kicker,
-  title,
-  ctaIcon,
-  ctaLabel,
-  onCta,
-}: {
-  kicker: string;
-  title: string;
-  ctaIcon?: React.ReactNode;
-  ctaLabel?: string;
-  onCta?: () => void;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-      }}
-    >
-      <View>
-        <Text
-          style={{
-            color: colors.accent,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            letterSpacing: 2.2,
-            textTransform: "uppercase",
-            fontWeight: "600",
-          }}
-        >
-          {kicker}
-        </Text>
-        <Text
-          style={{
-            color: colors.text,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 18,
-            fontWeight: "600",
-            letterSpacing: -0.2,
-            marginTop: 4,
-          }}
-        >
-          {title}
-        </Text>
-      </View>
-      {ctaLabel && onCta ? (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            height: 32,
-            paddingHorizontal: 12,
-            borderRadius: 16,
-            backgroundColor: "rgba(0, 212, 200, 0.10)",
-            borderWidth: 1,
-            borderColor: "rgba(0, 212, 200, 0.34)",
-          }}
-        >
-          {ctaIcon}
           <Text
             style={{
-              color: colors.accentLight,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 12,
-              fontWeight: "600",
+              fontSize: 13,
+              color: palette.textDim,
+              letterSpacing: 0.3,
             }}
           >
-            {ctaLabel}
+            Sign out
           </Text>
-        </View>
-      ) : null}
-    </View>
+        </Press>
+      </Animated.View>
+    </ScreenV4>
   );
 }
 
-// ── Carousel + project card ─────────────────────────────────────────
+// ── Sub-components used only inside this screen ─────────────────────────
 
-function ProjectCarousel({ projects }: { projects: OwnerProjectListItem[] }) {
-  const [page, setPage] = useState(0);
-  const onScrollEnd = useCallback(
-    (e: {
-      nativeEvent: {
-        contentOffset: { x: number };
-        layoutMeasurement: { width: number };
-      };
-    }) => {
-      const idx = Math.round(
-        e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
-      );
-      if (idx !== page) {
-        setPage(idx);
-        void haptics.select();
-      }
-    },
-    [page],
-  );
+function projectsSub(active: number, tenders: number): string {
+  if (active === 0) return "Let's start your first build.";
+  if (tenders === 0) {
+    return `${active} project${active === 1 ? "" : "s"} live · waiting on tenders.`;
+  }
+  return `${active} project${active === 1 ? "" : "s"} live · ${tenders} tender${tenders === 1 ? "" : "s"} in.`;
+}
 
-  return (
-    <View>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToAlignment="start"
-        onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-      >
-        {projects.map((p) => (
-          <View key={p.id} style={{ width: 320 }}>
-            <OwnerProjectCard project={p} />
-          </View>
-        ))}
-      </ScrollView>
-
-      {projects.length > 1 ? (
+/**
+ * The day's most-actionable surface. Picks the right hero based on
+ * the user's current state:
+ *   · tenderCount > 0    → big number with "Review tenders" CTA
+ *   · activeProjects > 0 → "Your projects are live, waiting on tenders"
+ *   · else (onboarding)  → "Start your first build" CTA
+ */
+function HeroNumberCard({
+  tenderCount,
+  activeProjects,
+  draftProjects,
+  onPressTenders,
+  onPressCreate,
+}: {
+  tenderCount: number;
+  activeProjects: number;
+  draftProjects: number;
+  onPressTenders: () => void;
+  onPressCreate: () => void;
+}) {
+  if (tenderCount > 0) {
+    return (
+      <Surface variant="accent" padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+          Tenders to review
+        </Text>
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
             marginTop: 14,
-          }}
-        >
-          {projects.map((_, i) => (
-            <View
-              key={i}
-              style={{
-                width: i === page ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor:
-                  i === page ? colors.accentLight : "rgba(255, 255, 255, 0.16)",
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function OwnerProjectCard({ project }: { project: OwnerProjectListItem }) {
-  const statusColor =
-    STATUS_COLOR[project.status] ?? STATUS_COLOR.archived!;
-  const statusLabel = STATUS_LABEL[project.status] ?? project.status;
-  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
-  const location = [project.suburb, project.state].filter(Boolean).join(", ");
-
-  return (
-    <View
-      style={{
-        borderRadius: 24,
-        overflow: "hidden",
-        backgroundColor: "rgba(255, 255, 255, 0.04)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-      }}
-    >
-      {/* Inner top highlight */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.12)",
-        }}
-      />
-      <View style={{ padding: 18 }}>
-        {/* Top row */}
-        <View
-          style={{
             flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
+            alignItems: "baseline",
             gap: 12,
           }}
         >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {typeIcon(project.type, 12)}
-              <Text
-                style={{
-                  color: colors.textMuted,
-                  fontFamily: "SpaceGrotesk_500Medium",
-                  fontSize: 11,
-                  fontWeight: "500",
-                }}
-              >
-                {typeLabel}
-              </Text>
-            </View>
-            <Text
-              numberOfLines={2}
-              style={{
-                color: colors.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 18,
-                fontWeight: "600",
-                letterSpacing: -0.2,
-                marginTop: 8,
-              }}
-            >
-              {project.title}
-            </Text>
-            {location ? (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  marginTop: 4,
-                }}
-              >
-                <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.textMuted,
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 12.5,
-                  }}
-                >
-                  {location}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Status chip */}
-          <View
-            style={{
-              paddingHorizontal: 10,
-              height: 26,
-              borderRadius: 13,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: statusColor.bg,
-              borderWidth: 1,
-              borderColor: statusColor.ring,
-            }}
-          >
-            <Text
-              style={{
-                color: statusColor.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.4,
-                textTransform: "uppercase",
-              }}
-            >
-              {statusLabel}
-            </Text>
-          </View>
+          <BigNumber value={tenderCount} size="lg" color={palette.text} />
+          <Text style={{ ...type.body, color: palette.textMuted }}>
+            {tenderCount === 1 ? "tender" : "tenders"} in
+          </Text>
         </View>
-
-        {/* Stats footer */}
-        <View
+        <Press
+          onPress={onPressTenders}
+          haptic="select"
           style={{
+            marginTop: 20,
             flexDirection: "row",
             alignItems: "center",
-            gap: 16,
-            marginTop: 16,
-            paddingTop: 14,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255, 255, 255, 0.06)",
+            gap: 8,
+            alignSelf: "flex-start",
+            paddingVertical: 12,
+            paddingHorizontal: 18,
+            borderRadius: 999,
+            backgroundColor: palette.accent,
           }}
         >
-          <Stat label="Builders" value={`${project.stats.unlockCount}/3`} />
-          <Stat label="Tenders" value={project.stats.tenderCount} />
-          <Stat
-            label="Unread"
-            value={project.stats.unreadMessages}
-            highlight={project.stats.unreadMessages > 0}
-          />
-          <View style={{ marginLeft: "auto" }}>
-            <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
-          </View>
-        </View>
-      </View>
-    </View>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "700",
+              color: palette.accentContrast,
+            }}
+          >
+            Review tenders
+          </Text>
+          <Icon.ArrowRight size={16} color={palette.accentContrast} />
+        </Press>
+      </Surface>
+    );
+  }
+
+  if (activeProjects > 0) {
+    return (
+      <Surface padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+          Your projects are live
+        </Text>
+        <Text
+          style={{
+            ...type.titleLarge,
+            color: palette.text,
+            fontWeight: "600",
+            marginTop: 16,
+            maxWidth: 280,
+          }}
+        >
+          Waiting on builders to tender.
+        </Text>
+        <Text
+          style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}
+        >
+          Median first response is 24 hours.
+        </Text>
+      </Surface>
+    );
+  }
+
+  // Onboarding empty state.
+  return (
+    <Surface variant="accent" padding={28} hairline>
+      <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+        Welcome to BuilderHQ
+      </Text>
+      <Text
+        style={{
+          ...type.titleLarge,
+          color: palette.text,
+          fontWeight: "600",
+          marginTop: 16,
+          maxWidth: 280,
+        }}
+      >
+        {draftProjects > 0 ? "Publish your draft." : "Start your first build."}
+      </Text>
+      <Text
+        style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}
+      >
+        {draftProjects > 0
+          ? `You have ${draftProjects} draft${draftProjects === 1 ? "" : "s"} ready to go live.`
+          : "Upload your plans and we'll match verified builders within days."}
+      </Text>
+      <Press
+        onPress={onPressCreate}
+        haptic="select"
+        style={{
+          marginTop: 22,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          alignSelf: "flex-start",
+          paddingVertical: 12,
+          paddingHorizontal: 18,
+          borderRadius: 999,
+          backgroundColor: palette.accent,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "700",
+            color: palette.accentContrast,
+          }}
+        >
+          {draftProjects > 0 ? "Open drafts" : "Get started"}
+        </Text>
+        <Icon.ArrowRight size={16} color={palette.accentContrast} />
+      </Press>
+    </Surface>
   );
 }
 
-function Stat({
+function StatTile({
   label,
   value,
-  highlight,
+  accent = false,
+  onPress,
 }: {
   label: string;
-  value: string | number;
-  highlight?: boolean;
+  value: number;
+  accent?: boolean;
+  onPress?: () => void;
 }) {
-  return (
-    <View>
+  const body = (
+    <Surface
+      variant={accent ? "accent" : "default"}
+      padding={16}
+      style={{ flex: 1, alignItems: "flex-start" }}
+    >
       <Text
         style={{
-          color: colors.textFaint,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 9,
-          letterSpacing: 1.6,
-          textTransform: "uppercase",
+          ...type.kicker,
+          color: accent ? palette.accent : palette.textDim,
+          fontWeight: "600",
         }}
       >
         {label}
       </Text>
       <Text
         style={{
-          color: highlight ? colors.accentLight : colors.text,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 14,
+          ...type.numericLarge,
+          color: accent ? palette.accentLight : palette.text,
+          fontVariant: ["tabular-nums"],
           fontWeight: "600",
-          marginTop: 2,
+          marginTop: 10,
         }}
       >
         {value}
       </Text>
+    </Surface>
+  );
+  if (!onPress) return body;
+  return (
+    <View style={{ flex: 1 }}>
+      <Press onPress={onPress} haptic="soft" scaleTo={0.98}>
+        {body}
+      </Press>
     </View>
   );
 }
 
-// ── Activity ────────────────────────────────────────────────────────
-
-function ActivityRow({ item }: { item: ActivityItem }) {
-  const unread = !item.readAt;
-  const Icon = useMemo(() => {
-    if (item.kind.includes("message")) return MessageSquare;
-    if (item.kind.includes("tender") || item.kind.includes("award")) return FileText;
-    if (item.kind.includes("unlock")) return Sparkles;
-    return Bell;
-  }, [item.kind]);
-
+function SectionHeader({ title, meta }: { title: string; meta?: string }) {
   return (
     <View
       style={{
         flexDirection: "row",
-        alignItems: "flex-start",
-        gap: 12,
-        padding: 14,
-        borderRadius: 18,
-        backgroundColor: unread
-          ? "rgba(0, 212, 200, 0.06)"
-          : "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: unread
-          ? "rgba(0, 212, 200, 0.28)"
-          : "rgba(255, 255, 255, 0.07)",
-        overflow: "hidden",
+        alignItems: "baseline",
+        justifyContent: "space-between",
       }}
     >
-      <View
-        pointerEvents="none"
+      <Text
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 12,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: unread
-            ? "rgba(0, 212, 200, 0.18)"
-            : "rgba(255, 255, 255, 0.05)",
-          borderWidth: 1,
-          borderColor: unread
-            ? "rgba(0, 212, 200, 0.34)"
-            : "rgba(255, 255, 255, 0.08)",
+          ...type.title,
+          color: palette.text,
+          fontWeight: "600",
         }}
       >
-        <Icon
-          size={15}
-          color={unread ? colors.accentLight : colors.textMuted}
-          strokeWidth={1.6}
-        />
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
+        {title}
+      </Text>
+      {meta ? (
         <Text
-          numberOfLines={2}
           style={{
-            color: colors.text,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 13.5,
-            lineHeight: 18,
-            fontWeight: unread ? "600" : "500",
+            ...type.caption,
+            color: palette.textDim,
+            letterSpacing: 0.6,
+            fontWeight: "600",
           }}
         >
-          {item.title}
+          {meta.toUpperCase()}
         </Text>
-        {item.body ? (
+      ) : null}
+    </View>
+  );
+}
+
+function ProjectRow({ project }: { project: OwnerProjectListItem }) {
+  const tone = STATUS_TONE[project.status] ?? "neutral";
+  const statusLabel = STATUS_LABEL[project.status] ?? project.status;
+  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
+
+  return (
+    <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
+          >
+            {project.title}
+          </Text>
           <Text
             numberOfLines={1}
             style={{
-              color: colors.textFaint,
-              fontFamily: "DMSans_400Regular",
-              fontSize: 12,
-              marginTop: 2,
+              ...type.bodySmall,
+              color: palette.textMuted,
+              marginTop: 4,
             }}
           >
-            {item.body}
+            {typeLabel} · {suburbLine(project)}
           </Text>
-        ) : null}
+        </View>
+        <Pill tone={tone}>{statusLabel}</Pill>
       </View>
+
+      {/* Inline stats row — only show non-zero values to keep this dense */}
+      {(project.stats.tenderCount > 0 ||
+        project.stats.unlockCount > 0 ||
+        project.stats.unreadMessages > 0) && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 18,
+            marginTop: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          {project.stats.tenderCount > 0 && (
+            <StatInline
+              icon={<Icon.Tender size={13} color={palette.accent} />}
+              label={`${project.stats.tenderCount} ${project.stats.tenderCount === 1 ? "tender" : "tenders"}`}
+            />
+          )}
+          {project.stats.unlockCount > 0 && (
+            <StatInline
+              icon={<Icon.Verified size={13} color={palette.textMuted} />}
+              label={`${project.stats.unlockCount} unlock${project.stats.unlockCount === 1 ? "" : "s"}`}
+            />
+          )}
+          {project.stats.unreadMessages > 0 && (
+            <StatInline
+              icon={<Icon.Message size={13} color={palette.accent} />}
+              label={`${project.stats.unreadMessages} unread`}
+              accent
+            />
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function StatInline({
+  icon,
+  label,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  accent?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      {icon}
       <Text
         style={{
-          color: colors.textDim,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 10.5,
-          marginTop: 2,
+          ...type.bodySmall,
+          color: accent ? palette.accentLight : palette.textMuted,
+          fontWeight: accent ? "600" : "500",
         }}
       >
-        {relativeTime(item.createdAt)}
+        {label}
       </Text>
     </View>
   );
 }
 
-// ── Empty states ────────────────────────────────────────────────────
+function ActivityRow({ item }: { item: ActivityItem }) {
+  const unread = item.readAt === null;
+  const iconColor = unread ? palette.accent : palette.textDim;
+  return (
+    <Row
+      paddingX={18}
+      paddingY={14}
+      leading={
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: unread ? palette.accentMuted : palette.surfaceElev,
+            borderWidth: 1,
+            borderColor: unread ? palette.hairlineAccent : palette.hairline,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {iconForActivityKind(item.kind, iconColor)}
+        </View>
+      }
+      title={item.title}
+      subtitle={item.body ?? undefined}
+      trailing={
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.textDim,
+            letterSpacing: 0.3,
+          }}
+        >
+          {relativeTime(item.createdAt)}
+        </Text>
+      }
+    />
+  );
+}
+
+function iconForActivityKind(kind: string, color: string): React.ReactNode {
+  switch (kind) {
+    case "tender_submitted":
+      return <Icon.Tender size={16} color={color} />;
+    case "tender_shortlisted":
+      return <Icon.CheckCircle size={16} color={color} />;
+    case "tender_awarded":
+      return <Icon.Trophy size={16} color={color} />;
+    case "tender_rejected":
+      return <Icon.Close size={16} color={color} />;
+    case "tender_withdrawn":
+      return <Icon.Close size={16} color={color} />;
+    default:
+      return <Icon.Bell size={16} color={color} />;
+  }
+}
 
 function EmptyProjects() {
   return (
-    <View
-      style={{
-        padding: 28,
-        borderRadius: 24,
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-        alignItems: "center",
-        overflow: "hidden",
-      }}
-    >
+    <Surface padding={28} style={{ marginTop: 14, alignItems: "center" }}>
       <View
-        pointerEvents="none"
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: palette.accentMuted,
+          borderWidth: 1,
+          borderColor: palette.hairlineAccent,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 14,
         }}
-      />
-      <RadarPulse size={96} />
+      >
+        <Icon.Project size={22} color={palette.accent} />
+      </View>
       <Text
         style={{
-          color: colors.text,
-          fontFamily: "BebasNeue_400Regular",
-          fontSize: 26,
-          letterSpacing: -0.3,
-          marginTop: 18,
-          textTransform: "uppercase",
+          ...type.title,
+          color: palette.text,
+          fontWeight: "600",
+          textAlign: "center",
         }}
       >
         No projects yet
       </Text>
       <Text
         style={{
-          color: colors.textMuted,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 13,
+          ...type.body,
+          color: palette.textMuted,
           textAlign: "center",
-          lineHeight: 19,
           marginTop: 8,
-          maxWidth: 240,
+          maxWidth: 280,
         }}
       >
-        Onboard your first project to start receiving tenders.
+        Create your first project on web and it'll appear here instantly.
       </Text>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
-          height: 36,
-          paddingHorizontal: 16,
-          borderRadius: 18,
-          backgroundColor: "rgba(0, 212, 200, 0.14)",
-          borderWidth: 1,
-          borderColor: "rgba(0, 212, 200, 0.40)",
-          marginTop: 16,
-        }}
-      >
-        <Plus size={13} color={colors.accentLight} strokeWidth={2} />
-        <Text
-          style={{
-            color: colors.accentLight,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 12.5,
-            fontWeight: "600",
-          }}
-        >
-          Onboard a project
-        </Text>
-        <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
-      </View>
-    </View>
+    </Surface>
   );
 }
 
-function EmptyActivity() {
+function RowDivider() {
   return (
     <View
       style={{
-        padding: 18,
-        borderRadius: 18,
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        overflow: "hidden",
+        height: 1,
+        backgroundColor: palette.hairline,
+        marginHorizontal: 18,
       }}
-    >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 10,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-        }}
-      >
-        <Sparkles size={14} color={colors.textDim} strokeWidth={1.6} />
-      </View>
-      <Text
-        style={{
-          flex: 1,
-          color: colors.textMuted,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 12.5,
-          lineHeight: 18,
-        }}
-      >
-        No activity yet. Builder unlocks, tenders, and messages land here.
-      </Text>
-    </View>
+    />
   );
 }

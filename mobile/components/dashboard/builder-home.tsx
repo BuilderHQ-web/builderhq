@@ -1,47 +1,51 @@
 /**
- * <BuilderHome /> — premium builder dashboard.
+ * <BuilderHome /> — v4 premium builder dashboard.
  *
- * Same architecture as owner-home (GlassHeader floats above scrollable
- * content), but the hero stat is FBA credits + a tighter section
- * sequence: FBA hero → 3 stats → For-you carousel → My tenders →
- * Recently unlocked → Activity.
+ * Composition top-to-bottom:
+ *
+ *   1. ScreenHeader — collapsible "Home" title with avatar trailing
+ *   2. Hero — kicker (greeting) + plain title + Instrument italic accent
+ *      ("Your tenders." / "Find work." depending on state)
+ *   3. HeroNumberCard — the day's most-actionable metric
+ *      · Active tenders waiting on owner  → big number + "view tenders"
+ *      · FBA founding access active       → remaining free unlocks
+ *      · Matched projects                 → "N projects matched"
+ *      · Onboarding                       → "Complete your profile"
+ *   4. StatRow — Active tenders / Unlocked / Saved
+ *   5. Suggested projects — Surface list of matched projects
+ *   6. My tenders — Surface list with status pills
+ *   7. Recent activity
+ *
+ * Builder-specific bits:
+ *   · Profile gating — if approval pending / rejected, hero swaps to a
+ *     status-aware card that explains the state without dead-ending.
+ *   · FBA emphasis — when founding access is active, the free-unlock
+ *     count is featured prominently. Time-limited offer = urgency.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
-import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  ArrowRight,
-  Bell,
-  Building,
-  ChevronRight,
-  FileText,
-  Home as HomeIcon,
-  Layers,
-  Lock,
-  MapPin,
-  Sparkles,
-  TrendingUp,
-  Wrench,
-  Zap,
-} from "lucide-react-native";
 
-import { Screen } from "@/components/ui/screen";
-import { Avatar } from "@/components/ui/avatar";
-import { GlassHeader, useGlassHeaderHeight } from "@/components/ui/glass-header";
-import { StatTile } from "@/components/ui/stat-tile";
-import { RadarPulse } from "@/components/ui/radar-pulse";
+import * as React from "react";
+import { Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { router } from "expo-router";
+import { useSharedValue } from "react-native-reanimated";
+
 import { useAuth } from "@/lib/auth";
-import { haptics } from "@/lib/haptics";
 import { useBuilderDashboard } from "@/lib/dashboard";
-import { brandGradient, colors } from "@/lib/theme";
+import { Icon } from "@/lib/icons";
+import { palette, type } from "@/lib/theme";
+import { haptics } from "@/lib/haptics";
+
+import {
+  AvatarV4,
+  BigNumber,
+  Hero,
+  Pill,
+  Press,
+  Row,
+  ScreenHeader,
+  ScreenV4,
+  Surface,
+} from "@/components/ui/v4";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
 import type {
@@ -51,7 +55,7 @@ import type {
   BuilderTenderListItem,
 } from "./types";
 
-// ── Mappings ────────────────────────────────────────────────────────
+// ── Mappings ────────────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -59,6 +63,7 @@ const TYPE_LABEL: Record<string, string> = {
   renovation: "Renovation",
   extension: "Extension",
 };
+
 const BUDGET_LABEL: Record<string, string> = {
   under_500k: "Under $500k",
   "500k_1m": "$500k – $1M",
@@ -68,45 +73,26 @@ const BUDGET_LABEL: Record<string, string> = {
   "3m_5m": "$3M – $5M",
   over_5m: "$5M+",
 };
-const TENDER_COLOR: Record<string, { bg: string; ring: string; text: string }> = {
-  draft: {
-    bg: "rgba(168, 179, 207, 0.08)",
-    ring: "rgba(168, 179, 207, 0.18)",
-    text: "#a8b3cf",
-  },
-  submitted: {
-    bg: "rgba(0, 212, 200, 0.12)",
-    ring: "rgba(0, 212, 200, 0.36)",
-    text: "#7df5ed",
-  },
-  shortlisted: {
-    bg: "rgba(125, 211, 252, 0.12)",
-    ring: "rgba(125, 211, 252, 0.36)",
-    text: "#7dd3fc",
-  },
-  awarded: {
-    bg: "rgba(134, 239, 172, 0.14)",
-    ring: "rgba(134, 239, 172, 0.40)",
-    text: "#86efac",
-  },
-  rejected: {
-    bg: "rgba(255, 122, 138, 0.12)",
-    ring: "rgba(255, 122, 138, 0.32)",
-    text: "#ff7a8a",
-  },
-  withdrawn: {
-    bg: "rgba(255, 255, 255, 0.04)",
-    ring: "rgba(255, 255, 255, 0.10)",
-    text: "#697296",
-  },
-};
-const TENDER_LABEL: Record<string, string> = {
+
+const TENDER_STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   submitted: "Submitted",
   shortlisted: "Shortlisted",
   awarded: "Awarded",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
+};
+
+const TENDER_STATUS_TONE: Record<
+  string,
+  "neutral" | "accent" | "success" | "warning" | "danger"
+> = {
+  draft: "neutral",
+  submitted: "accent",
+  shortlisted: "warning",
+  awarded: "success",
+  rejected: "danger",
+  withdrawn: "neutral",
 };
 
 function timeOfDayGreeting(now = new Date()): string {
@@ -117,1359 +103,705 @@ function timeOfDayGreeting(now = new Date()): string {
   return "Good evening";
 }
 
-function relativeTime(iso: string, now = Date.now()): string {
-  const diff = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
-  if (diff < 60) return "just now";
-  const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  return `${Math.floor(d / 7)}w`;
+function firstName(name: string | null | undefined): string {
+  if (!name) return "there";
+  return name.split(/\s+/)[0] ?? name;
 }
 
-function typeIcon(type: string, size = 14, color: string = colors.accentLight) {
-  const p = { size, color, strokeWidth: 1.6 };
-  switch (type) {
-    case "single_dwelling":
-      return <HomeIcon {...p} />;
-    case "multi_dwelling":
-      return <Building {...p} />;
-    case "renovation":
-      return <Wrench {...p} />;
-    case "extension":
-      return <Layers {...p} />;
-    default:
-      return <HomeIcon {...p} />;
-  }
+function suburbLineOf(p: BuilderProjectListItem): string {
+  const parts = [p.suburb, p.state].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : TYPE_LABEL[p.type] ?? p.type;
 }
 
-function navigateToProject(slug: string) {
-  void haptics.tap();
-  router.push(`/(main)/projects/${slug}` as never);
+function formatAud(n: number): string {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 0,
+  }).format(n);
 }
 
-// ── Screen ──────────────────────────────────────────────────────────
+function relativeTime(iso: string): string {
+  const diffSec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (diffSec < 60) return "just now";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}d`;
+  return new Date(iso).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+// ── Component ───────────────────────────────────────────────────────────
 
 export function BuilderHome() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { data, isLoading, error, refetch } = useBuilderDashboard();
-  const headerHeight = useGlassHeaderHeight();
-  const [refreshing, setRefreshing] = useState(false);
-  const [greeting, setGreeting] = useState(() => timeOfDayGreeting());
+  const [refreshing, setRefreshing] = React.useState(false);
+  const scrollY = useSharedValue(0);
 
-  useEffect(() => {
-    const id = setInterval(() => setGreeting(timeOfDayGreeting()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const onRefresh = useCallback(async () => {
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     void haptics.tap();
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
+    await refetch();
+    setRefreshing(false);
   }, [refetch]);
 
   if (isLoading && !data) {
     return (
-      <Screen variant="flat" edges={[]}>
+      <ScreenV4 variant="flat">
         <DashboardSkeleton />
-      </Screen>
+      </ScreenV4>
     );
   }
+
   if (error && !data) {
     return (
-      <Screen variant="flat" edges={[]}>
-        <ErrorView message={error} onRetry={refetch} />
-      </Screen>
+      <ScreenV4 variant="flat">
+        <ErrorView message={error} onRetry={() => void refetch()} />
+      </ScreenV4>
     );
   }
-  if (!data) return null;
 
-  const firstName = user?.name?.split(" ")[0] ?? null;
-  const subCompany = data.profile.companyName;
+  if (!data) {
+    return <ScreenV4 variant="flat"><View /></ScreenV4>;
+  }
+
+  const greeting = timeOfDayGreeting();
+  const fName = firstName(user?.name);
+  const stats = data.stats;
+
+  // Pick the screen's narrative based on builder state.
+  const heroNarrative = pickBuilderNarrative(data);
 
   return (
-    <Screen variant="flat" edges={[]}>
-      <GlassHeader
-        left={
-          <Avatar
-            name={data.profile.companyName ?? user?.name}
-            size={36}
+    <ScreenV4
+      variant="scroll"
+      scrollY={scrollY}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
+    >
+      <ScreenHeader
+        title="Home"
+        scrollY={scrollY}
+        trailing={
+          <Press
+            onPress={() => router.push("/(main)/profile")}
+            haptic="tap"
+            accessibilityLabel="Open profile"
+          >
+            <AvatarV4
+              name={data.profile.companyName ?? user?.name ?? "Builder"}
+              size={36}
+              verified={data.profile.approvalStatus === "approved"}
+            />
+          </Press>
+        }
+      />
+
+      {/* Hero */}
+      <Animated.View entering={FadeInDown.duration(420).delay(40)}>
+        <Hero
+          kicker={`${greeting.toUpperCase()}, ${fName.toUpperCase()}`}
+          title={heroNarrative.heroTitle}
+          accent={heroNarrative.heroAccent}
+          sub={heroNarrative.heroSub}
+        />
+      </Animated.View>
+
+      {/* Hero number card */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(160)}
+        style={{ marginTop: 28 }}
+      >
+        <HeroNumberCard data={data} />
+      </Animated.View>
+
+      {/* Stat row */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(260)}
+        style={{ marginTop: 16, flexDirection: "row", gap: 10 }}
+      >
+        <StatTileBlock
+          label="Tenders"
+          value={stats.activeTenders}
+          accent={stats.activeTenders > 0}
+        />
+        <StatTileBlock label="Unlocked" value={stats.unlockedProjects} />
+        <StatTileBlock
+          label="Saved"
+          value={stats.savedProjects}
+          onPress={() => router.push("/(main)/browse")}
+        />
+      </Animated.View>
+
+      {/* My tenders */}
+      {data.myTenders.length > 0 ? (
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(360)}
+          style={{ marginTop: 40 }}
+        >
+          <SectionHeader
+            title="Your tenders"
+            meta={`${data.myTenders.length} active`}
           />
-        }
-        center={
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                color: colors.textFaint,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 9.5,
-                letterSpacing: 2.4,
-                textTransform: "uppercase",
-                fontWeight: "600",
-              }}
-            >
-              Dashboard
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 15,
-                fontWeight: "600",
-                letterSpacing: -0.1,
-                marginTop: 1,
-              }}
-            >
-              {firstName ?? "Home"}
-            </Text>
-          </View>
-        }
-        right={
-          <View
+          <Surface padding={0} style={{ marginTop: 14 }}>
+            {data.myTenders.slice(0, 5).map((t, i) => (
+              <View key={t.id}>
+                <Press
+                  onPress={() => router.push(`/(main)/tenders/${t.id}`)}
+                  haptic="soft"
+                  scaleTo={0.99}
+                >
+                  <TenderRow tender={t} />
+                </Press>
+                {i < Math.min(data.myTenders.length, 5) - 1 ? (
+                  <RowDivider />
+                ) : null}
+              </View>
+            ))}
+          </Surface>
+        </Animated.View>
+      ) : null}
+
+      {/* Suggested / matched */}
+      {data.suggested.length > 0 ? (
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(440)}
+          style={{ marginTop: 40 }}
+        >
+          <SectionHeader
+            title="Matched for you"
+            meta={`${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"}`}
+          />
+          <Surface padding={0} style={{ marginTop: 14 }}>
+            {data.suggested.slice(0, 5).map((p, i) => (
+              <View key={p.id}>
+                <Press
+                  onPress={() => router.push(`/(main)/projects/${p.slug}`)}
+                  haptic="soft"
+                  scaleTo={0.99}
+                >
+                  <SuggestedRow project={p} />
+                </Press>
+                {i < Math.min(data.suggested.length, 5) - 1 ? (
+                  <RowDivider />
+                ) : null}
+              </View>
+            ))}
+          </Surface>
+          <Press
+            onPress={() => router.push("/(main)/browse")}
+            haptic="tap"
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              marginTop: 12,
+              alignSelf: "center",
+              flexDirection: "row",
               alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.08)",
+              gap: 6,
+              paddingVertical: 10,
+              paddingHorizontal: 18,
             }}
           >
-            <Bell size={15} color={colors.textMuted} strokeWidth={1.7} />
-          </View>
-        }
-      />
-
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: headerHeight + 4,
-          paddingHorizontal: 20,
-          paddingBottom: 140,
-        }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.accentLight}
-            progressBackgroundColor={colors.bgRaised}
-            progressViewOffset={headerHeight}
-          />
-        }
-      >
-        {/* Hero greeting */}
-        <Animated.View entering={FadeInUp.delay(40).duration(420).springify()}>
-          <Text
-            style={{
-              color: colors.accent,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 11,
-              letterSpacing: 2.6,
-              textTransform: "uppercase",
-              fontWeight: "600",
-            }}
-          >
-            {greeting}
-          </Text>
-        </Animated.View>
-        <Animated.View entering={FadeInUp.delay(100).duration(420).springify()}>
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-            style={{
-              color: colors.text,
-              fontFamily: "BebasNeue_400Regular",
-              fontSize: 52,
-              lineHeight: 54,
-              letterSpacing: -0.6,
-              marginTop: 6,
-            }}
-          >
-            {firstName ?? "Builder"}
-            <Text style={{ color: colors.accentLight }}>.</Text>
-          </Text>
-        </Animated.View>
-        {subCompany ? (
-          <Animated.View entering={FadeInUp.delay(140).duration(420).springify()}>
             <Text
-              numberOfLines={1}
               style={{
-                color: colors.textFaint,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 12,
-                fontWeight: "500",
-                letterSpacing: 0.04,
-                marginTop: 4,
+                fontSize: 13,
+                fontWeight: "600",
+                color: palette.accent,
+                letterSpacing: 0.2,
               }}
             >
-              {subCompany}
+              See all matches
             </Text>
-          </Animated.View>
-        ) : null}
-        <Animated.View entering={FadeInUp.delay(180).duration(420).springify()}>
+            <Icon.ArrowRight size={14} color={palette.accent} />
+          </Press>
+        </Animated.View>
+      ) : null}
+
+      {/* Activity */}
+      {data.activity.length > 0 ? (
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(520)}
+          style={{ marginTop: 40 }}
+        >
+          <SectionHeader title="Recent activity" />
+          <Surface padding={0} style={{ marginTop: 14 }}>
+            {data.activity.slice(0, 6).map((a, i) => (
+              <View key={a.id}>
+                <ActivityRow item={a} />
+                {i < Math.min(data.activity.length, 6) - 1 ? (
+                  <RowDivider />
+                ) : null}
+              </View>
+            ))}
+          </Surface>
+        </Animated.View>
+      ) : null}
+
+      {/* Sign out — quiet */}
+      <Animated.View
+        entering={FadeInDown.duration(440).delay(620)}
+        style={{ marginTop: 48, alignItems: "center" }}
+      >
+        <Press
+          onPress={async () => {
+            void haptics.tap();
+            await signOut();
+            router.replace("/(auth)/login");
+          }}
+          haptic="none"
+          style={{ paddingVertical: 12, paddingHorizontal: 24 }}
+        >
           <Text
             style={{
-              color: colors.textMuted,
-              fontFamily: "DMSans_400Regular",
-              fontSize: 14.5,
-              lineHeight: 21,
-              marginTop: 10,
+              fontSize: 13,
+              color: palette.textDim,
+              letterSpacing: 0.3,
             }}
           >
-            {subheadCopy(data)}
+            Sign out
           </Text>
-        </Animated.View>
-
-        {/* FBA hero */}
-        <Animated.View
-          entering={FadeInUp.delay(240).duration(460).springify()}
-          style={{ marginTop: 24 }}
-        >
-          <FbaHero fba={data.fba} />
-        </Animated.View>
-
-        {/* Stat row */}
-        <Animated.View
-          entering={FadeInUp.delay(300).duration(440).springify()}
-          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
-        >
-          <StatTile
-            label="Tenders"
-            value={data.stats.activeTenders}
-            tone={data.stats.activeTenders > 0 ? "accent" : "neutral"}
-          />
-          <StatTile label="Unlocked" value={data.stats.unlockedProjects} />
-          <StatTile label="Saved" value={data.stats.savedProjects} />
-        </Animated.View>
-
-        {/* For you */}
-        <Animated.View
-          entering={FadeInUp.delay(360).duration(440).springify()}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader
-            kicker="For you"
-            title={
-              data.suggested.length === 0
-                ? "Nothing matched"
-                : "New on the marketplace"
-            }
-            ctaLabel="Browse all"
-            onCta={() => {
-              void haptics.tap();
-              router.push("/(main)/browse");
-            }}
-          />
-        </Animated.View>
-
-        {data.suggested.length === 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(420).duration(440).springify()}
-            style={{ marginTop: 14 }}
-          >
-            <EmptyMatches />
-          </Animated.View>
-        ) : (
-          <Animated.View
-            entering={FadeInUp.delay(420).duration(440).springify()}
-            style={{ marginTop: 14, marginHorizontal: -20 }}
-          >
-            <ProjectCarousel projects={data.suggested} />
-          </Animated.View>
-        )}
-
-        {/* My tenders */}
-        <Animated.View
-          entering={FadeInUp.delay(500).duration(440).springify()}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader
-            kicker="My tenders"
-            title={
-              data.myTenders.length === 0
-                ? "No submissions yet"
-                : `${data.myTenders.length} in flight`
-            }
-          />
-        </Animated.View>
-        {data.myTenders.length === 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(540).duration(440).springify()}
-            style={{ marginTop: 14 }}
-          >
-            <EmptyCard
-              icon={<FileText size={18} color={colors.textDim} strokeWidth={1.6} />}
-              copy="Tenders you draft or submit will appear here, sorted by status."
-            />
-          </Animated.View>
-        ) : (
-          <View style={{ marginTop: 14, gap: 10 }}>
-            {data.myTenders.map((t, i) => (
-              <Animated.View
-                key={t.id}
-                entering={FadeInUp.delay(560 + i * 40).duration(380).springify()}
-              >
-                <TenderCard tender={t} />
-              </Animated.View>
-            ))}
-          </View>
-        )}
-
-        {/* Recently unlocked */}
-        {data.unlocked.length > 0 ? (
-          <>
-            <Animated.View
-              entering={FadeInUp.delay(620).duration(440).springify()}
-              style={{ marginTop: 36 }}
-            >
-              <SectionHeader
-                kicker="Recently unlocked"
-                title="Pick up where you left off"
-              />
-            </Animated.View>
-            <Animated.View
-              entering={FadeInUp.delay(660).duration(440).springify()}
-              style={{ marginTop: 14, marginHorizontal: -20 }}
-            >
-              <ProjectCarousel projects={data.unlocked} />
-            </Animated.View>
-          </>
-        ) : null}
-
-        {/* Activity */}
-        <Animated.View
-          entering={FadeInUp.delay(720).duration(440).springify()}
-          style={{ marginTop: 36 }}
-        >
-          <SectionHeader
-            kicker="Activity"
-            title={
-              data.activity.length === 0 ? "Quiet so far" : "Latest updates"
-            }
-          />
-        </Animated.View>
-        {data.activity.length === 0 ? (
-          <Animated.View
-            entering={FadeInUp.delay(760).duration(440).springify()}
-            style={{ marginTop: 14 }}
-          >
-            <EmptyCard
-              icon={<Sparkles size={18} color={colors.textDim} strokeWidth={1.6} />}
-              copy="Tender outcomes, new projects, and messages will land here."
-            />
-          </Animated.View>
-        ) : (
-          <View style={{ marginTop: 14, gap: 10 }}>
-            {data.activity.map((a, i) => (
-              <Animated.View
-                key={a.id}
-                entering={FadeInUp.delay(780 + i * 30).duration(360).springify()}
-              >
-                <ActivityRow item={a} />
-              </Animated.View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </Screen>
+        </Press>
+      </Animated.View>
+    </ScreenV4>
   );
 }
 
-function subheadCopy(data: BuilderDashboardPayload): string {
-  if (data.suggested.length > 0) {
-    return `${data.suggested.length} ${data.suggested.length === 1 ? "project" : "projects"} matching your area.`;
-  }
-  if (data.profile.serviceAreas.length === 0) {
-    return "Set your service areas to see matching projects.";
-  }
-  if (data.stats.unlockedProjects > 0) {
-    return "No new matches right now — your unlocked projects are below.";
-  }
-  return "Stay tuned — new projects land here as soon as they're live.";
+// ── Hero narrative selection ────────────────────────────────────────────
+
+interface HeroNarrative {
+  heroTitle: string;
+  heroAccent: string;
+  heroSub?: string;
 }
 
-// ── FBA hero ────────────────────────────────────────────────────────
+function pickBuilderNarrative(
+  data: BuilderDashboardPayload,
+): HeroNarrative {
+  // Profile not yet set up — must complete onboarding first.
+  if (!data.profile.hasProfile) {
+    return {
+      heroTitle: "Set up your",
+      heroAccent: "profile.",
+      heroSub: "Tell us about your business so we can match you with projects.",
+    };
+  }
 
-function FbaHero({ fba }: { fba: BuilderDashboardPayload["fba"] }) {
-  if (!fba.active) {
-    const reason =
-      fba.reason === "no_grant"
-        ? "Founding Builder Access isn't active yet."
-        : fba.reason === "expired"
-          ? "Your Founding Builder Access has ended."
-          : "Founding Builder Access was revoked.";
+  // Approval pending — verification in flight
+  if (data.profile.approvalStatus === "pending") {
+    return {
+      heroTitle: "Verification",
+      heroAccent: "in flight.",
+      heroSub: "We're checking your ABN and licence. Usually under 24 hours.",
+    };
+  }
+
+  // Active tenders → focus there
+  if (data.stats.activeTenders > 0) {
+    return {
+      heroTitle: "Your",
+      heroAccent: "tenders.",
+      heroSub: `${data.stats.activeTenders} ${data.stats.activeTenders === 1 ? "tender" : "tenders"} in play.`,
+    };
+  }
+
+  // No tenders yet → focus on finding work
+  return {
+    heroTitle: "Find your next",
+    heroAccent: "build.",
+    heroSub:
+      data.suggested.length > 0
+        ? `${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"} matched today.`
+        : "We'll match you with verified projects in your service area.",
+  };
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────
+
+function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
+  // Pre-approval state: gate by profile setup.
+  if (!data.profile.hasProfile) {
     return (
-      <View
-        style={{
-          padding: 22,
-          borderRadius: 28,
-          backgroundColor: "rgba(255, 255, 255, 0.035)",
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.08)",
-          overflow: "hidden",
-        }}
-      >
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
-          }}
-        />
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Zap size={14} color={colors.textDim} strokeWidth={1.6} />
-          <Text
-            style={{
-              color: colors.textFaint,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 10.5,
-              letterSpacing: 2.2,
-              textTransform: "uppercase",
-              fontWeight: "600",
-            }}
-          >
-            Founding access
-          </Text>
-        </View>
+      <Surface variant="accent" padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+          Action required
+        </Text>
         <Text
           style={{
-            color: colors.textMuted,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 13.5,
-            lineHeight: 19,
-            marginTop: 12,
+            ...type.titleLarge,
+            color: palette.text,
+            fontWeight: "600",
+            marginTop: 16,
+            maxWidth: 280,
           }}
         >
-          {reason} Unlocks are charged per project.
+          Complete your profile to start.
         </Text>
-      </View>
+        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}>
+          Add your ABN, licence, and service area on web.
+        </Text>
+      </Surface>
     );
   }
 
-  return (
-    <View
-      style={{
-        borderRadius: 28,
-        overflow: "hidden",
-        shadowColor: colors.accent,
-        shadowOpacity: 0.32,
-        shadowRadius: 26,
-        shadowOffset: { width: 0, height: 14 },
-        elevation: 10,
-      }}
-    >
-      <LinearGradient
-        colors={brandGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ padding: 22 }}
-      >
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.30)",
-          }}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            borderRadius: 28,
-            borderWidth: 1,
-            borderColor: "rgba(255, 255, 255, 0.18)",
-          }}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: -60,
-            right: -40,
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <Zap size={13} color={colors.textInverse} strokeWidth={2} />
-          <Text
-            style={{
-              color: "rgba(3, 17, 24, 0.75)",
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 10.5,
-              letterSpacing: 2.2,
-              textTransform: "uppercase",
-              fontWeight: "700",
-            }}
-          >
-            Founding access · Cycle {fba.cycleIndex + 1}/{fba.totalCycles}
-          </Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-end",
-            marginTop: 10,
-          }}
-        >
-          <Text
-            style={{
-              color: colors.textInverse,
-              fontFamily: "BebasNeue_400Regular",
-              fontSize: 84,
-              lineHeight: 84,
-              letterSpacing: -1.2,
-            }}
-          >
-            {fba.remainingThisCycle}
-          </Text>
-          <Text
-            style={{
-              color: "rgba(3, 17, 24, 0.65)",
-              fontFamily: "DMSans_400Regular",
-              fontSize: 13,
-              marginLeft: 8,
-              marginBottom: 12,
-            }}
-          >
-            / {fba.monthlyQuota} free unlocks left
-          </Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 8,
-          }}
-        >
-          <Text
-            style={{
-              color: "rgba(3, 17, 24, 0.72)",
-              fontFamily: "DMSans_400Regular",
-              fontSize: 12.5,
-            }}
-          >
-            Refresh in {fba.daysToRefresh} {fba.daysToRefresh === 1 ? "day" : "days"}
-          </Text>
-          {fba.totalSavedAud > 0 ? (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <TrendingUp
-                size={11}
-                color="rgba(3, 17, 24, 0.65)"
-                strokeWidth={2}
-              />
-              <Text
-                style={{
-                  color: "rgba(3, 17, 24, 0.72)",
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 12.5,
-                }}
-              >
-                Saved ${fba.totalSavedAud.toLocaleString("en-AU")}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-      </LinearGradient>
-    </View>
-  );
-}
-
-// ── Section header ──────────────────────────────────────────────────
-
-function SectionHeader({
-  kicker,
-  title,
-  ctaLabel,
-  onCta,
-}: {
-  kicker: string;
-  title: string;
-  ctaLabel?: string;
-  onCta?: () => void;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-      }}
-    >
-      <View>
-        <Text
-          style={{
-            color: colors.accent,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            letterSpacing: 2.2,
-            textTransform: "uppercase",
-            fontWeight: "600",
-          }}
-        >
-          {kicker}
+  if (data.profile.approvalStatus === "pending") {
+    return (
+      <Surface padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.warning, fontWeight: "600" }}>
+          Pending verification
         </Text>
         <Text
           style={{
-            color: colors.text,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 18,
+            ...type.titleLarge,
+            color: palette.text,
             fontWeight: "600",
-            letterSpacing: -0.2,
-            marginTop: 4,
+            marginTop: 16,
           }}
         >
-          {title}
+          We&apos;re reviewing your ABN.
         </Text>
-      </View>
-      {ctaLabel && onCta ? (
+        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}>
+          You can browse projects while you wait. Unlocks open once verified.
+        </Text>
+      </Surface>
+    );
+  }
+
+  // FBA active — feature founding access prominently
+  if (data.fba.active) {
+    return (
+      <Surface variant="accent" padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+          Founding access
+        </Text>
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            height: 32,
-            paddingHorizontal: 12,
-            borderRadius: 16,
-            backgroundColor: "rgba(0, 212, 200, 0.10)",
-            borderWidth: 1,
-            borderColor: "rgba(0, 212, 200, 0.34)",
-          }}
-        >
-          <Text
-            style={{
-              color: colors.accentLight,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 12,
-              fontWeight: "600",
-            }}
-          >
-            {ctaLabel}
-          </Text>
-          <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-// ── Project carousel + card ─────────────────────────────────────────
-
-function ProjectCarousel({
-  projects,
-}: {
-  projects: BuilderProjectListItem[];
-}) {
-  const [page, setPage] = useState(0);
-  const onScrollEnd = useCallback(
-    (e: {
-      nativeEvent: {
-        contentOffset: { x: number };
-        layoutMeasurement: { width: number };
-      };
-    }) => {
-      const idx = Math.round(
-        e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
-      );
-      if (idx !== page) {
-        setPage(idx);
-        void haptics.select();
-      }
-    },
-    [page],
-  );
-  return (
-    <View>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToAlignment="start"
-        onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-      >
-        {projects.map((p) => (
-          <View key={p.id} style={{ width: 320 }}>
-            <BuilderProjectCard project={p} />
-          </View>
-        ))}
-      </ScrollView>
-      {projects.length > 1 ? (
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
             marginTop: 14,
-          }}
-        >
-          {projects.map((_, i) => (
-            <View
-              key={i}
-              style={{
-                width: i === page ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor:
-                  i === page ? colors.accentLight : "rgba(255, 255, 255, 0.16)",
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function BuilderProjectCard({ project }: { project: BuilderProjectListItem }) {
-  const isFull = project.unlockedCount >= 3;
-  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
-  const budgetLabel = project.budgetBand
-    ? BUDGET_LABEL[project.budgetBand]
-    : null;
-  const location = [project.suburb, project.state].filter(Boolean).join(", ");
-
-  return (
-    <View
-      style={{
-        borderRadius: 24,
-        overflow: "hidden",
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: isFull
-          ? "rgba(255, 122, 138, 0.18)"
-          : "rgba(255, 255, 255, 0.08)",
-      }}
-    >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.12)",
-        }}
-      />
-      <View style={{ padding: 18 }}>
-        <View
-          style={{
             flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
+            alignItems: "baseline",
             gap: 12,
           }}
         >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {typeIcon(project.type, 12)}
-              <Text
-                style={{
-                  color: colors.textMuted,
-                  fontFamily: "SpaceGrotesk_500Medium",
-                  fontSize: 11,
-                }}
-              >
-                {typeLabel}
-              </Text>
-            </View>
-            <Text
-              numberOfLines={2}
-              style={{
-                color: colors.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 18,
-                fontWeight: "600",
-                letterSpacing: -0.2,
-                marginTop: 8,
-              }}
-            >
-              {project.title}
-            </Text>
-            {location ? (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  marginTop: 4,
-                }}
-              >
-                <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.textMuted,
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 12.5,
-                  }}
-                >
-                  {location}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <SlotPill unlockedCount={project.unlockedCount} isFull={isFull} />
+          <BigNumber value={data.fba.remainingThisCycle} size="lg" color={palette.text} />
+          <Text style={{ ...type.body, color: palette.textMuted }}>
+            free unlock{data.fba.remainingThisCycle === 1 ? "" : "s"} left
+          </Text>
         </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 14,
-            marginTop: 16,
-            paddingTop: 14,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255, 255, 255, 0.06)",
-          }}
-        >
-          {budgetLabel ? <Stat label="Budget" value={budgetLabel} /> : null}
-          {project.bedrooms != null ? (
-            <Stat label="Bed" value={project.bedrooms} />
-          ) : null}
-          {project.bathrooms != null ? (
-            <Stat label="Bath" value={project.bathrooms} />
-          ) : null}
-          <View style={{ marginLeft: "auto" }}>
-            <ChevronRight size={16} color={colors.textDim} strokeWidth={1.7} />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SlotPill({
-  unlockedCount,
-  isFull,
-}: {
-  unlockedCount: number;
-  isFull: boolean;
-}) {
-  if (isFull) {
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-          paddingHorizontal: 10,
-          height: 26,
-          borderRadius: 13,
-          backgroundColor: "rgba(255, 122, 138, 0.14)",
-          borderWidth: 1,
-          borderColor: "rgba(255, 122, 138, 0.32)",
-        }}
-      >
-        <Lock size={10} color={colors.danger} strokeWidth={1.8} />
         <Text
           style={{
-            color: colors.danger,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.4,
-            textTransform: "uppercase",
+            ...type.bodySmall,
+            color: palette.textMuted,
+            marginTop: 10,
           }}
         >
-          Full
+          Refreshes in {data.fba.daysToRefresh} day
+          {data.fba.daysToRefresh === 1 ? "" : "s"} · grant ends in{" "}
+          {data.fba.daysToGrantEnd} days
         </Text>
-      </View>
+        {data.fba.totalSavedAud > 0 ? (
+          <Pill tone="accent" size="md" style={{ marginTop: 16 }}>
+            Saved {formatAud(data.fba.totalSavedAud)} so far
+          </Pill>
+        ) : null}
+      </Surface>
     );
   }
+
+  // Active tenders — surface count + nudge
+  if (data.stats.activeTenders > 0) {
+    return (
+      <Surface variant="accent" padding={28} hairline>
+        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+          Tenders in play
+        </Text>
+        <View
+          style={{
+            marginTop: 14,
+            flexDirection: "row",
+            alignItems: "baseline",
+            gap: 12,
+          }}
+        >
+          <BigNumber value={data.stats.activeTenders} size="lg" color={palette.text} />
+          <Text style={{ ...type.body, color: palette.textMuted }}>
+            awaiting decision
+          </Text>
+        </View>
+        <Text style={{ ...type.bodySmall, color: palette.textMuted, marginTop: 10 }}>
+          Median time to decision · 5-10 days
+        </Text>
+      </Surface>
+    );
+  }
+
+  // Default — promote browsing
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingHorizontal: 10,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: "rgba(0, 212, 200, 0.10)",
-        borderWidth: 1,
-        borderColor: "rgba(0, 212, 200, 0.30)",
-      }}
-    >
-      <View style={{ flexDirection: "row", gap: 3 }}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 2.5,
-              backgroundColor:
-                i < unlockedCount
-                  ? colors.accentLight
-                  : "rgba(125, 245, 237, 0.22)",
-            }}
-          />
-        ))}
-      </View>
-      <Text
+    <Surface padding={28} hairline>
+      <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
+        Discover
+      </Text>
+      <View
         style={{
-          color: colors.accentLight,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.4,
+          marginTop: 14,
+          flexDirection: "row",
+          alignItems: "baseline",
+          gap: 12,
         }}
       >
-        {unlockedCount}/3
-      </Text>
-    </View>
+        <BigNumber value={data.suggested.length} size="lg" color={palette.text} />
+        <Text style={{ ...type.body, color: palette.textMuted }}>
+          {data.suggested.length === 1 ? "match" : "matches"} for you
+        </Text>
+      </View>
+      <Press
+        onPress={() => router.push("/(main)/browse")}
+        haptic="select"
+        style={{
+          marginTop: 22,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          alignSelf: "flex-start",
+          paddingVertical: 12,
+          paddingHorizontal: 18,
+          borderRadius: 999,
+          backgroundColor: palette.accent,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "700",
+            color: palette.accentContrast,
+          }}
+        >
+          Browse projects
+        </Text>
+        <Icon.ArrowRight size={16} color={palette.accentContrast} />
+      </Press>
+    </Surface>
   );
 }
 
-function Stat({
+function StatTileBlock({
   label,
   value,
+  accent = false,
+  onPress,
 }: {
   label: string;
-  value: string | number;
+  value: number;
+  accent?: boolean;
+  onPress?: () => void;
 }) {
-  return (
-    <View>
+  const body = (
+    <Surface
+      variant={accent ? "accent" : "default"}
+      padding={16}
+      style={{ flex: 1, alignItems: "flex-start" }}
+    >
       <Text
         style={{
-          color: colors.textFaint,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 9,
-          letterSpacing: 1.6,
-          textTransform: "uppercase",
+          ...type.kicker,
+          color: accent ? palette.accent : palette.textDim,
+          fontWeight: "600",
         }}
       >
         {label}
       </Text>
       <Text
         style={{
-          color: colors.text,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 12.5,
+          ...type.numericLarge,
+          color: accent ? palette.accentLight : palette.text,
+          fontVariant: ["tabular-nums"],
           fontWeight: "600",
-          marginTop: 2,
+          marginTop: 10,
         }}
       >
         {value}
       </Text>
+    </Surface>
+  );
+  if (!onPress) return body;
+  return (
+    <View style={{ flex: 1 }}>
+      <Press onPress={onPress} haptic="soft" scaleTo={0.98}>
+        {body}
+      </Press>
     </View>
   );
 }
 
-// ── Tender card ─────────────────────────────────────────────────────
-
-function TenderCard({ tender }: { tender: BuilderTenderListItem }) {
-  const tone = TENDER_COLOR[tender.status] ?? TENDER_COLOR.draft!;
-  const label = TENDER_LABEL[tender.status] ?? tender.status;
+function SectionHeader({ title, meta }: { title: string; meta?: string }) {
   return (
     <View
       style={{
-        padding: 16,
-        borderRadius: 20,
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-        overflow: "hidden",
-      }}
-    >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 10,
-        }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            numberOfLines={1}
-            style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 14.5,
-              fontWeight: "600",
-            }}
-          >
-            {tender.projectTitle}
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              marginTop: 4,
-            }}
-          >
-            {tender.totalPriceAud != null ? (
-              <Text
-                style={{
-                  color: colors.textMuted,
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 12,
-                }}
-              >
-                ${tender.totalPriceAud.toLocaleString("en-AU")}
-              </Text>
-            ) : null}
-            {tender.durationWeeks != null ? (
-              <>
-                {tender.totalPriceAud != null ? (
-                  <Text style={{ color: colors.textDim, fontSize: 12 }}>·</Text>
-                ) : null}
-                <Text
-                  style={{
-                    color: colors.textMuted,
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 12,
-                  }}
-                >
-                  {tender.durationWeeks} wks
-                </Text>
-              </>
-            ) : null}
-            {tender.submittedAt ? (
-              <>
-                <Text style={{ color: colors.textDim, fontSize: 12 }}>·</Text>
-                <Text
-                  style={{
-                    color: colors.textMuted,
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 12,
-                  }}
-                >
-                  {relativeTime(tender.submittedAt)}
-                </Text>
-              </>
-            ) : null}
-          </View>
-        </View>
-        <View
-          style={{
-            paddingHorizontal: 10,
-            height: 26,
-            borderRadius: 13,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: tone.bg,
-            borderWidth: 1,
-            borderColor: tone.ring,
-          }}
-        >
-          <Text
-            style={{
-              color: tone.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 1.4,
-              textTransform: "uppercase",
-            }}
-          >
-            {label}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// ── Activity row ────────────────────────────────────────────────────
-
-function ActivityRow({ item }: { item: ActivityItem }) {
-  const unread = !item.readAt;
-  const Icon = useMemo(() => {
-    if (item.kind.includes("message")) return Bell;
-    if (item.kind.includes("tender") || item.kind.includes("award"))
-      return FileText;
-    if (item.kind.includes("unlock")) return Sparkles;
-    return Bell;
-  }, [item.kind]);
-
-  return (
-    <View
-      style={{
-        padding: 14,
-        borderRadius: 18,
-        backgroundColor: unread
-          ? "rgba(0, 212, 200, 0.06)"
-          : "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: unread
-          ? "rgba(0, 212, 200, 0.28)"
-          : "rgba(255, 255, 255, 0.07)",
         flexDirection: "row",
-        alignItems: "flex-start",
-        gap: 12,
-        overflow: "hidden",
+        alignItems: "baseline",
+        justifyContent: "space-between",
       }}
     >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 12,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: unread
-            ? "rgba(0, 212, 200, 0.18)"
-            : "rgba(255, 255, 255, 0.05)",
-          borderWidth: 1,
-          borderColor: unread
-            ? "rgba(0, 212, 200, 0.34)"
-            : "rgba(255, 255, 255, 0.08)",
-        }}
-      >
-        <Icon
-          size={15}
-          color={unread ? colors.accentLight : colors.textMuted}
-          strokeWidth={1.6}
-        />
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text
-          numberOfLines={2}
-          style={{
-            color: colors.text,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 13.5,
-            lineHeight: 18,
-            fontWeight: unread ? "600" : "500",
-          }}
-        >
-          {item.title}
-        </Text>
-        {item.body ? (
-          <Text
-            numberOfLines={1}
-            style={{
-              color: colors.textFaint,
-              fontFamily: "DMSans_400Regular",
-              fontSize: 12,
-              marginTop: 2,
-            }}
-          >
-            {item.body}
-          </Text>
-        ) : null}
-      </View>
       <Text
         style={{
-          color: colors.textDim,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 10.5,
-          marginTop: 2,
+          ...type.title,
+          color: palette.text,
+          fontWeight: "600",
         }}
       >
-        {relativeTime(item.createdAt)}
+        {title}
       </Text>
-    </View>
-  );
-}
-
-// ── Empty states ────────────────────────────────────────────────────
-
-function EmptyMatches() {
-  return (
-    <View
-      style={{
-        padding: 28,
-        borderRadius: 24,
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-        alignItems: "center",
-        overflow: "hidden",
-      }}
-    >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <RadarPulse size={96} />
-      <Text
-        style={{
-          color: colors.text,
-          fontFamily: "BebasNeue_400Regular",
-          fontSize: 26,
-          letterSpacing: -0.3,
-          marginTop: 18,
-          textTransform: "uppercase",
-        }}
-      >
-        No new matches
-      </Text>
-      <Text
-        style={{
-          color: colors.textMuted,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 13,
-          textAlign: "center",
-          lineHeight: 19,
-          marginTop: 8,
-          maxWidth: 260,
-        }}
-      >
-        Add or expand your service areas to see more projects here.
-      </Text>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
-          height: 36,
-          paddingHorizontal: 16,
-          borderRadius: 18,
-          backgroundColor: "rgba(0, 212, 200, 0.14)",
-          borderWidth: 1,
-          borderColor: "rgba(0, 212, 200, 0.40)",
-          marginTop: 16,
-        }}
-      >
+      {meta ? (
         <Text
           style={{
-            color: colors.accentLight,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 12.5,
+            ...type.caption,
+            color: palette.textDim,
+            letterSpacing: 0.6,
             fontWeight: "600",
           }}
         >
-          Expand service areas
+          {meta.toUpperCase()}
         </Text>
-        <ArrowRight size={11} color={colors.accentLight} strokeWidth={2} />
+      ) : null}
+    </View>
+  );
+}
+
+function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
+  const tone = TENDER_STATUS_TONE[tender.status] ?? "neutral";
+  const statusLabel = TENDER_STATUS_LABEL[tender.status] ?? tender.status;
+  return (
+    <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
+          >
+            {tender.projectTitle}
+          </Text>
+          {tender.totalPriceAud != null ? (
+            <Text
+              style={{
+                ...type.bodySmall,
+                color: palette.textMuted,
+                marginTop: 4,
+              }}
+            >
+              {formatAud(tender.totalPriceAud)}
+              {tender.durationWeeks ? ` · ${tender.durationWeeks}w` : ""}
+            </Text>
+          ) : null}
+        </View>
+        <Pill tone={tone}>{statusLabel}</Pill>
       </View>
     </View>
   );
 }
 
-function EmptyCard({
-  icon,
-  copy,
-}: {
-  icon: React.ReactNode;
-  copy: string;
-}) {
+function SuggestedRow({ project }: { project: BuilderProjectListItem }) {
+  return (
+    <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={1}
+            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
+          >
+            {project.title}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={{
+              ...type.bodySmall,
+              color: palette.textMuted,
+              marginTop: 4,
+            }}
+          >
+            {suburbLineOf(project)}
+            {project.budgetBand
+              ? ` · ${BUDGET_LABEL[project.budgetBand] ?? project.budgetBand}`
+              : ""}
+          </Text>
+        </View>
+        <View
+          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+        >
+          {project.unlockedCount > 0 ? (
+            <Pill tone="neutral">{project.unlockedCount}/3 unlocked</Pill>
+          ) : null}
+          <Icon.ChevronRight size={16} color={palette.textDim} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ActivityRow({ item }: { item: ActivityItem }) {
+  const unread = item.readAt === null;
+  const iconColor = unread ? palette.accent : palette.textDim;
+  return (
+    <Row
+      paddingX={18}
+      paddingY={14}
+      leading={
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: unread ? palette.accentMuted : palette.surfaceElev,
+            borderWidth: 1,
+            borderColor: unread ? palette.hairlineAccent : palette.hairline,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {iconForActivityKind(item.kind, iconColor)}
+        </View>
+      }
+      title={item.title}
+      subtitle={item.body ?? undefined}
+      trailing={
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.textDim,
+            letterSpacing: 0.3,
+          }}
+        >
+          {relativeTime(item.createdAt)}
+        </Text>
+      }
+    />
+  );
+}
+
+function iconForActivityKind(kind: string, color: string): React.ReactNode {
+  switch (kind) {
+    case "tender_submitted":
+      return <Icon.Tender size={16} color={color} />;
+    case "tender_shortlisted":
+      return <Icon.CheckCircle size={16} color={color} />;
+    case "tender_awarded":
+      return <Icon.Trophy size={16} color={color} />;
+    case "tender_rejected":
+      return <Icon.Close size={16} color={color} />;
+    case "tender_withdrawn":
+      return <Icon.Close size={16} color={color} />;
+    default:
+      return <Icon.Bell size={16} color={color} />;
+  }
+}
+
+function RowDivider() {
   return (
     <View
       style={{
-        padding: 18,
-        borderRadius: 18,
-        backgroundColor: "rgba(255, 255, 255, 0.035)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.07)",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        overflow: "hidden",
+        height: 1,
+        backgroundColor: palette.hairline,
+        marginHorizontal: 18,
       }}
-    >
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          backgroundColor: "rgba(255, 255, 255, 0.10)",
-        }}
-      />
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 10,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-        }}
-      >
-        {icon}
-      </View>
-      <Text
-        style={{
-          flex: 1,
-          color: colors.textMuted,
-          fontFamily: "DMSans_400Regular",
-          fontSize: 12.5,
-          lineHeight: 18,
-        }}
-      >
-        {copy}
-      </Text>
-    </View>
+    />
   );
 }
