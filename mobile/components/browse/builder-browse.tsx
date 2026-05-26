@@ -21,11 +21,7 @@ import {
   View,
 } from "react-native";
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
-import Animated, {
-  FadeInUp,
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import { SlidersHorizontal, X } from "lucide-react-native";
@@ -76,16 +72,8 @@ export function BuilderBrowse() {
   const browse = useBrowse();
   const { user } = useAuth();
   const sheetRef = useRef<BottomSheetModal>(null);
-  const headerHeight = useTopBarHeight();
-
-  // Scroll-aware glass top bar — hidden at scroll 0, fades in as
-  // the user scrolls. Matches the Home tab's chrome behaviour.
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
-    },
-  });
+  // Header carries the search bar in a second row — reserve room for it.
+  const headerHeight = useTopBarHeight({ below: true });
 
   const openFilters = useCallback(() => {
     void haptics.tap();
@@ -140,7 +128,7 @@ export function BuilderBrowse() {
 
   const renderItem: ListRenderItem<BrowseListItem> = useCallback(
     ({ item }) => (
-      <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
+      <View style={{ paddingHorizontal: 10, paddingBottom: 12 }}>
         <BrowseProjectCard
           item={item}
           isSaved={browse.savedIds.has(item.id)}
@@ -180,10 +168,9 @@ export function BuilderBrowse() {
   }, [browse.isLoadingMore, browse.hasMore, browse.items.length]);
 
   return (
-    <ScreenV4 variant="flat" topBarHeight={headerHeight} topBarHidesAtTop>
+    <ScreenV4 variant="flat" topBarHeight={headerHeight}>
       <GlassTopBar
         title="Projects"
-        scrollY={scrollY}
         trailing={
           <Press
             onPress={() => router.push("/(main)/profile")}
@@ -192,6 +179,29 @@ export function BuilderBrowse() {
           >
             <AvatarV4 name={user?.name ?? "Builder"} size={32} />
           </Press>
+        }
+        // Search + filter live inside the glass-blurred header surface
+        // so they read as part of the header chrome, not a floating
+        // separate row underneath.
+        belowBar={
+          <SearchBar
+            value={browse.queryDraft}
+            onChange={browse.setQueryDraft}
+            placeholder="Search projects"
+            trailing={
+              <FilterButton
+                onPress={openFilters}
+                accessibilityLabel="Open filters"
+                badge={browse.activeFilterCount}
+              >
+                <SlidersHorizontal
+                  size={15}
+                  color={colors.text}
+                  strokeWidth={1.7}
+                />
+              </FilterButton>
+            }
+          />
         }
       />
 
@@ -202,32 +212,13 @@ export function BuilderBrowse() {
         ListHeaderComponent={
           <View
             style={{
-              // Content starts just under the status bar — the GlassTopBar
-              // is hidden at scroll 0 and fades in as the user scrolls,
-              // so there's no awkward empty gap up top.
-              paddingTop: headerHeight - 36,
-              paddingHorizontal: 14,
-              paddingBottom: 12,
+              // Reserve top padding for the floating header (title +
+              // search row both live in it).
+              paddingTop: headerHeight + 4,
+              paddingHorizontal: 10,
+              paddingBottom: 4,
             }}
           >
-            <SearchBar
-              value={browse.queryDraft}
-              onChange={browse.setQueryDraft}
-              placeholder="Search projects"
-              trailing={
-                <FilterButton
-                  onPress={openFilters}
-                  accessibilityLabel="Open filters"
-                  badge={browse.activeFilterCount}
-                >
-                  <SlidersHorizontal
-                    size={15}
-                    color={colors.text}
-                    strokeWidth={1.7}
-                  />
-                </FilterButton>
-              }
-            />
             {activeChips.length > 0 ? (
               <Animated.View
                 entering={FadeInUp.duration(200)}
@@ -296,12 +287,6 @@ export function BuilderBrowse() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        // Wire scroll-Y into the GlassTopBar so the header fades in as
-        // the user scrolls past the page top.
-        onScroll={(e) => {
-          scrollY.value = e.nativeEvent.contentOffset.y;
-        }}
-        scrollEventThrottle={16}
       />
 
       <FilterSheet
@@ -318,7 +303,7 @@ export function BuilderBrowse() {
 
 function BrowseSkeleton() {
   return (
-    <View style={{ paddingHorizontal: 14, paddingTop: 8, gap: 12 }}>
+    <View style={{ paddingHorizontal: 10, paddingTop: 8, gap: 12 }}>
       {[0, 1, 2].map((i) => (
         <View
           key={i}

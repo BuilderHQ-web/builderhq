@@ -286,15 +286,20 @@ export function BrowseProjectCard({ item, isSaved, onToggleSave }: Props) {
           }}
         >
           {budgetLabel ? (
-            <Stat
-              icon={
-                <Text style={{ fontSize: 13, color: palette.accentLight }}>
-                  $
-                </Text>
-              }
-              value={budgetLabel}
-              accent
-            />
+            // No leading $ icon — the budget label already starts with
+            // a dollar sign ("$500k–$1M"). Two dollar signs side-by-side
+            // read as a typo.
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "700",
+                color: palette.accentLight,
+                letterSpacing: -0.1,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {budgetLabel}
+            </Text>
           ) : null}
           {item.bedrooms != null ? (
             <Stat icon={<BedIcon />} value={String(item.bedrooms)} />
@@ -306,6 +311,70 @@ export function BrowseProjectCard({ item, isSaved, onToggleSave }: Props) {
             <Stat icon={<RulerIcon />} value={buildLabel} />
           ) : null}
         </View>
+
+        {/* Unlock price ribbon — only when the project is NOT full
+            (you can't unlock a filled project). Shows the original
+            unlock fee struck through next to a big FREE badge. The
+            value here is a stub until the server endpoint surfaces
+            real per-project unlock pricing on BrowseListItem. */}
+        {!item.isFull ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 14,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: "rgba(255, 255, 255, 0.05)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10.5,
+                fontWeight: "700",
+                letterSpacing: 1.6,
+                color: palette.textDim,
+              }}
+            >
+              UNLOCK
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: palette.textDim,
+                textDecorationLine: "line-through",
+                textDecorationColor: palette.textDim,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              $39
+            </Text>
+            <Text
+              style={{
+                fontSize: 22,
+                lineHeight: 24,
+                fontWeight: "800",
+                color: palette.accentLight,
+                letterSpacing: -0.4,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              $0
+            </Text>
+            <Text
+              style={{
+                fontSize: 10.5,
+                fontWeight: "700",
+                letterSpacing: 1.4,
+                color: palette.accent,
+              }}
+            >
+              FOUNDER
+            </Text>
+          </View>
+        ) : null}
 
         {/* Status hints — small inline badges, only when relevant */}
         {item.documentCount > 0 || match ? (

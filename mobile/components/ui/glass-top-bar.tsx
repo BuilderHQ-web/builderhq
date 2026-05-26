@@ -30,10 +30,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { palette, type } from "@/lib/theme";
 
 export const TOP_BAR_HEIGHT = 52;
+export const TOP_BAR_BELOW_HEIGHT = 64;
 
-export function useTopBarHeight(): number {
+/**
+ * Reserved height for the floating top bar overlay.
+ *
+ *   useTopBarHeight()            → just the title row (insets.top + 52)
+ *   useTopBarHeight({below: true}) → adds the search/filter row (+64)
+ */
+export function useTopBarHeight(opts?: { below?: boolean }): number {
   const insets = useSafeAreaInsets();
-  return insets.top + TOP_BAR_HEIGHT;
+  return insets.top + TOP_BAR_HEIGHT + (opts?.below ? TOP_BAR_BELOW_HEIGHT : 0);
 }
 
 interface Props {
@@ -45,6 +52,14 @@ interface Props {
   leading?: React.ReactNode;
   /** Right slot — typically <AvatarV4 size={32} /> or an action icon. */
   trailing?: React.ReactNode;
+  /** Optional second-row content rendered BELOW the title row inside
+   *  the same glass surface. Typically a search bar + filter button.
+   *  When supplied, the bar's total height grows by `belowBarHeight`
+   *  (default 64) so the consumer can reserve the right top padding
+   *  via `useTopBarHeight(belowBarHeight)`. */
+  belowBar?: React.ReactNode;
+  /** Reserved height for the belowBar row. Default 64. */
+  belowBarHeight?: number;
   /** Shared scrollY value. When provided, the bar fades in as the user
    *  scrolls past `revealAt`. When absent, the bar is always visible. */
   scrollY?: SharedValue<number>;
@@ -56,11 +71,14 @@ export function GlassTopBar({
   title,
   leading,
   trailing,
+  belowBar,
+  belowBarHeight = TOP_BAR_BELOW_HEIGHT,
   scrollY,
   revealAt = 60,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const totalHeight = insets.top + TOP_BAR_HEIGHT;
+  const totalHeight =
+    insets.top + TOP_BAR_HEIGHT + (belowBar ? belowBarHeight : 0);
 
   const animStyle = useAnimatedStyle(() => {
     if (!scrollY) {
@@ -108,30 +126,58 @@ export function GlassTopBar({
       {/* No hard hairline divider — the bar dissolves into the page
           via blur + tint, no horizontal line. */}
 
+      {/* Stacked layout: title row at top, optional belowBar (search etc.)
+          underneath, both inside the same blurred glass surface. */}
       <View
         pointerEvents="box-none"
         style={{
-          flexDirection: "row",
-          alignItems: "center",
           paddingTop: insets.top,
-          paddingHorizontal: 20,
           height: totalHeight,
         }}
       >
-        {leading ? (
-          // Drill-in mode — leading on left, title centered, trailing right
-          <>
-            <View style={{ width: 56, alignItems: "flex-start" }}>
-              {leading}
-            </View>
-            <View
-              pointerEvents="none"
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+        <View
+          pointerEvents="box-none"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 14,
+            height: TOP_BAR_HEIGHT,
+          }}
+        >
+          {leading ? (
+            // Drill-in mode — leading on left, title centered, trailing right
+            <>
+              <View style={{ width: 56, alignItems: "flex-start" }}>
+                {leading}
+              </View>
+              <View
+                pointerEvents="none"
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    ...type.title,
+                    color: palette.text,
+                    fontWeight: "700",
+                    letterSpacing: -0.3,
+                    fontSize: 17,
+                  }}
+                >
+                  {title}
+                </Text>
+              </View>
+              <View style={{ width: 56, alignItems: "flex-end" }}>
+                {trailing}
+              </View>
+            </>
+          ) : (
+            // Tab-root mode — title LEFT, trailing RIGHT, no center
+            <>
               <Text
                 numberOfLines={1}
                 style={{
@@ -139,35 +185,32 @@ export function GlassTopBar({
                   color: palette.text,
                   fontWeight: "700",
                   letterSpacing: -0.3,
-                  fontSize: 17,
+                  fontSize: 22,
+                  flex: 1,
                 }}
               >
                 {title}
               </Text>
-            </View>
-            <View style={{ width: 56, alignItems: "flex-end" }}>
-              {trailing}
-            </View>
-          </>
-        ) : (
-          // Tab-root mode — title LEFT, trailing RIGHT, no center
-          <>
-            <Text
-              numberOfLines={1}
-              style={{
-                ...type.title,
-                color: palette.text,
-                fontWeight: "700",
-                letterSpacing: -0.3,
-                fontSize: 22,
-                flex: 1,
-              }}
-            >
-              {title}
-            </Text>
-            <View style={{ alignItems: "flex-end" }}>{trailing}</View>
-          </>
-        )}
+              <View style={{ alignItems: "flex-end" }}>{trailing}</View>
+            </>
+          )}
+        </View>
+
+        {/* Second row — search, filters, tabs, etc. Lives inside the
+            same glass-blurred surface so it reads as part of the
+            header chrome, not a separate floating element. */}
+        {belowBar ? (
+          <View
+            pointerEvents="box-none"
+            style={{
+              height: belowBarHeight,
+              paddingHorizontal: 14,
+              justifyContent: "center",
+            }}
+          >
+            {belowBar}
+          </View>
+        ) : null}
       </View>
     </Animated.View>
   );
