@@ -32,6 +32,7 @@ import { View } from "react-native";
 
 import { useAuth } from "@/lib/auth";
 import { palette } from "@/lib/theme";
+import { AmbientBackground } from "@/components/ui/ambient-background";
 import { GlassTabBar } from "@/components/ui/glass-tab-bar";
 
 export default function MainLayout() {
@@ -41,11 +42,16 @@ export default function MainLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.canvas }}>
+      {/* Global atmosphere — gradient + accent blooms + faint grid
+          overlay. Mirrors the landing page. Mounted once here, every
+          screen sits on top transparently. */}
+      <AmbientBackground />
+
       <Tabs
         tabBar={(props) => <GlassTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          sceneStyle: { backgroundColor: palette.canvas },
+          sceneStyle: { backgroundColor: "transparent" },
         }}
       >
         {/* ── The 4 visible tabs ─────────────────────────────────── */}

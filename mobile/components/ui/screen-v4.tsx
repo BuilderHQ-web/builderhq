@@ -75,7 +75,10 @@ interface ScrollProps
 export function ScreenV4(props: FlatProps | ScrollProps) {
   const {
     edges,
-    background = palette.canvas,
+    // Default transparent — the global <AmbientBackground /> mounted at
+    // (main)/_layout paints the canvas. Pass a solid color only for
+    // screens that opt out of the global atmosphere (auth flow, etc.).
+    background = "transparent",
     paddingX = 20,
     topBarHeight = 0,
     bottomCta = false,

@@ -99,6 +99,12 @@ export function UnlockedMiniCard({
         backgroundColor: palette.surface,
         borderWidth: 1,
         borderColor: palette.hairline,
+        // 3D float
+        shadowColor: "#000",
+        shadowOpacity: 0.42,
+        shadowOffset: { width: 0, height: 12 },
+        shadowRadius: 22,
+        elevation: 8,
       }}
     >
       {/* Type-tinted top colour block — radial-ish gradient via solid stack */}

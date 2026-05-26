@@ -36,6 +36,9 @@ interface Props extends ViewProps {
   /** Add a subtle top hairline accent (the landing's signature device).
    *  Use SPARINGLY — once per surface stack at most. */
   hairline?: boolean;
+  /** 3D float shadow — lifts the card off the ambient background.
+   *  Default true; pass false for nested surfaces (rows inside a card). */
+  float?: boolean;
   style?: ViewStyle | ViewStyle[];
   children?: React.ReactNode;
 }
@@ -45,6 +48,7 @@ export function Surface({
   padding,
   radius = radii4.md,
   hairline = false,
+  float = true,
   style,
   children,
   ...rest
@@ -52,6 +56,27 @@ export function Surface({
   const bg = backgroundFor(variant);
   const borderColor = borderFor(variant);
   const resolvedPadding = padding ?? defaultPadding(variant);
+
+  // Premium 3D float — soft drop shadow + accent-tinted glow on
+  // accent-variant surfaces. Quiet variant never floats.
+  const floatStyle =
+    float && variant !== "quiet"
+      ? variant === "accent"
+        ? {
+            shadowColor: palette.accent,
+            shadowOpacity: 0.16,
+            shadowOffset: { width: 0, height: 14 },
+            shadowRadius: 28,
+            elevation: 10,
+          }
+        : {
+            shadowColor: "#000",
+            shadowOpacity: 0.4,
+            shadowOffset: { width: 0, height: 12 },
+            shadowRadius: 24,
+            elevation: 8,
+          }
+      : null;
 
   return (
     <View
@@ -65,6 +90,7 @@ export function Surface({
           borderColor,
           overflow: "hidden",
         },
+        floatStyle,
         style,
       ]}
     >

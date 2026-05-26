@@ -127,50 +127,19 @@ export function OwnerHome() {
     setRefreshing(false);
   }, [refetch]);
 
+  // Sticky chrome — title LEFT, avatar RIGHT, no bell. Hides at
+  // scroll 0 (hero owns the top); fades in as the user scrolls.
   const chrome = (
     <GlassTopBar
       title="Home"
-      leading={
+      scrollY={scrollY}
+      trailing={
         <Press
           onPress={() => router.push("/(main)/profile")}
           haptic="tap"
           accessibilityLabel="Open profile"
         >
           <AvatarV4 name={user?.name ?? "BuilderHQ"} size={32} />
-        </Press>
-      }
-      trailing={
-        <Press
-          onPress={() => router.push("/(main)/messages")}
-          haptic="tap"
-          accessibilityLabel="Open inbox"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: palette.surface,
-            borderWidth: 1,
-            borderColor: palette.hairline,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon.Bell size={17} color={palette.text} />
-          {data && data.stats.unreadMessages > 0 ? (
-            <View
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 9,
-                width: 7,
-                height: 7,
-                borderRadius: 3.5,
-                backgroundColor: palette.accent,
-                borderWidth: 1.5,
-                borderColor: palette.surface,
-              }}
-            />
-          ) : null}
         </Press>
       }
     />

@@ -1,26 +1,34 @@
 /**
  * <FoundingAccessCard /> — premium FBA showcase, mobile-grade.
  *
- * Aims higher than the web equivalent: subtle radial accent glow,
- * circular progress ring with the remaining count in the middle, two
- * stat tiles flanking, a horizontal cycle-progress bar, plus the
- * "FOUNDING MEMBER" + "CYCLE N OF M" badges up top.
+ *   ┌────────────────────────────────────────────────────────────┐
+ *   │  ✦ FOUNDING MEMBER                                          │
+ *   │                                                             │
+ *   │  CYCLE 1 OF 3                          WINDOW ENDS          │
+ *   │                                        9 AUG 2026           │
+ *   │                                                             │
+ *   │       ╭─ ring ─╮     SAVED SO FAR                           │
+ *   │       │   4   │     $99                                     │
+ *   │       │ OF 5  │                                             │
+ *   │       ╰────────╯     LIFETIME UNLOCKS                       │
+ *   │                      5                                      │
+ *   │                                                             │
+ *   │   ──────────  20% cycle progress  ─────────                 │
+ *   │   Refreshes in 13 days. …                                   │
+ *   └────────────────────────────────────────────────────────────┘
  *
- *   ┌─ FOUNDING MEMBER · CYCLE 1 OF 3 ────────  WINDOW ENDS 10 AUG ┐
- *   │                                                                │
- *   │            ╭─ progress ring ─╮     SAVED SO FAR                │
- *   │            │      4 OF 5      │    $199                        │
- *   │            ╰──────────────────╯     LIFETIME UNLOCKS           │
- *   │              Free unlocks                1                     │
- *   │              this cycle                                        │
- *   │                                                                │
- *   │   ────────────── 53% cycle progress ──────────                 │
- *   │   Unused credits expire when this cycle ends.                  │
- *   └────────────────────────────────────────────────────────────────┘
+ * Premium treatment:
+ *   · Single smooth LinearGradient background — no visible seam
+ *     between accent wash and base surface (the prior radial bloom
+ *     read as "two colours").
+ *   · Decompressed top-row badges — FOUNDING MEMBER on its own line,
+ *     then CYCLE / WINDOW ENDS on a second row with breathing room.
+ *   · Soft outer shadow + accent glow so the card floats off canvas.
  */
 
 import * as React from "react";
 import { Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
 
 import { palette, type } from "@/lib/theme";
@@ -31,16 +39,15 @@ interface Props {
   monthlyQuota: number;
   daysToRefresh: number;
   daysToGrantEnd: number;
-  cycleIndex: number; // 1-based
+  cycleIndex: number;
   totalCycles: number;
   totalSavedAud: number;
   lifetimeUnlocks?: number;
-  /** ISO date the founding window ends — formatted in the corner. */
   windowEnd?: Date;
 }
 
-const RING_SIZE = 132;
-const RING_STROKE = 10;
+const RING_SIZE = 124;
+const RING_STROKE = 9;
 
 function formatAud(n: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -78,69 +85,99 @@ export function FoundingAccessCard({
   return (
     <View
       style={{
-        borderRadius: 22,
+        borderRadius: 24,
         overflow: "hidden",
         borderWidth: 1,
         borderColor: palette.hairlineAccent,
-        backgroundColor: palette.surface,
+        // 3D float — premium shadow stack with accent-tinted glow under.
+        shadowColor: palette.accent,
+        shadowOpacity: 0.18,
+        shadowOffset: { width: 0, height: 18 },
+        shadowRadius: 36,
+        elevation: 12,
       }}
     >
-      {/* Soft accent radial wash behind everything — sells "premium" */}
-      <AccentWash />
-
-      <View style={{ padding: 20 }}>
-        {/* Top badges row */}
+      {/* Smooth single LinearGradient background — no seam */}
+      <LinearGradient
+        colors={[
+          "rgba(0, 212, 200, 0.10)",
+          "rgba(0, 212, 200, 0.04)",
+          "rgba(14, 19, 31, 1)",
+          "rgba(14, 19, 31, 1)",
+        ]}
+        locations={[0, 0.35, 0.75, 1]}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={{ padding: 22 }}
+      >
+        {/* Founding member badge — line of its own, decompressed */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
+            gap: 7,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 999,
+            backgroundColor: palette.accentMuted,
+            borderWidth: 1,
+            borderColor: palette.hairlineAccent,
+            alignSelf: "flex-start",
+          }}
+        >
+          <Icon.Spark size={12} color={palette.accent} />
+          <Text
+            style={{
+              fontSize: 10.5,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+              color: palette.accentLight,
+            }}
+          >
+            FOUNDING MEMBER
+          </Text>
+        </View>
+
+        {/* Cycle + window end — second row, plenty of room */}
+        <View
+          style={{
+            marginTop: 18,
+            flexDirection: "row",
+            alignItems: "flex-start",
             justifyContent: "space-between",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderRadius: 999,
-                backgroundColor: palette.accentMuted,
-                borderWidth: 1,
-                borderColor: palette.hairlineAccent,
-              }}
-            >
-              <Icon.Spark size={11} color={palette.accent} />
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 1.6,
-                  color: palette.accentLight,
-                }}
-              >
-                FOUNDING MEMBER
-              </Text>
-            </View>
+          <View>
             <Text
               style={{
                 fontSize: 10,
                 fontWeight: "600",
-                letterSpacing: 1.4,
+                letterSpacing: 1.6,
                 color: palette.textDim,
               }}
             >
-              CYCLE {cycleIndex}/{totalCycles}
+              CYCLE
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: palette.text,
+                fontVariant: ["tabular-nums"],
+                marginTop: 6,
+                letterSpacing: -0.3,
+              }}
+            >
+              {cycleIndex} of {totalCycles}
             </Text>
           </View>
           {windowEndLabel ? (
             <View style={{ alignItems: "flex-end" }}>
               <Text
                 style={{
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: "600",
-                  letterSpacing: 1.4,
+                  letterSpacing: 1.6,
                   color: palette.textDim,
                 }}
               >
@@ -148,11 +185,12 @@ export function FoundingAccessCard({
               </Text>
               <Text
                 style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: palette.textMuted,
-                  marginTop: 2,
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: palette.text,
+                  marginTop: 6,
                   fontVariant: ["tabular-nums"],
+                  letterSpacing: -0.1,
                 }}
               >
                 {windowEndLabel}
@@ -161,20 +199,20 @@ export function FoundingAccessCard({
           ) : null}
         </View>
 
-        {/* Ring + stats — single row, ring on left, stats stacked on right */}
+        {/* Ring + stats row */}
         <View
           style={{
-            marginTop: 22,
+            marginTop: 28,
             flexDirection: "row",
             alignItems: "center",
-            gap: 22,
+            gap: 24,
           }}
         >
           <ProgressRing fraction={ringFraction}>
             <Text
               style={{
-                fontSize: 30,
-                lineHeight: 32,
+                fontSize: 32,
+                lineHeight: 34,
                 fontWeight: "700",
                 color: palette.text,
                 fontVariant: ["tabular-nums"],
@@ -185,9 +223,9 @@ export function FoundingAccessCard({
             </Text>
             <Text
               style={{
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: "600",
-                letterSpacing: 1.4,
+                letterSpacing: 1.6,
                 color: palette.textDim,
                 marginTop: 2,
               }}
@@ -196,18 +234,21 @@ export function FoundingAccessCard({
             </Text>
           </ProgressRing>
 
-          <View style={{ flex: 1, gap: 14 }}>
+          <View style={{ flex: 1, gap: 18 }}>
             <StatCell
               label="SAVED SO FAR"
               value={totalSavedAud > 0 ? formatAud(totalSavedAud) : "$0"}
               accent
             />
-            <StatCell label="LIFETIME UNLOCKS" value={String(lifetimeUnlocks)} />
+            <StatCell
+              label="LIFETIME UNLOCKS"
+              value={String(lifetimeUnlocks)}
+            />
           </View>
         </View>
 
         {/* Cycle progress bar */}
-        <View style={{ marginTop: 22 }}>
+        <View style={{ marginTop: 28 }}>
           <View
             style={{
               flexDirection: "row",
@@ -219,15 +260,15 @@ export function FoundingAccessCard({
               style={{
                 fontSize: 10,
                 fontWeight: "600",
-                letterSpacing: 1.4,
+                letterSpacing: 1.6,
                 color: palette.textDim,
               }}
             >
-              CURRENT CYCLE PROGRESS
+              CYCLE PROGRESS
             </Text>
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: "700",
                 color: palette.accentLight,
                 fontVariant: ["tabular-nums"],
@@ -238,45 +279,43 @@ export function FoundingAccessCard({
           </View>
           <View
             style={{
-              marginTop: 8,
-              height: 4,
-              borderRadius: 2,
+              marginTop: 10,
+              height: 5,
+              borderRadius: 2.5,
               backgroundColor: "rgba(255,255,255,0.06)",
               overflow: "hidden",
             }}
           >
-            <View
+            <LinearGradient
+              colors={[palette.accent, palette.accentLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={{
                 width: `${cycleProgress}%`,
                 height: "100%",
-                backgroundColor: palette.accent,
               }}
             />
           </View>
         </View>
 
-        {/* Refresh hint */}
         <Text
           style={{
             ...type.bodySmall,
-            color: palette.textDim,
+            color: palette.textMuted,
             marginTop: 14,
             letterSpacing: -0.05,
+            fontSize: 12.5,
+            lineHeight: 18,
           }}
         >
           Refreshes in {daysToRefresh} day{daysToRefresh === 1 ? "" : "s"}.
           Unused credits expire when this cycle ends.
         </Text>
-      </View>
+      </LinearGradient>
     </View>
   );
 }
 
-/**
- * SVG-based circular progress ring with a teal-to-light gradient stroke.
- * The fraction (0–1) is the proportion of the ring that's filled —
- * remaining/total. Children render in the centre.
- */
 function ProgressRing({
   fraction,
   children,
@@ -309,7 +348,6 @@ function ProgressRing({
             <Stop offset="1" stopColor={palette.accentLight} stopOpacity="1" />
           </SvgGradient>
         </Defs>
-        {/* Track */}
         <Circle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
@@ -318,7 +356,6 @@ function ProgressRing({
           strokeWidth={RING_STROKE}
           fill="none"
         />
-        {/* Progress arc (rotated -90° so it starts from 12 o'clock) */}
         <Circle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
@@ -350,7 +387,7 @@ function StatCell({
     <View>
       <Text
         style={{
-          fontSize: 9.5,
+          fontSize: 10,
           fontWeight: "600",
           letterSpacing: 1.6,
           color: palette.textDim,
@@ -365,42 +402,12 @@ function StatCell({
           fontWeight: "700",
           color: accent ? palette.accentLight : palette.text,
           fontVariant: ["tabular-nums"],
-          marginTop: 4,
+          marginTop: 6,
           letterSpacing: -0.3,
         }}
       >
         {value}
       </Text>
-    </View>
-  );
-}
-
-/**
- * Faint teal radial wash that lifts the card from the canvas. Sized
- * to bleed beyond the top of the card so the gradient feels like
- * external light, not a painted overlay.
- */
-function AccentWash() {
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: "absolute",
-        top: -80,
-        left: -40,
-        right: -40,
-        height: 220,
-      }}
-    >
-      <Svg width="100%" height="100%">
-        <Defs>
-          <SvgGradient id="wash" x1="0.5" y1="0" x2="0.5" y2="1">
-            <Stop offset="0" stopColor={palette.accent} stopOpacity="0.18" />
-            <Stop offset="1" stopColor={palette.accent} stopOpacity="0" />
-          </SvgGradient>
-        </Defs>
-        <Circle cx="50%" cy="50%" r="60%" fill="url(#wash)" />
-      </Svg>
     </View>
   );
 }

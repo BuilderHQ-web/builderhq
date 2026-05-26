@@ -1,26 +1,37 @@
 /**
- * <SuggestedProjectCard /> — wide premium card for matched projects.
+ * <SuggestedProjectCard /> — wide premium project card.
  *
- *   ┌─────────────────────────────────────────────────────────────┐
- *   │ ✦ NEW MATCH                       ┌───────────────────────┐ │
- *   │                                   │                       │ │
- *   │ Multi-dwelling                    │   blueprint /         │ │
- *   │ Black Rock, VIC                   │   map fragment        │ │
- *   │                                   │   (SVG sketch)        │ │
- *   │ [$3M – $5M]                       │                       │ │
- *   │                                   │                       │ │
- *   │ 🛏 5  🛁 4  🏠 2                  └───────────────────────┘ │
+ *   ┌──────────────────────────────────────────────────────────────┐
+ *   │ ✦ NEW MATCH                                                  │
  *   │                                                              │
- *   │ ── 2 of 3 unlocked ────────────────────────────────────────  │
- *   └─────────────────────────────────────────────────────────────┘
+ *   │ Multi-dwelling · Black Rock, VIC                             │
+ *   │                                                              │
+ *   │ 📍 Black Rock, VIC · 3193                                    │
+ *   │                                                              │
+ *   │ [$3M – $5M]                                                  │
+ *   │                                                              │
+ *   │ 🛏 5  🛁 4  🏠 2                                              │
+ *   │                                                              │
+ *   │ ───────────  blueprint strip ──────────                      │
+ *   │                                                              │
+ *   │ 🔒 2 of 3 unlocked              1 slot left                  │
+ *   └──────────────────────────────────────────────────────────────┘
  *
- * The side art is a hand-rendered architectural SVG (blueprint
- * skyline / floor-plan fragment) — gives the card the construction-
- * brand-honesty signal without resorting to literal hardhats.
+ * Layout note: previous version put the blueprint visual as a SIDE
+ * COLUMN with flex stretching — the SVG container had no explicit
+ * height bound, which caused the card to balloon in some viewports.
+ *
+ * v2 puts the blueprint as a thin DECORATIVE HORIZONTAL STRIP near
+ * the bottom — fixed height, full-width inside the card. Predictable
+ * dimensions, more breathing room for the content above.
+ *
+ * Premium 3D float: shadow stack lifts the card off the ambient
+ * background so it reads as a layer.
  */
 
 import * as React from "react";
 import { Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Svg, {
   Defs,
   LinearGradient as SvgGradient,
@@ -37,19 +48,14 @@ import { Press } from "@/components/ui/press";
 
 interface Props {
   title: string;
-  /** Type label ("Multi-dwelling", "Renovation", etc.) */
   typeLabel?: string;
-  /** Location ("Black Rock, VIC"). */
   location?: string;
-  /** Pre-formatted budget band ("$3M – $5M"). */
   budgetLabel?: string;
   bedrooms?: number | null;
   bathrooms?: number | null;
   dwellingCount?: number | null;
-  /** Builders who've unlocked (out of 3 max). */
   unlockedCount?: number;
   unlockCap?: number;
-  /** Whether this is genuinely "new" (e.g. published <48h ago). */
   isNew?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
@@ -81,221 +87,220 @@ export function SuggestedProjectCard({
         overflow: "hidden",
         borderWidth: 1,
         borderColor: palette.hairline,
-        backgroundColor: palette.surface,
+        // 3D float — premium drop shadow stack.
+        shadowColor: "#000",
+        shadowOpacity: 0.45,
+        shadowOffset: { width: 0, height: 14 },
+        shadowRadius: 28,
+        elevation: 10,
       }}
     >
-      {/* Top hairline accent — premium signal */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 28,
-          right: 28,
-          height: 1,
-          backgroundColor: palette.accentLight,
-          opacity: 0.5,
-        }}
-      />
-
-      <View
-        style={{
-          flexDirection: "row",
-          padding: 18,
-          minHeight: 168,
-        }}
+      {/* Subtle gradient surface — slightly lifted top, deep base */}
+      <LinearGradient
+        colors={["rgba(20, 26, 42, 0.95)", "rgba(14, 19, 31, 1)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ padding: 18 }}
       >
-        {/* Content side */}
-        <View style={{ flex: 1, paddingRight: 14 }}>
-          {/* Kicker */}
-          {isNew ? (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                alignSelf: "flex-start",
-              }}
-            >
-              <Icon.Spark size={11} color={palette.accent} />
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 1.6,
-                  color: palette.accentLight,
-                }}
-              >
-                NEW MATCH
-              </Text>
-            </View>
-          ) : typeLabel ? (
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.6,
-                color: palette.textDim,
-              }}
-            >
-              {typeLabel.toUpperCase()}
-            </Text>
-          ) : null}
+        {/* Top hairline accent — premium signal */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 36,
+            right: 36,
+            height: 1,
+            backgroundColor: palette.accentLight,
+            opacity: 0.55,
+          }}
+        />
 
-          {/* Title */}
-          <Text
-            numberOfLines={2}
+        {/* Kicker — NEW MATCH or type label */}
+        {isNew ? (
+          <View
             style={{
-              ...type.title,
-              color: palette.text,
-              fontWeight: "600",
-              marginTop: 8,
-              letterSpacing: -0.2,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              alignSelf: "flex-start",
             }}
           >
-            {title}
-          </Text>
-
-          {/* Location */}
-          {location ? (
-            <View
+            <Icon.Spark size={11} color={palette.accent} />
+            <Text
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                marginTop: 6,
+                fontSize: 10.5,
+                fontWeight: "700",
+                letterSpacing: 1.8,
+                color: palette.accentLight,
               }}
             >
-              <Icon.Location size={12} color={palette.textDim} />
+              NEW MATCH
+            </Text>
+          </View>
+        ) : typeLabel ? (
+          <Text
+            style={{
+              fontSize: 10.5,
+              fontWeight: "700",
+              letterSpacing: 1.8,
+              color: palette.textDim,
+            }}
+          >
+            {typeLabel.toUpperCase()}
+          </Text>
+        ) : null}
+
+        {/* Title */}
+        <Text
+          numberOfLines={2}
+          style={{
+            ...type.title,
+            color: palette.text,
+            fontWeight: "700",
+            letterSpacing: -0.3,
+            fontSize: 21,
+            lineHeight: 26,
+            marginTop: 12,
+          }}
+        >
+          {title}
+        </Text>
+
+        {/* Location */}
+        {location ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 10,
+            }}
+          >
+            <Icon.Location size={13} color={palette.textDim} />
+            <Text
+              numberOfLines={1}
+              style={{
+                ...type.bodySmall,
+                color: palette.textMuted,
+                fontSize: 13,
+              }}
+            >
+              {location}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Budget pill */}
+        {budgetLabel ? (
+          <View style={{ flexDirection: "row", marginTop: 14 }}>
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 999,
+                backgroundColor: palette.accentMuted,
+                borderWidth: 1,
+                borderColor: palette.hairlineAccent,
+              }}
+            >
               <Text
-                numberOfLines={1}
                 style={{
-                  ...type.bodySmall,
-                  color: palette.textMuted,
-                  fontSize: 12.5,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: palette.accentLight,
+                  fontVariant: ["tabular-nums"],
+                  letterSpacing: -0.1,
                 }}
               >
-                {location}
+                {budgetLabel}
               </Text>
             </View>
-          ) : null}
+          </View>
+        ) : null}
 
-          {/* Budget pill */}
-          {budgetLabel ? (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 12,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderRadius: 999,
-                  backgroundColor: palette.accentMuted,
-                  borderWidth: 1,
-                  borderColor: palette.hairlineAccent,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "700",
-                    color: palette.accentLight,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {budgetLabel}
-                </Text>
-              </View>
-            </View>
-          ) : null}
+        {/* Specs */}
+        {(bedrooms || bathrooms || dwellingCount) ? (
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 22,
+              marginTop: 18,
+            }}
+          >
+            {bedrooms ? <Spec icon="bed" label="bed" value={bedrooms} /> : null}
+            {bathrooms ? (
+              <Spec icon="bath" label="bath" value={bathrooms} />
+            ) : null}
+            {dwellingCount && dwellingCount > 1 ? (
+              <Spec icon="dwell" label="dwell" value={dwellingCount} />
+            ) : null}
+          </View>
+        ) : null}
 
-          {/* Spec strip — bed / bath / dwellings */}
-          {(bedrooms || bathrooms || dwellingCount) && (
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 14,
-                marginTop: 12,
-              }}
-            >
-              {bedrooms ? <Spec label="bed" value={bedrooms} /> : null}
-              {bathrooms ? <Spec label="bath" value={bathrooms} /> : null}
-              {dwellingCount && dwellingCount > 1 ? (
-                <Spec label="dwell" value={dwellingCount} />
-              ) : null}
-            </View>
-          )}
-        </View>
-
-        {/* Visual side — blueprint / map fragment */}
+        {/* Decorative blueprint strip — FIXED HEIGHT, no flex weirdness */}
         <View
           style={{
-            width: 120,
-            borderRadius: 14,
+            marginTop: 22,
+            height: 64,
+            borderRadius: 12,
             overflow: "hidden",
             backgroundColor: "rgba(0, 212, 200, 0.04)",
             borderWidth: 1,
             borderColor: palette.hairline,
           }}
         >
-          <BlueprintArt />
+          <BlueprintStrip />
         </View>
-      </View>
 
-      {/* Footer: unlock status */}
-      {slotsLeft !== null ? (
-        <View
-          style={{
-            paddingHorizontal: 18,
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderTopColor: palette.hairline,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon.Lock size={12} color={palette.textDim} />
-          <Text
+        {/* Footer: unlock status */}
+        {slotsLeft !== null ? (
+          <View
             style={{
-              fontSize: 12,
-              fontWeight: "600",
-              color: palette.textMuted,
-              letterSpacing: -0.05,
-              flex: 1,
+              marginTop: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 7,
             }}
           >
-            {unlockedCount} of {unlockCap} unlocked
-          </Text>
-          {slotsLeft > 0 ? (
+            <Icon.Lock size={13} color={palette.textDim} />
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: "600",
-                color: palette.accentLight,
-                letterSpacing: 0.2,
+                color: palette.textMuted,
+                letterSpacing: -0.05,
+                flex: 1,
               }}
             >
-              {slotsLeft} slot{slotsLeft === 1 ? "" : "s"} left
+              {unlockedCount} of {unlockCap} unlocked
             </Text>
-          ) : (
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "600",
-                color: palette.danger,
-                letterSpacing: 0.2,
-              }}
-            >
-              FILLED
-            </Text>
-          )}
-        </View>
-      ) : null}
+            {slotsLeft > 0 ? (
+              <Text
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: "700",
+                  color: palette.accentLight,
+                  letterSpacing: 0.3,
+                }}
+              >
+                {slotsLeft} SLOT{slotsLeft === 1 ? "" : "S"} LEFT
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: "700",
+                  color: palette.danger,
+                  letterSpacing: 0.3,
+                }}
+              >
+                FILLED
+              </Text>
+            )}
+          </View>
+        ) : null}
+      </LinearGradient>
     </View>
   );
 
@@ -312,17 +317,24 @@ export function SuggestedProjectCard({
   );
 }
 
-function Spec({ label, value }: { label: string; value: number }) {
+function Spec({
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: number;
+}) {
   return (
     <View style={{ alignItems: "flex-start" }}>
       <Text
         style={{
-          fontSize: 18,
-          lineHeight: 22,
+          fontSize: 19,
+          lineHeight: 24,
           fontWeight: "700",
           color: palette.text,
           fontVariant: ["tabular-nums"],
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
         }}
       >
         {value}
@@ -330,10 +342,10 @@ function Spec({ label, value }: { label: string; value: number }) {
       <Text
         style={{
           fontSize: 9.5,
-          fontWeight: "600",
-          letterSpacing: 1.4,
+          fontWeight: "700",
+          letterSpacing: 1.5,
           color: palette.textDim,
-          marginTop: -1,
+          marginTop: 1,
         }}
       >
         {label.toUpperCase()}
@@ -343,105 +355,62 @@ function Spec({ label, value }: { label: string; value: number }) {
 }
 
 /**
- * Minimal architectural blueprint art — a stylized floor-plan
- * fragment in accent-tinted strokes on a dark surface. No literal
- * houses or hardhats; just clean lines that signal "construction"
- * without being on-the-nose.
+ * Horizontal architectural strip — full-width thin blueprint
+ * footer art. Fixed height (matches container), no flex issues.
  */
-function BlueprintArt() {
-  const stroke = "rgba(126, 245, 237, 0.55)";
-  const strokeFaint = "rgba(126, 245, 237, 0.25)";
+function BlueprintStrip() {
+  const stroke = "rgba(126, 245, 237, 0.50)";
+  const strokeFaint = "rgba(126, 245, 237, 0.20)";
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 120 168">
+    <Svg width="100%" height="100%" viewBox="0 0 320 64" preserveAspectRatio="xMidYMid slice">
       <Defs>
-        <SvgGradient id="bpFade" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#0E131F" stopOpacity="0" />
-          <Stop offset="1" stopColor="#0E131F" stopOpacity="0.85" />
+        <SvgGradient id="stripFade" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#0E131F" stopOpacity="0.6" />
+          <Stop offset="0.5" stopColor="#0E131F" stopOpacity="0" />
+          <Stop offset="1" stopColor="#0E131F" stopOpacity="0.6" />
         </SvgGradient>
       </Defs>
 
-      {/* Faint grid */}
-      {Array.from({ length: 10 }, (_, i) => (
+      {/* Faint grid lines */}
+      {Array.from({ length: 12 }, (_, i) => (
         <Line
           key={`v${i}`}
-          x1={i * 12}
+          x1={i * 28}
           y1={0}
-          x2={i * 12}
-          y2={168}
+          x2={i * 28}
+          y2={64}
           stroke={strokeFaint}
           strokeWidth={0.4}
-          opacity={0.4}
         />
       ))}
-      {Array.from({ length: 14 }, (_, i) => (
+      {Array.from({ length: 5 }, (_, i) => (
         <Line
           key={`h${i}`}
           x1={0}
-          y1={i * 12}
-          x2={120}
-          y2={i * 12}
+          y1={i * 14}
+          x2={320}
+          y2={i * 14}
           stroke={strokeFaint}
           strokeWidth={0.4}
-          opacity={0.4}
         />
       ))}
 
-      {/* Building footprint — staggered duplex rectangles */}
-      <Rect
-        x={18}
-        y={36}
-        width={42}
-        height={62}
-        stroke={stroke}
-        strokeWidth={1.2}
-        fill="none"
-      />
-      <Rect
-        x={60}
-        y={36}
-        width={42}
-        height={62}
-        stroke={stroke}
-        strokeWidth={1.2}
-        fill="none"
-      />
-      {/* Roof line above */}
-      <Path
-        d="M 18 36 L 60 18 L 102 36"
-        stroke={stroke}
-        strokeWidth={1.2}
-        fill="none"
-      />
-      {/* Interior walls */}
-      <Line x1={36} y1={62} x2={60} y2={62} stroke={stroke} strokeWidth={0.8} />
-      <Line x1={36} y1={62} x2={36} y2={98} stroke={stroke} strokeWidth={0.8} />
-      <Line x1={78} y1={62} x2={102} y2={62} stroke={stroke} strokeWidth={0.8} />
-      <Line x1={78} y1={62} x2={78} y2={98} stroke={stroke} strokeWidth={0.8} />
+      {/* Stylized skyline — three building outlines of varying heights */}
+      <Rect x={28} y={28} width={36} height={32} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={64} y={18} width={48} height={42} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={112} y={32} width={28} height={28} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={140} y={22} width={40} height={38} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={180} y={36} width={32} height={24} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={212} y={28} width={44} height={32} stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Rect x={256} y={20} width={36} height={40} stroke={stroke} strokeWidth={1.1} fill="none" />
 
-      {/* Door swing arcs */}
-      <Path
-        d="M 36 98 A 8 8 0 0 1 44 90"
-        stroke={stroke}
-        strokeWidth={0.8}
-        fill="none"
-      />
-      <Path
-        d="M 78 98 A 8 8 0 0 1 86 90"
-        stroke={stroke}
-        strokeWidth={0.8}
-        fill="none"
-      />
+      {/* Roofline accents on a couple */}
+      <Path d="M 64 18 L 88 8 L 112 18" stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Path d="M 140 22 L 160 12 L 180 22" stroke={stroke} strokeWidth={1.1} fill="none" />
+      <Path d="M 256 20 L 274 10 L 292 20" stroke={stroke} strokeWidth={1.1} fill="none" />
 
-      {/* North arrow */}
-      <Path
-        d="M 96 132 L 100 122 L 104 132 L 100 128 Z"
-        stroke={stroke}
-        strokeWidth={0.8}
-        fill={stroke}
-      />
-
-      {/* Bottom fade so card content sits cleanly above */}
-      <Rect x={0} y={120} width={120} height={48} fill="url(#bpFade)" />
+      {/* Edge fade so the strip dissolves cleanly on the left + right */}
+      <Rect width="320" height="64" fill="url(#stripFade)" />
     </Svg>
   );
 }

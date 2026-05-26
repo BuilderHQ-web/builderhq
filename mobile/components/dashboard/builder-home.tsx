@@ -228,10 +228,14 @@ export function BuilderHome() {
     setRefreshing(false);
   }, [refetch]);
 
+  // Sticky chrome — title LEFT, avatar RIGHT, no bell. Hidden at
+  // scroll 0 (the hero owns the top of the screen un-occluded) and
+  // fades in as the user scrolls.
   const chrome = (
     <GlassTopBar
       title="Home"
-      leading={
+      scrollY={scrollY}
+      trailing={
         <Press
           onPress={() => router.push("/(main)/profile")}
           haptic="tap"
@@ -242,25 +246,6 @@ export function BuilderHome() {
             size={32}
             verified={data?.profile.approvalStatus === "approved"}
           />
-        </Press>
-      }
-      trailing={
-        <Press
-          onPress={() => router.push("/(main)/messages")}
-          haptic="tap"
-          accessibilityLabel="Open inbox"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: palette.surface,
-            borderWidth: 1,
-            borderColor: palette.hairline,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon.Bell size={17} color={palette.text} />
         </Press>
       }
     />

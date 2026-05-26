@@ -1,82 +1,103 @@
 /**
- * <GlassTopBar /> — the v4 persistent sticky top bar.
+ * <GlassTopBar /> — sticky persistent chrome.
  *
- * Revolut / Linear / Cluely pattern: a single compact glass bar pinned
- * to the top of every screen. Page identity (title) lives IN the bar
- * — no big in-scroll display title competing with content.
+ * Layout: title on the LEFT, avatar on the RIGHT. No center slot.
+ * No bell. Title is slightly bolder than body text — it's the page ID.
  *
- * Composition:
+ *   ┌──────────────────────────────────────────────┐
+ *   │  Home                              (avatar)  │  ← glass
+ *   └──────────────────────────────────────────────┘
  *
- *   ┌───────────────────────────────────────────────────┐
- *   │  [avatar]      Page title              [action]   │  ← glass blur
- *   └───────────────────────────────────────────────────┘
+ * Scroll-aware visibility: when `scrollY` is wired in, the bar is
+ * INVISIBLE at scroll 0 (the hero content owns the top of the screen
+ * un-occluded) and fades in as the user scrolls past ~20px. Once the
+ * page is scrolled, the bar floats over content, glass-blurred.
  *
- *   ┌───────────────────────────────────────────────────┐
- *   │                                                   │
- *   │   Screen content scrolls under the bar            │
- *   │                                                   │
- *
- * Why glass:
- *   The native BlurView blurs whatever passes under it. The bar reads
- *   as a layer above the content, not a docked rectangle. Matches the
- *   Revolut chrome the user pointed at as reference.
- *
- * Used by every screen in the (main) group. Pair with
- *   <Screen … topInset> to reserve top padding for the bar.
+ * If `scrollY` is omitted, the bar is always visible — used by static
+ * (non-scroll) screens.
  */
+
 import * as React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  type SharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { palette, type } from "@/lib/theme";
 
-/** Bar height EXCLUDING the safe-area inset. */
 export const TOP_BAR_HEIGHT = 52;
 
-/** Total reserved height for the bar overlay — use as top padding
- *  on the screen's scroll content so first-frame content isn't
- *  hidden under the absolutely positioned bar. */
 export function useTopBarHeight(): number {
   const insets = useSafeAreaInsets();
   return insets.top + TOP_BAR_HEIGHT;
 }
 
 interface Props {
-  /** Page title rendered centred in the bar. */
+  /** Page title. Left-aligned when no `leading`; centered when `leading`
+   *  is supplied (drill-in screens with a back button). */
   title: string;
-  /** Left slot — typically <AvatarV4 size={32} />. */
+  /** Optional left slot — typically a back button on drill-in screens.
+   *  When present, the title shifts to centered alignment. */
   leading?: React.ReactNode;
-  /** Right slot — typically a bell, settings cog, or pill. */
+  /** Right slot — typically <AvatarV4 size={32} /> or an action icon. */
   trailing?: React.ReactNode;
+  /** Shared scrollY value. When provided, the bar fades in as the user
+   *  scrolls past `revealAt`. When absent, the bar is always visible. */
+  scrollY?: SharedValue<number>;
+  /** Scroll Y at which the bar reaches full opacity. Default 60. */
+  revealAt?: number;
 }
 
-export function GlassTopBar({ title, leading, trailing }: Props) {
+export function GlassTopBar({
+  title,
+  leading,
+  trailing,
+  scrollY,
+  revealAt = 60,
+}: Props) {
   const insets = useSafeAreaInsets();
   const totalHeight = insets.top + TOP_BAR_HEIGHT;
 
+  const animStyle = useAnimatedStyle(() => {
+    if (!scrollY) {
+      return { opacity: 1 };
+    }
+    return {
+      opacity: interpolate(
+        scrollY.value,
+        [0, revealAt * 0.35, revealAt],
+        [0, 0, 1],
+        "clamp",
+      ),
+    };
+  });
+
   return (
-    <View
+    <Animated.View
       pointerEvents="box-none"
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: totalHeight,
-        zIndex: 50,
-      }}
+      style={[
+        {
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: totalHeight,
+          zIndex: 50,
+        },
+        animStyle,
+      ]}
     >
-      {/* Native backdrop blur — Revolut-style glass. Content scrolling
-          under the bar gets properly blurred. */}
+      {/* Native blur — Revolut-style glass. */}
       <BlurView
         intensity={Platform.OS === "ios" ? 70 : 100}
         tint="dark"
         experimentalBlurMethod="dimezisBlurView"
         style={StyleSheet.absoluteFill}
       />
-      {/* Dark tint so foreground text stays at high contrast on bright
-          content scrolling underneath. */}
       <View
         pointerEvents="none"
         style={[
@@ -84,7 +105,6 @@ export function GlassTopBar({ title, leading, trailing }: Props) {
           { backgroundColor: "rgba(6, 8, 15, 0.55)" },
         ]}
       />
-      {/* Bottom hairline divider — kept very subtle. */}
       <View
         pointerEvents="none"
         style={{
@@ -97,56 +117,67 @@ export function GlassTopBar({ title, leading, trailing }: Props) {
         }}
       />
 
-      {/* Bar contents — centred title + slots */}
       <View
         pointerEvents="box-none"
         style={{
           flexDirection: "row",
           alignItems: "center",
           paddingTop: insets.top,
-          paddingHorizontal: 16,
+          paddingHorizontal: 20,
           height: totalHeight,
         }}
       >
-        <View
-          style={{
-            width: 60,
-            alignItems: "flex-start",
-            justifyContent: "center",
-          }}
-        >
-          {leading}
-        </View>
-        <View
-          pointerEvents="none"
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text
-            numberOfLines={1}
-            style={{
-              ...type.titleSmall,
-              color: palette.text,
-              fontWeight: "600",
-              letterSpacing: -0.1,
-            }}
-          >
-            {title}
-          </Text>
-        </View>
-        <View
-          style={{
-            width: 60,
-            alignItems: "flex-end",
-            justifyContent: "center",
-          }}
-        >
-          {trailing}
-        </View>
+        {leading ? (
+          // Drill-in mode — leading on left, title centered, trailing right
+          <>
+            <View style={{ width: 56, alignItems: "flex-start" }}>
+              {leading}
+            </View>
+            <View
+              pointerEvents="none"
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                style={{
+                  ...type.title,
+                  color: palette.text,
+                  fontWeight: "700",
+                  letterSpacing: -0.3,
+                  fontSize: 17,
+                }}
+              >
+                {title}
+              </Text>
+            </View>
+            <View style={{ width: 56, alignItems: "flex-end" }}>
+              {trailing}
+            </View>
+          </>
+        ) : (
+          // Tab-root mode — title LEFT, trailing RIGHT, no center
+          <>
+            <Text
+              numberOfLines={1}
+              style={{
+                ...type.title,
+                color: palette.text,
+                fontWeight: "700",
+                letterSpacing: -0.3,
+                fontSize: 22,
+                flex: 1,
+              }}
+            >
+              {title}
+            </Text>
+            <View style={{ alignItems: "flex-end" }}>{trailing}</View>
+          </>
+        )}
       </View>
-    </View>
+    </Animated.View>
   );
 }
