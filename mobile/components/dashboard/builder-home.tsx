@@ -1,16 +1,44 @@
 /**
- * <BuilderHome /> — v4.1 premium builder dashboard.
+ * <BuilderHome /> — v4.2 builder home, rebuilt from user feedback.
  *
- * Same chrome as OwnerHome: sticky <GlassTopBar /> carries identity,
- * scroll content is just content. Narrative tuned for builders:
- *   · Profile gating (not set up / pending / approved)
- *   · FBA founding-access featured prominently when active
- *   · Active tenders surface
- *   · Matched projects feed
+ * Composition top-to-bottom:
+ *
+ *   ┌─ GLASS TOP BAR  (avatar · Home · bell) ─────────────────┐
+ *   │                                                          │
+ *   │              HERO BLOCK (centered)                       │
+ *   │                                                          │
+ *   │              Good afternoon,                             │
+ *   │              Smith.   ← Instrument Serif italic accent   │
+ *   │                                                          │
+ *   │       Typewriter live-update line (cycles)               │
+ *   │                                                          │
+ *   │            [  Browse projects  ]   ← glowing CTA         │
+ *   │                                                          │
+ *   │─────────────────────────────────────────────────────────│
+ *   │  FOUNDING ACCESS                                         │
+ *   │  ┌─ progress ring + stats + cycle bar ───────────────┐   │
+ *   │  └────────────────────────────────────────────────────┘   │
+ *   │─────────────────────────────────────────────────────────│
+ *   │  STATS STRIP — Active / Win rate / Total submitted       │
+ *   │─────────────────────────────────────────────────────────│
+ *   │  SUGGESTED FOR YOU                                       │
+ *   │  ┌─ SuggestedProjectCard ────────────────────────────┐   │
+ *   │  └────────────────────────────────────────────────────┘   │
+ *   │─────────────────────────────────────────────────────────│
+ *   │  YOUR TENDERS                                            │
+ *   │  ┌─ tender rows ─────────────────────────────────────┐   │
+ *   │  └────────────────────────────────────────────────────┘   │
+ *   │─────────────────────────────────────────────────────────│
+ *   │  RECENTLY UNLOCKED  →                                    │
+ *   │  ▣▣▣▣▣  horizontal carousel of UnlockedMiniCards         │
+ *   └─────────────────────────────────────────────────────────┘
+ *
+ * Sentences in the typewriter are derived live from the dashboard
+ * payload so the user sees their actual current state cycle.
  */
 
 import * as React from "react";
-import { Text, View } from "react-native";
+import { Animated as RNAnimated, FlatList, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { router } from "expo-router";
 import { useSharedValue } from "react-native-reanimated";
@@ -22,19 +50,25 @@ import { palette, type } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
 import {
-  ActivityRow,
   AvatarV4,
-  BigNumber,
   GlassTopBar,
   Pill,
   Press,
-  ProjectCard,
   ScreenV4,
   Surface,
   useTopBarHeight,
 } from "@/components/ui/v4";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
+import { TypewriterGreeting } from "./typewriter-greeting";
+import { BrowseProjectsCTA } from "./browse-projects-cta";
+import { FoundingAccessCard } from "./founding-access-card";
+import { SuggestedProjectCard } from "./suggested-project-card";
+import {
+  UNLOCKED_CARD_WIDTH,
+  UnlockedMiniCard,
+} from "./unlocked-mini-card";
+import { ActivityRow } from "@/components/ui/v4";
 import type {
   BuilderDashboardPayload,
   BuilderProjectListItem,
@@ -83,10 +117,10 @@ const TENDER_STATUS_TONE: Record<
 
 function timeOfDayGreeting(): string {
   const h = new Date().getHours();
-  if (h < 5) return "Late night";
-  if (h < 12) return "Morning";
-  if (h < 18) return "Afternoon";
-  return "Evening";
+  if (h < 5) return "Up late";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function firstName(name: string | null | undefined): string {
@@ -118,6 +152,64 @@ function relativeTime(iso: string): string {
     day: "numeric",
     month: "short",
   });
+}
+
+/** Derive the typewriter sentences from live dashboard data. */
+function deriveSentences(data: BuilderDashboardPayload): string[] {
+  const lines: string[] = [];
+  const n = data.suggested.length;
+  const tenders = data.myTenders.length;
+
+  if (tenders > 0) {
+    const liveCount = data.myTenders.filter(
+      (t) => t.status === "submitted" || t.status === "shortlisted",
+    ).length;
+    if (liveCount > 0) {
+      lines.push(
+        `You have ${liveCount} live tender${liveCount === 1 ? "" : "s"} in play.`,
+      );
+    }
+  }
+
+  if (n > 0) {
+    lines.push(
+      `${n} new project${n === 1 ? "" : "s"} matched your area today.`,
+    );
+  }
+
+  if (data.fba.active) {
+    lines.push(
+      `${data.fba.remainingThisCycle} free unlock${data.fba.remainingThisCycle === 1 ? "" : "s"} left this cycle.`,
+    );
+    if (data.fba.totalSavedAud > 0) {
+      lines.push(
+        `You've saved ${formatAud(data.fba.totalSavedAud)} as a founding member.`,
+      );
+    }
+  }
+
+  if (data.profile.serviceAreas.length > 0) {
+    const areas = data.profile.serviceAreas
+      .slice(0, 2)
+      .map((a) => a.suburb ?? a.state)
+      .filter(Boolean)
+      .join(", ");
+    if (areas) {
+      lines.push(`Watching for new work in ${areas}.`);
+    }
+  }
+
+  if (data.activity.length > 0) {
+    const unread = data.activity.filter((a) => a.readAt === null).length;
+    if (unread > 0) {
+      lines.push(`${unread} new update${unread === 1 ? "" : "s"} since last login.`);
+    }
+  }
+
+  if (lines.length === 0) {
+    lines.push("Welcome to BuilderHQ — find your next build.");
+  }
+  return lines;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -207,7 +299,19 @@ export function BuilderHome() {
     );
   }
 
-  const fName = firstName(user?.name);
+  const fName = firstName(
+    data.profile.companyName?.split(/\s+/)[0] ?? user?.name,
+  );
+  const sentences = deriveSentences(data);
+
+  // Tender pipeline stats (derived). Win rate = awarded / settled
+  // (awarded+rejected); 0 settled returns null and we hide the stat.
+  const wonCount = data.myTenders.filter((t) => t.status === "awarded").length;
+  const settledCount = data.myTenders.filter(
+    (t) => t.status === "awarded" || t.status === "rejected",
+  ).length;
+  const winRate =
+    settledCount > 0 ? Math.round((wonCount / settledCount) * 100) : null;
 
   return (
     <>
@@ -219,51 +323,116 @@ export function BuilderHome() {
         refreshing={refreshing}
         topBarHeight={topBarHeight}
       >
-        {/* Quiet kicker greeting */}
-        <Animated.View entering={FadeInDown.duration(420).delay(40)}>
-          <Text
-            style={{
-              ...type.caption,
-              color: palette.textDim,
-              fontWeight: "600",
-              letterSpacing: 2.2,
-              marginTop: 4,
+        {/* ── HERO BLOCK ──────────────────────────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.duration(540).delay(60)}
+          style={{ marginTop: 32, marginBottom: 8 }}
+        >
+          <TypewriterGreeting
+            greeting={timeOfDayGreeting()}
+            name={fName}
+            sentences={sentences}
+          />
+          <BrowseProjectsCTA
+            onPress={() => {
+              void haptics.select();
+              router.push("/(main)/projects");
             }}
+          />
+        </Animated.View>
+
+        {/* ── FOUNDING ACCESS ─────────────────────────────────────── */}
+        {data.fba.active ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(240)}
+            style={{ marginTop: 44 }}
           >
-            {timeOfDayGreeting().toUpperCase()}, {fName.toUpperCase()}
-          </Text>
-        </Animated.View>
+            <SectionLabel kicker="Founding access" />
+            <View style={{ marginTop: 14 }}>
+              <FoundingAccessCard
+                remaining={data.fba.remainingThisCycle}
+                monthlyQuota={data.fba.monthlyQuota}
+                daysToRefresh={data.fba.daysToRefresh}
+                daysToGrantEnd={data.fba.daysToGrantEnd}
+                cycleIndex={data.fba.cycleIndex}
+                totalCycles={data.fba.totalCycles}
+                totalSavedAud={data.fba.totalSavedAud}
+                lifetimeUnlocks={data.stats.unlockedProjects}
+                windowEnd={
+                  new Date(
+                    Date.now() +
+                      data.fba.daysToGrantEnd * 24 * 60 * 60 * 1000,
+                  )
+                }
+              />
+            </View>
+          </Animated.View>
+        ) : null}
 
-        {/* Hero card — picks the right narrative based on builder state */}
+        {/* ── PIPELINE STATS STRIP ────────────────────────────────── */}
         <Animated.View
-          entering={FadeInDown.duration(440).delay(140)}
-          style={{ marginTop: 16 }}
+          entering={FadeInDown.duration(440).delay(320)}
+          style={{ marginTop: 32 }}
         >
-          <BuilderHeroCard data={data} />
+          <SectionLabel kicker="Your pipeline" />
+          <View style={{ marginTop: 14, flexDirection: "row", gap: 10 }}>
+            <PipelineStat
+              label="Active"
+              value={String(data.stats.activeTenders)}
+              icon={<Icon.Tender size={14} color={palette.accent} />}
+              accent={data.stats.activeTenders > 0}
+            />
+            <PipelineStat
+              label="Win rate"
+              value={winRate !== null ? `${winRate}%` : "—"}
+              icon={<Icon.Trophy size={14} color={palette.accent} />}
+            />
+            <PipelineStat
+              label="Submitted"
+              value={String(data.myTenders.length)}
+              icon={<Icon.Document size={14} color={palette.accent} />}
+            />
+          </View>
         </Animated.View>
 
-        {/* Stat row */}
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(240)}
-          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
-        >
-          <StatTile
-            label="Tenders"
-            value={data.stats.activeTenders}
-            accent={data.stats.activeTenders > 0}
-          />
-          <StatTile label="Unlocked" value={data.stats.unlockedProjects} />
-          <StatTile
-            label="Saved"
-            value={data.stats.savedProjects}
-            onPress={() => router.push("/(main)/projects")}
-          />
-        </Animated.View>
+        {/* ── SUGGESTED FOR YOU ───────────────────────────────────── */}
+        {data.suggested.length > 0 ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(400)}
+            style={{ marginTop: 36 }}
+          >
+            <SectionHeader
+              title="Suggested for you"
+              meta={`${data.suggested.length} ${data.suggested.length === 1 ? "match" : "matches"}`}
+              onSeeAll={() => router.push("/(main)/projects")}
+            />
+            <View style={{ marginTop: 14, gap: 14 }}>
+              {data.suggested.slice(0, 3).map((p) => (
+                <SuggestedProjectCard
+                  key={p.id}
+                  title={p.title}
+                  typeLabel={TYPE_LABEL[p.type]}
+                  location={projectLocation(p)}
+                  budgetLabel={
+                    p.budgetBand
+                      ? BUDGET_LABEL[p.budgetBand] ?? p.budgetBand
+                      : undefined
+                  }
+                  bedrooms={p.bedrooms ?? undefined}
+                  bathrooms={p.bathrooms ?? undefined}
+                  unlockedCount={p.unlockedCount}
+                  isNew={isNewlyPublished(p.publishedAt)}
+                  onPress={() => router.push(`/(main)/projects/${p.slug}`)}
+                />
+              ))}
+            </View>
+          </Animated.View>
+        ) : null}
 
-        {/* My tenders */}
+        {/* ── YOUR TENDERS ────────────────────────────────────────── */}
         {data.myTenders.length > 0 ? (
           <Animated.View
-            entering={FadeInDown.duration(440).delay(340)}
+            entering={FadeInDown.duration(440).delay(480)}
             style={{ marginTop: 36 }}
           >
             <SectionHeader
@@ -289,70 +458,64 @@ export function BuilderHome() {
           </Animated.View>
         ) : null}
 
-        {/* Matched projects — Airbnb-style ProjectCards */}
-        {data.suggested.length > 0 ? (
+        {/* ── RECENTLY UNLOCKED (horizontal scroll) ───────────────── */}
+        {data.unlocked.length > 0 ? (
           <Animated.View
-            entering={FadeInDown.duration(440).delay(440)}
-            style={{ marginTop: 36 }}
+            entering={FadeInDown.duration(440).delay(560)}
+            // Negative side margin so the carousel can extend full-bleed
+            // beyond the screen's page padding.
+            style={{ marginTop: 36, marginHorizontal: -20 }}
           >
-            <SectionHeader
-              title="Matched for you"
-              meta={`${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"}`}
-            />
-            <View style={{ marginTop: 14, gap: 12 }}>
-              {data.suggested.slice(0, 4).map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  title={p.title}
-                  location={projectLocation(p)}
-                  typeLabel={TYPE_LABEL[p.type]}
-                  statusLabel={
-                    p.budgetBand
-                      ? BUDGET_LABEL[p.budgetBand] ?? p.budgetBand
+            <View style={{ paddingHorizontal: 20 }}>
+              <SectionHeader
+                title="Recently unlocked"
+                meta="Swipe →"
+                onSeeAll={() => router.push("/(main)/projects")}
+              />
+            </View>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={data.unlocked.slice(0, 8)}
+              keyExtractor={(p) => p.id}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingTop: 14,
+                gap: 12,
+              }}
+              snapToInterval={UNLOCKED_CARD_WIDTH + 12}
+              decelerationRate="fast"
+              renderItem={({ item }) => (
+                <UnlockedMiniCard
+                  title={item.title}
+                  typeKey={item.type}
+                  typeLabel={TYPE_LABEL[item.type] ?? item.type}
+                  location={projectLocation(item)}
+                  budgetLabel={
+                    item.budgetBand
+                      ? BUDGET_LABEL[item.budgetBand] ?? item.budgetBand
                       : undefined
                   }
-                  statusTone="accent"
-                  stats={{
-                    unlockedOf: { current: p.unlockedCount, total: 3 },
-                  }}
+                  bedrooms={item.bedrooms}
+                  bathrooms={item.bathrooms}
                   onPress={() =>
-                    router.push(`/(main)/projects/${p.slug}`)
+                    router.push(`/(main)/projects/${item.slug}`)
                   }
                 />
-              ))}
-            </View>
-            <Press
-              onPress={() => router.push("/(main)/projects")}
-              haptic="tap"
-              style={{
-                marginTop: 14,
-                paddingVertical: 12,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "600",
-                  color: palette.accent,
-                  letterSpacing: 0.2,
-                }}
-              >
-                See all matches →
-              </Text>
-            </Press>
+              )}
+            />
           </Animated.View>
         ) : null}
 
-        {/* Activity */}
+        {/* ── ACTIVITY ────────────────────────────────────────────── */}
         {data.activity.length > 0 ? (
           <Animated.View
-            entering={FadeInDown.duration(440).delay(540)}
+            entering={FadeInDown.duration(440).delay(640)}
             style={{ marginTop: 36 }}
           >
             <SectionHeader title="Recent activity" />
             <Surface padding={0} style={{ marginTop: 14 }}>
-              {data.activity.slice(0, 6).map((a, i) => (
+              {data.activity.slice(0, 5).map((a, i) => (
                 <View key={a.id}>
                   <ActivityRow
                     kind={a.kind}
@@ -361,7 +524,7 @@ export function BuilderHome() {
                     time={relativeTime(a.createdAt)}
                     unread={a.readAt === null}
                   />
-                  {i < Math.min(data.activity.length, 6) - 1 ? (
+                  {i < Math.min(data.activity.length, 5) - 1 ? (
                     <RowDivider />
                   ) : null}
                 </View>
@@ -370,9 +533,9 @@ export function BuilderHome() {
           </Animated.View>
         ) : null}
 
-        {/* Sign out */}
+        {/* Sign out — quiet */}
         <Animated.View
-          entering={FadeInDown.duration(440).delay(640)}
+          entering={FadeInDown.duration(440).delay(720)}
           style={{ marginTop: 40, alignItems: "center" }}
         >
           <Press
@@ -400,273 +563,42 @@ export function BuilderHome() {
   );
 }
 
-// ── Hero card variants ──────────────────────────────────────────────────
+// ── small sub-components ────────────────────────────────────────────────
 
-function BuilderHeroCard({ data }: { data: BuilderDashboardPayload }) {
-  if (!data.profile.hasProfile) {
-    return (
-      <Surface variant="accent" padding={24} hairline>
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.accent,
-            fontWeight: "600",
-            letterSpacing: 2,
-          }}
-        >
-          ACTION REQUIRED
-        </Text>
-        <Text
-          style={{
-            ...type.titleLarge,
-            color: palette.text,
-            fontWeight: "600",
-            marginTop: 14,
-            maxWidth: 280,
-          }}
-        >
-          Complete your profile.
-        </Text>
-        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}>
-          Add your ABN, licence, and service area on web.
-        </Text>
-      </Surface>
-    );
-  }
-
-  if (data.profile.approvalStatus === "pending") {
-    return (
-      <Surface padding={24} hairline>
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.warning,
-            fontWeight: "600",
-            letterSpacing: 2,
-          }}
-        >
-          PENDING VERIFICATION
-        </Text>
-        <Text
-          style={{
-            ...type.titleLarge,
-            color: palette.text,
-            fontWeight: "600",
-            marginTop: 14,
-          }}
-        >
-          We&apos;re reviewing your ABN.
-        </Text>
-        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}>
-          You can browse projects while you wait. Unlocks open once verified.
-        </Text>
-      </Surface>
-    );
-  }
-
-  if (data.fba.active) {
-    return (
-      <Surface variant="accent" padding={24} hairline>
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.accent,
-            fontWeight: "600",
-            letterSpacing: 2,
-          }}
-        >
-          FOUNDING ACCESS
-        </Text>
-        <View
-          style={{
-            marginTop: 12,
-            flexDirection: "row",
-            alignItems: "baseline",
-            gap: 12,
-          }}
-        >
-          <BigNumber
-            value={data.fba.remainingThisCycle}
-            size="lg"
-            color={palette.text}
-          />
-          <Text style={{ ...type.body, color: palette.textMuted }}>
-            free unlock{data.fba.remainingThisCycle === 1 ? "" : "s"} left
-          </Text>
-        </View>
-        <Text
-          style={{
-            ...type.bodySmall,
-            color: palette.textMuted,
-            marginTop: 10,
-          }}
-        >
-          Refreshes in {data.fba.daysToRefresh} day
-          {data.fba.daysToRefresh === 1 ? "" : "s"} · grant ends in{" "}
-          {data.fba.daysToGrantEnd} days
-        </Text>
-        {data.fba.totalSavedAud > 0 ? (
-          <Pill tone="accent" size="md" style={{ marginTop: 14 }}>
-            Saved {formatAud(data.fba.totalSavedAud)} so far
-          </Pill>
-        ) : null}
-      </Surface>
-    );
-  }
-
-  if (data.stats.activeTenders > 0) {
-    return (
-      <Surface variant="accent" padding={24} hairline>
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.accent,
-            fontWeight: "600",
-            letterSpacing: 2,
-          }}
-        >
-          TENDERS IN PLAY
-        </Text>
-        <View
-          style={{
-            marginTop: 12,
-            flexDirection: "row",
-            alignItems: "baseline",
-            gap: 12,
-          }}
-        >
-          <BigNumber
-            value={data.stats.activeTenders}
-            size="lg"
-            color={palette.text}
-          />
-          <Text style={{ ...type.body, color: palette.textMuted }}>
-            awaiting decision
-          </Text>
-        </View>
-        <Text
-          style={{ ...type.bodySmall, color: palette.textMuted, marginTop: 10 }}
-        >
-          Median time to decision · 5-10 days
-        </Text>
-      </Surface>
-    );
-  }
-
+function SectionLabel({ kicker }: { kicker: string }) {
   return (
-    <Surface padding={24} hairline>
-      <Text
-        style={{
-          ...type.caption,
-          color: palette.accent,
-          fontWeight: "600",
-          letterSpacing: 2,
-        }}
-      >
-        DISCOVER
-      </Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View
         style={{
-          marginTop: 12,
-          flexDirection: "row",
-          alignItems: "baseline",
-          gap: 12,
-        }}
-      >
-        <BigNumber
-          value={data.suggested.length}
-          size="lg"
-          color={palette.text}
-        />
-        <Text style={{ ...type.body, color: palette.textMuted }}>
-          {data.suggested.length === 1 ? "match" : "matches"} for you
-        </Text>
-      </View>
-      <Press
-        onPress={() => router.push("/(main)/projects")}
-        haptic="select"
-        style={{
-          marginTop: 20,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          alignSelf: "flex-start",
-          paddingVertical: 12,
-          paddingHorizontal: 18,
-          borderRadius: 999,
+          width: 6,
+          height: 6,
+          borderRadius: 3,
           backgroundColor: palette.accent,
         }}
-      >
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "700",
-            color: palette.accentContrast,
-          }}
-        >
-          Browse projects
-        </Text>
-        <Icon.ArrowRight size={16} color={palette.accentContrast} />
-      </Press>
-    </Surface>
-  );
-}
-
-// ── Small bits ──────────────────────────────────────────────────────────
-
-function StatTile({
-  label,
-  value,
-  accent = false,
-  onPress,
-}: {
-  label: string;
-  value: number;
-  accent?: boolean;
-  onPress?: () => void;
-}) {
-  const body = (
-    <Surface
-      variant={accent ? "accent" : "default"}
-      padding={14}
-      style={{ flex: 1, alignItems: "flex-start" }}
-    >
+      />
       <Text
         style={{
-          ...type.caption,
-          color: accent ? palette.accent : palette.textDim,
-          fontWeight: "600",
-          letterSpacing: 1.6,
+          fontSize: 10.5,
+          fontWeight: "700",
+          letterSpacing: 1.8,
+          color: palette.accent,
         }}
       >
-        {label.toUpperCase()}
+        {kicker.toUpperCase()}
       </Text>
-      <Text
-        style={{
-          ...type.numericLarge,
-          fontSize: 26,
-          lineHeight: 30,
-          color: accent ? palette.accentLight : palette.text,
-          fontVariant: ["tabular-nums"],
-          fontWeight: "600",
-          marginTop: 8,
-        }}
-      >
-        {value}
-      </Text>
-    </Surface>
-  );
-  if (!onPress) return body;
-  return (
-    <View style={{ flex: 1 }}>
-      <Press onPress={onPress} haptic="soft" scaleTo={0.98}>
-        {body}
-      </Press>
     </View>
   );
 }
 
-function SectionHeader({ title, meta }: { title: string; meta?: string }) {
+function SectionHeader({
+  title,
+  meta,
+  onSeeAll,
+}: {
+  title: string;
+  meta?: string;
+  onSeeAll?: () => void;
+}) {
   return (
     <View
       style={{
@@ -680,18 +612,35 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
           ...type.title,
           color: palette.text,
           fontWeight: "600",
-          letterSpacing: -0.15,
+          letterSpacing: -0.2,
         }}
       >
         {title}
       </Text>
-      {meta ? (
+      {onSeeAll ? (
+        <Press
+          onPress={onSeeAll}
+          haptic="tap"
+          style={{ paddingVertical: 4, paddingHorizontal: 4 }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              letterSpacing: 1.4,
+              color: palette.accent,
+            }}
+          >
+            {(meta ?? "SEE ALL").toUpperCase()}
+          </Text>
+        </Press>
+      ) : meta ? (
         <Text
           style={{
-            ...type.caption,
-            color: palette.textDim,
-            letterSpacing: 1.4,
+            fontSize: 11,
             fontWeight: "600",
+            letterSpacing: 1.4,
+            color: palette.textDim,
           }}
         >
           {meta.toUpperCase()}
@@ -701,14 +650,64 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
   );
 }
 
+function PipelineStat({
+  label,
+  value,
+  icon,
+  accent,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: accent ? palette.hairlineAccent : palette.hairline,
+        backgroundColor: accent ? palette.accentMuted : palette.surface,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        {icon}
+        <Text
+          style={{
+            fontSize: 9.5,
+            fontWeight: "700",
+            letterSpacing: 1.6,
+            color: accent ? palette.accent : palette.textDim,
+          }}
+        >
+          {label.toUpperCase()}
+        </Text>
+      </View>
+      <Text
+        style={{
+          fontSize: 22,
+          lineHeight: 26,
+          fontWeight: "700",
+          color: accent ? palette.accentLight : palette.text,
+          fontVariant: ["tabular-nums"],
+          marginTop: 10,
+          letterSpacing: -0.3,
+        }}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
   const tone = TENDER_STATUS_TONE[tender.status] ?? "neutral";
   const statusLabel = TENDER_STATUS_LABEL[tender.status] ?? tender.status;
   return (
     <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
-      <View
-        style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
-      >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             numberOfLines={1}
@@ -726,6 +725,7 @@ function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
                 ...type.bodySmall,
                 color: palette.textMuted,
                 marginTop: 4,
+                fontVariant: ["tabular-nums"],
               }}
             >
               {formatAud(tender.totalPriceAud)}
@@ -749,4 +749,10 @@ function RowDivider() {
       }}
     />
   );
+}
+
+function isNewlyPublished(iso: string | null): boolean {
+  if (!iso) return false;
+  const diffMs = Date.now() - new Date(iso).getTime();
+  return diffMs < 1000 * 60 * 60 * 48; // < 48 hours
 }
