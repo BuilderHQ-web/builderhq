@@ -140,7 +140,7 @@ export function BuilderBrowse() {
 
   const renderItem: ListRenderItem<BrowseListItem> = useCallback(
     ({ item }) => (
-      <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+      <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
         <BrowseProjectCard
           item={item}
           isSaved={browse.savedIds.has(item.id)}
@@ -206,7 +206,7 @@ export function BuilderBrowse() {
               // is hidden at scroll 0 and fades in as the user scrolls,
               // so there's no awkward empty gap up top.
               paddingTop: headerHeight - 36,
-              paddingHorizontal: 20,
+              paddingHorizontal: 14,
               paddingBottom: 12,
             }}
           >
@@ -318,7 +318,7 @@ export function BuilderBrowse() {
 
 function BrowseSkeleton() {
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 12 }}>
+    <View style={{ paddingHorizontal: 14, paddingTop: 8, gap: 12 }}>
       {[0, 1, 2].map((i) => (
         <View
           key={i}
