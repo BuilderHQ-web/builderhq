@@ -32,11 +32,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
-import { colors } from "@/lib/theme";
+import { palette } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
-const TAB_HEIGHT = 60;
-const PILL_HEIGHT = 44;
+const TAB_HEIGHT = 62;
+const PILL_HEIGHT = 46;
 const HORIZONTAL_MARGIN = 18;
 
 export function GlassTabBar({
@@ -49,16 +49,36 @@ export function GlassTabBar({
   // on iPhone 15 / 16 + older non-notch devices via the Math.max.
   const bottomPad = Math.max(insets.bottom - 6, 14);
 
-  const tabCount = state.routes.length;
-  const pillX = useSharedValue(state.index);
+  // Defensive: only render routes that declared a tabBarIcon. Expo
+  // Router strips hidden routes (href:null) from state.routes, but if
+  // a future route forgets href:null we don't want it appearing in the
+  // bar without an icon.
+  const visibleRoutes = state.routes
+    .map((route, originalIndex) => ({
+      route,
+      originalIndex,
+      options: descriptors[route.key]!.options,
+    }))
+    .filter(({ options }) => Boolean(options.tabBarIcon));
+
+  const tabCount = visibleRoutes.length;
+  // Map state.index → visible position so the pill lines up even if
+  // hidden routes occupy slots in the underlying state.
+  const visibleIndex = Math.max(
+    0,
+    visibleRoutes.findIndex(
+      ({ originalIndex }) => originalIndex === state.index,
+    ),
+  );
+  const pillX = useSharedValue(visibleIndex);
 
   useEffect(() => {
-    pillX.value = withSpring(state.index, {
+    pillX.value = withSpring(visibleIndex, {
       mass: 0.55,
       damping: 16,
       stiffness: 170,
     });
-  }, [state.index, pillX]);
+  }, [visibleIndex, pillX]);
 
   return (
     <View
@@ -125,11 +145,10 @@ export function GlassTabBar({
         {/* 5. Sliding active capsule (with soft accent glow halo) */}
         <ActiveCapsule pillX={pillX} tabCount={tabCount} />
 
-        {/* 6. Tabs row */}
+        {/* 6. Tabs row — only the visible (icon-bearing) routes */}
         <View style={{ flexDirection: "row", height: "100%" }}>
-          {state.routes.map((route, index) => {
-            const { options } = descriptors[route.key]!;
-            const focused = state.index === index;
+          {visibleRoutes.map(({ route, options, originalIndex }) => {
+            const focused = state.index === originalIndex;
             const label =
               typeof options.tabBarLabel === "string"
                 ? options.tabBarLabel
@@ -163,24 +182,23 @@ export function GlassTabBar({
                   flex: 1,
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 2,
+                  gap: 3,
                 }}
               >
                 {TabIcon ? (
                   <TabIcon
                     focused={focused}
-                    color={focused ? colors.accentLight : colors.textMuted}
-                    size={20}
+                    color={focused ? palette.accentLight : palette.textMuted}
+                    size={21}
                   />
                 ) : null}
                 <Text
                   numberOfLines={1}
                   style={{
-                    color: focused ? colors.accentLight : colors.textMuted,
-                    fontFamily: "SpaceGrotesk_500Medium",
-                    fontSize: 9.5,
+                    color: focused ? palette.accentLight : palette.textMuted,
+                    fontSize: 10,
                     fontWeight: focused ? "600" : "500",
-                    letterSpacing: 0.2,
+                    letterSpacing: 0.15,
                   }}
                 >
                   {typeof label === "string" ? label : ""}

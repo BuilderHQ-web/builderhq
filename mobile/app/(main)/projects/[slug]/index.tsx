@@ -52,9 +52,16 @@ import {
 } from "lucide-react-native";
 
 import { Screen } from "@/components/ui/screen";
+import {
+  AvatarV4,
+  GlassTopBar,
+  Press,
+  useTopBarHeight,
+} from "@/components/ui/v4";
 import { haptics } from "@/lib/haptics";
 import { useProjectDetail, unlockProject } from "@/lib/dashboard";
 import { env } from "@/lib/env";
+import { palette } from "@/lib/theme";
 import { DashboardSkeleton } from "@/components/dashboard/skeleton";
 import { ErrorView } from "@/components/dashboard/error-view";
 import type {
@@ -94,6 +101,7 @@ export default function ProjectDetailScreen() {
   const slugStr = typeof slug === "string" ? slug : "";
   const { data, isLoading, error, refetch } = useProjectDetail(slugStr || null);
   const [refreshing, setRefreshing] = useState(false);
+  const topBarHeightForScroll = useTopBarHeight();
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -101,18 +109,6 @@ export default function ProjectDetailScreen() {
       scrollY.value = e.contentOffset.y;
     },
   });
-
-  const headerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 60, 120], [0, 0.4, 1], "clamp"),
-  }));
-  const headerTitleStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [60, 140], [0, 1], "clamp"),
-    transform: [
-      {
-        translateY: interpolate(scrollY.value, [60, 140], [4, 0], "clamp"),
-      },
-    ],
-  }));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -141,20 +137,16 @@ export default function ProjectDetailScreen() {
 
   if (isLoading && !data) {
     return (
-      <Screen variant="flat">
-        <View style={{ zIndex: 10 }}>
-          <TopBar onBack={onBack} />
-        </View>
+      <Screen variant="flat" edges={["bottom"]}>
+        <TopBarV4 onBack={onBack} title="Project" />
         <DashboardSkeleton />
       </Screen>
     );
   }
   if (error && !data) {
     return (
-      <Screen variant="flat">
-        <View style={{ zIndex: 10 }}>
-          <TopBar onBack={onBack} />
-        </View>
+      <Screen variant="flat" edges={["bottom"]}>
+        <TopBarV4 onBack={onBack} title="Project" />
         <ErrorView message={error} onRetry={refetch} />
       </Screen>
     );
@@ -162,54 +154,15 @@ export default function ProjectDetailScreen() {
   if (!data) return null;
 
   return (
-    <Screen variant="flat">
-      {/* Sticky animated top bar background */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          {
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 5,
-            backgroundColor: "#03090f",
-            borderBottomColor: "rgba(100, 180, 255, 0.10)",
-            borderBottomWidth: 1,
-          },
-          headerStyle,
-        ]}
-      >
-        <SafeAreaView edges={["top"]}>
-          <View className="h-12" />
-        </SafeAreaView>
-      </Animated.View>
-
-      <View style={{ zIndex: 10 }}>
-        <TopBar onBack={onBack} onEdit={data.mode === "owner" ? onEdit : undefined} />
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            {
-              position: "absolute",
-              left: 56,
-              right: 56,
-              top: 0,
-              bottom: 0,
-              alignItems: "center",
-              justifyContent: "center",
-            },
-            headerTitleStyle,
-          ]}
-        >
-          <Text
-            className="text-text font-ui font-semibold text-[14.5px]"
-            numberOfLines={1}
-          >
-            {data.project.title}
-          </Text>
-        </Animated.View>
-      </View>
+    <Screen variant="flat" edges={["bottom"]}>
+      {/* v4 sticky glass top bar — paints full-bleed to top (behind
+          status bar). Title is the project name; the floating bar
+          replaces the broken animated strip pattern. */}
+      <TopBarV4
+        onBack={onBack}
+        title={data.project.title}
+        onEdit={data.mode === "owner" ? onEdit : undefined}
+      />
 
       <AnimatedScrollView
         onScroll={scrollHandler}
@@ -217,7 +170,7 @@ export default function ProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 24,
-          paddingTop: 8,
+          paddingTop: topBarHeightForScroll + 8,
           paddingBottom: 56,
         }}
         refreshControl={
@@ -227,6 +180,7 @@ export default function ProjectDetailScreen() {
             tintColor="#7ef5ed"
             colors={["#7ef5ed"]}
             progressBackgroundColor="#0c1726"
+            progressViewOffset={topBarHeightForScroll}
           />
         }
       >
@@ -243,46 +197,61 @@ export default function ProjectDetailScreen() {
   );
 }
 
-// ── Top bar ──────────────────────────────────────────────────────────
+// ── v4 Top bar — sticky glass header with back + optional edit ─────
 
-function TopBar({
+function TopBarV4({
   onBack,
   onEdit,
+  title,
 }: {
   onBack: () => void;
   onEdit?: () => void;
+  title: string;
 }) {
   return (
-    <SafeAreaView edges={["top"]} style={{ position: "relative" }}>
-      <View
-        className="flex-row items-center justify-between px-2"
-        style={{ height: 48 }}
-      >
-        <Pressable
+    <GlassTopBar
+      title={title}
+      leading={
+        <Press
           onPress={onBack}
-          accessibilityRole="button"
+          haptic="tap"
           accessibilityLabel="Back"
-          hitSlop={12}
-          className="size-10 items-center justify-center rounded-full active:bg-surface-1/60"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: palette.surface,
+            borderWidth: 1,
+            borderColor: palette.hairline,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <ArrowLeft size={20} color="#eef6ff" strokeWidth={1.8} />
-        </Pressable>
-
-        {onEdit ? (
-          <Pressable
+          <ArrowLeft size={18} color={palette.text} strokeWidth={1.85} />
+        </Press>
+      }
+      trailing={
+        onEdit ? (
+          <Press
             onPress={onEdit}
-            accessibilityRole="button"
+            haptic="tap"
             accessibilityLabel="Edit on web"
-            hitSlop={12}
-            className="size-10 items-center justify-center rounded-full active:bg-surface-1/60"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: palette.surface,
+              borderWidth: 1,
+              borderColor: palette.hairline,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Pencil size={16} color="#eef6ff" strokeWidth={1.7} />
-          </Pressable>
-        ) : (
-          <View className="size-10" />
-        )}
-      </View>
-    </SafeAreaView>
+            <Pencil size={15} color={palette.text} strokeWidth={1.85} />
+          </Press>
+        ) : null
+      }
+    />
   );
 }
 

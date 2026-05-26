@@ -1,26 +1,12 @@
 /**
- * <BuilderHome /> — v4 premium builder dashboard.
+ * <BuilderHome /> — v4.1 premium builder dashboard.
  *
- * Composition top-to-bottom:
- *
- *   1. ScreenHeader — collapsible "Home" title with avatar trailing
- *   2. Hero — kicker (greeting) + plain title + Instrument italic accent
- *      ("Your tenders." / "Find work." depending on state)
- *   3. HeroNumberCard — the day's most-actionable metric
- *      · Active tenders waiting on owner  → big number + "view tenders"
- *      · FBA founding access active       → remaining free unlocks
- *      · Matched projects                 → "N projects matched"
- *      · Onboarding                       → "Complete your profile"
- *   4. StatRow — Active tenders / Unlocked / Saved
- *   5. Suggested projects — Surface list of matched projects
- *   6. My tenders — Surface list with status pills
- *   7. Recent activity
- *
- * Builder-specific bits:
- *   · Profile gating — if approval pending / rejected, hero swaps to a
- *     status-aware card that explains the state without dead-ending.
- *   · FBA emphasis — when founding access is active, the free-unlock
- *     count is featured prominently. Time-limited offer = urgency.
+ * Same chrome as OwnerHome: sticky <GlassTopBar /> carries identity,
+ * scroll content is just content. Narrative tuned for builders:
+ *   · Profile gating (not set up / pending / approved)
+ *   · FBA founding-access featured prominently when active
+ *   · Active tenders surface
+ *   · Matched projects feed
  */
 
 import * as React from "react";
@@ -36,20 +22,20 @@ import { palette, type } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
 import {
+  ActivityRow,
   AvatarV4,
   BigNumber,
-  Hero,
+  GlassTopBar,
   Pill,
   Press,
-  Row,
-  ScreenHeader,
+  ProjectCard,
   ScreenV4,
   Surface,
+  useTopBarHeight,
 } from "@/components/ui/v4";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
 import type {
-  ActivityItem,
   BuilderDashboardPayload,
   BuilderProjectListItem,
   BuilderTenderListItem,
@@ -95,12 +81,12 @@ const TENDER_STATUS_TONE: Record<
   withdrawn: "neutral",
 };
 
-function timeOfDayGreeting(now = new Date()): string {
-  const h = now.getHours();
+function timeOfDayGreeting(): string {
+  const h = new Date().getHours();
   if (h < 5) return "Late night";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Morning";
+  if (h < 18) return "Afternoon";
+  return "Evening";
 }
 
 function firstName(name: string | null | undefined): string {
@@ -108,9 +94,10 @@ function firstName(name: string | null | undefined): string {
   return name.split(/\s+/)[0] ?? name;
 }
 
-function suburbLineOf(p: BuilderProjectListItem): string {
+function projectLocation(p: BuilderProjectListItem): string {
   const parts = [p.suburb, p.state].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : TYPE_LABEL[p.type] ?? p.type;
+  if (parts.length === 0) return TYPE_LABEL[p.type] ?? p.type;
+  return parts.join(", ");
 }
 
 function formatAud(n: number): string {
@@ -123,7 +110,7 @@ function formatAud(n: number): string {
 
 function relativeTime(iso: string): string {
   const diffSec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (diffSec < 60) return "just now";
+  if (diffSec < 60) return "now";
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
   if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}d`;
@@ -140,6 +127,7 @@ export function BuilderHome() {
   const { data, isLoading, error, refetch } = useBuilderDashboard();
   const [refreshing, setRefreshing] = React.useState(false);
   const scrollY = useSharedValue(0);
+  const topBarHeight = useTopBarHeight();
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -148,297 +136,298 @@ export function BuilderHome() {
     setRefreshing(false);
   }, [refetch]);
 
+  const chrome = (
+    <GlassTopBar
+      title="Home"
+      leading={
+        <Press
+          onPress={() => router.push("/(main)/profile")}
+          haptic="tap"
+          accessibilityLabel="Open profile"
+        >
+          <AvatarV4
+            name={data?.profile.companyName ?? user?.name ?? "Builder"}
+            size={32}
+            verified={data?.profile.approvalStatus === "approved"}
+          />
+        </Press>
+      }
+      trailing={
+        <Press
+          onPress={() => router.push("/(main)/messages")}
+          haptic="tap"
+          accessibilityLabel="Open inbox"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: palette.surface,
+            borderWidth: 1,
+            borderColor: palette.hairline,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon.Bell size={17} color={palette.text} />
+        </Press>
+      }
+    />
+  );
+
   if (isLoading && !data) {
     return (
-      <ScreenV4 variant="flat">
-        <DashboardSkeleton />
-      </ScreenV4>
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <DashboardSkeleton />
+        </ScreenV4>
+      </>
     );
   }
 
   if (error && !data) {
     return (
-      <ScreenV4 variant="flat">
-        <ErrorView message={error} onRetry={() => void refetch()} />
-      </ScreenV4>
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <ErrorView message={error} onRetry={() => void refetch()} />
+        </ScreenV4>
+      </>
     );
   }
 
   if (!data) {
-    return <ScreenV4 variant="flat"><View /></ScreenV4>;
+    return (
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <View />
+        </ScreenV4>
+      </>
+    );
   }
 
-  const greeting = timeOfDayGreeting();
   const fName = firstName(user?.name);
-  const stats = data.stats;
-
-  // Pick the screen's narrative based on builder state.
-  const heroNarrative = pickBuilderNarrative(data);
 
   return (
-    <ScreenV4
-      variant="scroll"
-      scrollY={scrollY}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-    >
-      <ScreenHeader
-        title="Home"
+    <>
+      {chrome}
+      <ScreenV4
+        variant="scroll"
         scrollY={scrollY}
-        trailing={
-          <Press
-            onPress={() => router.push("/(main)/profile")}
-            haptic="tap"
-            accessibilityLabel="Open profile"
-          >
-            <AvatarV4
-              name={data.profile.companyName ?? user?.name ?? "Builder"}
-              size={36}
-              verified={data.profile.approvalStatus === "approved"}
-            />
-          </Press>
-        }
-      />
-
-      {/* Hero */}
-      <Animated.View entering={FadeInDown.duration(420).delay(40)}>
-        <Hero
-          kicker={`${greeting.toUpperCase()}, ${fName.toUpperCase()}`}
-          title={heroNarrative.heroTitle}
-          accent={heroNarrative.heroAccent}
-          sub={heroNarrative.heroSub}
-        />
-      </Animated.View>
-
-      {/* Hero number card */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(160)}
-        style={{ marginTop: 28 }}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        topBarHeight={topBarHeight}
       >
-        <HeroNumberCard data={data} />
-      </Animated.View>
-
-      {/* Stat row */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(260)}
-        style={{ marginTop: 16, flexDirection: "row", gap: 10 }}
-      >
-        <StatTileBlock
-          label="Tenders"
-          value={stats.activeTenders}
-          accent={stats.activeTenders > 0}
-        />
-        <StatTileBlock label="Unlocked" value={stats.unlockedProjects} />
-        <StatTileBlock
-          label="Saved"
-          value={stats.savedProjects}
-          onPress={() => router.push("/(main)/browse")}
-        />
-      </Animated.View>
-
-      {/* My tenders */}
-      {data.myTenders.length > 0 ? (
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(360)}
-          style={{ marginTop: 40 }}
-        >
-          <SectionHeader
-            title="Your tenders"
-            meta={`${data.myTenders.length} active`}
-          />
-          <Surface padding={0} style={{ marginTop: 14 }}>
-            {data.myTenders.slice(0, 5).map((t, i) => (
-              <View key={t.id}>
-                <Press
-                  onPress={() => router.push(`/(main)/tenders/${t.id}`)}
-                  haptic="soft"
-                  scaleTo={0.99}
-                >
-                  <TenderRow tender={t} />
-                </Press>
-                {i < Math.min(data.myTenders.length, 5) - 1 ? (
-                  <RowDivider />
-                ) : null}
-              </View>
-            ))}
-          </Surface>
-        </Animated.View>
-      ) : null}
-
-      {/* Suggested / matched */}
-      {data.suggested.length > 0 ? (
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(440)}
-          style={{ marginTop: 40 }}
-        >
-          <SectionHeader
-            title="Matched for you"
-            meta={`${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"}`}
-          />
-          <Surface padding={0} style={{ marginTop: 14 }}>
-            {data.suggested.slice(0, 5).map((p, i) => (
-              <View key={p.id}>
-                <Press
-                  onPress={() => router.push(`/(main)/projects/${p.slug}`)}
-                  haptic="soft"
-                  scaleTo={0.99}
-                >
-                  <SuggestedRow project={p} />
-                </Press>
-                {i < Math.min(data.suggested.length, 5) - 1 ? (
-                  <RowDivider />
-                ) : null}
-              </View>
-            ))}
-          </Surface>
-          <Press
-            onPress={() => router.push("/(main)/browse")}
-            haptic="tap"
+        {/* Quiet kicker greeting */}
+        <Animated.View entering={FadeInDown.duration(420).delay(40)}>
+          <Text
             style={{
-              marginTop: 12,
-              alignSelf: "center",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              paddingVertical: 10,
-              paddingHorizontal: 18,
+              ...type.caption,
+              color: palette.textDim,
+              fontWeight: "600",
+              letterSpacing: 2.2,
+              marginTop: 4,
             }}
+          >
+            {timeOfDayGreeting().toUpperCase()}, {fName.toUpperCase()}
+          </Text>
+        </Animated.View>
+
+        {/* Hero card — picks the right narrative based on builder state */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(140)}
+          style={{ marginTop: 16 }}
+        >
+          <BuilderHeroCard data={data} />
+        </Animated.View>
+
+        {/* Stat row */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(240)}
+          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
+        >
+          <StatTile
+            label="Tenders"
+            value={data.stats.activeTenders}
+            accent={data.stats.activeTenders > 0}
+          />
+          <StatTile label="Unlocked" value={data.stats.unlockedProjects} />
+          <StatTile
+            label="Saved"
+            value={data.stats.savedProjects}
+            onPress={() => router.push("/(main)/projects")}
+          />
+        </Animated.View>
+
+        {/* My tenders */}
+        {data.myTenders.length > 0 ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(340)}
+            style={{ marginTop: 36 }}
+          >
+            <SectionHeader
+              title="Your tenders"
+              meta={`${data.myTenders.length} active`}
+            />
+            <Surface padding={0} style={{ marginTop: 14 }}>
+              {data.myTenders.slice(0, 5).map((t, i) => (
+                <View key={t.id}>
+                  <Press
+                    onPress={() => router.push(`/(main)/tenders/${t.id}`)}
+                    haptic="soft"
+                    scaleTo={0.99}
+                  >
+                    <TenderRow tender={t} />
+                  </Press>
+                  {i < Math.min(data.myTenders.length, 5) - 1 ? (
+                    <RowDivider />
+                  ) : null}
+                </View>
+              ))}
+            </Surface>
+          </Animated.View>
+        ) : null}
+
+        {/* Matched projects — Airbnb-style ProjectCards */}
+        {data.suggested.length > 0 ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(440)}
+            style={{ marginTop: 36 }}
+          >
+            <SectionHeader
+              title="Matched for you"
+              meta={`${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"}`}
+            />
+            <View style={{ marginTop: 14, gap: 12 }}>
+              {data.suggested.slice(0, 4).map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  title={p.title}
+                  location={projectLocation(p)}
+                  typeLabel={TYPE_LABEL[p.type]}
+                  statusLabel={
+                    p.budgetBand
+                      ? BUDGET_LABEL[p.budgetBand] ?? p.budgetBand
+                      : undefined
+                  }
+                  statusTone="accent"
+                  stats={{
+                    unlockedOf: { current: p.unlockedCount, total: 3 },
+                  }}
+                  onPress={() =>
+                    router.push(`/(main)/projects/${p.slug}`)
+                  }
+                />
+              ))}
+            </View>
+            <Press
+              onPress={() => router.push("/(main)/projects")}
+              haptic="tap"
+              style={{
+                marginTop: 14,
+                paddingVertical: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: palette.accent,
+                  letterSpacing: 0.2,
+                }}
+              >
+                See all matches →
+              </Text>
+            </Press>
+          </Animated.View>
+        ) : null}
+
+        {/* Activity */}
+        {data.activity.length > 0 ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(540)}
+            style={{ marginTop: 36 }}
+          >
+            <SectionHeader title="Recent activity" />
+            <Surface padding={0} style={{ marginTop: 14 }}>
+              {data.activity.slice(0, 6).map((a, i) => (
+                <View key={a.id}>
+                  <ActivityRow
+                    kind={a.kind}
+                    title={a.title}
+                    subtitle={a.body ?? undefined}
+                    time={relativeTime(a.createdAt)}
+                    unread={a.readAt === null}
+                  />
+                  {i < Math.min(data.activity.length, 6) - 1 ? (
+                    <RowDivider />
+                  ) : null}
+                </View>
+              ))}
+            </Surface>
+          </Animated.View>
+        ) : null}
+
+        {/* Sign out */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(640)}
+          style={{ marginTop: 40, alignItems: "center" }}
+        >
+          <Press
+            onPress={async () => {
+              void haptics.tap();
+              await signOut();
+              router.replace("/(auth)/login");
+            }}
+            haptic="none"
+            style={{ paddingVertical: 12, paddingHorizontal: 24 }}
           >
             <Text
               style={{
                 fontSize: 13,
-                fontWeight: "600",
-                color: palette.accent,
-                letterSpacing: 0.2,
+                color: palette.textDim,
+                letterSpacing: 0.3,
               }}
             >
-              See all matches
+              Sign out
             </Text>
-            <Icon.ArrowRight size={14} color={palette.accent} />
           </Press>
         </Animated.View>
-      ) : null}
-
-      {/* Activity */}
-      {data.activity.length > 0 ? (
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(520)}
-          style={{ marginTop: 40 }}
-        >
-          <SectionHeader title="Recent activity" />
-          <Surface padding={0} style={{ marginTop: 14 }}>
-            {data.activity.slice(0, 6).map((a, i) => (
-              <View key={a.id}>
-                <ActivityRow item={a} />
-                {i < Math.min(data.activity.length, 6) - 1 ? (
-                  <RowDivider />
-                ) : null}
-              </View>
-            ))}
-          </Surface>
-        </Animated.View>
-      ) : null}
-
-      {/* Sign out — quiet */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(620)}
-        style={{ marginTop: 48, alignItems: "center" }}
-      >
-        <Press
-          onPress={async () => {
-            void haptics.tap();
-            await signOut();
-            router.replace("/(auth)/login");
-          }}
-          haptic="none"
-          style={{ paddingVertical: 12, paddingHorizontal: 24 }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              color: palette.textDim,
-              letterSpacing: 0.3,
-            }}
-          >
-            Sign out
-          </Text>
-        </Press>
-      </Animated.View>
-    </ScreenV4>
+      </ScreenV4>
+    </>
   );
 }
 
-// ── Hero narrative selection ────────────────────────────────────────────
+// ── Hero card variants ──────────────────────────────────────────────────
 
-interface HeroNarrative {
-  heroTitle: string;
-  heroAccent: string;
-  heroSub?: string;
-}
-
-function pickBuilderNarrative(
-  data: BuilderDashboardPayload,
-): HeroNarrative {
-  // Profile not yet set up — must complete onboarding first.
-  if (!data.profile.hasProfile) {
-    return {
-      heroTitle: "Set up your",
-      heroAccent: "profile.",
-      heroSub: "Tell us about your business so we can match you with projects.",
-    };
-  }
-
-  // Approval pending — verification in flight
-  if (data.profile.approvalStatus === "pending") {
-    return {
-      heroTitle: "Verification",
-      heroAccent: "in flight.",
-      heroSub: "We're checking your ABN and licence. Usually under 24 hours.",
-    };
-  }
-
-  // Active tenders → focus there
-  if (data.stats.activeTenders > 0) {
-    return {
-      heroTitle: "Your",
-      heroAccent: "tenders.",
-      heroSub: `${data.stats.activeTenders} ${data.stats.activeTenders === 1 ? "tender" : "tenders"} in play.`,
-    };
-  }
-
-  // No tenders yet → focus on finding work
-  return {
-    heroTitle: "Find your next",
-    heroAccent: "build.",
-    heroSub:
-      data.suggested.length > 0
-        ? `${data.suggested.length} project${data.suggested.length === 1 ? "" : "s"} matched today.`
-        : "We'll match you with verified projects in your service area.",
-  };
-}
-
-// ── Sub-components ──────────────────────────────────────────────────────
-
-function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
-  // Pre-approval state: gate by profile setup.
+function BuilderHeroCard({ data }: { data: BuilderDashboardPayload }) {
   if (!data.profile.hasProfile) {
     return (
-      <Surface variant="accent" padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-          Action required
+      <Surface variant="accent" padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.accent,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          ACTION REQUIRED
         </Text>
         <Text
           style={{
             ...type.titleLarge,
             color: palette.text,
             fontWeight: "600",
-            marginTop: 16,
+            marginTop: 14,
             maxWidth: 280,
           }}
         >
-          Complete your profile to start.
+          Complete your profile.
         </Text>
-        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}>
+        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}>
           Add your ABN, licence, and service area on web.
         </Text>
       </Surface>
@@ -447,43 +436,60 @@ function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
 
   if (data.profile.approvalStatus === "pending") {
     return (
-      <Surface padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.warning, fontWeight: "600" }}>
-          Pending verification
+      <Surface padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.warning,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          PENDING VERIFICATION
         </Text>
         <Text
           style={{
             ...type.titleLarge,
             color: palette.text,
             fontWeight: "600",
-            marginTop: 16,
+            marginTop: 14,
           }}
         >
           We&apos;re reviewing your ABN.
         </Text>
-        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}>
+        <Text style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}>
           You can browse projects while you wait. Unlocks open once verified.
         </Text>
       </Surface>
     );
   }
 
-  // FBA active — feature founding access prominently
   if (data.fba.active) {
     return (
-      <Surface variant="accent" padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-          Founding access
+      <Surface variant="accent" padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.accent,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          FOUNDING ACCESS
         </Text>
         <View
           style={{
-            marginTop: 14,
+            marginTop: 12,
             flexDirection: "row",
             alignItems: "baseline",
             gap: 12,
           }}
         >
-          <BigNumber value={data.fba.remainingThisCycle} size="lg" color={palette.text} />
+          <BigNumber
+            value={data.fba.remainingThisCycle}
+            size="lg"
+            color={palette.text}
+          />
           <Text style={{ ...type.body, color: palette.textMuted }}>
             free unlock{data.fba.remainingThisCycle === 1 ? "" : "s"} left
           </Text>
@@ -500,7 +506,7 @@ function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
           {data.fba.daysToGrantEnd} days
         </Text>
         {data.fba.totalSavedAud > 0 ? (
-          <Pill tone="accent" size="md" style={{ marginTop: 16 }}>
+          <Pill tone="accent" size="md" style={{ marginTop: 14 }}>
             Saved {formatAud(data.fba.totalSavedAud)} so far
           </Pill>
         ) : null}
@@ -508,57 +514,79 @@ function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
     );
   }
 
-  // Active tenders — surface count + nudge
   if (data.stats.activeTenders > 0) {
     return (
-      <Surface variant="accent" padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-          Tenders in play
+      <Surface variant="accent" padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.accent,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          TENDERS IN PLAY
         </Text>
         <View
           style={{
-            marginTop: 14,
+            marginTop: 12,
             flexDirection: "row",
             alignItems: "baseline",
             gap: 12,
           }}
         >
-          <BigNumber value={data.stats.activeTenders} size="lg" color={palette.text} />
+          <BigNumber
+            value={data.stats.activeTenders}
+            size="lg"
+            color={palette.text}
+          />
           <Text style={{ ...type.body, color: palette.textMuted }}>
             awaiting decision
           </Text>
         </View>
-        <Text style={{ ...type.bodySmall, color: palette.textMuted, marginTop: 10 }}>
+        <Text
+          style={{ ...type.bodySmall, color: palette.textMuted, marginTop: 10 }}
+        >
           Median time to decision · 5-10 days
         </Text>
       </Surface>
     );
   }
 
-  // Default — promote browsing
   return (
-    <Surface padding={28} hairline>
-      <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-        Discover
+    <Surface padding={24} hairline>
+      <Text
+        style={{
+          ...type.caption,
+          color: palette.accent,
+          fontWeight: "600",
+          letterSpacing: 2,
+        }}
+      >
+        DISCOVER
       </Text>
       <View
         style={{
-          marginTop: 14,
+          marginTop: 12,
           flexDirection: "row",
           alignItems: "baseline",
           gap: 12,
         }}
       >
-        <BigNumber value={data.suggested.length} size="lg" color={palette.text} />
+        <BigNumber
+          value={data.suggested.length}
+          size="lg"
+          color={palette.text}
+        />
         <Text style={{ ...type.body, color: palette.textMuted }}>
           {data.suggested.length === 1 ? "match" : "matches"} for you
         </Text>
       </View>
       <Press
-        onPress={() => router.push("/(main)/browse")}
+        onPress={() => router.push("/(main)/projects")}
         haptic="select"
         style={{
-          marginTop: 22,
+          marginTop: 20,
           flexDirection: "row",
           alignItems: "center",
           gap: 8,
@@ -584,7 +612,9 @@ function HeroNumberCard({ data }: { data: BuilderDashboardPayload }) {
   );
 }
 
-function StatTileBlock({
+// ── Small bits ──────────────────────────────────────────────────────────
+
+function StatTile({
   label,
   value,
   accent = false,
@@ -598,25 +628,28 @@ function StatTileBlock({
   const body = (
     <Surface
       variant={accent ? "accent" : "default"}
-      padding={16}
+      padding={14}
       style={{ flex: 1, alignItems: "flex-start" }}
     >
       <Text
         style={{
-          ...type.kicker,
+          ...type.caption,
           color: accent ? palette.accent : palette.textDim,
           fontWeight: "600",
+          letterSpacing: 1.6,
         }}
       >
-        {label}
+        {label.toUpperCase()}
       </Text>
       <Text
         style={{
           ...type.numericLarge,
+          fontSize: 26,
+          lineHeight: 30,
           color: accent ? palette.accentLight : palette.text,
           fontVariant: ["tabular-nums"],
           fontWeight: "600",
-          marginTop: 10,
+          marginTop: 8,
         }}
       >
         {value}
@@ -647,6 +680,7 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
           ...type.title,
           color: palette.text,
           fontWeight: "600",
+          letterSpacing: -0.15,
         }}
       >
         {title}
@@ -656,7 +690,7 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
           style={{
             ...type.caption,
             color: palette.textDim,
-            letterSpacing: 0.6,
+            letterSpacing: 1.4,
             fontWeight: "600",
           }}
         >
@@ -672,11 +706,17 @@ function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
   const statusLabel = TENDER_STATUS_LABEL[tender.status] ?? tender.status;
   return (
     <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+      >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             numberOfLines={1}
-            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
+            style={{
+              ...type.titleSmall,
+              color: palette.text,
+              fontWeight: "600",
+            }}
           >
             {tender.projectTitle}
           </Text>
@@ -697,101 +737,6 @@ function TenderRow({ tender }: { tender: BuilderTenderListItem }) {
       </View>
     </View>
   );
-}
-
-function SuggestedRow({ project }: { project: BuilderProjectListItem }) {
-  return (
-    <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            numberOfLines={1}
-            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
-          >
-            {project.title}
-          </Text>
-          <Text
-            numberOfLines={1}
-            style={{
-              ...type.bodySmall,
-              color: palette.textMuted,
-              marginTop: 4,
-            }}
-          >
-            {suburbLineOf(project)}
-            {project.budgetBand
-              ? ` · ${BUDGET_LABEL[project.budgetBand] ?? project.budgetBand}`
-              : ""}
-          </Text>
-        </View>
-        <View
-          style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-        >
-          {project.unlockedCount > 0 ? (
-            <Pill tone="neutral">{project.unlockedCount}/3 unlocked</Pill>
-          ) : null}
-          <Icon.ChevronRight size={16} color={palette.textDim} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function ActivityRow({ item }: { item: ActivityItem }) {
-  const unread = item.readAt === null;
-  const iconColor = unread ? palette.accent : palette.textDim;
-  return (
-    <Row
-      paddingX={18}
-      paddingY={14}
-      leading={
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: unread ? palette.accentMuted : palette.surfaceElev,
-            borderWidth: 1,
-            borderColor: unread ? palette.hairlineAccent : palette.hairline,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {iconForActivityKind(item.kind, iconColor)}
-        </View>
-      }
-      title={item.title}
-      subtitle={item.body ?? undefined}
-      trailing={
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.textDim,
-            letterSpacing: 0.3,
-          }}
-        >
-          {relativeTime(item.createdAt)}
-        </Text>
-      }
-    />
-  );
-}
-
-function iconForActivityKind(kind: string, color: string): React.ReactNode {
-  switch (kind) {
-    case "tender_submitted":
-      return <Icon.Tender size={16} color={color} />;
-    case "tender_shortlisted":
-      return <Icon.CheckCircle size={16} color={color} />;
-    case "tender_awarded":
-      return <Icon.Trophy size={16} color={color} />;
-    case "tender_rejected":
-      return <Icon.Close size={16} color={color} />;
-    case "tender_withdrawn":
-      return <Icon.Close size={16} color={color} />;
-    default:
-      return <Icon.Bell size={16} color={color} />;
-  }
 }
 
 function RowDivider() {

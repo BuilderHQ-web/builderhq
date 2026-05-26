@@ -43,8 +43,15 @@ interface BaseProps {
   background?: string;
   /** Horizontal page padding (default 20). 0 = full bleed. */
   paddingX?: number;
+  /** Reserve top padding for a floating <GlassTopBar />.
+   *  Pass the height (use useTopBarHeight() in the caller). */
+  topBarHeight?: number;
   /** Add 96px bottom inset for a sticky CTA bar. */
   bottomCta?: boolean;
+  /** Reserve room above the bottom tab bar so content isn't occluded.
+   *  Default 88 (tab bar height + safe area). Set to 0 if a non-tab
+   *  screen (auth flow, etc.). */
+  bottomTabInset?: number;
   /** Optional shared scroll-Y for a sibling ScreenHeader. */
   scrollY?: SharedValue<number>;
   style?: ViewStyle;
@@ -67,16 +74,27 @@ interface ScrollProps
 
 export function ScreenV4(props: FlatProps | ScrollProps) {
   const {
-    edges = ["top", "bottom"],
+    edges,
     background = palette.canvas,
     paddingX = 20,
+    topBarHeight = 0,
     bottomCta = false,
+    bottomTabInset = 88,
     scrollY,
     style,
     children,
   } = props;
 
-  const bottomPad = bottomCta ? 96 : 32;
+  // If a GlassTopBar is reserved, the screen owns the top edge itself
+  // (the bar paints behind the status bar). Otherwise, default to safe.
+  const resolvedEdges: readonly Edge[] =
+    edges ?? (topBarHeight > 0 ? ["bottom"] : ["top", "bottom"]);
+
+  // Bottom padding accounts for either a sticky CTA bar (96) or the
+  // floating tab bar (88). Caller picks one via bottomCta / bottomTabInset.
+  const bottomPad = bottomCta ? 96 : bottomTabInset;
+  // Top padding when a sticky bar is reserved.
+  const topPad = topBarHeight;
 
   const innerScrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -101,6 +119,7 @@ export function ScreenV4(props: FlatProps | ScrollProps) {
         scrollEventThrottle={16}
         contentContainerStyle={{
           paddingHorizontal: paddingX,
+          paddingTop: topPad + 8,
           paddingBottom: bottomPad,
         }}
         refreshControl={
@@ -111,6 +130,7 @@ export function ScreenV4(props: FlatProps | ScrollProps) {
               tintColor={palette.accent}
               colors={[palette.accent]}
               progressBackgroundColor={palette.surface}
+              progressViewOffset={topPad}
             />
           ) : undefined
         }
@@ -126,6 +146,7 @@ export function ScreenV4(props: FlatProps | ScrollProps) {
           {
             flex: 1,
             paddingHorizontal: paddingX,
+            paddingTop: topPad,
             paddingBottom: bottomPad,
           },
           style,
@@ -138,7 +159,7 @@ export function ScreenV4(props: FlatProps | ScrollProps) {
 
   return (
     <View style={{ flex: 1, backgroundColor: background }}>
-      <SafeAreaView style={{ flex: 1 }} edges={edges}>
+      <SafeAreaView style={{ flex: 1 }} edges={resolvedEdges}>
         <StatusBar style="light" />
         {Platform.OS === "ios" ? (
           <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>

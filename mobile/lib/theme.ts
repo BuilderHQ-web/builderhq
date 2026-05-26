@@ -111,15 +111,15 @@ export const fonts = {
 
 /** Locked optical scale — five sizes, one line-height per role. */
 export const type = {
-  // Display — Instrument Serif italic, screen titles
-  display: { fontSize: 44, lineHeight: 48, letterSpacing: -0.6 },
-  displayLarge: { fontSize: 64, lineHeight: 64, letterSpacing: -1.2 },
-  displayHero: { fontSize: 96, lineHeight: 96, letterSpacing: -2 },
+  // Display — Instrument Serif italic, hero greeting / moments only
+  display: { fontSize: 36, lineHeight: 40, letterSpacing: -0.4 },
+  displayLarge: { fontSize: 52, lineHeight: 56, letterSpacing: -0.8 },
+  displayHero: { fontSize: 80, lineHeight: 80, letterSpacing: -1.6 },
 
   // Title — system font, section headers
-  titleLarge: { fontSize: 28, lineHeight: 34, letterSpacing: -0.3 },
-  title: { fontSize: 22, lineHeight: 28, letterSpacing: -0.2 },
-  titleSmall: { fontSize: 18, lineHeight: 24, letterSpacing: -0.1 },
+  titleLarge: { fontSize: 24, lineHeight: 30, letterSpacing: -0.25 },
+  title: { fontSize: 19, lineHeight: 25, letterSpacing: -0.15 },
+  titleSmall: { fontSize: 16, lineHeight: 22, letterSpacing: -0.1 },
 
   // Body — system font, content
   body: { fontSize: 15, lineHeight: 22 },

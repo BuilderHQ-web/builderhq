@@ -21,3 +21,8 @@ export { ScreenHeader } from "./screen-header";
 export { Sheet } from "./sheet";
 export { StickyCTA } from "./sticky-cta";
 export { Moment } from "./moment";
+
+// v4.1 — the chrome the user pointed at (Revolut)
+export { GlassTopBar, useTopBarHeight, TOP_BAR_HEIGHT } from "./glass-top-bar";
+export { ProjectCard } from "./project-card";
+export { ActivityRow } from "./activity-row";

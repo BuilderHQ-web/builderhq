@@ -1,26 +1,26 @@
 /**
- * <OwnerHome /> — v4 premium owner dashboard.
+ * <OwnerHome /> — v4.1 premium owner dashboard.
+ *
+ * Page identity lives in the sticky <GlassTopBar /> (avatar | "Home"
+ * | bell). The first thing in scroll is content that EARNS the user's
+ * attention — not another block of "Home / GOOD AFTERNOON / Your
+ * projects." chrome.
  *
  * Composition top-to-bottom:
+ *   1. GlassTopBar — sticky chrome, avatar + "Home" + bell
+ *   2. Quiet welcome line — "Afternoon, Ryan." (small kicker text)
+ *   3. HeroCard — the single most-actionable surface for today
+ *      · Tenders to review (animated big number + CTA)
+ *      · OR "Your projects are live, waiting on builders"
+ *      · OR onboarding push
+ *   4. StatRow — three premium tile cards
+ *   5. Projects section — list of <ProjectCard /> with breathing room
+ *   6. Recent activity — premium <ActivityRow /> with kind-tinted icons
  *
- *   1. ScreenHeader — collapsible "Home" title with bell trailing
- *   2. Hero block — kicker (greeting) + plain display title + Instrument
- *      Serif italic accent ("Your projects.")
- *   3. HeroNumberCard — the day's most-actionable metric front and
- *      centre (tenders to review · projects live · or onboarding CTA)
- *   4. StatRow — three quiet stat tiles (Active / Drafts / Unread)
- *   5. Projects section — Surface-wrapped Row list with status pills
- *   6. Activity section — recent timeline rows
- *
- * v4 design choices in this screen:
- *   · One canvas, no gradients. All surfaces are solid #0E131F.
- *   · Hero NUMBER is the focal point — Revolut/Robinhood pattern.
- *   · Instrument Serif italic on ONE word per screen. Here: "projects."
- *   · Press feedback uses haptics throughout; rows soft-tap, CTAs select.
- *   · No floating glass header — iOS large-title-on-scroll pattern.
- *
- * Data shape unchanged from the legacy version — this is a pure UI
- * rewrite. `useOwnerDashboard()` returns the same OwnerDashboardPayload.
+ * Goals:
+ *   · Header carries identity → no display title block in scroll
+ *   · Projects are easy to scan and feel like content, not chrome
+ *   · Activity at a glance: kind = colored icon background
  */
 
 import * as React from "react";
@@ -36,19 +36,19 @@ import { palette, type } from "@/lib/theme";
 import { haptics } from "@/lib/haptics";
 
 import {
+  ActivityRow,
   AvatarV4,
   BigNumber,
-  Hero,
-  Pill,
+  GlassTopBar,
   Press,
-  Row,
-  ScreenHeader,
+  ProjectCard,
   ScreenV4,
   Surface,
+  useTopBarHeight,
 } from "@/components/ui/v4";
 import { DashboardSkeleton } from "./skeleton";
 import { ErrorView } from "./error-view";
-import type { ActivityItem, OwnerProjectListItem } from "./types";
+import type { OwnerProjectListItem } from "./types";
 
 // ── Mapping tables ──────────────────────────────────────────────────────
 
@@ -83,9 +83,9 @@ const STATUS_TONE: Record<
 function timeOfDayGreeting(now = new Date()): string {
   const h = now.getHours();
   if (h < 5) return "Late night";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Morning";
+  if (h < 18) return "Afternoon";
+  return "Evening";
 }
 
 function firstName(name: string | null | undefined): string {
@@ -93,14 +93,15 @@ function firstName(name: string | null | undefined): string {
   return name.split(/\s+/)[0] ?? name;
 }
 
-function suburbLine(p: OwnerProjectListItem): string {
+function locationLine(p: OwnerProjectListItem): string {
   const parts = [p.suburb, p.state, p.postcode].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : TYPE_LABEL[p.type] ?? p.type;
+  if (parts.length === 0) return TYPE_LABEL[p.type] ?? p.type;
+  return parts.join(" · ");
 }
 
 function relativeTime(iso: string): string {
   const diffSec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (diffSec < 60) return "just now";
+  if (diffSec < 60) return "now";
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
   if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}d`;
@@ -117,6 +118,7 @@ export function OwnerHome() {
   const { data, isLoading, error, refetch } = useOwnerDashboard();
   const [refreshing, setRefreshing] = React.useState(false);
   const scrollY = useSharedValue(0);
+  const topBarHeight = useTopBarHeight();
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -125,224 +127,306 @@ export function OwnerHome() {
     setRefreshing(false);
   }, [refetch]);
 
+  const chrome = (
+    <GlassTopBar
+      title="Home"
+      leading={
+        <Press
+          onPress={() => router.push("/(main)/profile")}
+          haptic="tap"
+          accessibilityLabel="Open profile"
+        >
+          <AvatarV4 name={user?.name ?? "BuilderHQ"} size={32} />
+        </Press>
+      }
+      trailing={
+        <Press
+          onPress={() => router.push("/(main)/messages")}
+          haptic="tap"
+          accessibilityLabel="Open inbox"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: palette.surface,
+            borderWidth: 1,
+            borderColor: palette.hairline,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon.Bell size={17} color={palette.text} />
+          {data && data.stats.unreadMessages > 0 ? (
+            <View
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 9,
+                width: 7,
+                height: 7,
+                borderRadius: 3.5,
+                backgroundColor: palette.accent,
+                borderWidth: 1.5,
+                borderColor: palette.surface,
+              }}
+            />
+          ) : null}
+        </Press>
+      }
+    />
+  );
+
   if (isLoading && !data) {
     return (
-      <ScreenV4 variant="flat">
-        <DashboardSkeleton />
-      </ScreenV4>
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <DashboardSkeleton />
+        </ScreenV4>
+      </>
     );
   }
 
   if (error && !data) {
     return (
-      <ScreenV4 variant="flat">
-        <ErrorView message={error} onRetry={() => void refetch()} />
-      </ScreenV4>
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <ErrorView message={error} onRetry={() => void refetch()} />
+        </ScreenV4>
+      </>
     );
   }
 
   if (!data) {
-    return <ScreenV4 variant="flat"><View /></ScreenV4>;
+    return (
+      <>
+        {chrome}
+        <ScreenV4 variant="flat" topBarHeight={topBarHeight}>
+          <View />
+        </ScreenV4>
+      </>
+    );
   }
 
-  const greeting = timeOfDayGreeting();
   const fName = firstName(user?.name);
   const stats = data.stats;
   const projects = data.projects;
   const activity = data.activity;
 
   return (
-    <ScreenV4
-      variant="scroll"
-      scrollY={scrollY}
-      onRefresh={onRefresh}
-      refreshing={refreshing}
-    >
-      <ScreenHeader
-        title="Home"
+    <>
+      {chrome}
+      <ScreenV4
+        variant="scroll"
         scrollY={scrollY}
-        trailing={
-          <Press
-            onPress={() => router.push("/(main)/profile")}
-            haptic="tap"
-            accessibilityLabel="Open profile"
-          >
-            <AvatarV4 name={user?.name ?? "BuilderHQ"} size={36} />
-          </Press>
-        }
-      />
-
-      {/* Hero — kicker + plain display + Instrument Serif italic accent.
-          The accent word ties this screen to the landing's voice. */}
-      <Animated.View entering={FadeInDown.duration(420).delay(40)}>
-        <Hero
-          kicker={`${greeting.toUpperCase()}, ${fName.toUpperCase()}`}
-          title="Your"
-          accent="projects."
-          sub={projectsSub(stats.activeProjects, stats.totalTenders)}
-        />
-      </Animated.View>
-
-      {/* Hero number — the day's main thing. Tenders if any, else
-          a smart fallback. */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(160)}
-        style={{ marginTop: 28 }}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        topBarHeight={topBarHeight}
       >
-        <HeroNumberCard
-          tenderCount={stats.totalTenders}
-          activeProjects={stats.activeProjects}
-          draftProjects={stats.draftProjects}
-          onPressTenders={() => {
-            const target = projects.find(
-              (p) => p.stats.tenderCount > 0,
-            );
-            if (target) {
-              void haptics.select();
-              router.push(`/(main)/projects/${target.slug}`);
-            }
-          }}
-          onPressCreate={() => {
-            void haptics.select();
-            // No native create flow yet — push to web.
-            router.push("/(main)/browse");
-          }}
-        />
-      </Animated.View>
-
-      {/* Stat row */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(260)}
-        style={{ marginTop: 16, flexDirection: "row", gap: 10 }}
-      >
-        <StatTile label="Active" value={stats.activeProjects} />
-        <StatTile label="Drafts" value={stats.draftProjects} />
-        <StatTile
-          label="Unread"
-          value={stats.unreadMessages}
-          accent={stats.unreadMessages > 0}
-          onPress={() => router.push("/(main)/messages")}
-        />
-      </Animated.View>
-
-      {/* Projects */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(360)}
-        style={{ marginTop: 40 }}
-      >
-        <SectionHeader
-          title="Your projects"
-          meta={`${projects.length} ${projects.length === 1 ? "project" : "projects"}`}
-        />
-        {projects.length === 0 ? (
-          <EmptyProjects />
-        ) : (
-          <Surface padding={0} style={{ marginTop: 14, gap: 0 }}>
-            {projects.map((p, i) => (
-              <View key={p.id}>
-                <Press
-                  onPress={() => router.push(`/(main)/projects/${p.slug}`)}
-                  haptic="soft"
-                  scaleTo={0.99}
-                >
-                  <ProjectRow project={p} />
-                </Press>
-                {i < projects.length - 1 ? <RowDivider /> : null}
-              </View>
-            ))}
-          </Surface>
-        )}
-      </Animated.View>
-
-      {/* Activity */}
-      {activity.length > 0 ? (
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(460)}
-          style={{ marginTop: 40 }}
-        >
-          <SectionHeader title="Recent activity" />
-          <Surface padding={0} style={{ marginTop: 14 }}>
-            {activity.slice(0, 6).map((a, i) => (
-              <View key={a.id}>
-                <ActivityRow item={a} />
-                {i < Math.min(activity.length, 6) - 1 ? (
-                  <RowDivider />
-                ) : null}
-              </View>
-            ))}
-          </Surface>
-        </Animated.View>
-      ) : null}
-
-      {/* Sign out — quiet, at the very bottom. Temporary until the
-          profile tab lands proper. */}
-      <Animated.View
-        entering={FadeInDown.duration(440).delay(560)}
-        style={{ marginTop: 48, alignItems: "center" }}
-      >
-        <Press
-          onPress={async () => {
-            void haptics.tap();
-            await signOut();
-            router.replace("/(auth)/login");
-          }}
-          haptic="none"
-          style={{ paddingVertical: 12, paddingHorizontal: 24 }}
-        >
+        {/* Quiet welcome — small kicker text, not a display title. The
+            sticky bar above already carries the page identity. */}
+        <Animated.View entering={FadeInDown.duration(420).delay(40)}>
           <Text
             style={{
-              fontSize: 13,
+              ...type.caption,
               color: palette.textDim,
-              letterSpacing: 0.3,
+              fontWeight: "600",
+              letterSpacing: 2.2,
+              marginTop: 4,
             }}
           >
-            Sign out
+            {timeOfDayGreeting().toUpperCase()}, {fName.toUpperCase()}
           </Text>
-        </Press>
-      </Animated.View>
-    </ScreenV4>
+        </Animated.View>
+
+        {/* Hero card — single, focused, the day's main action */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(140)}
+          style={{ marginTop: 16 }}
+        >
+          <HeroCard
+            tenderCount={stats.totalTenders}
+            activeProjects={stats.activeProjects}
+            draftProjects={stats.draftProjects}
+            onPressTenders={() => {
+              const target = projects.find((p) => p.stats.tenderCount > 0);
+              if (target) {
+                void haptics.select();
+                router.push(`/(main)/projects/${target.slug}`);
+              }
+            }}
+            onPressBrowse={() => {
+              void haptics.select();
+              router.push("/(main)/projects");
+            }}
+          />
+        </Animated.View>
+
+        {/* Stat row */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(240)}
+          style={{ marginTop: 12, flexDirection: "row", gap: 10 }}
+        >
+          <StatTile label="Active" value={stats.activeProjects} />
+          <StatTile label="Drafts" value={stats.draftProjects} />
+          <StatTile
+            label="Unread"
+            value={stats.unreadMessages}
+            accent={stats.unreadMessages > 0}
+            onPress={() => router.push("/(main)/messages")}
+          />
+        </Animated.View>
+
+        {/* Projects */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(340)}
+          style={{ marginTop: 36 }}
+        >
+          <SectionHeader
+            title="Your projects"
+            meta={
+              projects.length > 0
+                ? `${projects.length} ${projects.length === 1 ? "project" : "projects"}`
+                : undefined
+            }
+          />
+          {projects.length === 0 ? (
+            <EmptyProjects />
+          ) : (
+            <View style={{ marginTop: 14, gap: 12 }}>
+              {projects.slice(0, 4).map((p, i) => (
+                <ProjectCard
+                  key={p.id}
+                  title={p.title}
+                  location={locationLine(p)}
+                  typeLabel={TYPE_LABEL[p.type]}
+                  statusLabel={STATUS_LABEL[p.status]}
+                  statusTone={STATUS_TONE[p.status] ?? "neutral"}
+                  stats={{
+                    tenders: p.stats.tenderCount,
+                    unlocks: p.stats.unlockCount,
+                    unread: p.stats.unreadMessages,
+                  }}
+                  featured={i === 0 && p.stats.tenderCount > 0}
+                  onPress={() =>
+                    router.push(`/(main)/projects/${p.slug}`)
+                  }
+                />
+              ))}
+              {projects.length > 4 ? (
+                <Press
+                  onPress={() => router.push("/(main)/projects")}
+                  haptic="tap"
+                  style={{
+                    paddingVertical: 14,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: palette.accent,
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    See all {projects.length} projects →
+                  </Text>
+                </Press>
+              ) : null}
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Activity */}
+        {activity.length > 0 ? (
+          <Animated.View
+            entering={FadeInDown.duration(440).delay(440)}
+            style={{ marginTop: 36 }}
+          >
+            <SectionHeader title="Recent activity" />
+            <Surface padding={0} style={{ marginTop: 14 }}>
+              {activity.slice(0, 6).map((a, i) => (
+                <View key={a.id}>
+                  <ActivityRow
+                    kind={a.kind}
+                    title={a.title}
+                    subtitle={a.body ?? undefined}
+                    time={relativeTime(a.createdAt)}
+                    unread={a.readAt === null}
+                  />
+                  {i < Math.min(activity.length, 6) - 1 ? (
+                    <RowDivider />
+                  ) : null}
+                </View>
+              ))}
+            </Surface>
+          </Animated.View>
+        ) : null}
+
+        {/* Sign out — quiet */}
+        <Animated.View
+          entering={FadeInDown.duration(440).delay(560)}
+          style={{ marginTop: 40, alignItems: "center" }}
+        >
+          <Press
+            onPress={async () => {
+              void haptics.tap();
+              await signOut();
+              router.replace("/(auth)/login");
+            }}
+            haptic="none"
+            style={{ paddingVertical: 12, paddingHorizontal: 24 }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                color: palette.textDim,
+                letterSpacing: 0.3,
+              }}
+            >
+              Sign out
+            </Text>
+          </Press>
+        </Animated.View>
+      </ScreenV4>
+    </>
   );
 }
 
-// ── Sub-components used only inside this screen ─────────────────────────
+// ── Sub-components ──────────────────────────────────────────────────────
 
-function projectsSub(active: number, tenders: number): string {
-  if (active === 0) return "Let's start your first build.";
-  if (tenders === 0) {
-    return `${active} project${active === 1 ? "" : "s"} live · waiting on tenders.`;
-  }
-  return `${active} project${active === 1 ? "" : "s"} live · ${tenders} tender${tenders === 1 ? "" : "s"} in.`;
-}
-
-/**
- * The day's most-actionable surface. Picks the right hero based on
- * the user's current state:
- *   · tenderCount > 0    → big number with "Review tenders" CTA
- *   · activeProjects > 0 → "Your projects are live, waiting on tenders"
- *   · else (onboarding)  → "Start your first build" CTA
- */
-function HeroNumberCard({
+/** The single hero surface — state-aware. */
+function HeroCard({
   tenderCount,
   activeProjects,
   draftProjects,
   onPressTenders,
-  onPressCreate,
+  onPressBrowse,
 }: {
   tenderCount: number;
   activeProjects: number;
   draftProjects: number;
   onPressTenders: () => void;
-  onPressCreate: () => void;
+  onPressBrowse: () => void;
 }) {
   if (tenderCount > 0) {
     return (
-      <Surface variant="accent" padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-          Tenders to review
+      <Surface variant="accent" padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.accent,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          TENDERS TO REVIEW
         </Text>
         <View
           style={{
-            marginTop: 14,
+            marginTop: 12,
             flexDirection: "row",
             alignItems: "baseline",
             gap: 12,
@@ -385,23 +469,30 @@ function HeroNumberCard({
 
   if (activeProjects > 0) {
     return (
-      <Surface padding={28} hairline>
-        <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-          Your projects are live
+      <Surface padding={24} hairline>
+        <Text
+          style={{
+            ...type.caption,
+            color: palette.accent,
+            fontWeight: "600",
+            letterSpacing: 2,
+          }}
+        >
+          YOUR PROJECTS ARE LIVE
         </Text>
         <Text
           style={{
             ...type.titleLarge,
             color: palette.text,
             fontWeight: "600",
-            marginTop: 16,
+            marginTop: 14,
             maxWidth: 280,
           }}
         >
           Waiting on builders to tender.
         </Text>
         <Text
-          style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}
+          style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}
         >
           Median first response is 24 hours.
         </Text>
@@ -409,35 +500,41 @@ function HeroNumberCard({
     );
   }
 
-  // Onboarding empty state.
   return (
-    <Surface variant="accent" padding={28} hairline>
-      <Text style={{ ...type.kicker, color: palette.accent, fontWeight: "600" }}>
-        Welcome to BuilderHQ
+    <Surface variant="accent" padding={24} hairline>
+      <Text
+        style={{
+          ...type.caption,
+          color: palette.accent,
+          fontWeight: "600",
+          letterSpacing: 2,
+        }}
+      >
+        WELCOME TO BUILDERHQ
       </Text>
       <Text
         style={{
           ...type.titleLarge,
           color: palette.text,
           fontWeight: "600",
-          marginTop: 16,
+          marginTop: 14,
           maxWidth: 280,
         }}
       >
         {draftProjects > 0 ? "Publish your draft." : "Start your first build."}
       </Text>
       <Text
-        style={{ ...type.body, color: palette.textMuted, marginTop: 12 }}
+        style={{ ...type.body, color: palette.textMuted, marginTop: 10 }}
       >
         {draftProjects > 0
           ? `You have ${draftProjects} draft${draftProjects === 1 ? "" : "s"} ready to go live.`
           : "Upload your plans and we'll match verified builders within days."}
       </Text>
       <Press
-        onPress={onPressCreate}
+        onPress={onPressBrowse}
         haptic="select"
         style={{
-          marginTop: 22,
+          marginTop: 20,
           flexDirection: "row",
           alignItems: "center",
           gap: 8,
@@ -477,25 +574,28 @@ function StatTile({
   const body = (
     <Surface
       variant={accent ? "accent" : "default"}
-      padding={16}
+      padding={14}
       style={{ flex: 1, alignItems: "flex-start" }}
     >
       <Text
         style={{
-          ...type.kicker,
+          ...type.caption,
           color: accent ? palette.accent : palette.textDim,
           fontWeight: "600",
+          letterSpacing: 1.6,
         }}
       >
-        {label}
+        {label.toUpperCase()}
       </Text>
       <Text
         style={{
           ...type.numericLarge,
+          fontSize: 26,
+          lineHeight: 30,
           color: accent ? palette.accentLight : palette.text,
           fontVariant: ["tabular-nums"],
           fontWeight: "600",
-          marginTop: 10,
+          marginTop: 8,
         }}
       >
         {value}
@@ -526,6 +626,7 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
           ...type.title,
           color: palette.text,
           fontWeight: "600",
+          letterSpacing: -0.15,
         }}
       >
         {title}
@@ -535,7 +636,7 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
           style={{
             ...type.caption,
             color: palette.textDim,
-            letterSpacing: 0.6,
+            letterSpacing: 1.4,
             fontWeight: "600",
           }}
         >
@@ -544,160 +645,6 @@ function SectionHeader({ title, meta }: { title: string; meta?: string }) {
       ) : null}
     </View>
   );
-}
-
-function ProjectRow({ project }: { project: OwnerProjectListItem }) {
-  const tone = STATUS_TONE[project.status] ?? "neutral";
-  const statusLabel = STATUS_LABEL[project.status] ?? project.status;
-  const typeLabel = TYPE_LABEL[project.type] ?? project.type;
-
-  return (
-    <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            numberOfLines={1}
-            style={{ ...type.titleSmall, color: palette.text, fontWeight: "600" }}
-          >
-            {project.title}
-          </Text>
-          <Text
-            numberOfLines={1}
-            style={{
-              ...type.bodySmall,
-              color: palette.textMuted,
-              marginTop: 4,
-            }}
-          >
-            {typeLabel} · {suburbLine(project)}
-          </Text>
-        </View>
-        <Pill tone={tone}>{statusLabel}</Pill>
-      </View>
-
-      {/* Inline stats row — only show non-zero values to keep this dense */}
-      {(project.stats.tenderCount > 0 ||
-        project.stats.unlockCount > 0 ||
-        project.stats.unreadMessages > 0) && (
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 18,
-            marginTop: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          {project.stats.tenderCount > 0 && (
-            <StatInline
-              icon={<Icon.Tender size={13} color={palette.accent} />}
-              label={`${project.stats.tenderCount} ${project.stats.tenderCount === 1 ? "tender" : "tenders"}`}
-            />
-          )}
-          {project.stats.unlockCount > 0 && (
-            <StatInline
-              icon={<Icon.Verified size={13} color={palette.textMuted} />}
-              label={`${project.stats.unlockCount} unlock${project.stats.unlockCount === 1 ? "" : "s"}`}
-            />
-          )}
-          {project.stats.unreadMessages > 0 && (
-            <StatInline
-              icon={<Icon.Message size={13} color={palette.accent} />}
-              label={`${project.stats.unreadMessages} unread`}
-              accent
-            />
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
-
-function StatInline({
-  icon,
-  label,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  accent?: boolean;
-}) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      {icon}
-      <Text
-        style={{
-          ...type.bodySmall,
-          color: accent ? palette.accentLight : palette.textMuted,
-          fontWeight: accent ? "600" : "500",
-        }}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function ActivityRow({ item }: { item: ActivityItem }) {
-  const unread = item.readAt === null;
-  const iconColor = unread ? palette.accent : palette.textDim;
-  return (
-    <Row
-      paddingX={18}
-      paddingY={14}
-      leading={
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: unread ? palette.accentMuted : palette.surfaceElev,
-            borderWidth: 1,
-            borderColor: unread ? palette.hairlineAccent : palette.hairline,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {iconForActivityKind(item.kind, iconColor)}
-        </View>
-      }
-      title={item.title}
-      subtitle={item.body ?? undefined}
-      trailing={
-        <Text
-          style={{
-            ...type.caption,
-            color: palette.textDim,
-            letterSpacing: 0.3,
-          }}
-        >
-          {relativeTime(item.createdAt)}
-        </Text>
-      }
-    />
-  );
-}
-
-function iconForActivityKind(kind: string, color: string): React.ReactNode {
-  switch (kind) {
-    case "tender_submitted":
-      return <Icon.Tender size={16} color={color} />;
-    case "tender_shortlisted":
-      return <Icon.CheckCircle size={16} color={color} />;
-    case "tender_awarded":
-      return <Icon.Trophy size={16} color={color} />;
-    case "tender_rejected":
-      return <Icon.Close size={16} color={color} />;
-    case "tender_withdrawn":
-      return <Icon.Close size={16} color={color} />;
-    default:
-      return <Icon.Bell size={16} color={color} />;
-  }
 }
 
 function EmptyProjects() {

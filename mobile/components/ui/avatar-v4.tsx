@@ -25,8 +25,9 @@ interface Props {
   name: string | null | undefined;
   /** Explicit initials override (e.g. team abbreviations). */
   initials?: string;
-  /** Avatar diameter. Locked rhythm: 28 / 36 / 44 / 56 / 72. */
-  size?: 28 | 36 | 44 | 56 | 72;
+  /** Avatar diameter. Locked rhythm: 28 / 32 / 36 / 44 / 56 / 72.
+   *  (32 added for header avatars — matches the iOS chrome size.) */
+  size?: 28 | 32 | 36 | 44 | 56 | 72;
   /** Show a teal verification pip at bottom-right. */
   verified?: boolean;
   /** Filled accent (decisive state) vs default tinted (calm state). */
