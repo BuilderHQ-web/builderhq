@@ -114,7 +114,7 @@ function relativeTime(iso: string): string {
 // ── Component ───────────────────────────────────────────────────────────
 
 export function OwnerHome() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { data, isLoading, error, refetch } = useOwnerDashboard();
   const [refreshing, setRefreshing] = React.useState(false);
   const scrollY = useSharedValue(0);
@@ -192,6 +192,7 @@ export function OwnerHome() {
         onRefresh={onRefresh}
         refreshing={refreshing}
         topBarHeight={topBarHeight}
+        topBarHidesAtTop
       >
         {/* Quiet welcome — small kicker text, not a display title. The
             sticky bar above already carries the page identity. */}
@@ -334,31 +335,6 @@ export function OwnerHome() {
           </Animated.View>
         ) : null}
 
-        {/* Sign out — quiet */}
-        <Animated.View
-          entering={FadeInDown.duration(440).delay(560)}
-          style={{ marginTop: 40, alignItems: "center" }}
-        >
-          <Press
-            onPress={async () => {
-              void haptics.tap();
-              await signOut();
-              router.replace("/(auth)/login");
-            }}
-            haptic="none"
-            style={{ paddingVertical: 12, paddingHorizontal: 24 }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                color: palette.textDim,
-                letterSpacing: 0.3,
-              }}
-            >
-              Sign out
-            </Text>
-          </Press>
-        </Animated.View>
       </ScreenV4>
     </>
   );

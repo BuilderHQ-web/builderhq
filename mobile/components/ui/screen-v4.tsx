@@ -46,6 +46,11 @@ interface BaseProps {
   /** Reserve top padding for a floating <GlassTopBar />.
    *  Pass the height (use useTopBarHeight() in the caller). */
   topBarHeight?: number;
+  /** When true, the top bar is HIDDEN at scroll 0 (scroll-aware fade-in).
+   *  Content starts just under the status bar instead of below the
+   *  reserved bar area, so there's no awkward empty gap at the top.
+   *  Default false (the bar is always visible and reserves its space). */
+  topBarHidesAtTop?: boolean;
   /** Add 96px bottom inset for a sticky CTA bar. */
   bottomCta?: boolean;
   /** Reserve room above the bottom tab bar so content isn't occluded.
@@ -75,12 +80,10 @@ interface ScrollProps
 export function ScreenV4(props: FlatProps | ScrollProps) {
   const {
     edges,
-    // Default transparent — the global <AmbientBackground /> mounted at
-    // (main)/_layout paints the canvas. Pass a solid color only for
-    // screens that opt out of the global atmosphere (auth flow, etc.).
     background = "transparent",
     paddingX = 20,
     topBarHeight = 0,
+    topBarHidesAtTop = false,
     bottomCta = false,
     bottomTabInset = 88,
     scrollY,
@@ -88,16 +91,33 @@ export function ScreenV4(props: FlatProps | ScrollProps) {
     children,
   } = props;
 
-  // If a GlassTopBar is reserved, the screen owns the top edge itself
-  // (the bar paints behind the status bar). Otherwise, default to safe.
+  // Edge handling:
+  //   · Top: owned by GlassTopBar when topBarHeight > 0 (the bar paints
+  //     behind the status bar); otherwise SafeAreaView reserves it.
+  //   · Bottom: NEVER reserved by SafeAreaView — the floating tab bar
+  //     handles its own bottom safe-area inset. We let scroll content
+  //     extend full-bleed to the bottom of the screen so the tab bar's
+  //     native blur picks up the content scrolling under it. Reachability
+  //     is preserved by `bottomTabInset` on the content's bottom padding.
   const resolvedEdges: readonly Edge[] =
-    edges ?? (topBarHeight > 0 ? ["bottom"] : ["top", "bottom"]);
+    edges ?? (topBarHeight > 0 ? [] : ["top"]);
 
-  // Bottom padding accounts for either a sticky CTA bar (96) or the
-  // floating tab bar (88). Caller picks one via bottomCta / bottomTabInset.
+  // Bottom padding gives the LAST content item enough room to scroll
+  // above the floating tab bar — content still flows under the tab bar
+  // visually, but the last item is reachable above the bar.
   const bottomPad = bottomCta ? 96 : bottomTabInset;
-  // Top padding when a sticky bar is reserved.
-  const topPad = topBarHeight;
+
+  // Top padding: if the bar hides at scroll 0, content starts just
+  // under the status bar (small visual breathing room). When the bar
+  // appears on scroll, it covers the top of content — that's intended,
+  // the blur picks up the content scrolling under it.
+  // When the bar is always visible, reserve its full height so content
+  // doesn't get occluded.
+  const topPad = topBarHidesAtTop
+    ? topBarHeight > 0
+      ? topBarHeight - 36 // status bar + small breathing room only
+      : 0
+    : topBarHeight;
 
   const innerScrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({

@@ -90,18 +90,27 @@ export function GlassTabBar({
         right: HORIZONTAL_MARGIN,
       }}
     >
-      {/* The bar itself — clipped to a pill so the BlurView corners
-            don't bleed past the outer border. */}
+      {/* OUTER shadow wrapper — keeps the drop shadow OUTSIDE the
+          clipping context. Mixing overflow:hidden with shadow on the
+          same View causes a visible top/bottom edge artifact (the
+          shadow gets internally clipped, leaving a darker fringe at
+          the rounded edges). Splitting them fixes it. */}
       <View
         style={{
-          height: TAB_HEIGHT,
           borderRadius: TAB_HEIGHT / 2,
-          overflow: "hidden",
           shadowColor: "#000",
           shadowOpacity: 0.5,
           shadowRadius: 26,
           shadowOffset: { width: 0, height: 14 },
           elevation: 16,
+        }}
+      >
+      {/* INNER clipping wrapper — owns the pill clipping. */}
+      <View
+        style={{
+          height: TAB_HEIGHT,
+          borderRadius: TAB_HEIGHT / 2,
+          overflow: "hidden",
         }}
       >
         {/* 1. Native backdrop blur */}
@@ -207,6 +216,7 @@ export function GlassTabBar({
             );
           })}
         </View>
+      </View>
       </View>
     </View>
   );

@@ -94,6 +94,9 @@ export function UnlockedMiniCard({
     <View
       style={{
         width: UNLOCKED_CARD_WIDTH,
+        // Fixed minHeight so cards in the carousel are always the same
+        // size, even when some have less specs data than others.
+        minHeight: 300,
         borderRadius: 18,
         overflow: "hidden",
         backgroundColor: palette.surface,

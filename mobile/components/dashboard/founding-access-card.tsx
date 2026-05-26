@@ -1,35 +1,27 @@
 /**
  * <FoundingAccessCard /> — premium FBA showcase, mobile-grade.
  *
- *   ┌────────────────────────────────────────────────────────────┐
- *   │  ✦ FOUNDING MEMBER                                          │
- *   │                                                             │
- *   │  CYCLE 1 OF 3                          WINDOW ENDS          │
- *   │                                        9 AUG 2026           │
- *   │                                                             │
- *   │       ╭─ ring ─╮     SAVED SO FAR                           │
- *   │       │   4   │     $99                                     │
- *   │       │ OF 5  │                                             │
- *   │       ╰────────╯     LIFETIME UNLOCKS                       │
- *   │                      5                                      │
- *   │                                                             │
- *   │   ──────────  20% cycle progress  ─────────                 │
- *   │   Refreshes in 13 days. …                                   │
- *   └────────────────────────────────────────────────────────────┘
+ * v3 — simplified background after user feedback:
+ *   · Previous version used a diagonal gradient (start 0.2,0 → end
+ *     0.8,1) which produced a visible diagonal seam.
+ *   · v3 uses a single very subtle top-to-bottom gradient — slight
+ *     accent tint at the top fades to pure surface at the bottom.
+ *     Reads as a quiet wash of light, not "two colours".
  *
- * Premium treatment:
- *   · Single smooth LinearGradient background — no visible seam
- *     between accent wash and base surface (the prior radial bloom
- *     read as "two colours").
- *   · Decompressed top-row badges — FOUNDING MEMBER on its own line,
- *     then CYCLE / WINDOW ENDS on a second row with breathing room.
- *   · Soft outer shadow + accent glow so the card floats off canvas.
+ * Layout is decompressed: FOUNDING MEMBER on its own row, then
+ * CYCLE / WINDOW ENDS on a second row with breathing room, then
+ * ring + stats, then progress bar.
  */
 
 import * as React from "react";
 import { Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgGradient,
+  Stop,
+} from "react-native-svg";
 
 import { palette, type } from "@/lib/theme";
 import { Icon } from "@/lib/icons";
@@ -89,28 +81,29 @@ export function FoundingAccessCard({
         overflow: "hidden",
         borderWidth: 1,
         borderColor: palette.hairlineAccent,
-        // 3D float — premium shadow stack with accent-tinted glow under.
+        backgroundColor: palette.surface,
+        // 3D float
         shadowColor: palette.accent,
-        shadowOpacity: 0.18,
-        shadowOffset: { width: 0, height: 18 },
-        shadowRadius: 36,
+        shadowOpacity: 0.16,
+        shadowOffset: { width: 0, height: 16 },
+        shadowRadius: 32,
         elevation: 12,
       }}
     >
-      {/* Smooth single LinearGradient background — no seam */}
+      {/* Subtle top-to-bottom wash — accent at the top, surface at the
+          bottom. Single axis, very subtle. No diagonal seam. */}
       <LinearGradient
         colors={[
-          "rgba(0, 212, 200, 0.10)",
-          "rgba(0, 212, 200, 0.04)",
-          "rgba(14, 19, 31, 1)",
-          "rgba(14, 19, 31, 1)",
+          "rgba(0, 212, 200, 0.07)",
+          "rgba(0, 212, 200, 0.02)",
+          "rgba(14, 19, 31, 0)",
         ]}
-        locations={[0, 0.35, 0.75, 1]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={{ padding: 22 }}
       >
-        {/* Founding member badge — line of its own, decompressed */}
+        {/* Founding member badge */}
         <View
           style={{
             flexDirection: "row",
@@ -138,10 +131,10 @@ export function FoundingAccessCard({
           </Text>
         </View>
 
-        {/* Cycle + window end — second row, plenty of room */}
+        {/* Cycle + window end */}
         <View
           style={{
-            marginTop: 18,
+            marginTop: 22,
             flexDirection: "row",
             alignItems: "flex-start",
             justifyContent: "space-between",
@@ -164,7 +157,7 @@ export function FoundingAccessCard({
                 fontWeight: "700",
                 color: palette.text,
                 fontVariant: ["tabular-nums"],
-                marginTop: 6,
+                marginTop: 8,
                 letterSpacing: -0.3,
               }}
             >
@@ -188,7 +181,7 @@ export function FoundingAccessCard({
                   fontSize: 14,
                   fontWeight: "700",
                   color: palette.text,
-                  marginTop: 6,
+                  marginTop: 8,
                   fontVariant: ["tabular-nums"],
                   letterSpacing: -0.1,
                 }}
@@ -199,10 +192,10 @@ export function FoundingAccessCard({
           ) : null}
         </View>
 
-        {/* Ring + stats row */}
+        {/* Ring + stats */}
         <View
           style={{
-            marginTop: 28,
+            marginTop: 30,
             flexDirection: "row",
             alignItems: "center",
             gap: 24,
@@ -248,7 +241,7 @@ export function FoundingAccessCard({
         </View>
 
         {/* Cycle progress bar */}
-        <View style={{ marginTop: 28 }}>
+        <View style={{ marginTop: 30 }}>
           <View
             style={{
               flexDirection: "row",
