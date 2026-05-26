@@ -21,22 +21,25 @@ import {
   View,
 } from "react-native";
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
-import {
-  Bookmark,
-  Compass,
-  SlidersHorizontal,
-  X,
-} from "lucide-react-native";
+import { router } from "expo-router";
+import { SlidersHorizontal, X } from "lucide-react-native";
 
-import { Screen } from "@/components/ui/screen";
 import {
-  GlassHeader,
-  useGlassHeaderHeight,
-} from "@/components/ui/glass-header";
+  AvatarV4,
+  GlassTopBar,
+  Press,
+  ScreenV4,
+  useTopBarHeight,
+} from "@/components/ui/v4";
 import { RadarPulse } from "@/components/ui/radar-pulse";
 import { SearchBar, FilterButton } from "@/components/ui/search-bar";
+import { useAuth } from "@/lib/auth";
 import { useBrowse } from "@/lib/browse";
 import { haptics } from "@/lib/haptics";
 import { colors } from "@/lib/theme";
@@ -71,8 +74,18 @@ interface Chip {
 
 export function BuilderBrowse() {
   const browse = useBrowse();
+  const { user } = useAuth();
   const sheetRef = useRef<BottomSheetModal>(null);
-  const headerHeight = useGlassHeaderHeight();
+  const headerHeight = useTopBarHeight();
+
+  // Scroll-aware glass top bar — hidden at scroll 0, fades in as
+  // the user scrolls. Matches the Home tab's chrome behaviour.
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
 
   const openFilters = useCallback(() => {
     void haptics.tap();
@@ -167,88 +180,18 @@ export function BuilderBrowse() {
   }, [browse.isLoadingMore, browse.hasMore, browse.items.length]);
 
   return (
-    <Screen variant="flat" edges={[]}>
-      <GlassHeader
-        left={
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.08)",
-            }}
+    <ScreenV4 variant="flat" topBarHeight={headerHeight} topBarHidesAtTop>
+      <GlassTopBar
+        title="Projects"
+        scrollY={scrollY}
+        trailing={
+          <Press
+            onPress={() => router.push("/(main)/profile")}
+            haptic="tap"
+            accessibilityLabel="Open profile"
           >
-            <Compass size={15} color={colors.textMuted} strokeWidth={1.7} />
-          </View>
-        }
-        center={
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                color: colors.textFaint,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 9.5,
-                letterSpacing: 2.4,
-                textTransform: "uppercase",
-                fontWeight: "600",
-              }}
-            >
-              Marketplace
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.text,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 15,
-                fontWeight: "600",
-                letterSpacing: -0.1,
-                marginTop: 1,
-              }}
-            >
-              Browse
-            </Text>
-          </View>
-        }
-        right={
-          browse.mySavedCount > 0 ? (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                height: 30,
-                paddingHorizontal: 10,
-                borderRadius: 15,
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                borderWidth: 1,
-                borderColor: "rgba(255, 255, 255, 0.10)",
-              }}
-            >
-              <Bookmark
-                size={11}
-                color={colors.danger}
-                fill={colors.danger}
-                strokeWidth={0}
-              />
-              <Text
-                style={{
-                  color: colors.textMuted,
-                  fontFamily: "SpaceGrotesk_500Medium",
-                  fontSize: 11.5,
-                  fontWeight: "600",
-                }}
-              >
-                {browse.mySavedCount}
-              </Text>
-            </View>
-          ) : (
-            <View style={{ width: 36, height: 36 }} />
-          )
+            <AvatarV4 name={user?.name ?? "Builder"} size={32} />
+          </Press>
         }
       />
 
@@ -259,7 +202,10 @@ export function BuilderBrowse() {
         ListHeaderComponent={
           <View
             style={{
-              paddingTop: headerHeight + 8,
+              // Content starts just under the status bar — the GlassTopBar
+              // is hidden at scroll 0 and fades in as the user scrolls,
+              // so there's no awkward empty gap up top.
+              paddingTop: headerHeight - 36,
               paddingHorizontal: 20,
               paddingBottom: 12,
             }}
@@ -350,6 +296,12 @@ export function BuilderBrowse() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        // Wire scroll-Y into the GlassTopBar so the header fades in as
+        // the user scrolls past the page top.
+        onScroll={(e) => {
+          scrollY.value = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
       />
 
       <FilterSheet
@@ -358,7 +310,7 @@ export function BuilderBrowse() {
         patchFilters={browse.patchFilters}
         resetFilters={browse.resetFilters}
       />
-    </Screen>
+    </ScreenV4>
   );
 }
 

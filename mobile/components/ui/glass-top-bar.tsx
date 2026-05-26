@@ -105,17 +105,8 @@ export function GlassTopBar({
           { backgroundColor: "rgba(6, 8, 15, 0.55)" },
         ]}
       />
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: palette.hairline,
-        }}
-      />
+      {/* No hard hairline divider — the bar dissolves into the page
+          via blur + tint, no horizontal line. */}
 
       <View
         pointerEvents="box-none"

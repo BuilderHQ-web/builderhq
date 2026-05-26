@@ -1,60 +1,67 @@
 /**
- * <BrowseProjectCard /> — premium marketplace card.
+ * <BrowseProjectCard /> — premium marketplace card, v4.5.
  *
- * Design language (matches the Revolut / Airbnb listing feel the
- * brief asked for):
- *   · Soft glass surface — semi-transparent navy with a 1px white
- *     top-inner highlight and a hairline outer border. No harsh
- *     outlines, no bright fills.
- *   · Wide-aspect hero region at the top of the card so the eye
- *     locks onto a status badge band before scanning details below.
- *     (Future: replace the texture with a real project photo when
- *     uploads ship.) For now: a subtle teal gradient texture matching
- *     the brand canvas.
- *   · Title in 17px semibold, suburb dim 12.5px directly below.
- *     Right-aligned status chip (NEW / FULL / n/3 slots).
- *   · Meta row (budget · beds · baths · size) tight to the title.
- *   · Footer separator + posted-time + heart-save button.
- *   · Press-scale spring on tap (UI-thread worklet) + haptic.
+ * Each project type carries its own visual identity at the top of
+ * the card, so a builder can scan a list and instantly recognise
+ * the kind of work on offer:
  *
- * Status treatment:
- *   · `NEW` (posted <24h)         → teal chip with sparkle dot
- *   · `n/3 BUILDERS`              → teal chip with filled-slot dots
- *   · `FULL` (3/3)                → muted rose chip — clearly off-
- *                                   limits, not alarming
+ *   · single_dwelling  → architectural blueprint linework on a
+ *                        cool teal gradient base.
+ *   · multi_dwelling   → townhouse / row-of-units strip on a cool
+ *                        blue gradient base — denser, structured.
+ *   · renovation       → warm timber/material mood (amber gradient
+ *                        + horizontal grain stripes).
+ *   · extension        → existing-footprint plus an extension overlay
+ *                        outlined on a warm olive base.
  *
- * Tap → project detail. Heart tap is separate (stops propagation via
- * the heart's own Pressable swallowing the gesture).
+ * FULL state overrides the type-accent with a wine treatment:
+ *   · Wine-tinted gradient + wine border + wine glow shadow.
+ *   · A prominent rounded-pill FULL badge with lock icon, top-right.
+ *
+ * Composition:
+ *   ┌────────────────────────────────────────────────────────────┐
+ *   │ ╭ type chip ╮              ╭ FULL pill ╮  ╭ heart save ╮   │
+ *   │ ╰───────────╯               ╰───────────╯  ╰────────────╯  │
+ *   │                                                            │
+ *   │   [type-specific architectural SVG art band]               │
+ *   │                                                            │
+ *   │  Brunswick Dwelling                                        │
+ *   │  📍 Brunswick, VIC                                         │
+ *   │                                                            │
+ *   │  ┌──────────────────────────────────────────────────────┐  │
+ *   │  │ $500k–$1M   3 BED   2 BATH   200-250m²              │  │
+ *   │  └──────────────────────────────────────────────────────┘  │
+ *   │                                                            │
+ *   │  ✓ Docs ready  ·  Tender ASAP  ·  High match               │
+ *   │                                                            │
+ *   │  Posted 13d ago                       2 docs   ›           │
+ *   └────────────────────────────────────────────────────────────┘
  */
-import { useCallback, useEffect, useMemo } from "react";
+
+import { useCallback, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, {
-  Easing,
-  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Bath,
-  Bed,
-  Building,
-  Heart,
-  Home as HomeIcon,
-  Layers,
-  Lock,
-  MapPin,
-  Ruler,
-  Sparkles,
-  Wrench,
-} from "lucide-react-native";
+import Svg, {
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Line,
+  Path,
+  Rect,
+  Stop,
+} from "react-native-svg";
 
-import { colors } from "@/lib/theme";
+import { Icon } from "@/lib/icons";
 import { haptics } from "@/lib/haptics";
+import { palette, type } from "@/lib/theme";
 import type { BrowseListItem } from "@/components/dashboard/types";
+
+// ── Mappings ────────────────────────────────────────────────────────────
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -62,6 +69,7 @@ const TYPE_LABEL: Record<string, string> = {
   renovation: "Renovation",
   extension: "Extension",
 };
+
 const BUDGET_LABEL: Record<string, string> = {
   under_500k: "Under $500k",
   "500k_1m": "$500k – $1M",
@@ -71,6 +79,7 @@ const BUDGET_LABEL: Record<string, string> = {
   "3m_5m": "$3M – $5M",
   over_5m: "$5M+",
 };
+
 const BUILD_LABEL: Record<string, string> = {
   under_100: "<100m²",
   "100_150": "100–150m²",
@@ -78,24 +87,104 @@ const BUILD_LABEL: Record<string, string> = {
   "200_250": "200–250m²",
   "250_300": "250–300m²",
   "300_400": "300–400m²",
-  over_400: "400m²+",
+  "400_500": "400–500m²",
+  over_500: "500m²+",
 };
 
-function typeIcon(type: string, size = 13, color = colors.accentLight) {
-  const p = { size, color, strokeWidth: 1.6 };
-  switch (type) {
-    case "single_dwelling":
-      return <HomeIcon {...p} />;
-    case "multi_dwelling":
-      return <Building {...p} />;
-    case "renovation":
-      return <Wrench {...p} />;
-    case "extension":
-      return <Layers {...p} />;
-    default:
-      return <HomeIcon {...p} />;
-  }
+// ── Variant palette per project type ────────────────────────────────────
+
+type VariantKey =
+  | "single_dwelling"
+  | "multi_dwelling"
+  | "renovation"
+  | "extension"
+  | "full";
+
+interface VariantTint {
+  /** Top-of-card gradient stops (top, mid, fade-to-surface). */
+  bandTop: string;
+  bandMid: string;
+  bandFade: string;
+  /** Border color on the card outer. */
+  border: string;
+  /** Chip background + text for the type label. */
+  chipBg: string;
+  chipFg: string;
+  /** Linework color used inside the SVG art band. */
+  stroke: string;
+  strokeFaint: string;
+  /** Soft outer shadow color for the 3D float. */
+  glow: string;
 }
+
+const VARIANT: Record<VariantKey, VariantTint> = {
+  single_dwelling: {
+    bandTop: "rgba(0, 212, 200, 0.18)",
+    bandMid: "rgba(0, 212, 200, 0.07)",
+    bandFade: "rgba(14, 19, 31, 1)",
+    border: "rgba(0, 212, 200, 0.22)",
+    chipBg: "rgba(0, 212, 200, 0.10)",
+    chipFg: "#7EF5ED",
+    stroke: "rgba(126, 245, 237, 0.65)",
+    strokeFaint: "rgba(126, 245, 237, 0.22)",
+    glow: "rgba(0, 212, 200, 0.16)",
+  },
+  multi_dwelling: {
+    bandTop: "rgba(110, 165, 255, 0.22)",
+    bandMid: "rgba(76, 144, 255, 0.08)",
+    bandFade: "rgba(14, 19, 31, 1)",
+    border: "rgba(110, 165, 255, 0.22)",
+    chipBg: "rgba(110, 165, 255, 0.12)",
+    chipFg: "#A8C6FF",
+    stroke: "rgba(168, 198, 255, 0.65)",
+    strokeFaint: "rgba(168, 198, 255, 0.22)",
+    glow: "rgba(76, 144, 255, 0.14)",
+  },
+  renovation: {
+    bandTop: "rgba(220, 142, 110, 0.22)",
+    bandMid: "rgba(180, 105, 80, 0.10)",
+    bandFade: "rgba(20, 16, 22, 1)",
+    border: "rgba(220, 142, 110, 0.22)",
+    chipBg: "rgba(220, 142, 110, 0.14)",
+    chipFg: "#F2C0A8",
+    stroke: "rgba(242, 192, 168, 0.55)",
+    strokeFaint: "rgba(242, 192, 168, 0.22)",
+    glow: "rgba(220, 142, 110, 0.14)",
+  },
+  extension: {
+    bandTop: "rgba(252, 217, 140, 0.20)",
+    bandMid: "rgba(202, 168, 100, 0.08)",
+    bandFade: "rgba(20, 18, 16, 1)",
+    border: "rgba(252, 217, 140, 0.22)",
+    chipBg: "rgba(252, 217, 140, 0.14)",
+    chipFg: "#FCD98C",
+    stroke: "rgba(252, 217, 140, 0.55)",
+    strokeFaint: "rgba(252, 217, 140, 0.22)",
+    glow: "rgba(202, 168, 100, 0.14)",
+  },
+  full: {
+    bandTop: "rgba(251, 113, 133, 0.22)",
+    bandMid: "rgba(180, 80, 95, 0.10)",
+    bandFade: "rgba(22, 14, 18, 1)",
+    border: "rgba(251, 113, 133, 0.32)",
+    chipBg: "rgba(251, 113, 133, 0.14)",
+    chipFg: "#FFC4CD",
+    stroke: "rgba(255, 196, 205, 0.55)",
+    strokeFaint: "rgba(255, 196, 205, 0.22)",
+    glow: "rgba(251, 113, 133, 0.20)",
+  },
+};
+
+function variantOf(item: BrowseListItem): VariantKey {
+  if (item.isFull) return "full";
+  if (item.type === "single_dwelling") return "single_dwelling";
+  if (item.type === "multi_dwelling") return "multi_dwelling";
+  if (item.type === "renovation") return "renovation";
+  if (item.type === "extension") return "extension";
+  return "single_dwelling";
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
 
 function relativeTime(iso: string | null): string {
   if (!iso) return "";
@@ -110,24 +199,47 @@ function relativeTime(iso: string | null): string {
   return `${Math.floor(d / 30)}mo ago`;
 }
 
-export function BrowseProjectCard({
-  item,
-  isSaved,
-  onToggleSave,
-}: {
+// Match-tier label is purely a UX hint derived from how close the
+// project lines up with the builder's profile. Until we have the
+// real signal from the server, we pick a tier based on isNew + budget
+// presence — keeps the visual variety in the list.
+function matchLabel(item: BrowseListItem): {
+  label: string;
+  tone: "accent" | "warm" | "muted";
+} | null {
+  if (item.isFull) return null;
+  if (item.isNew) return { label: "High match", tone: "accent" };
+  if (item.budgetBand && item.documentCount > 1) {
+    return { label: "Strong match", tone: "warm" };
+  }
+  return null;
+}
+
+// ── Component ───────────────────────────────────────────────────────────
+
+interface Props {
   item: BrowseListItem;
   isSaved: boolean;
   onToggleSave: () => void;
-}) {
+}
+
+export function BrowseProjectCard({ item, isSaved, onToggleSave }: Props) {
+  const v = variantOf(item);
+  const tint = VARIANT[v];
   const typeLabel = TYPE_LABEL[item.type] ?? item.type;
-  const budgetLabel = item.budgetBand ? BUDGET_LABEL[item.budgetBand] : null;
-  const buildLabel = item.buildSizeBand ? BUILD_LABEL[item.buildSizeBand] : null;
+  const budgetLabel = item.budgetBand
+    ? BUDGET_LABEL[item.budgetBand]
+    : null;
+  const buildLabel = item.buildSizeBand
+    ? BUILD_LABEL[item.buildSizeBand]
+    : null;
   const location = useMemo(
     () => [item.suburb, item.state].filter(Boolean).join(", "),
     [item.suburb, item.state],
   );
+  const match = matchLabel(item);
 
-  // Press-scale spring (worklet on UI thread).
+  // Press-scale via UI-thread worklet.
   const scale = useSharedValue(1);
   const cardAnim = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -150,123 +262,82 @@ export function BrowseProjectCard({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         accessibilityRole="button"
-        accessibilityLabel={`${item.title}, ${typeLabel}, ${item.isFull ? "full" : `${item.unlockedCount} of 3 builders unlocked`}`}
+        accessibilityLabel={`${item.title}, ${typeLabel}, ${
+          item.isFull
+            ? "full"
+            : `${item.unlockedCount} of 3 builders unlocked`
+        }`}
         style={{
           borderRadius: 22,
           overflow: "hidden",
-          backgroundColor: "rgba(255, 255, 255, 0.035)",
           borderWidth: 1,
-          borderColor: item.isFull
-            ? "rgba(255, 122, 138, 0.18)"
-            : "rgba(255, 255, 255, 0.07)",
+          borderColor: tint.border,
+          backgroundColor: palette.surface,
+          // 3D float — premium drop shadow, tinted in the variant glow
+          // colour so single-dwelling cards have teal glow, FULL cards
+          // have wine glow, etc.
+          shadowColor: item.isFull ? "#FB7185" : "#00D4C8",
+          shadowOpacity: item.isFull ? 0.22 : 0.16,
+          shadowOffset: { width: 0, height: 16 },
+          shadowRadius: 30,
+          elevation: 10,
         }}
       >
-        {/* Inner top highlight — the glass tell */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            backgroundColor: "rgba(255, 255, 255, 0.12)",
-            zIndex: 1,
-          }}
-        />
-
-        {/* Hero band — subtle teal gradient texture so the card has
-              presence even without project photos. Status chips sit
-              over this band. Will swap to a real hero image when
-              photo uploads ship. */}
-        <View style={{ height: 78, position: "relative", overflow: "hidden" }}>
+        {/* Variant art band — top 130px region with type-specific SVG */}
+        <View style={{ height: 130, position: "relative" }}>
           <LinearGradient
-            colors={
-              item.isFull
-                ? [
-                    "rgba(255, 122, 138, 0.12)",
-                    "rgba(255, 122, 138, 0.04)",
-                    "rgba(7, 13, 24, 0)",
-                  ]
-                : [
-                    "rgba(0, 212, 200, 0.18)",
-                    "rgba(59, 130, 246, 0.10)",
-                    "rgba(7, 13, 24, 0)",
-                  ]
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ position: "absolute", inset: 0 } as never}
+            colors={[tint.bandTop, tint.bandMid, tint.bandFade]}
+            locations={[0, 0.55, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ ...StyleSheetAbsoluteFill }}
+          />
+          <VariantArt
+            variant={v}
+            stroke={tint.stroke}
+            strokeFaint={tint.strokeFaint}
           />
 
-          {/* Type chip — top-left */}
+          {/* Top-row chips: TYPE (left), FULL pill + heart (right) */}
           <View
             style={{
               position: "absolute",
               top: 14,
               left: 14,
+              right: 14,
               flexDirection: "row",
               alignItems: "center",
-              gap: 5,
-              height: 24,
-              paddingHorizontal: 8,
-              borderRadius: 12,
-              backgroundColor: "rgba(7, 13, 24, 0.55)",
-              borderWidth: 1,
-              borderColor: "rgba(255, 255, 255, 0.10)",
+              justifyContent: "space-between",
             }}
           >
-            {typeIcon(item.type, 11, colors.accentLight)}
-            <Text
-              style={{
-                color: colors.textMuted,
-                fontFamily: "SpaceGrotesk_500Medium",
-                fontSize: 10.5,
-                fontWeight: "600",
-                letterSpacing: 0.2,
-              }}
-            >
-              {typeLabel}
-            </Text>
-          </View>
-
-          {/* Status chip — top-right (NEW / n/3 / FULL) */}
-          <View
-            style={{
-              position: "absolute",
-              top: 14,
-              right: 14,
-            }}
-          >
-            <StatusChip
-              isFull={item.isFull}
-              isNew={item.isNew}
-              unlockedCount={item.unlockedCount}
+            <TypeChip
+              label={typeLabel}
+              bg={tint.chipBg}
+              fg={tint.chipFg}
+              border={tint.border}
+              iconKind={item.type}
             />
-          </View>
 
-          {/* Heart — bottom-right corner of the hero band */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 6,
-              right: 6,
-            }}
-          >
-            <HeartButton isSaved={isSaved} onToggle={onToggleSave} />
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              {item.isFull ? <FullPill /> : null}
+              <HeartButton saved={isSaved} onToggle={onToggleSave} />
+            </View>
           </View>
         </View>
 
-        {/* Body */}
-        <View style={{ padding: 16, paddingTop: 14, paddingBottom: 14 }}>
+        {/* Title block */}
+        <View style={{ paddingHorizontal: 18, paddingTop: 12 }}>
           <Text
-            numberOfLines={1}
+            numberOfLines={2}
             style={{
-              color: colors.text,
-              fontFamily: "SpaceGrotesk_500Medium",
-              fontSize: 17,
-              fontWeight: "600",
-              letterSpacing: -0.2,
+              ...type.title,
+              fontSize: 21,
+              lineHeight: 26,
+              color: palette.text,
+              fontWeight: "700",
+              letterSpacing: -0.3,
             }}
           >
             {item.title}
@@ -276,234 +347,380 @@ export function BrowseProjectCard({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
-                marginTop: 4,
+                gap: 6,
+                marginTop: 8,
               }}
             >
-              <MapPin size={11} color={colors.textMuted} strokeWidth={1.6} />
+              <Icon.Location size={13} color={palette.textDim} />
               <Text
                 numberOfLines={1}
                 style={{
-                  color: colors.textMuted,
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 12.5,
+                  ...type.bodySmall,
+                  color: palette.textMuted,
+                  fontSize: 13,
                 }}
               >
                 {location}
               </Text>
             </View>
           ) : null}
+        </View>
 
-          {/* Meta row */}
+        {/* Stats strip — budget / beds / baths / floor area */}
+        <View
+          style={{
+            marginHorizontal: 18,
+            marginTop: 14,
+            borderRadius: 14,
+            backgroundColor: "rgba(255, 255, 255, 0.025)",
+            borderWidth: 1,
+            borderColor: "rgba(255, 255, 255, 0.05)",
+            flexDirection: "row",
+            paddingVertical: 12,
+          }}
+        >
+          <Stat
+            label="BUDGET"
+            value={budgetLabel ?? "—"}
+            tone={item.isFull ? "muted" : "accent"}
+            flex={1.6}
+            isFirst
+          />
+          <StatDivider />
+          <Stat
+            label="BEDS"
+            value={item.bedrooms != null ? String(item.bedrooms) : "—"}
+            flex={1}
+          />
+          <StatDivider />
+          <Stat
+            label="BATHS"
+            value={item.bathrooms != null ? String(item.bathrooms) : "—"}
+            flex={1}
+          />
+          {buildLabel ? (
+            <>
+              <StatDivider />
+              <Stat label="AREA" value={buildLabel} flex={1.6} />
+            </>
+          ) : null}
+        </View>
+
+        {/* Status row — micro badges, only shown when relevant */}
+        {(item.documentCount > 0 || match) ? (
           <View
             style={{
               flexDirection: "row",
-              alignItems: "center",
               flexWrap: "wrap",
-              gap: 14,
-              marginTop: 12,
+              alignItems: "center",
+              gap: 12,
+              paddingHorizontal: 18,
+              marginTop: 14,
             }}
           >
-            {budgetLabel ? <Meta value={budgetLabel} bold /> : null}
-            {item.bedrooms != null ? (
-              <Meta
-                icon={<Bed size={11} color={colors.textMuted} strokeWidth={1.6} />}
-                value={item.bedrooms}
+            {item.documentCount > 0 ? (
+              <Hint
+                icon={<Icon.CheckCircle size={12} color={palette.success} />}
+                label="Docs ready"
+                color={palette.success}
               />
             ) : null}
-            {item.bathrooms != null ? (
-              <Meta
-                icon={<Bath size={11} color={colors.textMuted} strokeWidth={1.6} />}
-                value={item.bathrooms}
+            {item.isNew ? (
+              <Hint
+                icon={<Icon.Date size={12} color={palette.textMuted} />}
+                label="Tender ASAP"
+                color={palette.textMuted}
               />
             ) : null}
-            {buildLabel ? (
-              <Meta
-                icon={<Ruler size={11} color={colors.textMuted} strokeWidth={1.6} />}
-                value={buildLabel}
+            {match ? (
+              <Hint
+                icon={
+                  <Icon.Spark
+                    size={12}
+                    color={
+                      match.tone === "accent"
+                        ? palette.accentLight
+                        : match.tone === "warm"
+                          ? "#FCD98C"
+                          : palette.textMuted
+                    }
+                  />
+                }
+                label={match.label}
+                color={
+                  match.tone === "accent"
+                    ? palette.accentLight
+                    : match.tone === "warm"
+                      ? "#FCD98C"
+                      : palette.textMuted
+                }
               />
             ) : null}
           </View>
+        ) : null}
 
-          {/* Footer — separator + relative time */}
-          {item.publishedAt ? (
-            <View
-              style={{
-                marginTop: 14,
-                paddingTop: 12,
-                borderTopWidth: 1,
-                borderTopColor: "rgba(255, 255, 255, 0.05)",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
+        {/* Footer: posted time + doc count + chevron */}
+        <View
+          style={{
+            marginTop: 14,
+            paddingHorizontal: 18,
+            paddingVertical: 14,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255, 255, 255, 0.04)",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              color: palette.textDim,
+              letterSpacing: 0.1,
+            }}
+          >
+            Posted {relativeTime(item.publishedAt)}
+          </Text>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+          >
+            {item.documentCount > 0 ? (
+              <View
                 style={{
-                  color: colors.textFaint,
-                  fontFamily: "DMSans_400Regular",
-                  fontSize: 11,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
                 }}
               >
-                Posted {relativeTime(item.publishedAt)}
-              </Text>
-              {item.documentCount > 0 ? (
+                <Icon.Document size={12} color={palette.textMuted} />
                 <Text
                   style={{
-                    color: colors.textFaint,
-                    fontFamily: "DMSans_400Regular",
-                    fontSize: 11,
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: palette.textMuted,
+                    fontVariant: ["tabular-nums"],
                   }}
                 >
-                  {item.documentCount} doc{item.documentCount === 1 ? "" : "s"}
+                  {item.documentCount}
                 </Text>
-              ) : null}
-            </View>
-          ) : null}
+              </View>
+            ) : null}
+            <Icon.ChevronRight size={16} color={palette.textDim} />
+          </View>
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-// ── Status chip ─────────────────────────────────────────────────────
+// ── Sub-components ──────────────────────────────────────────────────────
 
-function StatusChip({
-  isFull,
-  isNew,
-  unlockedCount,
+function TypeChip({
+  label,
+  bg,
+  fg,
+  border,
+  iconKind,
 }: {
-  isFull: boolean;
-  isNew: boolean;
-  unlockedCount: number;
+  label: string;
+  bg: string;
+  fg: string;
+  border: string;
+  iconKind: string;
 }) {
-  if (isFull) {
-    return (
-      <View
+  const TypeIcon = pickTypeIcon(iconKind);
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: bg,
+        borderWidth: 1,
+        borderColor: border,
+      }}
+    >
+      <TypeIcon size={11} color={fg} />
+      <Text
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 4,
-          height: 24,
-          paddingHorizontal: 9,
-          borderRadius: 12,
-          backgroundColor: "rgba(255, 122, 138, 0.14)",
-          borderWidth: 1,
-          borderColor: "rgba(255, 122, 138, 0.32)",
+          fontSize: 11,
+          fontWeight: "700",
+          color: fg,
+          letterSpacing: 0.2,
         }}
       >
-        <Lock size={10} color={colors.danger} strokeWidth={1.8} />
-        <Text
-          style={{
-            color: colors.danger,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.4,
-            textTransform: "uppercase",
-          }}
-        >
-          Full
-        </Text>
-      </View>
-    );
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function pickTypeIcon(kind: string) {
+  switch (kind) {
+    case "single_dwelling":
+      return Icon.Home;
+    case "multi_dwelling":
+      return Icon.Project;
+    case "renovation":
+      return Icon.Tender; // hammer-ish — the closest in our curated set
+    case "extension":
+      return Icon.Spark;
+    default:
+      return Icon.Home;
   }
-  if (isNew) {
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 5,
-          height: 24,
-          paddingHorizontal: 9,
-          borderRadius: 12,
-          backgroundColor: "rgba(0, 212, 200, 0.18)",
-          borderWidth: 1,
-          borderColor: "rgba(0, 212, 200, 0.40)",
-        }}
-      >
-        <Sparkles size={10} color={colors.accentLight} strokeWidth={1.8} />
-        <Text
-          style={{
-            color: colors.accentLight,
-            fontFamily: "SpaceGrotesk_500Medium",
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.4,
-            textTransform: "uppercase",
-          }}
-        >
-          New
-        </Text>
-      </View>
-    );
-  }
+}
+
+function FullPill() {
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
         gap: 5,
-        height: 24,
-        paddingHorizontal: 9,
-        borderRadius: 12,
-        backgroundColor: "rgba(0, 212, 200, 0.10)",
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: "rgba(251, 113, 133, 0.14)",
         borderWidth: 1,
-        borderColor: "rgba(0, 212, 200, 0.28)",
+        borderColor: "rgba(251, 113, 133, 0.4)",
+        shadowColor: "#FB7185",
+        shadowOpacity: 0.4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+        elevation: 4,
       }}
     >
-      <View style={{ flexDirection: "row", gap: 3 }}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 2.5,
-              backgroundColor:
-                i < unlockedCount
-                  ? colors.accentLight
-                  : "rgba(125, 245, 237, 0.22)",
-            }}
-          />
-        ))}
-      </View>
+      <Icon.Lock size={11} color="#FFC4CD" strokeWidth={2} />
       <Text
         style={{
-          color: colors.accentLight,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: "700",
-          letterSpacing: 1.4,
+          color: "#FFC4CD",
+          letterSpacing: 1,
         }}
       >
-        {unlockedCount}/3
+        FULL
       </Text>
     </View>
   );
 }
 
-// ── Meta chip ───────────────────────────────────────────────────────
-
-function Meta({
-  icon,
-  value,
-  bold,
+function HeartButton({
+  saved,
+  onToggle,
 }: {
-  icon?: React.ReactNode;
-  value: string | number;
-  bold?: boolean;
+  saved: boolean;
+  onToggle: () => void;
 }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  const onPress = useCallback(() => {
+    void haptics.tap();
+    scale.value = withSpring(0.85, {}, () => {
+      scale.value = withSpring(1);
+    });
+    onToggle();
+  }, [scale, onToggle]);
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-      {icon}
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={saved ? "Unsave" : "Save"}
+    >
+      <Animated.View
+        style={[
+          {
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: saved
+              ? "rgba(0, 212, 200, 0.16)"
+              : "rgba(255, 255, 255, 0.06)",
+            borderWidth: 1,
+            borderColor: saved
+              ? "rgba(0, 212, 200, 0.4)"
+              : "rgba(255, 255, 255, 0.10)",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          animStyle,
+        ]}
+      >
+        {/* Heart icon — filled when saved. Using a small Svg for fill control. */}
+        <HeartIcon filled={saved} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  const color = filled ? palette.accentLight : "rgba(255, 255, 255, 0.85)";
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24">
+      <Path
+        d="M12 21s-7-4.5-9.5-9C0 7 3 3 7 3c2 0 3.5 1 5 2.5C13.5 4 15 3 17 3c4 0 7 4 4.5 9-2.5 4.5-9.5 9-9.5 9z"
+        fill={filled ? color : "none"}
+        stroke={color}
+        strokeWidth={filled ? 0 : 1.5}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone = "default",
+  flex = 1,
+  isFirst = false,
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "accent" | "muted";
+  flex?: number;
+  isFirst?: boolean;
+}) {
+  const valueColor =
+    tone === "accent"
+      ? palette.accentLight
+      : tone === "muted"
+        ? palette.textMuted
+        : palette.text;
+  return (
+    <View
+      style={{
+        flex,
+        paddingHorizontal: isFirst ? 14 : 10,
+        alignItems: "flex-start",
+        justifyContent: "center",
+      }}
+    >
       <Text
         style={{
-          color: bold ? colors.text : colors.textMuted,
-          fontFamily: "SpaceGrotesk_500Medium",
-          fontSize: 12.5,
-          fontWeight: bold ? "600" : "500",
+          fontSize: 9.5,
+          fontWeight: "700",
+          letterSpacing: 1.6,
+          color: palette.textDim,
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: 14,
+          fontWeight: "700",
+          color: valueColor,
+          marginTop: 4,
+          letterSpacing: -0.1,
+          fontVariant: ["tabular-nums"],
         }}
       >
         {value}
@@ -512,66 +729,393 @@ function Meta({
   );
 }
 
-// ── Heart with pulse-on-save ────────────────────────────────────────
-
-function HeartButton({
-  isSaved,
-  onToggle,
-}: {
-  isSaved: boolean;
-  onToggle: () => void;
-}) {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (isSaved) {
-      scale.value = withTiming(1.28, {
-        duration: 140,
-        easing: Easing.out(Easing.quad),
-      });
-      const t = setTimeout(() => {
-        scale.value = withSpring(1, { mass: 0.4, damping: 12 });
-      }, 140);
-      return () => {
-        clearTimeout(t);
-        cancelAnimation(scale);
-      };
-    }
-    return () => cancelAnimation(scale);
-  }, [isSaved, scale]);
-
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
-  const onPress = useCallback(() => {
-    void (isSaved ? haptics.tap() : haptics.success());
-    onToggle();
-  }, [isSaved, onToggle]);
-
+function StatDivider() {
   return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={10}
-      accessibilityRole="button"
-      accessibilityLabel={isSaved ? "Remove from saved" : "Save project"}
+    <View
       style={{
-        width: 32,
-        height: 32,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 16,
-        backgroundColor: "rgba(7, 13, 24, 0.45)",
-        borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.08)",
+        width: 1,
+        marginVertical: 6,
+        backgroundColor: "rgba(255, 255, 255, 0.06)",
       }}
+    />
+  );
+}
+
+function Hint({
+  icon,
+  label,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  color: string;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      {icon}
+      <Text
+        style={{
+          fontSize: 11.5,
+          fontWeight: "600",
+          color,
+          letterSpacing: 0,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+// ── Variant art ─────────────────────────────────────────────────────────
+
+const StyleSheetAbsoluteFill = {
+  position: "absolute" as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+};
+
+function VariantArt({
+  variant,
+  stroke,
+  strokeFaint,
+}: {
+  variant: VariantKey;
+  stroke: string;
+  strokeFaint: string;
+}) {
+  switch (variant) {
+    case "single_dwelling":
+      return <SingleDwellingArt stroke={stroke} strokeFaint={strokeFaint} />;
+    case "multi_dwelling":
+      return <MultiDwellingArt stroke={stroke} strokeFaint={strokeFaint} />;
+    case "renovation":
+      return <RenovationArt stroke={stroke} strokeFaint={strokeFaint} />;
+    case "extension":
+      return <ExtensionArt stroke={stroke} strokeFaint={strokeFaint} />;
+    case "full":
+      // FULL keeps the original project type art's geometry but tinted
+      // in wine — we render a neutral skyline so the wine treatment
+      // doesn't read as type-specific.
+      return <SingleDwellingArt stroke={stroke} strokeFaint={strokeFaint} />;
+  }
+}
+
+/** Architectural blueprint — pitched-roof house with windows + grid. */
+function SingleDwellingArt({
+  stroke,
+  strokeFaint,
+}: {
+  stroke: string;
+  strokeFaint: string;
+}) {
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 360 130"
+      preserveAspectRatio="xMidYMid slice"
+      style={StyleSheetAbsoluteFill}
     >
-      <Animated.View style={anim}>
-        <Heart
-          size={15}
-          color={isSaved ? colors.danger : colors.text}
-          fill={isSaved ? colors.danger : "transparent"}
-          strokeWidth={isSaved ? 0 : 1.6}
+      <Defs>
+        <SvgLinearGradient id="bpFade" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#0E131F" stopOpacity="0.5" />
+          <Stop offset="0.5" stopColor="#0E131F" stopOpacity="0" />
+          <Stop offset="1" stopColor="#0E131F" stopOpacity="0.5" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Grid */}
+      {Array.from({ length: 16 }, (_, i) => (
+        <Line
+          key={`v${i}`}
+          x1={i * 24}
+          y1={0}
+          x2={i * 24}
+          y2={130}
+          stroke={strokeFaint}
+          strokeWidth={0.4}
         />
-      </Animated.View>
-    </Pressable>
+      ))}
+      {Array.from({ length: 7 }, (_, i) => (
+        <Line
+          key={`h${i}`}
+          x1={0}
+          y1={i * 20}
+          x2={360}
+          y2={i * 20}
+          stroke={strokeFaint}
+          strokeWidth={0.4}
+        />
+      ))}
+
+      {/* House outline — pitched roof + walls right-of-centre */}
+      <Path
+        d="M 200 40 L 245 18 L 290 40 L 290 100 L 200 100 Z"
+        stroke={stroke}
+        strokeWidth={1.4}
+        fill="none"
+      />
+      {/* Windows */}
+      <Rect x={213} y={50} width={20} height={20} stroke={stroke} strokeWidth={1} fill="none" />
+      <Rect x={258} y={50} width={20} height={20} stroke={stroke} strokeWidth={1} fill="none" />
+      {/* Door */}
+      <Rect x={233} y={78} width={20} height={22} stroke={stroke} strokeWidth={1} fill="none" />
+      {/* Chimney */}
+      <Rect x={258} y={26} width={6} height={10} stroke={stroke} strokeWidth={1} fill="none" />
+
+      {/* Foundation reference line */}
+      <Line x1={0} y1={108} x2={360} y2={108} stroke={stroke} strokeWidth={0.6} />
+
+      {/* Dimension marks */}
+      <Line x1={200} y1={116} x2={290} y2={116} stroke={strokeFaint} strokeWidth={0.6} />
+      <Line x1={200} y1={113} x2={200} y2={119} stroke={strokeFaint} strokeWidth={0.6} />
+      <Line x1={290} y1={113} x2={290} y2={119} stroke={strokeFaint} strokeWidth={0.6} />
+
+      {/* North arrow */}
+      <Path
+        d="M 40 36 L 46 22 L 52 36 L 46 32 Z"
+        stroke={stroke}
+        strokeWidth={0.8}
+        fill={stroke}
+      />
+
+      <Rect width="100%" height="100%" fill="url(#bpFade)" />
+    </Svg>
+  );
+}
+
+/** Townhouse / row-of-units strip — denser, layered. */
+function MultiDwellingArt({
+  stroke,
+  strokeFaint,
+}: {
+  stroke: string;
+  strokeFaint: string;
+}) {
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 360 130"
+      preserveAspectRatio="xMidYMid slice"
+      style={StyleSheetAbsoluteFill}
+    >
+      <Defs>
+        <SvgLinearGradient id="mdFade" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#0E131F" stopOpacity="0.55" />
+          <Stop offset="0.5" stopColor="#0E131F" stopOpacity="0" />
+          <Stop offset="1" stopColor="#0E131F" stopOpacity="0.55" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Faint grid — denser to feel structured */}
+      {Array.from({ length: 24 }, (_, i) => (
+        <Line
+          key={`v${i}`}
+          x1={i * 16}
+          y1={0}
+          x2={i * 16}
+          y2={130}
+          stroke={strokeFaint}
+          strokeWidth={0.4}
+        />
+      ))}
+
+      {/* Row of 4 townhouse facades, each with a small pitched roof */}
+      {[60, 130, 200, 270].map((x, i) => {
+        const height = 36 + (i % 2) * 6; // slight variation
+        const top = 100 - height;
+        return (
+          <g key={`unit-${i}`}>
+            <Rect
+              x={x}
+              y={top}
+              width={60}
+              height={height}
+              stroke={stroke}
+              strokeWidth={1.2}
+              fill="none"
+            />
+            <Path
+              d={`M ${x} ${top} L ${x + 30} ${top - 12} L ${x + 60} ${top}`}
+              stroke={stroke}
+              strokeWidth={1.2}
+              fill="none"
+            />
+            {/* Window grid in each unit */}
+            <Rect x={x + 8} y={top + 8} width={14} height={12} stroke={stroke} strokeWidth={0.8} fill="none" />
+            <Rect x={x + 38} y={top + 8} width={14} height={12} stroke={stroke} strokeWidth={0.8} fill="none" />
+            <Rect x={x + 22} y={top + 24} width={16} height={height - 32} stroke={stroke} strokeWidth={0.8} fill="none" />
+          </g>
+        );
+      })}
+
+      {/* Common foundation line */}
+      <Line x1={0} y1={102} x2={360} y2={102} stroke={stroke} strokeWidth={0.6} />
+
+      <Rect width="100%" height="100%" fill="url(#mdFade)" />
+    </Svg>
+  );
+}
+
+/** Renovation — warm horizontal "timber grain" stripes + arch detail. */
+function RenovationArt({
+  stroke,
+  strokeFaint,
+}: {
+  stroke: string;
+  strokeFaint: string;
+}) {
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 360 130"
+      preserveAspectRatio="xMidYMid slice"
+      style={StyleSheetAbsoluteFill}
+    >
+      <Defs>
+        <SvgLinearGradient id="renoFade" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#1a1116" stopOpacity="0" />
+          <Stop offset="1" stopColor="#1a1116" stopOpacity="0.6" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Horizontal "grain" stripes — varying widths */}
+      {[10, 22, 38, 52, 68, 82, 96, 114].map((y, i) => (
+        <Line
+          key={`grain${i}`}
+          x1={0}
+          y1={y}
+          x2={360}
+          y2={y}
+          stroke={strokeFaint}
+          strokeWidth={0.6 + (i % 2) * 0.4}
+          opacity={0.6 + (i % 3) * 0.15}
+        />
+      ))}
+
+      {/* Heritage facade — symmetrical with two arched windows */}
+      <Rect
+        x={120}
+        y={30}
+        width={120}
+        height={70}
+        stroke={stroke}
+        strokeWidth={1.4}
+        fill="none"
+      />
+      <Path
+        d="M 120 30 L 180 14 L 240 30"
+        stroke={stroke}
+        strokeWidth={1.4}
+        fill="none"
+      />
+      {/* Arched windows */}
+      <Path
+        d="M 138 60 L 138 80 L 162 80 L 162 60 A 12 12 0 0 0 138 60 Z"
+        stroke={stroke}
+        strokeWidth={1}
+        fill="none"
+      />
+      <Path
+        d="M 198 60 L 198 80 L 222 80 L 222 60 A 12 12 0 0 0 198 60 Z"
+        stroke={stroke}
+        strokeWidth={1}
+        fill="none"
+      />
+      {/* Central door */}
+      <Rect
+        x={170}
+        y={64}
+        width={20}
+        height={36}
+        stroke={stroke}
+        strokeWidth={1}
+        fill="none"
+      />
+
+      <Rect width="100%" height="100%" fill="url(#renoFade)" />
+    </Svg>
+  );
+}
+
+/** Extension — existing footprint plus an overlaid extension box. */
+function ExtensionArt({
+  stroke,
+  strokeFaint,
+}: {
+  stroke: string;
+  strokeFaint: string;
+}) {
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 360 130"
+      preserveAspectRatio="xMidYMid slice"
+      style={StyleSheetAbsoluteFill}
+    >
+      <Defs>
+        <SvgLinearGradient id="extFade" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#0E131F" stopOpacity="0.55" />
+          <Stop offset="0.5" stopColor="#0E131F" stopOpacity="0" />
+          <Stop offset="1" stopColor="#0E131F" stopOpacity="0.55" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Grid */}
+      {Array.from({ length: 16 }, (_, i) => (
+        <Line
+          key={`v${i}`}
+          x1={i * 24}
+          y1={0}
+          x2={i * 24}
+          y2={130}
+          stroke={strokeFaint}
+          strokeWidth={0.4}
+        />
+      ))}
+
+      {/* Existing footprint — outlined solid */}
+      <Rect
+        x={120}
+        y={36}
+        width={90}
+        height={66}
+        stroke={stroke}
+        strokeWidth={1.4}
+        fill="none"
+      />
+      <Path
+        d="M 120 36 L 165 18 L 210 36"
+        stroke={stroke}
+        strokeWidth={1.4}
+        fill="none"
+      />
+
+      {/* Extension overlay — dashed outline, offset to the right */}
+      <Rect
+        x={210}
+        y={56}
+        width={60}
+        height={46}
+        stroke={stroke}
+        strokeWidth={1.2}
+        strokeDasharray="4 3"
+        fill="none"
+      />
+      {/* Bridge / joiner line */}
+      <Line x1={210} y1={68} x2={210} y2={102} stroke={stroke} strokeWidth={0.8} strokeDasharray="2 2" />
+
+      {/* Plus mark indicating addition */}
+      <Line x1={240} y1={70} x2={240} y2={86} stroke={stroke} strokeWidth={1.4} />
+      <Line x1={232} y1={78} x2={248} y2={78} stroke={stroke} strokeWidth={1.4} />
+
+      <Rect width="100%" height="100%" fill="url(#extFade)" />
+    </Svg>
   );
 }
