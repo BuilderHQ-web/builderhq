@@ -22,10 +22,18 @@ struct Press<Content: View>: View {
         @available(iOS 17.0, *)
         var feedback: SensoryFeedback? {
             switch self {
-            case .tap:    return .impact(weight: .light)
-            case .soft:   return .impact(weight: .soft)
-            case .select: return .selection
-            case .none:   return nil
+            case .tap:
+                return .impact(weight: .light)
+            case .soft:
+                // `.soft` is a Flexibility, not a Weight — the API
+                // splits the two axes. Soft flexibility on default
+                // intensity gives the squishy tap we want for low-
+                // emphasis presses (list rows in dense scrolls).
+                return .impact(flexibility: .soft, intensity: 0.6)
+            case .select:
+                return .selection
+            case .none:
+                return nil
             }
         }
     }

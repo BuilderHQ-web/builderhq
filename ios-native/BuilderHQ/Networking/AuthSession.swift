@@ -1,28 +1,28 @@
-/// AuthSession — observable session state.
+/// AuthSession — observable session state, wired to real auth.
 ///
-/// Owns the authenticated-user lifecycle. Hydrates from the Keychain
-/// on launch (where we store the bearer access + refresh tokens) and
-/// publishes a state enum the root view can switch on.
+/// State machine:
+///   · loading   — at boot, while we read keychain + call /me
+///   · signedOut — no valid session
+///   · signedIn  — confirmed by a successful /me call
 ///
-/// The networking layer (APIClient) reaches the session for the
-/// current access token and the forced-logout callback when refresh
-/// fails.
-///
-/// Implemented with the iOS 17 `@Observable` macro — no
-/// `@Published` / `ObservableObject` boilerplate.
+/// Single source of truth for "who's logged in" across the app.
+/// SwiftUI views read `@Environment(AuthSession.self)` and rerender
+/// when the state changes (iOS 17 `@Observable`).
 
 import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class AuthSession {
-    enum State {
+    enum State: Equatable {
         case loading
         case signedOut
         case signedIn(user: AuthUser)
     }
 
-    /// Mirrors the RN AuthUser shape so backend payloads parse cleanly.
+    /// Server payload shape. snake_case in JSON, camelCase in Swift —
+    /// the APIClient decoder handles the conversion.
     struct AuthUser: Codable, Equatable {
         let id: String
         let email: String
@@ -39,30 +39,56 @@ final class AuthSession {
     private(set) var state: State = .loading
 
     init() {
+        // Hook the forced-logout handler. APIClient calls this when
+        // the refresh chain dies; we wipe local state and flip to
+        // signedOut so the UI bounces back to the login screen.
+        APIClient.shared.onForcedLogout = { [weak self] in
+            await self?.didSignOut()
+        }
         Task { await hydrate() }
     }
 
-    /// Pulls cached tokens from the Keychain, calls /api/mobile/auth/me
-    /// to validate, and sets `state` accordingly. Stubbed for now —
-    /// actual implementation lands when APIClient does.
-    @MainActor
-    private func hydrate() async {
-        // TODO: replace with Keychain read + /api/mobile/auth/me.
-        // For now, start signed out so the project compiles + the
-        // auth flow renders.
-        try? await Task.sleep(for: .milliseconds(200))
-        state = .signedOut
+    // MARK: - Hydrate from boot
+
+    /// Called at app launch. Reads cached tokens; if present, validates
+    /// them by hitting /me. Three outcomes:
+    ///   · No tokens                    → signedOut
+    ///   · Tokens valid (or refreshable) → signedIn with the user
+    ///   · Tokens dead                  → signedOut + keychain cleared
+    func hydrate() async {
+        let access = try? KeychainStore.auth.get(KeychainStore.Key.accessToken)
+        let refresh = try? KeychainStore.auth.get(KeychainStore.Key.refreshToken)
+        if access == nil && refresh == nil {
+            state = .signedOut
+            return
+        }
+        do {
+            let user = try await AuthAPI.me()
+            state = .signedIn(user: user)
+        } catch APIError.unauthorized {
+            // Both access AND refresh chains dead. Wipe everything.
+            try? KeychainStore.auth.clearAll()
+            state = .signedOut
+        } catch {
+            // Network blip on cold start. Keep whatever state we had
+            // — a flaky connection on boot shouldn't bounce the user
+            // to login. We default to signedOut so the user can at
+            // least try to log in manually.
+            state = .signedOut
+        }
     }
 
-    /// Called by the login flow on successful auth.
-    @MainActor
+    // MARK: - Sign in (from LoginScreen success)
+
     func didSignIn(user: AuthUser) {
         state = .signedIn(user: user)
     }
 
-    /// Called on explicit sign-out OR when the refresh chain dies.
-    @MainActor
-    func didSignOut() {
+    // MARK: - Sign out
+
+    func didSignOut() async {
+        // Fire-and-forget server-side revocation + wipe local state.
+        await AuthAPI.logout()
         state = .signedOut
     }
 }

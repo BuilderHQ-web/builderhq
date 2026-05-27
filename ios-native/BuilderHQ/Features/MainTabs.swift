@@ -2,9 +2,8 @@
 ///
 /// Four tabs: Home, Projects, Inbox, You. Same conceptual layout as
 /// the RN `(main)/_layout.tsx`. Uses SwiftUI's native `TabView` with
-/// SF Symbols — the glass tab bar is built-in to iOS 18+ as
-/// `.tabViewStyle(.sidebarAdaptable)` for iPad, but on iPhone the
-/// default tab bar IS the native floating glass pill we want.
+/// SF Symbols — on iPhone, the default tab bar IS the native floating
+/// glass pill we want.
 ///
 /// Each tab's content is a stub for week 1 so the app compiles + the
 /// nav is testable end-to-end. Real screens land week 2-5.
@@ -13,26 +12,39 @@ import SwiftUI
 
 struct MainTabs: View {
     @Environment(AuthSession.self) private var session
-    @State private var selection: Tab = .home
+    @State private var selection: TabKind = .home
 
-    enum Tab: Hashable {
+    /// Renamed from `Tab` to avoid collision with SwiftUI's own
+    /// `Tab` type (iOS 18+ tab builder). Reads cleaner anyway.
+    enum TabKind: Hashable {
         case home, projects, inbox, you
     }
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab("Home", systemImage: "house.fill", value: Tab.home) {
-                HomeScreenStub()
-            }
-            Tab("Projects", systemImage: "safari.fill", value: Tab.projects) {
-                ProjectsScreenStub()
-            }
-            Tab("Inbox", systemImage: "message.fill", value: Tab.inbox) {
-                InboxScreenStub()
-            }
-            Tab("You", systemImage: "person.fill", value: Tab.you) {
-                YouScreenStub()
-            }
+            HomeScreenStub()
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(TabKind.home)
+
+            ProjectsScreenStub()
+                .tabItem {
+                    Label("Projects", systemImage: "safari.fill")
+                }
+                .tag(TabKind.projects)
+
+            InboxScreenStub()
+                .tabItem {
+                    Label("Inbox", systemImage: "message.fill")
+                }
+                .tag(TabKind.inbox)
+
+            YouScreenStub()
+                .tabItem {
+                    Label("You", systemImage: "person.fill")
+                }
+                .tag(TabKind.you)
         }
         .tint(Palette.accent)
     }
