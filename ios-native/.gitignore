@@ -1,0 +1,28 @@
+# Xcode-generated project files.
+#
+# project.yml is the source of truth — xcodegen creates the .xcodeproj
+# locally for each dev. Committing the .xcodeproj means every build-
+# settings tweak collides in git, so we ignore it.
+
+BuilderHQ.xcodeproj/
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+
+# Build artifacts
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.xcarchive
+
+# CocoaPods (if we add it later)
+Pods/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Misc
+.DS_Store
