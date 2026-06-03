@@ -42,6 +42,7 @@ import {
   verifyLicenceAction,
 } from "@/app/(app)/_actions/verification";
 import { isValidAbnFormat } from "@/lib/abn";
+import { isValidAuPhone, significantAuDigitCount } from "@/lib/au-phone";
 
 // ── types ────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,8 @@ interface InitialBundle {
     linkedinUrl: string | null;
     instagramUrl: string | null;
   } | null;
+  /** Contact phone (E.164) — lives on the user row, not the profile. */
+  phone: string;
   categories: ProjectType[];
   serviceAreas: ServiceArea[];
   licences: Licence[];
@@ -122,6 +125,7 @@ export function BuilderWizard({ initial }: { initial: InitialBundle }) {
     abn: initial.profile?.abn ?? "",
     acn: initial.profile?.acn ?? "",
     yearsInOperation: initial.profile?.yearsInOperation?.toString() ?? "",
+    phone: initial.phone ?? "",
   });
 
   /**
@@ -405,6 +409,7 @@ type CompanyValues = {
   abn: string;
   acn: string;
   yearsInOperation: string;
+  phone: string;
 };
 
 function CompanyStep({
@@ -481,6 +486,9 @@ function CompanyStep({
     } else if (!/^\d{11}$/.test(values.abn)) {
       errors.abn = "ABN must be exactly 11 digits";
     }
+    if (!isValidAuPhone(values.phone)) {
+      errors.phone = "Enter a valid AU mobile or landline (e.g. 0412 345 678).";
+    }
     if (Object.keys(errors).length) {
       setState({ fieldErrors: errors });
       return;
@@ -499,7 +507,16 @@ function CompanyStep({
     !savePending &&
     abnValid() &&
     values.companyName.trim().length > 0 &&
+    isValidAuPhone(values.phone) &&
     verifyResult !== null;
+
+  // Calm inline phone error — only once enough digits are in.
+  const phoneLiveError =
+    !isValidAuPhone(values.phone) &&
+    values.phone.trim() !== "" &&
+    significantAuDigitCount(values.phone) >= 9
+      ? "Enter a valid AU mobile or landline."
+      : undefined;
 
   // Continue-anyway available when verification ran but didn't pass —
   // they go through with limited (viewer) access. We let the UI pass
@@ -756,6 +773,39 @@ function CompanyStep({
                 className="tabular-nums"
               />
             </div>
+          </div>
+        ) : null}
+
+        {/* Contact phone — required. Revealed alongside the other
+            business details so it reads as standard company info. */}
+        {verifyResult ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="phone">Contact phone</Label>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-tight border border-border bg-surface-1 px-3 h-10 text-[13px] text-text-muted shrink-0">
+                <span aria-hidden>🇦🇺</span> +61
+              </span>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={values.phone}
+                onChange={(e) => onChange({ ...values, phone: e.target.value })}
+                placeholder="0412 345 678"
+                maxLength={20}
+                aria-invalid={!!(phoneLiveError ?? state.fieldErrors?.phone)}
+              />
+            </div>
+            {phoneLiveError ?? state.fieldErrors?.phone ? (
+              <p className="text-[11px] text-danger">
+                {phoneLiveError ?? state.fieldErrors?.phone}
+              </p>
+            ) : (
+              <p className="text-[11px] text-text-dim">
+                Used for tender coordination and account verification.
+              </p>
+            )}
           </div>
         ) : null}
 

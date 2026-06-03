@@ -36,6 +36,7 @@ import {
 } from "@/modules/unlocks";
 import { listTendersForBuilder } from "@/modules/tenders";
 import { projects as projectsTable } from "@/modules/projects/schema";
+import { hasFullVerificationForApproval } from "@/modules/verification";
 import { requireMobileAuth } from "../../_lib/requireMobileAuth";
 
 export const runtime = "nodejs";
@@ -106,16 +107,28 @@ export async function GET(request: NextRequest) {
 
   // Pull everything in parallel — none of these depend on each other
   // (suggested resolves service areas first, but we do that inline).
-  const [fba, profile, unlockedIds, myTendersRaw, notifications, unlockCount, savedCount] =
-    await Promise.all([
-      getFbaStatus(builderId),
-      getBuilderProfile(builderId),
-      listMyUnlockedProjectIds(builderId),
-      listTendersForBuilder(builderId),
-      listNotifications(builderId, { limit: MAX_ACTIVITY }),
-      countMyUnlocks(builderId),
-      countMySaved(builderId),
-    ]);
+  const [
+    fba,
+    profile,
+    unlockedIds,
+    myTendersRaw,
+    notifications,
+    unlockCount,
+    savedCount,
+    verification,
+  ] = await Promise.all([
+    getFbaStatus(builderId),
+    getBuilderProfile(builderId),
+    listMyUnlockedProjectIds(builderId),
+    listTendersForBuilder(builderId),
+    listNotifications(builderId, { limit: MAX_ACTIVITY }),
+    countMyUnlocks(builderId),
+    countMySaved(builderId),
+    // Powers the mobile "VerificationCallout" — only meaningful when
+    // approvalStatus !== "approved", but the cost is two cheap counts
+    // so we fetch it always to keep the response shape stable.
+    hasFullVerificationForApproval(builderId),
+  ]);
 
   // Suggested feed — service-area scoped if we have areas, otherwise
   // any recent published/tendering project so a new builder still has
@@ -257,11 +270,25 @@ export async function GET(request: NextRequest) {
       hasProfile: !!profile,
       approvalStatus: profile?.profile?.approvalStatus ?? null,
       companyName: profile?.profile?.companyName ?? null,
+      tradingName: profile?.profile?.tradingName ?? null,
+      // First name for the greeting is derived client-side from
+      // AuthSession.user.name (already in the iOS session). Not
+      // duplicated here to keep the response shape lean.
       serviceAreas: serviceAreas.map((a) => ({
         state: a.state,
         suburb: a.suburb,
         statewide: (a.radiusKm ?? 0) >= 50,
       })),
+    },
+    /**
+     * Verification booleans for the dashboard's "approval callout"
+     * card. Only rendered when `profile.approvalStatus !== "approved"`.
+     * Mirrors what the web's `<VerificationCallout>` consumes.
+     */
+    verification: {
+      abnVerified: verification.abnVerified,
+      anyLicenceVerified: verification.anyLicenceVerified,
+      reasons: verification.reasons,
     },
     stats,
     fba: fbaOut,

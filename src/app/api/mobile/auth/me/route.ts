@@ -10,7 +10,11 @@
  *     re-login.
  *
  * Success (200):
- *   { user: { id, email, name, role } }
+ *   { user: { id, email, name, role, needsOnboarding } }
+ *
+ * `needsOnboarding` mirrors the gate the web's (app) layout uses to
+ * bounce to /onboarding — mobile uses it to decide between OnboardingFlow
+ * vs MainTabs on the root view tree.
  *
  * Failures:
  *   401  no/bad bearer token (codes: missing | malformed | invalid | expired)
@@ -22,6 +26,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { users } from "@/modules/users";
+import { hasCompletedOnboarding } from "@/modules/profiles";
 import { requireMobileAuth } from "../../_lib/requireMobileAuth";
 
 export const runtime = "nodejs";
@@ -55,5 +60,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ user });
+  const onboarded = await hasCompletedOnboarding(user.id, user.role);
+
+  return NextResponse.json({
+    user: {
+      ...user,
+      needsOnboarding: !onboarded,
+    },
+  });
 }

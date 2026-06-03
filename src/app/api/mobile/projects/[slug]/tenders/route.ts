@@ -21,18 +21,32 @@ import {
 import { requireMobileAuth } from "../../../_lib/requireMobileAuth";
 import {
   analyticsToPayload,
-  ownerTenderSummary,
+  ownerTenderDetail,
   type MobileOwnerTenderAnalytics,
-  type MobileOwnerTenderSummary,
+  type MobileOwnerTenderDetail,
 } from "../../../_lib/ownerTenderPayload";
 
 export const runtime = "nodejs";
 
+/** Project specs the comparison screen needs for derived insights —
+ *  $/m² (buildSizeBand) and price-vs-budget (budgetBand). */
+export interface MobileOwnerTenderListProject {
+  type: string;
+  buildSizeBand: string | null;
+  budgetBand: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+}
+
 export interface MobileOwnerTenderListPayload {
   projectId: string;
   projectTitle: string;
+  project: MobileOwnerTenderListProject;
   analytics: MobileOwnerTenderAnalytics;
-  tenders: MobileOwnerTenderSummary[];
+  // Detail shape (incl. costLines) — a project caps at 3 tenders, so the
+  // per-trade comparison data rides along in this one round-trip without
+  // bloating the payload.
+  tenders: MobileOwnerTenderDetail[];
 }
 
 function notFoundResponse() {
@@ -62,8 +76,15 @@ export async function GET(
   const payload: MobileOwnerTenderListPayload = {
     projectId: project.id,
     projectTitle: project.title,
+    project: {
+      type: project.type,
+      buildSizeBand: project.buildSizeBand,
+      budgetBand: project.budgetBand,
+      bedrooms: project.bedrooms,
+      bathrooms: project.bathrooms,
+    },
     analytics: analyticsToPayload(analytics),
-    tenders: tenders.map(ownerTenderSummary),
+    tenders: tenders.map(ownerTenderDetail),
   };
   return NextResponse.json(payload);
 }

@@ -46,6 +46,7 @@ import { logger } from "@/lib/logger";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 import { users } from "@/modules/users";
 import { issueSession } from "@/modules/auth/mobile-tokens";
+import { hasCompletedOnboarding } from "@/modules/profiles";
 
 export const runtime = "nodejs";
 
@@ -173,6 +174,10 @@ export async function POST(request: NextRequest) {
     "mobile login",
   );
 
+  // Onboarding gate parity with the web's (app) layout. Mobile uses
+  // this to route between MainTabs (done) and OnboardingFlow (not).
+  const onboarded = await hasCompletedOnboarding(user.id, user.role);
+
   return NextResponse.json({
     accessToken: issued.value.accessToken,
     refreshToken: issued.value.refreshToken,
@@ -183,6 +188,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       name: user.name,
       role: user.role,
+      needsOnboarding: !onboarded,
     },
   });
 }

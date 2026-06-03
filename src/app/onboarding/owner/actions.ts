@@ -15,6 +15,7 @@ import {
 } from "@/modules/profiles";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { normaliseAuPhone } from "@/lib/au-phone";
 import { users } from "@/modules/users/schema";
 import { sendOwnerSignupOpsEmail } from "@/modules/email";
 
@@ -46,6 +47,23 @@ export async function ownerOnboardingAction(
     return s === "" ? null : s;
   };
 
+  // Phone — required for owners (builders call them once unlocked).
+  // Validate as AU mobile/landline and store E.164. Surface as a
+  // `phone` field error so the form highlights the input.
+  const phoneRaw = formData.get("phone");
+  const phoneInput = typeof phoneRaw === "string" ? phoneRaw.trim() : "";
+  if (phoneInput === "") {
+    return { fieldErrors: { phone: "Enter a contact phone number." } };
+  }
+  const phoneE164 = normaliseAuPhone(phoneInput);
+  if (!phoneE164) {
+    return {
+      fieldErrors: {
+        phone: "Enter a valid AU mobile or landline (e.g. 0412 345 678).",
+      },
+    };
+  }
+
   const result = await upsertOwnerProfile(userId, {
     entityType: formData.get("entityType"),
     companyName: nullable(formData.get("companyName")),
@@ -66,6 +84,12 @@ export async function ownerOnboardingAction(
     }
     return { error: result.error.message };
   }
+
+  // Persist the validated phone on the user row.
+  await db
+    .update(users)
+    .set({ phone: phoneE164, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 
   const complete = await completeOwnerOnboarding(userId);
   if (!complete.ok) return { error: complete.error.message };

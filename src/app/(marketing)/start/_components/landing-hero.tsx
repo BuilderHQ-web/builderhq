@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { Suspense } from "react";
+import Link from "next/link";
 
 import { StartCta } from "./start-cta";
 
@@ -88,6 +89,22 @@ export function LandingHero() {
           90 seconds · no card · no spam
         </span>
       </motion.div>
+
+      {/* Lower-friction escape hatch — rescues visitors who aren't ready
+          to upload plans by offering a quick call instead. */}
+      <motion.p
+        {...ENTER}
+        transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
+        className="mt-4 sm:mt-5 text-text-faint text-[12.5px] sm:text-[13px] font-ui"
+      >
+        Not ready to upload?{" "}
+        <Link
+          href="/book-a-call"
+          className="text-accent font-semibold underline-offset-2 hover:underline"
+        >
+          Book a free call →
+        </Link>
+      </motion.p>
     </div>
   );
 }
