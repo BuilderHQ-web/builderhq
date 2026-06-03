@@ -28,6 +28,42 @@ final class AuthSession {
         let email: String
         let name: String?
         let role: Role
+        /// True when the user has signed in / verified but hasn't yet
+        /// finished the role-specific onboarding wizard. Mirrors the
+        /// gate the web's (app) layout uses to bounce to /onboarding.
+        /// Decoded with a `true`-default so a stale server response
+        /// (pre-onboarding-gate API version) never lets an unbaked
+        /// account slip past — better to over-show the wizard than
+        /// land in a half-populated dashboard.
+        let needsOnboarding: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case id, email, name, role, needsOnboarding
+        }
+
+        init(
+            id: String,
+            email: String,
+            name: String?,
+            role: Role,
+            needsOnboarding: Bool
+        ) {
+            self.id = id
+            self.email = email
+            self.name = name
+            self.role = role
+            self.needsOnboarding = needsOnboarding
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            self.id = try c.decode(String.self, forKey: .id)
+            self.email = try c.decode(String.self, forKey: .email)
+            self.name = try c.decodeIfPresent(String.self, forKey: .name)
+            self.role = try c.decode(Role.self, forKey: .role)
+            self.needsOnboarding =
+                try c.decodeIfPresent(Bool.self, forKey: .needsOnboarding) ?? true
+        }
     }
 
     enum Role: String, Codable {
@@ -81,6 +117,16 @@ final class AuthSession {
     // MARK: - Sign in (from LoginScreen success)
 
     func didSignIn(user: AuthUser) {
+        state = .signedIn(user: user)
+    }
+
+    // MARK: - Onboarding completion
+
+    /// Called by an onboarding wizard after the server confirms the
+    /// profile is saved + onboarding is marked complete. Just swaps in
+    /// the fresh user (which has needsOnboarding = false), which trips
+    /// the RootView to render MainTabs instead of OnboardingFlow.
+    func didCompleteOnboarding(user: AuthUser) {
         state = .signedIn(user: user)
     }
 

@@ -12,35 +12,42 @@
 
 import SwiftUI
 
-struct Press<Content: View>: View {
-    enum HapticKind {
-        case tap     // .impact(weight: .light)
-        case soft    // .impact(weight: .soft)
-        case select  // .selection
-        case none    // disabled
+/// Haptic profile used by `Press` and `PressButtonStyle`. Hoisted out
+/// of `Press<Content>` so non-generic consumers (like ButtonStyle)
+/// can reference it without specifying a phantom Content type.
+enum PressHaptic {
+    case tap     // .impact(weight: .light)
+    case soft    // .impact(weight: .soft)
+    case select  // .selection
+    case none    // disabled
 
-        @available(iOS 17.0, *)
-        var feedback: SensoryFeedback? {
-            switch self {
-            case .tap:
-                return .impact(weight: .light)
-            case .soft:
-                // `.soft` is a Flexibility, not a Weight — the API
-                // splits the two axes. Soft flexibility on default
-                // intensity gives the squishy tap we want for low-
-                // emphasis presses (list rows in dense scrolls).
-                return .impact(flexibility: .soft, intensity: 0.6)
-            case .select:
-                return .selection
-            case .none:
-                return nil
-            }
+    @available(iOS 17.0, *)
+    var feedback: SensoryFeedback? {
+        switch self {
+        case .tap:
+            return .impact(weight: .light)
+        case .soft:
+            // `.soft` is a Flexibility, not a Weight — the API
+            // splits the two axes. Soft flexibility on default
+            // intensity gives the squishy tap we want for low-
+            // emphasis presses (list rows in dense scrolls).
+            return .impact(flexibility: .soft, intensity: 0.6)
+        case .select:
+            return .selection
+        case .none:
+            return nil
         }
     }
+}
+
+struct Press<Content: View>: View {
+    /// Back-compat alias — existing call sites use `Press.HapticKind`.
+    /// New code should reference `PressHaptic` directly.
+    typealias HapticKind = PressHaptic
 
     let action: () -> Void
     var longPress: (() -> Void)? = nil
-    var haptic: HapticKind = .tap
+    var haptic: PressHaptic = .tap
     var scaleTo: CGFloat = 0.97
     let content: Content
 
@@ -48,7 +55,7 @@ struct Press<Content: View>: View {
     @State private var hapticTrigger = 0
 
     init(
-        haptic: HapticKind = .tap,
+        haptic: PressHaptic = .tap,
         scaleTo: CGFloat = 0.97,
         longPress: (() -> Void)? = nil,
         action: @escaping () -> Void,

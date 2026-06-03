@@ -60,6 +60,16 @@ targets:
         NSCameraUsageDescription: BuilderHQ uses the camera to scan and confirm your build address. Optional — only triggered when you tap "Scan address".
         NSLocationWhenInUseUsageDescription: BuilderHQ uses your location to show projects in your service area and suggest the closest matches.
         NSPhotoLibraryAddUsageDescription: BuilderHQ saves tender summaries and project documents to your Photos when you tap Share → Save Image.
+        # App Transport Security exception — localhost only, so the
+        # simulator can hit `pnpm dev` (http://localhost:3000) during
+        # development. The DEBUG-only base URL in APIClient.swift means
+        # release builds still go to https://builderhq.com.au.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            localhost:
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.builderhq.app

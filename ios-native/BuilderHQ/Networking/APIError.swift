@@ -18,6 +18,10 @@ enum APIError: Error, LocalizedError {
     case forbidden(message: String)
     /// 404.
     case notFound(message: String)
+    /// 409 — duplicate / state-conflict (e.g. signup with existing
+    /// email). Surfaced separately from validation so the UI can copy
+    /// "already registered" hints without coercing it into a field error.
+    case conflict(message: String)
     /// 422 / 400 — validation failure. `fieldErrors` is keyed by
     /// JSON path ("email", "password", etc.) when the server returns
     /// structured field-level errors.
@@ -46,14 +50,47 @@ enum APIError: Error, LocalizedError {
             return "Session expired. Sign in again."
         case .forbidden(let message),
              .notFound(let message),
+             .conflict(let message),
              .validation(let message, _),
              .rateLimited(let message),
              .server(let message),
              .unknown(let message, _):
             return message
-        case .decoding:
+        case .decoding(let underlying):
+            #if DEBUG
+            // In DEBUG builds, surface the actual decode failure so we
+            // can see which field broke. Release builds get the
+            // friendly fallback.
+            return "Decode failed: \(decodeDescription(underlying))"
+            #else
             return "Couldn't read the server's response. Update the app if this keeps happening."
+            #endif
         }
+    }
+}
+
+/// Compact, human-readable description of a `DecodingError`. The raw
+/// `Swift.Error` description is unhelpful — this picks out the field
+/// path + reason so DEBUG builds can show useful info inline.
+private func decodeDescription(_ error: Error) -> String {
+    guard let decode = error as? DecodingError else {
+        return error.localizedDescription
+    }
+    switch decode {
+    case .keyNotFound(let key, let ctx):
+        let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+        return "missing key '\(key.stringValue)' at \(path.isEmpty ? "root" : path)"
+    case .typeMismatch(let type, let ctx):
+        let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+        return "type mismatch for \(type) at \(path.isEmpty ? "root" : path) \u{2014} \(ctx.debugDescription)"
+    case .valueNotFound(let type, let ctx):
+        let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+        return "null where \(type) expected at \(path.isEmpty ? "root" : path)"
+    case .dataCorrupted(let ctx):
+        let path = ctx.codingPath.map(\.stringValue).joined(separator: ".")
+        return "corrupted at \(path.isEmpty ? "root" : path): \(ctx.debugDescription)"
+    @unknown default:
+        return error.localizedDescription
     }
 }
 

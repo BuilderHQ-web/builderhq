@@ -45,16 +45,15 @@ struct PremiumTextField: View {
                     }
 
                     Group {
+                        // When the floating label is up, hide the
+                        // in-field placeholder so we never see the same
+                        // text twice (e.g. "Password" both floating AND
+                        // as the empty-field placeholder).
+                        let p = hasFloatingLabel ? "" : (placeholder ?? label)
                         if isSecure {
-                            SecureField(
-                                placeholder ?? label,
-                                text: $text
-                            )
+                            SecureField(p, text: $text)
                         } else {
-                            TextField(
-                                placeholder ?? label,
-                                text: $text
-                            )
+                            TextField(p, text: $text)
                         }
                     }
                     .font(.system(size: 16, weight: .medium))
@@ -66,9 +65,29 @@ struct PremiumTextField: View {
                     .submitLabel(submitLabel)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(
-                        keyboardType == .emailAddress ? .never : .sentences
+                        // No auto-cap for emails OR secure fields. The
+                        // .sentences default was capitalising the first
+                        // letter of typed passwords — annoying for any
+                        // password that isn't a proper noun.
+                        (keyboardType == .emailAddress || isSecure)
+                            ? .never : .sentences
                     )
                     .onSubmit { onSubmit?() }
+                    // Number-pad keyboards have no Return key. Without a
+                    // Done toolbar the user gets stuck with the keyboard
+                    // up after typing a digit field — there's nothing to
+                    // press to dismiss. Attach the toolbar only to those
+                    // kinds; other keyboards already have a submitLabel.
+                    .toolbar {
+                        if isFocused && needsDoneToolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Done") { isFocused = false }
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Palette.accentLight)
+                            }
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -115,5 +134,17 @@ struct PremiumTextField: View {
         if error != nil { return Palette.danger.opacity(0.6) }
         if isFocused { return Palette.accent.opacity(0.6) }
         return Palette.hairlineStrong
+    }
+
+    /// Number-pad / decimal-pad / phone-pad keyboards lack a Return key,
+    /// so we surface a Done button in the keyboard toolbar. Other
+    /// keyboards already give the user a way to dismiss / submit.
+    private var needsDoneToolbar: Bool {
+        switch keyboardType {
+        case .numberPad, .decimalPad, .phonePad, .asciiCapableNumberPad:
+            return true
+        default:
+            return false
+        }
     }
 }

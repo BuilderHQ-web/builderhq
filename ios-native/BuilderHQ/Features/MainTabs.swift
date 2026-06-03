@@ -1,18 +1,33 @@
 /// MainTabs — the authenticated app shell.
 ///
-/// Four tabs: Home, Projects, Inbox, You. Same conceptual layout as
-/// the RN `(main)/_layout.tsx`. Uses SwiftUI's native `TabView` with
-/// SF Symbols — on iPhone, the default tab bar IS the native floating
-/// glass pill we want.
+/// Role-aware Projects tab:
+///   · Builders / admins → `BrowseScreen` (marketplace listings,
+///     unlock + tender flow)
+///   · Project owners    → `OwnerProjectsScreen` (their own portfolio:
+///     drafts, live, tendering, completed; floating + to publish)
 ///
-/// Each tab's content is a stub for week 1 so the app compiles + the
-/// nav is testable end-to-end. Real screens land week 2-5.
+/// Same `TabKind.projects` tag either way so the selected-tab state
+/// survives role changes; the underlying screen swaps based on
+/// `session.state.role` at render time. Routing the request through
+/// the right backend endpoint (`/projects/browse` vs `/projects/mine`)
+/// is the responsibility of the screen behind the tab.
+///
+/// Each tab is wrapped in its own `NavigationStack` so that pushes
+/// (e.g. a feed card → ProjectDetailScreen) stay scoped to the tab and
+/// the back swipe restores the right history. The push destinations
+/// are registered once at the NavigationStack root via
+/// `.navigationDestination(for: String.self)` — any descendant view
+/// can fire `NavigationLink(value: slug)` and it routes to the
+/// ProjectDetailScreen for that slug.
 
 import SwiftUI
 
 struct MainTabs: View {
     @Environment(AuthSession.self) private var session
     @State private var selection: TabKind = .home
+    /// App-level messaging store — drives the Inbox screen + the live
+    /// unread badge on the Inbox tab. Polled while the tabs are alive.
+    @State private var messaging = MessagingCenter()
 
     /// Renamed from `Tab` to avoid collision with SwiftUI's own
     /// `Tab` type (iOS 18+ tab builder). Reads cleaner anyway.
@@ -22,136 +37,77 @@ struct MainTabs: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            HomeScreenStub()
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(TabKind.home)
+            NavigationStack {
+                HomeScreen()
+                    .navigationDestination(for: String.self) { slug in
+                        ProjectDetailScreen(slug: slug)
+                    }
+            }
+            .tabItem {
+                Label("Home", systemImage: "house.fill")
+            }
+            .tag(TabKind.home)
 
-            ProjectsScreenStub()
-                .tabItem {
-                    Label("Projects", systemImage: "safari.fill")
-                }
-                .tag(TabKind.projects)
+            NavigationStack {
+                projectsTabContent
+                    .navigationDestination(for: String.self) { slug in
+                        ProjectDetailScreen(slug: slug)
+                    }
+            }
+            .tabItem {
+                Label("Projects", systemImage: projectsTabIcon)
+            }
+            .tag(TabKind.projects)
 
-            InboxScreenStub()
+            InboxScreen()
                 .tabItem {
                     Label("Inbox", systemImage: "message.fill")
                 }
+                .badge(messaging.totalUnread)
                 .tag(TabKind.inbox)
 
-            YouScreenStub()
+            ProfileHubScreen(role: role)
                 .tabItem {
                     Label("You", systemImage: "person.fill")
                 }
                 .tag(TabKind.you)
         }
         .tint(Palette.accent)
+        .environment(messaging)
+        .task { messaging.startPolling() }
+        .onDisappear { messaging.stopPolling() }
     }
-}
 
-// MARK: - Tab content stubs (week 1)
-
-private struct HomeScreenStub: View {
-    @Environment(AuthSession.self) private var session
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    AccentItalic(plain: "Good afternoon,", italic: name, size: 44)
-                        .padding(.top, 8)
-
-                    Surface(.accent, hairline: true) {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("FOUNDING ACCESS")
-                                .font(Typography.caption)
-                                .tracking(2)
-                                .foregroundStyle(Palette.accent)
-
-                            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                                Text("4")
-                                    .font(Typography.numericHero)
-                                    .foregroundStyle(Palette.text)
-                                    .monospacedDigit()
-                                Text("free unlocks left")
-                                    .font(Typography.body)
-                                    .foregroundStyle(Palette.textMuted)
-                            }
-
-                            Text("Stubbed — real hero card with progress ring lands week 2.")
-                                .font(Typography.bodySmall)
-                                .foregroundStyle(Palette.textDim)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-            .navigationTitle("Home")
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+    /// Role-routed Projects tab content. Owners see their own project
+    /// list; builders + admins see the marketplace browse.
+    @ViewBuilder
+    private var projectsTabContent: some View {
+        if isOwner {
+            OwnerProjectsScreen()
+        } else {
+            BrowseScreen()
         }
     }
 
-    private var name: String {
+    /// Icon swap so the tab bar telegraphs the underlying experience —
+    /// compass for the marketplace explorer, folder for the owner's
+    /// portfolio.
+    private var projectsTabIcon: String {
+        isOwner ? "folder.fill" : "safari.fill"
+    }
+
+    private var isOwner: Bool {
         if case let .signedIn(user) = session.state {
-            return user.name?.split(separator: " ").first.map(String.init) ?? "there"
+            return user.role == .projectOwner
         }
-        return "there"
+        return false
+    }
+
+    private var role: AuthSession.Role {
+        if case let .signedIn(user) = session.state {
+            return user.role
+        }
+        return .builder
     }
 }
 
-private struct ProjectsScreenStub: View {
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text("Projects — week 3.")
-                    .font(Typography.body)
-                    .foregroundStyle(Palette.textMuted)
-                    .padding(.top, 100)
-            }
-            .navigationTitle("Projects")
-        }
-    }
-}
-
-private struct InboxScreenStub: View {
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text("Inbox — week 4.")
-                    .font(Typography.body)
-                    .foregroundStyle(Palette.textMuted)
-                    .padding(.top, 100)
-            }
-            .navigationTitle("Inbox")
-        }
-    }
-}
-
-private struct YouScreenStub: View {
-    @Environment(AuthSession.self) private var session
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    Text("You — week 5.")
-                        .font(Typography.body)
-                        .foregroundStyle(Palette.textMuted)
-                        .padding(.top, 100)
-
-                    Press(haptic: .tap) {
-                        session.didSignOut()
-                    } content: {
-                        Text("Sign out")
-                            .font(Typography.ui(size: 13))
-                            .foregroundStyle(Palette.textDim)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                    }
-                }
-            }
-            .navigationTitle("You")
-        }
-    }
-}

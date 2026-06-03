@@ -27,6 +27,14 @@ import SwiftUI
 struct LoginScreen: View {
     @Environment(AuthSession.self) private var session
 
+    /// Called when the user taps "Sign up" in the footer. AuthFlow
+    /// uses this to switch to SignupScreen.
+    let onSignupTap: () -> Void
+
+    /// Called when the user taps "Forgot password?". AuthFlow uses this
+    /// to switch to ForgotPasswordScreen.
+    let onForgotTap: () -> Void
+
     @State private var email = ""
     @State private var password = ""
     @State private var emailError: String? = nil
@@ -38,7 +46,9 @@ struct LoginScreen: View {
 
     private enum Field: Hashable { case email, password }
 
-    private enum SubmitStatus {
+    // fileprivate (not private) so SubmitButton below — declared at
+    // file scope — can reference it as `LoginScreen.SubmitStatus`.
+    fileprivate enum SubmitStatus {
         case idle
         case submitting
         case success
@@ -52,115 +62,119 @@ struct LoginScreen: View {
                 .onTapGesture { focusedField = nil }
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer(minLength: 40)
-
-                    // Kicker
-                    HStack(spacing: 10) {
-                        Circle()
-                            .fill(Palette.accent)
-                            .frame(width: 6, height: 6)
-                            .shadow(color: Palette.accentGlow, radius: 6)
-                        Text("BUILDERHQ")
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(2.4)
-                            .foregroundStyle(Palette.accent)
-                    }
-
-                    // Hero headline
-                    Group {
-                        Text("Welcome")
-                            .font(Typography.ui(size: 44, weight: .medium))
-                            .foregroundStyle(Palette.text)
-                            .tracking(-0.4)
-                        Text("back.")
-                            .font(Typography.serifItalic(size: 44))
-                            .foregroundStyle(Palette.accentLight)
-                            .tracking(-0.4)
-                    }
-                    .padding(.top, 20)
-
-                    Text("Sign in to find your next build.")
-                        .font(Typography.body)
-                        .foregroundStyle(Palette.textMuted)
-                        .padding(.top, 14)
-
-                    // Form
-                    VStack(spacing: 14) {
-                        PremiumTextField(
-                            label: "Email",
-                            text: $email,
-                            keyboardType: .emailAddress,
-                            textContentType: .emailAddress,
-                            submitLabel: .next,
-                            error: emailError,
-                            onSubmit: { focusedField = .password }
-                        )
-                        .focused($focusedField, equals: .email)
-
-                        PremiumTextField(
-                            label: "Password",
-                            text: $password,
-                            textContentType: .password,
-                            isSecure: true,
-                            submitLabel: .go,
-                            error: passwordError,
-                            onSubmit: { Task { await submit() } }
-                        )
-                        .focused($focusedField, equals: .password)
-                    }
-                    .padding(.top, 32)
-                    .offset(x: shakeAmount)
-                    .disabled(status == .submitting)
+                VStack(alignment: .leading, spacing: 32) {
+                    headerBlock
+                    fieldSection
+                        .offset(x: shakeAmount)
+                        .disabled(status == .submitting)
 
                     if let banner = bannerError {
                         BannerError(message: banner)
-                            .padding(.top, 14)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
-                    // Forgot password
-                    HStack {
-                        Spacer()
-                        Button {
-                            // TODO: forgot password flow lands later
-                        } label: {
-                            Text("Forgot password?")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Palette.textMuted)
-                        }
-                    }
-                    .padding(.top, 14)
-
-                    // Submit
-                    SubmitButton(status: status) {
-                        Task { await submit() }
-                    }
-                    .padding(.top, 28)
-                    .disabled(status == .submitting || status == .success)
-
-                    // Footer
-                    HStack(spacing: 6) {
-                        Text("Don't have an account?")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundStyle(Palette.textMuted)
-                        Button {
-                            // TODO: SignupScreen lands next turn
-                        } label: {
-                            Text("Sign up")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(Palette.accentLight)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 28)
-                    .padding(.bottom, 40)
+                    submitButton
+                    footer
                 }
                 .padding(.horizontal, 24)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 48)
+                .padding(.bottom, 32)
             }
             .scrollDismissesKeyboard(.interactively)
         }
+    }
+
+    // MARK: - Sections
+
+    private var headerBlock: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            // Kicker
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(Palette.accent)
+                    .frame(width: 6, height: 6)
+                    .shadow(color: Palette.accentGlow, radius: 6)
+                Text("BUILDERHQ")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundStyle(Palette.accent)
+            }
+
+            // Single-Text concat so the italic accent kisses the line
+            // above without a double-line-height gap.
+            (
+                Text("Welcome\n")
+                    .font(Typography.ui(size: 42, weight: .medium))
+                    .foregroundStyle(Palette.text)
+                + Text("back.")
+                    .font(Typography.serifItalic(size: 42))
+                    .foregroundStyle(Palette.accentLight)
+            )
+            .tracking(-0.5)
+            .lineSpacing(-4)
+
+            Text("Sign in to find your next build.")
+                .font(Typography.body)
+                .foregroundStyle(Palette.textMuted)
+        }
+    }
+
+    private var fieldSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            PremiumTextField(
+                label: "Email",
+                text: $email,
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress,
+                submitLabel: .next,
+                error: emailError,
+                onSubmit: { focusedField = .password }
+            )
+            .focused($focusedField, equals: .email)
+
+            PremiumTextField(
+                label: "Password",
+                text: $password,
+                textContentType: .password,
+                isSecure: true,
+                submitLabel: .go,
+                error: passwordError,
+                onSubmit: { Task { await submit() } }
+            )
+            .focused($focusedField, equals: .password)
+
+            HStack {
+                Spacer()
+                Button(action: onForgotTap) {
+                    Text("Forgot password?")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Palette.textMuted)
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private var submitButton: some View {
+        SubmitButton(status: status) {
+            Task { await submit() }
+        }
+        .disabled(status == .submitting || status == .success)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 6) {
+            Text("Don't have an account?")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Palette.textMuted)
+            Button(action: onSignupTap) {
+                Text("Sign up")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Palette.accentLight)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
     }
 
     // MARK: - Submit logic

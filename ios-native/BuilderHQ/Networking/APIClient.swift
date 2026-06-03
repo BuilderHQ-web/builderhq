@@ -22,10 +22,33 @@
 
 import Foundation
 
-/// Endpoints (today: production only — debug builds can override via
-/// build config later).
+/// Base URL for every request.
+///
+/// DEBUG builds (Xcode → ⌘R from the simulator) hit `pnpm dev` over
+/// plain HTTP at localhost:3000 so we can iterate on routes without a
+/// production deploy. The Info.plist has a matching ATS exception so
+/// the cleartext load is allowed for localhost only — production
+/// security is unaffected.
+///
+/// RELEASE builds (TestFlight, App Store) always hit
+/// `https://builderhq.com.au`.
+///
+/// Override in DEBUG by setting the `BHQ_API_BASE` environment
+/// variable on the Xcode scheme — useful for testing against a staging
+/// preview deploy or a Tailscale-served Mac. Falls through to
+/// localhost when unset.
 enum APIBase {
-    static let url = URL(string: "https://builderhq.com.au")!
+    static let url: URL = {
+        #if DEBUG
+        if let override = ProcessInfo.processInfo.environment["BHQ_API_BASE"],
+           let url = URL(string: override) {
+            return url
+        }
+        return URL(string: "http://localhost:3000")!
+        #else
+        return URL(string: "https://builderhq.com.au")!
+        #endif
+    }()
 }
 
 /// Refresh access tokens this many seconds before they expire.
@@ -70,7 +93,12 @@ final class APIClient {
         }
 
         self.encoder = JSONEncoder()
-        self.encoder.keyEncodingStrategy = .convertToSnakeCase
+        // No key-conversion on the encoder. The server's mobile routes
+        // use Zod schemas keyed in camelCase (`firstName`, `refreshToken`,
+        // `deviceLabel`, …), so iOS sends the property names verbatim.
+        // The decoder DOES convert from snake_case below because server
+        // RESPONSES (DB-backed) come back snake_case — opposite direction,
+        // opposite strategy.
     }
 
     // MARK: - Public surface
@@ -118,6 +146,74 @@ final class APIClient {
         )
     }
 
+    /// DELETE — typed response. No body (REST convention).
+    func delete<Response: Decodable>(
+        _ path: String,
+        authed: Bool = true,
+        as: Response.Type = Response.self
+    ) async throws -> Response {
+        try await request(
+            path: path,
+            method: "DELETE",
+            body: Optional<EmptyBody>.none,
+            authed: authed
+        )
+    }
+
+    /// PATCH — typed body + typed response. Used for partial-update
+    /// endpoints (e.g. tender draft autosave).
+    func patch<Body: Encodable, Response: Decodable>(
+        _ path: String,
+        body: Body,
+        authed: Bool = true,
+        as: Response.Type = Response.self
+    ) async throws -> Response {
+        try await request(
+            path: path,
+            method: "PATCH",
+            body: body,
+            authed: authed
+        )
+    }
+
+    /// PUT — typed body + typed response. Used for replace-all
+    /// endpoints (e.g. tender cost lines).
+    func put<Body: Encodable, Response: Decodable>(
+        _ path: String,
+        body: Body,
+        authed: Bool = true,
+        as: Response.Type = Response.self
+    ) async throws -> Response {
+        try await request(
+            path: path,
+            method: "PUT",
+            body: body,
+            authed: authed
+        )
+    }
+
+    /// POST raw bytes (e.g. a PDF) with a custom content type and decode
+    /// a typed JSON response. For binary uploads that don't fit the
+    /// Codable-body path — today, the plan/quote extraction endpoints
+    /// that read the file directly. Shares the same auth + proactive
+    /// refresh + one-shot 401 retry as `request`, but uses a dedicated
+    /// long-timeout session since payloads can be large.
+    func postData<Response: Decodable>(
+        _ path: String,
+        data: Data,
+        contentType: String,
+        authed: Bool = true,
+        as: Response.Type = Response.self
+    ) async throws -> Response {
+        try await sendData(
+            path: path,
+            data: data,
+            contentType: contentType,
+            authed: authed,
+            isRetry: false
+        )
+    }
+
     // MARK: - Internal — core request flow
 
     private func request<Body: Encodable, Response: Decodable>(
@@ -128,11 +224,23 @@ final class APIClient {
         isRetry: Bool = false
     ) async throws -> Response {
         // Proactive refresh — only on authed requests, not on retries.
-        if authed && !isRetry && (try? await shouldRefreshProactively()) == true {
+        if authed && !isRetry && (try? shouldRefreshProactively()) == true {
             _ = await refreshAccessToken()
         }
 
-        let url = APIBase.url.appending(path: path)
+        // `URL.appending(path:)` treats the whole string as a single
+        // path component and percent-encodes special chars — including
+        // the `?` that separates path from query string. For requests
+        // with query params (e.g. /api/.../browse?limit=20) the `?`
+        // becomes `%3F` and the server can't match the route. Use
+        // `URL(string:relativeTo:)` instead so the path/query split is
+        // parsed correctly.
+        guard let url = URL(string: path, relativeTo: APIBase.url) else {
+            throw APIError.unknown(
+                message: "Invalid URL path: \(path)",
+                status: 0
+            )
+        }
         var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -143,8 +251,10 @@ final class APIClient {
         }
 
         if authed {
-            if let token = try? KeychainStore.auth.get(KeychainStore.Key.accessToken),
-               let token = token {
+            // `try?` flattens the optional from `get(_:)` (which is
+            // `throws -> String?`), so the binding already produces
+            // `String` — no second unwrap needed.
+            if let token = try? KeychainStore.auth.get(KeychainStore.Key.accessToken) {
                 req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
         }
@@ -202,6 +312,8 @@ final class APIClient {
             throw APIError.forbidden(message: message)
         case 404:
             throw APIError.notFound(message: message)
+        case 409:
+            throw APIError.conflict(message: message)
         case 400, 422:
             throw APIError.validation(
                 message: message,
@@ -216,11 +328,104 @@ final class APIClient {
         }
     }
 
+    /// Raw-body sibling of `request` — same auth/refresh/error mapping,
+    /// but sends `data` verbatim with `contentType` and a generous
+    /// upload timeout.
+    private func sendData<Response: Decodable>(
+        path: String,
+        data: Data,
+        contentType: String,
+        authed: Bool,
+        isRetry: Bool
+    ) async throws -> Response {
+        if authed && !isRetry && (try? shouldRefreshProactively()) == true {
+            _ = await refreshAccessToken()
+        }
+        guard let url = URL(string: path, relativeTo: APIBase.url) else {
+            throw APIError.unknown(message: "Invalid URL path: \(path)", status: 0)
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        if authed,
+           let token = try? KeychainStore.auth.get(KeychainStore.Key.accessToken) {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Big PDFs (plan sets up to ~28MB) over a phone connection need
+        // headroom — don't widen the shared 15/30s session.
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 120
+        config.timeoutIntervalForResource = 600
+        let uploadSession = URLSession(configuration: config)
+
+        let respData: Data
+        let response: URLResponse
+        do {
+            (respData, response) = try await uploadSession.data(for: req)
+        } catch let error as URLError {
+            throw APIError.network(error)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.unknown(message: "Non-HTTP response", status: 0)
+        }
+
+        if http.statusCode == 401 && authed && !isRetry {
+            if await refreshAccessToken() {
+                return try await sendData(
+                    path: path,
+                    data: data,
+                    contentType: contentType,
+                    authed: authed,
+                    isRetry: true
+                )
+            }
+            await fireForcedLogout()
+            throw APIError.unauthorized
+        }
+        if http.statusCode == 401 {
+            await fireForcedLogout()
+            throw APIError.unauthorized
+        }
+
+        if (200..<300).contains(http.statusCode) {
+            if Response.self == EmptyResponse.self {
+                return EmptyResponse() as! Response
+            }
+            do {
+                return try decoder.decode(Response.self, from: respData)
+            } catch {
+                throw APIError.decoding(underlying: error)
+            }
+        }
+
+        let envelope = try? decoder.decode(ServerErrorEnvelope.self, from: respData)
+        let message = envelope?.error.message ?? "Request failed (\(http.statusCode))"
+        switch http.statusCode {
+        case 403: throw APIError.forbidden(message: message)
+        case 404: throw APIError.notFound(message: message)
+        case 409: throw APIError.conflict(message: message)
+        case 400, 422:
+            throw APIError.validation(
+                message: message,
+                fieldErrors: envelope?.error.details ?? [:]
+            )
+        case 429: throw APIError.rateLimited(message: message)
+        case 500...599: throw APIError.server(message: message)
+        default: throw APIError.unknown(message: message, status: http.statusCode)
+        }
+    }
+
     // MARK: - Refresh chain
 
-    private func shouldRefreshProactively() async throws -> Bool {
-        guard let _ = try KeychainStore.auth.get(KeychainStore.Key.accessToken),
-              let expiresAtStr = try KeychainStore.auth.get(KeychainStore.Key.accessExpiresAt)
+    private func shouldRefreshProactively() throws -> Bool {
+        // Need both an access token AND an expiry to decide. Either
+        // missing → nothing to refresh proactively.
+        guard
+            (try KeychainStore.auth.get(KeychainStore.Key.accessToken)) != nil,
+            let expiresAtStr = try KeychainStore.auth.get(KeychainStore.Key.accessExpiresAt)
         else {
             return false
         }
@@ -250,8 +455,9 @@ final class APIClient {
     }
 
     private func performRefresh() async -> Bool {
-        guard let refreshToken = try? KeychainStore.auth.get(KeychainStore.Key.refreshToken),
-              let refreshToken = refreshToken
+        // `try?` flattens the optional from `get(_:)`, so this binding
+        // already produces the unwrapped `String`.
+        guard let refreshToken = try? KeychainStore.auth.get(KeychainStore.Key.refreshToken)
         else { return false }
 
         let url = APIBase.url.appending(path: "/api/mobile/auth/refresh")

@@ -21,6 +21,50 @@ struct BuilderHQApp: App {
         // first paint. SwiftUI's `.custom(...)` font lookup is name-
         // based — once registered, any view can reach for it.
         FontRegistration.registerCustomFonts()
+
+        // Force every UITabBar in the app to use our brand teal as
+        // the selection tint, including the icon, label, and any
+        // system-rendered selection chrome. `.tint()` on the SwiftUI
+        // TabView is supposed to do this but iOS quietly fights back
+        // with system blue on some renderer paths — locking it at the
+        // appearance level is the only durable fix.
+        let brandTeal = UIColor(Palette.accent)
+        let unselected = UIColor(Palette.textDim)
+
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithDefaultBackground()
+        // Selected
+        tabAppearance.stackedLayoutAppearance.selected.iconColor = brandTeal
+        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: brandTeal,
+        ]
+        tabAppearance.inlineLayoutAppearance.selected.iconColor = brandTeal
+        tabAppearance.inlineLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: brandTeal,
+        ]
+        tabAppearance.compactInlineLayoutAppearance.selected.iconColor = brandTeal
+        tabAppearance.compactInlineLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: brandTeal,
+        ]
+        // Unselected
+        tabAppearance.stackedLayoutAppearance.normal.iconColor = unselected
+        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: unselected,
+        ]
+        tabAppearance.inlineLayoutAppearance.normal.iconColor = unselected
+        tabAppearance.inlineLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: unselected,
+        ]
+        tabAppearance.compactInlineLayoutAppearance.normal.iconColor = unselected
+        tabAppearance.compactInlineLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: unselected,
+        ]
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        // Belt-and-suspenders for older iOS renderer fallbacks.
+        UITabBar.appearance().tintColor = brandTeal
+        UITabBar.appearance().unselectedItemTintColor = unselected
     }
 
     var body: some Scene {
@@ -33,8 +77,13 @@ struct BuilderHQApp: App {
     }
 }
 
-/// Routes between auth (signed out) and the main app shell (signed in).
-/// Renders nothing while the session is hydrating to avoid a flash.
+/// Routes between auth (signed out), the role-specific onboarding
+/// wizard (signed in but profile not yet completed), and the main tab
+/// shell (signed in + onboarded). Renders nothing while the session is
+/// hydrating to avoid a flash.
+///
+/// The onboarding gate mirrors the web's (app) layout check — both
+/// roles must finish their wizard before the dashboard is reachable.
 struct RootView: View {
     @Environment(AuthSession.self) private var session
 
@@ -51,8 +100,12 @@ struct RootView: View {
                 Color.clear
             case .signedOut:
                 AuthFlow()
-            case .signedIn:
-                MainTabs()
+            case .signedIn(let user):
+                if user.needsOnboarding {
+                    OnboardingFlow(user: user)
+                } else {
+                    MainTabs()
+                }
             }
         }
     }
