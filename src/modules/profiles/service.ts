@@ -52,9 +52,17 @@ const postcode = z
   .string()
   .regex(/^\d{4}$/, "Australian postcodes are 4 digits");
 
+// `.nullish()` (= optional + nullable) so explicit null inputs are
+// accepted, not just empty-string / undefined. The web form always sends
+// "" for blank URL fields so the previous `.optional()` was sufficient
+// for that path, but the mobile route's merge-with-existing logic falls
+// back to `null` when neither patch nor existing has a value — without
+// nullable here, that path 400'd silently in step 1 of the builder
+// wizard because the resulting field errors targeted step 6 fields the
+// user couldn't see.
 const optionalUrl = z
   .union([z.url("Enter a valid URL"), z.literal("")])
-  .optional()
+  .nullish()
   .transform((v) => (v ? v : null));
 
 export const ownerProfileSchema = z.object({

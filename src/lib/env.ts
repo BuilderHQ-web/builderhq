@@ -37,6 +37,20 @@ const serverSchema = z.object({
   // Email (Resend) — required from Phase 1 (verification emails)
   RESEND_API_KEY: z.string().min(1).startsWith("re_"),
   EMAIL_FROM: z.string().min(1),
+  /**
+   * Dev-only safety belt. Comma-separated list of email addresses that
+   * may receive real emails when NODE_ENV !== "production". Every other
+   * recipient gets silently suppressed (logged + a fake message id
+   * returned so the caller's flow doesn't break).
+   *
+   * Prevents a developer's local "publish project" test from blasting
+   * real-world builders in the dev branch's seeded data. Has zero effect
+   * in production builds.
+   *
+   * Example for local .env.local:
+   *   EMAIL_DEV_ALLOWLIST="info@builderhq.com.au,me@gmail.com"
+   */
+  EMAIL_DEV_ALLOWLIST: z.string().optional(),
 
   // ── Phase 2+ — optional until each module ships ───────────────────────
   // R2 is now required from Phase 2 step 2 (document uploads).
@@ -49,6 +63,11 @@ const serverSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
+  // Anthropic — powers PDF auto-fill (tender quotes, and later project
+  // plans). Optional so the app boots without it; the extraction
+  // endpoints return 503 when it's unset.
+  ANTHROPIC_API_KEY: z.string().optional(),
 
   INNGEST_EVENT_KEY: z.string().optional(),
   INNGEST_SIGNING_KEY: z.string().optional(),
@@ -134,6 +153,11 @@ const clientSchema = z.object({
    *  /auth/magic success page fires the conversion event. */
   NEXT_PUBLIC_GOOGLE_ADS_ID: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: z.string().optional(),
+  /** Cal.com booking link in `username/event-slug` form (e.g.
+   *  "builderhq/builderhq-free-15-min-call"). Embedded on
+   *  /book-a-call/confirmed. When unset, the page falls back to a
+   *  "we'll call you" message instead of the calendar. */
+  NEXT_PUBLIC_CAL_LINK: z.string().optional(),
 });
 
 /**
@@ -163,6 +187,7 @@ function loadEnv() {
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
         NEXT_PUBLIC_GOOGLE_ADS_ID: process.env.NEXT_PUBLIC_GOOGLE_ADS_ID,
         NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
+        NEXT_PUBLIC_CAL_LINK: process.env.NEXT_PUBLIC_CAL_LINK,
       }) as z.infer<typeof serverSchema> & z.infer<typeof clientSchema>);
 
   return merged;

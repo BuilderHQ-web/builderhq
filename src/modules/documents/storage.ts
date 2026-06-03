@@ -159,6 +159,35 @@ export async function statObject(key: string): Promise<{
 }
 
 /**
+ * Read an object's raw bytes into memory (server-side). Unlike the
+ * presigned-URL helpers, this proxies the body through our server —
+ * reserved for server-to-server work like sending a PDF to Claude for
+ * extraction, where the bytes never touch the client. Returns the body
+ * plus the content-type R2 reports.
+ *
+ * Guard the size at the call site: pulling a large DWG/PDF fully into
+ * memory is fine for quote PDFs (a few MB) but not for arbitrary
+ * uploads. Throws if the object is missing.
+ */
+export async function getObjectBytes(key: string): Promise<{
+  bytes: Uint8Array;
+  contentType: string | null;
+}> {
+  const res = await r2.send(
+    new GetObjectCommand({ Bucket: env.R2_BUCKET, Key: key }),
+  );
+  if (!res.Body) {
+    throw new Error(`R2 object has no body: ${key}`);
+  }
+  // The AWS SDK v3 stream exposes transformToByteArray() in both Node
+  // and edge runtimes.
+  const bytes = await (
+    res.Body as { transformToByteArray: () => Promise<Uint8Array> }
+  ).transformToByteArray();
+  return { bytes, contentType: res.ContentType ?? null };
+}
+
+/**
  * Hard-delete an object. Used for cleanup when a DB write fails after
  * the upload succeeded, or for admin moderation.
  */

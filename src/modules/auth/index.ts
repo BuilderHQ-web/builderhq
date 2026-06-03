@@ -36,6 +36,14 @@ export {
   updateProfile,
   signUpSchema,
   type SignUpInput,
+  // Mobile-app sign-up (6-digit OTP). Web-side sign-up uses signUp +
+  // verifyEmail above; the mobile path stays in-app via codes.
+  mobileSignUp,
+  mobileVerifyCode,
+  mobileResendCode,
+  mobileRequestPasswordReset,
+  mobileResetPassword,
+  type MobileSignUpInput,
 } from "./service";
 
 // Ads-funnel magic-link (signup + login from /start). Issue + redeem

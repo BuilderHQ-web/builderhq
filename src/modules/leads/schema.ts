@@ -31,6 +31,10 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // applications appeared on PlanningAlerts (Moonee Valley + Merri-bek
   // pilot). Per-form specifics ride in the `meta` jsonb column.
   "architect_tender",
+  // "Book a call" Google Ads funnel — owner requests a 15-min intro
+  // call to get matched with builders. Project type / suburb / state /
+  // timeline ride in the `meta` jsonb column.
+  "book_call",
 ]);
 
 export const leads = pgTable(

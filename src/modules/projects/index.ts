@@ -49,6 +49,7 @@ export {
   update,
   publish,
   checkPublishability,
+  validateSaveReadiness,
   listMine,
   getBySlugForOwner,
   getByIdForOwner,

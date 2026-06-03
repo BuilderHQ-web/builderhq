@@ -101,6 +101,23 @@ export async function update(
     return fail("validation", errors.join(" "), { errors });
   }
 
+  // A LIVE project's required fields must not be cleared — that would
+  // break a published listing. Validate the merged result up-front and
+  // reject (without persisting) so the client can show inline errors.
+  // Drafts are exempt: they're allowed to be incomplete.
+  if (existing.status !== "draft") {
+    const merged = { ...existing, ...patch } as ProjectRow;
+    if (typeof patch.title === "string") merged.title = patch.title.trim();
+    const fieldErrors = validateSaveReadiness(merged);
+    if (Object.keys(fieldErrors).length > 0) {
+      return fail(
+        "validation",
+        "Required details can't be left empty on a live project.",
+        { fieldErrors },
+      );
+    }
+  }
+
   // Slug regen only while drafting — published URLs stay stable.
   let nextSlug = existing.slug;
   if (
@@ -134,6 +151,15 @@ export async function update(
     })
     .where(eq(projects.id, projectId))
     .returning();
+
+  // Draft → live: if this save completed everything a draft needs
+  // (required fields + an architectural plan), promote it now. `publish`
+  // re-checks readiness in-transaction and fans out to builders; if it's
+  // still incomplete it no-ops and the project stays a draft.
+  if (existing.status === "draft") {
+    const pub = await publish(ownerId, projectId);
+    if (pub.ok) return pub;
+  }
 
   return ok(updated!);
 }
@@ -665,6 +691,45 @@ function validateTypeRequired(p: ProjectRow): string[] {
       break;
   }
   return out;
+}
+
+/**
+ * Required-field readiness for SAVING an edit (no document check) — the
+ * field-level subset of `checkPublishability`. Returns a field→message
+ * map so the client can render inline errors. Used to (a) stop a LIVE
+ * project's required fields being cleared, and (b) with the doc gate,
+ * decide draft→live auto-publish.
+ */
+export function validateSaveReadiness(p: ProjectRow): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!p.title?.trim()) e.title = "Add a project title.";
+  if (!p.addressLine1 || !p.suburb || !p.state || !p.postcode) {
+    e.address = "Complete the project address.";
+  }
+  switch (p.type) {
+    case "single_dwelling":
+      if (!p.bedrooms) e.bedrooms = "Set the number of bedrooms.";
+      if (!p.bathrooms) e.bathrooms = "Set the number of bathrooms.";
+      if (!p.floors) e.floors = "Set the number of floors.";
+      break;
+    case "multi_dwelling":
+      if (!p.dwellingCount || p.dwellingCount < 2) {
+        e.dwellingCount = "Set a dwelling count of 2 or more.";
+      }
+      if (!p.bedrooms) e.bedrooms = "Set total bedrooms.";
+      if (!p.bathrooms) e.bathrooms = "Set total bathrooms.";
+      break;
+    case "renovation":
+      if (!p.renovationScopeTags || p.renovationScopeTags.length === 0) {
+        e.renovationScope = "Pick at least one renovation scope.";
+      }
+      break;
+    case "extension":
+      if (!p.extensionType) e.extensionType = "Pick the extension type.";
+      if (!p.extensionSizeBand) e.extensionSize = "Pick the extension size.";
+      break;
+  }
+  return e;
 }
 
 /** Validate a patch against the project's type. Returns user-facing

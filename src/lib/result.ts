@@ -23,6 +23,7 @@ export const err = <E>(error: E): Result<never, E> => ({ ok: false, error });
 export type AppError = {
   code:
     | "validation"
+    | "unauthorized"
     | "not_found"
     | "conflict"
     | "forbidden"

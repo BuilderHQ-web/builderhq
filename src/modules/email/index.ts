@@ -7,6 +7,8 @@
 export {
   OPS_EMAIL,
   sendVerificationEmail,
+  sendMobileVerificationCode,
+  sendMobilePasswordResetCode,
   sendPasswordResetEmail,
   sendTenderSubmittedEmail,
   sendTenderSubmittedBuilderEmail,
@@ -27,6 +29,7 @@ export {
   sendGuideDownloadEmail,
   sendGuideLeadOpsEmail,
   sendEstimateRequestOpsEmail,
+  sendBookCallOpsEmail,
   sendArchitectTenderOpsEmail,
   sendArchitectTenderConfirmationEmail,
   sendAdsFunnelMagicLinkEmail,
