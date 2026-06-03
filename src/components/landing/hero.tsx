@@ -123,7 +123,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
             transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="mt-4 lg:mt-9 mx-auto lg:mx-0 max-w-[32rem] text-[15px] sm:text-[17px] leading-[1.55] text-text-subtle"
           >
-            Upload your plans. We match verified builders. You pick the winner.
+            Upload your plans. We match verified builders. You compare quotes.
           </motion.p>
 
           {/* Primary CTA + ghost secondary */}
