@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { isValidAuPhone, significantAuDigitCount } from "@/lib/au-phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +79,7 @@ interface Props {
     defaultState: "NSW" | "VIC" | "QLD" | "WA" | "SA" | "TAS" | "ACT" | "NT" | null;
     defaultPostcode: string | null;
     contactPref: ContactPref;
+    phone: string;
   };
 }
 
@@ -86,8 +88,19 @@ export function OwnerForm({ defaults }: Props) {
   const [isPending, startTransition] = useTransition();
   const [entityType, setEntityType] = useState<EntityType | null>(defaults.entityType);
   const [contactPref, setContactPref] = useState<ContactPref>(defaults.contactPref);
+  const [phone, setPhone] = useState<string>(defaults.phone);
 
   const fieldError = (k: string) => state.fieldErrors?.[k];
+
+  // Live phone validity. Show an inline error only once the user has
+  // typed a plausible number's worth of digits and it's still invalid
+  // — keeps the field calm mid-entry. The submit button is gated on
+  // actual validity regardless.
+  const phoneValid = isValidAuPhone(phone);
+  const phoneLiveError =
+    !phoneValid && phone.trim() !== "" && significantAuDigitCount(phone) >= 9
+      ? "Enter a valid AU mobile or landline."
+      : undefined;
 
   const showCompany =
     entityType !== null &&
@@ -173,6 +186,39 @@ export function OwnerForm({ defaults }: Props) {
             />
           ))}
         </div>
+
+        {/* Contact number — required. Sits right under the preference
+            cards so it reads as the natural completion of "here's how
+            to reach me", not a separate ask. */}
+        <div className="mt-4 flex flex-col gap-1.5">
+          <Label htmlFor="phone">Your contact number</Label>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-tight border border-border bg-surface-1 px-3 h-10 text-[13px] text-text-muted shrink-0">
+              <span aria-hidden>🇦🇺</span> +61
+            </span>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="0412 345 678"
+              maxLength={20}
+              aria-invalid={!!(phoneLiveError ?? fieldError("phone"))}
+            />
+          </div>
+          {phoneLiveError ?? fieldError("phone") ? (
+            <p className="text-[11px] text-danger">
+              {phoneLiveError ?? fieldError("phone")}
+            </p>
+          ) : (
+            <p className="text-[11px] text-text-dim">
+              Shared with builders only after they unlock your project.
+            </p>
+          )}
+        </div>
       </Section>
 
       {/* Top-level error */}
@@ -196,7 +242,7 @@ export function OwnerForm({ defaults }: Props) {
         <Button
           type="submit"
           size="lg"
-          disabled={isPending || !entityType}
+          disabled={isPending || !entityType || !phoneValid}
           className="gap-2 w-full sm:w-auto"
         >
           {isPending ? <Loader2 className="size-4 animate-spin" /> : null}

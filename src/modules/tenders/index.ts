@@ -61,6 +61,7 @@ export {
   // KPIs
   countTendersReceivedForOwner,
   countTendersForProject,
+  countAwardedForBuilder,
   // Analytics roll-up helper
   computeTenderAnalytics,
 } from "./service";

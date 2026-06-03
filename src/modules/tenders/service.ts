@@ -394,6 +394,25 @@ async function fetchAwardedCountsBatch(
 }
 
 /**
+ * Public count of a builder's awarded tenders across every project — the
+ * "projects won" trust signal shown on their public profile. Mirrors the
+ * batch query above for a single builder.
+ */
+export async function countAwardedForBuilder(builderId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(tenders)
+    .where(
+      and(
+        eq(tenders.builderId, builderId),
+        eq(tenders.status, "awarded"),
+        isNull(tenders.deletedAt),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
+/**
  * Roll-up analytics across the loaded tender list. Pure function —
  * computes synchronously from what the page already loaded, no
  * additional DB hops. Returns null-y fields when there's not enough

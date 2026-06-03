@@ -25,16 +25,19 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
   getBySlugForOwner,
   getFullForUnlockedBuilder,
   getMarketplacePreview,
+  update as updateProject,
+  softDelete as softDeleteProject,
   type MarketplacePreview,
   type Project,
 } from "@/modules/projects";
+import { unlockPriceFor } from "@/modules/projects/pricing";
 import { projects as projectsTable } from "@/modules/projects/schema";
 import { listActiveForProjectUnchecked, listForProject as listDocumentsForProject } from "@/modules/documents";
 import {
@@ -152,6 +155,11 @@ interface UnlockAffordance {
   /** Slots left on the project. 0 means full. */
   slotsRemaining: number;
   unlockCap: number;
+  /** The underlying paid-path price for this project's type. Always
+   *  returned, even when FBA covers it, so the mobile CTA can render a
+   *  slashed-price treatment ("~~$149~~ Free with founding access").
+   *  Gives builders an explicit "you saved $X" signal. */
+  basePriceAud: number;
   /** "free" when an FBA credit will cover it; "paid" otherwise. */
   pricing:
     | { kind: "free"; reason: "founding_access"; remainingThisCycle: number }
@@ -178,6 +186,20 @@ interface PreviewProjectPayload {
   showsFullAddress: false;
 }
 
+/** Owner identity surfaced AFTER unlock. Builders get this so they can
+ *  trust who they're tendering to (name + tenure on platform + how many
+ *  projects this owner has run). Email/phone live in the messaging
+ *  flow — keep this read-only and safe to embed in the cached
+ *  payload. */
+interface UnlockedOwnerCard {
+  id: string;
+  name: string;
+  joinedAtIso: string;
+  /** Total projects this owner has ever published (any status). Gives
+   *  builders a "first-timer vs repeat client" signal. */
+  publishedProjectCount: number;
+}
+
 interface UnlockedBuilderPayload {
   mode: "unlocked_builder";
   project: BuilderProjectFields & {
@@ -187,6 +209,7 @@ interface UnlockedBuilderPayload {
   unlockedCount: number;
   isSaved: boolean;
   myTender: BuilderTenderSnapshot | null;
+  owner: UnlockedOwnerCard;
   showsFullAddress: true;
 }
 
@@ -335,18 +358,12 @@ async function ownerMode(
 }
 
 // ── Builder modes ────────────────────────────────────────────────────
-
-/**
- * Per-project unlock price the marketplace charges when FBA credits
- * aren't covering the cost. Mirrors the web side's pricing schedule —
- * keep in lockstep when prices change.
- */
-const UNLOCK_PRICE_BY_TYPE: Record<string, number> = {
-  single_dwelling: 99,
-  multi_dwelling: 149,
-  renovation: 79,
-  extension: 79,
-};
+//
+// Pricing is sourced from the canonical `unlockPriceFor()` helper in
+// `@/modules/projects/pricing` — the same table the web uses. The
+// previous local hardcoded table here had drifted (multi_dwelling: 149
+// vs canonical 249); always go through the helper so we can't drift
+// again.
 
 function previewToFields(p: MarketplacePreview): BuilderProjectFields {
   return {
@@ -391,6 +408,8 @@ async function previewMode(
     isProjectSaved(builderId, preview.id),
   ]);
 
+  const basePriceAud = unlockPriceFor(preview.type);
+
   let pricing: UnlockAffordance["pricing"];
   if (slotsRemaining === 0) {
     pricing = { kind: "unavailable", reason: "full" };
@@ -401,8 +420,7 @@ async function previewMode(
       remainingThisCycle: fba.remainingThisCycle,
     };
   } else {
-    const priceAud = UNLOCK_PRICE_BY_TYPE[preview.type] ?? 99;
-    pricing = { kind: "paid", priceAud };
+    pricing = { kind: "paid", priceAud: basePriceAud };
   }
 
   const payload: PreviewProjectPayload = {
@@ -415,6 +433,7 @@ async function previewMode(
       canUnlock: slotsRemaining > 0 && pricing.kind !== "unavailable",
       slotsRemaining,
       unlockCap: UNLOCK_CAP,
+      basePriceAud,
       pricing,
     },
     showsFullAddress: false,
@@ -440,9 +459,29 @@ async function unlockedBuilderMode(
   // builder detail page uses.
   const docs = await listActiveForProjectUnchecked(full.id);
 
-  const [tender, saved] = await Promise.all([
+  // Parallel: tender + saved flag + owner row + the owner's lifetime
+  // published-project count. The count gives builders a "first-timer
+  // vs repeat client" trust signal in the owner card.
+  const [tender, saved, ownerRow, ownerPublishedCount] = await Promise.all([
     getActiveTenderForBuilder(builderId, full.id),
     isProjectSaved(builderId, full.id),
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, full.ownerId))
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projectsTable)
+      .where(eq(projectsTable.ownerId, full.ownerId))
+      .then((rows) => rows[0]?.count ?? 0),
   ]);
 
   const documents: OwnerDocumentRow[] = docs.map((d) => ({
@@ -469,6 +508,31 @@ async function unlockedBuilderMode(
       }
     : null;
 
+  // Compose the owner's display name — prefer first+last so we don't
+  // leak a stale OAuth-provided full name when the user has overridden
+  // it later. Falls back to `name` then to a generic.
+  const ownerDisplayName = (() => {
+    if (!ownerRow) return "Project owner";
+    const fl = [ownerRow.firstName, ownerRow.lastName]
+      .filter((s) => typeof s === "string" && s.trim().length > 0)
+      .join(" ")
+      .trim();
+    if (fl.length > 0) return fl;
+    if (ownerRow.name && ownerRow.name.trim().length > 0) {
+      return ownerRow.name.trim();
+    }
+    return "Project owner";
+  })();
+
+  const owner: UnlockedOwnerCard = {
+    id: full.ownerId,
+    name: ownerDisplayName,
+    joinedAtIso: ownerRow?.createdAt
+      ? ownerRow.createdAt.toISOString()
+      : new Date().toISOString(),
+    publishedProjectCount: ownerPublishedCount,
+  };
+
   const payload: UnlockedBuilderPayload = {
     mode: "unlocked_builder",
     project: {
@@ -479,10 +543,180 @@ async function unlockedBuilderMode(
     unlockedCount: preview.unlockedCount,
     isSaved: saved,
     myTender,
+    owner,
     showsFullAddress: true,
   };
-  // Quiet TS unused; we keep the table import in case future ops
-  // join more project-level fields here.
-  void projectsTable;
   return NextResponse.json(payload);
+}
+
+// ── PATCH — owner edits an existing project ─────────────────────────
+//
+// Partial update of the editable project fields. Owner-only. Status is
+// untouched (a published project stays published; the slug only regens
+// for drafts, handled in the service). Returns the fresh project fields.
+
+const EDITABLE_FIELDS = [
+  "title",
+  "description",
+  "addressLine1",
+  "suburb",
+  "state",
+  "postcode",
+  "bedrooms",
+  "bathrooms",
+  "floors",
+  "landSizeBand",
+  "buildSizeBand",
+  "dwellingCount",
+  "existingAgeBand",
+  "extensionType",
+  "extensionSizeBand",
+  "budgetBand",
+  "targetStartMonth",
+  "targetCompletionMonth",
+] as const;
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params;
+  const auth = await requireMobileAuth(request);
+  if (!auth.ok) return auth.response;
+  if (auth.value.role !== "project_owner") {
+    return NextResponse.json(
+      { error: { code: "forbidden", message: "Only project owners can edit projects." } },
+      { status: 403 },
+    );
+  }
+
+  const ownerResult = await getBySlugForOwner(auth.value.userId, slug);
+  if (!ownerResult.ok) {
+    return NextResponse.json(
+      { error: { code: "not_found", message: "Project not found." } },
+      { status: 404 },
+    );
+  }
+  const project = ownerResult.value;
+
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: { code: "validation", message: "Invalid JSON body." } },
+      { status: 400 },
+    );
+  }
+  if (!raw || typeof raw !== "object") {
+    return NextResponse.json(
+      { error: { code: "validation", message: "Body must be an object." } },
+      { status: 400 },
+    );
+  }
+  const body = raw as Record<string, unknown>;
+
+  const patch: Record<string, unknown> = {};
+  for (const key of EDITABLE_FIELDS) {
+    if (body[key] !== undefined) patch[key] = body[key];
+  }
+  if (Array.isArray(body.renovationScopeTags)) {
+    patch.renovationScopeTags = body.renovationScopeTags;
+  }
+
+  const result = await updateProject(
+    auth.value.userId,
+    project.id,
+    patch as Parameters<typeof updateProject>[2],
+  );
+  if (!result.ok) {
+    const status =
+      result.error.code === "not_found" ? 404 :
+      result.error.code === "forbidden" ? 403 :
+      result.error.code === "validation" ? 400 :
+      500;
+    // Surface per-field errors (cleared required field on a live project)
+    // so the client can render them inline.
+    const details = result.error.details as { fieldErrors?: Record<string, string> } | undefined;
+    return NextResponse.json(
+      {
+        error: {
+          code: result.error.code,
+          message: result.error.message,
+          // `details` is the mobile client's field-error channel.
+          ...(details?.fieldErrors ? { details: details.fieldErrors } : {}),
+        },
+      },
+      { status },
+    );
+  }
+
+  const p = result.value;
+  return NextResponse.json({
+    project: {
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      status: p.status,
+      type: p.type,
+      // Lets the client detect a draft→live auto-promotion on save.
+      publishedAt: p.publishedAt ? p.publishedAt.toISOString() : null,
+    },
+  });
+}
+
+// MARK: - DELETE (owner, gated on zero unlocks)
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await params;
+  const auth = await requireMobileAuth(request);
+  if (!auth.ok) return auth.response;
+  if (auth.value.role !== "project_owner") {
+    return NextResponse.json(
+      { error: { code: "forbidden", message: "Only project owners can delete projects." } },
+      { status: 403 },
+    );
+  }
+
+  const ownerResult = await getBySlugForOwner(auth.value.userId, slug);
+  if (!ownerResult.ok) {
+    return NextResponse.json(
+      { error: { code: "not_found", message: "Project not found." } },
+      { status: 404 },
+    );
+  }
+  const project = ownerResult.value;
+
+  // A project any builder has unlocked can't be deleted — they spent a
+  // credit / paid for access. Tell the client so it can offer "archive".
+  const unlockCount = await countUnlocksForProject(project.id);
+  if (unlockCount > 0) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "validation",
+          message: `This project has been unlocked by ${unlockCount} builder${unlockCount === 1 ? "" : "s"}, so it can't be deleted.`,
+          // Structured detail the iOS client reads to drive the blocked UI.
+          details: { reason: "has_active_unlocks", unlockCount: String(unlockCount) },
+        },
+      },
+      { status: 400 },
+    );
+  }
+
+  const result = await softDeleteProject(auth.value.userId, project.id);
+  if (!result.ok) {
+    const status =
+      result.error.code === "not_found" ? 404 :
+      result.error.code === "forbidden" ? 403 : 500;
+    return NextResponse.json(
+      { error: { code: result.error.code, message: result.error.message } },
+      { status },
+    );
+  }
+
+  return NextResponse.json({ deleted: { id: result.value.id } });
 }

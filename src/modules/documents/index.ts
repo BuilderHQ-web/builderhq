@@ -46,4 +46,4 @@ export type { ActorContext } from "./policies";
 // direct uploads without re-instantiating an S3Client. Cross-module
 // reach is the whole point of these — they're infrastructure, not
 // document-specific behaviour.
-export { r2, presignDownload, presignUpload, statObject, deleteObject } from "./storage";
+export { r2, presignDownload, presignUpload, statObject, deleteObject, getObjectBytes } from "./storage";

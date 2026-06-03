@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
 import { auth } from "@/modules/auth";
 import { getBuilderProfile } from "@/modules/profiles";
+import { db } from "@/lib/db";
+import { users } from "@/modules/users/schema";
+import { displayAuPhoneFromE164 } from "@/lib/au-phone";
 import { Eyebrow } from "@/components/brand/section";
 
 import { BuilderWizard } from "./wizard";
@@ -14,6 +18,14 @@ export default async function BuilderOnboardingPage() {
   if (!session?.user?.id) redirect("/login");
 
   const bundle = await getBuilderProfile(session.user.id);
+
+  // Phone lives on the user row — fetch so a returning builder sees it
+  // pre-filled in the Company step.
+  const [userRow] = await db
+    .select({ phone: users.phone })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
 
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
 
@@ -57,6 +69,7 @@ export default async function BuilderOnboardingPage() {
                 instagramUrl: bundle.profile.instagramUrl,
               }
             : null,
+          phone: displayAuPhoneFromE164(userRow?.phone),
           categories: bundle?.categories.map((c) => c.category) ?? [],
           serviceAreas:
             bundle?.serviceAreas.map((a) => ({

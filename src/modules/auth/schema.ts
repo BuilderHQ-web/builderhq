@@ -87,10 +87,15 @@ export const sessions = pgTable(
  *                   click verifies the email AND creates a session in
  *                   one go, and (when paired with a draft project)
  *                   publishes the project on redemption.
+ *   mobile_signup — 6-digit code sent to a newly-registered mobile user.
+ *                   Short TTL (15 min). On verify, marks the user
+ *                   verified AND issues a mobile session in one call so
+ *                   the iOS / Android flow doesn't bounce out to a
+ *                   browser link.
  */
 export const verificationTokenPurposeEnum = pgEnum(
   "verification_token_purpose",
-  ["verification", "password_reset", "magic_link"],
+  ["verification", "password_reset", "magic_link", "mobile_signup"],
 );
 
 export const verificationTokens = pgTable(

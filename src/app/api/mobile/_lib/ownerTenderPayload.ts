@@ -131,6 +131,8 @@ export function ownerTenderSummary(
     decidedAtIso: t.decidedAt ? t.decidedAt.toISOString() : null,
     documentCount: t.documentCount,
     builder: builderToPayload(t.builder),
+    // `score` is a 0–1 fraction (filled/total); the mobile client decodes
+    // it as a Double and renders the percentage itself.
     completeness: t.completeness,
   };
 }

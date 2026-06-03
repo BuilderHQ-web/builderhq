@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
 import { auth } from "@/modules/auth";
 import { getOwnerProfile } from "@/modules/profiles";
+import { db } from "@/lib/db";
+import { users } from "@/modules/users/schema";
+import { displayAuPhoneFromE164 } from "@/lib/au-phone";
 import { Eyebrow } from "@/components/brand/section";
 
 import { OwnerForm } from "./owner-form";
@@ -17,6 +21,14 @@ export default async function OwnerOnboardingPage() {
   // the wizard after a partial save (today there's no autosave, but the
   // shape supports it).
   const existing = await getOwnerProfile(session.user.id);
+
+  // Phone lives on the user row, not the owner profile — fetch it so a
+  // returning owner sees their number pre-filled.
+  const [userRow] = await db
+    .select({ phone: users.phone })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
 
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
 
@@ -42,6 +54,7 @@ export default async function OwnerOnboardingPage() {
           defaultState: existing?.defaultState ?? null,
           defaultPostcode: existing?.defaultPostcode ?? null,
           contactPref: existing?.contactPref ?? "email",
+          phone: displayAuPhoneFromE164(userRow?.phone),
         }}
       />
     </div>

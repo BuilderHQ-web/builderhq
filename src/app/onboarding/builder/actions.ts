@@ -16,6 +16,7 @@ import {
 } from "@/modules/profiles";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { normaliseAuPhone } from "@/lib/au-phone";
 import { users } from "@/modules/users/schema";
 import { sendBuilderSignupOpsEmail } from "@/modules/email";
 import { hasFullVerificationForApproval } from "@/modules/verification";
@@ -63,6 +64,28 @@ export async function saveBuilderProfileAction(
   formData: FormData,
 ): Promise<ActionState> {
   const userId = await requireUserId();
+
+  // Phone lives on the user row, not the builder profile. The company
+  // step (1) sends it; later profile saves (steps 2/6) also carry it
+  // via the shared form fields. Validate + persist when present;
+  // reject when present-but-invalid. Absent/empty is left untouched so
+  // a save that simply doesn't include phone never clobbers it.
+  const phoneRaw = formData.get("phone");
+  const phoneInput = typeof phoneRaw === "string" ? phoneRaw.trim() : "";
+  if (phoneInput !== "") {
+    const phoneE164 = normaliseAuPhone(phoneInput);
+    if (!phoneE164) {
+      return {
+        fieldErrors: {
+          phone: "Enter a valid AU mobile or landline (e.g. 0412 345 678).",
+        },
+      };
+    }
+    await db
+      .update(users)
+      .set({ phone: phoneE164, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
 
   const result = await upsertBuilderProfile(userId, {
     companyName: String(formData.get("companyName") ?? ""),
@@ -197,6 +220,22 @@ export async function removeLicenceAction(licenceId: string): Promise<void> {
 
 export async function submitForApprovalAction(): Promise<ActionState> {
   const userId = await requireUserId();
+
+  // Phone gate — a reachable contact number is required before a
+  // builder can submit for approval. Collected in step 1; guard here
+  // too so it can't be bypassed.
+  const [phoneRow] = await db
+    .select({ phone: users.phone })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!phoneRow?.phone || phoneRow.phone.trim() === "") {
+    return {
+      error:
+        "Add a contact phone number in the Company step before submitting.",
+    };
+  }
+
   const result = await submitBuilderForApproval(userId);
   if (!result.ok) return { error: result.error.message };
 

@@ -22,11 +22,14 @@ import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 
 import { VerificationEmail } from "@/emails/VerificationEmail";
+import { MobileVerificationCodeEmail } from "@/emails/MobileVerificationCodeEmail";
+import { MobilePasswordResetCodeEmail } from "@/emails/MobilePasswordResetCodeEmail";
 import { PasswordResetEmail } from "@/emails/PasswordResetEmail";
 import { LaunchInviteEmail } from "@/emails/LaunchInviteEmail";
 import { GuideDownloadEmail } from "@/emails/GuideDownloadEmail";
 import { GuideLeadOpsEmail } from "@/emails/GuideLeadOpsEmail";
 import { EstimateRequestOpsEmail } from "@/emails/EstimateRequestOpsEmail";
+import { BookCallOpsEmail } from "@/emails/BookCallOpsEmail";
 import { ArchitectTenderOpsEmail } from "@/emails/ArchitectTenderOpsEmail";
 import { ArchitectTenderConfirmationEmail } from "@/emails/ArchitectTenderConfirmationEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
@@ -56,6 +59,57 @@ const resend = new Resend(env.RESEND_API_KEY);
  */
 export const OPS_EMAIL = "info@builderhq.com.au";
 
+/**
+ * Drop-in replacement for `resend.emails.send()` that adds a dev-mode
+ * allowlist guard. Same call signature, same return shape — every send
+ * function in this file routes through here.
+ *
+ * Behaviour:
+ *   · NODE_ENV === "production" → always forwards to Resend untouched.
+ *   · Otherwise → checks the recipient(s) against EMAIL_DEV_ALLOWLIST
+ *     (comma-separated, case-insensitive). If any recipient isn't on
+ *     the allowlist, the entire send is suppressed, logged, and a fake
+ *     message id is returned. Caller's success path keeps working —
+ *     they just don't actually hit Resend.
+ *
+ * Why this matters: when a developer points their local server at a
+ * Neon dev branch, the branch is seeded with REAL builder emails from
+ * production. Without this guard, a "publish project" test would
+ * notify every real builder in the seed. With it, only emails to
+ * addresses you explicitly allowlist (typically your own) go out.
+ */
+async function sendViaResend(
+  input: Parameters<typeof resend.emails.send>[0],
+): Promise<Awaited<ReturnType<typeof resend.emails.send>>> {
+  if (env.NODE_ENV !== "production") {
+    const allowlist = (env.EMAIL_DEV_ALLOWLIST ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const recipients = (Array.isArray(input.to) ? input.to : [input.to])
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.toLowerCase());
+    const blocked = recipients.filter((r) => !allowlist.includes(r));
+    if (blocked.length > 0) {
+      logger.warn(
+        {
+          event: "email.dev_suppressed",
+          to: input.to,
+          blocked,
+          subject: input.subject,
+          allowlist,
+        },
+        "[DEV] email suppressed by EMAIL_DEV_ALLOWLIST — add the recipient to allow real sends",
+      );
+      return {
+        data: { id: `dev-suppressed-${Date.now()}` },
+        error: null,
+      } as Awaited<ReturnType<typeof resend.emails.send>>;
+    }
+  }
+  return resend.emails.send(input);
+}
+
 interface SendVerificationEmailInput {
   to: string;
   verifyUrl: string;
@@ -73,7 +127,7 @@ export async function sendVerificationEmail(
     render(VerificationEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -100,6 +154,134 @@ export async function sendVerificationEmail(
   return ok({ id: data.id });
 }
 
+interface SendMobileVerificationCodeEmailInput {
+  to: string;
+  code: string;
+  firstName: string | null;
+  expiresInMinutes: number;
+}
+
+/**
+ * Mobile-app sign-up code. Sister to `sendVerificationEmail` but ships a
+ * 6-digit code instead of a link so the user can stay inside the app.
+ * The auth service handles minting / expiring the code; this function
+ * just renders + delivers it.
+ */
+export async function sendMobileVerificationCode(
+  input: SendMobileVerificationCodeEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.code} is your BuilderHQ verification code`;
+  const props = {
+    code: input.code,
+    firstName: input.firstName,
+    expiresInMinutes: input.expiresInMinutes,
+  };
+
+  const [html, text] = await Promise.all([
+    render(MobileVerificationCodeEmail(props)),
+    render(MobileVerificationCodeEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "mobile_signup_code" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.mobile_verification.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "mobile verification code send failed",
+    );
+    return fail(
+      "external_error",
+      "We couldn't send your code. Try again in a moment.",
+    );
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    { event: "email.mobile_verification.sent", to: input.to, resendId: data.id },
+    "mobile verification code sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendMobilePasswordResetCodeEmailInput {
+  to: string;
+  code: string;
+  firstName: string | null;
+  expiresInMinutes: number;
+}
+
+/**
+ * Mobile-app password-reset code. Sister to `sendMobileVerificationCode`
+ * but recovers an existing account instead of verifying a new one. The
+ * auth service handles minting / expiring the code; this function just
+ * renders + delivers it.
+ */
+export async function sendMobilePasswordResetCode(
+  input: SendMobilePasswordResetCodeEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.code} is your BuilderHQ password reset code`;
+  const props = {
+    code: input.code,
+    firstName: input.firstName,
+    expiresInMinutes: input.expiresInMinutes,
+  };
+
+  const [html, text] = await Promise.all([
+    render(MobilePasswordResetCodeEmail(props)),
+    render(MobilePasswordResetCodeEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "mobile_password_reset_code" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.mobile_password_reset.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "mobile password reset code send failed",
+    );
+    return fail(
+      "external_error",
+      "We couldn't send your code. Try again in a moment.",
+    );
+  }
+
+  if (!data) {
+    return fail("external_error", "Email provider returned no message id");
+  }
+
+  logger.info(
+    { event: "email.mobile_password_reset.sent", to: input.to, resendId: data.id },
+    "mobile password reset code sent",
+  );
+  return ok({ id: data.id });
+}
+
 interface SendPasswordResetEmailInput {
   to: string;
   resetUrl: string;
@@ -117,7 +299,7 @@ export async function sendPasswordResetEmail(
     render(PasswordResetEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -178,7 +360,7 @@ export async function sendLaunchInviteEmail(
     render(LaunchInviteEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -243,7 +425,7 @@ export async function sendGuideDownloadEmail(
     render(GuideDownloadEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -307,7 +489,7 @@ export async function sendGuideLeadOpsEmail(
     render(GuideLeadOpsEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -382,7 +564,7 @@ export async function sendEstimateRequestOpsEmail(
     render(EstimateRequestOpsEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -415,6 +597,90 @@ export async function sendEstimateRequestOpsEmail(
       resendId: data.id,
     },
     "estimate request ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Marketing lead capture (book a call, ops-only) ─────────────────────
+
+interface SendBookCallOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  projectType: string | null;
+  location: string | null;
+  timeline: string | null;
+  source: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Ops-only notification for "Book a call" submissions. The time slot is
+ * booked on Cal.com (which sends its own confirmation), so this is the
+ * lead record + a prompt to be ready — or to reach out if they filled
+ * the form but didn't pick a slot.
+ */
+export async function sendBookCallOpsEmail(
+  input: SendBookCallOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const fullName = [input.firstName, input.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const subject = `ACTION: Call request from ${fullName || input.email}`;
+  const props = {
+    leadId: input.leadId,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    phone: input.phone,
+    projectType: input.projectType,
+    location: input.location,
+    timeline: input.timeline,
+    source: input.source,
+    createdAt: input.createdAt,
+  };
+
+  const [html, text] = await Promise.all([
+    render(BookCallOpsEmail(props)),
+    render(BookCallOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "book_call" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.book_call_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "book call ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.book_call_ops.sent",
+      leadId: input.leadId,
+      resendId: data.id,
+    },
+    "book call ops notification sent",
   );
   return ok({ id: data.id });
 }
@@ -464,7 +730,7 @@ export async function sendArchitectTenderOpsEmail(
     render(ArchitectTenderOpsEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -528,7 +794,7 @@ export async function sendArchitectTenderConfirmationEmail(
     render(ArchitectTenderConfirmationEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     // No explicit reply-to — falls back to EMAIL_FROM
     // (info@builderhq.com.au). The architect-facing flow is now
@@ -606,7 +872,7 @@ export async function sendTenderSubmittedEmail(
     render(TenderSubmittedEmail(props)),
     render(TenderSubmittedEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -650,7 +916,7 @@ export async function sendTenderShortlistedEmail(
     render(TenderShortlistedEmail(props)),
     render(TenderShortlistedEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -698,7 +964,7 @@ export async function sendTenderAwardedEmail(
     render(TenderAwardedEmail(props)),
     render(TenderAwardedEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -740,7 +1006,7 @@ export async function sendTenderRejectedEmail(
     render(TenderRejectedEmail(props)),
     render(TenderRejectedEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -784,7 +1050,7 @@ export async function sendTenderWithdrawnEmail(
     render(TenderWithdrawnEmail(props)),
     render(TenderWithdrawnEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -834,7 +1100,7 @@ export async function sendTenderSubmittedBuilderEmail(
     render(TenderSubmittedBuilderEmail(props)),
     render(TenderSubmittedBuilderEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -880,7 +1146,7 @@ export async function sendOwnerSignupOpsEmail(
     render(OwnerSignupOpsEmail(input)),
     render(OwnerSignupOpsEmail(input), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -923,7 +1189,7 @@ export async function sendBuilderSignupOpsEmail(
     render(BuilderSignupOpsEmail(input)),
     render(BuilderSignupOpsEmail(input), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -965,7 +1231,7 @@ export async function sendProjectPublishedOpsEmail(
     render(ProjectPublishedOpsEmail(input)),
     render(ProjectPublishedOpsEmail(input), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -1006,7 +1272,7 @@ export async function sendUnlockOpsEmail(
     render(UnlockOpsEmail(input)),
     render(UnlockOpsEmail(input), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -1049,7 +1315,7 @@ export async function sendTenderSubmittedOpsEmail(
     render(TenderSubmittedOpsEmail(input)),
     render(TenderSubmittedOpsEmail(input), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: OPS_EMAIL,
     subject,
@@ -1101,7 +1367,7 @@ export async function sendProjectPublishedOwnerEmail(
     render(ProjectPublishedOwnerEmail(props)),
     render(ProjectPublishedOwnerEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -1158,7 +1424,7 @@ export async function sendProjectPublishedBuilderEmail(
     render(ProjectPublishedBuilderEmail(props)),
     render(ProjectPublishedBuilderEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -1221,7 +1487,7 @@ export async function sendUnlockOwnerEmail(
     render(UnlockOwnerEmail(props)),
     render(UnlockOwnerEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -1273,7 +1539,7 @@ export async function sendUnlockBuilderEmail(
     render(UnlockBuilderEmail(props)),
     render(UnlockBuilderEmail(props), { plainText: true }),
   ]);
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -1333,7 +1599,7 @@ export async function sendAdsFunnelMagicLinkEmail(
     render(AdsFunnelMagicLinkEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,
@@ -1398,7 +1664,7 @@ export async function sendAuthSigninLinkEmail(
     render(AuthSigninLinkEmail(props), { plainText: true }),
   ]);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await sendViaResend({
     from: env.EMAIL_FROM,
     to: input.to,
     subject,

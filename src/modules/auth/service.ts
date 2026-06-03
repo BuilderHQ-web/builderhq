@@ -12,7 +12,7 @@
  * (see ./auth.ts). Server actions call signIn() from "@/modules/auth".
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
@@ -21,9 +21,19 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
-import { sendPasswordResetEmail, sendVerificationEmail } from "@/modules/email";
+import {
+  sendMobilePasswordResetCode,
+  sendMobileVerificationCode,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "@/modules/email";
 import { users, userRoleEnum } from "@/modules/users";
 
+import {
+  issueSession,
+  revokeAllUserSessions,
+  type MobileSessionTokens,
+} from "./mobile-tokens";
 import { verificationTokens } from "./schema";
 
 // ── Zod input schemas ────────────────────────────────────────────────────
@@ -50,6 +60,12 @@ export type SignUpInput = z.infer<typeof signUpSchema>;
 const VERIFY_TOKEN_TTL_HOURS = 24;
 const RESET_TOKEN_TTL_MINUTES = 60;
 const VERIFY_RESEND_THROTTLE_SECONDS = 60;
+
+/**
+ * Mobile sign-up code TTL. Short on purpose — once the user has the code
+ * they should be entering it within a minute or two, not days later.
+ */
+const MOBILE_CODE_TTL_MINUTES = 15;
 /**
  * Identifier prefix used to namespace password-reset rows inside the shared
  * verification_tokens table — keeps a single table while preventing a
@@ -143,6 +159,370 @@ export async function signUp(
 
   logger.info({ event: "auth.signup", userId, role }, "user signed up");
   return ok({ userId, email });
+}
+
+// ── Mobile sign-up (6-digit OTP) ─────────────────────────────────────────
+//
+// Native iOS / Android sign-up flow. Same input as the web's signUp but
+// issues a 6-digit code (15-min TTL) instead of a long verification link,
+// and the verify step exchanges the code for a mobile session — so the
+// user is auto-signed-in without leaving the app.
+
+const mobileSignUpSchema = signUpSchema.extend({
+  /** Optional human label — shows up in the "active devices" screen
+   *  once that lands. */
+  deviceLabel: z.string().trim().max(120).optional(),
+});
+
+export type MobileSignUpInput = z.infer<typeof mobileSignUpSchema>;
+
+/** Crypto-strength 6-digit code. Padded so "001234" stays six digits. */
+function generateMobileCode(): string {
+  // randomInt is uniformly distributed over [min, max).
+  return randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
+/**
+ * Mobile sign-up. Creates the user (pending_verification) and emails a
+ * 6-digit code. The code is stored in verification_tokens under the
+ * `mobile_signup` purpose, scoped by email identifier.
+ *
+ * Returns the email + expiry timestamp so the client can render a
+ * "expires in 14:53" countdown on the OTP screen.
+ */
+export async function mobileSignUp(
+  raw: unknown,
+): Promise<Result<{ email: string; codeExpiresAt: string }>> {
+  const parsed = mobileSignUpSchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Some fields need fixing.", {
+      issues: parsed.error.issues,
+    });
+  }
+
+  const { firstName, lastName, email, password, role, signupSource, signupCampaign } =
+    parsed.data;
+
+  const [existing] = await db
+    .select({ id: users.id, status: users.status })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  // If an account already exists AND it's verified — block. If it's
+  // still pending_verification, allow the caller to re-submit so they
+  // get a fresh code (matches the web's "resend" pattern, just rolled
+  // into the same call).
+  if (existing && existing.status !== "pending_verification") {
+    return fail(
+      "conflict",
+      "An account with this email already exists. Try logging in.",
+    );
+  }
+
+  let userId: string;
+  if (existing) {
+    userId = existing.id;
+  } else {
+    const passwordHash = await hash(password, PASSWORD_HASH_OPTS);
+    try {
+      const [row] = await db
+        .insert(users)
+        .values({
+          email,
+          firstName,
+          lastName,
+          name: `${firstName} ${lastName}`,
+          passwordHash,
+          role,
+          status: "pending_verification",
+          signupSource: signupSource ?? null,
+          signupCampaign: signupCampaign ?? null,
+        })
+        .returning({ id: users.id });
+      if (!row) return fail("internal", "Could not create your account.");
+      userId = row.id;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("users_email_unique")) {
+        return fail(
+          "conflict",
+          "An account with this email already exists. Try logging in.",
+        );
+      }
+      logger.error(
+        { event: "auth.mobile_signup.insert_failed", message },
+        "user insert failed",
+      );
+      return fail("internal", "Could not create your account. Try again.");
+    }
+  }
+
+  const code = generateMobileCode();
+  const expires = new Date(Date.now() + MOBILE_CODE_TTL_MINUTES * 60 * 1000);
+
+  // Invalidate any prior mobile_signup codes for this email first — only
+  // the latest code should be valid.
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(verificationTokens)
+      .where(
+        and(
+          eq(verificationTokens.identifier, email),
+          eq(verificationTokens.purpose, "mobile_signup"),
+        ),
+      );
+    await tx.insert(verificationTokens).values({
+      identifier: email,
+      token: code,
+      purpose: "mobile_signup",
+      expires,
+    });
+  });
+
+  const emailRes = await sendMobileVerificationCode({
+    to: email,
+    code,
+    firstName,
+    expiresInMinutes: MOBILE_CODE_TTL_MINUTES,
+  });
+  if (!emailRes.ok) {
+    logger.warn(
+      {
+        event: "auth.mobile_signup.email_failed",
+        userId,
+        error: emailRes.error.message,
+      },
+      "mobile signup code failed to send; user can request resend",
+    );
+  }
+
+  logger.info(
+    { event: "auth.mobile_signup", userId, role },
+    "mobile user signed up",
+  );
+  return ok({ email, codeExpiresAt: expires.toISOString() });
+}
+
+const mobileVerifySchema = z.object({
+  email: z.email("Enter a valid email").transform((v) => v.toLowerCase().trim()),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+  deviceLabel: z.string().trim().max(120).optional(),
+});
+
+/**
+ * Verify a 6-digit mobile sign-up code. On success, marks the user
+ * active + email_verified, deletes the code, and issues a mobile
+ * session pair so the client can auto-sign-in without a second
+ * round-trip through /login.
+ *
+ * Failure modes:
+ *   · code wrong / expired / never minted → 401
+ *   · user already verified               → idempotent success + fresh session
+ *   · banned / suspended / deleted        → 401 (generic)
+ */
+export async function mobileVerifyCode(
+  raw: unknown,
+): Promise<
+  Result<{
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      role: (typeof userRoleEnum.enumValues)[number] | null;
+    };
+    tokens: MobileSessionTokens;
+  }>
+> {
+  const parsed = mobileVerifySchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Enter the 6-digit code from your email.");
+  }
+  const { email, code, deviceLabel } = parsed.data;
+
+  const [vt] = await db
+    .select()
+    .from(verificationTokens)
+    .where(
+      and(
+        eq(verificationTokens.identifier, email),
+        eq(verificationTokens.token, code),
+        eq(verificationTokens.purpose, "mobile_signup"),
+      ),
+    )
+    .limit(1);
+
+  if (!vt) {
+    return fail("unauthorized", "That code is invalid or has already been used.");
+  }
+  if (vt.expires < new Date()) {
+    // Burn the row so the same code can't be retried after expiry.
+    await db
+      .delete(verificationTokens)
+      .where(
+        and(
+          eq(verificationTokens.identifier, email),
+          eq(verificationTokens.token, code),
+          eq(verificationTokens.purpose, "mobile_signup"),
+        ),
+      );
+    return fail("unauthorized", "That code has expired. Request a new one.");
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      status: users.status,
+      deletedAt: users.deletedAt,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (!user || user.deletedAt) {
+    return fail("unauthorized", "We couldn't find your account.");
+  }
+  if (user.status === "banned" || user.status === "suspended") {
+    return fail("unauthorized", "We couldn't sign you in.");
+  }
+
+  // Mark user verified (idempotent if already active) + delete the code.
+  await db.transaction(async (tx) => {
+    if (user.status !== "active") {
+      await tx
+        .update(users)
+        .set({
+          emailVerified: new Date(),
+          status: "active",
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
+    }
+    await tx
+      .delete(verificationTokens)
+      .where(
+        and(
+          eq(verificationTokens.identifier, email),
+          eq(verificationTokens.purpose, "mobile_signup"),
+        ),
+      );
+  });
+
+  const issued = await issueSession({
+    userId: user.id,
+    deviceLabel: deviceLabel ?? null,
+  });
+  if (!issued.ok) {
+    return fail("internal", issued.error.message);
+  }
+
+  logger.info(
+    { event: "auth.mobile_verify", userId: user.id, role: user.role },
+    "mobile signup verified + session issued",
+  );
+
+  return ok({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    tokens: issued.value,
+  });
+}
+
+/**
+ * Resend the 6-digit mobile code. Throttled to one resend per
+ * VERIFY_RESEND_THROTTLE_SECONDS to prevent abuse, and silently no-ops
+ * for unknown / already-active emails to dodge user enumeration.
+ */
+export async function mobileResendCode(
+  raw: unknown,
+): Promise<Result<{ throttled: boolean; codeExpiresAt: string | null }>> {
+  const parsed = emailOnlySchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Enter a valid email.");
+  }
+  const { email } = parsed.data;
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      status: users.status,
+      firstName: users.firstName,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (!user || user.status !== "pending_verification") {
+    return ok({ throttled: false, codeExpiresAt: null });
+  }
+
+  // Throttle: most-recent mobile_signup token's expires gives a proxy
+  // for "when was the last code minted" (sent_at = expires - TTL).
+  const [latest] = await db
+    .select({ expires: verificationTokens.expires })
+    .from(verificationTokens)
+    .where(
+      and(
+        eq(verificationTokens.identifier, email),
+        eq(verificationTokens.purpose, "mobile_signup"),
+      ),
+    )
+    .orderBy(desc(verificationTokens.expires))
+    .limit(1);
+
+  if (latest) {
+    const lastSent = new Date(
+      latest.expires.getTime() - MOBILE_CODE_TTL_MINUTES * 60 * 1000,
+    );
+    const sinceMs = Date.now() - lastSent.getTime();
+    if (sinceMs < VERIFY_RESEND_THROTTLE_SECONDS * 1000) {
+      return ok({ throttled: true, codeExpiresAt: null });
+    }
+  }
+
+  const code = generateMobileCode();
+  const expires = new Date(Date.now() + MOBILE_CODE_TTL_MINUTES * 60 * 1000);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(verificationTokens)
+      .where(
+        and(
+          eq(verificationTokens.identifier, email),
+          eq(verificationTokens.purpose, "mobile_signup"),
+        ),
+      );
+    await tx.insert(verificationTokens).values({
+      identifier: email,
+      token: code,
+      purpose: "mobile_signup",
+      expires,
+    });
+  });
+
+  await sendMobileVerificationCode({
+    to: email,
+    code,
+    firstName: user.firstName,
+    expiresInMinutes: MOBILE_CODE_TTL_MINUTES,
+  });
+
+  logger.info(
+    { event: "auth.mobile_verify.resent", userId: user.id },
+    "mobile verification code resent",
+  );
+  return ok({ throttled: false, codeExpiresAt: expires.toISOString() });
 }
 
 export async function verifyEmail(
@@ -413,6 +793,245 @@ export async function resetPassword(raw: unknown): Promise<Result<{ userId: stri
   // is force-signed-out by the calling action; other devices ride 7d.
   logger.info({ event: "auth.pwreset.applied", userId: user.id }, "password reset applied");
   return ok({ userId: user.id });
+}
+
+// ── mobile password reset (6-digit code) ─────────────────────────────────
+//
+// The app's "Forgot password?" flow. Mirrors the web reset above but
+// issues a 6-digit code (15-min TTL) the user enters in-app alongside a
+// new password — no link round-trip. Codes are namespaced under the
+// `mpwreset:<email>` identifier so they never collide with the web's
+// link tokens (`pwreset:<email>`) in the shared verification_tokens
+// table, and reuse the existing `password_reset` purpose (no migration).
+
+/** Identifier prefix for MOBILE password-reset codes. Distinct from the
+ *  web's PWRESET_PREFIX so a 6-digit code and a 32-byte link token for
+ *  the same email can coexist without cross-acceptance. */
+const MPWRESET_PREFIX = "mpwreset:";
+
+/**
+ * Request a mobile password-reset code. Always resolves with a uniform
+ * `codeExpiresAt` (15 min from now) so the client can advance to the
+ * code-entry screen regardless of whether the email is registered — this
+ * endpoint never reveals account existence. A code is only minted +
+ * emailed when the account qualifies (exists, has a password, not
+ * banned/suspended).
+ */
+export async function mobileRequestPasswordReset(
+  raw: unknown,
+): Promise<Result<{ codeExpiresAt: string }>> {
+  const parsed = emailOnlySchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Enter a valid email.");
+  }
+  const { email } = parsed.data;
+
+  // Uniform expiry returned in every branch — identical whether or not a
+  // code is actually sent, so response shape can't enumerate accounts.
+  const expires = new Date(Date.now() + MOBILE_CODE_TTL_MINUTES * 60 * 1000);
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      passwordHash: users.passwordHash,
+      status: users.status,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  // Silently no-op for unknown / OAuth-only / banned / suspended accounts.
+  if (
+    !user ||
+    !user.passwordHash ||
+    user.status === "banned" ||
+    user.status === "suspended"
+  ) {
+    logger.info(
+      { event: "auth.mobile_pwreset.skipped" },
+      "mobile password reset requested for ineligible email",
+    );
+    return ok({ codeExpiresAt: expires.toISOString() });
+  }
+
+  const code = generateMobileCode();
+  const identifier = `${MPWRESET_PREFIX}${email}`;
+
+  // Only the latest code is valid — burn any prior mobile reset codes.
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(verificationTokens)
+      .where(eq(verificationTokens.identifier, identifier));
+    await tx.insert(verificationTokens).values({
+      identifier,
+      token: code,
+      purpose: "password_reset",
+      expires,
+    });
+  });
+
+  const emailRes = await sendMobilePasswordResetCode({
+    to: email,
+    code,
+    firstName: user.firstName,
+    expiresInMinutes: MOBILE_CODE_TTL_MINUTES,
+  });
+  if (!emailRes.ok) {
+    logger.warn(
+      {
+        event: "auth.mobile_pwreset.email_failed",
+        userId: user.id,
+        error: emailRes.error.message,
+      },
+      "mobile password reset code failed to send",
+    );
+  }
+
+  logger.info(
+    { event: "auth.mobile_pwreset.requested", userId: user.id },
+    "mobile password reset requested",
+  );
+  return ok({ codeExpiresAt: expires.toISOString() });
+}
+
+const mobileResetPasswordSchema = z.object({
+  email: z.email("Enter a valid email").transform((v) => v.toLowerCase().trim()),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+  password: z
+    .string()
+    .min(10, "Password must be at least 10 characters")
+    .max(200),
+  deviceLabel: z.string().trim().max(120).optional(),
+});
+
+/**
+ * Apply a mobile password reset: validate the 6-digit code, set the new
+ * password, and auto-sign-in by issuing a fresh session — same return
+ * shape as mobileVerifyCode. Entering the emailed code proves control of
+ * the inbox, so a still-pending account is recovered straight to active.
+ *
+ * Security: every other active session is revoked FIRST (a reset logs
+ * out all other devices), then the new session is issued — so the device
+ * performing the reset stays signed in while any stolen sessions die.
+ */
+export async function mobileResetPassword(
+  raw: unknown,
+): Promise<
+  Result<{
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      role: (typeof userRoleEnum.enumValues)[number] | null;
+    };
+    tokens: MobileSessionTokens;
+  }>
+> {
+  const parsed = mobileResetPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Some fields need fixing.", {
+      issues: parsed.error.issues,
+    });
+  }
+  const { email, code, password, deviceLabel } = parsed.data;
+  const identifier = `${MPWRESET_PREFIX}${email}`;
+
+  const [vt] = await db
+    .select()
+    .from(verificationTokens)
+    .where(
+      and(
+        eq(verificationTokens.identifier, identifier),
+        eq(verificationTokens.token, code),
+        eq(verificationTokens.purpose, "password_reset"),
+      ),
+    )
+    .limit(1);
+
+  if (!vt) {
+    return fail("unauthorized", "That code is invalid or has already been used.");
+  }
+  if (vt.expires < new Date()) {
+    await db
+      .delete(verificationTokens)
+      .where(eq(verificationTokens.identifier, identifier));
+    return fail("unauthorized", "That code has expired. Request a new one.");
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      status: users.status,
+      passwordHash: users.passwordHash,
+      deletedAt: users.deletedAt,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (!user || user.deletedAt) {
+    return fail("unauthorized", "We couldn't find your account.");
+  }
+  if (!user.passwordHash) {
+    return fail("unauthorized", "This account can't reset a password.");
+  }
+  if (user.status === "banned" || user.status === "suspended") {
+    return fail("forbidden", "This account can't be reset right now. Contact support.");
+  }
+
+  const passwordHash = await hash(password, PASSWORD_HASH_OPTS);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({
+        passwordHash,
+        // Code entry proves inbox control → also verify a pending account.
+        ...(user.status === "pending_verification"
+          ? { status: "active" as const, emailVerified: new Date() }
+          : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+    await tx
+      .delete(verificationTokens)
+      .where(eq(verificationTokens.identifier, identifier));
+  });
+
+  // Revoke all existing sessions BEFORE minting the new one, so the
+  // reset signs out other devices but not the one doing the reset.
+  await revokeAllUserSessions(user.id);
+
+  const issued = await issueSession({
+    userId: user.id,
+    deviceLabel: deviceLabel ?? null,
+  });
+  if (!issued.ok) {
+    return fail("internal", issued.error.message);
+  }
+
+  logger.info(
+    { event: "auth.mobile_pwreset.applied", userId: user.id, role: user.role },
+    "mobile password reset applied + session issued",
+  );
+
+  return ok({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    tokens: issued.value,
+  });
 }
 
 // ── change password (logged-in path) ─────────────────────────────────────
