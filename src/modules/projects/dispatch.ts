@@ -42,14 +42,14 @@ import {
   projectOwnerProfiles,
 } from "@/modules/profiles/schema";
 
-import { createMany as createNotificationsMany } from "@/modules/notifications";
+import {
+  createMany as createNotificationsMany,
+  enqueueEmails,
+} from "@/modules/notifications";
 import {
   sendProjectPublishedOwnerEmail,
-  sendProjectPublishedBuilderEmail,
   sendProjectPublishedOpsEmail,
 } from "@/modules/email";
-
-import { ensureUnsubscribeToken } from "./unsubscribe";
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -68,13 +68,8 @@ const BUDGET_LABEL: Record<string, string> = {
   over_5m: "Over $5M",
 };
 
-// Keep bulk sends under Resend's free-tier limit (10 req/sec). Each
-// batch fires N sends in parallel, then we sleep to respect the cap.
-// Tunable here; raise once we're on a paid Resend plan with higher rps.
-const BULK_BATCH_SIZE = 8;
-const BULK_BATCH_DELAY_MS = 1100;
-
-const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+// The builder fan-out no longer sends inline — it enqueues to the
+// notification_outbox and the Vercel cron drains it. See fanOutToBuilders.
 
 /**
  * Public entrypoint. Fire-and-forget from the publish action — caller
@@ -127,8 +122,8 @@ export async function dispatchProjectPublishedEvent(
       }),
     ]);
 
-    // 2. Fan-out to all eligible builders.
-    await fanOutToBuilders(ctx, builderUrl, base);
+    // 2. Fan-out to all eligible builders (enqueues to the outbox).
+    await fanOutToBuilders(ctx, builderUrl);
 
     logger.info(
       { event: "project.dispatch.ok", projectId, kind: "project_published" },
@@ -230,7 +225,6 @@ interface BuilderRecipient {
 async function fanOutToBuilders(
   ctx: DispatchContext,
   projectUrl: string,
-  baseUrl: string,
 ): Promise<void> {
   // Pull every builder with marketing-emails on AND a non-incomplete
   // profile (skip half-onboarded — they don't have a public profile yet
@@ -325,55 +319,43 @@ async function fanOutToBuilders(
     );
   }
 
-  // 2. Email fan-out — batched to respect Resend rate limit.
-  let sent = 0;
-  let failed = 0;
-  for (let i = 0; i < recipients.length; i += BULK_BATCH_SIZE) {
-    const batch = recipients.slice(i, i + BULK_BATCH_SIZE);
-    const results = await Promise.allSettled(
-      batch.map(async (r) => {
-        const token = await ensureUnsubscribeToken(r.userId);
-        // The API endpoint handles both the one-click POST (from
-        // Gmail/Outlook's built-in unsubscribe button via the List-
-        // Unsubscribe header) and the GET fallback (which 302s to the
-        // friendly /unsubscribe/[token] confirmation page). Same URL
-        // for both flows = simpler everything.
-        const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${token}`;
-        return sendProjectPublishedBuilderEmail({
-          to: r.email,
-          builderFirstName: r.firstName,
-          projectTitle: ctx.project.title,
-          projectType: TYPE_LABEL[ctx.project.type] ?? ctx.project.type,
-          suburb: ctx.project.suburb,
-          state: ctx.project.state,
-          budgetBand: ctx.project.budgetBand
-            ? BUDGET_LABEL[ctx.project.budgetBand] ?? ctx.project.budgetBand
-            : null,
-          isInServiceArea: r.isInServiceArea,
-          projectUrl,
-          unsubscribeUrl,
-        });
-      }),
-    );
-    for (const res of results) {
-      if (res.status === "fulfilled" && res.value.ok) sent++;
-      else failed++;
-    }
-    // Last batch needn't sleep.
-    if (i + BULK_BATCH_SIZE < recipients.length) {
-      await sleep(BULK_BATCH_DELAY_MS);
-    }
-  }
+  // 2. Enqueue the builder emails to the durable outbox in ONE fast bulk
+  //    insert. The Vercel cron (/api/cron/notification-outbox) drains it
+  //    in retry-safe batches. This replaces the old in-request throttled
+  //    send loop, which the serverless runtime killed after the first
+  //    batch — silently dropping most of the fan-out (Brunswick + Footscray).
+  //    Per-recipient email inputs are denormalised into the payload so the
+  //    drainer is self-contained; the unsubscribe URL is minted at send
+  //    time from the user id.
+  const enqueued = await enqueueEmails(
+    recipients.map((r) => ({
+      kind: "project_published_builder",
+      toEmail: r.email,
+      userId: r.userId,
+      projectId: ctx.project.id,
+      payload: {
+        builderFirstName: r.firstName,
+        projectTitle: ctx.project.title,
+        projectType: TYPE_LABEL[ctx.project.type] ?? ctx.project.type,
+        suburb: ctx.project.suburb,
+        state: ctx.project.state,
+        budgetBand: ctx.project.budgetBand
+          ? BUDGET_LABEL[ctx.project.budgetBand] ?? ctx.project.budgetBand
+          : null,
+        isInServiceArea: r.isInServiceArea,
+        projectSlug: ctx.project.slug,
+      },
+    })),
+  );
 
   logger.info(
     {
-      event: "project.dispatch.fanout.done",
+      event: "project.dispatch.fanout.enqueued",
       projectId: ctx.project.id,
       recipients: recipients.length,
-      sent,
-      failed,
+      enqueued,
     },
-    "project_published fan-out complete",
+    "project_published fan-out enqueued to outbox",
   );
 }
 
