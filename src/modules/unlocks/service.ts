@@ -28,6 +28,7 @@ import {
   postUnlockSystemMessage,
 } from "@/modules/messaging";
 import { builderProfiles } from "@/modules/profiles/schema";
+import { users } from "@/modules/users/schema";
 // Public-barrel import — the project row FK target lives here so we
 // don't deepen the cross-module-schema lint debt.
 import { projects } from "@/modules/projects";
@@ -346,6 +347,88 @@ export async function countUnlocksByProject(
     .groupBy(unlocks.projectId);
   for (const r of rows) result.set(r.projectId, r.n);
   return result;
+}
+
+/**
+ * One row per builder who has unlocked a project — the owner-facing
+ * "who's interested" list. Capped at UNLOCK_CAP (3) per project, so the
+ * per-builder verification lookup below is a tiny parallel fan-out, not
+ * an N+1 risk.
+ *
+ * `slug` is only populated for `approved` builders (the public profile
+ * at /b/<slug> 404s otherwise), so the UI can decide whether to link.
+ */
+export interface ProjectUnlockBuilder {
+  builderId: string;
+  companyName: string | null;
+  name: string | null;
+  /** Public-profile slug — null unless the builder is approved. */
+  slug: string | null;
+  initials: string;
+  state: string | null;
+  abnVerified: boolean;
+  anyLicenceVerified: boolean;
+  unlockedAt: Date;
+  source: UnlockRow["source"];
+}
+
+function toInitials(name: string | null): string {
+  return (name ?? "?")
+    .split(/\s+/)
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+export async function listUnlocksForProject(
+  projectId: string,
+): Promise<ProjectUnlockBuilder[]> {
+  const rows = await db
+    .select({
+      builderId: unlocks.builderId,
+      source: unlocks.source,
+      unlockedAt: unlocks.unlockedAt,
+      name: users.name,
+      companyName: builderProfiles.companyName,
+      state: builderProfiles.businessState,
+      slug: builderProfiles.slug,
+      approvalStatus: builderProfiles.approvalStatus,
+    })
+    .from(unlocks)
+    .innerJoin(users, eq(users.id, unlocks.builderId))
+    .leftJoin(builderProfiles, eq(builderProfiles.userId, unlocks.builderId))
+    .where(eq(unlocks.projectId, projectId))
+    .orderBy(desc(unlocks.unlockedAt));
+  if (rows.length === 0) return [];
+
+  // Verification chips — at most UNLOCK_CAP builders, so a small parallel
+  // fan-out is fine. A lookup failure degrades to "pending", never throws.
+  const { hasFullVerificationForApproval } = await import(
+    "@/modules/verification"
+  );
+  const verifications = await Promise.all(
+    rows.map((r) =>
+      hasFullVerificationForApproval(r.builderId).catch(() => ({
+        abnVerified: false,
+        anyLicenceVerified: false,
+      })),
+    ),
+  );
+
+  return rows.map((r, i) => ({
+    builderId: r.builderId,
+    companyName: r.companyName,
+    name: r.name,
+    slug: r.approvalStatus === "approved" ? r.slug : null,
+    initials: toInitials(r.companyName ?? r.name),
+    state: r.state,
+    abnVerified: verifications[i]?.abnVerified ?? false,
+    anyLicenceVerified: verifications[i]?.anyLicenceVerified ?? false,
+    unlockedAt: r.unlockedAt,
+    source: r.source,
+  }));
 }
 
 // ── saved projects ───────────────────────────────────────────────────────

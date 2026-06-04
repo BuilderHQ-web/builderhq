@@ -30,6 +30,7 @@ import { tenders } from "@/modules/tenders/schema";
 import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users/schema";
 import { builderProfiles } from "@/modules/profiles/schema";
+import { countUnlocksByProject } from "@/modules/unlocks";
 import type { Project } from "@/modules/projects";
 
 // ── public types ────────────────────────────────────────────────────────
@@ -81,6 +82,9 @@ export type OwnerDashboardData = {
   pulses: Array<{
     project: Project;
     tenderCount: number;
+    /** Builders who've unlocked this project so far (0..UNLOCK_CAP). The
+     *  signal that matters while a live project is still waiting on tenders. */
+    unlockCount: number;
     analytics: TenderAnalytics;
     awaitingDecision: number;
     /** Algorithmic badge: 'awaiting_decision' / 'no_tenders_yet' /
@@ -161,9 +165,11 @@ export async function getOwnerDashboardData(
   );
   const drafts = list.filter((p) => p.status === "draft");
 
-  // One round-trip for every visible tender across all owner's projects.
-  // Keeps the dashboard query cost flat regardless of project count.
-  const allTenderRows = await db
+  // One round-trip for every visible tender across all owner's projects,
+  // plus the unlock tallies — fanned out together. Keeps the dashboard
+  // query cost flat regardless of project count.
+  const [allTenderRows, unlockCounts] = await Promise.all([
+    db
     .select({
       id: tenders.id,
       projectId: tenders.projectId,
@@ -198,7 +204,9 @@ export async function getOwnerDashboardData(
         ]),
       ),
     )
-    .orderBy(desc(tenders.submittedAt));
+    .orderBy(desc(tenders.submittedAt)),
+    countUnlocksByProject(projectIds),
+  ]);
 
   // Rollup: counts by status (excluding withdrawn from the visible
   // bucket — owners don't act on withdrawn tenders).
@@ -388,6 +396,7 @@ export async function getOwnerDashboardData(
     return {
       project: p,
       tenderCount: analytics.count,
+      unlockCount: unlockCounts.get(p.id) ?? 0,
       analytics,
       awaitingDecision: pulseAwaitingDecision,
       recommendation,

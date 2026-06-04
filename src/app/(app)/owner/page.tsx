@@ -50,6 +50,7 @@ import {
   type PulseRecommendation,
 } from "@/modules/dashboards";
 import type { Project } from "@/modules/projects";
+import { UNLOCK_CAP } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { SectionKicker } from "@/components/app/section-kicker";
 import { Reveal } from "@/components/app/reveal";
@@ -547,12 +548,19 @@ function ProjectPulseCard({
 }: {
   pulse: OwnerDashboardData["pulses"][number];
 }) {
-  const { project, analytics, awaitingDecision, recommendation } = pulse;
+  const { project, analytics, awaitingDecision, recommendation, unlockCount } =
+    pulse;
   const recommendationMeta = REC_META[recommendation];
+  const hasTenders = analytics.count > 0;
+  // No-tender projects deep-link to the detail page (activity + who's
+  // unlocked); once tenders land, jump straight to the comparison.
+  const href = hasTenders
+    ? `/owner/projects/${project.slug}/tenders`
+    : `/owner/projects/${project.slug}`;
 
   return (
     <Link
-      href={`/owner/projects/${project.slug}/tenders`}
+      href={href}
       className={cn(
         "group relative overflow-hidden rounded-md border p-4 sm:p-5 transition-[border-color,background-color] duration-[260ms]",
         recommendationMeta.cardCls,
@@ -586,55 +594,83 @@ function ProjectPulseCard({
         </span>
       </div>
 
-      <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <PulseStat
-          label="Tenders"
-          value={String(analytics.count)}
-          sub={
-            analytics.uniqueBuilders === analytics.count
-              ? null
-              : `${analytics.uniqueBuilders} unique`
-          }
-        />
-        <PulseStat
-          label="Median"
-          value={
-            analytics.price.median != null
-              ? formatAudCompact(analytics.price.median)
-              : "—"
-          }
-          sub={null}
-        />
-        <PulseStat
-          label="Spread"
-          value={
-            analytics.price.spread != null
-              ? `${Math.round(analytics.price.spread * 100)}%`
-              : "—"
-          }
-          sub={null}
-        />
-        <PulseStat
-          label="Awaiting"
-          value={String(awaitingDecision)}
-          sub={null}
-          highlight={awaitingDecision > 0}
-        />
-      </div>
+      {hasTenders ? (
+        <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <PulseStat
+            label="Tenders"
+            value={String(analytics.count)}
+            sub={
+              analytics.uniqueBuilders === analytics.count
+                ? null
+                : `${analytics.uniqueBuilders} unique`
+            }
+          />
+          <PulseStat
+            label="Median"
+            value={
+              analytics.price.median != null
+                ? formatAudCompact(analytics.price.median)
+                : "—"
+            }
+            sub={null}
+          />
+          <PulseStat
+            label="Spread"
+            value={
+              analytics.price.spread != null
+                ? `${Math.round(analytics.price.spread * 100)}%`
+                : "—"
+            }
+            sub={null}
+          />
+          <PulseStat
+            label="Awaiting"
+            value={String(awaitingDecision)}
+            sub={null}
+            highlight={awaitingDecision > 0}
+          />
+        </div>
+      ) : (
+        // Waiting on the first tender — price stats are meaningless, so lead
+        // with the signal that actually matters: are builders unlocking?
+        <div className="relative grid grid-cols-3 gap-3">
+          <PulseStat
+            label="Unlocks"
+            value={String(unlockCount)}
+            sub={`of ${UNLOCK_CAP} spots`}
+            highlight={unlockCount > 0}
+          />
+          <PulseStat label="Tenders" value="0" sub="awaiting" />
+          <PulseStat
+            label="Live"
+            value={analytics.daysLive != null ? `${analytics.daysLive}d` : "—"}
+            sub="on market"
+          />
+        </div>
+      )}
 
-      <div className="relative mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between text-[11px] text-text-dim">
-        <span>
-          {analytics.daysLive != null
-            ? `Live ${analytics.daysLive}d`
-            : project.status === "draft"
-              ? "Draft — not published"
-              : "Not yet live"}
-          {analytics.daysSinceLatest != null
-            ? ` · last tender ${humanAgo(analytics.daysSinceLatest)}`
-            : ""}
+      <div className="relative mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between gap-3 text-[11px] text-text-dim">
+        <span className="truncate">
+          {hasTenders ? (
+            <>
+              {analytics.daysLive != null
+                ? `Live ${analytics.daysLive}d`
+                : project.status === "draft"
+                  ? "Draft — not published"
+                  : "Not yet live"}
+              {unlockCount > 0 ? ` · ${unlockCount} unlocked` : ""}
+              {analytics.daysSinceLatest != null
+                ? ` · last tender ${humanAgo(analytics.daysSinceLatest)}`
+                : ""}
+            </>
+          ) : unlockCount > 0 ? (
+            "Builders are reviewing — tenders usually follow within days"
+          ) : (
+            "Builders notified — a bell + email lands on each unlock"
+          )}
         </span>
-        <span className="inline-flex items-center gap-1 group-hover:text-accent-light transition-colors">
-          Open comparison
+        <span className="inline-flex items-center gap-1 group-hover:text-accent-light transition-colors shrink-0">
+          {hasTenders ? "Open comparison" : "View project"}
           <ArrowUpRight className="size-3" />
         </span>
       </div>

@@ -19,10 +19,12 @@ import { getBySlugForOwner, type Project } from "@/modules/projects";
 import { listForProject } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
 import { listForUserOnProject } from "@/modules/messaging";
+import { listUnlocksForProject, UNLOCK_CAP } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
 import { ProjectMessagingPanel } from "@/components/app/messaging/project-thread";
+import { ProjectActivity } from "./activity";
 
 export async function generateMetadata({
   params,
@@ -121,15 +123,15 @@ export default async function ProjectDetailPage({
     redirect(`/owner/projects/${slug}/edit`);
   }
 
-  const docs = await listForProject(session.user.id!, project.id);
-  const tenderCount = await countTendersForProject(project.id);
-  // One conversation per builder who's unlocked the project. The
-  // inline panel below the grid lets the owner chat with each builder
-  // without bouncing to /messages.
-  const conversations = await listForUserOnProject(
-    session.user.id!,
-    project.id,
-  );
+  // Independent reads — fan out in parallel. `builders` is the unlock
+  // list (≤ UNLOCK_CAP), which drives the "who's interested" panel; one
+  // conversation per unlocked builder powers the inline messaging panel.
+  const [docs, tenderCount, conversations, builders] = await Promise.all([
+    listForProject(session.user.id!, project.id),
+    countTendersForProject(project.id),
+    listForUserOnProject(session.user.id!, project.id),
+    listUnlocksForProject(project.id),
+  ]);
   // Inline the unread tally here — totalUnread() lives in a "use client"
   // module, so calling it from this server component throws an RSC
   // boundary error. The math is a trivial reduce.
@@ -170,7 +172,23 @@ export default async function ProjectDetailPage({
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
+        {/* Activity — the owner's "what's happening / who's interested /
+            what now" panel. Sits first, right under the header, so a live
+            project page is never silent: it reassures while waiting, shows
+            who's unlocked (with links to their public profile), and points
+            to the tender comparison once tenders arrive. */}
+        <Reveal immediate>
+          <ProjectActivity
+            slug={project.slug}
+            state={project.state}
+            unlockCount={builders.length}
+            tenderCount={tenderCount}
+            cap={UNLOCK_CAP}
+            builders={builders}
+          />
+        </Reveal>
+
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
           {/* Left — details (staggered entrance) */}
           <div className="space-y-5">
             <Reveal immediate delay={0.04}>
@@ -364,7 +382,7 @@ export default async function ProjectDetailPage({
                 </span>
                 <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
                   {conversations.length === 0
-                    ? "Conversations appear when a builder unlocks"
+                    ? "Message builders the moment they unlock"
                     : `Talk to ${conversations.length} builder${conversations.length === 1 ? "" : "s"}`}
                 </h2>
               </div>

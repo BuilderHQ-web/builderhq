@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Files } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner } from "@/modules/projects";
 import { listTendersForOwner, computeTenderAnalytics } from "@/modules/tenders";
+import { countUnlocksForProject } from "@/modules/unlocks";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { TendersComparison } from "./comparison";
 
 export const metadata = { title: "Tenders" };
@@ -27,7 +30,10 @@ export default async function ProjectTendersPage({
   }
   const project = r.value;
 
-  const tenders = await listTendersForOwner(project.id);
+  const [tenders, unlockCount] = await Promise.all([
+    listTendersForOwner(project.id),
+    countUnlocksForProject(project.id),
+  ]);
   // Roll-up analytics computed server-side so the page paints with
   // numbers ready (no client-side calc flicker on first frame).
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
@@ -61,15 +67,50 @@ export default async function ProjectTendersPage({
         </div>
 
         {tenders.length === 0 ? (
-          <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
-            <FileText className="mx-auto size-6 text-text-dim mb-3" />
-            <h3 className="text-[15px] font-semibold text-text">
-              No tenders yet
-            </h3>
-            <p className="mt-1 text-[12.5px] text-text-dim mx-auto max-w-[44ch]">
-              Builders who unlock this project can submit tenders. They&apos;ll
-              appear here for side-by-side comparison.
-            </p>
+          <div className="relative overflow-hidden rounded-lg border border-border-subtle bg-surface-1/40 px-6 py-14 text-center">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 size-56 rounded-full blur-3xl opacity-40"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(0,212,200,0.16), transparent 70%)",
+              }}
+            />
+            <div className="relative">
+              <span
+                className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full border border-border-accent text-accent-light"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(0,212,200,0.18), rgba(26,95,212,0.14))",
+                }}
+              >
+                <FileText className="size-5" />
+              </span>
+              <h3 className="text-[16px] font-semibold text-text">
+                {unlockCount > 0
+                  ? "Tenders are on their way"
+                  : "Your project is live"}
+              </h3>
+              <p className="mt-1.5 mx-auto max-w-[48ch] text-[13px] leading-[1.6] text-text-muted">
+                {unlockCount > 0
+                  ? `${unlockCount} builder${unlockCount === 1 ? "" : "s"} ${
+                      unlockCount === 1 ? "has" : "have"
+                    } unlocked your project and ${
+                      unlockCount === 1 ? "is" : "are"
+                    } preparing to tender. Priced tenders usually land within a few days — they'll appear here side-by-side.`
+                  : "Verified builders are reviewing your project now. The first priced tenders usually arrive within 3–7 days of going live, and appear here for side-by-side comparison."}
+              </p>
+              <Link
+                href={`/owner/projects/${project.slug}`}
+                className={cn(
+                  buttonVariants({ variant: "subtle", size: "md" }),
+                  "mt-5 gap-1.5",
+                )}
+              >
+                {unlockCount > 0 ? "Message your builders" : "Back to project"}
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </div>
         ) : (
           <TendersComparison

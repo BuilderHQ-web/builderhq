@@ -29,12 +29,15 @@ export {
   countMyUnlocks,
   countUnlocksForProject,
   countUnlocksByProject,
+  listUnlocksForProject,
   saveProject,
   unsaveProject,
   isSaved,
   listMySavedProjectIds,
   countMySaved,
 } from "./service";
+
+export type { ProjectUnlockBuilder } from "./service";
 
 export { canUnlock, canSave } from "./policies";
 export type { ActorContext } from "./policies";

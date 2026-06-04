@@ -246,6 +246,12 @@ const MISSING_LABEL: Record<PublishabilityReport["missing"][number], string> = {
 // ── component ────────────────────────────────────────────────────────────
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+/** Quietly retry this many *transient* save failures before surfacing a
+ *  scary red "Save failed". A momentary network/DB hiccup shouldn't alarm
+ *  the owner mid-edit when the next attempt just succeeds — which is why the
+ *  status used to flicker save-failed → autosaved even though data persisted. */
+const MAX_SAVE_RETRIES = 4;
 type Step = 1 | 2 | 3;
 
 export function ProjectWizard({
@@ -281,6 +287,7 @@ export function ProjectWizard({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPatch = useRef<UpdateProjectInput>({});
   const inflight = useRef(false);
+  const saveRetries = useRef(0);
 
   const flush = useCallback(async () => {
     if (inflight.current) return;
@@ -293,11 +300,28 @@ export function ProjectWizard({
     try {
       const r = await updateProjectAction(project.id, patch);
       if (!r.ok) {
-        setSaveState("error");
-        setSaveError(r.error.message);
+        if (r.error.code === "validation") {
+          // Deterministic — retrying the same value would just fail again.
+          // Surface it (the optimistic value stays in the form); the next
+          // edit re-queues. Don't requeue, so we don't loop on bad input.
+          saveRetries.current = 0;
+          setSaveState("error");
+          setSaveError(r.error.message);
+          return;
+        }
+        // Transient blip (network / DB hiccup). Keep the patch and retry —
+        // only flash "Save failed" if it survives a few quick retries, so a
+        // momentary hiccup doesn't alarm the owner when the next try works.
         pendingPatch.current = { ...patch, ...pendingPatch.current };
+        if (saveRetries.current >= MAX_SAVE_RETRIES) {
+          setSaveState("error");
+          setSaveError(r.error.message);
+        } else {
+          saveRetries.current += 1;
+        }
         return;
       }
+      saveRetries.current = 0;
       setProject(r.value);
       setSaveState("saved");
       const rep = await checkPublishabilityAction(r.value.id);
@@ -329,6 +353,24 @@ export function ProjectWizard({
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [flush]);
+
+  // The instant the project flips draft → published — whether from the
+  // explicit Publish button OR an autosave that completes the draft (the
+  // server auto-promotes a draft the moment it has everything it needs) —
+  // hand off to the full-screen "you're live" celebration. One nav path for
+  // both, so the moment is never silently skipped. The ref fires it once;
+  // the draft-start guard means editing an already-live project never does.
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (
+      initialProject.status === "draft" &&
+      project.status !== "draft" &&
+      !celebratedRef.current
+    ) {
+      celebratedRef.current = true;
+      router.push(`/owner/projects/${project.slug}/published`);
+    }
+  }, [project.status, project.slug, initialProject.status, router]);
 
   const refreshDocs = useCallback(async () => {
     const r = await listProjectDocumentsAction(project.id);
@@ -372,20 +414,14 @@ export function ProjectWizard({
         );
         return;
       }
+      // Flip local state to published — the draft→published effect above
+      // takes it from here and routes to the celebration. One nav path for
+      // both the manual button and an autosave that auto-promotes the draft.
       setProject(r.value);
-      toast.success("Project published", "Builders can now find it in the marketplace.");
-      // Invalidate the RSC cache *before* navigating. Without this, the
-      // detail route's prefetched fragment (taken while the project was
-      // still a draft) can bleed into the post-publish render and throw
-      // — symptom: success toast fires, then the detail page bounces to
-      // the global error boundary. router.refresh() forces Next.js to
-      // re-fetch RSC for the next navigation.
-      router.refresh();
-      router.push(`/owner/projects/${r.value.slug}`);
     } finally {
       setPublishing(false);
     }
-  }, [flush, project.id, router]);
+  }, [flush, project.id]);
 
   const onDelete = useCallback(async () => {
     if (!confirm("Delete this draft? This can be undone by an admin.")) return;
