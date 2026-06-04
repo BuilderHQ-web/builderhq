@@ -1,5 +1,7 @@
 /**
- * /auth/email-sent — passwordless sign-in confirmation.
+ * /email-sent — passwordless sign-in confirmation. (Lives in the `(auth)`
+ * route group, which is NOT part of the URL — so the path is /email-sent,
+ * not /auth/email-sent. The login form pushes here after requesting a link.)
  *
  * Reached after POST /api/auth/email-link returns. Tells the user
  * to check their inbox, offers a resend button, and a "wrong email"

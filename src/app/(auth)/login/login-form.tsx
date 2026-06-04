@@ -76,7 +76,7 @@ export function LoginForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: trimmed }),
       });
-      router.push(`/auth/email-sent?email=${encodeURIComponent(trimmed)}`);
+      router.push(`/email-sent?email=${encodeURIComponent(trimmed)}`);
     } catch {
       setLinkError("Something went wrong. Try again in a moment.");
       setLinkSending(false);
