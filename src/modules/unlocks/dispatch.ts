@@ -14,7 +14,7 @@
  */
 
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
@@ -204,13 +204,20 @@ async function gatherContext(
     .innerJoin(builderUsers, eq(builderUsers.id, unlocks.builderId))
     .leftJoin(builderProfiles, eq(builderProfiles.userId, unlocks.builderId))
     .where(
-      // Latest unlock for this (builder, project) — there's only one
-      // due to the unique index, but still scope the WHERE explicitly.
-      eq(unlocks.builderId, builderId),
+      // Scope by BOTH builder AND project. The unique index guarantees at
+      // most one row. (Previously this filtered by builderId alone with
+      // limit(1) — so for a builder who'd unlocked more than one project,
+      // it could fetch the WRONG project's unlock row, fail the projectId
+      // check below, and silently drop the entire notification set:
+      // owner email + bell, builder receipt, and the ops email.)
+      and(
+        eq(unlocks.builderId, builderId),
+        eq(unlocks.projectId, projectId),
+      ),
     )
     .limit(1);
 
-  if (!row || row.projectId !== projectId) return null;
+  if (!row) return null;
 
   // Verification chips — pull from the verification module via dynamic
   // import to keep this dispatch file's static graph small. Failures
