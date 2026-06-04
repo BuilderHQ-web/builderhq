@@ -25,6 +25,8 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  jsonb,
+  integer,
 } from "drizzle-orm/pg-core";
 
 import { users } from "@/modules/users";
@@ -94,3 +96,83 @@ export const notifications = pgTable(
 
 export type NotificationRow = typeof notifications.$inferSelect;
 export type NotificationInsert = typeof notifications.$inferInsert;
+
+/**
+ * notification_outbox — durable email send queue.
+ *
+ * Why this exists: bulk email fan-outs (project_published → builders)
+ * used to send inline in the publish request via a throttled batch
+ * loop. On Vercel serverless the function is terminated shortly after
+ * the response, so only the first batch ever sent — the rest were
+ * silently dropped (this bit Brunswick AND Footscray).
+ *
+ * Now the publish does ONE fast, reliable bulk insert here (status
+ * 'pending'), and a Vercel cron (`/api/cron/notification-outbox`)
+ * drains it in retry-safe batches. A claimed row is moved to 'sending'
+ * with a lease (next_attempt_at = now + lease); if the drainer dies
+ * mid-send the row becomes re-claimable once the lease expires, so
+ * nothing is lost and nothing double-sends.
+ */
+export const notificationOutbox = pgTable(
+  "notification_outbox",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+
+    /** Email kind — selects the sender in the drainer. Plain text (not an
+     *  enum) so new email kinds don't need a migration. Today only
+     *  "project_published_builder". */
+    kind: text().notNull(),
+
+    /** Destination address — denormalised so the drainer is self-contained. */
+    toEmail: text("to_email").notNull(),
+
+    /** Recipient user — for the unsubscribe-token lookup at send time. */
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+
+    /** Subject project, if any. */
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+
+    /** Everything the email template needs, denormalised so a later
+     *  project edit/delete can't corrupt an in-flight send. */
+    payload: jsonb().notNull().default(sql`'{}'::jsonb`),
+
+    /** pending → sending (claimed, leased) → sent | failed. */
+    status: text().notNull().default("pending"),
+    attempts: integer().notNull().default(0),
+    lastError: text("last_error"),
+    /** Resend message id once delivered to the provider. */
+    resendId: text("resend_id"),
+
+    /** Doubles as retry-backoff schedule AND the claim lease: a claimed
+     *  row gets next_attempt_at = now() + lease; a row is claimable when
+     *  next_attempt_at <= now(), which auto-recovers leases the drainer
+     *  abandoned by dying mid-send. */
+    nextAttemptAt: timestamp("next_attempt_at", {
+      mode: "date",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    sentAt: timestamp("sent_at", { mode: "date", withTimezone: true }),
+  },
+  (t) => [
+    // Drainer claim: due rows, oldest first.
+    index("notif_outbox_status_next_idx").on(t.status, t.nextAttemptAt),
+    // Idempotency — at most one row per (kind, recipient, project) so a
+    // re-publish or a double dispatch never double-enqueues.
+    uniqueIndex("notif_outbox_kind_email_project_unique").on(
+      t.kind,
+      t.toEmail,
+      t.projectId,
+    ),
+  ],
+);
+
+export type NotificationOutboxRow = typeof notificationOutbox.$inferSelect;
+export type NotificationOutboxInsert = typeof notificationOutbox.$inferInsert;

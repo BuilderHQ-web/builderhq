@@ -22,9 +22,20 @@ export {
   getOwn,
 } from "./service";
 
+// Email outbox — durable bulk-email queue. Producers enqueue; the
+// `/api/cron/notification-outbox` drainer claims + sends.
+export {
+  enqueueEmails,
+  claimDueOutbox,
+  markOutboxSent,
+  markOutboxFailed,
+} from "./outbox";
+export type { OutboxEmailItem, ClaimedOutboxRow } from "./outbox";
+
 export {
   notifications,
   notificationKindEnum,
+  notificationOutbox,
 } from "./schema";
 
 export type { Notification, NotificationKind, CreateNotificationInput } from "./types";
