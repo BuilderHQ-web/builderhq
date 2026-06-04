@@ -68,9 +68,21 @@ const EMAIL_FROM =
   process.env.EMAIL_FROM || "BuilderHQ <info@builderhq.com.au>";
 const THROTTLE_MS = 1200;
 
-if (!process.env.DATABASE_URL) {
-  console.error("ERROR: DATABASE_URL not set (use --env-file).");
+// Prefer DATABASE_URL_PROD when present, so you can keep DATABASE_URL = dev
+// in the same env-file and explicitly opt this backfill into production.
+const DB_URL = process.env.DATABASE_URL_PROD || process.env.DATABASE_URL;
+if (!DB_URL) {
+  console.error("ERROR: no DATABASE_URL_PROD or DATABASE_URL set (use --env-file).");
   process.exit(1);
+}
+// Print the DB host (creds masked) so it's obvious which DB we're hitting.
+try {
+  const host = new URL(DB_URL.replace(/^postgres(ql)?:/, "http:")).host;
+  console.log(
+    `DB host: ${host}${process.env.DATABASE_URL_PROD ? "  (via DATABASE_URL_PROD)" : ""}\n`,
+  );
+} catch {
+  /* ignore */
 }
 if (!RESEND_API_KEY) {
   console.error("ERROR: RESEND_API_KEY not set (use --env-file).");
@@ -277,7 +289,7 @@ async function sendEmail({ to, subject, html, tag }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: DB_URL });
 const db = await pool.connect();
 
 try {
