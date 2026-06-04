@@ -22,10 +22,7 @@ import { listForUserOnProject } from "@/modules/messaging";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
-import {
-  ProjectMessagingPanel,
-  totalUnread,
-} from "@/components/app/messaging/project-thread";
+import { ProjectMessagingPanel } from "@/components/app/messaging/project-thread";
 
 export async function generateMetadata({
   params,
@@ -133,7 +130,13 @@ export default async function ProjectDetailPage({
     session.user.id!,
     project.id,
   );
-  const messagingUnread = totalUnread(conversations);
+  // Inline the unread tally here — totalUnread() lives in a "use client"
+  // module, so calling it from this server component throws an RSC
+  // boundary error. The math is a trivial reduce.
+  const messagingUnread = conversations.reduce(
+    (sum, c) => sum + c.unreadCount,
+    0,
+  );
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
