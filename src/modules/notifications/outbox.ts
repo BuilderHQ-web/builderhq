@@ -72,20 +72,24 @@ export interface ClaimedOutboxRow {
   userId: string | null;
   projectId: string | null;
   payload: Record<string, unknown>;
-  /** Attempt count INCLUDING this claim. */
+  /** Real send-failure count so far. NOT incremented by claiming — only a
+   *  genuine send error counts, so a row that's merely claimed-then-
+   *  abandoned (the drainer died, e.g. Hobby's 10s cutoff) is retried
+   *  forever rather than falsely burning through its attempt budget. */
   attempts: number;
 }
 
 /**
- * Atomically claim up to `limit` due rows for sending. Marks them
- * 'sending', bumps attempts, and leases them. Skips rows another drainer
- * already holds.
+ * Atomically claim up to `limit` due rows for sending: mark them
+ * 'sending' and lease them (next_attempt_at = now + LEASE). Skips rows
+ * another drainer already holds. Claiming does NOT touch `attempts` — if
+ * this run dies before sending a claimed row, the lease simply expires
+ * and the row is reclaimed, no attempt wasted.
  */
 export async function claimDueOutbox(limit: number): Promise<ClaimedOutboxRow[]> {
   const res = await db.execute(sql`
     UPDATE notification_outbox
        SET status = 'sending',
-           attempts = attempts + 1,
            next_attempt_at = now() + make_interval(mins => ${LEASE_MINUTES})
      WHERE id IN (
        SELECT id FROM notification_outbox
@@ -128,19 +132,22 @@ export async function markOutboxSent(id: string, resendId: string): Promise<void
 }
 
 /**
- * Record a failed send for a claimed row. Returns it to 'pending' with a
- * backoff so the next drain retries it — until MAX_ATTEMPTS, after which
- * it's parked as 'failed'. `attempts` is the post-claim value.
+ * Record a failed send for a claimed row. Bumps the real attempt count
+ * and returns it to 'pending' with a backoff so the next drain retries it
+ * — until MAX_ATTEMPTS, after which it's parked as 'failed'.
+ * `priorAttempts` is the row's attempts value at claim time.
  */
 export async function markOutboxFailed(
   id: string,
-  attempts: number,
+  priorAttempts: number,
   error: string,
 ): Promise<void> {
+  const attempts = priorAttempts + 1;
   const dead = attempts >= MAX_ATTEMPTS;
   await db.execute(sql`
     UPDATE notification_outbox
        SET status = ${dead ? "failed" : "pending"},
+           attempts = ${attempts},
            last_error = ${error.slice(0, 500)},
            next_attempt_at = now() + make_interval(mins => ${RETRY_BACKOFF_MINUTES})
      WHERE id = ${id}

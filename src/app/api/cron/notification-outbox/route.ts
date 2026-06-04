@@ -31,11 +31,15 @@ import { ensureUnsubscribeToken } from "@/modules/projects/unsubscribe";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** Rows per run. At ~120ms/send this stays well under the 60s budget;
- *  anything beyond drains on the next minute's run. */
-const BATCH = 50;
-/** Resend free tier is 10 req/s — keep a safe gap between sends. */
-const SEND_GAP_MS = 120;
+/** Rows per run. Sized to finish comfortably inside Vercel Hobby's 10s
+ *  function limit (each send is latency-bound at ~0.4-0.6s, so ~12 fits
+ *  with margin); anything beyond drains on the next run. Bump this once
+ *  on Pro (60s functions). The lease/claim model means an over-budget run
+ *  loses nothing either way — leftovers are reclaimed next run. */
+const BATCH = 12;
+/** Resend free tier is 10 req/s; sequential sends are already latency-
+ *  bound well under that, so just a tiny safety gap. */
+const SEND_GAP_MS = 60;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const BASE = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
 

@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/notification-outbox",
-      "schedule": "* * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
