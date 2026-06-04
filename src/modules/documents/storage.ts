@@ -103,7 +103,14 @@ export async function presignUpload(args: {
     ContentLength: args.contentLength,
   });
 
-  const url = await getSignedUrl(r2, cmd, { expiresIn: FIVE_MINUTES });
+  // Scale the upload window by file size so a large plan on a slow
+  // connection can't have its presigned URL expire mid-PUT (~30s/MB,
+  // floored at 15 min, capped at 60 min). Downloads keep the short TTL.
+  const uploadTtl = Math.min(
+    60 * 60,
+    Math.max(15 * 60, Math.ceil(args.contentLength / (1024 * 1024)) * 30),
+  );
+  const url = await getSignedUrl(r2, cmd, { expiresIn: uploadTtl });
 
   return {
     url,

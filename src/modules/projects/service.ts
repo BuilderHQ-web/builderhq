@@ -249,8 +249,11 @@ export async function checkPublishability(
 }
 
 /**
- * Flip a draft → published. Re-runs the publishability check inside a
- * transaction so the gate can't be raced.
+ * Flip a draft → published. Re-checks the publishability gate first, then
+ * scopes the UPDATE to status='draft' so it's idempotent: a re-publish on
+ * an already-live project (e.g. auto-publish + a manual click, or a retry)
+ * is a no-op that returns the live row WITHOUT re-running the fan-out — so
+ * builders aren't re-notified and publishedAt isn't reset.
  */
 export async function publish(
   ownerId: string,
@@ -273,9 +276,27 @@ export async function publish(
       publishedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(and(eq(projects.id, projectId), eq(projects.ownerId, ownerId)))
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.ownerId, ownerId),
+        eq(projects.status, "draft"),
+      ),
+    )
     .returning();
-  if (!row) return fail("internal", "Failed to publish project.");
+
+  // No row updated → it wasn't a draft (already published, or a concurrent
+  // publish won the race). Return the current row idempotently and skip the
+  // fan-out below so the project isn't re-dispatched.
+  if (!row) {
+    const [current] = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.ownerId, ownerId)))
+      .limit(1);
+    if (current) return ok(current);
+    return fail("internal", "Failed to publish project.");
+  }
 
   // Fan-out: owner confirmation, ops heads-up, fan-out to every
   // eligible builder. Wrapped in `after()` from next/server so the
