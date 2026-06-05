@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CtaLinks } from "./cta-links";
-import { BuildingReveal } from "./building-reveal";
+import { BlueprintBuild } from "./blueprint-build";
 
 /**
  * Hero — horizontal composition: copy left, card-stack right.
@@ -75,7 +75,7 @@ export function Hero({ cta }: { cta: CtaLinks }) {
           transition={{ delay: 0.2, duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
           className="flex justify-center order-1 lg:order-2 mt-1 sm:mt-2 lg:mt-0"
         >
-          <BuildingReveal />
+          <BlueprintBuild />
         </motion.div>
 
         {/* Copy. Centred on mobile + tablet, left-aligned on desktop. */}
