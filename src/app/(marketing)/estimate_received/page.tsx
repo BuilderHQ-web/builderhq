@@ -38,7 +38,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Estimate request received — BuilderHQ",
+  title: "Estimate request received · BuilderHQ",
   description:
     "We've got your estimate request. A BuilderHQ team member will reach out within 12 hours to collect your drawings.",
   robots: { index: false, follow: true },
@@ -144,7 +144,7 @@ export default function EstimateReceivedPage() {
               <div className={s.timelineRow}>
                 <span className={s.timelineDotMuted} />
                 <span>
-                  You send through your <em>drawings</em> — sketch, DA, or
+                  You send through your <em>drawings</em>, sketch, DA, or
                   working
                 </span>
               </div>

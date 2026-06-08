@@ -10,7 +10,7 @@ import {
 export const metadata = {
   title: "Privacy Policy",
   description:
-    "How BuilderHQ collects, uses, stores, and shares your personal information — under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.",
+    "How BuilderHQ collects, uses, stores, and shares your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.",
 };
 
 /**
@@ -364,7 +364,7 @@ export default function PrivacyPage() {
     <MarketingPageShell
       kicker="Legal"
       title="Privacy policy."
-      sub="How we collect, use, and protect your personal information — under the Privacy Act 1988 (Cth) and the Australian Privacy Principles."
+      sub="How we collect, use, and protect your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles."
       meta="Last updated · 10 May 2026"
     >
       <LegalDocument sections={SECTIONS} />

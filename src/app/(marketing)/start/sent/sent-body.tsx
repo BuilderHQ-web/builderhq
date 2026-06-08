@@ -136,7 +136,7 @@ export function SentBody({
           <Step n={2}>
             {plansOutcome === "uploaded" ? (
               <>
-                Your project{projectTitle ? <> — <em>{projectTitle}</em></> : null} goes live to verified Australian builders.
+                Your project{projectTitle ? <>, <em>{projectTitle}</em></> : null} goes live to verified Australian builders.
               </>
             ) : (
               <>You land in your dashboard. Add plans when ready to go live.</>

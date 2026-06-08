@@ -99,7 +99,7 @@ export async function submitGuideLeadAction(
         leadId: lead.id,
         msg: userEmail.error.message,
       },
-      "guide download email did not send — lead retained, admin can retry",
+      "guide download email did not send, lead retained, admin can retry",
     );
   }
   if (opsEmail.ok) {
@@ -111,7 +111,7 @@ export async function submitGuideLeadAction(
         leadId: lead.id,
         msg: opsEmail.error.message,
       },
-      "ops notification did not send — lead retained, dashboard will surface it",
+      "ops notification did not send, lead retained, dashboard will surface it",
     );
   }
 

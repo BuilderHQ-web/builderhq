@@ -119,7 +119,7 @@ export function EstimateForm({ styles }: { styles: Styles }) {
     }
     if (!emailOk) {
       setInvalidField("email");
-      setError("That email address looks off — please double-check.");
+      setError("That email address looks off, please double-check.");
       return;
     }
     // 8 chars is the loosest sensible floor for AU mobile + landline
@@ -289,7 +289,7 @@ export function EstimateForm({ styles }: { styles: Styles }) {
             name="company"
             type="text"
             className={styles.fieldInput}
-            placeholder="Architect, designer, or — if you're the homeowner — leave blank"
+            placeholder="Architect, designer, or, if you're the homeowner, leave blank"
             autoComplete="organization"
             value={company}
             onChange={(e) => setCompany(e.target.value)}

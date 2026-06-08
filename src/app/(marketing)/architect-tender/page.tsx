@@ -45,7 +45,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Onboard your project for tender — BuilderHQ",
+  title: "Onboard your project for tender · BuilderHQ",
   description:
     "A planning-stage tender initiative for Melbourne architects. By invitation.",
   robots: { index: false, follow: false },
@@ -103,7 +103,7 @@ export default function ArchitectTenderPage() {
       <div className={s.fade}>
         {/* Top bar — logo (links home) + invitation indicator */}
         <header className={s.topbar}>
-          <Link href="/" className={s.brand} aria-label="BuilderHQ — home">
+          <Link href="/" className={s.brand} aria-label="BuilderHQ, home">
             <Logo height={26} />
           </Link>
           <span className={s.invitation}>By invitation</span>

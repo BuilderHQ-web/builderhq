@@ -1280,7 +1280,7 @@ function PulseCard() {
           icon={<Files className="size-3.5" />}
           label="Spread"
           value="7%"
-          sub="Tight — builders agree"
+          sub="Tight, builders agree"
           tone="accent"
         />
       </div>

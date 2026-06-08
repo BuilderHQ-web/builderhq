@@ -88,7 +88,7 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
     if (field === "surname" && !v) msg = "Surname is required.";
     if (field === "email") {
       if (!v) msg = "Email is required.";
-      else if (!emailRegex.test(v)) msg = "That email looks off — please double-check.";
+      else if (!emailRegex.test(v)) msg = "That email looks off, please double-check.";
     }
     if (field === "practiceName" && !v) msg = "Practice name is required.";
     if (field === "projectAddress" && (!v || v.length < 4))
@@ -114,7 +114,7 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
     const e1 = email.trim();
     if (!e1) next.email = "Email is required.";
     else if (!emailRegex.test(e1))
-      next.email = "That email looks off — please double-check.";
+      next.email = "That email looks off, please double-check.";
     if (!practiceName.trim()) next.practiceName = "Practice name is required.";
     if (projectAddress.trim().length < 4)
       next.projectAddress = "Please confirm the project address.";

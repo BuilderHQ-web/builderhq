@@ -21,7 +21,7 @@ import { users } from "@/modules/users";
 import { SentBody } from "./sent-body";
 
 export const metadata = {
-  title: "Check your inbox — BuilderHQ",
+  title: "Check your inbox · BuilderHQ",
 };
 
 interface PageProps {

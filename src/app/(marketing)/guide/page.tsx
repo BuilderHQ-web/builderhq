@@ -35,7 +35,7 @@ const inter = Inter({
 
 export const metadata = {
   title:
-    "The Melbourne Build Brief — A Field Guide for Homeowners | BuilderHQ",
+    "The Melbourne Build Brief, A Field Guide for Homeowners | BuilderHQ",
   description:
     "Free 21-page independent guide to building or renovating in Melbourne. Real 2026 costs, contract clauses, the 12 red flags, and how to vet a builder properly. No sign-up tricks.",
   openGraph: {
@@ -120,7 +120,7 @@ export default function GuidePage() {
                   <li className={s.insideItem}>
                     The <em>12 red flags</em> to walk from
                   </li>
-                  <li className={s.insideItem}>Vetting protocol — 5 free checks</li>
+                  <li className={s.insideItem}>Vetting protocol: 5 free checks</li>
                   <li className={s.insideItem}>
                     Contracts: <em>what to strike</em>
                   </li>

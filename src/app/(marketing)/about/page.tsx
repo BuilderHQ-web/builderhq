@@ -13,7 +13,7 @@ import { MarketingPageShell } from "@/components/landing/page-shell";
 export const metadata = {
   title: "About",
   description:
-    "BuilderHQ is Australia's residential tendering platform — built so owners and builders can find each other on real terms, fast.",
+    "BuilderHQ is Australia's residential tendering platform, built so owners and builders can find each other on real terms, fast.",
 };
 
 export default function AboutPage() {
@@ -21,7 +21,7 @@ export default function AboutPage() {
     <MarketingPageShell
       kicker="About"
       title="Built for the residential build."
-      sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted — so the right team gets the job, faster."
+      sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted, so the right team gets the job, faster."
     >
       {/* Mission statement */}
       <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
@@ -69,7 +69,7 @@ export default function AboutPage() {
           <Pillar
             icon={<Layers className="size-4" />}
             title="Structured by default"
-            body="Tenders use the same scope, fields, and format. When you compare three builders, you're actually comparing the same thing — not three writing styles."
+            body="Tenders use the same scope, fields, and format. When you compare three builders, you're actually comparing the same thing, not three writing styles."
           />
           <Pillar
             icon={<Hammer className="size-4" />}
@@ -78,7 +78,7 @@ export default function AboutPage() {
           />
           <Pillar
             icon={<Map className="size-4" />}
-            title="Free for owners — forever"
+            title="Free for owners, forever"
             body="No fees to publish, match, or award. We make money from a small unlock fee builders pay to access private project details. Never from you."
           />
         </div>

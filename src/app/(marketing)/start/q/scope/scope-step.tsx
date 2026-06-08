@@ -329,7 +329,7 @@ function titleFor(type: ProjectType): React.ReactNode {
 function subFor(type: ProjectType): string | undefined {
   switch (type) {
     case "single_dwelling":
-      return "Rough numbers are fine — you can refine in the wizard after.";
+      return "Rough numbers are fine, you can refine in the wizard after.";
     case "multi_dwelling":
       return "Even-spread averages are fine. We use this to match builders by experience.";
     case "renovation":

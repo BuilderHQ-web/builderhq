@@ -132,7 +132,7 @@ export async function submitBookCallAction(
         leadId: lead.id,
         msg: opsResult.error.message,
       },
-      "book call ops notification did not send — lead retained for admin retry",
+      "book call ops notification did not send, lead retained for admin retry",
     );
   }
 

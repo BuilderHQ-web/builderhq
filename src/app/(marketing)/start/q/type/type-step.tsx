@@ -29,7 +29,7 @@ const OPTIONS: {
   {
     id: "multi_dwelling",
     title: "Multi-dwelling",
-    copy: "Two or more dwellings on one site — townhouses, duplex, units.",
+    copy: "Two or more dwellings on one site, townhouses, duplex, units.",
     icon: <Building2 size={20} strokeWidth={1.6} />,
   },
   {

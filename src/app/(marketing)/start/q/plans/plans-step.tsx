@@ -221,7 +221,7 @@ export function PlansStep() {
           Got architectural <span className="text-accent">plans?</span>
         </>
       }
-      sub="Builders bid better — and faster — with plans in hand. Don't have any yet? Skip this and add them later from your dashboard."
+      sub="Builders bid better, and faster, with plans in hand. Don't have any yet? Skip this and add them later from your dashboard."
     >
       <div>
         <DropZone

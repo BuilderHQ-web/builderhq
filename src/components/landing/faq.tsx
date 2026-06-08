@@ -49,7 +49,7 @@ const QAS: QA[] = [
     ),
   },
   {
-    q: "What does BuilderHQ actually do that I can&apos;t do myself?",
+    q: "What does BuilderHQ actually do that I can't do myself?",
     a: (
       <>
         Standardise tenders. When three builders quote a job in three

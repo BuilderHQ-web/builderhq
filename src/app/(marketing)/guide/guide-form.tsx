@@ -84,7 +84,7 @@ export function GuideForm({ styles }: { styles: Styles }) {
     }
     if (!emailOk) {
       setInvalidField("email");
-      setError("That email address looks off — please double-check.");
+      setError("That email address looks off, please double-check.");
       return;
     }
 

@@ -38,11 +38,11 @@ const inter = Inter({
 
 export const metadata = {
   title:
-    "Free Preliminary Cost Estimate — 12hr turnaround | BuilderHQ",
+    "Free Preliminary Cost Estimate, 12hr turnaround | BuilderHQ",
   description:
-    "A hand-prepared preliminary cost estimate for your Melbourne build, returned within 12 hours. Free. No obligation. Send your sketch, DA, or working drawings — we'll do the rest.",
+    "A hand-prepared preliminary cost estimate for your Melbourne build, returned within 12 hours. Free. No obligation. Send your sketch, DA, or working drawings, we'll do the rest.",
   openGraph: {
-    title: "Free Preliminary Cost Estimate — BuilderHQ",
+    title: "Free Preliminary Cost Estimate · BuilderHQ",
     description:
       "Hand-prepared preliminary cost estimate, returned in 12 hours. Free.",
     type: "website",

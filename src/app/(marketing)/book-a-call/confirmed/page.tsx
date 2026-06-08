@@ -35,7 +35,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Pick a time — BuilderHQ",
+  title: "Pick a time · BuilderHQ",
   description:
     "Choose a slot for your free 15-minute call and we'll match you with vetted builders.",
   robots: { index: false, follow: true },

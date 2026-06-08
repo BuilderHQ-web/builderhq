@@ -35,11 +35,11 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Book a Free Call — Get Matched With Vetted Builders | BuilderHQ",
+  title: "Book a Free Call · Get Matched With Vetted Builders | BuilderHQ",
   description:
-    "Book a free 15-minute call and we'll match you with vetted builders to quote your Melbourne project. No plans needed, no obligation — we do the legwork.",
+    "Book a free 15-minute call and we'll match you with vetted builders to quote your Melbourne project. No plans needed, no obligation, we do the legwork.",
   openGraph: {
-    title: "Get Matched With Vetted Builders — BuilderHQ",
+    title: "Get Matched With Vetted Builders · BuilderHQ",
     description:
       "Free 15-minute call. We match you with vetted builders to quote your project.",
     type: "website",
@@ -111,7 +111,7 @@ export default function BookACallLandingPage() {
                     We match you with <em>vetted builders</em>
                   </li>
                   <li className={s.insideItem}>
-                    They quote — you <em>compare</em>
+                    They quote, you <em>compare</em>
                   </li>
                   <li className={s.insideItem}>
                     We help you <em>get set up</em>
@@ -174,7 +174,7 @@ export default function BookACallLandingPage() {
                 <div className={s.howStepNum}>03</div>
                 <div className={s.howStepLabel}>Compare</div>
                 <p className={s.howStepText}>
-                  They <em>quote your project</em> — you compare and choose,
+                  They <em>quote your project</em>, you compare and choose,
                   with us in your corner the whole way.
                 </p>
               </div>

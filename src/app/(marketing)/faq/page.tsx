@@ -322,7 +322,7 @@ const CATEGORIES: Category[] = [
     label: "Support",
     questions: [
       {
-        q: "Something's not working — who do I contact?",
+        q: "Something's not working, who do I contact?",
         a: (
           <>
             Email{" "}
@@ -374,7 +374,7 @@ export default function FAQPage() {
     <MarketingPageShell
       kicker="Help centre"
       title="The honest answers."
-      sub="Everything project owners and builders ask before signing up. If your question isn't here, get in touch — we'll add it."
+      sub="Everything project owners and builders ask before signing up. If your question isn't here, get in touch, we'll add it."
     >
       <FAQContent />
     </MarketingPageShell>

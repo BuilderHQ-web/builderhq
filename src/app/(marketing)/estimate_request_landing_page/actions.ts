@@ -124,7 +124,7 @@ export async function submitEstimateRequestAction(
         leadId: lead.id,
         msg: opsResult.error.message,
       },
-      "estimate ops notification did not send — lead retained for admin retry",
+      "estimate ops notification did not send, lead retained for admin retry",
     );
   }
 

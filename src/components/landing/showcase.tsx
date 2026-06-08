@@ -26,7 +26,7 @@ const TABS: Tab[] = [
     id: "workspace",
     title: "One workspace per project",
     icon: <Folder className="size-4" />,
-    caption: "Drawings, specs, scope, and messages — all in one place.",
+    caption: "Drawings, specs, scope, and messages, all in one place.",
   },
   {
     id: "compare",
@@ -203,7 +203,7 @@ export function Showcase() {
           {/* caption under the desktop dashboard */}
           <p className="hidden lg:block mt-6 text-center text-[13px] text-text-dim">
             <span className="text-accent-light">{activeTab.title}</span>
-            {" — "}
+            {" · "}
             {activeTab.caption}
           </p>
         </Reveal>
@@ -693,7 +693,7 @@ function DashboardTracking() {
           <PulseTile
             label="Spread"
             value="7%"
-            sub="Tight — agreement"
+            sub="Tight, agreement"
             tone="accent"
           />
           <PulseTile

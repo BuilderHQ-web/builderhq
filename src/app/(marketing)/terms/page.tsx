@@ -3,7 +3,7 @@ import { MarketingPageShell } from "@/components/landing/page-shell";
 export const metadata = {
   title: "Terms of Use",
   description:
-    "BuilderHQ Terms of Use — the rules that govern using the platform.",
+    "BuilderHQ Terms of Use, the rules that govern using the platform.",
 };
 
 /**

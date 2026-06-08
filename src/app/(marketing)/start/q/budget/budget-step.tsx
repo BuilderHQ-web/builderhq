@@ -61,7 +61,7 @@ export function BudgetStep() {
           What&apos;s your <span className="text-accent">budget?</span>
         </>
       }
-      sub="A band — not a precise number. Builders use this to decide whether to tender. Wide bands keep options open."
+      sub="A band, not a precise number. Builders use this to decide whether to tender. Wide bands keep options open."
     >
       <div className="flex flex-wrap gap-2">
         {OPTIONS.map((o) => (

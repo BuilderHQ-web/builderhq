@@ -38,7 +38,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Your Guide is on its way — BuilderHQ",
+  title: "Your Guide is on its way · BuilderHQ",
   description:
     "Your Melbourne Build Brief is on its way to your inbox. Check your email in the next minute.",
   robots: { index: false, follow: true },

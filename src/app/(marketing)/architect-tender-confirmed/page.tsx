@@ -34,7 +34,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Received — BuilderHQ",
+  title: "Received · BuilderHQ",
   description: "Your project is being onboarded.",
   robots: { index: false, follow: false },
 };
@@ -52,7 +52,7 @@ export default function ArchitectTenderConfirmedPage() {
 
       <div className={s.fade}>
         <header className={s.topbar}>
-          <Link href="/" aria-label="BuilderHQ — home" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <Link href="/" aria-label="BuilderHQ, home" style={{ display: "inline-flex", textDecoration: "none" }}>
             <Logo height={26} />
           </Link>
         </header>

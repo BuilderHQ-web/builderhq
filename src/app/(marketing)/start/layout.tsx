@@ -17,7 +17,7 @@ import { Ambient } from "@/components/landing/ambient";
  */
 
 export const metadata: Metadata = {
-  title: "Upload your project — BuilderHQ",
+  title: "Upload your project · BuilderHQ",
   description:
     "BuilderHQ is the only marketplace where verified Australian builders tender for your residential project. Free for owners. Up to three tenders per project.",
   // Don't crawl funnel sub-pages; we only want the landing indexed.

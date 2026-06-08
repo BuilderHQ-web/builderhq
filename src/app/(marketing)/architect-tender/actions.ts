@@ -46,7 +46,7 @@ import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 const inputSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required.").max(80),
   surname: z.string().trim().min(1, "Surname is required.").max(80),
-  email: z.email("That email looks off — please double-check.").max(160),
+  email: z.email("That email looks off, please double-check.").max(160),
   practiceName: z.string().trim().min(1, "Practice name is required.").max(160),
   projectAddress: z
     .string()
@@ -155,7 +155,7 @@ export async function submitArchitectTenderAction(
         leadId: lead.id,
         msg: opsResult.error.message,
       },
-      "architect tender ops notification did not send — lead retained for admin retry",
+      "architect tender ops notification did not send, lead retained for admin retry",
     );
   }
 
@@ -166,7 +166,7 @@ export async function submitArchitectTenderAction(
         leadId: lead.id,
         msg: confirmationResult.error.message,
       },
-      "architect tender confirmation did not send — the architect won't see a receipt but the lead is captured",
+      "architect tender confirmation did not send, the architect won't see a receipt but the lead is captured",
     );
   }
 

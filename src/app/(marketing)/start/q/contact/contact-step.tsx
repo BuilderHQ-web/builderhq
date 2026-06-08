@@ -197,7 +197,7 @@ export function ContactStep({ turnstileSiteKey }: Props) {
             Where do we send your <span className="text-accent">tenders?</span>
           </>
         }
-        sub="Your project goes private to your account until you publish — no builder sees it before that. We use your details to confirm you and notify you when tenders arrive."
+        sub="Your project goes private to your account until you publish, no builder sees it before that. We use your details to confirm you and notify you when tenders arrive."
         aside={<TrustAside />}
       >
         <div className="max-w-[520px] space-y-4">
@@ -284,7 +284,7 @@ function TrustAside() {
       <ul className="mt-5 space-y-3 text-[13px] leading-[1.55] font-body text-text-muted">
         <Bullet>Your exact address stays private until you award a tender.</Bullet>
         <Bullet>We don&apos;t share contact details with builders until you do.</Bullet>
-        <Bullet>No spam — we email about your project, that&apos;s it.</Bullet>
+        <Bullet>No spam. We email about your project, that&apos;s it.</Bullet>
         <Bullet>One-click unsubscribe on every email.</Bullet>
       </ul>
     </div>
