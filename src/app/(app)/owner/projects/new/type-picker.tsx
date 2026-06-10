@@ -31,13 +31,13 @@ const TYPES: Array<{
   {
     id: "renovation",
     label: "Renovation",
-    description: "Working on an existing home — kitchen, bathroom, internal.",
+    description: "Working on an existing home: kitchen, bathroom, internal.",
     icon: <Wrench className="size-5" />,
   },
   {
     id: "extension",
     label: "Extension",
-    description: "Adding new floor space — ground, first floor, or rear.",
+    description: "Adding new floor space: ground, first floor, or rear.",
     icon: <Layers className="size-5" />,
   },
 ];

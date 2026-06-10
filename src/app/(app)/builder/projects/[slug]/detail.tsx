@@ -48,7 +48,7 @@ import {
   ProjectMessagingPanel,
   totalUnread,
 } from "@/components/app/messaging/project-thread";
-import { cn } from "@/lib/utils";
+import { cn, truncate } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
 
@@ -398,8 +398,15 @@ export function ProjectDetail({
               <Reveal immediate delay={0.16}>
                 <Card title="Brief" icon={<FileText className="size-4" />}>
                   <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                    {preview.description}
+                    {unlocked
+                      ? preview.description
+                      : truncate(preview.description, 20)}
                   </p>
+                  {!unlocked ? (
+                    <p className="mt-2 text-[12px] text-text-dim">
+                      Unlock the project to read the full brief.
+                    </p>
+                  ) : null}
                 </Card>
               </Reveal>
             ) : null}

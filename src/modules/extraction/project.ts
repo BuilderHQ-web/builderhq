@@ -119,7 +119,10 @@ const EXTRACTION_TOOL: Anthropic.Tool = {
         description:
           "A concise 2-4 sentence scope summary a builder would read first: " +
           "what's being built, storeys, key rooms/areas, notable inclusions " +
-          "(garage, pool, alfresco). Plain text. Drawn only from the plans.",
+          "(garage, pool, alfresco). Plain text, drawn only from the plans. " +
+          "NEVER include the street address, street name, unit number, or " +
+          "postcode here — it is shown publicly before unlock, so the exact " +
+          "location must stay out of the description.",
       },
       addressLine1: {
         type: ["string", "null"],
@@ -243,8 +246,12 @@ const SYSTEM_PROMPT =
   "returning a raw number.\n" +
   "- Construction budget and dates are almost never on plans — leave them " +
   "null unless explicitly written.\n" +
+  "- PRIVACY: the description is shown publicly to builders before they " +
+  "unlock the project, so it must NEVER contain the street address, street " +
+  "name, unit number, or postcode. Put those only in the address fields.\n" +
   "- Write a clean, specific title and a helpful 2-4 sentence description " +
-  "from what you see.";
+  "of the building and its scope (never the street address) from what you " +
+  "see.";
 
 // ── Zod re-validation ────────────────────────────────────────────────
 
@@ -308,20 +315,55 @@ function normalisePostcode(s: string | null | undefined): string | null {
   return m?.[1] ?? null;
 }
 
+/**
+ * Belt-and-suspenders: if the model slips the street address or postcode
+ * into the description (the prompt forbids it, but models drift), strip it.
+ * The description is shown to builders before they unlock, so the exact
+ * location must never leak through it.
+ */
+function stripAddressFromDescription(
+  desc: string | null,
+  addressLine1: string | null,
+  postcode: string | null,
+): string | null {
+  if (!desc) return desc;
+  let out = desc;
+  for (const needle of [addressLine1, postcode]) {
+    const n = needle?.trim();
+    if (n && n.length >= 3) {
+      const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+      out = out.replace(re, " ");
+    }
+  }
+  out = out
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/^[\s,;:.-]+|[\s,;:.-]+$/g, "")
+    .trim();
+  return out || null;
+}
+
 function normalise(raw: z.infer<typeof RawExtraction>): ProjectExtraction {
   const type = pickEnum(TYPES, raw.type);
   const scopeTags = Array.from(
     new Set((raw.renovationScopeTags ?? []).filter((t) => has(SCOPES, t))),
   );
+  const addressLine1 = cleanText(raw.addressLine1, 200);
+  const postcode = normalisePostcode(raw.postcode);
+  const description = stripAddressFromDescription(
+    cleanText(raw.description, 2000),
+    addressLine1,
+    postcode,
+  );
 
   return {
     type,
     title: cleanText(raw.title, 90),
-    description: cleanText(raw.description, 2000),
-    addressLine1: cleanText(raw.addressLine1, 200),
+    description,
+    addressLine1,
     suburb: cleanText(raw.suburb, 80),
     state: pickEnum(STATES, raw.state?.toUpperCase?.() ?? raw.state),
-    postcode: normalisePostcode(raw.postcode),
+    postcode,
     bedrooms: clampInt(raw.bedrooms, 0, 50),
     bathrooms: clampInt(raw.bathrooms, 0, 50),
     floors: clampInt(raw.floors, 1, 10),
