@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Home,
   Building,
@@ -30,6 +30,7 @@ import {
   Zap,
   Landmark,
   FileQuestion,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
@@ -279,6 +280,15 @@ export function ProjectWizard({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState<Step>(1);
+  // Latches true once the owner reaches the final (Documents) step. Publish
+  // stays disabled until then, so they review every section — and discover
+  // where to add more plans — instead of publishing straight from step 1.
+  const [reachedLast, setReachedLast] = useState(false);
+
+  const goStep = useCallback((target: Step) => {
+    setStep(target);
+    if (target >= 3) setReachedLast(true);
+  }, []);
 
   const isPublished = project.status !== "draft";
 
@@ -459,7 +469,7 @@ export function ProjectWizard({
         <ProgressTracker
           step={step}
           checkpoints={checkpoints}
-          onJump={(s) => setStep(s)}
+          onJump={goStep}
           locked={isPublished}
         />
       </header>
@@ -467,6 +477,9 @@ export function ProjectWizard({
       {/* Step content */}
       <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
         <div className="mx-auto max-w-[820px]">
+          <Suspense fallback={null}>
+            <AutofillBanner />
+          </Suspense>
           {step === 1 ? (
             <Step1Basics
               project={project}
@@ -493,7 +506,7 @@ export function ProjectWizard({
           <div className="mt-10 flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => setStep((s) => (s > 1 ? ((s - 1) as Step) : s))}
+              onClick={() => goStep(Math.max(1, step - 1) as Step)}
               disabled={step === 1}
               className={cn(
                 "inline-flex items-center gap-1.5 h-10 px-4 rounded-full border text-[12px] tracking-[0.04em] transition-colors",
@@ -520,7 +533,7 @@ export function ProjectWizard({
             {step < 3 ? (
               <button
                 type="button"
-                onClick={() => setStep((s) => Math.min(3, s + 1) as Step)}
+                onClick={() => goStep(Math.min(3, step + 1) as Step)}
                 className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent-muted border border-border-accent text-accent-light text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-muted/70 transition-colors"
               >
                 Next
@@ -538,8 +551,69 @@ export function ProjectWizard({
         report={report}
         publishing={publishing}
         allDone={allDone}
+        reviewed={reachedLast}
         onPublish={onPublish}
       />
+    </div>
+  );
+}
+
+// ── auto-fill review banner ──────────────────────────────────────────────
+
+/**
+ * Shown once when the owner arrives from the AI plan auto-fill flow
+ * (?from=autofill&filled=N). Reassures them their plan is attached and
+ * nudges a review. Reads the query off window.location (no Suspense
+ * needed) and scrubs it so a refresh won't re-show it.
+ */
+function AutofillBanner() {
+  const sp = useSearchParams();
+  const [dismissed, setDismissed] = useState(false);
+
+  const isAutofill = sp.get("from") === "autofill";
+  const n = parseInt(sp.get("filled") ?? "0", 10);
+  const filled = Number.isFinite(n) ? n : 0;
+
+  // Scrub the params from the address bar so a refresh won't re-show this.
+  // Pure history-API side-effect — no React state is touched here.
+  useEffect(() => {
+    if (!isAutofill || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("from")) return;
+    url.searchParams.delete("from");
+    url.searchParams.delete("filled");
+    window.history.replaceState({}, "", url.pathname + url.search);
+  }, [isAutofill]);
+
+  if (!isAutofill || dismissed) return null;
+
+  return (
+    <div
+      className="mb-6 flex items-start gap-3 rounded-md border border-border-accent bg-[rgba(0,212,200,0.05)] px-4 py-3.5"
+      style={{ animation: "var(--animate-fade-in)" }}
+    >
+      <span className="mt-0.5 size-7 shrink-0 rounded-md grid place-items-center border border-border-accent bg-accent-muted text-accent-light">
+        <Sparkles className="size-3.5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-semibold text-text">
+          {filled > 0
+            ? `We filled ${filled} ${filled === 1 ? "detail" : "details"} from your plans`
+            : "Your plans are attached"}
+        </p>
+        <p className="mt-0.5 text-[12.5px] leading-[1.5] text-text-muted">
+          Review each step and adjust anything before you publish. Your
+          architectural plan is already uploaded.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="shrink-0 -m-1 p-1 text-text-dim hover:text-text transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="size-4" />
+      </button>
     </div>
   );
 }
@@ -1390,12 +1464,14 @@ function PublishBar({
   report,
   publishing,
   allDone,
+  reviewed,
   onPublish,
 }: {
   project: Project;
   report: PublishabilityReport | null;
   publishing: boolean;
   allDone: boolean;
+  reviewed: boolean;
   onPublish: () => void | Promise<void>;
 }) {
   const isPublished = project.status !== "draft";
@@ -1406,20 +1482,32 @@ function PublishBar({
           {isPublished ? (
             <div className="text-[13px] text-accent-light flex items-center gap-2">
               <Check className="size-4" />
-              Published — visible to matched builders
+              Published, visible to matched builders
             </div>
-          ) : allDone ? (
-            <div className="text-[13px] text-accent-light flex items-center gap-2">
-              <Check className="size-4" />
-              Ready to publish
-            </div>
-          ) : (
+          ) : !allDone ? (
             <div className="text-[12.5px] text-text-dim flex items-start gap-2">
               <AlertTriangle className="size-3.5 text-warning shrink-0 mt-0.5" />
               <span className="truncate">
                 Still missing:{" "}
                 {report?.missing.map((m) => MISSING_LABEL[m]).join(" · ")}
               </span>
+            </div>
+          ) : !reviewed ? (
+            <div className="text-[12.5px] flex items-start gap-2">
+              <ArrowRight className="size-3.5 text-accent-light shrink-0 mt-0.5" />
+              <span className="min-w-0">
+                <span className="text-text font-medium">
+                  Review each step to publish.
+                </span>{" "}
+                <span className="text-text-dim">
+                  You can add more plans in the Documents step.
+                </span>
+              </span>
+            </div>
+          ) : (
+            <div className="text-[13px] text-accent-light flex items-center gap-2">
+              <Check className="size-4" />
+              Ready to publish
             </div>
           )}
         </div>
@@ -1436,10 +1524,15 @@ function PublishBar({
           <button
             type="button"
             onClick={onPublish}
-            disabled={!allDone || publishing}
+            disabled={!allDone || !reviewed || publishing}
+            title={
+              allDone && !reviewed
+                ? "Review every step first. Open the Documents step to finish your review."
+                : undefined
+            }
             className={cn(
               "inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-full text-[12.5px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] shrink-0",
-              allDone && !publishing
+              allDone && reviewed && !publishing
                 ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_28px_-8px_rgba(0,212,200,0.55)]"
                 : "bg-surface-2 text-text-dim cursor-not-allowed",
             )}

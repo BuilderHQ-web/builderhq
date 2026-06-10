@@ -152,14 +152,10 @@ export async function update(
     .where(eq(projects.id, projectId))
     .returning();
 
-  // Draft → live: if this save completed everything a draft needs
-  // (required fields + an architectural plan), promote it now. `publish`
-  // re-checks readiness in-transaction and fans out to builders; if it's
-  // still incomplete it no-ops and the project stays a draft.
-  if (existing.status === "draft") {
-    const pub = await publish(ownerId, projectId);
-    if (pub.ok) return pub;
-  }
+  // Drafts are NOT auto-published on save. Publishing is always an explicit
+  // action (the Publish button → publishProjectAction → publish()), so a
+  // draft never goes live while the owner is still reviewing or editing it
+  // — including when AI auto-fill has pre-populated everything.
 
   return ok(updated!);
 }
