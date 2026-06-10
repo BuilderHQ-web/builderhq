@@ -1,0 +1,879 @@
+/* ──────────────────────────────────────────────────────────────────────
+ * Owner Advisory — /owneradvisory
+ *
+ * Dark, editorial, "private members' service" treatment on the BuilderHQ
+ * brand canvas (#03090f) — the same backdrop as the landing page: fibre
+ * starfield, blueprint grid, ambient orbs, noise. The brand display face
+ * (Instrument Serif) + Geist for UI/body, exactly like the rest of the
+ * product. The form is the hero, framed in a glass console.
+ *
+ * Mobile-first and centred — most traffic is phone, so the phone view is
+ * the priority: ultra-clean, generous whitespace, one focal object at a
+ * time. Desktop fans out into a two-column, form-forward hero.
+ * ────────────────────────────────────────────────────────────────────── */
+
+.page {
+  --bg: #03090f; /* brand canvas */
+  --bg-2: #060f19;
+  --ink: #f3f8fb; /* near-white — display */
+  --ink-body: #b9c8d4; /* body */
+  --ink-soft: #8499a8; /* secondary */
+  --ink-faint: #607585; /* captions */
+  --teal: #00d4c8;
+  --teal-ink: #34e6dc; /* bright teal for small TEXT/links on dark */
+  --teal-light: #7ef5ed;
+  --teal-wash: rgba(0, 212, 200, 0.1);
+  --on-teal: #031118; /* ink ON a teal fill */
+  --line: rgba(150, 190, 220, 0.14);
+  --line-soft: rgba(150, 190, 220, 0.08);
+  --line-strong: rgba(150, 190, 220, 0.28);
+  --card: rgba(255, 255, 255, 0.028);
+  --card-hover: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.09);
+  /* Clean modern sans across the whole page — display + body are both
+   * Geist (the brand UI face). Hierarchy comes from size + weight, not a
+   * second family. Minimal, elegant, classy. */
+  --display: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  position: relative;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink-body);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* `clip` (not `hidden`) keeps horizontal overflow contained WITHOUT
+   * creating a scroll container that would break `position: sticky`. */
+  overflow-x: clip;
+}
+
+/* Film-grain noise — last backdrop layer (above fibre/grid/ambient z-0,
+ * below all content z-10). */
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox=%270 0 200 200%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.75%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Sticky glass nav ────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 18px 0;
+  border-bottom: 1px solid transparent;
+  transition:
+    padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.4s ease,
+    border-color 0.4s ease,
+    backdrop-filter 0.4s ease;
+}
+.navScrolled {
+  padding: 11px 0;
+  background: rgba(4, 10, 16, 0.62);
+  border-bottom-color: rgba(150, 190, 220, 0.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.navMeta {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navMetaDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px rgba(0, 212, 200, 0.7);
+}
+
+/* ── Hero / form ─────────────────────────────────────────────────────── */
+.hero {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(104px, 17vh, 150px) 24px clamp(52px, 9vh, 96px);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(30px, 5vh, 48px);
+}
+/* Mobile-first: centred, decluttered. */
+.heroLede {
+  text-align: center;
+  animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes heroIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--teal-ink);
+  margin: 0 0 20px;
+}
+.headline {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(34px, 8.2vw, 57px);
+  line-height: 1.08;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+  margin: 0;
+}
+.headline em {
+  font-style: normal;
+  color: var(--teal-light);
+}
+.subline {
+  font-size: clamp(15.5px, 2.3vw, 17.5px);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 20px auto 0;
+  max-width: 31em;
+}
+/* Quiet human authority anchor — desktop only (declutters mobile). */
+.heroProof {
+  display: none;
+  align-items: center;
+  gap: 11px;
+  margin: 28px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.heroProof b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.heroProofDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 10px rgba(0, 212, 200, 0.8);
+}
+
+/* The form lives in a glass console — the focal object of the hero. */
+.heroPanel {
+  display: flex;
+  flex-direction: column;
+  animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+.formCard {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045),
+    rgba(255, 255, 255, 0.015)
+  );
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: clamp(22px, 6vw, 38px);
+  box-shadow:
+    0 40px 90px -50px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  overflow: hidden;
+}
+.trustline {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  margin: 18px 4px 0;
+  text-align: center;
+}
+.trustline b {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* ── Progressive form ────────────────────────────────────────────────── */
+/* Progress thread — inlaid along the console's top edge, fills teal.
+ * Absolute (not fixed): the console's backdrop-filter would capture a
+ * fixed child anyway. */
+.progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-soft);
+  z-index: 5;
+}
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4c8, #7ef5ed);
+  box-shadow: 0 0 16px rgba(0, 212, 200, 0.6);
+  transition: width 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.formTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  margin-bottom: 16px;
+}
+.backBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+  transition: color 0.2s;
+}
+.backBtn:hover {
+  color: var(--ink);
+}
+.counter {
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.answerThread {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink-soft);
+  margin: 0 0 18px;
+}
+.answerThread span + span::before {
+  content: " · ";
+  color: var(--teal-ink);
+}
+
+.stage {
+  animation: pageturn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes pageturn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.question {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(24px, 4.6vw, 30px);
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 22px;
+}
+
+/* Single-select answer plates — the answer IS the next click. */
+.plates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plate {
+  appearance: none;
+  text-align: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 19px;
+  color: var(--ink);
+  transition:
+    border-color 0.22s,
+    background 0.22s,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s;
+}
+.plate:hover {
+  border-color: var(--line-strong);
+  background: var(--card-hover);
+}
+.plateArrow {
+  font-family: var(--sans);
+  color: var(--ink-faint);
+  font-size: 16px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.22s,
+    transform 0.22s,
+    color 0.22s;
+}
+.plate:hover .plateArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--teal-ink);
+}
+.plateActive {
+  border-color: rgba(0, 212, 200, 0.55);
+  background: var(--teal-wash);
+  box-shadow: 0 12px 34px -18px rgba(0, 212, 200, 0.7);
+}
+.plateActive .plateArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--teal-ink);
+}
+
+/* Naked text inputs — a baseline, not a box. */
+.textField {
+  position: relative;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--line-strong);
+  transition: border-color 0.25s;
+}
+.textField:focus-within {
+  border-color: var(--teal);
+}
+.textField + .textField {
+  margin-top: 20px;
+}
+.input {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+  font-family: var(--sans);
+  font-size: clamp(17px, 2.3vw, 20px);
+  font-weight: 400;
+  color: var(--ink);
+  padding: 0;
+  letter-spacing: -0.004em;
+}
+.input:focus,
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.input::placeholder {
+  color: var(--ink-faint);
+  opacity: 0.55;
+  font-weight: 400;
+}
+/* Keep autofilled text on-brand and avoid the browser's filled box. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  transition: background-color 9999s ease-out 0s;
+}
+.valid::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 10px rgba(0, 212, 200, 0.8);
+}
+.fieldHint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 16px 0 0;
+}
+
+/* "Continue" — a text link with a teal arrow. */
+.continue {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 26px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--teal-ink);
+  transition:
+    gap 0.22s,
+    opacity 0.2s;
+}
+.continue:hover {
+  gap: 14px;
+}
+.continue:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.continueArrow {
+  font-size: 17px;
+}
+
+/* The one deliberate, filled action — final submit. */
+.submit {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 28px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #1ee0d4, #00c6ba);
+  color: var(--on-teal);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 17px 26px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(0, 212, 200, 0.4),
+    0 18px 40px -16px rgba(0, 212, 200, 0.6);
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s,
+    opacity 0.2s;
+}
+.submit:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(0, 212, 200, 0.5),
+    0 22px 48px -16px rgba(0, 212, 200, 0.72);
+}
+.submit:active {
+  transform: translateY(0);
+}
+.submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(3, 17, 24, 0.35);
+  border-top-color: var(--on-teal);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.error {
+  margin: 16px 0 0;
+  font-size: 13.5px;
+  color: #ff8a7a;
+}
+
+/* ── Confirmation ────────────────────────────────────────────────────── */
+.confirm {
+  animation: pageturn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  padding: 6px 0 8px;
+}
+.confirmMark {
+  width: 54px;
+  height: 54px;
+  margin: 0 0 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal-ink);
+  box-shadow: 0 0 0 8px var(--teal-wash);
+}
+.confirmTitle {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(28px, 5.4vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.confirmBody {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 18px 0 0;
+  max-width: 32em;
+}
+.confirmLink {
+  margin-top: 28px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teal-ink);
+  text-decoration: none;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.confirmLink:hover {
+  gap: 12px;
+}
+
+/* ── Content sections ────────────────────────────────────────────────── */
+.section {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(64px, 12vh, 128px) 24px;
+}
+.sectionEyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--teal-ink);
+  margin: 0 0 26px;
+}
+.rule {
+  height: 1px;
+  background: var(--line);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ── Moe quote — scroll-driven word reveal ───────────────────────────── */
+.quoteSection {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: clamp(84px, 17vh, 176px) 24px;
+}
+.quote {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(24px, 5vw, 39px);
+  line-height: 1.32;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  margin: 0;
+}
+.quoteRule {
+  width: 46px;
+  height: 2px;
+  background: var(--teal);
+  margin: 34px 0 22px;
+  box-shadow: 0 0 14px rgba(0, 212, 200, 0.6);
+}
+.quoteAttr {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.quoteAttr b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* What it is — points */
+.points {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(34px, 5vw, 48px);
+  margin-top: 8px;
+}
+.pointTitle {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(22px, 3.6vw, 27px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.pointBody {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 32em;
+}
+
+/* Why free — woven, quiet */
+.whyfree {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 34em;
+  margin: 0;
+}
+.whyfree b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Eligibility */
+.eligHead {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(27px, 5.2vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 32px;
+}
+.eligList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.eligItem {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: var(--ink-body);
+}
+.eligItem:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.eligNum {
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-ink);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  width: 22px;
+}
+.eligItem b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Final CTA — centred as a calm closing band between the list + footer. */
+.cta {
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 58vh;
+  padding: clamp(40px, 7vh, 80px) 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ctaHead {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(30px, 5.6vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 30px;
+}
+.ctaBtn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #1ee0d4, #00c6ba);
+  color: var(--on-teal);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 16px 34px;
+  border-radius: 50px;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(0, 212, 200, 0.4),
+    0 18px 40px -16px rgba(0, 212, 200, 0.6);
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s;
+}
+.ctaBtn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(0, 212, 200, 0.5),
+    0 24px 50px -16px rgba(0, 212, 200, 0.75);
+}
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px 16px;
+}
+/* Secondary, quiet action — Learn more about BuilderHQ. */
+.ctaBtnGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 26px;
+  border-radius: 50px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--ink-body);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+}
+.ctaBtnGhost:hover {
+  border-color: rgba(0, 212, 200, 0.5);
+  background: rgba(0, 212, 200, 0.06);
+  color: var(--ink);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--line);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 24px 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+.footerLeft {
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+.footerLinks {
+  display: flex;
+  gap: 20px;
+}
+.footerLinks a {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footerLinks a:hover {
+  color: var(--teal-ink);
+}
+
+/* ── Desktop: two-column form-forward hero, left-aligned lede ────────── */
+@media (min-width: 920px) {
+  .heroGrid {
+    grid-template-columns: 1.02fr 0.98fr;
+    align-items: center;
+    gap: clamp(48px, 6vw, 90px);
+  }
+  .heroLede {
+    text-align: left;
+  }
+  .subline {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .heroProof {
+    display: flex;
+  }
+  .heroPanel {
+    max-width: 480px;
+    width: 100%;
+    margin-left: auto;
+  }
+  .points {
+    grid-template-columns: 1fr 1fr;
+    gap: 56px 64px;
+  }
+}
+
+/* Respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .stage,
+  .confirm,
+  .heroLede,
+  .heroPanel {
+    animation: none;
+  }
+  .progressFill,
+  .plate,
+  .submit,
+  .ctaBtn {
+    transition: none;
+  }
+}

@@ -32,6 +32,8 @@ import { EstimateRequestOpsEmail } from "@/emails/EstimateRequestOpsEmail";
 import { BookCallOpsEmail } from "@/emails/BookCallOpsEmail";
 import { ArchitectTenderOpsEmail } from "@/emails/ArchitectTenderOpsEmail";
 import { ArchitectTenderConfirmationEmail } from "@/emails/ArchitectTenderConfirmationEmail";
+import { OwnerAdvisoryOpsEmail } from "@/emails/OwnerAdvisoryOpsEmail";
+import { OwnerAdvisoryConfirmationEmail } from "@/emails/OwnerAdvisoryConfirmationEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
 import { TenderSubmittedBuilderEmail } from "@/emails/TenderSubmittedBuilderEmail";
 import { TenderSubmittedOpsEmail } from "@/emails/TenderSubmittedOpsEmail";
@@ -515,6 +517,118 @@ export async function sendGuideLeadOpsEmail(
   logger.info(
     { event: "email.guide_lead_ops.sent", leadId: input.leadId, resendId: data.id },
     "guide ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Owner Advisory (/owneradvisory) ────────────────────────────────────
+
+interface SendOwnerAdvisoryOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  email: string;
+  phone: string | null;
+  projectType: string;
+  suburb: string;
+  stage: string;
+  source: string | null;
+  createdAt: Date;
+}
+
+/** Internal ops notification — fires to info@ on every advisory request. */
+export async function sendOwnerAdvisoryOpsEmail(
+  input: SendOwnerAdvisoryOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Owner Advisory request: ${input.firstName} — ${input.projectType}, ${input.suburb}`;
+  const props = { ...input };
+
+  const [html, text] = await Promise.all([
+    render(OwnerAdvisoryOpsEmail(props)),
+    render(OwnerAdvisoryOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "ops_owner_advisory" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.owner_advisory_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "owner advisory ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    { event: "email.owner_advisory_ops.sent", leadId: input.leadId, resendId: data.id },
+    "owner advisory ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendOwnerAdvisoryConfirmationEmailInput {
+  to: string;
+  firstName: string;
+  projectType: string;
+  suburb: string;
+  guideUrl: string;
+}
+
+/** Confirmation to the homeowner — sets the within-one-business-day
+ *  expectation and reinforces the independence promise. */
+export async function sendOwnerAdvisoryConfirmationEmail(
+  input: SendOwnerAdvisoryConfirmationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `We've got your request, ${input.firstName}`;
+  const props = {
+    firstName: input.firstName,
+    projectType: input.projectType,
+    suburb: input.suburb,
+    guideUrl: input.guideUrl,
+  };
+
+  const [html, text] = await Promise.all([
+    render(OwnerAdvisoryConfirmationEmail(props)),
+    render(OwnerAdvisoryConfirmationEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "owner_advisory_confirmation" }],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.owner_advisory_confirm.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "owner advisory confirmation send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    { event: "email.owner_advisory_confirm.sent", to: input.to, resendId: data.id },
+    "owner advisory confirmation sent",
   );
   return ok({ id: data.id });
 }
