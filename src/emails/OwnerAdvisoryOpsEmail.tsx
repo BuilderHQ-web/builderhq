@@ -14,7 +14,6 @@ import {
   InlineLink,
   MetaCard,
   MetaRow,
-  MiniLabel,
   PrimaryButton,
   Strong,
 } from "./_shell";
@@ -96,14 +95,6 @@ export function OwnerAdvisoryOpsEmail({
           }
         />
       </MetaCard>
-
-      <MiniLabel>Next step</MiniLabel>
-      <BodyText>
-        Reach out within one business day. Open with a short intro, confirm
-        what they&apos;re building, and offer to walk through their builders
-        and quotes. Keep it human — they came here worried about getting the
-        biggest decision of their life wrong.
-      </BodyText>
 
       <PrimaryButton href={replyHref}>Reply to {firstName}</PrimaryButton>
 

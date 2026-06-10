@@ -55,7 +55,7 @@ export function OwnerAdvisoryConfirmationEmail({
         />
         <MetaRow
           label="3"
-          value="We walk you through your builders, your quotes, and where the real risk sits. No cost, no obligation."
+          value="We walk you through finding the right builders, getting them to quote, comparing what comes back, and where the real risk sits. No cost, no obligation."
         />
       </MetaCard>
 
