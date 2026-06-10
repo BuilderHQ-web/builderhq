@@ -28,6 +28,8 @@ export {
   sendLaunchInviteEmail,
   sendGuideDownloadEmail,
   sendGuideLeadOpsEmail,
+  sendOwnerAdvisoryOpsEmail,
+  sendOwnerAdvisoryConfirmationEmail,
   sendEstimateRequestOpsEmail,
   sendBookCallOpsEmail,
   sendArchitectTenderOpsEmail,

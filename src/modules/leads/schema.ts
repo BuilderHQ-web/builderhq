@@ -35,6 +35,10 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // call to get matched with builders. Project type / suburb / state /
   // timeline ride in the `meta` jsonb column.
   "book_call",
+  // Owner Advisory Program (/owneradvisory) — homeowner requests
+  // independent advisory on their tender. project_type / suburb / stage
+  // ride in the `meta` jsonb column; first name + mobile are top-level.
+  "owner_advisory",
 ]);
 
 export const leads = pgTable(
