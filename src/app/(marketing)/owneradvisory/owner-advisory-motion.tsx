@@ -3,7 +3,7 @@
 /**
  * Scroll-driven motion for /owneradvisory.
  *
- * - <ScrollQuote/> brightens the Moe quote word-by-word as the section
+ * - <ScrollQuote/> brightens the founder quote word-by-word as the section
  *   scrolls up through the viewport — the line "wakes up" as you reach it.
  * - <Reveal/> is a quiet whileInView fade-up for section blocks.
  *

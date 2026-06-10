@@ -132,9 +132,9 @@ export function OwnerAdvisoryForm({ styles: s }: { styles: Styles }) {
           </div>
           <h2 className={s.confirmTitle}>Thank you, {name}.</h2>
           <p className={s.confirmBody}>
-            BuilderHQ has sent your next steps by email. Moe or someone from the
-            team will call within one business day. Keep your drawings and any
-            builder quotes handy, so that first conversation counts.
+            BuilderHQ has sent your next steps by email. Someone from the team
+            will call within one business day. Keep your drawings and project
+            details handy, so that first conversation counts.
           </p>
           <a className={s.confirmLink} href="https://builderhq.com.au/guide">
             While you wait, read the Melbourne Build Brief{" "}
