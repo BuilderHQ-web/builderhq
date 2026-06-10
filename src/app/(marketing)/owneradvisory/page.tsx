@@ -8,7 +8,7 @@
  * (Instrument Serif) + Geist. It converts a scared Melbourne homeowner
  * via a quiet, one-question-at-a-time consultation framed in a glass
  * console. Server component renders the static editorial chrome; the
- * progressive form, the sticky glass nav, and the scroll-driven Moe
+ * progressive form, the sticky glass nav, and the scroll-driven founder
  * quote are client islands.
  *
  * Phone-first: the mobile view is centred and decluttered (most traffic
@@ -30,7 +30,7 @@ import { ScrollQuote, Reveal } from "./owner-advisory-motion";
 export const metadata = {
   title: "Owner Advisory: someone in your corner before you sign | BuilderHQ",
   description:
-    "Independent advisory for Melbourne homeowners about to go to tender. BuilderHQ compares your builders' quotes line by line, reviews your contract before you sign, and helps you avoid the mistakes that cost owners hundreds of thousands. No commissions from builders, ever.",
+    "Independent advisory for Melbourne homeowners going to tender. BuilderHQ runs your whole tender, coordinates builder pricing into quotes you can truly compare, reads every line, and reviews your contract before you sign, so you avoid the mistakes that cost owners hundreds of thousands.",
   openGraph: {
     title: "Owner Advisory · Melbourne",
     description:
@@ -61,14 +61,15 @@ export default function OwnerAdvisoryPage() {
                 Before you sign with a builder, have <em>someone in your corner</em>.
               </h1>
               <p className={s.subline}>
-                Independent advice before you go to tender. BuilderHQ compares your
-                builders, reads their quotes properly, and flags the mistakes that
-                cost homeowners hundreds of thousands.
+                BuilderHQ runs your whole tender. We bring the right builders to the
+                table, coordinate their pricing into quotes you can truly compare,
+                then read every line for the mistakes that cost homeowners hundreds
+                of thousands.
               </p>
               <p className={s.heroProof}>
                 <span className={s.heroProofDot} aria-hidden />
                 <span>
-                  Guided by <b>Moe Akbulut</b>, Founder of BuilderHQ, with 20+ years
+                  Guided by <b>our team of industry experts</b>, with decades spent
                   building Melbourne homes.
                 </span>
               </p>
@@ -90,13 +91,13 @@ export default function OwnerAdvisoryPage() {
 
         <div className={s.rule} />
 
-        {/* ── Moe — pinned scroll reveal ── */}
+        {/* ── Founder quote — pinned scroll reveal ── */}
         <ScrollQuote
           styles={s}
-          eyebrow="From our founder"
-          quote="A builder's quote isn't a price. It's a story about what they've left out. After twenty years, I can read one in five minutes. What's missing, what'll blow out, who's cutting corners to win the job. Homeowners can't see that yet. We can. So we show them."
-          attrName="Moe Akbulut"
-          attrRole="Founder, BuilderHQ · 20+ years building Melbourne homes"
+          eyebrow="From the founding team"
+          quote="A builder's quote isn't a price. It's a story about what's been left out. Running a tender properly is real work: we bring the right builders together, coordinate their pricing until it is genuinely comparable, then read every line for what's missing, what will blow out, and who is cutting corners to win. It takes decades of building to see it, so we do that work for the homeowner."
+          attrName="The BuilderHQ founding team"
+          attrRole="Decades building and pricing Melbourne homes"
         />
 
         <div className={s.rule} />
@@ -108,6 +109,14 @@ export default function OwnerAdvisoryPage() {
           </Reveal>
           <div className={s.points}>
             <Reveal delay={0}>
+              <h3 className={s.pointTitle}>Your tender, set up and run.</h3>
+              <p className={s.pointBody}>
+                BuilderHQ handles the initial tender set-up, reaches out to the
+                right builders, and coordinates their pricing, so your job goes to
+                market properly from day one.
+              </p>
+            </Reveal>
+            <Reveal delay={0.08}>
               <h3 className={s.pointTitle}>Your quotes, compared line by line.</h3>
               <p className={s.pointBody}>
                 BuilderHQ reads every quote the way a builder does: what&apos;s
@@ -115,25 +124,18 @@ export default function OwnerAdvisoryPage() {
                 out later.
               </p>
             </Reveal>
-            <Reveal delay={0.08}>
+            <Reveal delay={0.16}>
               <h3 className={s.pointTitle}>Your contract, before you sign.</h3>
               <p className={s.pointBody}>
                 BuilderHQ flags the clauses that cost homeowners most, while you can
                 still change them, not after.
               </p>
             </Reveal>
-            <Reveal delay={0.16}>
+            <Reveal delay={0.24}>
               <h3 className={s.pointTitle}>Only builders worth your time.</h3>
               <p className={s.pointBody}>
                 Only vetted Melbourne builders make it onto the platform. No
                 lead-selling, no free-for-all, no chasing.
-              </p>
-            </Reveal>
-            <Reveal delay={0.24}>
-              <h3 className={s.pointTitle}>No commissions. Ever.</h3>
-              <p className={s.pointBody}>
-                BuilderHQ is never paid by builders. The only side it answers to is
-                yours, which is the whole point.
               </p>
             </Reveal>
           </div>
@@ -146,10 +148,10 @@ export default function OwnerAdvisoryPage() {
           <Reveal>
             <p className={s.sectionEyebrow}>Why there&apos;s no cost</p>
             <p className={s.whyfree}>
-              BuilderHQ is taking a small number of Melbourne projects into the
-              program while the service is refined and the first case studies are
-              built. It takes no commissions from builders, which is{" "}
-              <b>exactly why the advice stays honest</b>.
+              BuilderHQ is taking on a small number of Melbourne projects while the
+              program is refined and the first case studies are built. Places are
+              limited and chosen by hand, so{" "}
+              <b>every owner in the program gets our full attention</b>.
             </p>
           </Reveal>
         </section>
@@ -170,7 +172,7 @@ export default function OwnerAdvisoryPage() {
               <li className={s.eligItem}>
                 <span className={s.eligNum}>01</span>
                 <span>
-                  Melbourne metropolitan <b>residential</b> projects
+                  Melbourne <b>residential</b> projects
                 </span>
               </li>
               <li className={s.eligItem}>
@@ -198,7 +200,7 @@ export default function OwnerAdvisoryPage() {
         {/* ── Final CTA ── */}
         <section className={s.cta}>
           <Reveal>
-            <h2 className={s.ctaHead}>Ready to have someone in your corner?</h2>
+            <h2 className={s.ctaHead}>Ready to have BuilderHQ in your corner?</h2>
             <div className={s.ctaActions}>
               <a href="#start" className={s.ctaBtn}>
                 Start your advisory <span aria-hidden>→</span>
