@@ -1,12 +1,16 @@
 /**
  * gen-icons.mjs — regenerate the site favicons from the brand icon.
  *
- * Source of truth: public/brand/BuilderHQ_Icon.png — the transparent,
- * already-centred teal "b" mark (1024 square). We keep it backgroundless
- * (no tile) and simply downscale to each Next.js file-convention size:
+ * Source of truth: public/brand/BuilderHQ_Icon.png — the transparent teal "b".
+ * We trim it tight and re-centre it on a square canvas (the supplied art sits a
+ * few px off-centre), keep it backgroundless, and downscale to each Next.js
+ * file-convention size:
  *   src/app/favicon.ico   (PNG-in-ICO, 16/32/48)
  *   src/app/icon.png      (512)
  *   src/app/apple-icon.png(180)
+ *
+ * Pixel-perfect centring matters for Google's search-result favicon, which
+ * crops the square into a circle and exaggerates any offset.
  *
  * Run: node scripts/gen-icons.mjs
  */
@@ -19,11 +23,18 @@ const OUT = {
   icon: "src/app/icon.png",
   apple: "src/app/apple-icon.png",
 };
-const src = readFileSync(SRC);
 
-// Downscale the square, transparent source to a size (preserves framing).
+// Trim to the tight mark, then re-centre on a square transparent canvas.
+const trimmed = await sharp(readFileSync(SRC)).trim({ threshold: 10 }).png().toBuffer();
+const master = await sharp({
+  create: { width: 1024, height: 1024, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+})
+  .composite([{ input: trimmed, gravity: "center" }])
+  .png()
+  .toBuffer();
+
 async function png(size) {
-  return sharp(src)
+  return sharp(master)
     .resize(size, size, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -68,16 +79,26 @@ writeFileSync(OUT.ico, ico([
 writeFileSync(OUT.icon, await png(512));
 writeFileSync(OUT.apple, await png(180));
 
-// review previews: the transparent icon on a white tab and on dark chrome.
-async function on(bg, size, name) {
-  const m = await png(size);
+// review previews: square on white/dark, and a circle (how Google renders it).
+async function square(bg, size, name) {
   const out = await sharp({ create: { width: size, height: size, channels: 4, background: bg } })
-    .composite([{ input: m }])
+    .composite([{ input: await png(size) }])
     .png()
     .toBuffer();
   writeFileSync("/tmp/prev_" + name + ".png", out);
 }
-await on("#ffffff", 64, "white64");
-await on("#03090f", 64, "dark64");
+async function circle(bg, size, name) {
+  const onbg = await sharp({ create: { width: size, height: size, channels: 4, background: bg } })
+    .composite([{ input: await png(size) }])
+    .png()
+    .toBuffer();
+  const mask = Buffer.from(
+    `<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`,
+  );
+  const out = await sharp(onbg).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
+  writeFileSync("/tmp/prev_" + name + ".png", out);
+}
+await square("#ffffff", 64, "white64");
+await circle("#ffffff", 120, "circle");
 writeFileSync("/tmp/prev_512.png", await png(512));
-console.log("wrote", Object.values(OUT).join(", "), "+ previews");
+console.log("wrote", Object.values(OUT).join(", "), "+ previews (incl. circle)");
