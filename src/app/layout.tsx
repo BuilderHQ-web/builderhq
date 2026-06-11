@@ -57,12 +57,6 @@ export const metadata: Metadata = {
     "townhouse development",
     "project tendering",
   ],
-  icons: {
-    icon: [
-      { url: "/brand/BuilderHQ_White_Text.png", type: "image/png", sizes: "500x500" },
-    ],
-    apple: "/brand/BuilderHQ_White_Text.png",
-  },
   openGraph: {
     type: "website",
     siteName: "BuilderHQ",
