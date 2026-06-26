@@ -90,7 +90,11 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar role={role} initialUnreadMessages={initialUnreadMessages} />
+      <Sidebar
+        role={role}
+        initialUnreadMessages={initialUnreadMessages}
+        fbaActive={isFounding}
+      />
       {/* Touch-device counterpart to the sidebar. Always mounted so
           the hamburger trigger can open it via custom event; hidden
           at lg+ via internal `lg:hidden`. */}

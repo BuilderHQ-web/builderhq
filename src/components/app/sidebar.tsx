@@ -72,7 +72,7 @@ const builderNav: NavSection[] = [
   {
     title: "Builder",
     items: [
-      { href: "/builder/access", label: "Founding access", icon: Sparkles, disabled: true },
+      { href: "/builder/access", label: "Founding access", icon: Sparkles },
       { href: "/builder/profile", label: "Public profile", icon: Hammer },
     ],
   },
@@ -114,11 +114,19 @@ interface SidebarProps {
   /** Server-rendered unread message count so the badge is correct
    *  on first paint. The component soft-polls from there. */
   initialUnreadMessages?: number;
+  /** Builder holds an active Founding Builder Access grant. FBA is being
+   *  retired: the "Founding access" link stays live for grant-holders and
+   *  is a dimmed stub for everyone else (new builders never had it). */
+  fbaActive?: boolean;
 }
 
 const SIDEBAR_POLL_MS = 30_000;
 
-export function Sidebar({ role, initialUnreadMessages = 0 }: SidebarProps) {
+export function Sidebar({
+  role,
+  initialUnreadMessages = 0,
+  fbaActive = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const sections = navByRole[role];
 
@@ -159,15 +167,23 @@ export function Sidebar({ role, initialUnreadMessages = 0 }: SidebarProps) {
               </div>
             ) : null}
             <ul className="flex flex-col gap-px">
-              {section.items.map((item) => (
-                <li key={item.href}>
-                  <NavLink
-                    item={item}
-                    active={isActive(pathname, item.href)}
-                    badge={item.badgeKey ? badges[item.badgeKey] : 0}
-                  />
-                </li>
-              ))}
+              {section.items.map((item) => {
+                // "Founding access" is being retired: live for builders who
+                // still hold an active grant, a dimmed stub for everyone else.
+                const navItem =
+                  item.href === "/builder/access"
+                    ? { ...item, disabled: !fbaActive }
+                    : item;
+                return (
+                  <li key={navItem.href}>
+                    <NavLink
+                      item={navItem}
+                      active={isActive(pathname, navItem.href)}
+                      badge={navItem.badgeKey ? badges[navItem.badgeKey] : 0}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
