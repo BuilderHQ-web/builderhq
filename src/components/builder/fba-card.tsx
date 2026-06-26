@@ -213,10 +213,8 @@ function FbaInactiveCard({
   reason: "no_grant" | "expired" | "revoked";
 }) {
   const headline =
-    reason === "expired"
+    reason === "expired" || reason === "revoked"
       ? "Founding Access has ended"
-      : reason === "revoked"
-      ? "Founding Access was revoked"
       : "Founding Access not active";
   const sub =
     reason === "no_grant"

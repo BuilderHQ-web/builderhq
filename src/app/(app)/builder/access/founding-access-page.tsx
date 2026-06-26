@@ -125,11 +125,9 @@ function Hero({
     : null;
   const headline = status.active
     ? "Founding access · live"
-    : status.reason === "expired"
+    : status.reason === "expired" || status.reason === "revoked"
       ? "Founding access · ended"
-      : status.reason === "revoked"
-        ? "Founding access · revoked"
-        : `Founding seats close ${formatDate(cutoffDate)}`;
+      : `Founding seats close ${formatDate(cutoffDate)}`;
 
   return (
     <section className="relative overflow-hidden border-b border-border-subtle">
@@ -383,13 +381,11 @@ function InactiveStatusPanel({
     cutoffDate.getTime() > Date.now();
 
   const heading =
-    status.reason === "expired"
+    status.reason === "expired" || status.reason === "revoked"
       ? "Your founding window has closed"
-      : status.reason === "revoked"
-        ? "Founding access was revoked"
-        : stillEligible
-          ? "Claim a founding seat"
-          : "Founding access not active";
+      : stillEligible
+        ? "Claim a founding seat"
+        : "Founding access not active";
 
   const sub =
     status.reason === "no_grant" && stillEligible

@@ -23,8 +23,12 @@ import {
 import { sql } from "drizzle-orm";
 
 import { users } from "@/modules/users";
-import { projects } from "@/modules/projects";
-import { tenders } from "@/modules/tenders";
+// Import the FK target tables from their schema files directly, NOT the
+// module barrels — the barrels re-export server-only services, which the
+// drizzle-kit schema loader (db:generate) can't import. Every other
+// schema.ts follows this same rule.
+import { projects } from "@/modules/projects/schema";
+import { tenders } from "@/modules/tenders/schema";
 
 export const adminActionKindEnum = pgEnum("admin_action_kind", [
   "builder_approved",

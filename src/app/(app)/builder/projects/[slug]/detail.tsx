@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -27,10 +27,13 @@ import {
   Briefcase,
   MessageSquare,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 
 import {
   unlockProjectAction,
+  startUnlockCheckoutAction,
+  amIUnlockedAction,
   saveProjectAction,
   unsaveProjectAction,
   getBuilderDownloadUrlAction,
@@ -180,9 +183,55 @@ export function ProjectDetail({
   const router = useRouter();
   const [unlocked, setUnlocked] = useState(unlockedInitial);
   const [saved, setSaved] = useState(savedInitial);
+  const [confirming, setConfirming] = useState(false);
   const [unlocking, startUnlock] = useTransition();
   const [savingPending, startSave] = useTransition();
   const meta = TYPE_META[preview.type];
+
+  // Returning from Stripe Checkout: ?unlock=success (poll until the
+  // webhook has granted the unlock) or ?unlock=cancelled (no charge made).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("unlock");
+    if (!status) return;
+    // Strip the query so a manual refresh doesn't re-trigger this.
+    window.history.replaceState({}, "", window.location.pathname);
+
+    if (status === "cancelled") {
+      toast.error("Checkout cancelled", "No charge was made — you can unlock any time.");
+      return;
+    }
+    if (status === "success" && !unlockedInitial) {
+      // Deferred so it isn't a synchronous setState in the effect body.
+      queueMicrotask(() => setConfirming(true));
+      let tries = 0;
+      const tick = async () => {
+        tries += 1;
+        const r = await amIUnlockedAction(preview.id);
+        if (r.ok && r.value.unlocked) {
+          setUnlocked(true);
+          setConfirming(false);
+          toast.success(
+            "Project unlocked",
+            "Payment received — message the owner and submit your tender.",
+          );
+          router.refresh();
+          return;
+        }
+        if (tries >= 10) {
+          setConfirming(false);
+          toast.success(
+            "Payment received",
+            "We're finalising your unlock — refresh in a moment if it's not showing.",
+          );
+          return;
+        }
+        window.setTimeout(tick, 1500);
+      };
+      window.setTimeout(tick, 1200);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onToggleSave = () => {
     startSave(async () => {
@@ -227,6 +276,46 @@ export function ProjectDetail({
       setUnlocked(true);
       toast.success("Project unlocked", "You can now message the owner and submit a tender.");
       router.refresh();
+    });
+  };
+
+  // Paid unlock → hosted Stripe Checkout. The unlock itself is granted
+  // server-side by the webhook on payment capture; we hand off to the
+  // secure checkout URL and the useEffect above handles the return.
+  const onPaidUnlock = () => {
+    startUnlock(async () => {
+      const r = await startUnlockCheckoutAction(preview.slug);
+      if (!r.ok) {
+        const reason = (r.error.details as { reason?: string } | undefined)?.reason;
+        if (reason === "viewer_mode") {
+          toast.error(
+            "Verify your business to unlock",
+            "We need to confirm your ABN + licence first. Opening your profile.",
+          );
+          router.push("/builder/profile");
+          return;
+        }
+        if (reason === "project_full") {
+          toast.error(
+            "Project is full",
+            "Another builder unlocked the last spot — try a similar project.",
+          );
+          router.refresh();
+          return;
+        }
+        toast.error("Couldn't start checkout", r.error.message);
+        return;
+      }
+      if (r.value.alreadyUnlocked) {
+        setUnlocked(true);
+        toast.success("Already unlocked", "You already have access to this project.");
+        router.refresh();
+        return;
+      }
+      if (r.value.url) {
+        // Full-page redirect to Stripe's hosted checkout page.
+        window.location.href = r.value.url;
+      }
     });
   };
 
@@ -537,6 +626,12 @@ export function ProjectDetail({
               </KvGrid>
             </Card>
             </Reveal>
+
+            {!unlocked ? (
+              <Reveal immediate delay={0.24}>
+                <UnlockBenefitsCard priceAud={priceAud} documents={documents.length} />
+              </Reveal>
+            ) : null}
           </div>
         </div>
 
@@ -586,6 +681,8 @@ export function ProjectDetail({
           slug={preview.slug}
           tenderStatus={myTenderStatus}
         />
+      ) : confirming ? (
+        <ConfirmingBar />
       ) : preview.unlockedCount >= UNLOCK_CAP ? (
         <ProjectFullBar />
       ) : viewerMode ? (
@@ -601,6 +698,7 @@ export function ProjectDetail({
           unlockedCount={preview.unlockedCount}
           unlocking={unlocking}
           onUnlock={onUnlock}
+          onPaidUnlock={onPaidUnlock}
         />
       )}
     </div>
@@ -696,6 +794,7 @@ function UnlockBar({
   unlockedCount,
   unlocking,
   onUnlock,
+  onPaidUnlock,
 }: {
   priceAud: number;
   documents: number;
@@ -703,6 +802,7 @@ function UnlockBar({
   unlockedCount: number;
   unlocking: boolean;
   onUnlock: () => void;
+  onPaidUnlock: () => void;
 }) {
   const fbaActive = fbaStatus.active;
   const hasCredits = fbaActive && fbaStatus.remainingThisCycle > 0;
@@ -711,6 +811,19 @@ function UnlockBar({
   // unpopular). When ≥1, surface the urgency.
   const spotsLeft = Math.max(0, UNLOCK_CAP - unlockedCount);
   const showScarcity = unlockedCount > 0;
+  const scarcity = showScarcity ? (
+    <span className={cn("ml-1.5", spotsLeft === 1 ? "text-warning font-semibold" : "")}>
+      · {spotsLeft === 1 ? "1 spot left" : `${spotsLeft} of ${UNLOCK_CAP} spots open`}
+    </span>
+  ) : null;
+
+  // Shared CTA styling for both the FBA and paid buttons.
+  const ctaClass = cn(
+    "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
+    "bg-accent text-accent-contrast hover:bg-accent-hover",
+    "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+    unlocking && "opacity-70 cursor-not-allowed",
+  );
 
   return (
     <div
@@ -722,24 +835,17 @@ function UnlockBar({
       )}
     >
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-        {/* Left — status / pricing */}
-        <div className="min-w-0 flex items-start gap-3">
-          <span
-            className={cn(
-              "size-10 rounded-md border flex items-center justify-center shrink-0",
-              hasCredits
-                ? "bg-accent-muted/60 border-border-accent text-accent-light"
-                : "bg-warning/[0.08] border-warning/30 text-warning",
-            )}
-          >
-            {hasCredits ? <Sparkles className="size-4" /> : <Lock className="size-4" />}
-          </span>
-          <div className="min-w-0">
-            {hasCredits ? (
-              <>
+        {hasCredits ? (
+          <>
+            {/* Left — FBA free unlock */}
+            <div className="min-w-0 flex items-start gap-3">
+              <span className="size-10 rounded-md border bg-accent-muted/60 border-border-accent text-accent-light flex items-center justify-center shrink-0">
+                <Sparkles className="size-4" />
+              </span>
+              <div className="min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-[13px] font-semibold text-accent-light">
-                    Unlock free with FBA
+                    Unlock free with Founding Access
                   </span>
                   <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
                     <span className="line-through decoration-[rgba(255,255,255,0.35)] decoration-1">
@@ -754,81 +860,74 @@ function UnlockBar({
                   {fbaStatus.remainingThisCycle} of {fbaStatus.monthlyQuota} free
                   unlocks left this cycle · address · owner contact ·{" "}
                   {documents} document{documents === 1 ? "" : "s"}
-                  {showScarcity ? (
-                    <span
-                      className={cn(
-                        "ml-1.5",
-                        spotsLeft === 1 ? "text-warning font-semibold" : "",
-                      )}
-                    >
-                      ·{" "}
-                      {spotsLeft === 1
-                        ? "1 spot left"
-                        : `${spotsLeft} of ${UNLOCK_CAP} spots open`}
-                    </span>
-                  ) : null}
+                  {scarcity}
                 </div>
-              </>
-            ) : (
-              <>
+              </div>
+            </div>
+            {/* Right — FBA CTA */}
+            <button type="button" onClick={onUnlock} disabled={unlocking} className={ctaClass}>
+              {unlocking ? <Loader2 className="size-4 animate-spin" /> : <Unlock className="size-4" />}
+              {unlocking ? "Unlocking…" : "Unlock with Founding Access"}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Left — paid unlock */}
+            <div className="min-w-0 flex items-start gap-3">
+              <span className="size-10 rounded-md border bg-accent-muted/50 border-border-accent text-accent-light flex items-center justify-center shrink-0">
+                <Lock className="size-4" />
+              </span>
+              <div className="min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-[13px] font-semibold text-text">
-                    {fbaActive
-                      ? "Cycle credits used"
-                      : "Free during founding launch"}
+                    Unlock this project
                   </span>
-                  <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
-                    <span className="line-through decoration-[rgba(255,255,255,0.35)] decoration-1">
-                      ${priceAud}
-                    </span>
-                    <span className="text-accent-light font-display text-[16px] leading-none">
-                      $0
-                    </span>
+                  <span className="font-display text-accent-light text-[20px] leading-none">
+                    ${priceAud}
                   </span>
+                  <span className="text-[11px] text-text-dim">one-off</span>
+                  {scarcity}
                 </div>
-                <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
-                  {fbaActive
-                    ? "Your cycle resets soon — see Founding access for the exact date."
-                    : "Founding Builder Access is one click — free unlocks while we open the platform."}
+                <div className="text-[11.5px] text-text-dim mt-0.5">
+                  Exact address · owner contact · {documents} document
+                  {documents === 1 ? "" : "s"} · message the owner
                 </div>
-              </>
-            )}
+                <div className="mt-1 inline-flex items-center gap-1.5 text-[10.5px] text-text-dim">
+                  <ShieldCheck className="size-3 text-accent-light/80" />
+                  Secure checkout by Stripe · card, Apple&nbsp;Pay &amp; Google&nbsp;Pay
+                </div>
+              </div>
+            </div>
+            {/* Right — paid CTA */}
+            <button type="button" onClick={onPaidUnlock} disabled={unlocking} className={ctaClass}>
+              {unlocking ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+              {unlocking ? "Redirecting…" : `Unlock for $${priceAud}`}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ConfirmingBar — shown after returning from Stripe with ?unlock=success
+ * while we poll for the webhook to grant the unlock (usually a second or
+ * two). Keeps the moment feeling instant + intentional rather than blank.
+ */
+function ConfirmingBar() {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.06)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center gap-3">
+        <span className="size-10 rounded-md border border-border-accent bg-accent-muted/50 text-accent-light flex items-center justify-center shrink-0">
+          <Loader2 className="size-4 animate-spin" />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[13px] font-semibold text-text">Confirming your payment…</div>
+          <div className="text-[11.5px] text-text-dim mt-0.5">
+            Unlocking your project — this only takes a moment.
           </div>
         </div>
-
-        {/* Right — primary CTA */}
-        {hasCredits ? (
-          <button
-            type="button"
-            onClick={onUnlock}
-            disabled={unlocking}
-            className={cn(
-              "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
-              "bg-accent text-accent-contrast hover:bg-accent-hover",
-              "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
-              unlocking && "opacity-70 cursor-not-allowed",
-            )}
-          >
-            {unlocking ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Unlock className="size-4" />
-            )}
-            {unlocking ? "Unlocking…" : "Unlock with FBA"}
-          </button>
-        ) : (
-          <Link
-            href="/builder/access"
-            className={cn(
-              "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
-              "bg-accent text-accent-contrast hover:bg-accent-hover",
-              "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
-            )}
-          >
-            <Sparkles className="size-3.5" />
-            {fbaActive ? "View cycle status" : "Claim founder access"}
-          </Link>
-        )}
       </div>
     </div>
   );
@@ -964,6 +1063,52 @@ function ViewerModeBar({
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * UnlockBenefitsCard — a clear, scannable panel (right column, under
+ * Lifecycle) spelling out exactly what unlocking buys. Only shown while
+ * locked; once unlocked it's redundant.
+ */
+function UnlockBenefitsCard({
+  priceAud,
+  documents,
+}: {
+  priceAud: number;
+  documents: number;
+}) {
+  const items = [
+    "Exact street address",
+    ...(documents > 0
+      ? [`${documents} project document${documents === 1 ? "" : "s"} to download`]
+      : []),
+    "Owner's name & contact details",
+    "Direct messaging with the owner",
+    "Submit a tender on the project",
+  ];
+  return (
+    <Card title="What you'll unlock" icon={<Unlock className="size-4" />}>
+      <ul className="space-y-2.5">
+        {items.map((t) => (
+          <li key={t} className="flex items-start gap-2.5 text-[13px] text-text-muted">
+            <span className="mt-[1px] size-4 rounded-full bg-accent-muted/60 border border-border-accent flex items-center justify-center shrink-0">
+              <Check className="size-2.5 text-accent-light" />
+            </span>
+            <span className="leading-[1.5]">{t}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-dim">
+          <ShieldCheck className="size-3 text-accent-light/80" />
+          Secure one-off payment
+        </span>
+        <span className="font-display text-accent-light text-[18px] leading-none">
+          ${priceAud}
+        </span>
+      </div>
+    </Card>
   );
 }
 
