@@ -13,10 +13,10 @@
 import type { ProjectRow } from "./schema";
 
 export const UNLOCK_PRICE_AUD: Record<ProjectRow["type"], number> = {
-  renovation: 99,
-  extension: 149,
-  single_dwelling: 199,
-  multi_dwelling: 249,
+  renovation: 49,
+  extension: 99,
+  single_dwelling: 149,
+  multi_dwelling: 199,
 };
 
 export function unlockPriceFor(type: ProjectRow["type"]): number {

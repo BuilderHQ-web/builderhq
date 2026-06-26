@@ -22,6 +22,7 @@ import {
   type MarketplacePreview,
 } from "@/modules/projects";
 import { getDownloadUrlForUnlocked } from "@/modules/documents";
+import { createUnlockCheckout } from "@/modules/payments";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireBuilder(): Promise<Result<ActorContext>> {
@@ -57,6 +58,39 @@ export async function unlockProjectAction(
 
   // Caller will already have the slug; we don't re-resolve here.
   return ok({ unlocked: true as const, preview: null });
+}
+
+/**
+ * Start a paid unlock checkout. Returns the hosted Stripe Checkout URL
+ * for the client to redirect to (`window.location.href = url`), or a flag
+ * that the builder already holds the unlock (client just reloads the
+ * preview). All eligibility / cap gating happens in the service before any
+ * Stripe call; the unlock itself is granted by the webhook on capture.
+ */
+export async function startUnlockCheckoutAction(
+  slug: string,
+): Promise<Result<{ url: string | null; alreadyUnlocked: boolean }>> {
+  const a = await requireBuilder();
+  if (!a.ok) return a;
+  if (!canUnlock(a.value)) {
+    return fail("forbidden", "Only builders can unlock projects.");
+  }
+  const r = await createUnlockCheckout({ builderId: a.value.id, slug });
+  if (!r.ok) return r;
+  return ok({ url: r.value.url, alreadyUnlocked: r.value.alreadyUnlocked });
+}
+
+/**
+ * Poll helper for the post-checkout return screen. The unlock is granted
+ * asynchronously by the Stripe webhook (on payment capture), so the
+ * success page polls this until it flips true.
+ */
+export async function amIUnlockedAction(
+  projectId: string,
+): Promise<Result<{ unlocked: boolean }>> {
+  const a = await requireBuilder();
+  if (!a.ok) return a;
+  return ok({ unlocked: await isUnlocked(a.value.id, projectId) });
 }
 
 export async function saveProjectAction(

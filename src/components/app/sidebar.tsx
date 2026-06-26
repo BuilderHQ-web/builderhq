@@ -32,6 +32,8 @@ interface NavItem {
   icon: LucideIcon;
   /** Phase the route ships in. Items without it are live now. */
   soon?: string;
+  /** Render as a dimmed, non-clickable stub (feature being retired). */
+  disabled?: boolean;
   /** Symbolic badge key — sidebar resolves to a live number. */
   badgeKey?: "messages";
 }
@@ -70,7 +72,7 @@ const builderNav: NavSection[] = [
   {
     title: "Builder",
     items: [
-      { href: "/builder/access", label: "Founding access", icon: Sparkles },
+      { href: "/builder/access", label: "Founding access", icon: Sparkles, disabled: true },
       { href: "/builder/profile", label: "Public profile", icon: Hammer },
     ],
   },
@@ -184,6 +186,23 @@ function NavLink({
   badge: number;
 }) {
   const Icon = item.icon;
+  if (item.disabled) {
+    // Dimmed, non-interactive stub — feature being retired.
+    return (
+      <div
+        aria-disabled="true"
+        title="Founding access is winding down"
+        className={cn(
+          "group relative flex items-center gap-2.5 rounded-md px-3 py-2",
+          "font-ui text-[13px] tracking-[-0.005em] select-none cursor-not-allowed",
+          "text-text-faint/55",
+        )}
+      >
+        <Icon className="size-4 shrink-0 text-text-faint/45" />
+        <span className="flex-1 truncate">{item.label}</span>
+      </div>
+    );
+  }
   return (
     <Link
       href={item.href}

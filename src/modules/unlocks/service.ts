@@ -50,7 +50,7 @@ import { unlocks, savedProjects, type UnlockRow } from "./schema";
  * credit / payment logic. We don't burn an FBA credit on a builder
  * who isn't allowed to unlock anyway.
  */
-async function checkUnlockEligibility(
+export async function checkUnlockEligibility(
   builderId: string,
 ): Promise<Result<{ ok: true }>> {
   const [profile] = await db
@@ -172,7 +172,13 @@ async function dispatchUnlock(
 export async function unlockProject(
   builderId: string,
   projectId: string,
-  options: { source?: UnlockRow["source"] } = {},
+  options: {
+    source?: UnlockRow["source"];
+    /** Stripe payment intent id — set on the paid path so the row records
+     *  which charge funded the unlock (and the webhook can tell its own
+     *  unlock apart from a racing one). */
+    stripePaymentIntentId?: string | null;
+  } = {},
 ): Promise<Result<UnlockRow>> {
   // Already unlocked? Return the existing row.
   const [existing] = await db
@@ -194,7 +200,12 @@ export async function unlockProject(
   // Caller-forced source (e.g. Stripe webhook, admin override).
   // Still cap-enforced — admins shouldn't blow past the rule by accident.
   if (options.source && options.source !== "free") {
-    return insertUnlockWithCap(builderId, projectId, options.source);
+    return insertUnlockWithCap(
+      builderId,
+      projectId,
+      options.source,
+      options.stripePaymentIntentId ?? null,
+    );
   }
 
   // Default: gate on FBA credit.
@@ -232,6 +243,7 @@ async function insertUnlockWithCap(
   builderId: string,
   projectId: string,
   source: UnlockRow["source"],
+  stripePaymentIntentId: string | null = null,
 ): Promise<Result<UnlockRow>> {
   let inserted: UnlockRow | null = null;
   let atCap = false;
@@ -253,7 +265,7 @@ async function insertUnlockWithCap(
 
       const [row] = await tx
         .insert(unlocks)
-        .values({ builderId, projectId, source })
+        .values({ builderId, projectId, source, stripePaymentIntentId })
         .returning();
       inserted = row ?? null;
     });

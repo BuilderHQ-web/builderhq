@@ -24,6 +24,7 @@ export { UNLOCK_CAP } from "./constants";
 
 export {
   unlockProject,
+  checkUnlockEligibility,
   isUnlocked,
   listMyUnlockedProjectIds,
   countMyUnlocks,

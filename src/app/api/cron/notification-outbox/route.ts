@@ -25,7 +25,12 @@ import {
   markOutboxFailed,
   type ClaimedOutboxRow,
 } from "@/modules/notifications";
-import { sendProjectPublishedBuilderEmail } from "@/modules/email";
+import {
+  sendProjectPublishedBuilderEmail,
+  sendUnlockOwnerEmail,
+  sendUnlockBuilderEmail,
+  sendUnlockOpsEmail,
+} from "@/modules/email";
 import { ensureUnsubscribeToken } from "@/modules/projects/unsubscribe";
 
 export const runtime = "nodejs";
@@ -59,13 +64,23 @@ export async function GET(request: NextRequest) {
 
   for (const row of claimed) {
     try {
-      if (row.kind !== "project_published_builder") {
+      // Builder ids are encoded into the unlock kinds (`unlock_owner:<id>`),
+      // so match by prefix.
+      let resendId: string;
+      if (row.kind === "project_published_builder") {
+        resendId = await sendProjectPublished(row);
+      } else if (row.kind.startsWith("unlock_owner")) {
+        resendId = await sendUnlockOwner(row);
+      } else if (row.kind.startsWith("unlock_builder")) {
+        resendId = await sendUnlockBuilder(row);
+      } else if (row.kind.startsWith("unlock_ops")) {
+        resendId = await sendUnlockOps(row);
+      } else {
         // Unknown kind — park it (don't loop forever).
         await markOutboxFailed(row.id, 999, `unknown kind: ${row.kind}`);
         skipped++;
         continue;
       }
-      const resendId = await sendProjectPublished(row);
       await markOutboxSent(row.id, resendId);
       sent++;
     } catch (err) {
@@ -114,6 +129,86 @@ async function sendProjectPublished(row: ClaimedOutboxRow): Promise<string> {
     isInServiceArea: p.isInServiceArea,
     projectUrl: `${BASE}/builder/projects/${p.projectSlug}`,
     unsubscribeUrl,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+  return result.value.id;
+}
+
+/** Owner notice: "<builder> unlocked your project". Returns id or throws. */
+async function sendUnlockOwner(row: ClaimedOutboxRow): Promise<string> {
+  const p = row.payload as {
+    ownerFirstName: string | null;
+    builderCompany: string;
+    builderState: string | null;
+    abnVerified: boolean;
+    anyLicenceVerified: boolean;
+    projectTitle: string;
+    projectSlug: string;
+    builderSlug: string | null;
+  };
+  const result = await sendUnlockOwnerEmail({
+    to: row.toEmail,
+    ownerFirstName: p.ownerFirstName,
+    builderCompany: p.builderCompany,
+    builderState: p.builderState,
+    abnVerified: p.abnVerified,
+    anyLicenceVerified: p.anyLicenceVerified,
+    projectTitle: p.projectTitle,
+    projectUrl: `${BASE}/owner/projects/${p.projectSlug}`,
+    builderProfileUrl: p.builderSlug ? `${BASE}/b/${p.builderSlug}` : null,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+  return result.value.id;
+}
+
+/** Builder receipt with the address + owner contact. Returns id or throws. */
+async function sendUnlockBuilder(row: ClaimedOutboxRow): Promise<string> {
+  const p = row.payload as {
+    builderFirstName: string | null;
+    projectTitle: string;
+    projectAddress: string | null;
+    ownerName: string | null;
+    ownerEmail: string;
+    ownerPhone: string | null;
+    projectSlug: string;
+    unlockedViaFba: boolean;
+  };
+  const result = await sendUnlockBuilderEmail({
+    to: row.toEmail,
+    builderFirstName: p.builderFirstName,
+    projectTitle: p.projectTitle,
+    projectAddress: p.projectAddress,
+    ownerName: p.ownerName,
+    ownerEmail: p.ownerEmail,
+    ownerPhone: p.ownerPhone,
+    projectUrl: `${BASE}/builder/projects/${p.projectSlug}`,
+    unlockedViaFba: p.unlockedViaFba,
+  });
+  if (!result.ok) throw new Error(result.error.message);
+  return result.value.id;
+}
+
+/** Ops heads-up. sendUnlockOpsEmail targets the ops inbox internally. */
+async function sendUnlockOps(row: ClaimedOutboxRow): Promise<string> {
+  const p = row.payload as {
+    projectTitle: string;
+    projectSlug: string;
+    builderCompany: string;
+    builderEmail: string;
+    ownerName: string | null;
+    ownerEmail: string;
+    source: string;
+    unlockedAt: string;
+  };
+  const result = await sendUnlockOpsEmail({
+    projectTitle: p.projectTitle,
+    projectUrl: `${BASE}/builder/projects/${p.projectSlug}`,
+    builderCompany: p.builderCompany,
+    builderEmail: p.builderEmail,
+    ownerName: p.ownerName,
+    ownerEmail: p.ownerEmail,
+    source: p.source,
+    unlockedAt: new Date(p.unlockedAt),
   });
   if (!result.ok) throw new Error(result.error.message);
   return result.value.id;

@@ -26,12 +26,8 @@ import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users/schema";
 import { builderProfiles, projectOwnerProfiles } from "@/modules/profiles/schema";
 
-import { create as createNotification } from "@/modules/notifications";
-import {
-  sendUnlockOwnerEmail,
-  sendUnlockBuilderEmail,
-  sendUnlockOpsEmail,
-} from "@/modules/email";
+import { create as createNotification, enqueueEmails } from "@/modules/notifications";
+import { OPS_EMAIL } from "@/modules/email";
 
 interface DispatchContext {
   unlock: { source: string; unlockedAt: Date };
@@ -83,10 +79,6 @@ export async function dispatchUnlockEvent(input: {
 
     const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
     const ownerProjectUrl = `${base}/owner/projects/${ctx.project.slug}`;
-    const builderProjectUrl = `${base}/builder/projects/${ctx.project.slug}`;
-    const builderProfileUrl = ctx.builder.slug
-      ? `${base}/b/${ctx.builder.slug}`
-      : null;
     const projectAddress =
       [
         ctx.project.addressLine1,
@@ -97,8 +89,20 @@ export async function dispatchUnlockEvent(input: {
         .filter(Boolean)
         .join(", ") || null;
 
+    // Owner gets an instant in-app bell; the three emails go through the
+    // durable notification_outbox so a transient Resend failure is retried
+    // and recorded (resend_id / last_error) instead of being silently
+    // swallowed by Promise.allSettled — which is exactly what dropped an
+    // owner unlock email before. The Vercel cron drainer renders + sends.
+    //
+    // builderId is encoded into each `kind` because the outbox dedups on
+    // (kind, to_email, project_id): the owner and ops recipients are the
+    // SAME address for every builder, so without the builder in the key a
+    // 2nd or 3rd builder unlocking the same project would be deduped away
+    // and the owner/ops would never be told. Re-dispatching the SAME unlock
+    // still dedups correctly (same builder → same kind).
+    const bid = ctx.builder.id;
     await Promise.allSettled([
-      // Owner — bell + email
       createNotification({
         userId: ctx.owner.id,
         kind: "project_unlocked",
@@ -107,40 +111,56 @@ export async function dispatchUnlockEvent(input: {
         body: "They now have your address, contact, and documents.",
         actionUrl: ownerProjectUrl,
       }),
-      sendUnlockOwnerEmail({
-        to: ctx.owner.email,
-        ownerFirstName: ctx.owner.firstName,
-        builderCompany: ctx.builder.company,
-        builderState: ctx.builder.state,
-        abnVerified: ctx.builder.abnVerified,
-        anyLicenceVerified: ctx.builder.anyLicenceVerified,
-        projectTitle: ctx.project.title,
-        projectUrl: ownerProjectUrl,
-        builderProfileUrl,
-      }),
-      // Builder — receipt
-      sendUnlockBuilderEmail({
-        to: ctx.builder.email,
-        builderFirstName: ctx.builder.firstName,
-        projectTitle: ctx.project.title,
-        projectAddress,
-        ownerName: ctx.owner.name,
-        ownerEmail: ctx.owner.email,
-        ownerPhone: ctx.owner.phone,
-        projectUrl: builderProjectUrl,
-        unlockedViaFba: ctx.unlock.source === "founding",
-      }),
-      // Ops — heads-up
-      sendUnlockOpsEmail({
-        projectTitle: ctx.project.title,
-        projectUrl: builderProjectUrl,
-        builderCompany: ctx.builder.company,
-        builderEmail: ctx.builder.email,
-        ownerName: ctx.owner.name,
-        ownerEmail: ctx.owner.email,
-        source: ctx.unlock.source,
-        unlockedAt: ctx.unlock.unlockedAt,
-      }),
+      enqueueEmails([
+        {
+          kind: `unlock_owner:${bid}`,
+          toEmail: ctx.owner.email,
+          userId: ctx.owner.id,
+          projectId: ctx.project.id,
+          payload: {
+            ownerFirstName: ctx.owner.firstName,
+            builderCompany: ctx.builder.company,
+            builderState: ctx.builder.state,
+            abnVerified: ctx.builder.abnVerified,
+            anyLicenceVerified: ctx.builder.anyLicenceVerified,
+            projectTitle: ctx.project.title,
+            projectSlug: ctx.project.slug,
+            builderSlug: ctx.builder.slug,
+          },
+        },
+        {
+          kind: `unlock_builder:${bid}`,
+          toEmail: ctx.builder.email,
+          userId: ctx.builder.id,
+          projectId: ctx.project.id,
+          payload: {
+            builderFirstName: ctx.builder.firstName,
+            projectTitle: ctx.project.title,
+            projectAddress,
+            ownerName: ctx.owner.name,
+            ownerEmail: ctx.owner.email,
+            ownerPhone: ctx.owner.phone,
+            projectSlug: ctx.project.slug,
+            unlockedViaFba: ctx.unlock.source === "founding",
+          },
+        },
+        {
+          kind: `unlock_ops:${bid}`,
+          toEmail: OPS_EMAIL,
+          userId: null,
+          projectId: ctx.project.id,
+          payload: {
+            projectTitle: ctx.project.title,
+            projectSlug: ctx.project.slug,
+            builderCompany: ctx.builder.company,
+            builderEmail: ctx.builder.email,
+            ownerName: ctx.owner.name,
+            ownerEmail: ctx.owner.email,
+            source: ctx.unlock.source,
+            unlockedAt: ctx.unlock.unlockedAt.toISOString(),
+          },
+        },
+      ]),
     ]);
 
     logger.info(

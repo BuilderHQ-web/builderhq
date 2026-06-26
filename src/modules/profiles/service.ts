@@ -27,7 +27,6 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { users } from "@/modules/users";
-import { maybeAutoGrantFounding } from "@/modules/credits";
 
 import {
   builderLicences,
@@ -704,22 +703,9 @@ export async function submitBuilderForApproval(
     })
     .where(eq(builderProfiles.userId, userId));
 
-  // FBA grant — runs whether they auto-approve or fall to manual.
-  // Failure is non-fatal.
-  try {
-    const grant = await maybeAutoGrantFounding(userId);
-    if (grant) {
-      logger.info(
-        { event: "credits.fba.auto_granted", userId, grantId: grant.id },
-        "auto-granted founding builder access",
-      );
-    }
-  } catch (err) {
-    logger.error(
-      { event: "credits.fba.auto_grant_failed", userId, err },
-      "auto-grant FBA threw — continuing onboarding",
-    );
-  }
+  // Founding Builder Access is being retired — new builders are NOT
+  // auto-granted FBA. They go straight to paid unlocks. (Existing grants
+  // keep working until they expire; admins can still grant manually.)
 
   logger.info(
     {
