@@ -24,7 +24,7 @@ import {
   saveProjectAction,
   unsaveProjectAction,
 } from "@/app/(app)/_actions/marketplace";
-import { cn, truncate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { MarketplacePreview } from "@/modules/projects";
 import { unlockPriceFor } from "@/modules/projects/pricing";
 // Constants path (NOT the module index) so we don't pull
@@ -298,12 +298,6 @@ export function ProjectCard({
             />
           )}
         </div>
-
-        {project.description ? (
-          <p className="mt-4 text-[12px] leading-[1.55] text-text-muted truncate">
-            {truncate(project.description, 20)}
-          </p>
-        ) : null}
 
         <div className="mt-auto pt-4 flex items-center justify-between gap-2 border-t border-border-subtle/50">
           <SpotsIndicator

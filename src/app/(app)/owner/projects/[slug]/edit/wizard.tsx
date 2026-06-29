@@ -703,25 +703,27 @@ function Step1Basics({
   disabled: boolean;
   flagMissingRequired?: boolean;
 }) {
-  const titleMissing = flagMissingRequired && !project.title?.trim();
   return (
     <div className="space-y-5">
-      <SectionTitle title="About the project" sub="A clear title and address — that's it for this step." />
+      <SectionTitle title="About the project" sub="The address — that's it for this step." />
 
       {flagMissingRequired ? (
         <FinishBanner project={project} />
       ) : null}
 
       <Card>
-        <Field label="Project title" required error={titleMissing ? "Required to publish your project." : null}>
+        <Field label="Project title">
           <input
             type="text"
-            defaultValue={project.title}
-            disabled={disabled}
-            onChange={(e) => setField("title", e.target.value)}
-            placeholder="e.g. Niddrie townhouse"
-            className={titleMissing ? inputClsErr : inputCls}
+            value={project.title}
+            readOnly
+            disabled
+            className={inputCls}
           />
+          <p className="mt-1.5 text-[12px] text-text-dim">
+            Generated automatically from the type and suburb — this is what
+            builders see, so it never includes your street address.
+          </p>
         </Field>
       </Card>
 

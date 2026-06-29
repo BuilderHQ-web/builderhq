@@ -69,7 +69,9 @@ export type MarketplacePreview = {
   budgetBand: ProjectRow["budgetBand"];
   targetStartMonth: string | null;
   targetCompletionMonth: string | null;
-  description: string | null;
+  // NOTE: the brief/description is deliberately NOT in the pre-unlock
+  // preview — it's free text that could contain the street address or
+  // owner PII. Builders only see it AFTER unlocking (the full project row).
   documentCount: number;
   /**
    * Number of builders who have unlocked this project. Bounded

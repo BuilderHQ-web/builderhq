@@ -56,7 +56,11 @@ export async function create(
   ownerId: string,
   input: CreateProjectInput,
 ): Promise<Result<Project>> {
-  const title = input.title?.trim() || defaultTitleFor(input.type);
+  // Title (and therefore the slug/URL) is always derived from structured
+  // fields — never the owner's free text — so a street address can't leak
+  // in. No suburb at create yet, so it's just the type label for now; it
+  // firms up as the wizard fills suburb/state, and again at publish.
+  const title = deriveProjectTitle(input.type, null, null);
   const slug = await uniqueSlug(title);
 
   const [row] = await db
@@ -101,13 +105,20 @@ export async function update(
     return fail("validation", errors.join(" "), { errors });
   }
 
+  // Title is ALWAYS server-derived from structured fields (type + suburb +
+  // state) — any client-sent `title` in the patch is ignored, so an owner
+  // can't sneak the street address into the title/slug/URL.
+  const mergedSuburb =
+    patch.suburb !== undefined ? patch.suburb : existing.suburb;
+  const mergedState = patch.state !== undefined ? patch.state : existing.state;
+  const nextTitle = deriveProjectTitle(existing.type, mergedSuburb, mergedState);
+
   // A LIVE project's required fields must not be cleared — that would
   // break a published listing. Validate the merged result up-front and
   // reject (without persisting) so the client can show inline errors.
   // Drafts are exempt: they're allowed to be incomplete.
   if (existing.status !== "draft") {
-    const merged = { ...existing, ...patch } as ProjectRow;
-    if (typeof patch.title === "string") merged.title = patch.title.trim();
+    const merged = { ...existing, ...patch, title: nextTitle } as ProjectRow;
     const fieldErrors = validateSaveReadiness(merged);
     if (Object.keys(fieldErrors).length > 0) {
       return fail(
@@ -118,15 +129,11 @@ export async function update(
     }
   }
 
-  // Slug regen only while drafting — published URLs stay stable.
+  // Slug follows the derived title; regenerated only while drafting so
+  // published URLs stay stable.
   let nextSlug = existing.slug;
-  if (
-    existing.status === "draft" &&
-    typeof patch.title === "string" &&
-    patch.title.trim() &&
-    patch.title.trim() !== existing.title
-  ) {
-    nextSlug = await uniqueSlug(patch.title.trim(), existing.id);
+  if (existing.status === "draft" && nextTitle !== existing.title) {
+    nextSlug = await uniqueSlug(nextTitle, existing.id);
   }
 
   // When the patch updates renovationScopeTags (multi-select), also
@@ -142,7 +149,7 @@ export async function update(
     .update(projects)
     .set({
       ...patch,
-      ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+      title: nextTitle,
       ...(derivedSingleScope !== undefined
         ? { renovationScope: derivedSingleScope }
         : {}),
@@ -265,11 +272,30 @@ export async function publish(
     );
   }
 
+  // Finalise the address-safe public name + slug from the now-complete
+  // structured fields, the moment before it becomes a public URL. This also
+  // heals any older draft whose title/slug predate the derive-from-fields
+  // rule (e.g. an owner-typed address title).
+  const [proj] = await db
+    .select({
+      type: projects.type,
+      suburb: projects.suburb,
+      state: projects.state,
+    })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, ownerId)))
+    .limit(1);
+  if (!proj) return fail("internal", "Failed to publish project.");
+  const finalTitle = deriveProjectTitle(proj.type, proj.suburb, proj.state);
+  const finalSlug = await uniqueSlug(finalTitle, projectId);
+
   const [row] = await db
     .update(projects)
     .set({
       status: "published",
       publishedAt: new Date(),
+      title: finalTitle,
+      slug: finalSlug,
       updatedAt: new Date(),
     })
     .where(
@@ -434,7 +460,6 @@ export async function listForMarketplace(
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
-      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -476,7 +501,6 @@ export async function getMarketplacePreview(
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
-      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -543,7 +567,6 @@ export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
-      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -632,19 +655,34 @@ export async function softDelete(
 
 // ── helpers ──────────────────────────────────────────────────────────────
 
-function defaultTitleFor(type: ProjectRow["type"]): string {
-  switch (type) {
-    case "single_dwelling":
-      return "Untitled single dwelling";
-    case "multi_dwelling":
-      return "Untitled multi-dwelling";
-    case "renovation":
-      return "Untitled renovation";
-    case "extension":
-      return "Untitled extension";
-    default:
-      return "Untitled project";
-  }
+const PROJECT_TYPE_TITLE: Record<ProjectRow["type"], string> = {
+  single_dwelling: "Single dwelling",
+  multi_dwelling: "Multi-dwelling",
+  renovation: "Renovation",
+  extension: "Extension",
+};
+
+/**
+ * Public, address-safe project name — derived ONLY from structured fields
+ * (type + suburb + state), NEVER from owner free-text. This is the single
+ * source of truth for the title AND (via slugify) the slug / URL / breadcrumb,
+ * so a street address typed anywhere by the owner can never reach a
+ * builder-visible surface. While a draft has no suburb yet it's just the
+ * type label; it firms up as suburb/state are filled and again at publish.
+ *
+ *   ("multi_dwelling", "Doreen", "VIC") → "Multi-dwelling · Doreen, VIC"
+ *                                        → slug "multi-dwelling-doreen-vic"
+ */
+function deriveProjectTitle(
+  type: ProjectRow["type"],
+  suburb: string | null | undefined,
+  state: string | null | undefined,
+): string {
+  const base = PROJECT_TYPE_TITLE[type];
+  const loc = [suburb?.trim() || null, state || null]
+    .filter(Boolean)
+    .join(", ");
+  return loc ? `${base} · ${loc}` : base;
 }
 
 /** kebab-case + trim + 4-char uniqueness suffix. */

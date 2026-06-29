@@ -143,7 +143,8 @@ interface BuilderProjectFields {
   budgetBand: string | null;
   targetStartMonth: string | null;
   targetCompletionMonth: string | null;
-  description: string | null;
+  // No `description` here — the free-text brief can carry the address/PII and
+  // is never sent pre-unlock. It's added to the unlocked payload below.
   publishedAtIso: string | null;
 }
 
@@ -204,6 +205,7 @@ interface UnlockedBuilderPayload {
   mode: "unlocked_builder";
   project: BuilderProjectFields & {
     addressLine1: string | null;
+    description: string | null;
   };
   documents: OwnerDocumentRow[];
   unlockedCount: number;
@@ -388,7 +390,6 @@ function previewToFields(p: MarketplacePreview): BuilderProjectFields {
     budgetBand: p.budgetBand,
     targetStartMonth: p.targetStartMonth,
     targetCompletionMonth: p.targetCompletionMonth,
-    description: p.description,
     publishedAtIso: p.publishedAt ? p.publishedAt.toISOString() : null,
   };
 }
@@ -538,6 +539,7 @@ async function unlockedBuilderMode(
     project: {
       ...previewToFields(preview),
       addressLine1: full.addressLine1 ?? null,
+      description: full.description ?? null,
     },
     documents,
     unlockedCount: preview.unlockedCount,
@@ -556,7 +558,7 @@ async function unlockedBuilderMode(
 // for drafts, handled in the service). Returns the fresh project fields.
 
 const EDITABLE_FIELDS = [
-  "title",
+  // `title` is server-derived (type + suburb + state) — not owner-editable.
   "description",
   "addressLine1",
   "suburb",
