@@ -51,7 +51,7 @@ import {
   ProjectMessagingPanel,
   totalUnread,
 } from "@/components/app/messaging/project-thread";
-import { cn, truncate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
 
@@ -483,19 +483,22 @@ export function ProjectDetail({
             </Card>
             </Reveal>
 
-            {preview.description ? (
+            {/* Brief — the owner's free-text brief can contain the street
+                address or PII, so it's never shown before unlock (it isn't
+                even sent in the preview payload). Locked prompt pre-unlock,
+                full brief from the unlocked row after. */}
+            {!unlocked || full?.description ? (
               <Reveal immediate delay={0.16}>
                 <Card title="Brief" icon={<FileText className="size-4" />}>
-                  <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                    {unlocked
-                      ? preview.description
-                      : truncate(preview.description, 20)}
-                  </p>
-                  {!unlocked ? (
-                    <p className="mt-2 text-[12px] text-text-dim">
+                  {unlocked ? (
+                    <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
+                      {full?.description}
+                    </p>
+                  ) : (
+                    <p className="text-[12px] text-text-dim">
                       Unlock the project to read the full brief.
                     </p>
-                  ) : null}
+                  )}
                 </Card>
               </Reveal>
             ) : null}
