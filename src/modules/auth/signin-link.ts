@@ -159,6 +159,8 @@ export interface SigninRedemption {
   userId: string;
   email: string;
   firstName: string | null;
+  /** Drives the post-sign-in landing route (dashboardForRole). */
+  role: string | null;
 }
 
 /**
@@ -213,6 +215,7 @@ export async function redeemSigninMagicLink(
       id: users.id,
       email: users.email,
       firstName: users.firstName,
+      role: users.role,
       status: users.status,
       deletedAt: users.deletedAt,
     })
@@ -268,5 +271,6 @@ export async function redeemSigninMagicLink(
     userId: user.id,
     email: user.email,
     firstName: user.firstName,
+    role: user.role,
   });
 }

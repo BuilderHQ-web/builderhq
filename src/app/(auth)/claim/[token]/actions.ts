@@ -23,6 +23,7 @@ import { db } from "@/lib/db";
 import { users } from "@/modules/users";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 import { fail, ok, type Result } from "@/lib/result";
+import { dashboardForRole } from "@/lib/dashboard-route";
 
 export interface ClaimActionState {
   ok?: true;
@@ -108,12 +109,6 @@ async function getUserRole(userId: string): Promise<string | null> {
     .where(eq(users.id, userId))
     .limit(1);
   return row?.role ?? null;
-}
-
-function dashboardForRole(role: string | null): string {
-  if (role === "admin") return "/admin";
-  if (role === "builder") return "/builder";
-  return "/owner";
 }
 
 /**
