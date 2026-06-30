@@ -234,17 +234,19 @@ export default async function BuilderDashboard() {
           </Reveal>
         ) : null}
 
-        {/* ── FBA panel ────────────────────────────────────────────── */}
-        <Reveal immediate delay={0.04}>
-          <section>
-            <SectionKicker>
-              {fbaStatus.active ? "Founding access" : "Access"}
-            </SectionKicker>
-            <div className="mt-5">
-              <FbaCard status={fbaStatus} />
-            </div>
-          </section>
-        </Reveal>
+        {/* ── FBA panel — only for builders with an ACTIVE grant. FBA is
+            being retired, so non-grant-holders (expired / revoked / never had
+            it) see no founding panel on the dashboard at all. */}
+        {fbaStatus.active ? (
+          <Reveal immediate delay={0.04}>
+            <section>
+              <SectionKicker>Founding access</SectionKicker>
+              <div className="mt-5">
+                <FbaCard status={fbaStatus} />
+              </div>
+            </section>
+          </Reveal>
+        ) : null}
 
         {/* ── Pulse strip ─────────────────────────────────────────── */}
         <Reveal immediate delay={0.08}>
