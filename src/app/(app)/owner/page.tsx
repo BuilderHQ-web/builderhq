@@ -43,7 +43,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { redirect } from "next/navigation";
+
 import { auth } from "@/modules/auth";
+import { dashboardForRole } from "@/lib/dashboard-route";
 import {
   getOwnerDashboardData,
   type OwnerDashboardData,
@@ -71,6 +74,12 @@ export default async function OwnerDashboard({
   searchParams?: Promise<{ welcome?: string }>;
 }) {
   const session = await auth();
+  // Defence-in-depth: only project owners belong on this dashboard. A
+  // builder/admin who lands here (e.g. an old link) is bounced to their
+  // own dashboard rather than seeing the owner page under their chrome.
+  if (session?.user?.role && session.user.role !== "project_owner") {
+    redirect(dashboardForRole(session.user.role));
+  }
   const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
 
   const data: OwnerDashboardData = session?.user

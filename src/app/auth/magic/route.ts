@@ -36,6 +36,7 @@ import {
   verificationTokens,
 } from "@/modules/auth";
 import { env } from "@/lib/env";
+import { dashboardForRole } from "@/lib/dashboard-route";
 
 export const runtime = "nodejs";
 
@@ -119,12 +120,16 @@ async function handleSignin(token: string): Promise<NextResponse> {
     return redirectToLoginError("session_failed");
   }
 
-  // Sign-in always lands on /owner. Future: honour the `?next=`
-  // query that was carried through the issue→redeem cycle (stored
-  // in a short-lived cookie or stamped into the token identifier).
-  // For now /owner is the safe default; the dashboard auto-routes
-  // builders elsewhere.
-  const target = new URL("/owner", env.NEXT_PUBLIC_APP_URL);
+  // Land on the dashboard that matches the user's role. Previously this
+  // hardcoded /owner on the assumption the dashboard would auto-route
+  // builders elsewhere — it doesn't, so builders landed on the owner
+  // dashboard (builder chrome + owner page) until they navigated away.
+  // dashboardForRole is the same mapping password login + account claim use.
+  // Future: also honour a `?next=` carried through the issue→redeem cycle.
+  const target = new URL(
+    dashboardForRole(redemption.value.role),
+    env.NEXT_PUBLIC_APP_URL,
+  );
 
   logger.info(
     {

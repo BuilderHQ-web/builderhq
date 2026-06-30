@@ -34,7 +34,10 @@ import {
   X,
 } from "lucide-react";
 
+import { redirect } from "next/navigation";
+
 import { auth } from "@/modules/auth";
+import { dashboardForRole } from "@/lib/dashboard-route";
 import { listForMarketplace, listByIds } from "@/modules/projects";
 import { getBuilderProfile } from "@/modules/profiles";
 import {
@@ -82,6 +85,11 @@ export const dynamic = "force-dynamic";
 
 export default async function BuilderDashboard() {
   const session = await auth();
+  // Defence-in-depth: only builders belong on this dashboard. An owner/
+  // admin who lands here is bounced to their own dashboard.
+  if (session?.user?.role && session.user.role !== "builder") {
+    redirect(dashboardForRole(session.user.role));
+  }
   const userId = session?.user?.id;
   const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
 

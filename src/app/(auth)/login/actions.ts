@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { resendVerificationEmail, signIn } from "@/modules/auth";
 import { users } from "@/modules/users";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
+import { dashboardForRole } from "@/lib/dashboard-route";
 
 export interface LoginActionState {
   error?: string;
@@ -22,12 +23,6 @@ const loginSchema = z.object({
   password: z.string().min(1, "Enter your password"),
   next: z.string().optional(),
 });
-
-function dashboardForRole(role: string | null) {
-  if (role === "admin") return "/admin";
-  if (role === "builder") return "/builder";
-  return "/owner";
-}
 
 /**
  * Login flow:
