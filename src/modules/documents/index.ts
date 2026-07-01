@@ -32,6 +32,7 @@ export {
   listMyDocuments,
   listForProject,
   listActiveForProjectUnchecked,
+  listActiveObjectsForProject,
   listForTenderUnchecked,
   getDownloadUrlForUnlocked,
   softDelete,

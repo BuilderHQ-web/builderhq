@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
@@ -509,42 +509,11 @@ export function ProjectDetail({
               title={`Documents · ${documents.length}`}
               icon={<FileText className="size-4" />}
             >
-              <div className="relative">
-                <div
-                  className={cn(
-                    "transition-[filter] duration-[300ms]",
-                    unlocked ? "" : "blur-md select-none pointer-events-none",
-                  )}
-                >
-                  {documents.length === 0 ? (
-                    <p className="text-[12.5px] text-text-dim">
-                      No documents attached.
-                    </p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {Object.entries(docsByCategory).map(([cat, docs]) => (
-                        <li key={cat}>
-                          <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1.5">
-                            {DOC_CAT_LABEL[cat as DocumentCategory]}
-                          </div>
-                          <ul className="space-y-1.5">
-                            {docs.map((d) => (
-                              <DocRow key={d.id} doc={d} unlocked={unlocked} />
-                            ))}
-                          </ul>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                {!unlocked ? (
-                  <BlurOverlay
-                    icon={<FileText className="size-4" />}
-                    title="Unlock to download documents"
-                    sub={`${documents.length} file${documents.length === 1 ? "" : "s"} attached across ${Object.keys(docsByCategory).length} categor${Object.keys(docsByCategory).length === 1 ? "y" : "ies"}.`}
-                  />
-                ) : null}
-              </div>
+              <DocumentsPanel
+                documents={documents}
+                docsByCategory={docsByCategory}
+                unlocked={unlocked}
+              />
             </Card>
             </Reveal>
           </div>
@@ -1378,43 +1347,254 @@ function BlurOverlay({
   );
 }
 
+/**
+ * Documents card body. Adds "download all" + a select-mode that lets the
+ * builder tick a subset and download just those, on top of the existing
+ * per-file download. Both bulk paths hit the server zip route
+ * (/builder/projects/[slug]/documents/download) so it's one clean download
+ * regardless of how many files — no browser multi-download blocking.
+ * Locked state keeps the blur + overlay exactly as before.
+ */
+function DocumentsPanel({
+  documents,
+  docsByCategory,
+  unlocked,
+}: {
+  documents: Document[];
+  docsByCategory: Record<string, Document[]>;
+  unlocked: boolean;
+}) {
+  const params = useParams();
+  const slug = String((params as { slug?: string } | null)?.slug ?? "");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [zipBusy, setZipBusy] = useState(false);
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  async function downloadZip(ids?: string[]) {
+    if (zipBusy || !slug) return;
+    setZipBusy(true);
+    try {
+      const qs = ids && ids.length ? `?ids=${ids.join(",")}` : "";
+      const res = await fetch(
+        `/builder/projects/${encodeURIComponent(slug)}/documents/download${qs}`,
+      );
+      if (!res.ok) {
+        toast.error("Download failed", "Couldn't prepare the download. Please try again.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${slug || "project"}-documents.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Download failed", "Something went wrong preparing the download.");
+    } finally {
+      setZipBusy(false);
+    }
+  }
+
+  const catCount = Object.keys(docsByCategory).length;
+
+  return (
+    <div className="relative">
+      <div
+        className={cn(
+          "transition-[filter] duration-[300ms]",
+          unlocked ? "" : "blur-md select-none pointer-events-none",
+        )}
+      >
+        {documents.length === 0 ? (
+          <p className="text-[12.5px] text-text-dim">No documents attached.</p>
+        ) : (
+          <>
+            {unlocked ? (
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => downloadZip()}
+                  disabled={zipBusy}
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-sm border border-border-accent bg-accent-muted/40 text-[12px] font-medium text-accent-light transition-colors hover:bg-accent-muted/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {zipBusy && !selectMode ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Download className="size-3.5" />
+                  )}
+                  Download all
+                  <span className="text-text-dim font-normal">· {documents.length}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+                  className={cn(
+                    "inline-flex items-center h-8 px-2.5 rounded-sm border text-[12px] font-medium transition-colors",
+                    selectMode
+                      ? "border-border-strong text-text-muted hover:text-text"
+                      : "border-border-subtle text-text-muted hover:text-accent-light hover:border-border-accent",
+                  )}
+                >
+                  {selectMode ? "Cancel" : "Select files"}
+                </button>
+              </div>
+            ) : null}
+
+            <ul className="space-y-3">
+              {Object.entries(docsByCategory).map(([cat, docs]) => (
+                <li key={cat}>
+                  <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1.5">
+                    {DOC_CAT_LABEL[cat as DocumentCategory]}
+                  </div>
+                  <ul className="space-y-1.5">
+                    {docs.map((d) => (
+                      <DocRow
+                        key={d.id}
+                        doc={d}
+                        unlocked={unlocked}
+                        selectMode={selectMode}
+                        selected={selected.has(d.id)}
+                        onToggle={() => toggle(d.id)}
+                      />
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+
+            {selectMode ? (
+              <div className="mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-sm border border-border-accent bg-accent-muted/30">
+                <span className="text-[12px] text-text-muted">
+                  <span className="text-text font-medium tabular-nums">{selected.size}</span>{" "}
+                  of {documents.length} selected
+                </span>
+                <button
+                  type="button"
+                  onClick={() => downloadZip([...selected])}
+                  disabled={selected.size === 0 || zipBusy}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-sm bg-accent text-accent-contrast text-[12px] font-semibold transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {zipBusy ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Download className="size-3.5" />
+                  )}
+                  Download selected
+                </button>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+
+      {!unlocked ? (
+        <BlurOverlay
+          icon={<FileText className="size-4" />}
+          title="Unlock to download documents"
+          sub={`${documents.length} file${documents.length === 1 ? "" : "s"} attached across ${catCount} categor${catCount === 1 ? "y" : "ies"}.`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function DocRow({
   doc,
   unlocked,
+  selectMode = false,
+  selected = false,
+  onToggle,
 }: {
   doc: Document;
   unlocked: boolean;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
-  return (
-    <li className="flex items-center justify-between gap-3 px-3 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]">
+
+  const meta = (
+    <>
+      {selectMode ? (
+        <span
+          aria-hidden
+          className={cn(
+            "shrink-0 size-4 rounded-[4px] border flex items-center justify-center transition-colors",
+            selected ? "bg-accent border-accent text-accent-contrast" : "border-border-strong",
+          )}
+        >
+          {selected ? <Check className="size-3" strokeWidth={3} /> : null}
+        </span>
+      ) : null}
       <div className="min-w-0">
         <div className="text-[12.5px] font-medium text-text truncate">{doc.filename}</div>
         <div className="text-[10px] text-text-dim">{prettyBytes(doc.sizeBytes)}</div>
       </div>
-      <button
-        type="button"
-        disabled={!unlocked || busy}
-        onClick={async () => {
-          setBusy(true);
-          const r = await getBuilderDownloadUrlAction(doc.id);
-          setBusy(false);
-          if (!r.ok) {
-            toast.error("Download failed", r.error.message);
-            return;
-          }
-          window.open(r.value.url, "_blank", "noopener");
-        }}
-        className={cn(
-          "inline-flex items-center justify-center size-8 rounded-sm border border-border-subtle text-text-muted transition-colors",
-          unlocked
-            ? "hover:text-accent-light hover:border-border-accent"
-            : "opacity-40 cursor-not-allowed",
-        )}
-        title="Download"
-      >
-        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-      </button>
+    </>
+  );
+
+  return (
+    <li
+      className={cn(
+        "flex items-center justify-between gap-3 px-3 py-2 rounded-sm border transition-colors",
+        selectMode && selected
+          ? "border-border-accent bg-accent-muted/30"
+          : "border-border-subtle bg-[rgba(255,255,255,0.022)]",
+      )}
+    >
+      {selectMode ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-pressed={selected}
+          className="flex items-center gap-3 min-w-0 flex-1 text-left"
+        >
+          {meta}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3 min-w-0 flex-1">{meta}</div>
+      )}
+
+      {selectMode ? null : (
+        <button
+          type="button"
+          disabled={!unlocked || busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await getBuilderDownloadUrlAction(doc.id);
+            setBusy(false);
+            if (!r.ok) {
+              toast.error("Download failed", r.error.message);
+              return;
+            }
+            window.open(r.value.url, "_blank", "noopener");
+          }}
+          className={cn(
+            "shrink-0 inline-flex items-center justify-center size-8 rounded-sm border border-border-subtle text-text-muted transition-colors",
+            unlocked
+              ? "hover:text-accent-light hover:border-border-accent"
+              : "opacity-40 cursor-not-allowed",
+          )}
+          title="Download"
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+        </button>
+      )}
     </li>
   );
 }
