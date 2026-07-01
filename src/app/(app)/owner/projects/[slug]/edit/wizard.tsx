@@ -116,12 +116,13 @@ const BUILD_BANDS: Array<{ id: NonNullable<Project["buildSizeBand"]>; label: str
 ];
 
 const EXTENSION_BANDS: Array<{ id: NonNullable<Project["extensionSizeBand"]>; label: string }> = [
-  { id: "under_20", label: "Under 20 m²" },
-  { id: "20_40", label: "20 – 40 m²" },
-  { id: "40_60", label: "40 – 60 m²" },
-  { id: "60_80", label: "60 – 80 m²" },
-  { id: "80_100", label: "80 – 100 m²" },
-  { id: "over_100", label: "100 m²+" },
+  { id: "under_50", label: "Under 50 m²" },
+  { id: "50_100", label: "50 – 100 m²" },
+  { id: "100_150", label: "100 – 150 m²" },
+  { id: "150_200", label: "150 – 200 m²" },
+  { id: "200_250", label: "200 – 250 m²" },
+  { id: "250_300", label: "250 – 300 m²" },
+  { id: "over_300", label: "300 m²+" },
 ];
 
 const AGE_BANDS: Array<{ id: NonNullable<Project["existingAgeBand"]>; label: string }> = [

@@ -87,12 +87,13 @@ const BUILD_LBL: Record<NonNullable<Project["buildSizeBand"]>, string> = {
   over_400: "400 m²+",
 };
 const EXT_SIZE_LBL: Record<NonNullable<Project["extensionSizeBand"]>, string> = {
-  under_20: "Under 20 m²",
-  "20_40": "20 – 40 m²",
-  "40_60": "40 – 60 m²",
-  "60_80": "60 – 80 m²",
-  "80_100": "80 – 100 m²",
-  over_100: "100 m²+",
+  under_50: "Under 50 m²",
+  "50_100": "50 – 100 m²",
+  "100_150": "100 – 150 m²",
+  "150_200": "150 – 200 m²",
+  "200_250": "200 – 250 m²",
+  "250_300": "250 – 300 m²",
+  over_300: "300 m²+",
 };
 const AGE_LBL: Record<NonNullable<Project["existingAgeBand"]>, string> = {
   under_10: "Under 10 yrs",
