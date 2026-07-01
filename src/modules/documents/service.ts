@@ -308,6 +308,36 @@ export async function listActiveForProjectUnchecked(
 }
 
 /**
+ * Server-only: the active project documents with their R2 object keys, for
+ * bulk server-side operations (e.g. zipping a "download all"). Unchecked —
+ * the caller MUST gate access (e.g. builder has unlocked the project).
+ * Never expose `objectKey` to the client.
+ */
+export async function listActiveObjectsForProject(
+  projectId: string,
+): Promise<
+  { id: string; filename: string; objectKey: string; sizeBytes: number }[]
+> {
+  return db
+    .select({
+      id: documents.id,
+      filename: documents.filename,
+      objectKey: documents.objectKey,
+      sizeBytes: documents.sizeBytes,
+    })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.projectId, projectId),
+        eq(documents.status, "active"),
+        isNull(documents.tenderId),
+        isNull(documents.deletedAt),
+      ),
+    )
+    .orderBy(desc(documents.createdAt));
+}
+
+/**
  * List the documents attached to a tender. Used by both:
  *   - the builder editing the tender (sees pending + active), and
  *   - the project owner viewing a submitted tender (active only).
