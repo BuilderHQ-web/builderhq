@@ -128,14 +128,16 @@ export const buildSizeBandEnum = pgEnum("build_size_band", [
   "over_400",
 ]);
 
-/** Extension-size bands (m²). */
+/** Extension-size bands (m²). 50 m² intervals to 300, then a 300+ catch-all
+ *  — wide enough for major additions (basement + extension + studio). */
 export const extensionSizeBandEnum = pgEnum("extension_size_band", [
-  "under_20",
-  "20_40",
-  "40_60",
-  "60_80",
-  "80_100",
-  "over_100",
+  "under_50",
+  "50_100",
+  "100_150",
+  "150_200",
+  "200_250",
+  "250_300",
+  "over_300",
 ]);
 
 /** Age bands for renovation projects (years since built). */
