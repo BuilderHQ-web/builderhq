@@ -460,6 +460,7 @@ export async function listForMarketplace(
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -501,6 +502,7 @@ export async function getMarketplacePreview(
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -567,6 +569,7 @@ export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
       budgetBand: projects.budgetBand,
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
+      description: projects.description,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })

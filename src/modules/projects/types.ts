@@ -69,9 +69,14 @@ export type MarketplacePreview = {
   budgetBand: ProjectRow["budgetBand"];
   targetStartMonth: string | null;
   targetCompletionMonth: string | null;
-  // NOTE: the brief/description is deliberately NOT in the pre-unlock
-  // preview — it's free text that could contain the street address or
-  // owner PII. Builders only see it AFTER unlocking (the full project row).
+  /**
+   * The owner's free-text brief. Product decision (2026-07-03): shown
+   * BEFORE unlock — builders need it to judge fit, and hiding it cost
+   * more unlocks than it protected. It's free text, so listings are
+   * reviewed before going live and owners are steered away from putting
+   * street addresses or contact details in it.
+   */
+  description: string | null;
   documentCount: number;
   /**
    * Number of builders who have unlocked this project. Bounded
