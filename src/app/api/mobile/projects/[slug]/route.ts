@@ -143,8 +143,10 @@ interface BuilderProjectFields {
   budgetBand: string | null;
   targetStartMonth: string | null;
   targetCompletionMonth: string | null;
-  // No `description` here — the free-text brief can carry the address/PII and
-  // is never sent pre-unlock. It's added to the unlocked payload below.
+  /** The owner's brief. Visible pre-unlock (product decision 2026-07-03):
+   *  builders need it to judge fit; listings are reviewed before going
+   *  live so the free text stays address-safe. */
+  description: string | null;
   publishedAtIso: string | null;
 }
 
@@ -205,7 +207,6 @@ interface UnlockedBuilderPayload {
   mode: "unlocked_builder";
   project: BuilderProjectFields & {
     addressLine1: string | null;
-    description: string | null;
   };
   documents: OwnerDocumentRow[];
   unlockedCount: number;
@@ -390,6 +391,7 @@ function previewToFields(p: MarketplacePreview): BuilderProjectFields {
     budgetBand: p.budgetBand,
     targetStartMonth: p.targetStartMonth,
     targetCompletionMonth: p.targetCompletionMonth,
+    description: p.description,
     publishedAtIso: p.publishedAt ? p.publishedAt.toISOString() : null,
   };
 }

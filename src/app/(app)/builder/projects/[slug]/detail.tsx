@@ -484,22 +484,16 @@ export function ProjectDetail({
             </Card>
             </Reveal>
 
-            {/* Brief — the owner's free-text brief can contain the street
-                address or PII, so it's never shown before unlock (it isn't
-                even sent in the preview payload). Locked prompt pre-unlock,
-                full brief from the unlocked row after. */}
-            {!unlocked || full?.description ? (
+            {/* Brief — visible before unlock (product decision 2026-07-03:
+                builders need the brief to judge fit; listings are reviewed
+                before going live so the free text stays address-safe). The
+                unlocked row remains the authoritative source post-unlock. */}
+            {(unlocked ? full?.description : preview.description) ? (
               <Reveal immediate delay={0.16}>
                 <Card title="Brief" icon={<FileText className="size-4" />}>
-                  {unlocked ? (
-                    <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                      {full?.description}
-                    </p>
-                  ) : (
-                    <p className="text-[12px] text-text-dim">
-                      Unlock the project to read the full brief.
-                    </p>
-                  )}
+                  <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
+                    {unlocked ? full?.description : preview.description}
+                  </p>
                 </Card>
               </Reveal>
             ) : null}
