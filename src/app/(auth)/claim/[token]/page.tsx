@@ -99,7 +99,7 @@ export default async function ClaimPage(props: {
         }
       />
 
-      <div className="w-full rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.025)] px-4 py-3 flex items-center justify-between gap-3">
+      <div className="w-full rounded-xl border border-[rgba(24,34,44,0.1)] bg-[rgba(24,34,44,0.04)] px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5 min-w-0 flex-1 text-left">
           <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
             Claiming

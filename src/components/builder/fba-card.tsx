@@ -73,7 +73,7 @@ function FbaActiveCard({
         "relative overflow-hidden rounded-md border p-5 sm:p-6 lg:p-7",
         "border-border-accent/40",
         "shadow-[0_14px_36px_-22px_rgba(0,212,200,0.45)]",
-        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(6,18,30,0.6)_100%)]",
+        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(250,248,243,0.6)_100%)]",
       )}
     >
       {/* corner glow + scan-line sheen */}
@@ -98,7 +98,7 @@ function FbaActiveCard({
         className="pointer-events-none absolute inset-y-0 w-[35%] rounded-full"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.18), transparent)",
+            "linear-gradient(90deg, transparent, rgba(10,125,115,0.18), transparent)",
           filter: "blur(36px)",
         }}
       />
@@ -181,7 +181,7 @@ function FbaActiveCard({
             {Math.round(cyclePct)}%
           </span>
         </div>
-        <div className="relative h-[5px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+        <div className="relative h-[5px] rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: `${cyclePct}%` }}
@@ -229,7 +229,7 @@ function FbaInactiveCard({
       className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))] p-5 sm:p-6 lg:p-7"
     >
       <div className="flex items-start gap-3">
-        <span className="size-10 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted flex items-center justify-center shrink-0">
+        <span className="size-10 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted flex items-center justify-center shrink-0">
           <Lock className="size-4" />
         </span>
         <div>
@@ -344,7 +344,7 @@ function CreditsArc({
           cy="50"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgba(24,34,44,0.07)"
           strokeWidth="6"
         />
         <motion.circle

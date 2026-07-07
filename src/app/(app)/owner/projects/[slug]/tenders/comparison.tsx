@@ -109,11 +109,11 @@ const STATUS_META: Record<
   },
   shortlisted: {
     label: "Shortlisted",
-    cls: "border-[rgba(126,245,237,0.55)] bg-[rgba(126,245,237,0.10)] text-accent-light",
+    cls: "border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] text-accent-light",
   },
   awarded: {
     label: "Awarded",
-    cls: "border-[rgba(126,245,237,0.70)] bg-[rgba(126,245,237,0.18)] text-accent-light",
+    cls: "border-[rgba(10,125,115,0.70)] bg-[rgba(10,125,115,0.18)] text-accent-light",
   },
   rejected: {
     label: "Rejected",
@@ -315,7 +315,7 @@ export function TendersComparison({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center text-[13px] text-text-dim">
+        <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] px-6 py-16 text-center text-[13px] text-text-dim">
           No tenders match this filter.
         </div>
       ) : (
@@ -420,7 +420,7 @@ function ProjectPulseHeader({
     <section
       className={cn(
         "relative overflow-hidden rounded-md border border-border-subtle",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+        "bg-surface-1 card-elev",
         "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.18)]",
       )}
     >
@@ -549,7 +549,7 @@ function PulseTile({
   return (
     <div className="px-4 sm:px-5 lg:px-6 py-4 sm:py-5">
       <div className="flex items-center gap-2 mb-2.5 text-text-dim">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted">
           {icon}
         </span>
         <span className="text-[10px] tracking-[0.18em] uppercase">{label}</span>
@@ -664,7 +664,7 @@ function FilterPills({
 }) {
   return (
     <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-      <div className="inline-flex sm:flex flex-nowrap sm:flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(10,28,44,0.55)] w-max sm:w-fit">
+      <div className="inline-flex sm:flex flex-nowrap sm:flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] w-max sm:w-fit">
         {(
           [
             ["all", "All", tenders.length],
@@ -682,7 +682,7 @@ function FilterPills({
               "h-9 px-3 sm:px-4 rounded-full text-[12px] tracking-[0.04em] transition-colors inline-flex items-center gap-2 shrink-0",
               filter === id
                 ? "bg-accent-muted/60 border border-border-accent text-accent-light"
-                : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)]",
+                : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(24,34,44,0.04)]",
             )}
           >
             {label}
@@ -715,7 +715,7 @@ function SortDropdown({
       <select
         value={sortKey}
         onChange={(e) => onChange(e.target.value as SortKey)}
-        className="h-9 px-3 pr-7 rounded-full border border-border-subtle bg-[rgba(10,28,44,0.55)] text-[12px] text-text hover:border-border-strong transition-colors focus:outline-none focus:border-border-accent appearance-none"
+        className="h-9 px-3 pr-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] text-[12px] text-text hover:border-border-strong transition-colors focus:outline-none focus:border-border-accent appearance-none"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%23a8c2d8' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>\")",
@@ -761,7 +761,7 @@ function TenderCardsRow({
 }) {
   if (selected.length === 0) {
     return (
-      <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-12 text-center text-[13px] text-text-dim">
+      <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] px-6 py-12 text-center text-[13px] text-text-dim">
         Pick tenders below to compare side-by-side.
       </div>
     );
@@ -864,14 +864,14 @@ function TenderCard({
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "relative overflow-hidden rounded-md border p-4 sm:p-5",
-        "shadow-[0_14px_36px_-22px_rgba(0,0,0,0.55)]",
+        "shadow-[0_14px_36px_-22px_rgba(15,23,32,0.19)]",
         tender.status === "awarded"
-          ? "border-border-accent/60 bg-[linear-gradient(160deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]"
+          ? "border-border-accent/60 bg-[linear-gradient(160deg,rgba(0,212,200,0.10),rgba(250,248,243,0.78))]"
           : tender.status === "shortlisted"
-            ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(6,18,30,0.78))]"
+            ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.78))]"
             : tender.status === "rejected"
-              ? "border-[rgba(255,120,120,0.20)] bg-[linear-gradient(180deg,rgba(255,120,120,0.04),rgba(6,18,30,0.78))]"
-              : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+              ? "border-[rgba(255,120,120,0.20)] bg-[linear-gradient(180deg,rgba(255,120,120,0.04),rgba(250,248,243,0.78))]"
+              : "border-border-subtle bg-surface-1 card-elev",
       )}
     >
       {/* corner glow when winning */}
@@ -892,7 +892,7 @@ function TenderCard({
           type="button"
           onClick={onRemove}
           aria-label="Remove from compare"
-          className="absolute top-2 right-2 size-8 rounded-sm flex items-center justify-center text-text-dim hover:text-text hover:bg-[rgba(255,255,255,0.04)] transition-colors z-10"
+          className="absolute top-2 right-2 size-8 rounded-sm flex items-center justify-center text-text-dim hover:text-text hover:bg-[rgba(24,34,44,0.05)] transition-colors z-10"
           title="Remove from compare"
         >
           <X className="size-4" />
@@ -1195,7 +1195,7 @@ function NeutralChip({
         "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[9.5px] tracking-[0.06em] uppercase",
         tone === "accent"
           ? "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light"
-          : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-dim",
+          : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-dim",
       )}
     >
       {icon}
@@ -1217,7 +1217,7 @@ function MedianDeltaPill({ pct }: { pct: number }) {
       ? "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light"
       : tone === "warn"
         ? "border-warning/30 bg-[rgba(255,181,71,0.06)] text-warning"
-        : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-dim";
+        : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-dim";
 
   const label =
     pct === 0
@@ -1298,7 +1298,7 @@ function CompletenessBar({
           {completeness.filled}/{completeness.total} · {pct}%
         </span>
       </div>
-      <div className="h-1 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+      <div className="h-1 rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-[width]", barCls)}
           style={{ width: `${pct}%` }}
@@ -1414,7 +1414,7 @@ function OverflowStrip({
   onAdd: (id: string) => void;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-[rgba(10,28,44,0.55)] p-4">
+    <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.45)] p-4">
       <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-3">
         Other tenders · click to add to compare
       </div>
@@ -1437,7 +1437,7 @@ function OverflowStrip({
               type="button"
               onClick={() => onAdd(t.id)}
               className={cn(
-                "group inline-flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full border bg-[rgba(255,255,255,0.022)] hover:bg-[rgba(0,212,200,0.05)] hover:border-border-accent transition-colors text-[12px] text-text",
+                "group inline-flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full border bg-[rgba(24,34,44,0.035)] hover:bg-[rgba(0,212,200,0.05)] hover:border-border-accent transition-colors text-[12px] text-text",
                 rec === "best_value"
                   ? "border-border-accent/50"
                   : "border-border-subtle",
@@ -1594,28 +1594,28 @@ function Insight({
   const styles = {
     teal: {
       ring: "border-border-accent/40",
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
       icon: "border-border-accent bg-accent-muted text-accent-light",
       val: "text-accent-light",
       glow: "rgba(0,212,200,0.18)",
     },
     blue: {
       ring: "border-[rgba(120,180,255,0.20)]",
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
       icon: "border-[rgba(120,180,255,0.30)] bg-[rgba(26,95,212,0.18)] text-[#bfd6ff]",
       val: "text-[#bfd6ff]",
       glow: "rgba(26,95,212,0.20)",
     },
     amber: {
       ring: "border-[rgba(251,184,64,0.22)]",
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
       icon: "border-[rgba(251,184,64,0.30)] bg-[rgba(251,184,64,0.10)] text-[#ffd887]",
       val: "text-[#ffd887]",
       glow: "rgba(251,184,64,0.18)",
     },
     rose: {
       ring: "border-[rgba(255,120,150,0.20)]",
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
       icon: "border-[rgba(255,120,150,0.30)] bg-[rgba(255,120,150,0.10)] text-[#ffc0cd]",
       val: "text-[#ffc0cd]",
       glow: "rgba(255,120,150,0.16)",
@@ -1625,7 +1625,7 @@ function Insight({
   return (
     <div
       className={cn(
-        "relative rounded-md border p-4 overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "relative rounded-md border p-4 overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         styles.ring,
       )}
       style={{ background: styles.bg }}
@@ -1694,13 +1694,13 @@ function DetailCard({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]">
+    <section className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 sm:px-5 py-4 hover:bg-[rgba(255,255,255,0.018)] transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 sm:px-5 py-4 hover:bg-[rgba(24,34,44,0.03)] transition-colors text-left"
       >
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
+        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="flex-1 min-w-0">
@@ -1795,7 +1795,7 @@ function CostBreakdownSection({ selected }: { selected: TenderForOwner[] }) {
           <div className="rounded-sm border border-border-subtle overflow-x-auto">
             <div className="min-w-[480px]">
               <div
-                className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
+                className="grid border-b border-border-subtle bg-[rgba(24,34,44,0.03)]"
                 style={{
                   gridTemplateColumns: `minmax(180px,1.4fr) repeat(${selected.length}, minmax(120px,1fr))`,
                 }}
@@ -1923,7 +1923,7 @@ function ScopeSection({ selected }: { selected: TenderForOwner[] }) {
       <div className="rounded-sm border border-border-subtle overflow-x-auto">
         <div className="min-w-[420px]">
           <div
-            className="grid border-b border-border-subtle bg-[rgba(255,255,255,0.018)]"
+            className="grid border-b border-border-subtle bg-[rgba(24,34,44,0.03)]"
             style={{
               gridTemplateColumns: `minmax(180px,1.6fr) repeat(${selected.length}, minmax(110px,1fr))`,
             }}
@@ -2022,7 +2022,7 @@ function ConditionsSection({ selected }: { selected: TenderForOwner[] }) {
         {selected.map((t) => (
           <div
             key={t.id}
-            className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.012)] p-3"
+            className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3"
           >
             <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-2 truncate">
               {t.builder.companyName ?? t.builder.name ?? "—"}
@@ -2069,7 +2069,7 @@ function PitchCol({ tender }: { tender: TenderForOwner }) {
   const text = tender.pitch ?? "";
   const short = text.length > 240 ? text.slice(0, 240) + "…" : text;
   return (
-    <div className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.012)] p-3">
+    <div className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3">
       <div className="flex items-center gap-2 mb-2">
         <span
           className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold border border-border-accent text-accent-light shrink-0"
@@ -2156,7 +2156,7 @@ function TenderDocsCol({ tender }: { tender: TenderForOwner }) {
   };
 
   return (
-    <div className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.012)] p-3">
+    <div className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-[11.5px] font-semibold text-text truncate">
           {tender.builder.companyName ?? tender.builder.name ?? "—"}
@@ -2187,7 +2187,7 @@ function TenderDocsCol({ tender }: { tender: TenderForOwner }) {
           {docs.map((d) => (
             <li
               key={d.id}
-              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
+              className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)]"
             >
               <span className="text-[11px] text-text truncate">{d.filename}</span>
               <DocDownload id={d.id} />
@@ -2264,8 +2264,8 @@ function AwardConfirmDialog({
           onClick={(e) => e.stopPropagation()}
           className={cn(
             "relative w-full max-w-[480px] rounded-md border border-border-accent/45 overflow-hidden",
-            "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(10,28,44,0.85)_45%,rgba(6,18,30,0.9))]",
-            "shadow-[0_24px_60px_-22px_rgba(0,0,0,0.7),0_0_0_1px_rgba(0,212,200,0.15)]",
+            "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(24,34,44,0.5)_45%,rgba(250,248,243,0.9))]",
+            "shadow-[0_24px_60px_-22px_rgba(15,23,32,0.24),0_0_0_1px_rgba(0,212,200,0.15)]",
           )}
         >
           <span
@@ -2293,7 +2293,7 @@ function AwardConfirmDialog({
             </p>
 
             {target.totalPriceAud ? (
-              <div className="mt-4 px-4 py-3 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-baseline justify-between gap-3">
+              <div className="mt-4 px-4 py-3 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-baseline justify-between gap-3">
                 <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim">
                   Awarded amount
                 </span>
@@ -2309,7 +2309,7 @@ function AwardConfirmDialog({
                   "mt-5 flex items-start gap-3 px-4 py-3 rounded-sm border cursor-pointer transition-colors",
                   rejectOthers
                     ? "border-border-accent/45 bg-[rgba(0,212,200,0.04)]"
-                    : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
+                    : "border-border-subtle bg-[rgba(24,34,44,0.03)]",
                 )}
               >
                 <input

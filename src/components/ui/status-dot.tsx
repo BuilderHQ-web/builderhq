@@ -21,11 +21,11 @@ export function StatusDot({
   label?: string;
 }) {
   const palette = {
-    accent: { bg: "bg-accent-light", glow: "rgba(126,245,237,0.7)", ring: "bg-accent" },
+    accent: { bg: "bg-accent-light", glow: "rgba(10,125,115,0.7)", ring: "bg-accent" },
     success: { bg: "bg-success", glow: "oklch(0.78 0.16 155 / 0.55)", ring: "bg-success" },
     warning: { bg: "bg-warning", glow: "rgba(251,184,64,0.55)", ring: "bg-warning" },
     danger:  { bg: "bg-danger", glow: "oklch(0.72 0.20 22 / 0.55)", ring: "bg-danger" },
-    muted:   { bg: "bg-text-faint", glow: "rgba(238,246,255,0.18)", ring: "bg-text-faint" },
+    muted:   { bg: "bg-text-faint", glow: "rgba(22,28,34,0.18)", ring: "bg-text-faint" },
   }[tone];
 
   return (

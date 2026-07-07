@@ -59,8 +59,8 @@ export default async function ProjectsPage() {
           />
         ) : (
           <Reveal immediate delay={0.04}>
-            <div className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]">
-              <div className="hidden md:grid grid-cols-[1.6fr_1fr_120px_140px_120px] gap-4 px-5 py-3 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+            <div className="rounded-md border border-border-subtle overflow-hidden bg-surface-2">
+              <div className="hidden md:grid grid-cols-[1.6fr_1fr_120px_140px_120px] gap-4 px-5 py-3 bg-[rgba(24,34,44,0.03)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
                 <span>Project</span>
                 <span>Location</span>
                 <span>Type</span>
@@ -120,10 +120,10 @@ export default async function ProjectsPage() {
 function StatusBadge({ status }: { status: Project["status"] }) {
   const cls =
     status === "draft"
-      ? "border-border-subtle text-text-dim bg-[rgba(255,255,255,0.012)]"
+      ? "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]"
       : status === "published" || status === "tendering"
       ? "border-border-accent text-accent-light bg-accent-muted/40"
-      : "border-border-subtle text-text-dim bg-[rgba(255,255,255,0.012)]";
+      : "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]";
   return (
     <span
       className={cn(

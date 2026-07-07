@@ -150,7 +150,7 @@ export function Sidebar({
       {/* Brand row — sits flush with the topbar height. */}
       <div className="flex items-center h-14 px-6">
         <Link href="/" aria-label="BuilderHQ home">
-          <Logo size={20} />
+          <Logo size={20} tone="dark" />
         </Link>
       </div>
 

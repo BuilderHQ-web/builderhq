@@ -56,7 +56,7 @@ const buttonVariants = cva(
           "hover:bg-[oklch(0.78_0.20_22)]",
         ],
         link: [
-          "bg-transparent text-accent-light underline-offset-[5px] decoration-[rgba(126,245,237,0.4)]",
+          "bg-transparent text-accent-light underline-offset-[5px] decoration-[rgba(10,125,115,0.4)]",
           "hover:underline px-0",
         ],
       },

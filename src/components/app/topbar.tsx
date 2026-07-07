@@ -79,7 +79,7 @@ export function Topbar({
             <Menu className="size-5" />
           </button>
           <div className="lg:hidden">
-            <Logo size={20} />
+            <Logo size={20} tone="dark" />
           </div>
           <Breadcrumbs crumbs={crumbs} />
         </div>

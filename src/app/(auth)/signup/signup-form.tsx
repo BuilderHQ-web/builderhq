@@ -223,7 +223,7 @@ function RoleOption({
         "transition-[background-color,border-color,color] duration-[160ms]",
         isActive
           ? "border-accent/65 bg-[rgba(0,212,200,0.07)] text-text shadow-[inset_0_0_0_1px_rgba(0,212,200,0.25)]"
-          : "border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.025)] text-text-muted hover:border-[rgba(255,255,255,0.18)] hover:text-text",
+          : "border-[rgba(24,34,44,0.1)] bg-[rgba(24,34,44,0.04)] text-text-muted hover:border-[rgba(24,34,44,0.18)] hover:text-text",
       )}
     >
       <span className={cn(isActive ? "text-accent-light" : "text-text-faint")}>

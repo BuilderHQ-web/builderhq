@@ -54,7 +54,7 @@ export default async function OwnerTendersIndex() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] px-6 py-16 text-center">
+          <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] px-6 py-16 text-center">
             <Folders className="mx-auto size-6 text-text-dim mb-3" />
             <h3 className="text-[15px] font-semibold text-text">
               No published projects yet
@@ -75,7 +75,7 @@ export default async function OwnerTendersIndex() {
             </Link>
           </div>
         ) : (
-          <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden">
+          <div className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden">
             {rows.map(({ project: p, count }, i, arr) => (
               <Link
                 key={p.id}

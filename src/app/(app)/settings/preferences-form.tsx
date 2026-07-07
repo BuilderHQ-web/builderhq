@@ -98,11 +98,11 @@ export function PreferencesForm({
       ) : null}
       <li
         className={cn(
-          "flex items-start gap-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] px-4 py-3.5",
+          "flex items-start gap-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] px-4 py-3.5",
           "transition-colors",
         )}
       >
-        <span className="size-9 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted shrink-0">
+        <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted shrink-0">
           <Zap className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -115,7 +115,7 @@ export function PreferencesForm({
                 "text-[10px] tracking-[0.18em] uppercase rounded-sm px-1.5 py-0.5 border",
                 reducedMotion
                   ? "text-accent-light border-border-accent/45 bg-[rgba(0,212,200,0.08)]"
-                  : "text-text-dim border-border-subtle bg-[rgba(255,255,255,0.022)]",
+                  : "text-text-dim border-border-subtle bg-[rgba(24,34,44,0.035)]",
               )}
             >
               {reducedMotion ? "Active" : "Off"}
@@ -154,7 +154,7 @@ function PrefRow({
         "flex items-start gap-3 rounded-md border px-4 py-3.5 transition-colors",
         checked
           ? "border-border-accent/45 bg-[rgba(0,212,200,0.04)]"
-          : "border-border-subtle bg-[rgba(255,255,255,0.018)] hover:border-border-strong",
+          : "border-border-subtle bg-[rgba(24,34,44,0.03)] hover:border-border-strong",
       )}
     >
       <span
@@ -162,7 +162,7 @@ function PrefRow({
           "size-9 rounded-md flex items-center justify-center shrink-0",
           checked
             ? "border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light"
-            : "border border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+            : "border border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
         )}
       >
         {icon}
@@ -186,7 +186,7 @@ function PrefRow({
         className={cn(
           "relative inline-flex shrink-0 mt-0.5 h-6 w-10 rounded-full transition-colors duration-[160ms]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-border-accent",
-          checked ? "bg-accent" : "bg-[rgba(255,255,255,0.08)]",
+          checked ? "bg-accent" : "bg-[rgba(24,34,44,0.09)]",
           disabled && "opacity-50 cursor-not-allowed",
         )}
       >

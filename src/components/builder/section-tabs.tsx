@@ -33,7 +33,7 @@ export function BuilderSectionTabs({
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(10,28,44,0.55)] shadow-[0_8px_24px_-18px_rgba(0,0,0,0.55)] w-fit">
+    <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] shadow-[0_8px_24px_-18px_rgba(15,23,32,0.19)] w-fit">
       {TABS.map((t) => {
         const isActive =
           t.href === "/builder/browse"
@@ -49,7 +49,7 @@ export function BuilderSectionTabs({
               "inline-flex items-center gap-2 h-9 px-4 rounded-full text-[12px] tracking-[0.04em] transition-colors",
               isActive
                 ? "bg-accent-muted/60 border border-border-accent text-accent-light"
-                : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)]",
+                : "border border-transparent text-text-muted hover:text-text hover:bg-[rgba(24,34,44,0.04)]",
             )}
           >
             <t.Icon className="size-3.5" />

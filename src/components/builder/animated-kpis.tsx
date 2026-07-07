@@ -13,14 +13,14 @@ const TONES: Record<
   { bg: string; ring: string; num: string; iconBg: string; glow: string }
 > = {
   teal: {
-    bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+    bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
     ring: "border-border-accent/40",
     num: "text-accent-light",
     iconBg: "border-border-accent bg-accent-muted text-accent-light",
     glow: "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
   },
   blue: {
-    bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(6,18,30,0.6))",
+    bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
     ring: "border-[rgba(120,180,255,0.20)]",
     num: "text-[#bfd6ff]",
     iconBg:
@@ -28,7 +28,7 @@ const TONES: Record<
     glow: "radial-gradient(circle, rgba(26,95,212,0.20), transparent 70%)",
   },
   amber: {
-    bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(6,18,30,0.6))",
+    bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
     ring: "border-[rgba(251,184,64,0.22)]",
     num: "text-[#ffd887]",
     iconBg:
@@ -36,7 +36,7 @@ const TONES: Record<
     glow: "radial-gradient(circle, rgba(251,184,64,0.18), transparent 70%)",
   },
   rose: {
-    bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(6,18,30,0.6))",
+    bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
     ring: "border-[rgba(255,120,150,0.20)]",
     num: "text-[#ffc0cd]",
     iconBg:
@@ -90,7 +90,7 @@ function KpiCard({ kpi, index }: { kpi: AnimatedKpi; index: number }) {
       whileHover={{ y: -2 }}
       className={cn(
         "relative rounded-md border p-5 overflow-hidden cursor-default",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         "transition-[border-color,box-shadow] duration-[300ms]",
         "hover:border-border-accent/60",
         t.ring,

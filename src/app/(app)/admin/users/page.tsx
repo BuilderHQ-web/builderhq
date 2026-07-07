@@ -173,8 +173,8 @@ export default async function AdminUsersPage(props: {
             }
           />
         ) : (
-          <div className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]">
-            <div className="hidden lg:grid grid-cols-[2.2fr_1fr_1.2fr_1fr_1.6fr] gap-4 px-6 py-3 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+          <div className="rounded-md border border-border-subtle overflow-hidden bg-surface-2">
+            <div className="hidden lg:grid grid-cols-[2.2fr_1fr_1.2fr_1fr_1.6fr] gap-4 px-6 py-3 bg-[rgba(24,34,44,0.03)] border-b border-border-subtle text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
               <span>User</span>
               <span>Role</span>
               <span>Status</span>

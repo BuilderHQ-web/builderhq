@@ -164,7 +164,7 @@ export function NotificationBell({ initialUnreadCount }: Props) {
         sideOffset={8}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-[rgba(255,255,255,0.012)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-[rgba(24,34,44,0.025)]">
           <div className="flex items-baseline gap-2">
             <span className="text-[11px] tracking-[0.16em] uppercase text-accent font-semibold">
               Notifications
@@ -298,7 +298,7 @@ function Row({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="size-10 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.018)] flex items-center justify-center mb-3">
+      <div className="size-10 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] flex items-center justify-center mb-3">
         <Bell className="size-4 text-text-faint" />
       </div>
       <p className="text-[12.5px] text-text-muted">You're all caught up</p>

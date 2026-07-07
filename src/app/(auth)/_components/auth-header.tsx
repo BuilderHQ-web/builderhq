@@ -26,7 +26,7 @@ export function AuthHeader({
 }) {
   return (
     <>
-      <Logo height={25} className="mb-1" />
+      <Logo height={25} tone="dark" className="mb-1" />
       <div className="flex flex-col gap-2.5">
         <h1 className={AUTH_HEADING_CLS}>{title}</h1>
         {subtitle ? <p className={AUTH_SUBTITLE_CLS}>{subtitle}</p> : null}

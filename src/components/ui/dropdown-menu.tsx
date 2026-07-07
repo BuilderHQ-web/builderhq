@@ -30,7 +30,7 @@ export const DropdownMenuContent = React.forwardRef<
       className={cn(
         "z-50 min-w-[200px] overflow-hidden rounded-md border border-border-strong",
         "bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface-1))]",
-        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_24px_48px_-16px_rgba(0,0,0,0.65),0_8px_16px_-8px_rgba(0,0,0,0.5)]",
+        "shadow-[inset_0_1px_0_0_rgba(24,34,44,0.06),0_24px_48px_-16px_rgba(15,23,32,0.22),0_8px_16px_-8px_rgba(15,23,32,0.17)]",
         "p-1 text-text",
         // motion
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
@@ -185,7 +185,7 @@ export const DropdownMenuSubContent = React.forwardRef<
     className={cn(
       "z-50 min-w-[180px] overflow-hidden rounded-md border border-border-strong p-1",
       "bg-[linear-gradient(180deg,var(--color-surface-2),var(--color-surface-1))]",
-      "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_24px_48px_-16px_rgba(0,0,0,0.65)]",
+      "shadow-[inset_0_1px_0_0_rgba(24,34,44,0.06),0_24px_48px_-16px_rgba(15,23,32,0.22)]",
       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}

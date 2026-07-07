@@ -277,7 +277,7 @@ const APPROVAL_META: Record<
   incomplete: {
     label: "Draft",
     icon: AlertTriangle,
-    cls: "border-border-subtle text-text-dim bg-[rgba(255,255,255,0.012)]",
+    cls: "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]",
   },
   pending_review: {
     label: "Pending review",
@@ -319,7 +319,7 @@ function SectionCard({
   trailing?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]">
+    <section className="rounded-md border border-border-subtle overflow-hidden bg-surface-2">
       <header className="px-4 sm:px-7 py-4 sm:py-5 flex items-start justify-between gap-3 border-b border-border-subtle/60">
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium text-accent">
@@ -538,7 +538,7 @@ function LogoUpload({
       <div
         className={cn(
           "relative size-[160px] rounded-md overflow-hidden border border-border-subtle",
-          "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.55))]",
+          "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.55))]",
           "flex items-center justify-center",
         )}
       >
@@ -1075,7 +1075,7 @@ function ServiceAreasSection({ initial }: { initial: ServiceArea[] }) {
               return (
                 <li
                   key={`${a.state}-${a.suburb ?? "all"}-${a.postcode ?? "any"}-${i}`}
-                  className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] px-3.5 py-3"
+                  className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3.5 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <MapPin className="size-3.5 text-text-faint shrink-0" />
@@ -1260,7 +1260,7 @@ function LicencesSection({
             {licences.map((l) => (
               <li
                 key={l.id}
-                className="flex items-start gap-3 px-3 py-2.5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
+                className="flex items-start gap-3 px-3 py-2.5 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)]"
               >
                 <span className="size-7 rounded-sm border border-border-subtle bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0 mt-0.5">
                   <ShieldCheck className="size-3.5" />
@@ -1519,7 +1519,7 @@ function AbnVerifyPanel({
   };
 
   return (
-    <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] p-5">
+    <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] p-5">
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:gap-4 items-end">
         <Field
           label="ABN"

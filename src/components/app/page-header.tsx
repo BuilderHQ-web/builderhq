@@ -126,7 +126,7 @@ export function EmptyState({
           )}
           style={{
             background:
-              "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.18), rgba(255,255,255,0.018))",
+              "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.18), rgba(24,34,44,0.03))",
           }}
         >
           {icon}

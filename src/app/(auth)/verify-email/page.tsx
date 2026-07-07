@@ -42,7 +42,7 @@ export default async function VerifyEmailPage({
         <Mail size={16} strokeWidth={2} />
       </div>
 
-      <div className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-4 text-left">
+      <div className="w-full rounded-xl border border-[rgba(24,34,44,0.09)] bg-[rgba(24,34,44,0.04)] p-4 text-left">
         <p className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui font-semibold">
           Not seeing it?
         </p>

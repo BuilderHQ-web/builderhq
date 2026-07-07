@@ -229,7 +229,7 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
             aria-label="BuilderHQ home"
             onClick={() => setOpen(false)}
           >
-            <Logo size={20} />
+            <Logo size={20} tone="dark" />
           </Link>
           <button
             type="button"

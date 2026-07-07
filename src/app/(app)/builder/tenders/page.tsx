@@ -21,7 +21,7 @@ const STATUS_META: Record<
 > = {
   draft: {
     label: "Draft",
-    cls: "border-border-subtle bg-[rgba(255,255,255,0.012)] text-text-dim",
+    cls: "border-border-subtle bg-[rgba(24,34,44,0.025)] text-text-dim",
   },
   submitted: {
     label: "Submitted",
@@ -33,7 +33,7 @@ const STATUS_META: Record<
   },
   awarded: {
     label: "Awarded",
-    cls: "border-[rgba(126,245,237,0.55)] bg-[rgba(126,245,237,0.10)] text-accent-light",
+    cls: "border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] text-accent-light",
   },
   rejected: {
     label: "Rejected",
@@ -41,7 +41,7 @@ const STATUS_META: Record<
   },
   withdrawn: {
     label: "Withdrawn",
-    cls: "border-border-subtle bg-[rgba(255,255,255,0.012)] text-text-dim",
+    cls: "border-border-subtle bg-[rgba(24,34,44,0.025)] text-text-dim",
   },
 };
 
@@ -159,7 +159,7 @@ function Bucket({
         </h2>
         <span className="text-[11.5px] text-text-dim">{subtitle}</span>
       </header>
-      <div className="rounded-md border border-border-subtle overflow-hidden bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]">
+      <div className="rounded-md border border-border-subtle overflow-hidden bg-surface-1 card-elev">
         {children}
       </div>
     </section>

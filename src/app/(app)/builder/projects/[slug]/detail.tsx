@@ -815,7 +815,7 @@ function UnlockBar({
                     Unlock free with Founding Access
                   </span>
                   <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
-                    <span className="line-through decoration-[rgba(255,255,255,0.35)] decoration-1">
+                    <span className="line-through decoration-[rgba(24,34,44,0.3)] decoration-1">
                       ${priceAud}
                     </span>
                     <span className="text-accent-light font-display text-[16px] leading-none">
@@ -1091,9 +1091,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]">
+    <section className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]">
       <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center">
           {icon}
         </span>
         <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>
@@ -1236,7 +1236,7 @@ function ContactRow({
         "flex items-center justify-between gap-3 px-3 py-2 rounded-sm border transition-colors",
         highlighted
           ? "border-border-accent/50 bg-[rgba(0,212,200,0.05)]"
-          : "border-border-subtle bg-[rgba(255,255,255,0.018)]",
+          : "border-border-subtle bg-[rgba(24,34,44,0.03)]",
       )}
     >
       <span className="flex items-center gap-2 min-w-0">
@@ -1245,7 +1245,7 @@ function ContactRow({
             "size-6 rounded-sm flex items-center justify-center shrink-0",
             highlighted
               ? "bg-accent-muted text-accent-light"
-              : "bg-[rgba(255,255,255,0.022)] text-text-muted",
+              : "bg-[rgba(24,34,44,0.035)] text-text-muted",
           )}
         >
           {icon}
@@ -1287,15 +1287,15 @@ function PlaceholderContactBlock() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <span className="size-10 rounded-full bg-[rgba(255,255,255,0.04)] border border-border-subtle" />
+        <span className="size-10 rounded-full bg-[rgba(24,34,44,0.05)] border border-border-subtle" />
         <div className="space-y-1.5">
-          <div className="h-2.5 w-32 rounded bg-[rgba(255,255,255,0.06)]" />
-          <div className="h-2 w-24 rounded bg-[rgba(255,255,255,0.04)]" />
+          <div className="h-2.5 w-32 rounded bg-[rgba(24,34,44,0.07)]" />
+          <div className="h-2 w-24 rounded bg-[rgba(24,34,44,0.05)]" />
         </div>
       </div>
       <div className="space-y-1.5 pt-2 border-t border-border-subtle/60">
-        <div className="h-9 rounded-sm bg-[rgba(255,255,255,0.022)]" />
-        <div className="h-9 rounded-sm bg-[rgba(255,255,255,0.022)]" />
+        <div className="h-9 rounded-sm bg-[rgba(24,34,44,0.035)]" />
+        <div className="h-9 rounded-sm bg-[rgba(24,34,44,0.035)]" />
       </div>
     </div>
   );
@@ -1549,7 +1549,7 @@ function DocRow({
         "flex items-center justify-between gap-3 px-3 py-2 rounded-sm border transition-colors",
         selectMode && selected
           ? "border-border-accent bg-accent-muted/30"
-          : "border-border-subtle bg-[rgba(255,255,255,0.022)]",
+          : "border-border-subtle bg-[rgba(24,34,44,0.035)]",
       )}
     >
       {selectMode ? (

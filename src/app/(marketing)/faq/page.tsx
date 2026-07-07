@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Comprehensive FAQ page. Categorised, accordion-driven, calm.
- * One question open at a time — same UX language as the home-page
+ * One question open at a time, same UX language as the home-page
  * FAQ section, but with the full answer set instead of the homepage
  * highlight reel.
  */
@@ -39,7 +39,7 @@ const CATEGORIES: Category[] = [
             a project once. Verified builders unlock projects they want to
             quote on, submit structured tenders, and owners compare them
             side-by-side in one place. We do the matching, verification, and
-            structure — you do the building.
+            structure, you do the building.
           </>
         ),
       },
@@ -47,7 +47,7 @@ const CATEGORIES: Category[] = [
         q: "Who is BuilderHQ for?",
         a: (
           <>
-            Anyone planning a residential build in Australia — new homes,
+            Anyone planning a residential build in Australia, new homes,
             extensions, renovations, multi-dwelling projects. On the builder
             side: licensed Australian residential builders, from boutique
             two-person crews up to mid-sized companies. We&apos;re not a
@@ -75,7 +75,7 @@ const CATEGORIES: Category[] = [
             Median first response from a matched builder is within 24 hours
             of publish. Full tenders typically land within 5–10 days. The
             window depends on project complexity, location, and how many
-            builders match your service area — bigger metros move faster
+            builders match your service area, bigger metros move faster
             than regional areas where builder pool is smaller.
           </>
         ),
@@ -90,7 +90,7 @@ const CATEGORIES: Category[] = [
         q: "Is it really free for project owners?",
         a: (
           <>
-            Yes — owners pay nothing to upload, match with builders, receive
+            Yes, owners pay nothing to upload, match with builders, receive
             tenders, message builders, or award a build. There are no
             commissions on the awarded contract. The marketplace is funded by
             builders paying a small unlock fee per project; never by you.
@@ -102,7 +102,7 @@ const CATEGORIES: Category[] = [
         a: (
           <>
             Once published, your project&apos;s public preview is visible to
-            verified builders only — never the open internet, never the press,
+            verified builders only, never the open internet, never the press,
             never search engines. The preview shows project type, location
             (suburb + state, not exact address), budget band, and a short
             description. Your address, contact details, and full document set
@@ -126,12 +126,11 @@ const CATEGORIES: Category[] = [
         q: "Can I get help comparing tenders?",
         a: (
           <>
-            The comparison view is built to do most of that work for you —
-            structured fields, cost-breakdown rows that highlight where
+            The comparison view is built to do most of that work for you, structured fields, cost-breakdown rows that highlight where
             builders disagree, recommendation badges (Best value, Most
             thorough, Fastest, Best documented), and a project pulse with
             median price + spread. Beyond that, we&apos;re happy to walk you
-            through any tender — drop us a line.
+            through any tender, drop us a line.
           </>
         ),
       },
@@ -141,7 +140,7 @@ const CATEGORIES: Category[] = [
           <>
             The builder gets an email with your contact details and a
             celebration message. The contract conversation moves off-platform
-            from there — BuilderHQ doesn&apos;t insert itself into the build,
+            from there, BuilderHQ doesn&apos;t insert itself into the build,
             doesn&apos;t hold the money, and doesn&apos;t take a commission.
             Your tender record stays in BuilderHQ as a reference document for
             both sides.
@@ -174,7 +173,7 @@ const CATEGORIES: Category[] = [
           <>
             Builders pay a small unlock fee per project to access the address,
             owner contact, and downloadable documents. Founding builders get
-            complimentary unlocks for the launch period — a hand-picked cohort
+            complimentary unlocks for the launch period, a hand-picked cohort
             we work with directly. After founding access, unlocks are priced
             per project type (a single-dwelling reno is cheaper to unlock
             than a multi-unit build).
@@ -188,8 +187,8 @@ const CATEGORIES: Category[] = [
             Because every project on BuilderHQ is a real owner with real plans
             and a real intent to build. We don&apos;t sell leads, we
             don&apos;t resell your contact details, and we don&apos;t flood
-            you with tyre-kickers. The unlock fee is what keeps the
-            marketplace clean — and what funds the platform you tender on.
+            you with unqualified enquiries. The unlock fee keeps the
+            marketplace serious, and funds the platform you tender on.
           </>
         ),
       },
@@ -197,8 +196,8 @@ const CATEGORIES: Category[] = [
         q: "How do I get more matches?",
         a: (
           <>
-            Three things move the needle: (1) keep your service-area radius
-            realistic — bigger doesn&apos;t always mean better, (2) keep your
+            Three things make the biggest difference: (1) keep your service-area radius
+            realistic, bigger doesn&apos;t always mean better, (2) keep your
             licence + ABN verified active (the chips show on every owner&apos;s
             comparison view), and (3) tender with structured cost breakdowns
             and supporting documents. Owners reward thoroughness with quicker
@@ -233,7 +232,7 @@ const CATEGORIES: Category[] = [
           <>
             They can still browse the marketplace but can&apos;t unlock or
             tender on projects until their ABN and at least one licence are
-            verified active. We call this &quot;viewer mode&quot; — it
+            verified active. We call this &quot;viewer mode&quot;, it
             protects owners from receiving tenders from unverified accounts.
             Builders see exactly what&apos;s left in their dashboard.
           </>
@@ -248,7 +247,7 @@ const CATEGORIES: Category[] = [
             against the policy provider where possible. Insurance status is
             shown on the builder&apos;s public profile. Final contractual
             insurance verification is the owner&apos;s call before the build
-            starts — we surface the data, you confirm it.
+            starts, we surface the data, you confirm it.
           </>
         ),
       },
@@ -276,7 +275,7 @@ const CATEGORIES: Category[] = [
         a: (
           <>
             Account deletion is in active development alongside our data-
-            export tool — both will ship in the same release so you can take
+            export tool, both will ship in the same release so you can take
             your data with you. Until then, contact{" "}
             <a
               href="mailto:info@builderhq.com.au"
@@ -297,7 +296,7 @@ const CATEGORIES: Category[] = [
             in the comparison view (e.g. flagging scope gaps between
             tenders), and (2) tender PDF auto-fill (drop a PDF, we
             pre-populate the structured form for the builder to review). AI
-            outputs are always editable and never authoritative — see our{" "}
+            outputs are always editable and never authoritative, see our{" "}
             <a href="/terms" className="text-accent-light underline underline-offset-4">Terms</a>{" "}
             for the AI assistance disclaimer.
           </>
@@ -342,7 +341,7 @@ const CATEGORIES: Category[] = [
         a: (
           <>
             The home page&apos;s &quot;Showcase&quot; section walks through
-            three of the most-used screens — tracking, workspace, and
+            three of the most-used screens, tracking, workspace, and
             comparison. For a deeper walkthrough, get in touch and
             we&apos;ll show you the full product live.
           </>
@@ -413,10 +412,10 @@ function FAQContent() {
             className="scroll-mt-28"
           >
             <h2
-              className="font-display tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
+              className="font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
               dangerouslySetInnerHTML={{ __html: cat.label }}
             />
-            <ul className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))] overflow-hidden divide-y divide-border-subtle/60">
+            <ul className="rounded-md border border-border-subtle bg-white overflow-hidden divide-y divide-border-subtle/60">
               {cat.questions.map((qa, i) => {
                 const key = `${cat.id}-${i}`;
                 return (
@@ -434,9 +433,9 @@ function FAQContent() {
           </section>
         ))}
 
-        <section className="mt-6 rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.40),rgba(6,18,30,0.55))] px-6 lg:px-8 py-7 lg:py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <section className="mt-6 rounded-md border border-border-subtle bg-white px-6 lg:px-8 py-7 lg:py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Still have a question?
             </span>
             <h3 className="mt-2 font-ui font-semibold text-[18px] tracking-[-0.01em] text-text">

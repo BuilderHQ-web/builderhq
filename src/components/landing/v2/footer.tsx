@@ -1,0 +1,96 @@
+/**
+ * Footer v3 — Base44's clean architecture in our colours: brand and a
+ * plain-English description on the left, labelled link columns across
+ * the right, one hairline, one quiet copyright line. Nothing else.
+ */
+
+import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
+
+const COLUMNS: Array<{
+  label: string;
+  links: Array<{ label: string; href: string }>;
+}> = [
+  {
+    label: "Platform",
+    links: [
+      { label: "How it works", href: "#how" },
+      { label: "Trust and verification", href: "#trust" },
+      { label: "Architect Network", href: "#network" },
+      { label: "FAQ", href: "#faq" },
+    ],
+  },
+  {
+    label: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Book a call", href: "/book-a-call" },
+      { label: "Contact", href: "mailto:info@builderhq.com.au" },
+    ],
+  },
+  {
+    label: "Legal",
+    links: [
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+    ],
+  },
+];
+
+export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
+  const resolve = (h: string) => (homeAnchors && h.startsWith("#") ? "/" + h : h);
+  return (
+    <footer
+      className="relative border-t border-border-subtle px-5 md:px-10 pt-16 pb-8"
+      style={{
+        background: "#efeae1",
+        paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div className="mx-auto max-w-[1200px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr] gap-12 lg:gap-8">
+          {/* Brand */}
+          <div className="flex flex-col items-center lg:items-start gap-5 text-center lg:text-left">
+            <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
+              <Logo height={24} tone="dark" />
+            </Link>
+            <p className="max-w-[44ch] text-[14px] leading-[1.7] text-text-muted">
+              BuilderHQ is where Australia’s residential builds get organised.
+              Homeowners tender their plans, verified builders price real work,
+              and architects get seen and referred. Free for homeowners, no
+              commission, ever.
+            </p>
+          </div>
+
+          {/* Link columns */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 lg:justify-items-end">
+            {COLUMNS.map((col) => (
+              <nav key={col.label} aria-label={col.label} className="flex flex-col items-center sm:items-start gap-3.5">
+                <p className="text-[11px] tracking-[0.18em] uppercase text-text-dim font-semibold">
+                  {col.label}
+                </p>
+                {col.links.map((l) =>
+                  l.href.startsWith("/") ? (
+                    <Link key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
+                      {l.label}
+                    </a>
+                  ),
+                )}
+              </nav>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-14 pt-6 border-t border-border-subtle/70">
+          <p className="text-[12.5px] text-text-dim text-center lg:text-left">
+            © {new Date().getFullYear()} BuilderHQ · Canberra · Melbourne · Australia
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}

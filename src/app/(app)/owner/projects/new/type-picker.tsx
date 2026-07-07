@@ -71,33 +71,28 @@ export function TypePicker() {
             onClick={() => setPicked(t.id)}
             aria-pressed={picked === t.id}
             className={cn(
-              "group relative text-left p-5 rounded-md border transition-[border-color,background] duration-[400ms] ease-[var(--ease-out)]",
+              "group relative text-left p-5 rounded-lg border card-elev transition-[border-color,box-shadow,transform] duration-[220ms] ease-[var(--ease-out)]",
               picked === t.id
-                ? "border-border-accent bg-[rgba(0,212,200,0.04)]"
-                : "border-border-subtle bg-[rgba(255,255,255,0.012)] hover:border-border",
+                ? "border-border-accent-strong bg-[#eafaf7] ring-1 ring-[rgba(0,212,200,0.30)]"
+                : "border-border bg-surface-1 hover:-translate-y-px hover:border-border-strong hover:card-elev-lg",
             )}
           >
             <div className="flex items-start gap-3">
               <span
                 className={cn(
-                  "size-10 rounded-md flex items-center justify-center border shrink-0 transition-colors duration-[400ms]",
+                  "size-10 rounded-md flex items-center justify-center border shrink-0 transition-colors duration-[220ms]",
                   picked === t.id
                     ? "border-border-accent bg-accent-muted text-accent-light"
-                    : "border-border-subtle bg-[rgba(255,255,255,0.02)] text-text-muted",
+                    : "border-border-subtle bg-surface-2 text-text-muted group-hover:text-text",
                 )}
               >
                 {t.icon}
               </span>
               <div className="min-w-0">
-                <div
-                  className={cn(
-                    "text-[14px] font-semibold",
-                    picked === t.id ? "text-text" : "text-text-muted",
-                  )}
-                >
+                <div className="text-[14px] font-semibold text-text">
                   {t.label}
                 </div>
-                <div className="text-[12.5px] text-text-dim mt-0.5 leading-[1.5]">
+                <div className="text-[12.5px] text-text-subtle mt-0.5 leading-[1.5]">
                   {t.description}
                 </div>
               </div>

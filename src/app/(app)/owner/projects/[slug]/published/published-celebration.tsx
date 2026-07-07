@@ -249,7 +249,7 @@ function Ambient({ reduce }: { reduce: boolean }) {
         className="absolute inset-0 opacity-50"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(100,180,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(rgba(24,34,44,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.05) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
           maskImage:
             "radial-gradient(ellipse 70% 60% at 50% 38%, black, transparent 75%)",

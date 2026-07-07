@@ -214,7 +214,7 @@
 .sampleDoc {
   position: relative;
   width: 300px;
-  background: linear-gradient(160deg, rgba(10, 22, 36, 0.95) 0%, rgba(6, 16, 26, 0.98) 100%);
+  background: var(--g-panel-bg, linear-gradient(160deg, rgba(10, 22, 36, 0.95) 0%, rgba(6, 16, 26, 0.98) 100%));
   border: 1px solid rgba(0, 212, 200, 0.18);
   border-radius: 6px;
   padding: 18px 18px 16px;
@@ -339,7 +339,7 @@
 }
 
 .formCard {
-  background: linear-gradient(180deg, rgba(10, 21, 33, 0.9), rgba(6, 13, 22, 0.96));
+  background: var(--g-card-bg, linear-gradient(180deg, rgba(10, 21, 33, 0.9), rgba(6, 13, 22, 0.96)));
   border: 1px solid var(--g-line);
   border-radius: 16px;
   padding: 80px 32px 32px;
@@ -412,7 +412,7 @@
 .fieldInput {
   width: 100%;
   padding: 13px 16px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--g-field-bg, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--g-line-strong);
   border-radius: 8px;
   font-family: var(--g-sans);
@@ -424,8 +424,8 @@
 }
 .fieldInput::placeholder { color: rgba(255, 255, 255, 0.3); }
 .fieldInput:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--g-field-border-hover, rgba(255, 255, 255, 0.2));
+  background: var(--g-field-bg-hover, rgba(255, 255, 255, 0.05));
 }
 .fieldInput:focus {
   border-color: var(--g-teal);
@@ -441,7 +441,7 @@
   width: 100%;
   padding: 13px 16px;
   padding-right: 40px;
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--g-field-bg, rgba(255, 255, 255, 0.04));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300d4c8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: calc(100% - 16px) center;

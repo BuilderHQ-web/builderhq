@@ -22,7 +22,7 @@ import { GridOverlay } from "@/components/landing/grid-overlay";
  *      opacity. Same fine grain the landing has so the page reads
  *      as part of the same product.
  *
- * Base colour matches the landing (`#03080e`) so the auth surface
+ * Base colour matches the landing (`#f4f1ea`) so the auth surface
  * and the marketing surface share one canvas — login should feel
  * like a step inward, not a different building.
  *
@@ -35,7 +35,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#03080e] antialiased">
+    <div className="relative h-dvh overflow-hidden bg-[#f4f1ea] antialiased">
       <AuthAmbient />
       <FibreCanvas />
       <GridOverlay />

@@ -18,6 +18,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import s from "../estimate_request_landing_page/estimate.module.css";
 import theme from "../guide/theme.module.css";
+import light from "./light.module.css";
 import { BookCallForm } from "./book-call-form";
 
 const fraunces = Fraunces({
@@ -49,11 +50,7 @@ export const metadata = {
 export default function BookACallLandingPage() {
   return (
     <div
-      className={`${theme.scope} ${fraunces.variable} ${inter.variable} ${s.body}`}
-      style={{
-        fontFamily:
-          "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif",
-      }}
+      className={`${theme.scope} ${light.light} ${fraunces.variable} ${inter.variable} ${s.body}`}
     >
       {/* Ambient backdrop — same family as /estimate + /guide. */}
       <div className={s.ambient}>
@@ -71,7 +68,7 @@ export default function BookACallLandingPage() {
           className={s.navLogo}
           aria-label="BuilderHQ home"
         >
-          <Logo height={28} />
+          <Logo height={28} tone="dark" />
         </Link>
         <div className={s.navMeta}>
           <span className={s.navMetaDot} />
