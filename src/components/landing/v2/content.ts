@@ -116,14 +116,13 @@ export interface LensCopy {
 // instead of navigating. Keep in sync with SENTINELS in partner-form.tsx.
 const ARCHITECT_JOIN_HREF = "#join-architect";
 const FINANCE_JOIN_HREF = "#join-finance";
-const INTRO_MAILTO =
-  "mailto:info@builderhq.com.au?subject=Architect%20introduction";
+const REQUEST_INTRO_HREF = "#request-intro";
 
 export const LENS: Record<Role, LensCopy> = {
   /* ── HOMEOWNER — the default story. Nervous, first time, needs safety. ── */
   homeowner: {
     hero: {
-      badge: "Now live in Australia",
+      badge: "Residential tendering · Now live in Australia",
       h1a: "Choose better.",
       h1b: "Build smarter.",
       sub: "Upload your plans once. Verified builders come to you with tenders you compare side by side.",
@@ -219,7 +218,7 @@ export const LENS: Record<Role, LensCopy> = {
       h2a: "Need a designer",
       h2b: "or a broker?",
       body: "Our Preferred Partner networks connect you with architects and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
-      cta: { label: "Ask us for an introduction", href: INTRO_MAILTO },
+      cta: { label: "Request an introduction", href: REQUEST_INTRO_HREF },
     },
     faq: [
       {
@@ -473,7 +472,7 @@ export const LENS: Record<Role, LensCopy> = {
     proof: {
       h2a: "Every practice,",
       h2b: "personally invited.",
-      body: "There’s no signup form. We research practices with active, well documented residential work, then pick up the phone and ask. Nothing is shared until you’ve agreed exactly what we publish and how it’s credited.",
+      body: "There’s no open directory to buy into. Register your interest or catch our eye with active, well documented residential work, and we pick up the phone. Nothing is shared until you’ve agreed exactly what we publish and how it’s credited.",
       place: "Built in Melbourne, for Australia.",
       panelTitle: "How practices join",
       gates: [
@@ -615,7 +614,7 @@ export const LENS: Record<Role, LensCopy> = {
     proof: {
       h2a: "Every partner,",
       h2b: "personally chosen.",
-      body: "There’s no open sign-up form. We look for brokers with genuine residential and construction finance experience and clients who speak well of them, then we pick up the phone. Nothing is shared until you’ve agreed to exactly what we publish.",
+      body: "There’s no open directory to buy into. Register your interest or come recommended by clients who speak well of you, and we pick up the phone. Nothing is shared until you’ve agreed to exactly what we publish.",
       place: "Built in Melbourne, for Australia.",
       panelTitle: "How partners join",
       gates: [

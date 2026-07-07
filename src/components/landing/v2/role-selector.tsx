@@ -51,7 +51,7 @@ export function RoleSelector() {
     >
       <div className="mx-auto w-full max-w-[1180px]">
         <div className="flex flex-col items-center text-center gap-4 mb-16 lg:mb-24">
-          <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.28em] uppercase text-text-dim">
+          <span className="inline-flex items-center gap-2.5 text-[11px] tracking-[0.28em] uppercase text-text-dim">
             <span className="h-px w-6 bg-text-faint/40" />
             One platform, every side
             <span className="h-px w-6 bg-text-faint/40" />
@@ -60,8 +60,8 @@ export function RoleSelector() {
             See it <span className="text-accent-light">your way.</span>
           </h2>
           <p className="max-w-[46ch] text-[14.5px] sm:text-[16px] leading-[1.6] text-text-muted">
-            Choose your view and the page tailors itself: your language, your
-            questions, your next step.
+            Choose your side of the build and the page re-tunes: your
+            questions, your numbers, your next step.
           </p>
         </div>
 
@@ -182,7 +182,7 @@ function RoleCard({
       </div>
 
       <div className="relative mt-4 lg:mt-8">
-        <span className="block text-[10px] tracking-[0.2em] uppercase text-text-dim mb-1.5">
+        <span className="block text-[11px] tracking-[0.2em] uppercase text-text-dim mb-1.5">
           I’m a
         </span>
         <span

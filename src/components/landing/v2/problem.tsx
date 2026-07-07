@@ -85,7 +85,7 @@ export function Problem() {
           <div className="grid grid-cols-1 lg:grid-cols-[1.04fr_88px_1fr] items-center gap-y-10">
             {/* ── The old way: debris ─────────────────────────── */}
             <div>
-              <p className="flex items-center gap-2.5 mb-6 text-[10px] tracking-[0.24em] uppercase text-text-dim justify-center lg:justify-start">
+              <p className="flex items-center gap-2.5 mb-6 text-[11px] tracking-[0.24em] uppercase text-text-dim justify-center lg:justify-start">
                 <span className="size-1.5 rounded-full bg-[rgba(255,110,110,0.75)] shadow-[0_0_8px_rgba(255,110,110,0.5)]" />
                 The old way
               </p>
@@ -147,7 +147,7 @@ export function Problem() {
 
             {/* ── With BuilderHQ: order ───────────────────────── */}
             <div>
-              <p className="flex items-center gap-2.5 mb-6 text-[10px] tracking-[0.24em] uppercase justify-center lg:justify-start" style={{ color: pal.accent }}>
+              <p className="flex items-center gap-2.5 mb-6 text-[11px] tracking-[0.24em] uppercase justify-center lg:justify-start" style={{ color: pal.accent }}>
                 <span className="size-1.5 rounded-full" style={{ background: pal.accentSoft, boxShadow: `0 0 10px ${pal.accent}` }} />
                 With BuilderHQ
               </p>

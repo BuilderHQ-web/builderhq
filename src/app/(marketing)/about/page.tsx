@@ -1,10 +1,12 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
-  ShieldCheck,
+  BadgeDollarSign,
   Hammer,
-  Map,
   Layers,
+  Mail,
+  Phone,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -24,7 +26,7 @@ export default function AboutPage() {
       sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted, so the right team gets the job, faster."
     >
       {/* Mission statement */}
-      <section className="rounded-md border border-border-subtle bg-white px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
@@ -33,7 +35,7 @@ export default function AboutPage() {
               "radial-gradient(circle, rgba(0,212,200,0.14), transparent 70%)",
           }}
         />
-        <span className="relative text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+        <span className="relative text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
           Our mission
         </span>
         <h2 className="relative mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
@@ -54,7 +56,7 @@ export default function AboutPage() {
 
       {/* Pillars */}
       <section className="mb-12 lg:mb-20">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+        <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
           What we believe
         </span>
         <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
@@ -77,7 +79,7 @@ export default function AboutPage() {
             body="Residential only, Australian only. No commercial crossover, no offshore quoting. Just the builders who build homes here, in your state."
           />
           <Pillar
-            icon={<Map className="size-4" />}
+            icon={<BadgeDollarSign className="size-4" />}
             title="Free for owners, forever"
             body="No fees to publish, match, or award. We make money from a small unlock fee builders pay to access private project details. Never from you."
           />
@@ -85,7 +87,7 @@ export default function AboutPage() {
       </section>
 
       {/* Built with industry experts */}
-      <section className="rounded-md border border-border-subtle bg-white px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -bottom-24 -left-20 size-72 rounded-full opacity-50"
@@ -99,7 +101,7 @@ export default function AboutPage() {
             <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0">
               <Users className="size-4" />
             </span>
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+            <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Built with industry experts
             </span>
           </div>
@@ -109,12 +111,12 @@ export default function AboutPage() {
             <span className="text-accent-light">build, design, and own</span>.
           </h2>
           <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            BuilderHQ wasn&apos;t built in a vacuum. Every section, every
-            field, and every workflow was reviewed against decades of
-            residential build experience, registered builders running
-            real projects, registered architects who deliver them weekly,
-            owner-builders who&apos;ve been through it themselves, and
-            quantity surveyors who know where tenders quietly diverge.
+            Every section, every field, and every workflow on BuilderHQ was
+            reviewed against decades of residential build experience:
+            registered builders running real projects, registered architects
+            who deliver them weekly, owner-builders who&apos;ve been through
+            it themselves, and quantity surveyors who know where tenders
+            quietly diverge.
           </p>
           <p className="mt-5 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
             We&apos;re still listening. Real-world feedback shapes the
@@ -136,20 +138,63 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Who's behind it — real people, real particulars. The section a
+          skeptic visits the About page for. */}
+      <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -left-20 size-72 rounded-full opacity-50"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(0,212,200,0.12), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+            Who&apos;s behind it
+          </span>
+          <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+            Run by people
+            <br />
+            <span className="text-accent-light">you can call</span>.
+          </h2>
+          <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
+            BuilderHQ is built and run from Melbourne by a small Australian
+            team, led by founder Aryan Vadera. Every builder application is
+            reviewed by a person, every early project is walked through by
+            hand, and the roadmap is shaped by the owners, builders and
+            architects using the platform. If you&apos;d like to talk to us
+            before you sign up, call. A person answers.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-2.5">
+            <ContactChip
+              icon={<Phone className="size-3.5" />}
+              label="0416 926 380"
+              href="tel:0416926380"
+            />
+            <ContactChip
+              icon={<Phone className="size-3.5" />}
+              label="0452 280 062"
+              href="tel:0452280062"
+            />
+            <ContactChip
+              icon={<Mail className="size-3.5" />}
+              label="info@builderhq.com.au"
+              href="mailto:info@builderhq.com.au"
+            />
+          </div>
+
+          <p className="mt-8 pt-6 border-t border-border-subtle/70 text-[12px] leading-[1.7] text-text-dim">
+            BuilderHQ · ABN 70 697 584 722 · Melbourne, Victoria, Australia
+          </p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="mt-12 sm:mt-16 text-center">
         <h2 className="font-ui font-semibold tracking-[-0.03em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
-          Ready to{" "}
-          <span
-            className="text-accent-light"
-            style={{
-              textShadow:
-                "0 0 60px rgba(0,212,200,0.28), 0 0 120px rgba(0,212,200,0.10)",
-            }}
-          >
-            build it
-          </span>
-          ?
+          Ready to <span className="text-accent-light">build it</span>?
         </h2>
         <p className="mt-5 mx-auto max-w-[44ch] text-[14px] leading-[1.7] text-text-subtle">
           Two minutes to publish your project. Verified builders take it
@@ -176,9 +221,29 @@ export default function AboutPage() {
   );
 }
 
+function ContactChip({
+  icon,
+  label,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-subtle bg-surface-2 text-[13px] font-medium text-text transition-colors hover:border-border-accent/50 hover:bg-[rgba(0,212,200,0.05)]"
+    >
+      <span className="text-accent-light">{icon}</span>
+      {label}
+    </a>
+  );
+}
+
 function ExpertPill({ role, detail }: { role: string; detail: string }) {
   return (
-    <div className="px-4 py-3 rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)]">
+    <div className="px-4 py-3 rounded-lg border border-border-accent/30 bg-[rgba(0,212,200,0.04)]">
       <div className="text-[12px] font-semibold text-text">{role}</div>
       <div className="text-[10.5px] text-text-dim mt-0.5">{detail}</div>
     </div>
@@ -195,7 +260,7 @@ function Pillar({
   body: string;
 }) {
   return (
-    <article className="group relative rounded-md border border-border-subtle bg-white px-6 py-6 transition-[border-color,box-shadow] duration-[400ms] hover:border-border-accent/55 hover:shadow-[0_12px_32px_-20px_rgba(24,34,44,0.3)]">
+    <article className="group relative rounded-xl border border-border-subtle bg-white card-elev px-6 py-6 transition-[border-color,box-shadow] duration-[400ms] hover:border-border-accent/55 hover:shadow-[0_12px_32px_-20px_rgba(24,34,44,0.3)]">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[400ms]"

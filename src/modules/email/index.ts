@@ -36,6 +36,8 @@ export {
   sendArchitectTenderConfirmationEmail,
   sendPartnerInterestOpsEmail,
   sendPartnerInterestConfirmationEmail,
+  sendPartnerIntroOpsEmail,
+  sendPartnerIntroConfirmationEmail,
   sendAdsFunnelMagicLinkEmail,
   sendAuthSigninLinkEmail,
 } from "./service";

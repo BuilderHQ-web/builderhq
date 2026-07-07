@@ -17,10 +17,54 @@ import { SectionField } from "./section-field";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 
+/** Per-lens framing for the panel — the kicker names the network the
+ *  reader is actually looking at, and the editorial masthead speaks to
+ *  them rather than always to architects. */
+const META: Record<
+  Role,
+  {
+    kicker: string;
+    line: string;
+    accent: string;
+    words: [string, string, string];
+    note: string;
+  }
+> = {
+  homeowner: {
+    kicker: "Preferred Partner Networks",
+    line: "Trusted partners,",
+    accent: "personally chosen.",
+    words: ["Architects", "Brokers", "Introduced"],
+    note: "No charge to you. No obligation. Just the right fit.",
+  },
+  builder: {
+    kicker: "Preferred Partner Networks",
+    line: "Trusted partners,",
+    accent: "personally chosen.",
+    words: ["Architects", "Brokers", "Introduced"],
+    note: "No charge. No obligation. Send us the good ones.",
+  },
+  architect: {
+    kicker: "Preferred Architect Network",
+    line: "Hand picked practices,",
+    accent: "personally spoken with.",
+    words: ["Featured", "Promoted", "Referred"],
+    note: "No membership fees. No contracts. Opt out with one email.",
+  },
+  finance: {
+    kicker: "Preferred Finance Partner Network",
+    line: "Hand picked brokers,",
+    accent: "personally spoken with.",
+    words: ["Listed", "Featured", "Introduced"],
+    note: "No fees. No lead charges. Opt out with one email.",
+  },
+};
+
 export function Network() {
   const { role, setRole } = useRole();
   const copy = LENS[role].network;
   const pal = ROLE_PALETTE[role];
+  const meta = META[role];
 
   return (
     <section id="network" className="relative overflow-hidden px-5 md:px-10 py-20 lg:py-24 scroll-mt-16 lg:min-h-[100svh] lg:flex lg:items-center">
@@ -36,12 +80,14 @@ export function Network() {
             <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]">
               {/* Copy */}
               <div className="p-8 lg:p-12">
-                <span
-                  className="text-[11px] tracking-[0.2em] uppercase font-ui font-semibold"
-                  style={{ color: pal.accent }}
-                >
-                  Preferred Architect Network
-                </span>
+                <RoleSwap className="inline-block">
+                  <span
+                    className="text-[11px] tracking-[0.2em] uppercase font-ui font-semibold"
+                    style={{ color: pal.accent }}
+                  >
+                    {meta.kicker}
+                  </span>
+                </RoleSwap>
                 <RoleSwap>
                   <h2 className="mt-4 max-w-[20ch] font-ui font-semibold tracking-[-0.03em] text-[clamp(1.9rem,2.6vw+0.5rem,3rem)] leading-[1.1]">
                     <span className="text-text">{copy.h2a}</span>{" "}
@@ -73,41 +119,43 @@ export function Network() {
                 </RoleSwap>
               </div>
 
-              {/* Editorial masthead */}
+              {/* Editorial masthead — re-tunes with the lens. */}
               <div className="relative hidden lg:flex flex-col justify-between p-12 border-l border-border-subtle/70 overflow-hidden">
                 <span
                   aria-hidden
                   className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full opacity-70"
                   style={{ background: `radial-gradient(circle, ${pal.glow1}, transparent 70%)` }}
                 />
-                <div className="relative">
-                  <p
-                    className="text-[10px] tracking-[0.26em] uppercase font-ui font-semibold"
-                    style={{ color: pal.accent }}
-                  >
-                    The network
-                  </p>
-                  <p className="mt-4 font-ui font-semibold tracking-[-0.02em] text-[26px] leading-[1.2] text-text">
-                    Hand picked practices,{" "}
-                    <span style={{ color: pal.accentSoft }}>personally spoken with.</span>
-                  </p>
-                </div>
-                <div className="relative mt-10 flex flex-col gap-3">
-                  {["Featured", "Promoted", "Referred"].map((word, i) => (
-                    <div key={word} className="flex items-center gap-3">
-                      <span className="font-mono text-[12px] tabular-nums" style={{ color: pal.accent + "b3" }}>
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
-                      <span className="text-[13px] tracking-[0.08em] uppercase text-text-muted">
-                        {word}
-                      </span>
-                    </div>
-                  ))}
-                  <p className="mt-4 text-[12px] leading-[1.6] text-text-dim">
-                    No membership fees. No contracts. Opt out with one email.
-                  </p>
-                </div>
+                <RoleSwap>
+                  <div className="relative">
+                    <p
+                      className="text-[11px] tracking-[0.26em] uppercase font-ui font-semibold"
+                      style={{ color: pal.accent }}
+                    >
+                      The network
+                    </p>
+                    <p className="mt-4 font-ui font-semibold tracking-[-0.02em] text-[26px] leading-[1.2] text-text">
+                      {meta.line}{" "}
+                      <span style={{ color: pal.accentSoft }}>{meta.accent}</span>
+                    </p>
+                  </div>
+                  <div className="relative mt-10 flex flex-col gap-3">
+                    {meta.words.map((word, i) => (
+                      <div key={word} className="flex items-center gap-3">
+                        <span className="font-mono text-[12px] tabular-nums" style={{ color: pal.accent + "b3" }}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
+                        <span className="text-[13px] tracking-[0.08em] uppercase text-text-muted">
+                          {word}
+                        </span>
+                      </div>
+                    ))}
+                    <p className="mt-4 text-[12px] leading-[1.6] text-text-dim">
+                      {meta.note}
+                    </p>
+                  </div>
+                </RoleSwap>
               </div>
             </div>
           </div>

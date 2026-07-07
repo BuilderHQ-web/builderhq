@@ -63,8 +63,8 @@ const CATEGORIES: Category[] = [
             Most owners publish in 2–5 minutes. We ask for the brief
             essentials: project type, location, budget band, plans + scope
             documents, and a short description. You can edit and re-publish
-            at any time. Better briefs typically pull 3× more tenders, so
-            taking 15 minutes pays off.
+            at any time. Better briefs get better tenders, so taking the
+            extra 15 minutes pays off.
           </>
         ),
       },
@@ -72,11 +72,12 @@ const CATEGORIES: Category[] = [
         q: "How quickly will I get tenders?",
         a: (
           <>
-            Median first response from a matched builder is within 24 hours
-            of publish. Full tenders typically land within 5–10 days. The
-            window depends on project complexity, location, and how many
-            builders match your service area, bigger metros move faster
-            than regional areas where builder pool is smaller.
+            Builders matched to your area are notified the moment you
+            publish, and you see interest from your dashboard as it happens.
+            How fast full tenders land depends on your project, its location,
+            and how many builders match your service area. And if your
+            project isn&apos;t getting the attention it should, our team steps
+            in and works it with you directly.
           </>
         ),
       },
@@ -108,6 +109,31 @@ const CATEGORIES: Category[] = [
             description. Your address, contact details, and full document set
             stay private until a builder unlocks the project (and you get
             notified the moment that happens).
+          </>
+        ),
+      },
+      {
+        q: "Do builders see my budget?",
+        a: (
+          <>
+            Browsing builders see your budget band alongside your suburb and
+            scope, it&apos;s part of what makes a project worth pricing
+            properly. Your exact figures, address, contact details and
+            documents stay private until a verified builder unlocks your
+            project to tender.
+          </>
+        ),
+      },
+      {
+        q: "What if my project doesn't get tenders?",
+        a: (
+          <>
+            We don&apos;t leave projects sitting. Every listing is reviewed
+            by our team before it goes live, and we watch how it performs
+            after. If your project isn&apos;t drawing the builders it
+            deserves, we work it directly: refining the brief with you and
+            putting it in front of the right builders. You can also call us
+            at any point and a person will pick it up.
           </>
         ),
       },
@@ -171,12 +197,11 @@ const CATEGORIES: Category[] = [
         q: "What does it cost a builder to tender?",
         a: (
           <>
-            Builders pay a small unlock fee per project to access the address,
-            owner contact, and downloadable documents. Founding builders get
-            complimentary unlocks for the launch period, a hand-picked cohort
-            we work with directly. After founding access, unlocks are priced
-            per project type (a single-dwelling reno is cheaper to unlock
-            than a multi-unit build).
+            Builders pay a one-off unlock fee per project, between $49 and
+            $199 depending on the project type, to access the address, owner
+            contact, and the full document set. A single-dwelling renovation
+            is cheaper to unlock than a multi-unit build. No subscription,
+            no lead packs, and no commission on jobs you win.
           </>
         ),
       },
@@ -331,8 +356,23 @@ const CATEGORIES: Category[] = [
             >
               info@builderhq.com.au
             </a>{" "}
-            with a short description and a screenshot if you can. We aim to
-            reply within one business day, faster on weekday mornings (AEST).
+            with a short description and a screenshot if you can, or call us
+            on{" "}
+            <a
+              href="tel:0416926380"
+              className="text-accent-light underline underline-offset-4"
+            >
+              0416 926 380
+            </a>{" "}
+            or{" "}
+            <a
+              href="tel:0452280062"
+              className="text-accent-light underline underline-offset-4"
+            >
+              0452 280 062
+            </a>
+            . We aim to reply within one business day, faster on weekday
+            mornings (AEST).
           </>
         ),
       },
@@ -340,10 +380,10 @@ const CATEGORIES: Category[] = [
         q: "Can I see a demo before signing up?",
         a: (
           <>
-            The home page&apos;s &quot;Showcase&quot; section walks through
-            three of the most-used screens, tracking, workspace, and
-            comparison. For a deeper walkthrough, get in touch and
-            we&apos;ll show you the full product live.
+            The home page walks through the product screen by screen for
+            every side of the build, posting, verification, comparison and
+            award. For a deeper walkthrough, get in touch and we&apos;ll show
+            you the full product live.
           </>
         ),
       },
@@ -390,14 +430,14 @@ function FAQContent() {
       {/* Sticky category nav */}
       <aside className="hidden lg:block">
         <nav className="sticky top-28 flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui mb-2 px-3">
+          <span className="text-[11px] tracking-[0.22em] uppercase text-text-dim font-ui mb-2 px-3">
             Categories
           </span>
           {CATEGORIES.map((c) => (
             <a
               key={c.id}
               href={`#${c.id}`}
-              className="px-3 py-2 rounded-sm text-[12.5px] text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.025)] transition-colors"
+              className="px-3 py-2 rounded-md text-[12.5px] text-text-muted hover:text-text hover:bg-[rgba(24,34,44,0.04)] transition-colors"
               dangerouslySetInnerHTML={{ __html: c.label }}
             />
           ))}
@@ -415,7 +455,7 @@ function FAQContent() {
               className="font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.2rem)] leading-[1.1] text-text mb-4 sm:mb-5"
               dangerouslySetInnerHTML={{ __html: cat.label }}
             />
-            <ul className="rounded-md border border-border-subtle bg-white overflow-hidden divide-y divide-border-subtle/60">
+            <ul className="rounded-xl border border-border-subtle bg-white card-elev overflow-hidden divide-y divide-border-subtle/60">
               {cat.questions.map((qa, i) => {
                 const key = `${cat.id}-${i}`;
                 return (
@@ -433,9 +473,9 @@ function FAQContent() {
           </section>
         ))}
 
-        <section className="mt-6 rounded-md border border-border-subtle bg-white px-6 lg:px-8 py-7 lg:py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <section className="mt-6 rounded-xl border border-border-subtle bg-white card-elev px-6 lg:px-8 py-7 lg:py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+            <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Still have a question?
             </span>
             <h3 className="mt-2 font-ui font-semibold text-[18px] tracking-[-0.01em] text-text">
@@ -474,7 +514,7 @@ function FAQRow({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center gap-4 px-5 lg:px-7 py-5 lg:py-6 text-left hover:bg-[rgba(255,255,255,0.018)] transition-colors duration-[160ms]"
+        className="w-full flex items-center gap-4 px-5 lg:px-7 py-5 lg:py-6 text-left hover:bg-[rgba(24,34,44,0.025)] transition-colors duration-[160ms]"
       >
         <span
           className={cn(
@@ -486,7 +526,7 @@ function FAQRow({
         </span>
         <span
           className={cn(
-            "size-7 rounded-sm border flex items-center justify-center shrink-0",
+            "size-7 rounded-md border flex items-center justify-center shrink-0",
             "transition-[transform,border-color,background-color,color] duration-[260ms]",
             isOpen
               ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-accent-light rotate-45"

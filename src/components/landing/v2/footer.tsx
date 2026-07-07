@@ -17,7 +17,7 @@ const COLUMNS: Array<{
       { label: "How it works", href: "#how" },
       { label: "Trust and verification", href: "#trust" },
       { label: "Architect Network", href: "#network" },
-      { label: "FAQ", href: "#faq" },
+      { label: "FAQs", href: "#faq" },
     ],
   },
   {
@@ -60,6 +60,24 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
               and architects get seen and referred. Free for homeowners, no
               commission, ever.
             </p>
+            {/* Talk to a person — the trust signal almost no marketplace
+                offers. Real numbers, real reply. */}
+            <p className="text-[13px] leading-[1.8] text-text-muted">
+              <a href="tel:0416926380" className="hover:text-text transition-colors">
+                0416 926 380
+              </a>
+              <span aria-hidden className="mx-2 text-text-faint">·</span>
+              <a href="tel:0452280062" className="hover:text-text transition-colors">
+                0452 280 062
+              </a>
+              <span aria-hidden className="mx-2 text-text-faint">·</span>
+              <a
+                href="mailto:info@builderhq.com.au"
+                className="hover:text-text transition-colors"
+              >
+                info@builderhq.com.au
+              </a>
+            </p>
           </div>
 
           {/* Link columns */}
@@ -85,9 +103,12 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
           </div>
         </div>
 
-        <div className="mt-14 pt-6 border-t border-border-subtle/70">
+        <div className="mt-14 pt-6 border-t border-border-subtle/70 flex flex-col lg:flex-row items-center lg:items-baseline justify-between gap-2">
           <p className="text-[12.5px] text-text-dim text-center lg:text-left">
-            © {new Date().getFullYear()} BuilderHQ · Canberra · Melbourne · Australia
+            © {new Date().getFullYear()} BuilderHQ · ABN 70 697 584 722
+          </p>
+          <p className="text-[12.5px] text-text-dim text-center lg:text-right">
+            Melbourne, Victoria, Australia
           </p>
         </div>
       </div>

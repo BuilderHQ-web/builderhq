@@ -13,6 +13,7 @@ import { motion } from "motion/react";
 import { ArrowUpRight, ArrowDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 import { HeroVisual } from "./hero-visual";
 import { LENS, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
@@ -103,6 +104,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
               <div className="mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
                 <Link
                   href={primary.href}
+                  onClick={() => track("hero_cta", { role, label: primary.label })}
                   className={cn(
                     "group inline-flex items-center justify-center gap-2 h-12 sm:h-[52px] px-8 rounded-full",
                     "bg-accent text-accent-contrast text-[15px] font-semibold tracking-[0.01em]",

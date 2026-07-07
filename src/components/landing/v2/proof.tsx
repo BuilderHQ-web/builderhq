@@ -58,7 +58,7 @@ export function Proof() {
                   className="absolute top-0 inset-x-10 h-px"
                   style={{ background: `linear-gradient(90deg, transparent, ${pal.accentSoft}77, transparent)` }}
                 />
-                <p className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-semibold">
+                <p className="text-[11px] tracking-[0.22em] uppercase text-text-dim font-semibold">
                   {copy.panelTitle}
                 </p>
 

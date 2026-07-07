@@ -65,7 +65,7 @@ export function MarketingPageShell({
           <div className="mx-auto max-w-[860px]">
             {/* Page header */}
             <header className="mb-12 lg:mb-16">
-              <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">
+              <span className="inline-flex items-center gap-2.5 text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">
                 <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.7)]" />
                 {kicker}
               </span>

@@ -18,6 +18,7 @@ import { MotionConfig } from "motion/react";
 
 import type { Role } from "./content";
 import { ROLE_ORDER } from "./content";
+import { track } from "@/lib/analytics";
 
 const STORAGE_KEY = "bhq_role";
 
@@ -80,6 +81,7 @@ export function RoleProvider({
     (next: Role) => {
       applyRole(next);
       setDocked(true);
+      track("lens_selected", { role: next, source: "nav" });
     },
     [applyRole],
   );
@@ -87,6 +89,7 @@ export function RoleProvider({
   const flyToDock = React.useCallback(
     (next: Role, from: FlightFrom) => {
       applyRole(next);
+      track("lens_selected", { role: next, source: "selector" });
       const reduce =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;

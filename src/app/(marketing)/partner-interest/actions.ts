@@ -26,6 +26,8 @@ import {
 import {
   sendPartnerInterestOpsEmail,
   sendPartnerInterestConfirmationEmail,
+  sendPartnerIntroOpsEmail,
+  sendPartnerIntroConfirmationEmail,
 } from "@/modules/email";
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
@@ -168,6 +170,121 @@ export async function submitPartnerInterestAction(
         msg: confirmationResult.error.message,
       },
       "partner interest confirmation did not send, applicant won't see a receipt but the lead is captured",
+    );
+  }
+
+  return ok({ ok: true });
+}
+
+/* ── Homeowner introduction requests ─────────────────────────────────────
+   The homeowner-facing sibling of the partner form: "Request an
+   introduction" on the landing network section. Same shape: validate,
+   rate-limit, persist a `leads` row (kind partner_intro_request), fan out
+   the ops notify + a holding confirmation. */
+
+const introSchema = z.object({
+  need: z.enum(["architect", "finance", "both"]),
+  fullName: z.string().trim().min(1, "Your name is required.").max(120),
+  email: z.email("That email looks off, please double-check.").max(160),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  state: z.enum(AU_STATES),
+  /** Honeypot — checked before validation; kept here for typing only. */
+  hp: z.string().optional(),
+});
+
+export type IntroRequestInput = z.infer<typeof introSchema>;
+
+export async function submitIntroRequestAction(
+  input: IntroRequestInput,
+): Promise<Result<{ ok: true }>> {
+  if (typeof input?.hp === "string" && input.hp.trim().length > 0) {
+    logger.info({ event: "partner_intro.honeypot_tripped" }, "intro form honeypot tripped");
+    return ok({ ok: true });
+  }
+
+  const parsed = introSchema.safeParse(input);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return fail("validation", first?.message ?? "Some fields need fixing.", {
+      issues: parsed.error.issues,
+    });
+  }
+  const v = parsed.data;
+
+  const hdrs = await headers();
+  const ip = clientIpFromHeaders(hdrs);
+  const userAgent = hdrs.get("user-agent") ?? null;
+
+  const rl = await limiters.signUp.limit(ip);
+  if (!rl.success) {
+    return fail(
+      "rate_limited",
+      "Too many submissions from this network. Wait a minute and try again.",
+    );
+  }
+
+  const parts = v.fullName.trim().split(/\s+/);
+  const firstName = parts[0] ?? v.fullName.trim();
+  const lastName = parts.length > 1 ? parts.slice(1).join(" ") : null;
+
+  const leadResult = await createLead({
+    kind: "partner_intro_request",
+    firstName,
+    lastName,
+    email: v.email.trim().toLowerCase(),
+    phone: v.phone && v.phone.length > 0 ? v.phone : null,
+    source: "landing_intro_request",
+    ip,
+    userAgent,
+    meta: { need: v.need, state: v.state },
+  });
+
+  if (!leadResult.ok) return leadResult;
+  const lead = leadResult.value;
+
+  const [opsResult, confirmationResult] = await Promise.all([
+    sendPartnerIntroOpsEmail({
+      leadId: lead.id,
+      firstName,
+      lastName,
+      email: lead.email,
+      phone: lead.phone,
+      need: v.need,
+      state: v.state,
+      source: lead.source,
+      createdAt: lead.createdAt,
+    }),
+    sendPartnerIntroConfirmationEmail({
+      to: lead.email,
+      firstName,
+      need: v.need,
+    }),
+  ]);
+
+  if (opsResult.ok) {
+    await markLeadOpsNotified(lead.id);
+  } else {
+    logger.warn(
+      {
+        event: "partner_intro.ops_email_failed",
+        leadId: lead.id,
+        msg: opsResult.error.message,
+      },
+      "partner intro ops notification did not send, lead retained for admin retry",
+    );
+  }
+
+  if (confirmationResult.ok) {
+    await markLeadDelivered(lead.id);
+  } else {
+    await markLeadDeliveryFailed(lead.id, confirmationResult.error.message);
+    logger.warn(
+      {
+        event: "partner_intro.confirmation_email_failed",
+        leadId: lead.id,
+        msg: confirmationResult.error.message,
+      },
+      "partner intro confirmation did not send, homeowner won't see a receipt but the lead is captured",
     );
   }
 
