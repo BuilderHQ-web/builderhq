@@ -5,6 +5,7 @@ import {
   Instrument_Serif,
   Geist,
 } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 import { ToastProvider } from "@/components/ui/toast";
@@ -98,6 +99,9 @@ export default function RootLayout({
           </Suspense>
           {children}
         </ToastProvider>
+        {/* Vercel Web Analytics — pageviews everywhere; custom events fire
+            through src/lib/analytics.ts. */}
+        <Analytics />
       </body>
     </html>
   );

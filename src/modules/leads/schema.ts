@@ -45,6 +45,10 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // project is attached (these are practitioners, not project owners).
   "partner_architect_interest",
   "partner_finance_interest",
+  // Homeowner asking BuilderHQ for a Preferred Partner introduction
+  // (architect, finance broker, or both) via the landing network CTA.
+  // The need + state ride in the `meta` jsonb.
+  "partner_intro_request",
 ]);
 
 export const leads = pgTable(

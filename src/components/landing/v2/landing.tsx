@@ -31,6 +31,7 @@ import { Close } from "./close";
 import { Footer } from "./footer";
 import { SectionDivider } from "./section-divider";
 import { PartnerForm } from "./partner-form";
+import { SectionTracker } from "./section-tracker";
 
 export function Landing({
   initialRole = "homeowner",
@@ -77,9 +78,12 @@ export function Landing({
       <RoleWash />
       <FlyingLabel />
 
-      {/* Partner "Join the network" capture modal — listens for the
-          #join-architect / #join-finance sentinel CTAs. */}
+      {/* Partner capture modal — listens for the #join-architect /
+          #join-finance / #request-intro sentinel CTAs. */}
       <PartnerForm />
+
+      {/* Scroll-depth analytics: one section_viewed per landmark. */}
+      <SectionTracker />
       </div>
     </RoleProvider>
   );

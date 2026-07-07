@@ -37,6 +37,11 @@ import {
   type PartnerNetwork,
 } from "@/emails/PartnerInterestConfirmationEmail";
 import { PartnerInterestOpsEmail } from "@/emails/PartnerInterestOpsEmail";
+import {
+  PartnerIntroOpsEmail,
+  type IntroNeed,
+} from "@/emails/PartnerIntroOpsEmail";
+import { PartnerIntroConfirmationEmail } from "@/emails/PartnerIntroConfirmationEmail";
 import { OwnerAdvisoryOpsEmail } from "@/emails/OwnerAdvisoryOpsEmail";
 import { OwnerAdvisoryConfirmationEmail } from "@/emails/OwnerAdvisoryConfirmationEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
@@ -1085,6 +1090,134 @@ export async function sendPartnerInterestConfirmationEmail(
       resendId: data.id,
     },
     "partner interest confirmation sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Preferred Partner introduction requests (homeowner side) ───────────
+
+interface SendPartnerIntroOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  lastName: string | null;
+  email: string;
+  phone: string | null;
+  need: IntroNeed;
+  state: string;
+  source: string | null;
+  createdAt: Date;
+}
+
+/** Ops notification — fires to info@ on every introduction request. */
+export async function sendPartnerIntroOpsEmail(
+  input: SendPartnerIntroOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const fullName = [input.firstName, input.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const needLabel =
+    input.need === "both"
+      ? "Architect + broker"
+      : input.need === "architect"
+        ? "Architect"
+        : "Finance broker";
+  const subject = `INTRO (${needLabel}): ${fullName || input.email} — ${input.state}`;
+  const props = { ...input };
+
+  const [html, text] = await Promise.all([
+    render(PartnerIntroOpsEmail(props)),
+    render(PartnerIntroOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "partner_intro" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.partner_intro_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "partner intro ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.partner_intro_ops.sent",
+      leadId: input.leadId,
+      resendId: data.id,
+    },
+    "partner intro ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendPartnerIntroConfirmationEmailInput {
+  to: string;
+  firstName: string;
+  need: IntroNeed;
+}
+
+/** Confirmation to the homeowner — restrained holding email. */
+export async function sendPartnerIntroConfirmationEmail(
+  input: SendPartnerIntroConfirmationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = "Received — we're lining up your introduction";
+  const props = { firstName: input.firstName, need: input.need };
+
+  const [html, text] = await Promise.all([
+    render(PartnerIntroConfirmationEmail(props)),
+    render(PartnerIntroConfirmationEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lead_partner_confirmation" },
+      { name: "variant", value: "partner_intro" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.partner_intro_confirm.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "partner intro confirmation send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.partner_intro_confirm.sent",
+      to: input.to,
+      resendId: data.id,
+    },
+    "partner intro confirmation sent",
   );
   return ok({ id: data.id });
 }

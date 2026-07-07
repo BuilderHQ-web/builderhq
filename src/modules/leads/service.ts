@@ -31,6 +31,7 @@ const createLeadSchema = z.object({
     "owner_advisory",
     "partner_architect_interest",
     "partner_finance_interest",
+    "partner_intro_request",
   ]),
   firstName: z
     .string()

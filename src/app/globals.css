@@ -498,7 +498,7 @@ img, svg, video, canvas, iframe {
   --color-text-muted: #53606b;
   --color-text-subtle: rgba(22, 28, 34, 0.66);
   --color-text-faint: rgba(22, 28, 34, 0.44);
-  --color-text-dim: #8b949d;
+  --color-text-dim: #78828d;
 
   /* where the bright tint used to read on dark, use a deep teal on light */
   --color-accent-light: #0a7d73;

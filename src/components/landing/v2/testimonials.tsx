@@ -5,7 +5,8 @@
  * full-bleed on the page, with an attribution line up top, a huge bold
  * quote, and three big stepped stat rectangles at the bottom (the
  * descending-staircase Base44 uses). No photo. It auto-advances every
- * 7s with a smooth horizontal slide and can be driven by the dots.
+ * 10s with a smooth horizontal slide, pauses while hovered so reading
+ * always wins, and can be driven by the dots.
  *
  * Reset-on-lens-change via keying <Story> on role (no setState-in-effect).
  *
@@ -21,7 +22,8 @@ import { TESTIMONIALS, ROLE_PALETTE, type Role } from "./content";
 import { SectionField } from "./section-field";
 import { useRole } from "./role";
 
-const INTERVAL = 7000;
+/** Slow enough to read the long quotes; pauses entirely on hover. */
+const INTERVAL = 10000;
 
 /** Descending staircase — first tallest, bottoms aligned. */
 const STEP_H = ["h-[128px] sm:h-[240px] lg:h-[300px]", "h-[112px] sm:h-[205px] lg:h-[250px]", "h-[96px] sm:h-[170px] lg:h-[200px]"];
@@ -49,14 +51,18 @@ function Story({ role }: { role: Role }) {
   const set = TESTIMONIALS[role];
   const [idx, setIdx] = React.useState(0);
   const [dir, setDir] = React.useState(1);
+  // Auto-advance yields to reading: hovering anywhere over the story
+  // holds the current quote until the pointer leaves.
+  const [paused, setPaused] = React.useState(false);
 
   React.useEffect(() => {
+    if (paused) return;
     const t = window.setTimeout(() => {
       setDir(1);
       setIdx((i) => (i + 1) % set.length);
     }, INTERVAL);
     return () => window.clearTimeout(t);
-  }, [idx, set.length]);
+  }, [idx, set.length, paused]);
 
   const go = (next: number) => {
     setDir(next >= idx ? 1 : -1);
@@ -66,7 +72,10 @@ function Story({ role }: { role: Role }) {
   const t = set[idx]!;
 
   return (
-    <div>
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       {/* popLayout: the outgoing slide is lifted out of flow while the
           incoming one lands, so the block never collapses to a blank
           gap mid-rotation (mode="wait" left a ~0.5s hole). */}
