@@ -351,25 +351,25 @@ function PulseTile({
 }) {
   const styles: Record<Tone, { bg: string; ring: string; num: string; glow: string }> = {
     teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
       ring: "border-border-accent/40",
       num: "text-accent-light",
       glow: "rgba(0,212,200,0.18)",
     },
     blue: {
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
       ring: "border-[rgba(120,180,255,0.20)]",
       num: "text-[#bfd6ff]",
       glow: "rgba(26,95,212,0.20)",
     },
     amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
       ring: "border-[rgba(251,184,64,0.22)]",
       num: "text-[#ffd887]",
       glow: "rgba(251,184,64,0.18)",
     },
     rose: {
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
       ring: "border-[rgba(255,120,150,0.20)]",
       num: "text-[#ffc0cd]",
       glow: "rgba(255,120,150,0.16)",
@@ -381,7 +381,7 @@ function PulseTile({
     <div
       className={cn(
         "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         t.ring,
       )}
       style={{ background: t.bg }}
@@ -394,7 +394,7 @@ function PulseTile({
         }}
       />
       <div className="relative flex items-center gap-2 mb-3 text-text-dim">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted">
           {icon}
         </span>
         <span className="text-[10px] tracking-[0.18em] uppercase">{label}</span>
@@ -425,7 +425,7 @@ function DecisionsWaitingCallout({
     <section
       className={cn(
         "relative overflow-hidden rounded-md border border-warning/30",
-        "bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(6,18,30,0.6)_70%)]",
+        "bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(250,248,243,0.6)_70%)]",
         "shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]",
       )}
     >
@@ -477,7 +477,7 @@ function DecisionRow({
       ? "border-[rgba(255,120,120,0.40)] bg-[rgba(255,120,120,0.06)] text-[rgba(255,160,160,0.95)]"
       : decision.urgency === "warn"
         ? "border-warning/30 bg-[rgba(255,181,71,0.04)] text-warning"
-        : "border-border-subtle bg-[rgba(255,255,255,0.018)] text-text-dim";
+        : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-dim";
   const expiryLabel =
     decision.daysUntilExpiry == null
       ? "—"
@@ -491,7 +491,7 @@ function DecisionRow({
     <li>
       <Link
         href={`/owner/projects/${decision.projectSlug}/tenders`}
-        className="group grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+        className="group grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] hover:border-border-strong hover:bg-[rgba(24,34,44,0.045)] transition-colors"
       >
         <span
           className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0 row-span-1 sm:row-span-1"
@@ -521,7 +521,7 @@ function DecisionRow({
                 "inline-flex items-center px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.16em] uppercase",
                 decision.status === "shortlisted"
                   ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                  : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+                  : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
               )}
             >
               {decision.status}
@@ -736,7 +736,7 @@ const REC_META: Record<
     icon: <Hourglass className="size-3" />,
     badgeCls: "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
     cardCls:
-      "border-warning/30 bg-[linear-gradient(180deg,rgba(255,181,71,0.04),rgba(6,18,30,0.78))] hover:border-warning/50",
+      "border-warning/30 bg-[linear-gradient(180deg,rgba(255,181,71,0.04),rgba(250,248,243,0.78))] hover:border-warning/50",
     glow: "radial-gradient(circle, rgba(255,181,71,0.20), transparent 70%)",
   },
   fresh_arrival: {
@@ -745,16 +745,16 @@ const REC_META: Record<
     badgeCls:
       "border-border-accent bg-accent-muted/40 text-accent-light",
     cardCls:
-      "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(6,18,30,0.78))] hover:border-border-accent/60",
+      "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.78))] hover:border-border-accent/60",
     glow: "radial-gradient(circle, rgba(0,212,200,0.22), transparent 70%)",
   },
   no_tenders_yet: {
     label: "No tenders yet",
     icon: <Hourglass className="size-3" />,
     badgeCls:
-      "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+      "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
     cardCls:
-      "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] hover:border-border-strong",
+      "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
     glow: "radial-gradient(circle, rgba(120,180,255,0.10), transparent 70%)",
   },
   decision_made: {
@@ -763,16 +763,16 @@ const REC_META: Record<
     badgeCls:
       "border-border-accent bg-accent-muted/40 text-accent-light",
     cardCls:
-      "border-border-accent/45 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(6,18,30,0.78))]",
+      "border-border-accent/45 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.78))]",
     glow: "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
   },
   healthy_spread: {
     label: "Healthy spread",
     icon: <TrendingUp className="size-3" />,
     badgeCls:
-      "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+      "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
     cardCls:
-      "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] hover:border-border-strong",
+      "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
     glow: "radial-gradient(circle, rgba(120,180,255,0.10), transparent 70%)",
   },
   wide_spread: {
@@ -781,7 +781,7 @@ const REC_META: Record<
     badgeCls:
       "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
     cardCls:
-      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(6,18,30,0.78))]",
+      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(250,248,243,0.78))]",
     glow: "radial-gradient(circle, rgba(255,181,71,0.16), transparent 70%)",
   },
   dormant: {
@@ -790,7 +790,7 @@ const REC_META: Record<
     badgeCls:
       "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
     cardCls:
-      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(6,18,30,0.78))]",
+      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(250,248,243,0.78))]",
     glow: "radial-gradient(circle, rgba(255,181,71,0.16), transparent 70%)",
   },
 };
@@ -1009,16 +1009,16 @@ function Panel({
 }) {
   const toneCls =
     tone === "accent"
-      ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(6,18,30,0.6))]"
+      ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(250,248,243,0.6))]"
       : tone === "muted"
         ? "border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))]"
-        : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]";
+        : "border-border-subtle bg-surface-1 card-elev";
 
   return (
     <section
       className={cn(
         "rounded-md border overflow-hidden transform-gpu",
-        "shadow-[0_12px_32px_-18px_rgba(0,0,0,0.55)]",
+        "shadow-[0_12px_32px_-18px_rgba(15,23,32,0.19)]",
         toneCls,
         className,
       )}
@@ -1060,7 +1060,7 @@ function Shortcut({
           "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] transition-colors duration-[160ms]",
           primary
             ? "bg-accent-muted/40 border border-border-accent text-accent-light hover:bg-accent-muted/70"
-            : "hover:bg-[rgba(255,255,255,0.022)]",
+            : "hover:bg-[rgba(24,34,44,0.035)]",
         )}
       >
         <span
@@ -1068,7 +1068,7 @@ function Shortcut({
             "size-8 rounded-md flex items-center justify-center shrink-0",
             primary
               ? "bg-accent-muted border border-border-accent text-accent-light"
-              : "border border-border-subtle bg-[rgba(255,255,255,0.018)] text-text-muted",
+              : "border border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted",
           )}
         >
           {icon}

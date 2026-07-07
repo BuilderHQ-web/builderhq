@@ -236,7 +236,7 @@ function ToastCard({
       role="status"
       className={cn(
         "pointer-events-auto w-[360px] max-w-full",
-        "rounded-md border shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]",
+        "rounded-md border shadow-[0_18px_40px_-18px_rgba(15,23,32,0.19)]",
         "backdrop-blur-md",
         palette.surface,
         palette.border,
@@ -286,7 +286,7 @@ function ToastCard({
 const TONES = {
   default: {
     icon: Info,
-    surface: "bg-[rgba(10,28,44,0.92)]",
+    surface: "bg-[rgba(255,255,255,0.92)]",
     border: "border-border-strong",
     iconWrap: "bg-surface-1 border border-border-subtle",
     iconColor: "text-text-muted",
@@ -296,7 +296,7 @@ const TONES = {
   success: {
     icon: Check,
     surface:
-      "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(10,28,44,0.92))]",
+      "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(255,255,255,0.92))]",
     border: "border-accent/35",
     iconWrap: "bg-accent text-accent-contrast",
     iconColor: "text-accent-contrast",
@@ -306,7 +306,7 @@ const TONES = {
   danger: {
     icon: AlertTriangle,
     surface:
-      "bg-[linear-gradient(180deg,rgba(255,122,138,0.08),rgba(10,28,44,0.92))]",
+      "bg-[linear-gradient(180deg,rgba(255,122,138,0.08),rgba(255,255,255,0.92))]",
     border: "border-danger/35",
     iconWrap: "bg-danger/15 border border-danger/30",
     iconColor: "text-danger",
@@ -316,7 +316,7 @@ const TONES = {
   info: {
     icon: Info,
     surface:
-      "bg-[linear-gradient(180deg,rgba(26,95,212,0.10),rgba(10,28,44,0.92))]",
+      "bg-[linear-gradient(180deg,rgba(26,95,212,0.10),rgba(255,255,255,0.92))]",
     border: "border-blue-400/30",
     iconWrap: "bg-[rgba(26,95,212,0.18)] border border-blue-400/30",
     iconColor: "text-[rgb(160,200,255)]",

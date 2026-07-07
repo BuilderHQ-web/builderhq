@@ -40,7 +40,7 @@ export function VerificationCallout({
     <section
       className={cn(
         "relative overflow-hidden rounded-md border border-warning/30",
-        "bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(6,18,30,0.6)_70%)]",
+        "bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(250,248,243,0.6)_70%)]",
         "shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]",
       )}
     >
@@ -145,7 +145,7 @@ function ChecklistItem({
         "transition-[border-color,background-color,transform] duration-[160ms]",
         done
           ? "border-border-accent/45 bg-[rgba(0,212,200,0.06)]"
-          : "border-border-subtle bg-[rgba(255,255,255,0.018)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)]",
+          : "border-border-subtle bg-[rgba(24,34,44,0.03)] hover:border-border-strong hover:bg-[rgba(24,34,44,0.045)]",
         "active:scale-[0.997] active:duration-[100ms]",
       )}
     >

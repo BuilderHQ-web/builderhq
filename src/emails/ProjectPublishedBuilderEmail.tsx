@@ -64,7 +64,7 @@ export function ProjectPublishedBuilderEmail({
     >
       <BodyText>{greet}</BodyText>
       <BodyText>
-        A new project just went live on the marketplace
+        A new project just went live on the platform
         {isInServiceArea ? " — and it sits inside your service area" : ""}.
       </BodyText>
 

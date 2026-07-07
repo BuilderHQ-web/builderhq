@@ -30,6 +30,7 @@ export function Logo({
   className,
   size,
   height,
+  tone = "light",
   alt = "BuilderHQ",
 }: {
   className?: string;
@@ -37,9 +38,15 @@ export function Logo({
   size?: number;
   /** Visible logo height in px (not the full canvas). */
   height?: number;
+  /** "light" = white wordmark (dark surfaces); "dark" = ink wordmark (light surfaces). Mark stays teal either way. */
+  tone?: "light" | "dark";
   alt?: string;
 }) {
   const h = height ?? size ?? 28;
+  const src =
+    tone === "dark"
+      ? "/brand/BuilderHQ_Dark_Text.png"
+      : "/brand/BuilderHQ_White_Text.png";
   const w = h * GLYPH_ASPECT;
 
   // Scaled bitmap dimensions (square, since source is square).
@@ -65,7 +72,7 @@ export function Logo({
       style={{
         height: h,
         width: w,
-        backgroundImage: 'url("/brand/BuilderHQ_White_Text.png")',
+        backgroundImage: `url("${src}")`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: `${bgX}px ${bgY}px`,
         backgroundSize: `${bgSize}px ${bgSize}px`,

@@ -2,17 +2,16 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Premium card surface.
+ * Premium card surface (light).
  *
- * Layering tricks:
- *   1. 1px inset top highlight ("catching light") — the single move that
- *      makes a dark-mode card look like a real surface, not a div.
- *   2. Subtle top-to-bottom gradient inside (surface-1 → slightly cooler).
- *   3. Layered shadow: tight inner contour + larger soft drop.
- *   4. Hover lifts the card 1px and softens the accent rim — never aggressive.
+ * A crisp white surface lifted off the warm greige canvas by `card-elev`
+ * (globals.css): a tight contact shadow for the edge plus a soft, wide
+ * ambient drop. That separation — white on warm, gently raised — is what
+ * keeps sections legible instead of melting into one flat sheet.
  *
  * The `interactive` prop exists because most cards are static (purely
- * informational) and shouldn't animate on hover.
+ * informational) and shouldn't animate on hover. When set, the card
+ * lifts 1px into `card-elev-lg` and firms its border.
  */
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
@@ -23,11 +22,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        "relative isolate rounded-[var(--radius-xl)] border border-border bg-surface-1",
-        // One inset highlight + a quiet drop. No outer shadow halo.
-        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]",
-        "transition-[border-color,background] duration-[160ms] ease-[var(--ease-out)]",
-        interactive && "hover:border-border-strong hover:bg-surface-2",
+        "relative isolate rounded-[var(--radius-xl)] border border-border bg-surface-1 card-elev",
+        "transition-[border-color,box-shadow,transform] duration-[180ms] ease-[var(--ease-out)]",
+        interactive && "hover:-translate-y-px hover:border-border-strong hover:card-elev-lg",
         className,
       )}
       {...props}

@@ -243,7 +243,7 @@ export function PlanAutofill({
   if (phase === "error") {
     return (
       <div className="py-6" style={{ animation: "var(--animate-fade-in)" }}>
-        <div className="rounded-lg border border-border-subtle bg-[rgba(255,255,255,0.012)] p-6 sm:p-8 text-center">
+        <div className="rounded-lg border border-border-subtle bg-[rgba(24,34,44,0.025)] p-6 sm:p-8 text-center">
           <span className="mx-auto size-12 rounded-full grid place-items-center border border-border-subtle bg-[rgba(255,80,80,0.06)] text-danger">
             <RotateCcw className="size-5" />
           </span>
@@ -316,7 +316,7 @@ export function PlanAutofill({
           "relative block cursor-pointer rounded-lg border overflow-hidden transition-[border-color,background] duration-[300ms]",
           dragOver
             ? "border-border-accent bg-[rgba(0,212,200,0.05)]"
-            : "border-border-strong border-dashed bg-[rgba(255,255,255,0.012)] hover:border-border-accent/60",
+            : "border-border-strong border-dashed bg-[rgba(24,34,44,0.025)] hover:border-border-accent/60",
         )}
       >
         <input
@@ -331,7 +331,7 @@ export function PlanAutofill({
           className="absolute inset-0 opacity-[0.4] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(100,180,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,0.05) 1px, transparent 1px)",
+              "linear-gradient(rgba(24,34,44,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.05) 1px, transparent 1px)",
             backgroundSize: "28px 28px",
             maskImage:
               "radial-gradient(ellipse 70% 70% at 50% 45%, black 30%, transparent 80%)",

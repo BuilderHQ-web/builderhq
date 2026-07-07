@@ -665,7 +665,7 @@ export function TenderForm({
               ready={ready}
             />
 
-            <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-3">
+            <div className="rounded-md border border-border-subtle bg-surface-1 card-elev p-3">
               <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-2 px-1">
                 Jump to section
               </div>
@@ -780,10 +780,10 @@ function Section({
   return (
     <section
       id={`section-${slug(title)}`}
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]"
+      className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]"
     >
       <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
+        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="min-w-0">
@@ -818,14 +818,14 @@ function Collapsible({
   return (
     <section
       id={`section-${slug(title)}`}
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]"
+      className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]"
     >
       <button
         type="button"
         onClick={onToggle}
-        className="w-full text-left px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.018)] transition-colors"
+        className="w-full text-left px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center gap-3 hover:bg-[rgba(24,34,44,0.03)] transition-colors"
       >
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
+        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="min-w-0 flex-1">
@@ -839,7 +839,7 @@ function Collapsible({
                   "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
                   badge === "Filled"
                     ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                    : "border-border-subtle bg-[rgba(255,255,255,0.018)] text-text-dim",
+                    : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-dim",
                 )}
               >
                 {badge}
@@ -962,7 +962,7 @@ function CostBreakdown({
 
       {/* Other lines */}
       <div className="rounded-md border border-border-subtle overflow-hidden">
-        <div className="px-4 py-2 bg-[rgba(255,255,255,0.018)] border-b border-border-subtle text-[10px] tracking-[0.16em] uppercase text-text-dim flex items-center justify-between">
+        <div className="px-4 py-2 bg-[rgba(24,34,44,0.03)] border-b border-border-subtle text-[10px] tracking-[0.16em] uppercase text-text-dim flex items-center justify-between">
           <span>Custom lines</span>
           <button
             type="button"
@@ -1019,7 +1019,7 @@ function CostBreakdown({
         className={cn(
           "rounded-md border p-4 transition-colors",
           variance == null
-            ? "border-border-subtle bg-[rgba(255,255,255,0.012)]"
+            ? "border-border-subtle bg-[rgba(24,34,44,0.025)]"
             : variance === 0
             ? "border-border-accent/50 bg-[rgba(0,212,200,0.04)]"
             : "border-warning/30 bg-warning/[0.05]",
@@ -1072,7 +1072,7 @@ function TradeRow({
   isLocked: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_140px] sm:grid-cols-[1fr_180px] gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0 transition-colors hover:bg-[rgba(255,255,255,0.012)]">
+    <div className="grid grid-cols-[1fr_140px] sm:grid-cols-[1fr_180px] gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0 transition-colors hover:bg-[rgba(24,34,44,0.025)]">
       <div className="min-w-0">
         <div className="text-[12.5px] font-medium text-text">{tradeLabel}</div>
         {hint ? (
@@ -1142,9 +1142,9 @@ function LiveSummaryCard({
       className={cn(
         "relative overflow-hidden rounded-md border p-5",
         ready
-          ? "border-border-accent/45 bg-[linear-gradient(160deg,rgba(0,212,200,0.06),rgba(6,18,30,0.78))]"
-          : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+          ? "border-border-accent/45 bg-[linear-gradient(160deg,rgba(0,212,200,0.06),rgba(250,248,243,0.78))]"
+          : "border-border-subtle bg-surface-1 card-elev",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
       )}
     >
       {/* corner glow when ready */}
@@ -1292,8 +1292,8 @@ function DocsRailCard({
         "relative overflow-hidden rounded-md",
         // Stronger visual weight than the other sections — accent border
         // + glow so the eye lands here first.
-        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(10,28,44,0.55)_45%,rgba(6,18,30,0.78))]",
-        "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.30),0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(24,34,44,0.45)_45%,rgba(250,248,243,0.78))]",
+        "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.30),0_10px_28px_-18px_rgba(15,23,32,0.19)]",
       )}
     >
       {/* Soft accent halo top-right */}
@@ -1363,7 +1363,7 @@ function DocsRailCard({
             "block cursor-pointer rounded-md border-2 border-dashed p-7 sm:p-9 text-center transition-colors",
             dragOver
               ? "border-border-accent bg-[rgba(0,212,200,0.08)]"
-              : "border-border-subtle hover:border-border-accent/60 hover:bg-[rgba(0,212,200,0.03)] bg-[rgba(255,255,255,0.012)]",
+              : "border-border-subtle hover:border-border-accent/60 hover:bg-[rgba(0,212,200,0.03)] bg-[rgba(24,34,44,0.025)]",
             (isLocked || !hasDraft) && "opacity-50 pointer-events-none",
           )}
         >
@@ -1392,7 +1392,7 @@ function DocsRailCard({
             {activeUploads.map((u) => (
               <div
                 key={u.id}
-                className="rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] px-3 py-2 text-[11px]"
+                className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.03)] px-3 py-2 text-[11px]"
               >
                 <div className="flex justify-between text-text-muted mb-1">
                   <span className="truncate mr-2">{u.filename}</span>
@@ -1408,7 +1408,7 @@ function DocsRailCard({
                     {u.status === "error" && (u.error ?? "Err")}
                   </span>
                 </div>
-                <div className="h-[2px] rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div className="h-[2px] rounded-full bg-[rgba(24,34,44,0.07)] overflow-hidden">
                   <span
                     className={cn(
                       "block h-full rounded-full transition-[width] duration-300",
@@ -1436,7 +1436,7 @@ function DocsRailCard({
             {docs.map((d) => (
               <li
                 key={d.id}
-                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)]"
+                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)]"
               >
                 <div className="min-w-0">
                   <div className="text-[12px] font-medium text-text truncate">
@@ -1485,7 +1485,7 @@ function DocsRailCard({
 // ── Form atoms ───────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
+  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
 
 function Field({
   label,
@@ -1536,7 +1536,7 @@ function PriceInput({
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
+        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
         disabled && "opacity-60 cursor-not-allowed",
         size === "sm" ? "h-9" : "h-11",
       )}
@@ -1597,7 +1597,7 @@ function NumberInput({
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] h-11 focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
+        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] h-11 focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
         disabled && "opacity-60 cursor-not-allowed",
       )}
     >
@@ -1673,7 +1673,7 @@ function TagInput({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] focus-within:border-border-accent",
+        "flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] focus-within:border-border-accent",
         disabled && "opacity-60 cursor-not-allowed",
       )}
     >
@@ -1778,7 +1778,7 @@ function TocLink({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="block px-3 py-2 rounded-sm text-[12.5px] text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.022)] transition-colors"
+      className="block px-3 py-2 rounded-sm text-[12.5px] text-text-muted hover:text-text hover:bg-[rgba(24,34,44,0.035)] transition-colors"
     >
       {label}
     </a>
@@ -2019,7 +2019,7 @@ function ContactTile({
   href?: string;
 }) {
   const inner = (
-    <div className="rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] px-4 py-3 hover:bg-[rgba(0,212,200,0.06)] transition-colors duration-[140ms]">
+    <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-4 py-3 hover:bg-[rgba(0,212,200,0.06)] transition-colors duration-[140ms]">
       <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
         {label}
       </div>

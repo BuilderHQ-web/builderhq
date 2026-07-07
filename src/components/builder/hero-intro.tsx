@@ -37,7 +37,7 @@ export function BuilderHeroIntro({ firstName }: { firstName: string }) {
         className="pointer-events-none absolute inset-y-0 w-[40%] rounded-full"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.15), transparent)",
+            "linear-gradient(90deg, transparent, rgba(10,125,115,0.15), transparent)",
           filter: "blur(36px)",
         }}
       />

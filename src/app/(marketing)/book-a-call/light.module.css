@@ -1,0 +1,28 @@
+/* Light override for the shared --g-* ad-lander system — scoped to
+ * /book-a-call only; /guide and /estimate keep their dark originals.
+ * Brings the page onto the landing's scheme: warm off-white canvas,
+ * ink text, deep teal accents, Geist for everything (no serif).
+ * The doubled class outranks `.scope` regardless of bundle order. */
+.light.light {
+  --g-bg: #f4f1ea;
+  --g-bg-elev: #ffffff;
+  --g-teal: #0c9b8d;
+  --g-teal-glow: rgba(12, 155, 141, 0.25);
+  --g-white: #161c22;
+  --g-text: rgba(22, 28, 34, 0.92);
+  --g-text-soft: rgba(22, 28, 34, 0.6);
+  --g-text-dim: rgba(22, 28, 34, 0.44);
+  --g-line: rgba(24, 34, 44, 0.1);
+  --g-line-strong: rgba(24, 34, 44, 0.16);
+  --g-line-teal: rgba(12, 155, 141, 0.35);
+  --g-serif: var(--font-ui);
+  --g-sans: var(--font-ui);
+
+  /* Panels + fields flip to light surfaces (dark originals are the
+     fallback values in estimate.module.css). */
+  --g-panel-bg: #ffffff;
+  --g-card-bg: #ffffff;
+  --g-field-bg: rgba(24, 34, 44, 0.05);
+  --g-field-bg-hover: rgba(24, 34, 44, 0.07);
+  --g-field-border-hover: rgba(24, 34, 44, 0.26);
+}

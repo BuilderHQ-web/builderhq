@@ -293,7 +293,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
         className="pointer-events-none absolute inset-y-0 w-[35%] rounded-full"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.18), transparent)",
+            "linear-gradient(90deg, transparent, rgba(10,125,115,0.18), transparent)",
           filter: "blur(40px)",
         }}
       />
@@ -318,7 +318,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
             <div
               className={cn(
                 "relative size-[148px] sm:size-[200px] rounded-md overflow-hidden border border-border-accent/40",
-                "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(6,18,30,0.78))]",
+                "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(250,248,243,0.78))]",
                 "shadow-[0_24px_60px_-24px_rgba(0,212,200,0.40),0_0_0_1px_rgba(0,212,200,0.18)]",
                 "flex items-center justify-center",
               )}
@@ -348,7 +348,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
             <div className="flex flex-wrap items-center gap-2">
               <ApprovalChip status={profile.approvalStatus} />
               {profile.businessState ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
+                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
                   <MapPin className="size-3" />
                   {profile.businessSuburb
                     ? `${profile.businessSuburb}, ${profile.businessState}`
@@ -356,7 +356,7 @@ function Hero({ profile }: { profile: PublicProfile }) {
                 </span>
               ) : null}
               {profile.yearsInOperation != null ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
+                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
                   <Calendar className="size-3" />
                   {profile.yearsInOperation}{" "}
                   {profile.yearsInOperation === 1 ? "year" : "years"}
@@ -445,7 +445,7 @@ const APPROVAL_META: Record<
 > = {
   incomplete: {
     label: "Draft",
-    cls: "border-border-subtle text-text-dim bg-[rgba(255,255,255,0.012)]",
+    cls: "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]",
     icon: Eye,
   },
   pending_review: {
@@ -590,7 +590,7 @@ function StatCard({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] p-4 sm:p-5">
+    <div className="rounded-md border border-border-subtle bg-surface-2 p-4 sm:p-5">
       <div className="flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-text-dim">
         <Icon className="size-3 text-accent-light shrink-0" />
         <span className="truncate">{label}</span>
@@ -664,7 +664,7 @@ function CategoriesSection({ categories }: { categories: ProjectType[] }) {
               key={c}
               className={cn(
                 "group relative rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+                "bg-surface-1 card-elev",
                 "transition-[border-color,box-shadow,transform] duration-[220ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
                 "hover:border-border-accent/55 hover:-translate-y-0.5",
                 "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30)]",
@@ -719,7 +719,7 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
               key={state}
               className={cn(
                 "rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]",
+                "bg-surface-2",
               )}
             >
               <div className="flex items-baseline gap-3 mb-3">
@@ -741,7 +741,7 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
                   {suburbs.map((a, i) => (
                     <span
                       key={`${a.suburb}-${a.postcode ?? "x"}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[12px] text-text-muted"
+                      className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[12px] text-text-muted"
                     >
                       <MapPin className="size-3 text-text-faint" />
                       {a.suburb}
@@ -787,7 +787,7 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
             key={l.id}
             className={cn(
               "rounded-md border border-border-subtle p-4 sm:p-5",
-              "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+              "bg-surface-1 card-elev",
             )}
           >
             <div className="flex items-start gap-3">
@@ -853,7 +853,7 @@ function CallToAction({
     <section
       className={cn(
         "relative overflow-hidden rounded-md border border-border-accent/35",
-        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_55%,rgba(6,18,30,0.6)_100%)]",
+        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_55%,rgba(250,248,243,0.6)_100%)]",
       )}
     >
       <div

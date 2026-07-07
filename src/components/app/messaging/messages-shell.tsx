@@ -359,7 +359,7 @@ function ListPane({
             placeholder="Search messages"
             className={cn(
               "w-full h-9 pl-9 pr-3 rounded-md border border-border-subtle",
-              "bg-[rgba(255,255,255,0.025)] text-[12.5px] text-text",
+              "bg-[rgba(24,34,44,0.04)] text-[12.5px] text-text",
               "placeholder:text-text-dim/70",
               "focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)]",
               "transition-colors duration-[120ms]",
@@ -408,7 +408,7 @@ function ListItem({
         "active:scale-[0.997] active:duration-[120ms]",
         active
           ? "bg-[rgba(0,212,200,0.07)]"
-          : "hover:bg-[rgba(255,255,255,0.025)]",
+          : "hover:bg-[rgba(24,34,44,0.04)]",
       )}
     >
       {/* Active accent bar */}
@@ -500,7 +500,7 @@ function ListEmpty({
         className="size-14 rounded-full border border-border-subtle flex items-center justify-center mb-4"
         style={{
           background:
-            "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.16), rgba(255,255,255,0.018))",
+            "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.16), rgba(24,34,44,0.03))",
         }}
       >
         <Inbox className="size-5 text-accent-light" />
@@ -584,7 +584,7 @@ function ThreadEmpty({
       className={cn("flex-col min-h-0 items-center justify-center", className)}
     >
       <div className="text-center px-6 max-w-[420px]">
-        <div className="mx-auto size-14 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.018)] flex items-center justify-center mb-5">
+        <div className="mx-auto size-14 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] flex items-center justify-center mb-5">
           <MessageSquare className="size-6 text-accent" />
         </div>
         <h2 className="font-display uppercase tracking-[-0.012em] text-[24px] leading-[1.05] text-text">
@@ -628,7 +628,7 @@ function ThreadHeader({
       : `/owner/projects/${conv.projectSlug}`;
 
   return (
-    <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.5))]">
+    <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border-subtle bg-surface-2">
       <button
         type="button"
         onClick={onBack}
@@ -991,11 +991,11 @@ function Composer({
 
   const empty = value.trim().length === 0;
   return (
-    <div className="border-t border-border-subtle bg-[linear-gradient(180deg,rgba(6,18,30,0.4),rgba(6,18,30,0.85))] backdrop-blur-sm">
+    <div className="border-t border-border-subtle bg-[linear-gradient(180deg,rgba(250,248,243,0.4),rgba(250,248,243,0.85))] backdrop-blur-sm">
       <div className="mx-auto max-w-[760px] px-4 sm:px-8 py-4">
         <div
           className={cn(
-            "flex items-end gap-2.5 rounded-2xl border border-border-subtle bg-[rgba(255,255,255,0.025)] p-2",
+            "flex items-end gap-2.5 rounded-2xl border border-border-subtle bg-[rgba(24,34,44,0.04)] p-2",
             "focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.04)]",
             "transition-colors duration-[160ms]",
           )}

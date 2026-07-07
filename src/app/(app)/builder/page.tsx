@@ -514,25 +514,25 @@ function PulseTile({
 }) {
   const styles: Record<Tone, { bg: string; ring: string; num: string; glow: string }> = {
     teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
       ring: "border-border-accent/40",
       num: "text-accent-light",
       glow: "rgba(0,212,200,0.18)",
     },
     blue: {
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
       ring: "border-[rgba(120,180,255,0.20)]",
       num: "text-[#bfd6ff]",
       glow: "rgba(26,95,212,0.20)",
     },
     amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
       ring: "border-[rgba(251,184,64,0.22)]",
       num: "text-[#ffd887]",
       glow: "rgba(251,184,64,0.18)",
     },
     rose: {
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
       ring: "border-[rgba(255,120,150,0.20)]",
       num: "text-[#ffc0cd]",
       glow: "rgba(255,120,150,0.16)",
@@ -544,7 +544,7 @@ function PulseTile({
     <div
       className={cn(
         "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         t.ring,
       )}
       style={{ background: t.bg }}
@@ -557,7 +557,7 @@ function PulseTile({
         }}
       />
       <div className="relative flex items-center gap-2 mb-3 text-text-dim">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center text-text-muted">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted">
           {icon}
         </span>
         <span className="text-[10px] tracking-[0.18em] uppercase">{label}</span>
@@ -594,10 +594,10 @@ function ActionNeededCallout({
       : "info";
   const toneCls =
     tone === "celebrate"
-      ? "border-border-accent/45 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(6,18,30,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(0,212,200,0.20)]"
+      ? "border-border-accent/45 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(250,248,243,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(0,212,200,0.20)]"
       : tone === "urgent"
-        ? "border-warning/30 bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(6,18,30,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]"
-        : "border-border-accent/30 bg-[linear-gradient(140deg,rgba(0,212,200,0.04)_0%,rgba(6,18,30,0.55)_70%)] shadow-[0_12px_32px_-22px_rgba(0,212,200,0.15)]";
+        ? "border-warning/30 bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(250,248,243,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]"
+        : "border-border-accent/30 bg-[linear-gradient(140deg,rgba(0,212,200,0.04)_0%,rgba(250,248,243,0.55)_70%)] shadow-[0_12px_32px_-22px_rgba(0,212,200,0.15)]";
   const haloCls =
     tone === "urgent"
       ? "radial-gradient(circle, rgba(255,181,71,0.22), transparent 70%)"
@@ -686,7 +686,7 @@ function ActionRow({ action }: { action: BuilderActionNeeded }) {
     <li>
       <Link
         href={`/builder/projects/${action.projectSlug}/tender`}
-        className="group grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] hover:border-border-strong hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+        className="group grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] hover:border-border-strong hover:bg-[rgba(24,34,44,0.045)] transition-colors"
       >
         <div className="min-w-0 col-span-2 sm:col-span-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -699,8 +699,8 @@ function ActionRow({ action }: { action: BuilderActionNeeded }) {
                 action.status === "awarded"
                   ? "border-border-accent bg-accent-muted/40 text-accent-light"
                   : action.status === "shortlisted"
-                    ? "border-[rgba(126,245,237,0.55)] bg-[rgba(126,245,237,0.10)] text-accent-light"
-                    : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+                    ? "border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] text-accent-light"
+                    : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
               )}
             >
               {action.status}
@@ -797,10 +797,10 @@ function PipelineStrip({
           ? "border-warning/30 bg-[rgba(255,181,71,0.04)] text-warning"
           : tone === "danger"
             ? "border-[rgba(255,120,120,0.30)] bg-[rgba(255,120,120,0.04)] text-[rgba(255,160,160,0.95)]"
-            : "border-border-subtle bg-[rgba(255,255,255,0.018)] text-text-muted";
+            : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted";
 
   return (
-    <div className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] p-4 sm:p-5">
+    <div className="rounded-md border border-border-subtle bg-surface-1 card-elev p-4 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {stages.map((st) => {
           const pct = total > 0 ? Math.round((st.value / total) * 100) : 0;
@@ -917,7 +917,7 @@ function ActivityIcon({ kind }: { kind: BuilderActivityEvent["kind"] }) {
   }
   if (kind === "shortlisted") {
     return (
-      <span className="size-7 rounded-md border border-[rgba(126,245,237,0.55)] bg-[rgba(126,245,237,0.10)] flex items-center justify-center text-accent-light shrink-0">
+      <span className="size-7 rounded-md border border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] flex items-center justify-center text-accent-light shrink-0">
         <Sparkles className="size-3.5" />
       </span>
     );
@@ -946,8 +946,8 @@ function Panel({
     <section
       className={cn(
         "rounded-md border overflow-hidden border-border-subtle",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
-        "shadow-[0_12px_32px_-18px_rgba(0,0,0,0.55)]",
+        "bg-surface-1 card-elev",
+        "shadow-[0_12px_32px_-18px_rgba(15,23,32,0.19)]",
       )}
     >
       <header className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">

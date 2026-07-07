@@ -50,7 +50,7 @@ export default async function OnboardingLayout({
             aria-label="BuilderHQ home"
             className="inline-flex items-center min-h-11 -my-2 py-2"
           >
-            <Logo size={22} />
+            <Logo size={22} tone="dark" />
           </Link>
           <form action={signOutAction}>
             <button

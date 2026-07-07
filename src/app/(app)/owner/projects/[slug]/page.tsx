@@ -414,7 +414,7 @@ function Card({
   return (
     <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
       <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center">
+        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center">
           {icon}
         </span>
         <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export function FbaQuotaPill({ status }: { status: FbaStatus }) {
   if (!status.active) {
     return (
-      <span className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.012)] text-[11px] tracking-[0.04em] text-text-dim">
+      <span className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.025)] text-[11px] tracking-[0.04em] text-text-dim">
         <Lock className="size-3" />
         Pay-per-unlock
       </span>

@@ -47,7 +47,7 @@ export default function EmailSentPage() {
         <EmailSentBody />
       </Suspense>
 
-      <div className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.025)] p-4 text-left">
+      <div className="w-full rounded-xl border border-[rgba(24,34,44,0.09)] bg-[rgba(24,34,44,0.04)] p-4 text-left">
         <p className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold">
           What happens next
         </p>
@@ -75,7 +75,7 @@ export default function EmailSentPage() {
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2.5">
-      <span className="inline-flex items-center justify-center size-4.5 min-w-4.5 rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.025)] text-[10px] text-text-faint font-ui font-semibold shrink-0 mt-0.5"
+      <span className="inline-flex items-center justify-center size-4.5 min-w-4.5 rounded-full border border-[rgba(24,34,44,0.1)] bg-[rgba(24,34,44,0.04)] text-[10px] text-text-faint font-ui font-semibold shrink-0 mt-0.5"
         style={{ width: 18, height: 18 }}
       >
         {n}

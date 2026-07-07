@@ -32,6 +32,11 @@ import { EstimateRequestOpsEmail } from "@/emails/EstimateRequestOpsEmail";
 import { BookCallOpsEmail } from "@/emails/BookCallOpsEmail";
 import { ArchitectTenderOpsEmail } from "@/emails/ArchitectTenderOpsEmail";
 import { ArchitectTenderConfirmationEmail } from "@/emails/ArchitectTenderConfirmationEmail";
+import {
+  PartnerInterestConfirmationEmail,
+  type PartnerNetwork,
+} from "@/emails/PartnerInterestConfirmationEmail";
+import { PartnerInterestOpsEmail } from "@/emails/PartnerInterestOpsEmail";
 import { OwnerAdvisoryOpsEmail } from "@/emails/OwnerAdvisoryOpsEmail";
 import { OwnerAdvisoryConfirmationEmail } from "@/emails/OwnerAdvisoryConfirmationEmail";
 import { TenderSubmittedEmail } from "@/emails/TenderSubmittedEmail";
@@ -946,6 +951,140 @@ export async function sendArchitectTenderConfirmationEmail(
       resendId: data.id,
     },
     "architect tender confirmation sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── Preferred Partner network interest (architect / finance) ───────────
+
+interface SendPartnerInterestOpsEmailInput {
+  leadId: string;
+  firstName: string;
+  lastName: string | null;
+  email: string;
+  phone: string | null;
+  firmName: string;
+  network: PartnerNetwork;
+  state: string;
+  website: string | null;
+  source: string | null;
+  createdAt: Date;
+}
+
+/** Ops notification — fires to info@ on every partner-network registration. */
+export async function sendPartnerInterestOpsEmail(
+  input: SendPartnerInterestOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const fullName = [input.firstName, input.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const netLabel = input.network === "architect" ? "Architect" : "Finance broker";
+  const subject = `PARTNER (${netLabel}): ${fullName || input.email} — ${input.firmName}`;
+  const props = { ...input };
+
+  const [html, text] = await Promise.all([
+    render(PartnerInterestOpsEmail(props)),
+    render(PartnerInterestOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: `partner_${input.network}` },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.partner_interest_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "partner interest ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.partner_interest_ops.sent",
+      leadId: input.leadId,
+      resendId: data.id,
+    },
+    "partner interest ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendPartnerInterestConfirmationEmailInput {
+  to: string;
+  firstName: string;
+  firmName: string;
+  network: PartnerNetwork;
+}
+
+/** Confirmation to the partner — restrained, institutional holding email. */
+export async function sendPartnerInterestConfirmationEmail(
+  input: SendPartnerInterestConfirmationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const netLabel =
+    input.network === "architect"
+      ? "Preferred Architect Network"
+      : "Preferred Finance Partner network";
+  const subject = `Received — your interest in the ${netLabel}`;
+  const props = {
+    firstName: input.firstName,
+    firmName: input.firmName,
+    network: input.network,
+  };
+
+  const [html, text] = await Promise.all([
+    render(PartnerInterestConfirmationEmail(props)),
+    render(PartnerInterestConfirmationEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lead_partner_confirmation" },
+      { name: "variant", value: `partner_${input.network}` },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.partner_interest_confirm.failed",
+        to: input.to,
+        code: error.name,
+        message: error.message,
+      },
+      "partner interest confirmation send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.partner_interest_confirm.sent",
+      to: input.to,
+      resendId: data.id,
+    },
+    "partner interest confirmation sent",
   );
   return ok({ id: data.id });
 }

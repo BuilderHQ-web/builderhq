@@ -272,8 +272,8 @@ export function CommandPalette({ role }: Props) {
             transition={{ duration: 0.18, ease: [0.2, 0.65, 0.3, 0.9] }}
             className={cn(
               "relative w-full max-w-[640px] rounded-md border border-border-strong overflow-hidden",
-              "bg-[linear-gradient(180deg,rgba(10,28,44,0.96),rgba(6,18,30,0.99))]",
-              "shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7),0_0_0_1px_rgba(0,212,200,0.08),0_0_60px_-12px_rgba(0,212,200,0.18)]",
+              "bg-surface-1 card-elev",
+              "shadow-[0_30px_80px_-30px_rgba(15,23,32,0.24),0_0_0_1px_rgba(0,212,200,0.08),0_0_60px_-12px_rgba(0,212,200,0.18)]",
             )}
           >
             {/* Ambient teal tint */}
@@ -348,7 +348,7 @@ export function CommandPalette({ role }: Props) {
             </div>
 
             {/* Footer hints */}
-            <div className="relative px-4 py-2.5 border-t border-border-subtle bg-[rgba(255,255,255,0.012)] flex items-center justify-between text-[10.5px] text-text-dim">
+            <div className="relative px-4 py-2.5 border-t border-border-subtle bg-[rgba(24,34,44,0.025)] flex items-center justify-between text-[10.5px] text-text-dim">
               <div className="flex items-center gap-3">
                 <Hint label="navigate" keys={["↑", "↓"]} />
                 <Hint label="select" keys={["↵"]} />
@@ -393,7 +393,7 @@ function CommandRow({
         "transition-[background-color,color] duration-[100ms]",
         active
           ? "bg-[rgba(0,212,200,0.12)] text-text"
-          : "text-text-muted hover:bg-[rgba(255,255,255,0.025)]",
+          : "text-text-muted hover:bg-[rgba(24,34,44,0.04)]",
       )}
     >
       <span
@@ -429,7 +429,7 @@ function CommandRow({
 function EmptyHint({ query }: { query: string }) {
   return (
     <div className="px-6 py-12 text-center">
-      <div className="mx-auto size-10 rounded-full border border-border-subtle bg-[rgba(255,255,255,0.018)] flex items-center justify-center mb-3">
+      <div className="mx-auto size-10 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] flex items-center justify-center mb-3">
         <Search className="size-4 text-text-faint" />
       </div>
       <p className="text-[13px] text-text-muted">

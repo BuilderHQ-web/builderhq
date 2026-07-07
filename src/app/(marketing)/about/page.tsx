@@ -24,7 +24,7 @@ export default function AboutPage() {
       sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted, so the right team gets the job, faster."
     >
       {/* Mission statement */}
-      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-md border border-border-subtle bg-white px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
@@ -33,10 +33,10 @@ export default function AboutPage() {
               "radial-gradient(circle, rgba(0,212,200,0.14), transparent 70%)",
           }}
         />
-        <span className="relative text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+        <span className="relative text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
           Our mission
         </span>
-        <h2 className="relative mt-4 font-display tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+        <h2 className="relative mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
           To make building a home in Australia
           <br />
           <span className="text-accent-light">feel less like chasing</span>.
@@ -46,7 +46,7 @@ export default function AboutPage() {
           different builders, written in three different formats, with three
           different scope assumptions buried in the fine print. Owners can&apos;t
           actually compare. Builders can&apos;t stand out for the right reasons.
-          Architects waste hours playing telephone. We&apos;re fixing that
+          Architects lose hours relaying messages between the two. We&apos;re fixing that
           with structured tenders, live verification, and a single workspace
           everyone can trust.
         </p>
@@ -54,10 +54,10 @@ export default function AboutPage() {
 
       {/* Pillars */}
       <section className="mb-12 lg:mb-20">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
           What we believe
         </span>
-        <h2 className="mt-4 font-display tracking-[-0.012em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
+        <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
           Four principles, no compromise.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -74,7 +74,7 @@ export default function AboutPage() {
           <Pillar
             icon={<Hammer className="size-4" />}
             title="Australian residential only"
-            body="No commercial bleed. No foreign builders quoting from offshore. Just the people who build homes here, on the ground."
+            body="Residential only, Australian only. No commercial crossover, no offshore quoting. Just the builders who build homes here, in your state."
           />
           <Pillar
             icon={<Map className="size-4" />}
@@ -85,7 +85,7 @@ export default function AboutPage() {
       </section>
 
       {/* Built with industry experts */}
-      <section className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))] px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
+      <section className="rounded-md border border-border-subtle bg-white px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
           className="pointer-events-none absolute -bottom-24 -left-20 size-72 rounded-full opacity-50"
@@ -99,11 +99,11 @@ export default function AboutPage() {
             <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0">
               <Users className="size-4" />
             </span>
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Built with industry experts
             </span>
           </div>
-          <h2 className="mt-5 font-display tracking-[-0.012em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
+          <h2 className="mt-5 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
             Shaped by the people who actually
             <br />
             <span className="text-accent-light">build, design, and own</span>.
@@ -111,19 +111,19 @@ export default function AboutPage() {
           <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
             BuilderHQ wasn&apos;t built in a vacuum. Every section, every
             field, and every workflow was reviewed against decades of
-            residential build experience — registered builders running
+            residential build experience, registered builders running
             real projects, registered architects who deliver them weekly,
             owner-builders who&apos;ve been through it themselves, and
             quantity surveyors who know where tenders quietly diverge.
           </p>
           <p className="mt-5 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
             We&apos;re still listening. Real-world feedback shapes the
-            roadmap directly — if you&apos;ve been around an Australian
+            roadmap directly, if you&apos;ve been around an Australian
             residential build and you have a sharper way of doing
             something, we want to hear it.
           </p>
 
-          {/* Three "shaped by" pills — keeps the prose from being a
+          {/* Three "shaped by" pills, keeps the prose from being a
               wall of text and visualises the breadth of input. */}
           <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <ExpertPill role="Registered builders" detail="VIC · NSW · QLD · SA" />
@@ -138,7 +138,7 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="mt-12 sm:mt-16 text-center">
-        <h2 className="font-display tracking-[-0.012em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
+        <h2 className="font-ui font-semibold tracking-[-0.03em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
           Ready to{" "}
           <span
             className="text-accent-light"
@@ -195,7 +195,7 @@ function Pillar({
   body: string;
 }) {
   return (
-    <article className="group relative rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,26,42,0.55),rgba(6,18,30,0.78))] px-6 py-6 transition-[border-color,background-color] duration-[400ms] hover:border-border-accent/55 hover:bg-[linear-gradient(180deg,rgba(10,32,52,0.65),rgba(6,18,30,0.82))]">
+    <article className="group relative rounded-md border border-border-subtle bg-white px-6 py-6 transition-[border-color,box-shadow] duration-[400ms] hover:border-border-accent/55 hover:shadow-[0_12px_32px_-20px_rgba(24,34,44,0.3)]">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[400ms]"

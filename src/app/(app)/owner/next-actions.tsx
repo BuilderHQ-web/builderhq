@@ -319,19 +319,19 @@ function ActionTile({ action }: { action: Action }) {
     { bg: string; ring: string; glow: string; kickerColor: string }
   > = {
     amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.07),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(251,184,64,0.07),rgba(250,248,243,0.6))",
       ring: "border-warning/35 hover:border-warning/55",
       glow: "rgba(251,184,64,0.22)",
       kickerColor: "text-warning",
     },
     teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
       ring: "border-border-accent/40 hover:border-accent/60",
       glow: "rgba(0,212,200,0.18)",
       kickerColor: "text-accent-light",
     },
     muted: {
-      bg: "linear-gradient(180deg,rgba(255,255,255,0.02),rgba(6,18,30,0.6))",
+      bg: "linear-gradient(180deg,rgba(24,34,44,0.03),rgba(250,248,243,0.6))",
       ring: "border-border-subtle hover:border-border-accent/40",
       glow: "rgba(120,180,255,0.10)",
       kickerColor: "text-text-muted",
@@ -344,7 +344,7 @@ function ActionTile({ action }: { action: Action }) {
       href={action.href}
       className={cn(
         "group relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         "transition-colors",
         t.ring,
       )}
@@ -365,7 +365,7 @@ function ActionTile({ action }: { action: Action }) {
       />
 
       <div className="relative flex items-start gap-3">
-        <span className="relative size-9 rounded-lg border border-border-subtle bg-[rgba(255,255,255,0.022)] flex items-center justify-center shrink-0">
+        <span className="relative size-9 rounded-lg border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center shrink-0">
           {action.icon}
           {action.pulse ? (
             <span

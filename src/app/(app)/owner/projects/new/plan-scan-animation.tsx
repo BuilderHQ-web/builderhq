@@ -149,9 +149,9 @@ export function PlanScanAnimation({
           className="relative size-full rounded-[14px] border border-border-strong overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, rgba(12,30,48,0.92), rgba(6,16,26,0.96))",
+              "linear-gradient(180deg, rgba(12,30,48,0.92), rgba(250,248,243,0.96))",
             boxShadow:
-              "0 30px 70px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)",
+              "0 30px 70px -30px rgba(15,23,32,0.24), inset 0 1px 0 rgba(24,34,44,0.05)",
           }}
         >
           {/* Faint blueprint grid */}
@@ -160,7 +160,7 @@ export function PlanScanAnimation({
             className="absolute inset-0 opacity-[0.5]"
             style={{
               backgroundImage:
-                "linear-gradient(rgba(100,180,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(100,180,255,0.07) 1px, transparent 1px)",
+                "linear-gradient(rgba(24,34,44,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.07) 1px, transparent 1px)",
               backgroundSize: "22px 22px",
             }}
           />
@@ -219,7 +219,7 @@ export function PlanScanAnimation({
                 style={{
                   background:
                     "linear-gradient(90deg, transparent, var(--color-accent-light), transparent)",
-                  boxShadow: "0 0 10px 1px rgba(126,245,237,0.7)",
+                  boxShadow: "0 0 10px 1px rgba(10,125,115,0.7)",
                 }}
               />
             </motion.div>

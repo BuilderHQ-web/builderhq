@@ -172,8 +172,8 @@ function PanelShell({
     <section
       className={cn(
         "relative overflow-hidden rounded-md border border-border-subtle",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
-        "shadow-[0_12px_32px_-18px_rgba(0,0,0,0.55)]",
+        "bg-surface-1 card-elev",
+        "shadow-[0_12px_32px_-18px_rgba(15,23,32,0.19)]",
         compact ? "min-h-[440px]" : "min-h-[520px]",
       )}
     >
@@ -208,7 +208,7 @@ function BuilderPicker({
               "shrink-0 inline-flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full border transition-colors duration-[140ms]",
               c.id === activeId
                 ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted hover:text-text hover:border-border",
+                : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted hover:text-text hover:border-border",
             )}
           >
             <span
@@ -404,7 +404,7 @@ function ThreadHeader({
 }) {
   if (!conv) {
     return (
-      <header className="px-5 py-3.5 border-b border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.5))]">
+      <header className="px-5 py-3.5 border-b border-border-subtle bg-surface-2">
         <div className="flex items-center gap-2 text-text-dim">
           <MessageSquare className="size-3.5" />
           <span className="text-[12px]">Messaging</span>
@@ -425,7 +425,7 @@ function ThreadHeader({
       </span>
     );
   return (
-    <header className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.5))]">
+    <header className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle bg-surface-2">
       <span
         className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0"
         style={{
@@ -735,11 +735,11 @@ function Composer({
 
   const empty = value.trim().length === 0;
   return (
-    <div className="border-t border-border-subtle bg-[linear-gradient(180deg,rgba(6,18,30,0.4),rgba(6,18,30,0.85))] backdrop-blur-sm">
+    <div className="border-t border-border-subtle bg-[linear-gradient(180deg,rgba(250,248,243,0.4),rgba(250,248,243,0.85))] backdrop-blur-sm">
       <div className="px-4 py-3">
         <div
           className={cn(
-            "flex items-end gap-2 rounded-2xl border border-border-subtle bg-[rgba(255,255,255,0.025)] p-1.5",
+            "flex items-end gap-2 rounded-2xl border border-border-subtle bg-[rgba(24,34,44,0.04)] p-1.5",
             "focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.04)]",
             "transition-colors duration-[160ms]",
           )}
@@ -805,7 +805,7 @@ function EmptyPanel({
           className="size-14 rounded-full border border-border-subtle flex items-center justify-center mb-4"
           style={{
             background:
-              "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.16), rgba(255,255,255,0.018))",
+              "radial-gradient(circle at 50% 30%, rgba(0,212,200,0.16), rgba(24,34,44,0.03))",
           }}
         >
           <Inbox className="size-5 text-accent-light" />

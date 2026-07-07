@@ -180,7 +180,7 @@ function StatusBanner({
 function BuilderRow({ b }: { b: ProjectUnlockBuilder }) {
   const displayName = b.companyName ?? b.name ?? "Verified builder";
   return (
-    <li className="flex items-center gap-3 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.012)] p-3 sm:p-3.5">
+    <li className="flex items-center gap-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3 sm:p-3.5">
       <span
         className="size-11 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
         style={{

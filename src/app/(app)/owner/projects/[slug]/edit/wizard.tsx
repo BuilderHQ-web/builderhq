@@ -1268,14 +1268,14 @@ function CategoryTile({
     <article
       className={cn(
         "relative rounded-md border overflow-hidden transition-[border-color,background] duration-[300ms]",
-        "shadow-[0_18px_44px_-22px_rgba(0,0,0,0.55)]",
+        "shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]",
         meta.required && activeFiles.length === 0
-          ? "border-warning/40 bg-[linear-gradient(180deg,rgba(251,184,64,0.05),rgba(6,18,30,0.6))]"
+          ? "border-warning/40 bg-[linear-gradient(180deg,rgba(251,184,64,0.05),rgba(250,248,243,0.6))]"
           : hasFiles
-          ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(6,18,30,0.6))]"
+          ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.6))]"
           : dragOver
           ? "border-border-accent bg-[rgba(0,212,200,0.05)]"
-          : "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] hover:border-border",
+          : "border-border-subtle bg-surface-1 card-elev hover:border-border",
       )}
     >
       <label
@@ -1306,7 +1306,7 @@ function CategoryTile({
                 ? "border-warning/40 bg-warning/[0.08] text-warning"
                 : hasFiles
                 ? "border-border-accent bg-accent-muted text-accent-light"
-                : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+                : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
             )}
           >
             <Icon className="size-4" />
@@ -1365,7 +1365,7 @@ function CategoryTile({
                   {u.status === "error" && (u.error ?? "Err")}
                 </span>
               </div>
-              <div className="h-[2px] mt-1 rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+              <div className="h-[2px] mt-1 rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
                 <span
                   className={cn(
                     "block h-full rounded-full transition-[width] duration-300",
@@ -1415,7 +1415,7 @@ function FileChip({
 }) {
   const [busy, setBusy] = useState<"download" | "delete" | null>(null);
   return (
-    <li className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1.5 rounded-sm bg-[rgba(255,255,255,0.022)] border border-border-subtle/60">
+    <li className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1.5 rounded-sm bg-[rgba(24,34,44,0.035)] border border-border-subtle/60">
       <span className="truncate text-text-muted flex-1">{doc.filename}</span>
       <div className="flex items-center gap-1 shrink-0">
         <button
@@ -1631,12 +1631,12 @@ function Card({
 }) {
   return (
     <section
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] overflow-hidden shadow-[0_18px_44px_-22px_rgba(0,0,0,0.55)]"
+      className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]"
     >
       {title ? (
         <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
           {icon ? (
-            <span className="size-8 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.018)] text-accent-light flex items-center justify-center shrink-0">
+            <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
               {icon}
             </span>
           ) : null}
@@ -1656,7 +1656,7 @@ function Card({
 }
 
 const inputCls =
-  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(255,255,255,0.022)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
+  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
 
 /**
  * Same as inputCls but with a red border to flag a missing required

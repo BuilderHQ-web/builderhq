@@ -73,7 +73,7 @@ function Choice({ onAi, onManual }: { onAi: () => void; onManual: () => void }) 
             className="absolute inset-0 -z-10"
             style={{
               background:
-                "linear-gradient(165deg, rgba(0,212,200,0.08), rgba(6,18,30,0.4))",
+                "linear-gradient(165deg, rgba(0,212,200,0.08), rgba(250,248,243,0.4))",
               boxShadow: "0 24px 60px -34px rgba(0,212,200,0.45)",
             }}
           />
@@ -116,9 +116,9 @@ function Choice({ onAi, onManual }: { onAi: () => void; onManual: () => void }) 
           type="button"
           onClick={onManual}
           style={rise(140)}
-          className="group relative text-left rounded-lg border border-border-subtle bg-[rgba(255,255,255,0.012)] overflow-hidden p-6 sm:p-7 transition-[border-color,transform] duration-[300ms] hover:border-border hover:-translate-y-0.5"
+          className="group relative text-left rounded-lg border border-border-subtle bg-[rgba(24,34,44,0.025)] overflow-hidden p-6 sm:p-7 transition-[border-color,transform] duration-[300ms] hover:border-border hover:-translate-y-0.5"
         >
-          <span className="size-12 rounded-md grid place-items-center border border-border-subtle bg-[rgba(255,255,255,0.02)] text-text-muted">
+          <span className="size-12 rounded-md grid place-items-center border border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted">
             <PencilLine className="size-5.5" />
           </span>
           <h2 className="mt-5 text-[17px] font-semibold text-text">

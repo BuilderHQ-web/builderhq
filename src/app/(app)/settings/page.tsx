@@ -125,7 +125,7 @@ export default async function SettingsPage() {
                 href={`#${n.id}`}
                 className={cn(
                   "group flex items-center gap-2.5 px-3 py-2 rounded-sm",
-                  "text-text-muted hover:text-text hover:bg-[rgba(255,255,255,0.03)]",
+                  "text-text-muted hover:text-text hover:bg-[rgba(24,34,44,0.045)]",
                   "transition-colors duration-[140ms]",
                 )}
               >
@@ -295,7 +295,7 @@ function SettingsSection({
       // header isn't hidden when the user clicks a quick-jump link.
       className={cn(
         "scroll-mt-24 rounded-md border overflow-hidden",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]",
+        "bg-surface-2",
         tone === "danger" ? "border-danger/25" : "border-border-subtle",
       )}
     >

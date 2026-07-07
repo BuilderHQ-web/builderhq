@@ -18,6 +18,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import s from "../../estimate_received/confirmed.module.css";
 import theme from "../../guide/theme.module.css";
+import light from "../light.module.css";
 import { BookConfirmed } from "./book-confirmed";
 
 const fraunces = Fraunces({
@@ -44,11 +45,7 @@ export const metadata = {
 export default function BookCallConfirmedPage() {
   return (
     <div
-      className={`${theme.scope} ${fraunces.variable} ${inter.variable} ${s.body}`}
-      style={{
-        fontFamily:
-          "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif",
-      }}
+      className={`${theme.scope} ${light.light} ${fraunces.variable} ${inter.variable} ${s.body}`}
     >
       <div className={s.ambient}>
         <div className={`${s.orb} ${s.orb1}`} />
@@ -64,7 +61,7 @@ export default function BookCallConfirmedPage() {
           className={s.navLogo}
           aria-label="BuilderHQ home"
         >
-          <Logo height={28} />
+          <Logo height={28} tone="dark" />
         </Link>
         <div className={s.navMeta}>
           <span className={s.navMetaDot} />

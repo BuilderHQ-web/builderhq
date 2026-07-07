@@ -54,7 +54,7 @@ const TYPE_META: Record<
   extension: {
     label: "Extension",
     Icon: Layers,
-    tone: "from-[rgba(126,245,237,0.20)] to-[rgba(0,212,200,0.18)]",
+    tone: "from-[rgba(10,125,115,0.20)] to-[rgba(0,212,200,0.18)]",
   },
 };
 
@@ -126,12 +126,12 @@ export function ProjectCard({
         // inner body uses flex-1 so its footer sticks to the bottom.
         "group relative flex h-full flex-col rounded-md border overflow-hidden",
         "transition-[transform,border-color,box-shadow,background-color] duration-[260ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
-        "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
-        "shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]",
+        "border-border-subtle bg-surface-1 card-elev",
+        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
         // Hover: lift + accent border + soft accent glow that hints
         // toward the card's edge without taking over the content.
         "hover:border-border-accent/60 hover:-translate-y-1",
-        "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30),0_8px_22px_-12px_rgba(0,0,0,0.7)]",
+        "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30),0_8px_22px_-12px_rgba(15,23,32,0.24)]",
         // Tactile press — subtle compression so click registers.
         "active:translate-y-0 active:scale-[0.995] active:duration-[120ms]",
       )}
@@ -167,7 +167,7 @@ export function ProjectCard({
           className="absolute inset-x-0 top-0 h-px"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(126,245,237,0.45), transparent)",
+              "linear-gradient(90deg, transparent, rgba(10,125,115,0.45), transparent)",
           }}
         />
 
@@ -250,7 +250,7 @@ export function ProjectCard({
               Unlock cost
             </div>
             <div className="flex items-baseline justify-end gap-1.5">
-              <span className="font-display text-[16px] leading-none text-text-dim line-through decoration-[rgba(255,255,255,0.4)] decoration-[1.5px] tabular-nums">
+              <span className="font-display text-[16px] leading-none text-text-dim line-through decoration-[rgba(24,34,44,0.34)] decoration-[1.5px] tabular-nums">
                 ${priceAud}
               </span>
               <span className="font-display text-[26px] leading-none text-accent-light tabular-nums">
@@ -410,8 +410,8 @@ function SpecCell({
       className={cn(
         "flex flex-col items-center justify-center rounded-sm border py-2 transition-colors",
         isEmpty
-          ? "border-border-subtle/60 bg-[rgba(255,255,255,0.012)]"
-          : "border-border-subtle bg-[rgba(255,255,255,0.022)]",
+          ? "border-border-subtle/60 bg-[rgba(24,34,44,0.025)]"
+          : "border-border-subtle bg-[rgba(24,34,44,0.035)]",
       )}
     >
       <span

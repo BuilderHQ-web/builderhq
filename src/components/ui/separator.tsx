@@ -25,8 +25,8 @@ export const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
           variant === "solid" && "bg-border-subtle",
           variant === "gradient" &&
             (isH
-              ? "bg-[linear-gradient(90deg,transparent,rgba(100,180,255,0.18),transparent)]"
-              : "bg-[linear-gradient(180deg,transparent,rgba(100,180,255,0.18),transparent)]"),
+              ? "bg-[linear-gradient(90deg,transparent,rgba(24,34,44,0.18),transparent)]"
+              : "bg-[linear-gradient(180deg,transparent,rgba(24,34,44,0.18),transparent)]"),
           variant === "accent" &&
             (isH
               ? "bg-[linear-gradient(90deg,transparent_15%,rgba(0,212,200,0.7)_50%,transparent_85%)] shadow-[0_0_8px_rgba(0,212,200,0.3)]"

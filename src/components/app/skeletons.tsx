@@ -22,11 +22,11 @@ export function ProjectCardSkeleton() {
     <div
       className={cn(
         "relative flex flex-col rounded-md border border-border-subtle overflow-hidden",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+        "bg-surface-1 card-elev",
       )}
     >
       {/* Cover band — matches the type-icon hero strip */}
-      <div className="relative h-[140px] bg-[rgba(255,255,255,0.018)] overflow-hidden">
+      <div className="relative h-[140px] bg-[rgba(24,34,44,0.03)] overflow-hidden">
         <Skeleton className="absolute top-3 left-3 h-5 w-[110px] rounded-sm" />
         <Skeleton className="absolute top-3 right-3 size-7 rounded-md" />
       </div>
@@ -94,7 +94,7 @@ export function TenderRowSkeleton() {
     <div
       className={cn(
         "rounded-md border border-border-subtle px-5 py-4",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.45),rgba(6,18,30,0.55))]",
+        "bg-surface-2",
       )}
     >
       <div className="flex items-center gap-4">

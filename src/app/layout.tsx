@@ -7,7 +7,6 @@ import {
 } from "next/font/google";
 import "./globals.css";
 
-import { SmoothScroll } from "@/components/smooth-scroll";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgress } from "@/components/app/route-progress";
 
@@ -69,7 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#03090f",
+  themeColor: "#f4f1ea",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -89,14 +88,16 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans text-text">
-        <SmoothScroll>
-          <ToastProvider>
-            <Suspense fallback={null}>
-              <RouteProgress />
-            </Suspense>
-            {children}
-          </ToastProvider>
-        </SmoothScroll>
+        {/* Native scroll, deliberately. Lenis smooth-scroll came out in the
+            landing v2 overhaul: it fought the role-morph choreography and
+            JS scroll-jacking reads "techy" to the exact audience the page
+            needs to reassure. */}
+        <ToastProvider>
+          <Suspense fallback={null}>
+            <RouteProgress />
+          </Suspense>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

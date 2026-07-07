@@ -39,6 +39,12 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // independent advisory on their tender. project_type / suburb / stage
   // ride in the `meta` jsonb column; first name + mobile are top-level.
   "owner_advisory",
+  // Preferred Partner network interest — architects / finance brokers
+  // registering via the landing "Join the network" CTAs. Firm name lands
+  // in practice_name; state + website ride in the `meta` jsonb. No
+  // project is attached (these are practitioners, not project owners).
+  "partner_architect_interest",
+  "partner_finance_interest",
 ]);
 
 export const leads = pgTable(

@@ -166,7 +166,7 @@ function Hero({
         className="pointer-events-none absolute inset-y-0 w-[35%] rounded-full"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(126,245,237,0.18), transparent)",
+            "linear-gradient(90deg, transparent, rgba(10,125,115,0.18), transparent)",
           filter: "blur(40px)",
         }}
       />
@@ -236,7 +236,7 @@ function StatusPanel({
       className={cn(
         "relative overflow-hidden rounded-md border p-5 sm:p-7 lg:p-9",
         "border-border-accent/40",
-        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(6,18,30,0.6)_100%)]",
+        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_50%,rgba(250,248,243,0.6)_100%)]",
         "shadow-[0_24px_60px_-30px_rgba(0,212,200,0.4)]",
       )}
     >
@@ -339,7 +339,7 @@ function StatusPanel({
             {Math.round(cyclePct)}%
           </span>
         </div>
-        <div className="relative h-[6px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+        <div className="relative h-[6px] rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: `${cyclePct}%` }}
@@ -399,7 +399,7 @@ function InactiveStatusPanel({
       className={cn(
         "relative overflow-hidden rounded-md border p-5 sm:p-7 lg:p-9",
         stillEligible
-          ? "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(6,18,30,0.6)_100%)]"
+          ? "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(250,248,243,0.6)_100%)]"
           : "border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))]",
       )}
     >
@@ -409,7 +409,7 @@ function InactiveStatusPanel({
             "size-12 rounded-md flex items-center justify-center shrink-0 border",
             stillEligible
               ? "border-accent/40 bg-[rgba(0,212,200,0.10)] text-accent"
-              : "border-border-subtle bg-[rgba(255,255,255,0.022)] text-text-muted",
+              : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
           )}
         >
           {stillEligible ? <Sparkles className="size-5" /> : <Lock className="size-5" />}
@@ -533,10 +533,10 @@ function CycleCard({
         "relative overflow-hidden rounded-md border p-5",
         "transition-all duration-[200ms]",
         tone === "current"
-          ? "border-border-accent/45 bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(6,18,30,0.55))] shadow-[0_14px_36px_-22px_rgba(0,212,200,0.45)]"
+          ? "border-border-accent/45 bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(250,248,243,0.55))] shadow-[0_14px_36px_-22px_rgba(0,212,200,0.45)]"
           : tone === "past"
-            ? "border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.4),rgba(6,18,30,0.55))]"
-            : "border-border-subtle/60 bg-[rgba(255,255,255,0.012)] opacity-70",
+            ? "border-border-subtle bg-surface-2"
+            : "border-border-subtle/60 bg-[rgba(24,34,44,0.025)] opacity-70",
       )}
     >
       {/* Top: kicker + tone label */}
@@ -577,7 +577,7 @@ function CycleCard({
       </div>
 
       {/* Mini bar */}
-      <div className="mt-3 h-[3px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+      <div className="mt-3 h-[3px] rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
         <span
           className={cn(
             "block h-full rounded-full",
@@ -589,7 +589,7 @@ function CycleCard({
               tone === "current"
                 ? "linear-gradient(90deg, #1a5fd4, #00d4c8)"
                 : tone === "past"
-                  ? "linear-gradient(90deg, rgba(0,212,200,0.6), rgba(126,245,237,0.6))"
+                  ? "linear-gradient(90deg, rgba(0,212,200,0.6), rgba(10,125,115,0.6))"
                   : undefined,
           }}
         />
@@ -637,7 +637,7 @@ function CohortPanel({
       ref={ref}
       className={cn(
         "rounded-md border border-border-subtle overflow-hidden",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+        "bg-surface-1 card-elev",
       )}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-0">
@@ -664,7 +664,7 @@ function CohortPanel({
                 {cohort.cap}
               </span>
             </div>
-            <div className="relative h-[8px] rounded-full bg-[rgba(255,255,255,0.05)] overflow-hidden">
+            <div className="relative h-[8px] rounded-full bg-[rgba(24,34,44,0.06)] overflow-hidden">
               <motion.span
                 initial={{ width: 0 }}
                 animate={{ width: `${takenPct}%` }}
@@ -799,7 +799,7 @@ function BenefitCard({
     <div
       className={cn(
         "group relative rounded-md border border-border-subtle p-5",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))]",
+        "bg-surface-1 card-elev",
         "transition-[border-color,box-shadow,transform] duration-[220ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
         "hover:border-border-accent/55 hover:-translate-y-0.5",
         "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30)]",
@@ -895,7 +895,7 @@ function BigCreditsArc({
           cy="90"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgba(24,34,44,0.07)"
           strokeWidth="9"
         />
         <motion.circle

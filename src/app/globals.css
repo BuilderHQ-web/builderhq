@@ -18,61 +18,83 @@
      consuming components don't need refactoring. */
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-ui: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Aliases kept for components that opted in by name earlier. */
-  --font-serif: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-geist: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* Backgrounds & surfaces */
-  --color-bg: #03090f;
-  --color-bg-deep: #060f19;
-  --color-bg-raised: oklch(0.165 0.015 240);
-  --color-bg-elev: oklch(0.205 0.018 240);
-  --color-bg-overlay: oklch(0.10 0.012 240 / 0.72);
+  /* Backgrounds & surfaces — warm greige canvas, crisp white cards
+     (light-first; the old navy lives on in --color-navy* for contrast).
+     The canvas is deliberately a touch deeper than the cards so white
+     surfaces + card-elev read as sitting ABOVE the page, not flush with
+     it. Landing + marketing self-paint #f4f1ea, so this is app-only. */
+  --color-bg: #ece7dd;
+  --color-bg-deep: #e3ddd0;
+  --color-bg-raised: #ffffff;
+  --color-bg-elev: #fbfaf6;
+  --color-bg-overlay: rgba(12, 18, 24, 0.5);
 
-  --color-surface-1: oklch(0.155 0.014 240);
-  --color-surface-2: oklch(0.195 0.016 240);
-  --color-surface-3: oklch(0.235 0.018 240);
-  --color-surface-hover: oklch(0.255 0.020 240);
+  --color-surface-1: #ffffff;
+  --color-surface-2: #faf8f3;
+  --color-surface-3: #f1ede4;
+  --color-surface-hover: #ece7dc;
 
-  /* Borders — blueprint-blue tinted, not neutral grey */
-  --color-border-subtle: rgba(100, 180, 255, 0.06);
-  --color-border: rgba(100, 180, 255, 0.10);
-  --color-border-strong: rgba(100, 180, 255, 0.18);
-  --color-border-accent: rgba(0, 212, 200, 0.30);
-  --color-border-accent-strong: rgba(0, 212, 200, 0.45);
+  /* Borders — ink-alpha hairlines on light ground */
+  --color-border-subtle: rgba(24, 34, 44, 0.10);
+  --color-border: rgba(24, 34, 44, 0.14);
+  --color-border-strong: rgba(24, 34, 44, 0.22);
+  --color-border-accent: rgba(9, 148, 137, 0.35);
+  --color-border-accent-strong: rgba(9, 148, 137, 0.5);
 
-  /* Text — premium "screen white" with slight cool tint */
-  --color-text: #eef6ff;
-  --color-text-muted: #98b8d0;
-  --color-text-subtle: rgba(238, 246, 255, 0.62);
-  --color-text-faint: rgba(238, 246, 255, 0.42);
-  --color-text-dim: #567080;
-  --color-text-inverse: #031118;
+  /* Text — ink, with warm-grey support levels. Muted + dim are pulled a
+     little darker than the landing values so dense dashboard copy stays
+     legible on the warm canvas. */
+  --color-text: #161c22;
+  --color-text-muted: #48535d;
+  --color-text-subtle: rgba(22, 28, 34, 0.68);
+  --color-text-faint: rgba(22, 28, 34, 0.46);
+  --color-text-dim: #78828d;
+  --color-text-inverse: #f6fbff;
 
-  /* Accent — BuilderHQ teal (primary) + light teal for highlights */
+  /* Accent — BuilderHQ teal for actions; deep teal where teal is TEXT */
   --color-accent: #00d4c8;
   --color-accent-hover: oklch(0.84 0.14 195);
   --color-accent-active: oklch(0.74 0.15 195);
-  --color-accent-muted: rgba(0, 212, 200, 0.14);
+  --color-accent-muted: rgba(9, 148, 137, 0.12);
   --color-accent-glow: rgba(0, 212, 200, 0.35);
-  --color-accent-light: #7ef5ed;
+  --color-accent-light: #0a7d73;
   --color-accent-contrast: #031118;
+
+  /* The old canvas, kept for deliberate dark-contrast moments */
+  --color-navy: #03090f;
+  --color-navy-raised: #0a1119;
 
   /* Secondary brand blue — used in gradients & visuals */
   --color-blue: #1a5fd4;
   --color-blue-glow: rgba(26, 95, 212, 0.30);
 
-  /* Semantic */
-  --color-success: oklch(0.78 0.16 155);
-  --color-success-muted: oklch(0.78 0.16 155 / 0.14);
-  --color-warning: #fbb840;
-  --color-warning-muted: rgba(255, 180, 0, 0.14);
-  --color-danger: oklch(0.72 0.20 22);
-  --color-danger-muted: oklch(0.72 0.20 22 / 0.14);
-  --color-info: oklch(0.78 0.13 230);
-  --color-info-muted: oklch(0.78 0.13 230 / 0.14);
+  /* Light band — the landing's "step into the light" sections (how it
+     works, trust, network). Cool paper, ink text, deepened teal for
+     small accents so contrast holds on light ground. Dark sections
+     keep the tokens above; these are additive, not a theme switch. */
+  --color-paper: #eef3f6;
+  --color-paper-raised: #ffffff;
+  --color-ink: #0c1b26;
+  --color-ink-muted: #42606f;
+  --color-ink-faint: #6e8795;
+  --color-ink-border: rgba(12, 43, 63, 0.14);
+  --color-accent-deep: #077e76;
+
+  /* Semantic — deep enough to read as text on white; muted stays soft */
+  --color-success: oklch(0.55 0.15 155);
+  --color-success-muted: oklch(0.62 0.15 155 / 0.15);
+  --color-warning: #b26a08;
+  --color-warning-muted: rgba(232, 152, 30, 0.16);
+  --color-danger: oklch(0.55 0.2 25);
+  --color-danger-muted: oklch(0.6 0.2 25 / 0.13);
+  --color-info: oklch(0.52 0.12 235);
+  --color-info-muted: oklch(0.6 0.12 235 / 0.13);
 
   /* Radii — brand-tight 3px for chips/buttons, larger for content cards */
   --radius-tight: 3px;
@@ -109,7 +131,7 @@
   display: inline-block;
   font-style: italic;
   padding-right: 0.12em;
-  background-image: linear-gradient(110deg, #eef6ff 0%, #7ef5ed 55%);
+  background-image: linear-gradient(110deg, #161c22 0%, #0a7d73 62%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -117,14 +139,14 @@
 
 /* Custom utilities not provided by core Tailwind */
 @utility glass {
-  background: oklch(1 0 0 / 0.025);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--color-border);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
 }
 
 @utility glass-strong {
-  background: oklch(1 0 0 / 0.04);
+  background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--color-border-strong);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
@@ -159,9 +181,25 @@
 /* Hairline divider — used inside cards and rows for the absolute lightest
    separation. Lighter than border-subtle, never visible enough to count. */
 @utility hairline {
-  background: linear-gradient(90deg, transparent, rgba(100, 180, 255, 0.10), transparent);
+  background: linear-gradient(90deg, transparent, rgba(24, 34, 44, 0.12), transparent);
   height: 1px;
   width: 100%;
+}
+
+/* Elevation — the single move that turns a flat white rectangle on the
+   warm canvas into a surface that reads as "above" the page. A tight
+   contact shadow for the edge + a soft, wide ambient drop. Kept subtle
+   and premium: no heavy halos, no drama. card-elev-lg is the raised /
+   hover state and the treatment for genuinely prominent panels. */
+@utility card-elev {
+  box-shadow:
+    0 1px 2px rgba(24, 34, 44, 0.05),
+    0 6px 18px -10px rgba(24, 34, 44, 0.14);
+}
+@utility card-elev-lg {
+  box-shadow:
+    0 1px 2px rgba(24, 34, 44, 0.06),
+    0 16px 40px -16px rgba(24, 34, 44, 0.20);
 }
 
 /* Brand kicker — the small uppercase label used throughout the landing */
@@ -173,7 +211,7 @@
   font-size: 10px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-accent-light);
 }
 
 @keyframes fadeIn {
@@ -225,19 +263,17 @@
 }
 
 /* ==========================================================================
-   Base — dark-first.
+   Base — light-first (the landing scheme, app-wide).
    ========================================================================== */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html, body {
-  /* Landing / global base. Sits a shade darker than the brand
-     `--color-bg-deep` token so the hero canvas reads as deeper
-     night, but stays brighter than the auth shell (`#020610`) so
-     the two surfaces have a clear hierarchy. */
-  background-color: #03080e;
+  /* App canvas — warm greige. Landing + marketing self-paint their own
+     #f4f1ea fixed layer on top, so this only shows through the app shell. */
+  background-color: #ece7dd;
 }
 
 html {
@@ -259,7 +295,7 @@ body {
      explicit dark colour set above so the canvas always reads dark
      even if a gradient stop fails. */
   background-image:
-    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 212, 200, 0.04), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(0, 170, 158, 0.05), transparent 60%),
     radial-gradient(ellipse 50% 40% at 100% 100%, rgba(26, 95, 212, 0.03), transparent 65%);
   min-height: 100vh;
   min-height: 100dvh;
@@ -292,8 +328,8 @@ html.lenis body {
 }
 
 ::selection {
-  background: rgba(126, 245, 237, 0.88);
-  color: var(--color-text-inverse);
+  background: rgba(0, 212, 200, 0.32);
+  color: #0c1418;
   text-shadow: none;
 }
 
@@ -309,17 +345,17 @@ html.lenis body {
 @media (pointer: fine) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+    scrollbar-color: rgba(24, 34, 44, 0.22) transparent;
   }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(24, 34, 44, 0.16);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  *::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); background-clip: padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(24, 34, 44, 0.28); background-clip: padding-box; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -434,3 +470,39 @@ img, svg, video, canvas, iframe {
    don't want it leaking in. Scoped to `prose`-style containers
    downstream. */
 
+
+/* ── Landing v2 · light theme ───────────────────────────────────────
+   The marketing landing can flip to a warm off-white treatment without
+   touching the app. Everything under `.lp-light` re-resolves the neutral
+   tokens; descendants inherit these instead of the dark :root values, so
+   every `text-text` / `bg-surface-1` / `border-border-subtle` utility
+   flips automatically. Role hues (ROLE_PALETTE) are deepened for white in
+   content.ts. The bright teal --color-accent stays (dark text on it). */
+.lp-light {
+  --color-bg: #f4f1ea;
+  --color-bg-deep: #ebe7dd;
+  --color-bg-overlay: rgba(244, 241, 234, 0.72);
+
+  --color-surface-1: #ffffff;
+  --color-surface-2: #faf8f3;
+  --color-surface-3: #f1ede4;
+  --color-surface-hover: #ece7dc;
+
+  --color-border-subtle: rgba(24, 34, 44, 0.09);
+  --color-border: rgba(24, 34, 44, 0.14);
+  --color-border-strong: rgba(24, 34, 44, 0.22);
+  --color-border-accent: rgba(9, 148, 137, 0.35);
+  --color-border-accent-strong: rgba(9, 148, 137, 0.5);
+
+  --color-text: #161c22;
+  --color-text-muted: #53606b;
+  --color-text-subtle: rgba(22, 28, 34, 0.66);
+  --color-text-faint: rgba(22, 28, 34, 0.44);
+  --color-text-dim: #8b949d;
+
+  /* where the bright tint used to read on dark, use a deep teal on light */
+  --color-accent-light: #0a7d73;
+  --color-accent-muted: rgba(9, 148, 137, 0.12);
+
+  color-scheme: light;
+}

@@ -1559,7 +1559,7 @@ function LicencesStep({
                   onChange={(e) => setDraft({ ...draft, state: e.target.value as AustralianState })}
                   className={cn(
                     "h-10 rounded-tight border border-border bg-surface-1 px-3 text-[13px] text-text",
-                    "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]",
+                    "shadow-[inset_0_1px_0_0_rgba(24,34,44,0.03)]",
                     "focus:outline-none focus:border-border-accent-strong",
                   )}
                 >
@@ -1662,7 +1662,7 @@ function LicenceVerifyChip({
   if (!v) {
     // No result yet (still in flight, or just added pre-verify)
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-border-subtle bg-[rgba(255,255,255,0.018)] text-[9.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
+      <span className="inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.03)] text-[9.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
         <Loader2 className="size-2.5 animate-spin" />
         Verifying…
       </span>

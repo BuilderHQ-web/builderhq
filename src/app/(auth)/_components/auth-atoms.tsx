@@ -12,7 +12,7 @@ import * as React from "react";
 type Tone = "info" | "success" | "warning" | "error";
 
 const BANNER_TONE_CLS: Record<Tone, string> = {
-  info: "border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.03)] text-text-muted",
+  info: "border-[rgba(24,34,44,0.1)] bg-[rgba(24,34,44,0.045)] text-text-muted",
   success: "border-accent/25 bg-accent-muted/50 text-accent-light",
   warning:
     "border-[rgba(251,184,64,0.30)] bg-[rgba(251,184,64,0.06)] text-warning",

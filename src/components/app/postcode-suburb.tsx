@@ -229,11 +229,11 @@ export function PostcodeSuburb({
             className={cn(
               "h-10 w-full rounded-tight border border-border px-3 text-[13px] text-text",
               "bg-[linear-gradient(180deg,var(--color-surface-1),color-mix(in_oklch,var(--color-surface-1)_92%,var(--color-bg-deep)))]",
-              "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]",
+              "shadow-[inset_0_1px_0_0_rgba(24,34,44,0.03)]",
               "transition-[border-color,background,box-shadow] duration-[200ms] ease-[var(--ease-out)]",
               "hover:border-border-strong",
               "focus:outline-none focus:border-border-accent-strong focus:bg-surface-2",
-              "focus:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_0_3px_rgba(0,212,200,0.18),0_0_24px_-4px_rgba(0,212,200,0.20)]",
+              "focus:shadow-[inset_0_1px_0_0_rgba(24,34,44,0.05),0_0_0_3px_rgba(0,212,200,0.18),0_0_24px_-4px_rgba(0,212,200,0.20)]",
             )}
           >
             <option value="">Select suburb…</option>

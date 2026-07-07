@@ -61,7 +61,7 @@ export function EmptyState({
       transition={{ duration: 0.32, ease: [0.2, 0.65, 0.3, 0.9] }}
       className={cn(
         "rounded-md border border-border-subtle",
-        "bg-[linear-gradient(180deg,rgba(10,28,44,0.4),rgba(6,18,30,0.25))]",
+        "bg-surface-2",
         "px-8 py-14 sm:py-16 text-center",
         "relative overflow-hidden",
         className,
@@ -84,7 +84,7 @@ export function EmptyState({
           className={cn(
             "mx-auto size-14 rounded-full flex items-center justify-center mb-5",
             "border border-border-subtle",
-            "bg-[radial-gradient(circle_at_50%_30%,rgba(0,212,200,0.18),rgba(255,255,255,0.018))]",
+            "bg-[radial-gradient(circle_at_50%_30%,rgba(0,212,200,0.18),rgba(24,34,44,0.03))]",
             tone === "primary" && "shadow-[0_0_24px_rgba(0,212,200,0.25)]",
           )}
         >
