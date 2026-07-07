@@ -47,19 +47,19 @@ export function RoleSelector() {
     <section
       id="choose"
       aria-label="Choose your view"
-      className="relative px-5 md:px-10 py-10 lg:py-12 scroll-mt-24 lg:min-h-[84svh] lg:flex lg:flex-col lg:justify-center"
+      className="relative px-5 md:px-10 py-12 lg:py-20 scroll-mt-24 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center"
     >
       <div className="mx-auto w-full max-w-[1180px]">
-        <div className="flex flex-col items-center text-center gap-2.5 mb-8 lg:mb-10">
+        <div className="flex flex-col items-center text-center gap-4 mb-16 lg:mb-24">
           <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.28em] uppercase text-text-dim">
             <span className="h-px w-6 bg-text-faint/40" />
             One platform, every side
             <span className="h-px w-6 bg-text-faint/40" />
           </span>
-          <h2 className="font-ui font-semibold text-[clamp(1.8rem,2.4vw+0.5rem,2.7rem)] leading-[1.08] tracking-[-0.03em] text-text">
+          <h2 className="font-ui font-semibold text-[clamp(2.3rem,3.4vw+0.5rem,3.7rem)] leading-[1.05] tracking-[-0.03em] text-text">
             See it <span className="text-accent-light">your way.</span>
           </h2>
-          <p className="max-w-[46ch] text-[13.5px] sm:text-[14.5px] leading-[1.6] text-text-muted">
+          <p className="max-w-[46ch] text-[14.5px] sm:text-[16px] leading-[1.6] text-text-muted">
             Choose your view and the page tailors itself: your language, your
             questions, your next step.
           </p>

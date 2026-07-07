@@ -31,7 +31,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-[5.25rem] sm:pt-24 lg:pt-20 pb-8 lg:pb-12 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden lg:min-h-[88svh] lg:flex lg:items-center"
+      className="relative isolate pt-[5.25rem] sm:pt-24 lg:pt-20 pb-8 lg:pb-16 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden lg:min-h-[100svh] lg:flex lg:items-center"
     >
       <div className="mx-auto w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.12fr_1fr] gap-4 sm:gap-10 lg:gap-20 items-center">
         {/* Visual — leads on mobile, right column on desktop. */}

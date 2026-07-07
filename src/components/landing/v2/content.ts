@@ -698,7 +698,7 @@ export const ECOSYSTEM = {
       line: "Real work, priced fairly, won directly.",
     },
     {
-      who: "Finance brokers",
+      who: "Finance Brokers",
       bring: "back the build",
       line: "The right finance, right when it counts.",
     },
