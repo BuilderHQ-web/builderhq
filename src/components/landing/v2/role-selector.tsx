@@ -37,7 +37,7 @@ const WORD: Record<Role, string> = {
   homeowner: "Homeowner",
   builder: "Builder",
   architect: "Architect",
-  finance: "Finance broker",
+  finance: "Finance Broker",
 };
 
 export function RoleSelector() {
@@ -47,7 +47,7 @@ export function RoleSelector() {
     <section
       id="choose"
       aria-label="Choose your view"
-      className="relative px-5 md:px-10 py-12 lg:py-20 scroll-mt-24 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center"
+      className="relative px-5 md:px-10 py-10 lg:py-12 scroll-mt-24 lg:min-h-[84svh] lg:flex lg:flex-col lg:justify-center"
     >
       <div className="mx-auto w-full max-w-[1180px]">
         <div className="flex flex-col items-center text-center gap-2.5 mb-8 lg:mb-10">
