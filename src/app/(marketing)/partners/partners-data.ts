@@ -30,7 +30,8 @@ export interface PartnerWork {
   title: string;
   suburb: string;
   type: string;
-  year: string;
+  /** Optional; omitted where the practice doesn't publish a year. */
+  year?: string;
   /** Optional project image; normalised by the work-strip treatment. */
   image?: string;
 }
@@ -43,6 +44,10 @@ export interface Partner {
    *  for the partner to review their draft before it goes live. */
   draft?: boolean;
   name: string;
+  /** Overrides the default kind label ("Architecture practice" /
+   *  "Finance partner") where a partner needs a more accurate title,
+   *  e.g. a building designer who is not a registered architect. */
+  roleLabel?: string;
   /** Two-letter mark for the monogram tile when no portrait is supplied. */
   monogram: string;
   /** Optional portrait (principal or representative). Any lighting or
@@ -65,6 +70,9 @@ export interface Partner {
   about: string;
   facts: {
     established: string;
+    /** Optional headline experience stat, e.g. "30+ yrs". Shown as a big
+     *  figure when there's no Google rating to lead with. */
+    experience?: string;
     basedIn: string;
     serves: string;
     focus: string;
@@ -164,6 +172,40 @@ export const PARTNERS: Partner[] = [
       { title: "Griffith Dual Occupancy", suburb: "Griffith", type: "Multi-dwelling", year: "2025" },
       { title: "Garden Courtyard House", suburb: "Narrabundah", type: "New build", year: "2024" },
       { title: "Deakin Pair", suburb: "Deakin", type: "Multi-dwelling", year: "2023" },
+    ],
+    joined: "2026",
+  },
+
+  /* ── Real, in review (draft) ────────────────────────────────────── */
+  {
+    slug: "house-design-solutions",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "House Design Solutions",
+    monogram: "HD",
+    principal: "Paul A. Mete",
+    suburb: "Albert Park",
+    state: "VIC",
+    tagline:
+      "New homes, extensions and unit developments across Melbourne, designed to be built, not just drawn.",
+    disciplines: ["New homes", "Extensions", "Unit developments"],
+    why: "Paul has spent decades designing homes across Melbourne, and it shows in how buildable his drawings are. He works the way we like: architectural thinking paired with the practicalities of construction, no sales staff, and a real focus on getting the right builder alongside the client early. He is exactly the sort of designer we are glad to introduce.",
+    about:
+      "House Design Solutions is Paul Mete's Albert Park practice, designing new homes, extensions and unit developments across Melbourne since 1987. A member of Design Matters, Paul works without sales staff, pairing architectural design with the realities of building so his homes are as sensible to construct as they are to live in.",
+    facts: {
+      established: "1987",
+      experience: "30+ yrs",
+      basedIn: "Albert Park, VIC",
+      serves: "Melbourne and regional Victoria",
+      focus: "Homes, extensions and developments",
+    },
+    website: "https://www.housedesignsolutions.com.au",
+    work: [
+      { title: "Mont Albert", suburb: "Mont Albert", type: "New family home" },
+      { title: "Hawthorn East Rear Extension", suburb: "Hawthorn East", type: "Heritage extension" },
+      { title: "Templestowe Side by Side", suburb: "Templestowe", type: "Duplex development" },
+      { title: "Eltham House", suburb: "Eltham", type: "New family home", year: "2015" },
     ],
     joined: "2026",
   },

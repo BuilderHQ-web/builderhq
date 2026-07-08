@@ -21,11 +21,17 @@ export const KIND_LABEL = {
   finance: "Finance partner",
 } as const;
 
+/** The label under "Preferred Partner", accurate to what the partner is
+ *  (a building designer is not a registered architect, for instance). */
+export function kindLabel(partner: Partner) {
+  return partner.roleLabel ?? KIND_LABEL[partner.kind];
+}
+
 /** The identity header props, shared so both routes render the same title
  *  block (the public route hands these to MarketingPageShell). */
 export function partnerHeaderProps(partner: Partner) {
   return {
-    kicker: `Preferred Partner · ${KIND_LABEL[partner.kind]}`,
+    kicker: `Preferred Partner · ${kindLabel(partner)}`,
     title: partner.name,
     sub: partner.tagline,
     meta: `${partner.suburb}, ${partner.state} · In the network since ${partner.joined}`,
@@ -52,7 +58,10 @@ export function PartnerProfileSections({
     figures.push({ label: "Reviews", value: String(partner.google.reviews) });
   }
   figures.push({ label: "Established", value: partner.facts.established });
-  if (figures.length < 3) {
+  if (partner.facts.experience) {
+    figures.push({ label: "Experience", value: partner.facts.experience });
+  }
+  if (figures.length < 2) {
     figures.push({ label: "Serves", value: partner.facts.serves, big: false });
   }
 
@@ -214,8 +223,12 @@ export function PartnerProfileSections({
                       {w.suburb}
                       <span aria-hidden className="mx-1.5 text-text-faint">·</span>
                       {w.type}
-                      <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                      {w.year}
+                      {w.year ? (
+                        <>
+                          <span aria-hidden className="mx-1.5 text-text-faint">·</span>
+                          {w.year}
+                        </>
+                      ) : null}
                     </p>
                   </figcaption>
                 </figure>
@@ -235,9 +248,11 @@ export function PartnerProfileSections({
                       {w.type}
                     </p>
                   </div>
-                  <span className="font-mono text-[12px] tabular-nums text-text-dim shrink-0">
-                    {w.year}
-                  </span>
+                  {w.year ? (
+                    <span className="font-mono text-[12px] tabular-nums text-text-dim shrink-0">
+                      {w.year}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -408,7 +423,7 @@ function MiniPartner({ partner }: { partner: Partner }) {
           {partner.name}
         </span>
         <span className="block text-[12px] text-text-dim truncate">
-          {KIND_LABEL[partner.kind]}
+          {kindLabel(partner)}
           <span aria-hidden className="mx-1.5 text-text-faint">·</span>
           {partner.suburb}, {partner.state}
         </span>
