@@ -110,7 +110,9 @@ export function PartnerProfileSections({
               className="pointer-events-none absolute -inset-8"
               style={{ background: `radial-gradient(closest-side, ${h.glow1}, transparent 72%)` }}
             />
-            <PartnerAvatar partner={partner} size={178} className="relative" />
+            {/* A face reads smaller than a full-bleed logo tile at the same
+                box, so portraits get a 20% larger frame. */}
+            <PartnerAvatar partner={partner} size={partner.portrait && !partner.logo ? 214 : 178} className="relative" />
           </div>
           {/* A real 3-row grid (label / value / sub-label) rather than
               independent flex columns: every value sits on the same
@@ -162,12 +164,24 @@ export function PartnerProfileSections({
           behind them, the affiliation is the credibility. */}
       {partner.institution ? (
         <section className="mt-2 flex items-center gap-4 rounded-2xl border border-border-subtle bg-white card-elev px-6 sm:px-7 py-5">
-          <span
-            className="flex size-11 shrink-0 items-center justify-center rounded-full"
-            style={{ background: `${h.accent}12`, color: h.accentSoft }}
-          >
-            <Landmark className="size-5" strokeWidth={1.75} />
-          </span>
+          {partner.institution.logo ? (
+            // The institution's own mark, full colour — a brand is its own
+            // credential, so no tint and no disc behind it.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={partner.institution.logo}
+              alt={partner.institution.name}
+              loading="lazy"
+              className="size-11 shrink-0 object-contain"
+            />
+          ) : (
+            <span
+              className="flex size-11 shrink-0 items-center justify-center rounded-full"
+              style={{ background: `${h.accent}12`, color: h.accentSoft }}
+            >
+              <Landmark className="size-5" strokeWidth={1.75} />
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             <p className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text">
               {partner.institution.name}

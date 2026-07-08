@@ -73,8 +73,9 @@ export interface Partner {
   principal?: string;
   /** The institution an individual partner works with (e.g. a bank staff
    *  lending specialist). Rendered as a credential strip under the
-   *  identity band — the affiliation is the credibility. */
-  institution?: { name: string; role?: string; note?: string };
+   *  identity band — the affiliation is the credibility. `logo` shows the
+   *  institution's own brand mark in place of the generic bank icon. */
+  institution?: { name: string; role?: string; note?: string; logo?: string };
   /** Overrides the about-section label ("The practice" / "The business"),
    *  e.g. "About Ayse" for an individual. */
   aboutLabel?: string;
@@ -451,6 +452,7 @@ export const PARTNERS: Partner[] = [
       name: "Commonwealth Bank",
       role: "Mobile Senior Home Lending Specialist",
       note: "Australia’s largest home lender",
+      logo: "/partners/ayse-altintas/commbank.png",
     },
     stats: [
       { label: "With Commonwealth Bank", value: "4+ yrs" },
