@@ -559,6 +559,61 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "vibe-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Vibe Building Design",
+    monogram: "VB",
+    logo: "/partners/vibe-building-design/logo.png",
+    logoDark: true,
+    suburb: "Brunswick East",
+    state: "VIC",
+    tagline:
+      "New homes, extensions and multi-residential projects across Melbourne, with advice that starts before you even buy the site.",
+    disciplines: ["New homes", "Extensions", "Multi-residential"],
+    google: { rating: 5.0, reviews: 13 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "13 reviews" },
+      { label: "Established", value: "2016" },
+      { label: "Pre-purchase advice", value: "Included" },
+    ],
+    why: "Vibe gets involved earlier than most designers. Owners come to them before a contract is signed and leave knowing exactly what a block can carry, then the same team runs concept, town planning and documentation as one continuous process, so the design intent survives all the way to the builder's hands. Nearly a decade of that discipline shows in a perfect five star record, and in owners who reach tender already sure of their drawings.",
+    about:
+      "Vibe Building Design is a Brunswick East studio founded in 2016, designing new homes, extensions and multi-residential projects across Melbourne. A member of Design Matters National, the team works from pre-purchase property advice through concept design, town planning and construction documentation, so a project carries one design intent from the day the site is bought to the day builders price it.",
+    facts: {
+      established: "2016",
+      basedIn: "Brunswick East, VIC",
+      serves: "Melbourne",
+      focus: "Homes, extensions and multi-residential",
+    },
+    website: "https://www.vibebuildingdesign.com.au",
+    instagram: "https://www.instagram.com/vibebuildingdesign/",
+    linkedin: "https://www.linkedin.com/company/vibe-building-design/",
+    galleryUrl: "https://www.vibebuildingdesign.com.au/projects",
+    work: [
+      {
+        title: "Project Collins",
+        suburb: "Melbourne",
+        type: "Duplex development",
+        image: "/partners/vibe-building-design/collins.jpg",
+      },
+      {
+        title: "Project Charteris",
+        suburb: "Melbourne",
+        type: "Custom home",
+        image: "/partners/vibe-building-design/charteris.jpg",
+      },
+      {
+        title: "Project Bruce",
+        suburb: "Melbourne",
+        type: "Rear extension",
+        image: "/partners/vibe-building-design/bruce.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
