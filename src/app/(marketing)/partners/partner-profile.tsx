@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Check, Globe, Landmark, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Award, Check, Globe, Landmark, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
@@ -198,6 +198,33 @@ export function PartnerProfileSections({
         </section>
       ) : null}
 
+      {/* Recognition — gold plaques for the honours that carry weight.
+          The lead award reads first; a tally closes the row. */}
+      {partner.awards?.length ? (
+        <section className="mt-2 rounded-2xl border border-border-subtle bg-white card-elev px-6 sm:px-7 py-5 sm:py-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4">
+            {partner.awards.slice(0, 3).map((a) => (
+              <div key={a.label} className="flex items-start gap-3">
+                <span
+                  className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "rgba(224,166,60,0.13)", color: "#a9781f" }}
+                >
+                  <Award className="size-[18px]" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-ui font-semibold text-[13.5px] leading-snug tracking-[-0.01em] text-text">
+                    {a.label}
+                  </p>
+                  {a.sub ? (
+                    <p className="mt-1 text-[11.5px] leading-snug text-text-muted">{a.sub}</p>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* Why we introduce them — the curatorial note. */}
       <section className="relative mt-5 rounded-2xl border border-border-subtle bg-white card-elev px-7 sm:px-9 py-8 sm:py-9 overflow-hidden">
         <span
@@ -319,7 +346,8 @@ export function PartnerProfileSections({
           {showWorkImages ? (
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {partner.work.map((w) => (
-                <PartnerWorkCard key={w.title} work={w} hue={h} href={partner.galleryUrl} />
+                // Keyed by image: two projects may share a suburb title.
+                <PartnerWorkCard key={w.image ?? w.title} work={w} hue={h} href={partner.galleryUrl} />
               ))}
             </div>
           ) : (

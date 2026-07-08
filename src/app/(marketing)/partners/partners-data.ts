@@ -111,6 +111,9 @@ export interface Partner {
    *  auto-built figure band verbatim — full control for partners whose
    *  story is not a set of round numbers. */
   stats?: PartnerStat[];
+  /** Industry recognition, rendered as a gold plaque strip under the
+   *  identity band. Lead with the biggest honour; keep to three. */
+  awards?: { label: string; sub?: string }[];
   website?: string;
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
@@ -483,6 +486,75 @@ export const PARTNERS: Partner[] = [
         suburb: "Melbourne",
         type: "Suburban Melbourne",
         image: "/partners/silverpoint-design-and-planning/dual-occupancy.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "sketch-design-and-interiors",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Design and interiors studio",
+    name: "SKETCH Design and Interiors",
+    monogram: "SK",
+    logo: "/partners/sketch-design-and-interiors/logo.png",
+    principal: "Darrin Albert and Andrew Brown",
+    suburb: "Elsternwick",
+    state: "VIC",
+    tagline:
+      "Homes and interiors designed as one considered whole, from the first sketch to the last finish.",
+    disciplines: ["New homes", "Renovations", "Interior design"],
+    google: { rating: 4.7, reviews: 58 },
+    stats: [
+      { label: "Google rating", value: "4.7", star: true, sub: "58 reviews" },
+      { label: "Instagram following", value: "109k", sub: "@sketchdesign.au" },
+      { label: "Established", value: "2006" },
+    ],
+    awards: [
+      {
+        label: "National Building Design of the Year",
+        sub: "Design Matters National · 2022",
+      },
+      {
+        label: "Victorian Building Design of the Year",
+        sub: "Design Matters National · 2022",
+      },
+      {
+        label: "25+ awards since 2017",
+        sub: "Design Matters National, BDAA and Houzz",
+      },
+    ],
+    why: "Few studios in Melbourne carry a record like SKETCH's: National Building Design of the Year in 2022, and a shelf of Design Matters honours before and since. What we notice is why they win. A twenty-two person team keeps design, interiors, town planning and documentation under one roof, clients choose finishes in a dedicated materials room rather than from a brochure, and the drawings that leave the studio are ones builders price with confidence. Serious capability, worn lightly.",
+    about:
+      "SKETCH is an Elsternwick studio of around twenty-two designers, interior designers and documenters, founded in 2006 and led by co-directors Darrin Albert and Andrew Brown. The practice designs new homes, renovations, additions and multi-residential projects across Melbourne, with interiors and town planning handled in house, and Darrin is a registered building practitioner with the Victorian Building Authority. In 2022, Design Matters National named the studio both Victorian and National Building Design of the Year.",
+    facts: {
+      established: "2006",
+      basedIn: "Elsternwick, VIC",
+      serves: "Melbourne",
+      focus: "Homes, interiors and multi-residential",
+    },
+    website: "https://www.sketchdesign.com.au",
+    instagram: "https://www.instagram.com/sketchdesign.au/",
+    linkedin: "https://www.linkedin.com/company/sketch-building-design/",
+    galleryUrl: "https://www.sketchdesign.com.au/gallery",
+    work: [
+      {
+        title: "Elwood",
+        suburb: "Elwood",
+        type: "New home",
+        image: "/partners/sketch-design-and-interiors/elwood.jpg",
+      },
+      {
+        title: "Elsternwick",
+        suburb: "Elsternwick",
+        type: "Custom home",
+        image: "/partners/sketch-design-and-interiors/elsternwick-home.jpg",
+      },
+      {
+        title: "Elsternwick",
+        suburb: "Elsternwick",
+        type: "Interior design",
+        image: "/partners/sketch-design-and-interiors/elsternwick-interior.jpg",
       },
     ],
     joined: "2026",
