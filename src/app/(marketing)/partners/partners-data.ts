@@ -36,6 +36,15 @@ export interface PartnerWork {
   image?: string;
 }
 
+export interface PartnerStat {
+  label: string;
+  value: string;
+  /** Show a gold star after the value (used for a rating). */
+  star?: boolean;
+  /** Small line beneath the value, e.g. "8 reviews". */
+  sub?: string;
+}
+
 export interface Partner {
   slug: string;
   kind: PartnerKind;
@@ -73,7 +82,8 @@ export interface Partner {
   /** One short paragraph about the practice, in plainer terms. */
   about: string;
   facts: {
-    established: string;
+    /** Optional; omitted where we don't have a verified founding year. */
+    established?: string;
     /** Optional headline experience stat, e.g. "30+ yrs". */
     experience?: string;
     basedIn: string;
@@ -84,11 +94,20 @@ export interface Partner {
    *  "Projects tendered", etc). Shown in the hero band when set — the
    *  thing that distinguishes them specifically. */
   signature?: { label: string; value: string };
+  /** Optional hand-authored headline stats. When set, these replace the
+   *  auto-built figure band verbatim — full control for partners whose
+   *  story is not a set of round numbers. */
+  stats?: PartnerStat[];
   website?: string;
+  /** Instagram profile, shown when a partner has no website. */
+  instagram?: string;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
   galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
   work?: PartnerWork[];
+  /** Render the work grid with elegant image placeholders while we wait on
+   *  the partner's photos (so the layout previews complete, not empty). */
+  workImagesPending?: boolean;
   /** Finance partners: where they actually help. */
   services?: string[];
   /** Year they joined the network. */
@@ -235,6 +254,43 @@ export const PARTNERS: Partner[] = [
         image: "/partners/house-design-solutions/malvern.jpg",
       },
     ],
+    joined: "2026",
+  },
+  {
+    slug: "summerhill-building-designers",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Summerhill Building Designers",
+    monogram: "SB",
+    // logo: to come — client will supply the brand mark.
+    principal: "Robert",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "Custom homes, multi-unit developments and extensions across Melbourne, with the planning and permits handled end to end.",
+    disciplines: ["Custom homes", "Multi-unit developments", "Extensions"],
+    google: { rating: 4.5, reviews: 8 },
+    stats: [
+      { label: "Google rating", value: "4.5", star: true, sub: "8 reviews" },
+      { label: "Residential", value: "100%" },
+      { label: "Planning & permits", value: "Handled" },
+    ],
+    why: "Robert and the Summerhill team take on the part of a project many owners find most daunting: the planning permits, the building requirements and the documentation that decide whether a design can actually be built. They handle it calmly and thoroughly, so clients reach construction with a resolved design and their approvals in order. That groundwork is what keeps a build on track, and the reason we are glad to introduce them.",
+    about:
+      "Summerhill Building Designers is a specialist residential design practice working across Melbourne. Led by Robert, the studio designs custom homes, multi-unit developments and extensions, and carries the planning and permit process from first sketch to approved documentation, so clients are not left to navigate council requirements and building regulations on their own. The focus is straightforward: considered, buildable design delivered without the usual stress.",
+    facts: {
+      basedIn: "Melbourne, VIC",
+      serves: "Greater Melbourne",
+      focus: "Homes, units and extensions",
+    },
+    instagram: "https://www.instagram.com/summerhillbuildingdesigners/",
+    work: [
+      { title: "Custom home", suburb: "Melbourne", type: "New build" },
+      { title: "Multi-unit homes", suburb: "Melbourne", type: "Development" },
+      { title: "Home extension", suburb: "Melbourne", type: "Rear addition" },
+    ],
+    workImagesPending: true,
     joined: "2026",
   },
 

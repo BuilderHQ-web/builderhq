@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Globe, Image as ImageIcon, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
@@ -51,25 +51,31 @@ export function PartnerProfileSections({
   // Three headline figures max — the band reads as a considered set, not
   // a table. Rating leads when we have one (with the review count folded
   // in beneath); a signature stat carries the third slot when it exists.
+  // Hand-authored stats win outright; otherwise build the band from the
+  // rating, founding year and a signature (or experience) stat.
   const figures: Array<{
     label: string;
     value: string;
     star?: boolean;
     sub?: string;
-  }> = [];
-  if (partner.google) {
-    figures.push({
-      label: "Google rating",
-      value: partner.google.rating.toFixed(1),
-      star: true,
-      sub: `${partner.google.reviews} reviews`,
-    });
-  }
-  figures.push({ label: "Established", value: partner.facts.established });
-  if (partner.signature) {
-    figures.push({ label: partner.signature.label, value: partner.signature.value });
-  } else if (partner.facts.experience) {
-    figures.push({ label: "Experience", value: partner.facts.experience });
+  }> = partner.stats ? [...partner.stats] : [];
+  if (!partner.stats) {
+    if (partner.google) {
+      figures.push({
+        label: "Google rating",
+        value: partner.google.rating.toFixed(1),
+        star: true,
+        sub: `${partner.google.reviews} reviews`,
+      });
+    }
+    if (partner.facts.established) {
+      figures.push({ label: "Established", value: partner.facts.established });
+    }
+    if (partner.signature) {
+      figures.push({ label: partner.signature.label, value: partner.signature.value });
+    } else if (partner.facts.experience) {
+      figures.push({ label: "Experience", value: partner.facts.experience });
+    }
   }
 
   const others = preview
@@ -81,7 +87,8 @@ export function PartnerProfileSections({
         ...PARTNERS.filter((p) => !p.draft && p.kind !== partner.kind),
       ].slice(0, 2);
 
-  const hasWorkImages = partner.work?.some((w) => w.image);
+  const showWorkImages =
+    partner.work?.some((w) => w.image) || partner.workImagesPending;
 
   return (
     <>
@@ -201,6 +208,30 @@ export function PartnerProfileSections({
               Visit website
               <ArrowUpRight className="size-3 text-text-dim" />
             </a>
+          ) : partner.instagram ? (
+            <a
+              href={partner.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="size-3.5 text-text-dim"
+              >
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+              View on Instagram
+              <ArrowUpRight className="size-3 text-text-dim" />
+            </a>
           ) : null}
         </div>
       </section>
@@ -222,7 +253,7 @@ export function PartnerProfileSections({
               </a>
             ) : null}
           </div>
-          {hasWorkImages ? (
+          {showWorkImages ? (
             <div
               className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5"
               style={{ "--acc": h.accentSoft } as CSSProperties}
@@ -241,9 +272,22 @@ export function PartnerProfileSections({
                         />
                       ) : (
                         <span
-                          className="absolute inset-0"
-                          style={{ background: `linear-gradient(155deg, ${h.accent}14, ${h.accent}08)` }}
-                        />
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-2.5"
+                          style={{ background: `linear-gradient(155deg, ${h.accent}12, ${h.accent}06)` }}
+                        >
+                          <span
+                            className="flex size-11 items-center justify-center rounded-full"
+                            style={{ background: `${h.accent}14`, color: h.accentSoft }}
+                          >
+                            <ImageIcon className="size-5" strokeWidth={1.5} />
+                          </span>
+                          <span
+                            className="text-[11px] font-medium tracking-[0.02em]"
+                            style={{ color: h.accentSoft }}
+                          >
+                            Photo to come
+                          </span>
+                        </span>
                       )}
                       {/* Resting edge — a whisper of a hairline, never a hard border. */}
                       <span
