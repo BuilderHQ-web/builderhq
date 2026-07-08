@@ -8,13 +8,20 @@
  * 1:1 onto columns) without touching the pages.
  *
  * ⚠️ SAMPLE CONTENT — every entry below is illustrative, for design and
- * review only. Replace with real, consented partners (their own words
- * approved, per the network promise) before this page ships to
- * production. Publishing invented practices would breach the exact trust
- * this page exists to build.
+ * review only. Names, quotes, ratings and imagery must be replaced with
+ * real, consented data (approved by the partner, ratings pulled from
+ * Google or verified) before this ships. Publishing invented practices,
+ * or unverified ratings, would breach the exact trust this page builds.
  *
- * Copy rules as everywhere: no em dashes, curly apostrophes, measured
- * institutional voice.
+ * Imagery note: `portrait` and `work[].image` can be any source photo.
+ * The <PartnerAvatar> / work treatment normalises them (grayscale + a
+ * role-hued duotone + a fixed frame) so mismatched inputs still read as
+ * one controlled system. Leave a field undefined and the elegant
+ * monogram / text fallback renders instead — the page never looks broken.
+ *
+ * Copy rules as everywhere: no em dashes, curly apostrophes, measured and
+ * warm. Selective without sounding exclusionary: we vouch for people, we
+ * do not audition them.
  */
 
 export type PartnerKind = "architect" | "finance";
@@ -24,22 +31,31 @@ export interface PartnerWork {
   suburb: string;
   type: string;
   year: string;
+  /** Optional project image; normalised by the work-strip treatment. */
+  image?: string;
 }
 
 export interface Partner {
   slug: string;
   kind: PartnerKind;
   name: string;
-  /** Two-letter mark for the monogram tile (until real logos arrive). */
+  /** Two-letter mark for the monogram tile when no portrait is supplied. */
   monogram: string;
+  /** Optional portrait (principal or representative). Any lighting or
+   *  background: the avatar treatment normalises it. */
+  portrait?: string;
+  /** The person the portrait shows, credited quietly for trust. */
+  principal?: string;
   suburb: string;
   state: string;
   /** The one-line "known for" that carries the roster row. */
   tagline: string;
   /** Short discipline tags, 2–3, shown as the row's meta line. */
   disciplines: string[];
-  /** The curatorial note: why BuilderHQ invited them. 2–3 sentences,
-   *  written by us, in our voice. This is what no directory has. */
+  /** Optional verified Google rating, shown as a confident stat. */
+  google?: { rating: number; reviews: number };
+  /** The curatorial note: why we introduce them, in our voice. This is
+   *  the thing no directory can write. Warm and specific, never superior. */
   why: string;
   /** One short paragraph about the practice, in plainer terms. */
   about: string;
@@ -50,7 +66,7 @@ export interface Partner {
     focus: string;
   };
   website?: string;
-  /** Architects: selected work, text-first (photography can attach later). */
+  /** Architects: selected work, text-first (images optional). */
   work?: PartnerWork[];
   /** Finance partners: where they actually help. */
   services?: string[];
@@ -65,19 +81,21 @@ export const PARTNERS: Partner[] = [
     kind: "architect",
     name: "Fold Architecture",
     monogram: "FA",
+    principal: "Nina Kraus",
     suburb: "Brunswick",
     state: "VIC",
     tagline:
       "Considered new builds and rear extensions that make narrow Melbourne blocks live large.",
     disciplines: ["New builds", "Extensions"],
-    why: "We invited Fold after walking through two of their finished projects with the owners who commissioned them. The documentation is meticulous, the builders they work with speak well of them, and their clients would hire them again tomorrow. That combination is rarer than it should be.",
+    google: { rating: 4.9, reviews: 38 },
+    why: "We got to know Fold through two of their finished homes, walking each one with the owners who commissioned it. What stayed with us was the care in the detail and how warmly their clients spoke about the whole process. They are exactly the kind of practice we are glad to introduce.",
     about:
       "Fold is a four-person studio in Brunswick working almost entirely in residential. Their drawings are known among builders for being priced without a single request for information, which keeps tenders tight and honest.",
     facts: {
       established: "2016",
       basedIn: "Brunswick, VIC",
       serves: "Melbourne inner north and west",
-      focus: "New builds and rear extensions",
+      focus: "New builds and extensions",
     },
     website: "https://example.com",
     work: [
@@ -92,19 +110,21 @@ export const PARTNERS: Partner[] = [
     kind: "architect",
     name: "Harlow & Maye",
     monogram: "HM",
+    principal: "James Harlow",
     suburb: "Carlton North",
     state: "VIC",
     tagline:
       "Heritage terraces and period homes, renovated with restraint and respect for what is already there.",
     disciplines: ["Renovations", "Heritage"],
-    why: "Heritage work punishes shortcuts, and Harlow & Maye take none. Their council approval record across Yarra and Merri-bek is exceptional, and every builder we spoke with described their contract documentation as the standard others should meet.",
+    google: { rating: 5.0, reviews: 26 },
+    why: "Heritage work rewards patience, and Harlow & Maye bring it in spades. Their approvals across the inner north are handled with real craft, and the builders who price their projects tell us the documentation is a pleasure to work from. We are proud to have them in the network.",
     about:
-      "A partnership of two registered architects working on Victorian and Edwardian housing stock across the inner north. Most of their work arrives by referral from past clients, which says more than any award.",
+      "A partnership of two registered architects working on Victorian and Edwardian housing stock across the inner north. Most of their work arrives by referral from past clients, which tells you plenty.",
     facts: {
       established: "2012",
       basedIn: "Carlton North, VIC",
       serves: "Melbourne inner suburbs",
-      focus: "Heritage renovation and restoration",
+      focus: "Heritage renovation",
     },
     website: "https://example.com",
     work: [
@@ -119,19 +139,21 @@ export const PARTNERS: Partner[] = [
     kind: "architect",
     name: "Studio Ellara",
     monogram: "SE",
+    principal: "Priya Anand",
     suburb: "Kingston",
     state: "ACT",
     tagline:
       "Courtyard homes and considered multi-dwelling projects across Canberra's established suburbs.",
     disciplines: ["Multi-dwelling", "New builds"],
-    why: "Canberra's planning environment rewards architects who know it deeply, and Studio Ellara do. Their dual-occupancy work balances yield with genuine liveability, and the builders who price their projects tell us the drawings answer questions before they are asked.",
+    google: { rating: 4.8, reviews: 19 },
+    why: "Studio Ellara know Canberra's streets and its planning rules intimately, and it shows in how naturally their infill homes sit where they are built. Their clients and their builders both speak highly of them, which is the surest sign we look for.",
     about:
       "Studio Ellara is a Kingston-based practice focused on infill housing done properly: courtyard homes, dual occupancies and small multi-dwelling projects that sit quietly in their streets.",
     facts: {
       established: "2018",
       basedIn: "Kingston, ACT",
       serves: "Canberra and Queanbeyan",
-      focus: "Multi-dwelling and courtyard homes",
+      focus: "Multi-dwelling homes",
     },
     website: "https://example.com",
     work: [
@@ -148,19 +170,21 @@ export const PARTNERS: Partner[] = [
     kind: "finance",
     name: "Keystone Lending Group",
     monogram: "KL",
+    principal: "Daniel Rossi",
     suburb: "Hawthorn",
     state: "VIC",
     tagline:
       "Construction finance specialists who structure the loan around the build, not the other way round.",
     disciplines: ["Construction loans", "Owner-builder finance"],
-    why: "Construction lending is its own discipline, and Keystone treat it that way. They understand progress payments, land-and-build structures and what happens when a build runs long, and their clients told us they explain every step before it arrives.",
+    google: { rating: 4.9, reviews: 84 },
+    why: "Construction finance has its own rhythm, and Keystone guide people through it with real generosity, explaining each step before it arrives. Their clients told us they felt looked after from the first call, and that is who we want beside a homeowner starting a build.",
     about:
       "Keystone is a Hawthorn brokerage working almost entirely in residential construction finance: new builds, knock-down rebuilds and major renovations, from first homes to multi-dwelling projects.",
     facts: {
       established: "2014",
       basedIn: "Hawthorn, VIC",
       serves: "Victoria",
-      focus: "Construction and renovation finance",
+      focus: "Construction finance",
     },
     website: "https://example.com",
     services: [
@@ -176,19 +200,21 @@ export const PARTNERS: Partner[] = [
     kind: "finance",
     name: "Marlow Finance Co",
     monogram: "MF",
+    principal: "Sarah Marlow",
     suburb: "Belconnen",
     state: "ACT",
     tagline:
       "Plain-spoken lending advice for Canberra families planning their first build or their next one.",
     disciplines: ["Construction loans", "First-build finance"],
-    why: "Marlow earned their invitation the slow way: client after client describing the same experience of straight answers, realistic numbers and a broker who picked up the phone mid-build. That is exactly who we want beside a homeowner at the start.",
+    google: { rating: 5.0, reviews: 41 },
+    why: "Marlow earned their place the best possible way: through clients who kept describing the same experience of straight answers, realistic numbers and a broker who stayed reachable through the whole build. We were glad to make the call and invite them in.",
     about:
       "A small Belconnen team led by its founding broker, working with owner-occupiers across the ACT on construction loans, borrowing capacity and the sequencing of land, build and settlement.",
     facts: {
       established: "2019",
       basedIn: "Belconnen, ACT",
       serves: "ACT and surrounds",
-      focus: "Owner-occupier construction finance",
+      focus: "Owner-occupier finance",
     },
     website: "https://example.com",
     services: [
