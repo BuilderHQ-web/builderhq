@@ -102,8 +102,11 @@ export interface Partner {
    *  story is not a set of round numbers. */
   stats?: PartnerStat[];
   website?: string;
-  /** Instagram profile, shown when a partner has no website. */
+  /** Instagram profile. A compact icon beside the website button, or the
+   *  full link when the partner has no website. */
   instagram?: string;
+  /** LinkedIn page, shown as a compact icon beside the other links. */
+  linkedin?: string;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
   galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
@@ -307,6 +310,59 @@ export const PARTNERS: Partner[] = [
         suburb: "Kensington",
         type: "Townhouse development",
         image: "/partners/summerhill-building-designers/kensington.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "xpress-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Xpress Building Design",
+    monogram: "XB",
+    logo: "/partners/xpress-building-design/logo.png",
+    suburb: "St Albans",
+    state: "VIC",
+    tagline:
+      "Multi-unit and custom home specialists, carrying Melbourne projects from concept through town planning to working drawings.",
+    disciplines: ["Custom homes", "Multi-unit developments", "Town planning"],
+    google: { rating: 5.0, reviews: 142 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "142 reviews" },
+      { label: "Projects designed", value: "12,000+" },
+      { label: "Experience", value: "20+ yrs" },
+    ],
+    why: "Few practices know Melbourne's councils like Xpress. Twenty years and more than twelve thousand projects have made them specialists at taking multi-unit and custom designs through town planning cleanly, with documentation builders can actually price and build from. Owners bring them ambitious sites; they come away with approved, buildable drawings and a process that stayed calm the whole way.",
+    about:
+      "Xpress Building Design is a St Albans practice designing custom homes, dual occupancies and multi-unit developments across Melbourne and Victoria. A Registered Building Practitioner and member of the Building Designers Association of Victoria, the team handles the full arc in house: concept design, town planning, 3D renders and working drawings, with permit experience across more than seventeen Melbourne councils.",
+    facts: {
+      basedIn: "St Albans, VIC",
+      serves: "Melbourne and Victoria",
+      focus: "Custom homes and multi-unit developments",
+    },
+    website: "https://xpressbuildingdesign.com.au",
+    instagram: "https://www.instagram.com/xpressbuildingdesign/",
+    linkedin: "https://www.linkedin.com/company/xpress-building-design/",
+    galleryUrl: "https://xpressbuildingdesign.com.au/projects/",
+    work: [
+      {
+        title: "Box Hill",
+        suburb: "Box Hill",
+        type: "Custom home",
+        image: "/partners/xpress-building-design/box-hill.jpg",
+      },
+      {
+        title: "Keilor East",
+        suburb: "Keilor East",
+        type: "Dual occupancy",
+        image: "/partners/xpress-building-design/keilor-east.jpg",
+      },
+      {
+        title: "Reservoir",
+        suburb: "Reservoir",
+        type: "Multi-unit development",
+        image: "/partners/xpress-building-design/reservoir.jpg",
       },
     ],
     joined: "2026",

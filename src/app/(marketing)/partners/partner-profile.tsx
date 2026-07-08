@@ -196,42 +196,55 @@ export function PartnerProfileSections({
           <p className="text-[13px] text-text-muted">
             Serves <span className="font-medium text-text">{partner.facts.serves}</span>
           </p>
-          {partner.website ? (
-            <a
-              href={partner.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
-            >
-              <Globe className="size-3.5 text-text-dim" />
-              Visit website
-              <ArrowUpRight className="size-3 text-text-dim" />
-            </a>
-          ) : partner.instagram ? (
-            <a
-              href={partner.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="size-3.5 text-text-dim"
+          {/* Links, as one quiet cluster: the primary link as a labelled
+              pill, socials as compact circles beside it. */}
+          <span className="inline-flex items-center gap-2.5">
+            {partner.website ? (
+              <a
+                href={partner.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
               >
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-              </svg>
-              View on Instagram
-              <ArrowUpRight className="size-3 text-text-dim" />
-            </a>
-          ) : null}
+                <Globe className="size-3.5 text-text-dim" />
+                Visit website
+                <ArrowUpRight className="size-3 text-text-dim" />
+              </a>
+            ) : partner.instagram ? (
+              <a
+                href={partner.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
+              >
+                <InstagramGlyph className="size-3.5 text-text-dim" />
+                View on Instagram
+                <ArrowUpRight className="size-3 text-text-dim" />
+              </a>
+            ) : null}
+            {partner.website && partner.instagram ? (
+              <a
+                href={partner.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${partner.name} on Instagram`}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border-subtle bg-surface-2 text-text-muted transition-colors hover:border-border-strong hover:text-text"
+              >
+                <InstagramGlyph className="size-4" />
+              </a>
+            ) : null}
+            {partner.linkedin ? (
+              <a
+                href={partner.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${partner.name} on LinkedIn`}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border-subtle bg-surface-2 text-text-muted transition-colors hover:border-border-strong hover:text-text"
+              >
+                <LinkedInGlyph className="size-4" />
+              </a>
+            ) : null}
+          </span>
         </div>
       </section>
 
@@ -388,6 +401,46 @@ export function PartnerProfileSections({
 }
 
 /* ── Pieces ──────────────────────────────────────────────────────────── */
+
+/* Brand glyphs, inlined: this lucide-react build ships no brand icons. */
+
+function InstagramGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
+function LinkedInGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect x="2" y="9" width="4" height="12" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  );
+}
 
 function SectionLabel({
   children,
