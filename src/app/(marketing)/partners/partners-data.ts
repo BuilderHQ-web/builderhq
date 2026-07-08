@@ -70,13 +70,16 @@ export interface Partner {
   about: string;
   facts: {
     established: string;
-    /** Optional headline experience stat, e.g. "30+ yrs". Shown as a big
-     *  figure when there's no Google rating to lead with. */
+    /** Optional headline experience stat, e.g. "30+ yrs". */
     experience?: string;
     basedIn: string;
     serves: string;
     focus: string;
   };
+  /** Optional signature stat unique to the partner ("Homes designed",
+   *  "Projects tendered", etc). Shown in the hero band when set — the
+   *  thing that distinguishes them specifically. */
+  signature?: { label: string; value: string };
   website?: string;
   /** Architects: selected work, text-first (images optional). */
   work?: PartnerWork[];
@@ -190,6 +193,8 @@ export const PARTNERS: Partner[] = [
     tagline:
       "New homes, extensions and unit developments across Melbourne, designed to be built, not just drawn.",
     disciplines: ["New homes", "Extensions", "Unit developments"],
+    google: { rating: 5.0, reviews: 31 },
+    signature: { label: "Melbourne homes designed", value: "150+" },
     why: "Paul has spent decades designing homes across Melbourne, and it shows in how buildable his drawings are. He works the way we like: architectural thinking paired with the practicalities of construction, no sales staff, and a real focus on getting the right builder alongside the client early. He is exactly the sort of designer we are glad to introduce.",
     about:
       "House Design Solutions is Paul Mete's Albert Park practice, designing new homes, extensions and unit developments across Melbourne since 1987. A member of Design Matters, Paul works without sales staff, pairing architectural design with the realities of building so his homes are as sensible to construct as they are to live in.",

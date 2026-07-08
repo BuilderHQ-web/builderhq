@@ -47,22 +47,28 @@ export function PartnerProfileSections({
 }) {
   const h = partnerHue(partner.kind);
 
+  // Three headline figures max — the band reads as a considered set, not
+  // a table. Rating leads when we have one (with the review count folded
+  // in beneath); a signature stat carries the third slot when it exists.
   const figures: Array<{
     label: string;
     value: string;
     star?: boolean;
-    big?: boolean;
+    sub?: string;
   }> = [];
   if (partner.google) {
-    figures.push({ label: "Google rating", value: partner.google.rating.toFixed(1), star: true });
-    figures.push({ label: "Reviews", value: String(partner.google.reviews) });
+    figures.push({
+      label: "Google rating",
+      value: partner.google.rating.toFixed(1),
+      star: true,
+      sub: `${partner.google.reviews} reviews`,
+    });
   }
   figures.push({ label: "Established", value: partner.facts.established });
-  if (partner.facts.experience) {
+  if (partner.signature) {
+    figures.push({ label: partner.signature.label, value: partner.signature.value });
+  } else if (partner.facts.experience) {
     figures.push({ label: "Experience", value: partner.facts.experience });
-  }
-  if (figures.length < 2) {
-    figures.push({ label: "Serves", value: partner.facts.serves, big: false });
   }
 
   const others = preview
@@ -108,13 +114,7 @@ export function PartnerProfileSections({
                 <dt className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
                   {f.label}
                 </dt>
-                <dd
-                  className={
-                    f.big === false
-                      ? "font-ui font-semibold text-[15px] leading-snug text-text max-w-[15ch]"
-                      : "font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)]"
-                  }
-                >
+                <dd className="font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)]">
                   <span className="inline-flex items-center gap-1.5">
                     {f.value}
                     {f.star ? (
@@ -122,6 +122,9 @@ export function PartnerProfileSections({
                     ) : null}
                   </span>
                 </dd>
+                {f.sub ? (
+                  <p className="text-[11px] leading-none text-text-dim">{f.sub}</p>
+                ) : null}
               </div>
             ))}
           </dl>
