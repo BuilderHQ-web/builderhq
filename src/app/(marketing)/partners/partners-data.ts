@@ -614,6 +614,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "2bscene-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "2BScene Design",
+    monogram: "2B",
+    logo: "/partners/2bscene-design/logo.png",
+    principal: "Luciano Bologna",
+    suburb: "North Melbourne",
+    state: "VIC",
+    tagline:
+      "Bold, expressive homes and multi-residential design from North Melbourne, drawn with an engineer's eye for how things get built.",
+    disciplines: ["Custom homes", "Multi-residential", "Commercial"],
+    google: { rating: 4.7, reviews: 14 },
+    stats: [
+      { label: "Google rating", value: "4.7", star: true, sub: "14 reviews" },
+      { label: "In practice", value: "20+ yrs" },
+      { label: "Awards won", value: "5", sub: "incl. three Building Design Awards" },
+    ],
+    awards: [
+      {
+        label: "New House $2 to $3 Million",
+        sub: "Building Design Awards · The Brighton House · 2024",
+      },
+      {
+        label: "New House over $3 Million",
+        sub: "Building Design Awards · Undulating Cubes · 2020",
+      },
+      {
+        label: "Lord Mayor's Innovation Award",
+        sub: "City of Melbourne · 2019 and 2024",
+      },
+    ],
+    why: "Luciano pairs an engineer's understanding of structure with a designer's eye, and it runs through everything 2BScene draws: bold, expressive forms that still resolve into disciplined, buildable documentation. Three Building Design Awards across 2011, 2020 and 2024 say the work keeps holding up, and the studio's small senior team means the director whose name wins the awards is the one across your project.",
+    about:
+      "2BScene Design is a North Melbourne studio led by director Luciano Bologna, who brings more than twenty five years in building and construction to bespoke family homes, multi-residential developments and commercial projects across Melbourne. In over two decades of practice from its Errol Street studio the firm has won three Building Design Awards for new homes and two City of Melbourne Lord Mayor's small business awards, working to its own simple standard: design led, detail driven.",
+    facts: {
+      basedIn: "North Melbourne, VIC",
+      serves: "Melbourne",
+      focus: "Homes, multi-residential and commercial",
+    },
+    website: "https://www.2bs.net.au",
+    instagram: "https://www.instagram.com/2bscene_design/",
+    facebook: "https://www.facebook.com/2BSceneDesign/",
+    linkedin: "https://www.linkedin.com/company/2bscene-design/",
+    galleryUrl: "https://www.2bs.net.au/portfolio",
+    work: [
+      {
+        title: "Brighton",
+        suburb: "Brighton",
+        type: "Custom home",
+        image: "/partners/2bscene-design/brighton.jpg",
+      },
+      {
+        title: "Patterson Lakes",
+        suburb: "Patterson Lakes",
+        type: "Waterfront home",
+        image: "/partners/2bscene-design/patterson-lakes.jpg",
+      },
+      {
+        title: "Beaumaris",
+        suburb: "Beaumaris",
+        type: "Custom home",
+        image: "/partners/2bscene-design/beaumaris.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
