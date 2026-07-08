@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Check, Globe } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 import { PARTNERS, getPartner, type Partner } from "../partners-data";
-import { GoogleRating, PartnerAvatar, partnerHue } from "../partner-ui";
+import { PartnerAvatar, partnerHue } from "../partner-ui";
+
+const STAR_GOLD = "#e0a63c";
 
 /**
  * /partners/[slug] — a Preferred Partner's page.
@@ -57,25 +59,24 @@ export default async function PartnerProfilePage({
 
   const h = partnerHue(partner.kind);
 
-  // Four scannable stat blocks. Rating leads when we have it; otherwise
-  // the base location does.
-  const stats: Array<{ label: string; node: React.ReactNode }> = [
-    partner.google
-      ? {
-          label: "Google rating",
-          node: (
-            <GoogleRating
-              rating={partner.google.rating}
-              reviews={partner.google.reviews}
-              variant="stat"
-            />
-          ),
-        }
-      : { label: "Based in", node: <StatValue>{partner.facts.basedIn}</StatValue> },
-    { label: "Established", node: <StatValue>{partner.facts.established}</StatValue> },
-    { label: "Serves", node: <StatValue>{partner.facts.serves}</StatValue> },
-    { label: "Focus", node: <StatValue>{partner.facts.focus}</StatValue> },
-  ];
+  // Headline figures — only facts that read as real numbers get blown up.
+  // Rating and reviews when we have them, plus the founding year.
+  // Descriptive facts (serves, focus) live in the practice section, not
+  // forced into giant type where phrases would wrap and cheapen the band.
+  const figures: Array<{
+    label: string;
+    value: string;
+    star?: boolean;
+    big?: boolean;
+  }> = [];
+  if (partner.google) {
+    figures.push({ label: "Google rating", value: partner.google.rating.toFixed(1), star: true });
+    figures.push({ label: "Reviews", value: String(partner.google.reviews) });
+  }
+  figures.push({ label: "Established", value: partner.facts.established });
+  if (figures.length < 3) {
+    figures.push({ label: "Serves", value: partner.facts.serves, big: false });
+  }
 
   const others = [
     ...PARTNERS.filter((p) => p.kind === partner.kind && p.slug !== partner.slug),
@@ -99,24 +100,42 @@ export default async function PartnerProfilePage({
         All Preferred Partners
       </Link>
 
-      {/* Identity + key stats — portrait plus the bold detail blocks. */}
-      <section className="rounded-2xl border border-border-subtle bg-white card-elev p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-          <PartnerAvatar partner={partner} size={116} />
-          <dl className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6">
-            {stats.map((s, i) => (
-              <div
-                key={s.label}
-                className={
-                  i > 0
-                    ? "lg:pl-6 lg:border-l lg:border-border-subtle/70"
-                    : undefined
-                }
-              >
+      {/* Identity + headline figures — open on the canvas, no card, no
+          dividers. Bigger portrait with a soft role bloom, and the numbers
+          set large and centred under their labels. */}
+      <section className="mb-8 lg:mb-10">
+        <div className="flex flex-col items-center gap-10 sm:flex-row sm:items-center sm:gap-12 lg:gap-16">
+          <div className="relative shrink-0">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -inset-7"
+              style={{ background: `radial-gradient(closest-side, ${h.glow1}, transparent 72%)` }}
+            />
+            <PartnerAvatar partner={partner} size={148} className="relative" />
+          </div>
+          <dl
+            className="grid w-full gap-x-6 gap-y-8 sm:w-auto sm:flex-1"
+            style={{ gridTemplateColumns: `repeat(${figures.length}, minmax(0, 1fr))` }}
+          >
+            {figures.map((f) => (
+              <div key={f.label} className="flex flex-col items-center gap-2.5 text-center">
                 <dt className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
-                  {s.label}
+                  {f.label}
                 </dt>
-                <dd className="mt-2">{s.node}</dd>
+                <dd
+                  className={
+                    f.big === false
+                      ? "font-ui font-semibold text-[15px] leading-snug text-text max-w-[15ch]"
+                      : "font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)]"
+                  }
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {f.value}
+                    {f.star ? (
+                      <Star className="size-[0.6em]" style={{ color: STAR_GOLD, fill: STAR_GOLD }} />
+                    ) : null}
+                  </span>
+                </dd>
               </div>
             ))}
           </dl>
@@ -158,6 +177,9 @@ export default async function PartnerProfilePage({
               Led by <span className="font-medium text-text">{partner.principal}</span>
             </p>
           ) : null}
+          <p className="text-[13px] text-text-muted">
+            Serves <span className="font-medium text-text">{partner.facts.serves}</span>
+          </p>
           {partner.website ? (
             <a
               href={partner.website}
@@ -352,14 +374,6 @@ export default async function PartnerProfilePage({
 }
 
 /* ── Pieces ──────────────────────────────────────────────────────────── */
-
-function StatValue({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-ui font-semibold text-[15.5px] leading-[1.35] tracking-[-0.01em] text-text">
-      {children}
-    </p>
-  );
-}
 
 function SectionLabel({
   children,
