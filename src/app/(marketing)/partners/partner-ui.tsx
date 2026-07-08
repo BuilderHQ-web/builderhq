@@ -188,14 +188,16 @@ export function GoogleRating({
 }
 
 /**
- * The single source of truth for the portfolio hover. One duration and a
- * symmetric ease (equally smooth in and out) drive every animated layer, so
- * colour, zoom, lift, ring and badge move as one motion rather than a set of
- * separate, competing ones. Tune here once and every partner grid follows.
+ * The single source of truth for the portfolio hover — the house craft-tile
+ * motion: a long 1.4s run on a fast-start, slow-settle curve, so the colour
+ * return and zoom bloom in gradually and land without a snap (and reverse
+ * just as gently). Every animated layer shares this one clock, so colour,
+ * zoom, lift, ring and badge move as a single motion. Tune here once and
+ * every partner grid follows.
  */
 const WORK_HOVER: CSSProperties = {
-  transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
-  transitionDuration: "620ms",
+  transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+  transitionDuration: "1400ms",
 };
 
 export function PartnerWorkCard({
@@ -219,7 +221,7 @@ export function PartnerWorkCard({
             src={work.image}
             alt={`${work.title}, ${work.type}`}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover grayscale will-change-transform group-hover:scale-[1.045] group-hover:grayscale-0"
+            className="absolute inset-0 h-full w-full object-cover grayscale will-change-transform group-hover:scale-[1.04] group-hover:grayscale-0"
             style={{ ...WORK_HOVER, transitionProperty: "transform, filter" }}
           />
         ) : (
