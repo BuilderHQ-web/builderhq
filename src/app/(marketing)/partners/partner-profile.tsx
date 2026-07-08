@@ -89,6 +89,10 @@ export function PartnerProfileSections({
   const showWorkImages =
     partner.work?.some((w) => w.image) || partner.workImagesPending;
 
+  // Honours board data: the first award is the headline, the rest support.
+  const awards = partner.awards ?? [];
+  const heroAward = awards[0];
+
   return (
     <>
       {preview ? null : (
@@ -198,30 +202,75 @@ export function PartnerProfileSections({
         </section>
       ) : null}
 
-      {/* Recognition — gold plaques for the honours that carry weight.
-          The lead award reads first; a tally closes the row. */}
-      {partner.awards?.length ? (
-        <section className="mt-2 rounded-2xl border border-border-subtle bg-white card-elev px-6 sm:px-7 py-5 sm:py-6">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4">
-            {partner.awards.slice(0, 3).map((a) => (
-              <div key={a.label} className="flex items-start gap-3">
+      {/* Recognition — an honours board, not a list. The page's only dark
+          moment: gold on deep ink, a medallion seal, the headline award
+          carried large, and the supporting honours beneath a fine rule. */}
+      {heroAward ? (
+        <section
+          className="relative mt-2 overflow-hidden rounded-2xl border card-elev px-6 sm:px-10 py-8 sm:py-9 text-center"
+          style={{
+            background: "linear-gradient(180deg, #161d26 0%, #10151c 100%)",
+            borderColor: "rgba(224,166,60,0.32)",
+          }}
+        >
+          {/* Gold bloom rising behind the seal. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(58% 70% at 50% 0%, rgba(224,166,60,0.13), transparent 72%)" }}
+          />
+          {/* Medallion seal. */}
+          <span
+            className="relative mx-auto flex size-12 items-center justify-center rounded-full border"
+            style={{
+              borderColor: "rgba(224,166,60,0.45)",
+              background: "rgba(224,166,60,0.10)",
+              color: "#e0b25c",
+              boxShadow: "0 0 24px rgba(224,166,60,0.18)",
+            }}
+          >
+            <Award className="size-5" strokeWidth={1.6} />
+          </span>
+          <p
+            className="relative mt-4 font-ui font-semibold text-[10.5px] tracking-[0.3em] uppercase"
+            style={{ color: "rgba(224,166,60,0.72)" }}
+          >
+            Recognition
+          </p>
+          <p className="relative mx-auto mt-3 max-w-[26ch] font-ui font-semibold tracking-[-0.02em] leading-[1.2] text-[clamp(1.3rem,1.2vw+0.95rem,1.7rem)] text-white">
+            {heroAward.label}
+          </p>
+          {heroAward.sub ? (
+            <p className="relative mt-2.5 text-[12.5px] tracking-[0.04em]" style={{ color: "rgba(224,178,92,0.92)" }}>
+              {heroAward.sub}
+            </p>
+          ) : null}
+          {awards.length > 1 ? (
+            <>
+              {/* Fine rule with a centre diamond, like an engraved plate. */}
+              <div aria-hidden className="relative mx-auto mt-7 flex max-w-[380px] items-center gap-3">
                 <span
-                  className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "rgba(224,166,60,0.13)", color: "#a9781f" }}
-                >
-                  <Award className="size-[18px]" strokeWidth={1.75} />
-                </span>
-                <div className="min-w-0">
-                  <p className="font-ui font-semibold text-[13.5px] leading-snug tracking-[-0.01em] text-text">
-                    {a.label}
-                  </p>
-                  {a.sub ? (
-                    <p className="mt-1 text-[11.5px] leading-snug text-text-muted">{a.sub}</p>
-                  ) : null}
-                </div>
+                  className="h-px flex-1"
+                  style={{ background: "linear-gradient(90deg, transparent, rgba(224,166,60,0.42))" }}
+                />
+                <span className="size-1.5 rotate-45" style={{ background: "rgba(224,166,60,0.6)" }} />
+                <span
+                  className="h-px flex-1"
+                  style={{ background: "linear-gradient(90deg, rgba(224,166,60,0.42), transparent)" }}
+                />
               </div>
-            ))}
-          </div>
+              <div className="relative mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-[rgba(224,166,60,0.16)]">
+                {awards.slice(1, 3).map((a) => (
+                  <div key={a.label} className="sm:px-6">
+                    <p className="font-ui font-medium text-[13.5px] leading-snug text-white/90">
+                      {a.label}
+                    </p>
+                    {a.sub ? <p className="mt-1.5 text-[11.5px] leading-snug text-white/45">{a.sub}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
         </section>
       ) : null}
 
