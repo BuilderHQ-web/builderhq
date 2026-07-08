@@ -71,6 +71,15 @@ export interface Partner {
   logoDark?: boolean;
   /** The person the portrait shows, credited quietly for trust. */
   principal?: string;
+  /** The institution an individual partner works with (e.g. a bank staff
+   *  lending specialist). Rendered as a credential strip under the
+   *  identity band — the affiliation is the credibility. */
+  institution?: { name: string; role?: string; note?: string };
+  /** Overrides the about-section label ("The practice" / "The business"),
+   *  e.g. "About Ayse" for an individual. */
+  aboutLabel?: string;
+  /** Overrides the services-section label ("Where they help"). */
+  servicesLabel?: string;
   suburb: string;
   state: string;
   /** The one-line "known for" that carries the roster row. */
@@ -424,6 +433,53 @@ export const PARTNERS: Partner[] = [
   },
 
   /* ── Finance partners ───────────────────────────────────────────── */
+  /* Real, in review (draft) */
+  {
+    slug: "ayse-altintas",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Home lending specialist",
+    name: "Ayse Altintas",
+    monogram: "AA",
+    portrait: "/partners/ayse-altintas/portrait.jpg",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "Home and construction lending with Commonwealth Bank, made straightforward for people planning a build.",
+    disciplines: ["Construction loans", "Pre-approvals", "Refinancing"],
+    institution: {
+      name: "Commonwealth Bank",
+      role: "Mobile Senior Home Lending Specialist",
+      note: "Australia’s largest home lender",
+    },
+    stats: [
+      { label: "With Commonwealth Bank", value: "4+ yrs" },
+      { label: "In home lending", value: "5+ yrs" },
+      { label: "Appointments", value: "Mobile", sub: "she comes to you" },
+    ],
+    why: "Finance is the part of a build most owners find hardest to read, and Ayse is who we trust to steady it. Five years in home lending, the last four with Commonwealth Bank, have made her fluent in the loans that matter when you build: construction lending, progress payments and pre-approvals that still hold up once real quotes land. As a mobile specialist she comes to you, and she explains each step in plain terms before anyone is asked to decide.",
+    aboutLabel: "About Ayse",
+    about:
+      "Ayse Altintas is a Mobile Senior Home Lending Specialist with Commonwealth Bank, helping people buy, build and refinance across Melbourne. She has spent five years in home lending, the last four with the bank, and she works around you rather than a branch: appointments where and when they suit, and one point of contact from the first conversation through approval, settlement and the progress payments of a build.",
+    facts: {
+      basedIn: "Melbourne, VIC",
+      serves: "Melbourne",
+      focus: "Home and construction lending",
+    },
+    website: "https://www.commbank.com.au/home-loans.html",
+    instagram: "https://www.instagram.com/ayse.cba/",
+    linkedin: "https://www.linkedin.com/in/ayse-altintas-6a0102210/",
+    servicesLabel: "Where Ayse helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Land and house-and-land purchases",
+      "Knockdown rebuild and renovation lending",
+      "Refinancing to fund a build",
+      "Home equity and next-home moves",
+    ],
+    joined: "2026",
+  },
   {
     slug: "keystone-lending",
     kind: "finance",

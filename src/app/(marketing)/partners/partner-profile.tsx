@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Globe, Landmark, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
@@ -158,6 +158,32 @@ export function PartnerProfileSections({
         </div>
       </section>
 
+      {/* Institution credential — for individuals who carry a bank or firm
+          behind them, the affiliation is the credibility. */}
+      {partner.institution ? (
+        <section className="mt-2 flex items-center gap-4 rounded-2xl border border-border-subtle bg-white card-elev px-6 sm:px-7 py-5">
+          <span
+            className="flex size-11 shrink-0 items-center justify-center rounded-full"
+            style={{ background: `${h.accent}12`, color: h.accentSoft }}
+          >
+            <Landmark className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text">
+              {partner.institution.name}
+            </p>
+            {partner.institution.role ? (
+              <p className="mt-0.5 text-[12.5px] text-text-muted">{partner.institution.role}</p>
+            ) : null}
+          </div>
+          {partner.institution.note ? (
+            <p className="hidden sm:block shrink-0 text-[11px] tracking-[0.14em] uppercase text-text-dim">
+              {partner.institution.note}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       {/* Why we introduce them — the curatorial note. */}
       <section className="relative mt-5 rounded-2xl border border-border-subtle bg-white card-elev px-7 sm:px-9 py-8 sm:py-9 overflow-hidden">
         <span
@@ -182,7 +208,7 @@ export function PartnerProfileSections({
       {/* The practice. */}
       <section className="mt-12 lg:mt-16">
         <SectionLabel hue={h.accent}>
-          {partner.kind === "architect" ? "The practice" : "The business"}
+          {partner.aboutLabel ?? (partner.kind === "architect" ? "The practice" : "The business")}
         </SectionLabel>
         <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.8] text-text-subtle">
           {partner.about}
@@ -300,7 +326,7 @@ export function PartnerProfileSections({
       {/* Where they help (brokers). */}
       {partner.services?.length ? (
         <section className="mt-12 lg:mt-16">
-          <SectionLabel hue={h.accent}>Where they help</SectionLabel>
+          <SectionLabel hue={h.accent}>{partner.servicesLabel ?? "Where they help"}</SectionLabel>
           <ul className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {partner.services.map((s) => (
               <li
