@@ -115,6 +115,8 @@ export interface Partner {
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
   instagram?: string;
+  /** Facebook page, shown as a compact icon beside the other links. */
+  facebook?: string;
   /** LinkedIn page, shown as a compact icon beside the other links. */
   linkedin?: string;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
@@ -428,6 +430,59 @@ export const PARTNERS: Partner[] = [
         suburb: "Lalor",
         type: "Townhouse development",
         image: "/partners/evoka-studio/lalor.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "silverpoint-design-and-planning",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and planning practice",
+    name: "Silverpoint Design and Planning",
+    monogram: "SP",
+    logo: "/partners/silverpoint-design-and-planning/logo.png",
+    suburb: "Camberwell",
+    state: "VIC",
+    tagline:
+      "Building design and town planning under one roof, shaping Melbourne projects for council approval from the first sketch.",
+    disciplines: ["Building design", "Town planning", "Dual occupancy"],
+    google: { rating: 4.9, reviews: 72 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "72 reviews" },
+      { label: "Projects completed", value: "1,800+" },
+      { label: "Experience", value: "40+ yrs" },
+    ],
+    why: "Forty years of design and town planning have taught Silverpoint what Melbourne councils will approve, and they put that knowledge to work before a line is drawn. With design and planning under the one roof, schemes are shaped for approval from the start rather than negotiated after the fact. Accredited with HIA, Master Builders Victoria and the BPC, they are the steady hand we want on a complex site.",
+    about:
+      "Silverpoint is a Camberwell practice pairing building design with town planning consultancy, working across Melbourne for more than forty years. The team designs new homes, extensions, dual occupancies and multi-unit developments, and carries the planning side end to end: applications, subdivision and council negotiation. With HIA, Master Builders Victoria and BPC accreditation, and more than 1,800 projects completed, few practices know the approval process better.",
+    facts: {
+      basedIn: "Camberwell, VIC",
+      serves: "Melbourne and surrounds",
+      focus: "Design, planning and dual occupancy",
+    },
+    website: "https://www.silverpointdesignandplanning.com.au",
+    instagram: "https://www.instagram.com/silverpoint_buildingdesigners/",
+    facebook: "https://www.facebook.com/silverpointbuildingdesigners/",
+    galleryUrl: "https://www.silverpointdesignandplanning.com.au/case-study/",
+    work: [
+      {
+        title: "Sandringham",
+        suburb: "Sandringham",
+        type: "New family home",
+        image: "/partners/silverpoint-design-and-planning/sandringham.jpg",
+      },
+      {
+        title: "Custom home",
+        suburb: "Melbourne",
+        type: "Suburban Melbourne",
+        image: "/partners/silverpoint-design-and-planning/custom-home.jpg",
+      },
+      {
+        title: "Dual occupancy",
+        suburb: "Melbourne",
+        type: "Suburban Melbourne",
+        image: "/partners/silverpoint-design-and-planning/dual-occupancy.jpg",
       },
     ],
     joined: "2026",
