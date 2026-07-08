@@ -34,6 +34,26 @@ export function PartnerAvatar({
   const h = partnerHue(partner.kind);
   const radius = size >= 96 ? 20 : size >= 72 ? 16 : 14;
 
+  // A logo is not a photo — render it clean (contained on a white tile),
+  // never grayscale/duotoned, with quiet breathing room.
+  if (partner.logo) {
+    return (
+      <span
+        className={cn("relative flex shrink-0 items-center justify-center overflow-hidden border bg-white", className)}
+        style={{ width: size, height: size, borderRadius: radius, borderColor: h.accent + "26" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={partner.logo}
+          alt={partner.name}
+          loading="lazy"
+          className="object-contain"
+          style={{ width: "74%", height: "74%" }}
+        />
+      </span>
+    );
+  }
+
   if (partner.portrait) {
     return (
       <span

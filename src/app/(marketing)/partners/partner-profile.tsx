@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
 
@@ -207,55 +208,94 @@ export function PartnerProfileSections({
       {/* Selected work (architects). */}
       {partner.work?.length ? (
         <section className="mt-12 lg:mt-16">
-          <SectionLabel hue={h.accent}>Selected work</SectionLabel>
+          <div className="flex items-end justify-between gap-4">
+            <SectionLabel hue={h.accent}>Selected work</SectionLabel>
+            {partner.galleryUrl ? (
+              <a
+                href={partner.galleryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group -mb-0.5 inline-flex shrink-0 items-center gap-1.5 text-[12.5px] font-ui font-medium text-text-muted transition-colors duration-[200ms] hover:text-text"
+              >
+                View full gallery
+                <ArrowUpRight className="size-3.5 transition-transform duration-[200ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
+            ) : null}
+          </div>
           {hasWorkImages ? (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              {partner.work.map((w) => (
-                <figure
-                  key={w.title}
-                  className="rounded-xl border border-border-subtle bg-white card-elev overflow-hidden"
-                >
-                  <span className="relative block aspect-[4/3] overflow-hidden">
-                    {w.image ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+            <div
+              className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5"
+              style={{ "--acc": h.accentSoft } as CSSProperties}
+            >
+              {partner.work.map((w) => {
+                const media = (
+                  <>
+                    <div className="relative aspect-square overflow-hidden rounded-2xl border border-border-subtle bg-[#0e1216] card-elev transition-[transform,box-shadow] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1.5 group-hover:card-elev-lg">
+                      {w.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={w.image}
-                          alt={w.title}
+                          alt={`${w.title} — ${w.type}`}
                           loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover grayscale contrast-[1.03]"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
                         />
+                      ) : (
                         <span
-                          aria-hidden
-                          className="absolute inset-0 mix-blend-multiply"
-                          style={{ background: `linear-gradient(160deg, ${h.accent}17, ${h.accentSoft}24)` }}
+                          className="absolute inset-0"
+                          style={{ background: `linear-gradient(155deg, ${h.accent}14, ${h.accent}08)` }}
                         />
-                      </>
-                    ) : (
+                      )}
+                      {/* Foot gradient rises on hover — depth without a caption bar. */}
                       <span
-                        className="absolute inset-0"
-                        style={{ background: `linear-gradient(155deg, ${h.accent}14, ${h.accent}08)` }}
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-[380ms] group-hover:opacity-100"
+                        style={{ background: "linear-gradient(to top, rgba(8,11,15,0.45), rgba(8,11,15,0) 55%)" }}
                       />
-                    )}
-                  </span>
-                  <figcaption className="px-4 py-3.5">
-                    <p className="font-ui font-semibold text-[14px] tracking-[-0.01em] text-text">
-                      {w.title}
-                    </p>
-                    <p className="mt-0.5 text-[12px] text-text-muted">
-                      {w.suburb}
-                      <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                      {w.type}
-                      {w.year ? (
-                        <>
-                          <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                          {w.year}
-                        </>
+                      {/* Accent hairline ring on hover. */}
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-[380ms] group-hover:opacity-100"
+                        style={{ boxShadow: `inset 0 0 0 1px ${h.accent}55` }}
+                      />
+                      {partner.galleryUrl ? (
+                        <span className="absolute right-3.5 top-3.5 inline-flex size-8 translate-y-1 items-center justify-center rounded-full bg-white/92 text-[#161c22] opacity-0 shadow-sm backdrop-blur-sm transition-all duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100">
+                          <ArrowUpRight className="size-4" />
+                        </span>
                       ) : null}
-                    </p>
-                  </figcaption>
-                </figure>
-              ))}
+                    </div>
+                    <div className="mt-3.5">
+                      <p className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text transition-colors duration-[240ms] group-hover:text-[var(--acc)]">
+                        {w.title}
+                      </p>
+                      <p className="mt-0.5 text-[12.5px] text-text-muted">
+                        {w.type}
+                        {w.year ? (
+                          <>
+                            <span aria-hidden className="mx-1.5 text-text-faint">·</span>
+                            {w.year}
+                          </>
+                        ) : null}
+                      </p>
+                    </div>
+                  </>
+                );
+                return partner.galleryUrl ? (
+                  <a
+                    key={w.title}
+                    href={partner.galleryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block rounded-2xl outline-none transition-[filter] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f1ea]"
+                    style={{ "--tw-ring-color": h.accent + "99" } as CSSProperties}
+                  >
+                    {media}
+                  </a>
+                ) : (
+                  <div key={w.title} className="group block">
+                    {media}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <ul className="mt-5 rounded-xl border border-border-subtle bg-white card-elev overflow-hidden divide-y divide-border-subtle/60">

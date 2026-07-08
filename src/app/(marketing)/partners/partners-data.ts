@@ -53,6 +53,10 @@ export interface Partner {
   /** Optional portrait (principal or representative). Any lighting or
    *  background: the avatar treatment normalises it. */
   portrait?: string;
+  /** Optional brand logo. Rendered clean (contained on a white tile, no
+   *  grayscale/duotone) since a logo is not a photo. Takes precedence over
+   *  portrait for the avatar. */
+  logo?: string;
   /** The person the portrait shows, credited quietly for trust. */
   principal?: string;
   suburb: string;
@@ -81,6 +85,8 @@ export interface Partner {
    *  thing that distinguishes them specifically. */
   signature?: { label: string; value: string };
   website?: string;
+  /** Where the selected-work images link to (e.g. the practice's gallery). */
+  galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
   work?: PartnerWork[];
   /** Finance partners: where they actually help. */
@@ -187,6 +193,7 @@ export const PARTNERS: Partner[] = [
     roleLabel: "Building design practice",
     name: "House Design Solutions",
     monogram: "HD",
+    logo: "/partners/house-design-solutions/logo.png",
     principal: "Paul A. Mete",
     suburb: "Albert Park",
     state: "VIC",
@@ -206,11 +213,27 @@ export const PARTNERS: Partner[] = [
       focus: "Homes, extensions and developments",
     },
     website: "https://www.housedesignsolutions.com.au",
+    galleryUrl: "https://www.housedesignsolutions.com.au/gallery/",
     work: [
-      { title: "Mont Albert", suburb: "Mont Albert", type: "New family home" },
-      { title: "Hawthorn East Rear Extension", suburb: "Hawthorn East", type: "Heritage extension" },
-      { title: "Templestowe Side by Side", suburb: "Templestowe", type: "Duplex development" },
-      { title: "Eltham House", suburb: "Eltham", type: "New family home", year: "2015" },
+      {
+        title: "Templestowe",
+        suburb: "Templestowe",
+        type: "Duplex unit development",
+        image: "/partners/house-design-solutions/templestowe.jpg",
+      },
+      {
+        title: "Burwood",
+        suburb: "Burwood",
+        type: "Modern family home",
+        image: "/partners/house-design-solutions/burwood.jpg",
+      },
+      {
+        title: "Malvern",
+        suburb: "Malvern",
+        type: "Family home",
+        year: "1980s",
+        image: "/partners/house-design-solutions/malvern.jpg",
+      },
     ],
     joined: "2026",
   },
