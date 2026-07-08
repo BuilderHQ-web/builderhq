@@ -1,31 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
-import { PartnerForm } from "@/components/landing/v2/partner-form";
 
-import { PARTNERS, getPartner, type Partner } from "../partners-data";
-import { PartnerAvatar, partnerHue } from "../partner-ui";
-
-const STAR_GOLD = "#e0a63c";
+import { PARTNERS, getPartner } from "../partners-data";
+import { PartnerProfileSections, partnerHeaderProps } from "../partner-profile";
 
 /**
- * /partners/[slug] — a Preferred Partner's page.
+ * /partners/[slug] — a Preferred Partner's public page.
  *
- * Built to be share-worthy: the partner's own clients should see a page
- * the partner is proud to link. Reading order:
- *   identity + key stats  → the fast, scannable facts (who, where, rated)
- *   why we introduce them  → the curatorial note, our voice, our vouch
- *   the practice           → about, in plainer terms
- *   selected work / services
- *   how an introduction works
- *   the ask
+ * Draft partners (people we are still onboarding) are not reachable here;
+ * they are reviewed via the private /partners/preview/[slug] route until
+ * they go live.
  */
 
 export function generateStaticParams() {
-  return PARTNERS.map((p) => ({ slug: p.slug }));
+  return PARTNERS.filter((p) => !p.draft).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -35,18 +25,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const partner = getPartner(slug);
-  if (!partner) return {};
+  if (!partner || partner.draft) return {};
   return {
     title: `${partner.name} · Preferred Partner`,
     description: partner.tagline,
     alternates: { canonical: `/partners/${slug}` },
   };
 }
-
-const KIND_LABEL = {
-  architect: "Architecture practice",
-  finance: "Finance partner",
-} as const;
 
 export default async function PartnerProfilePage({
   params,
@@ -55,386 +40,11 @@ export default async function PartnerProfilePage({
 }) {
   const { slug } = await params;
   const partner = getPartner(slug);
-  if (!partner) notFound();
-
-  const h = partnerHue(partner.kind);
-
-  // Headline figures — only facts that read as real numbers get blown up.
-  // Rating and reviews when we have them, plus the founding year.
-  // Descriptive facts (serves, focus) live in the practice section, not
-  // forced into giant type where phrases would wrap and cheapen the band.
-  const figures: Array<{
-    label: string;
-    value: string;
-    star?: boolean;
-    big?: boolean;
-  }> = [];
-  if (partner.google) {
-    figures.push({ label: "Google rating", value: partner.google.rating.toFixed(1), star: true });
-    figures.push({ label: "Reviews", value: String(partner.google.reviews) });
-  }
-  figures.push({ label: "Established", value: partner.facts.established });
-  if (figures.length < 3) {
-    figures.push({ label: "Serves", value: partner.facts.serves, big: false });
-  }
-
-  const others = [
-    ...PARTNERS.filter((p) => p.kind === partner.kind && p.slug !== partner.slug),
-    ...PARTNERS.filter((p) => p.kind !== partner.kind),
-  ].slice(0, 2);
-
-  const hasWorkImages = partner.work?.some((w) => w.image);
+  if (!partner || partner.draft) notFound();
 
   return (
-    <MarketingPageShell
-      kicker={`Preferred Partner · ${KIND_LABEL[partner.kind]}`}
-      title={partner.name}
-      sub={partner.tagline}
-      meta={`${partner.suburb}, ${partner.state} · In the network since ${partner.joined}`}
-    >
-      <Link
-        href="/partners"
-        className="group inline-flex items-center gap-1.5 text-[13px] font-medium text-text-muted hover:text-text transition-colors mb-9"
-      >
-        <ArrowLeft className="size-3.5 transition-transform duration-[180ms] group-hover:-translate-x-0.5" />
-        All Preferred Partners
-      </Link>
-
-      {/* Identity + headline figures — open on the canvas, no card, no
-          dividers. Bigger portrait with a soft role bloom, and the numbers
-          set large and centred under their labels. */}
-      <section className="mb-8 lg:mb-10">
-        <div className="flex flex-col items-center gap-10 sm:flex-row sm:items-center sm:gap-12 lg:gap-16">
-          <div className="relative shrink-0">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -inset-7"
-              style={{ background: `radial-gradient(closest-side, ${h.glow1}, transparent 72%)` }}
-            />
-            <PartnerAvatar partner={partner} size={148} className="relative" />
-          </div>
-          <dl
-            className="grid w-full gap-x-6 gap-y-8 sm:w-auto sm:flex-1"
-            style={{ gridTemplateColumns: `repeat(${figures.length}, minmax(0, 1fr))` }}
-          >
-            {figures.map((f) => (
-              <div key={f.label} className="flex flex-col items-center gap-2.5 text-center">
-                <dt className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
-                  {f.label}
-                </dt>
-                <dd
-                  className={
-                    f.big === false
-                      ? "font-ui font-semibold text-[15px] leading-snug text-text max-w-[15ch]"
-                      : "font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)]"
-                  }
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    {f.value}
-                    {f.star ? (
-                      <Star className="size-[0.6em]" style={{ color: STAR_GOLD, fill: STAR_GOLD }} />
-                    ) : null}
-                  </span>
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* Why we introduce them — the curatorial note. The page's heart. */}
-      <section className="relative mt-5 rounded-2xl border border-border-subtle bg-white card-elev px-7 sm:px-9 py-8 sm:py-9 overflow-hidden">
-        <span
-          aria-hidden
-          className="absolute top-0 inset-x-10 h-px"
-          style={{ background: `linear-gradient(90deg, transparent, ${h.accent}59, transparent)` }}
-        />
-        <p
-          className="text-[11px] tracking-[0.22em] uppercase font-ui font-semibold"
-          style={{ color: h.accent }}
-        >
-          Why we introduce them
-        </p>
-        <p className="mt-5 max-w-[62ch] font-ui text-[17px] sm:text-[18px] leading-[1.75] text-text">
-          {partner.why}
-        </p>
-        <p className="mt-6 text-[12px] text-text-dim">
-          Chosen and introduced by the BuilderHQ team.
-        </p>
-      </section>
-
-      {/* The practice. */}
-      <section className="mt-12 lg:mt-16">
-        <SectionLabel hue={h.accent}>
-          {partner.kind === "architect" ? "The practice" : "The business"}
-        </SectionLabel>
-        <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.8] text-text-subtle">
-          {partner.about}
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-          {partner.principal ? (
-            <p className="text-[13px] text-text-muted">
-              Led by <span className="font-medium text-text">{partner.principal}</span>
-            </p>
-          ) : null}
-          <p className="text-[13px] text-text-muted">
-            Serves <span className="font-medium text-text">{partner.facts.serves}</span>
-          </p>
-          {partner.website ? (
-            <a
-              href={partner.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-9 px-4 rounded-full border border-border-subtle bg-surface-2 text-[12.5px] font-medium text-text transition-colors hover:border-border-strong"
-            >
-              <Globe className="size-3.5 text-text-dim" />
-              Visit website
-              <ArrowUpRight className="size-3 text-text-dim" />
-            </a>
-          ) : null}
-        </div>
-      </section>
-
-      {/* Selected work (architects) — image strip when supplied, else text. */}
-      {partner.work?.length ? (
-        <section className="mt-12 lg:mt-16">
-          <SectionLabel hue={h.accent}>Selected work</SectionLabel>
-          {hasWorkImages ? (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              {partner.work.map((w) => (
-                <figure
-                  key={w.title}
-                  className="rounded-xl border border-border-subtle bg-white card-elev overflow-hidden"
-                >
-                  <span className="relative block aspect-[4/3] overflow-hidden">
-                    {w.image ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={w.image}
-                          alt={w.title}
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover grayscale contrast-[1.03]"
-                        />
-                        <span
-                          aria-hidden
-                          className="absolute inset-0 mix-blend-multiply"
-                          style={{ background: `linear-gradient(160deg, ${h.accent}17, ${h.accentSoft}24)` }}
-                        />
-                      </>
-                    ) : (
-                      <span
-                        className="absolute inset-0"
-                        style={{ background: `linear-gradient(155deg, ${h.accent}14, ${h.accent}08)` }}
-                      />
-                    )}
-                  </span>
-                  <figcaption className="px-4 py-3.5">
-                    <p className="font-ui font-semibold text-[14px] tracking-[-0.01em] text-text">
-                      {w.title}
-                    </p>
-                    <p className="mt-0.5 text-[12px] text-text-muted">
-                      {w.suburb}
-                      <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                      {w.type}
-                      <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                      {w.year}
-                    </p>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          ) : (
-            <ul className="mt-5 rounded-xl border border-border-subtle bg-white card-elev overflow-hidden divide-y divide-border-subtle/60">
-              {partner.work.map((w) => (
-                <li key={w.title} className="flex items-baseline gap-4 px-6 sm:px-8 py-5">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text">
-                      {w.title}
-                    </p>
-                    <p className="mt-0.5 text-[12.5px] text-text-muted">
-                      {w.suburb}
-                      <span aria-hidden className="mx-2 text-text-faint">·</span>
-                      {w.type}
-                    </p>
-                  </div>
-                  <span className="font-mono text-[12px] tabular-nums text-text-dim shrink-0">
-                    {w.year}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-[12px] text-text-dim">
-            A sample of recent residential projects, shared with the
-            practice&rsquo;s approval.
-          </p>
-        </section>
-      ) : null}
-
-      {/* Where they help (brokers). */}
-      {partner.services?.length ? (
-        <section className="mt-12 lg:mt-16">
-          <SectionLabel hue={h.accent}>Where they help</SectionLabel>
-          <ul className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {partner.services.map((s) => (
-              <li
-                key={s}
-                className="flex items-start gap-3 rounded-xl border border-border-subtle bg-white card-elev px-5 py-4 text-[14px] leading-[1.5] text-text"
-              >
-                <span
-                  className="mt-[2px] inline-flex size-[18px] items-center justify-center rounded-full shrink-0"
-                  style={{ background: h.accent + "1f", color: h.accentSoft }}
-                >
-                  <Check className="size-3" strokeWidth={3} />
-                </span>
-                {s}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* How an introduction works. */}
-      <section className="mt-12 lg:mt-16">
-        <SectionLabel hue={h.accent}>How an introduction works</SectionLabel>
-        <div className="mt-5 rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-8 py-6 sm:py-7">
-          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-            <IntroStep n="01" title="Ask us">
-              Tell us what your build needs. Two minutes, no account required.
-            </IntroStep>
-            <IntroStep n="02" title="We introduce">
-              We connect you with {partner.name} directly, with a little
-              context on your project.
-            </IntroStep>
-            <IntroStep n="03" title="You take it from there">
-              The relationship is yours. We take no commission and no cut.
-            </IntroStep>
-          </ol>
-          <p className="mt-6 pt-5 border-t border-border-subtle/70 text-[12.5px] text-text-dim">
-            No charge, no obligation, and no detail shared without your say.
-          </p>
-        </div>
-      </section>
-
-      {/* The ask. */}
-      <section className="mt-12 lg:mt-16 rounded-2xl border border-border-subtle bg-white card-elev px-7 sm:px-10 py-9 sm:py-11 text-center relative overflow-hidden">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 size-72 rounded-full opacity-60"
-          style={{ background: `radial-gradient(circle, ${h.glow1}, transparent 70%)` }}
-        />
-        <p
-          className="relative text-[11px] tracking-[0.22em] uppercase font-ui font-semibold"
-          style={{ color: h.accent }}
-        >
-          Work with {partner.name}
-        </p>
-        <h2 className="relative mt-3 mx-auto max-w-[22ch] font-ui font-semibold tracking-[-0.03em] text-[clamp(1.7rem,2.6vw+0.5rem,2.4rem)] leading-[1.1] text-text">
-          Start with an introduction.
-        </h2>
-        <p className="relative mt-3 mx-auto max-w-[46ch] text-[14px] leading-[1.65] text-text-muted">
-          Ask us to connect you and we will make the introduction personally,
-          with your project&rsquo;s context attached.
-        </p>
-        <div className="relative mt-7 flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="#request-intro"
-            className="group inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13.5px] font-semibold hover:bg-accent-hover transition-colors"
-          >
-            Request an introduction
-            <ArrowUpRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
-          <Link
-            href="/partners"
-            className="inline-flex items-center gap-1.5 h-12 px-4 text-[13px] font-medium text-text-muted hover:text-text transition-colors"
-          >
-            Browse all partners
-          </Link>
-        </div>
-      </section>
-
-      {/* More from the network. */}
-      {others.length ? (
-        <section className="mt-12 lg:mt-16">
-          <SectionLabel hue="var(--color-accent-light)">
-            More from the network
-          </SectionLabel>
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {others.map((o) => (
-              <MiniPartner key={o.slug} partner={o} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <PartnerForm />
+    <MarketingPageShell {...partnerHeaderProps(partner)}>
+      <PartnerProfileSections partner={partner} />
     </MarketingPageShell>
-  );
-}
-
-/* ── Pieces ──────────────────────────────────────────────────────────── */
-
-function SectionLabel({
-  children,
-  hue,
-}: {
-  children: React.ReactNode;
-  hue: string;
-}) {
-  return (
-    <div className="flex items-center gap-4">
-      <h2
-        className="text-[12px] tracking-[0.22em] uppercase font-ui font-semibold shrink-0"
-        style={{ color: hue }}
-      >
-        {children}
-      </h2>
-      <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
-    </div>
-  );
-}
-
-function IntroStep({
-  n,
-  title,
-  children,
-}: {
-  n: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <li className="flex flex-col gap-1.5">
-      <p className="flex items-baseline gap-2.5">
-        <span className="font-mono text-[12px] tabular-nums text-text-dim">{n}</span>
-        <span className="text-[14px] font-semibold text-text">{title}</span>
-      </p>
-      <p className="text-[13px] leading-[1.6] text-text-muted pl-[30px]">
-        {children}
-      </p>
-    </li>
-  );
-}
-
-function MiniPartner({ partner }: { partner: Partner }) {
-  return (
-    <Link
-      href={`/partners/${partner.slug}`}
-      className="group flex items-center gap-3.5 rounded-xl border border-border-subtle bg-white card-elev p-4 transition-[transform,box-shadow] duration-[240ms] ease-[var(--ease-out)] hover:-translate-y-0.5 hover:card-elev-lg"
-    >
-      <PartnerAvatar partner={partner} size={44} />
-      <span className="min-w-0 flex-1">
-        <span className="block font-ui font-semibold text-[14.5px] tracking-[-0.01em] text-text truncate">
-          {partner.name}
-        </span>
-        <span className="block text-[12px] text-text-dim truncate">
-          {KIND_LABEL[partner.kind]}
-          <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-          {partner.suburb}, {partner.state}
-        </span>
-      </span>
-      <ArrowUpRight className="size-4 shrink-0 text-text-faint transition-transform duration-[200ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-    </Link>
   );
 }

@@ -38,6 +38,10 @@ export interface PartnerWork {
 export interface Partner {
   slug: string;
   kind: PartnerKind;
+  /** Still being onboarded: hidden from the public directory and public
+   *  /partners/[slug] route, but reachable via /partners/preview/[slug]
+   *  for the partner to review their draft before it goes live. */
+  draft?: boolean;
   name: string;
   /** Two-letter mark for the monogram tile when no portrait is supplied. */
   monogram: string;
@@ -227,8 +231,13 @@ export const PARTNERS: Partner[] = [
   },
 ];
 
-export const ARCHITECT_PARTNERS = PARTNERS.filter((p) => p.kind === "architect");
-export const FINANCE_PARTNERS = PARTNERS.filter((p) => p.kind === "finance");
+// Public listings exclude drafts (partners still under review).
+export const ARCHITECT_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "architect" && !p.draft,
+);
+export const FINANCE_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "finance" && !p.draft,
+);
 
 export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);
