@@ -100,32 +100,52 @@ export function PartnerProfileSections({
           <div className="relative shrink-0">
             <span
               aria-hidden
-              className="pointer-events-none absolute -inset-7"
+              className="pointer-events-none absolute -inset-8"
               style={{ background: `radial-gradient(closest-side, ${h.glow1}, transparent 72%)` }}
             />
-            <PartnerAvatar partner={partner} size={148} className="relative" />
+            <PartnerAvatar partner={partner} size={178} className="relative" />
           </div>
+          {/* A real 3-row grid (label / value / sub-label) rather than
+              independent flex columns: every value sits on the same
+              baseline no matter how many lines a label wraps to. */}
           <dl
-            className="grid w-full gap-x-6 gap-y-8 sm:w-auto sm:flex-1"
-            style={{ gridTemplateColumns: `repeat(${figures.length}, minmax(0, 1fr))` }}
+            className="grid w-full gap-x-6 sm:w-auto sm:flex-1"
+            style={{
+              gridTemplateColumns: `repeat(${figures.length}, minmax(0, 1fr))`,
+              gridTemplateRows: "auto auto auto",
+            }}
           >
-            {figures.map((f) => (
-              <div key={f.label} className="flex flex-col items-center gap-2.5 text-center">
-                <dt className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium">
-                  {f.label}
-                </dt>
-                <dd className="font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)]">
-                  <span className="inline-flex items-center gap-1.5">
-                    {f.value}
-                    {f.star ? (
-                      <Star className="size-[0.6em]" style={{ color: STAR_GOLD, fill: STAR_GOLD }} />
-                    ) : null}
-                  </span>
-                </dd>
-                {f.sub ? (
-                  <p className="text-[11px] leading-none text-text-dim">{f.sub}</p>
-                ) : null}
-              </div>
+            {figures.map((f, i) => (
+              <dt
+                key={`label-${f.label}`}
+                className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium text-center self-end"
+                style={{ gridColumn: i + 1, gridRow: 1 }}
+              >
+                {f.label}
+              </dt>
+            ))}
+            {figures.map((f, i) => (
+              <dd
+                key={`value-${f.label}`}
+                className="mt-2.5 font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)] text-center"
+                style={{ gridColumn: i + 1, gridRow: 2 }}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  {f.value}
+                  {f.star ? (
+                    <Star className="size-[0.6em]" style={{ color: STAR_GOLD, fill: STAR_GOLD }} />
+                  ) : null}
+                </span>
+              </dd>
+            ))}
+            {figures.map((f, i) => (
+              <p
+                key={`sub-${f.label}`}
+                className="mt-2 text-[11px] leading-none text-text-dim text-center"
+                style={{ gridColumn: i + 1, gridRow: 3 }}
+              >
+                {f.sub ?? ""}
+              </p>
             ))}
           </dl>
         </div>
