@@ -34,9 +34,29 @@ export function PartnerAvatar({
   const h = partnerHue(partner.kind);
   const radius = size >= 96 ? 20 : size >= 72 ? 16 : 14;
 
-  // A logo is not a photo — render it clean (contained on a white tile),
-  // never grayscale/duotoned, with quiet breathing room.
+  // A logo is not a photo — render it clean, never grayscale/duotoned.
   if (partner.logo) {
+    // Light-on-dark logo: it carries its own dark background, so let it
+    // fill the tile edge to edge rather than sit on white (where a white
+    // wordmark would disappear).
+    if (partner.logoDark) {
+      return (
+        <span
+          className={cn("relative block shrink-0 overflow-hidden border", className)}
+          style={{ width: size, height: size, borderRadius: radius, background: "#0d0d0d", borderColor: h.accent + "33" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={partner.logo}
+            alt={partner.name}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </span>
+      );
+    }
+    // Otherwise, a dark mark on light: contained on a white tile with quiet
+    // breathing room.
     return (
       <span
         className={cn("relative flex shrink-0 items-center justify-center overflow-hidden border bg-white", className)}

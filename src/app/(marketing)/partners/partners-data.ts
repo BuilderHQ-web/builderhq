@@ -66,6 +66,9 @@ export interface Partner {
    *  grayscale/duotone) since a logo is not a photo. Takes precedence over
    *  portrait for the avatar. */
   logo?: string;
+  /** The logo is light-on-dark (its own dark background): render it
+   *  full-bleed on a dark tile instead of contained on white. */
+  logoDark?: boolean;
   /** The person the portrait shows, credited quietly for trust. */
   principal?: string;
   suburb: string;
@@ -263,7 +266,8 @@ export const PARTNERS: Partner[] = [
     roleLabel: "Building design practice",
     name: "Summerhill Building Designers",
     monogram: "SB",
-    // logo: to come — client will supply the brand mark.
+    logo: "/partners/summerhill-building-designers/logo.png",
+    logoDark: true,
     principal: "Robert",
     suburb: "Melbourne",
     state: "VIC",
@@ -286,11 +290,25 @@ export const PARTNERS: Partner[] = [
     },
     instagram: "https://www.instagram.com/summerhillbuildingdesigners/",
     work: [
-      { title: "Custom home", suburb: "Melbourne", type: "New build" },
-      { title: "Multi-unit homes", suburb: "Melbourne", type: "Development" },
-      { title: "Home extension", suburb: "Melbourne", type: "Rear addition" },
+      {
+        title: "Avondale Heights",
+        suburb: "Avondale Heights",
+        type: "Custom home",
+        image: "/partners/summerhill-building-designers/avondale-heights.jpg",
+      },
+      {
+        title: "Coburg",
+        suburb: "Coburg",
+        type: "Kitchen and living",
+        image: "/partners/summerhill-building-designers/coburg.jpg",
+      },
+      {
+        title: "Kensington",
+        suburb: "Kensington",
+        type: "Townhouse development",
+        image: "/partners/summerhill-building-designers/kensington.jpg",
+      },
     ],
-    workImagesPending: true,
     joined: "2026",
   },
 

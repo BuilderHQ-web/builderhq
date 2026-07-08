@@ -268,7 +268,7 @@ export function PartnerProfileSections({
                           src={w.image}
                           alt={`${w.title}, ${w.type}`}
                           loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[720ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:scale-[1.045]"
+                          className="absolute inset-0 h-full w-full object-cover grayscale transition-[transform,filter] duration-[720ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:scale-[1.045] group-hover:grayscale-0"
                         />
                       ) : (
                         <span
