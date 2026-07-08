@@ -10,17 +10,26 @@
  *
  * <GoogleRating> presents a verified rating as a single confident stat,
  * never a five-star directory row.
+ *
+ * <PartnerWorkCard> is the portfolio tile: one project, rendered
+ * black-and-white and blooming to full colour on hover, lifting as a
+ * single, unified motion. All of its hover timing flows from WORK_HOVER,
+ * so every partner's grid animates identically and future tuning is one
+ * edit.
  */
 
-import { Star } from "lucide-react";
+import type { CSSProperties } from "react";
+import { ArrowUpRight, Image as ImageIcon, Star } from "lucide-react";
 
 import { ROLE_PALETTE } from "@/components/landing/v2/content";
 import { cn } from "@/lib/utils";
-import type { Partner, PartnerKind } from "./partners-data";
+import type { Partner, PartnerKind, PartnerWork } from "./partners-data";
 
 export function partnerHue(kind: PartnerKind) {
   return ROLE_PALETTE[kind];
 }
+
+type PartnerHue = ReturnType<typeof partnerHue>;
 
 export function PartnerAvatar({
   partner,
@@ -175,5 +184,117 @@ export function GoogleRating({
       <span className="tabular-nums font-semibold">{rating.toFixed(1)}</span>
       <span className="text-text-dim">Google</span>
     </span>
+  );
+}
+
+/**
+ * The single source of truth for the portfolio hover. One duration and a
+ * symmetric ease (equally smooth in and out) drive every animated layer, so
+ * colour, zoom, lift, ring and badge move as one motion rather than a set of
+ * separate, competing ones. Tune here once and every partner grid follows.
+ */
+const WORK_HOVER: CSSProperties = {
+  transitionTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
+  transitionDuration: "620ms",
+};
+
+export function PartnerWorkCard({
+  work,
+  hue,
+  href,
+}: {
+  work: PartnerWork;
+  hue: PartnerHue;
+  href?: string;
+}) {
+  const media = (
+    <>
+      <div
+        className="relative aspect-square overflow-hidden rounded-2xl bg-black/[0.03] card-elev will-change-transform group-hover:-translate-y-1 group-hover:card-elev-lg"
+        style={{ ...WORK_HOVER, transitionProperty: "transform, box-shadow" }}
+      >
+        {work.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={work.image}
+            alt={`${work.title}, ${work.type}`}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover grayscale will-change-transform group-hover:scale-[1.045] group-hover:grayscale-0"
+            style={{ ...WORK_HOVER, transitionProperty: "transform, filter" }}
+          />
+        ) : (
+          <span
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2.5"
+            style={{ background: `linear-gradient(155deg, ${hue.accent}12, ${hue.accent}06)` }}
+          >
+            <span
+              className="flex size-11 items-center justify-center rounded-full"
+              style={{ background: `${hue.accent}14`, color: hue.accentSoft }}
+            >
+              <ImageIcon className="size-5" strokeWidth={1.5} />
+            </span>
+            <span className="text-[11px] font-medium tracking-[0.02em]" style={{ color: hue.accentSoft }}>
+              Photo to come
+            </span>
+          </span>
+        )}
+        {/* Resting edge — a whisper of a hairline, never a hard border. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl"
+          style={{ boxShadow: "inset 0 0 0 1px rgba(20,28,36,0.05)" }}
+        />
+        {/* Accent edge, cross-fading in on the same clock as everything else. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100"
+          style={{ ...WORK_HOVER, transitionProperty: "opacity", boxShadow: `inset 0 0 0 1px ${hue.accent}40` }}
+        />
+        {href ? (
+          <span
+            className="absolute right-3.5 top-3.5 inline-flex size-8 translate-y-0.5 items-center justify-center rounded-full bg-white/95 text-[#161c22] opacity-0 shadow-sm backdrop-blur-sm group-hover:translate-y-0 group-hover:opacity-100"
+            style={{ ...WORK_HOVER, transitionProperty: "opacity, transform" }}
+          >
+            <ArrowUpRight className="size-4" />
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-3.5">
+        <p
+          className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text group-hover:text-[var(--acc)]"
+          style={{ ...WORK_HOVER, transitionProperty: "color" }}
+        >
+          {work.title}
+        </p>
+        <p className="mt-0.5 text-[12.5px] text-text-muted">
+          {work.type}
+          {work.year ? (
+            <>
+              <span aria-hidden className="mx-1.5 text-text-faint">·</span>
+              {work.year}
+            </>
+          ) : null}
+        </p>
+      </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f1ea]"
+        style={{ "--acc": hue.accentSoft, "--tw-ring-color": hue.accent + "99" } as CSSProperties}
+      >
+        {media}
+      </a>
+    );
+  }
+  return (
+    <div className="group block" style={{ "--acc": hue.accentSoft } as CSSProperties}>
+      {media}
+    </div>
   );
 }

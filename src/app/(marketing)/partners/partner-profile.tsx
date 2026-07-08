@@ -1,11 +1,10 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Check, Globe, Image as ImageIcon, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Globe, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 import { PARTNERS, type Partner } from "./partners-data";
-import { PartnerAvatar, partnerHue } from "./partner-ui";
+import { PartnerAvatar, PartnerWorkCard, partnerHue } from "./partner-ui";
 
 /**
  * PartnerProfileSections — the body of a partner's page, shared by the
@@ -254,92 +253,10 @@ export function PartnerProfileSections({
             ) : null}
           </div>
           {showWorkImages ? (
-            <div
-              className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5"
-              style={{ "--acc": h.accentSoft } as CSSProperties}
-            >
-              {partner.work.map((w) => {
-                const media = (
-                  <>
-                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-black/[0.03] card-elev transition-[transform,box-shadow] duration-[520ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:-translate-y-1 group-hover:card-elev-lg">
-                      {w.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={w.image}
-                          alt={`${w.title}, ${w.type}`}
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover grayscale transition-[transform,filter] duration-[720ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:scale-[1.045] group-hover:grayscale-0"
-                        />
-                      ) : (
-                        <span
-                          className="absolute inset-0 flex flex-col items-center justify-center gap-2.5"
-                          style={{ background: `linear-gradient(155deg, ${h.accent}12, ${h.accent}06)` }}
-                        >
-                          <span
-                            className="flex size-11 items-center justify-center rounded-full"
-                            style={{ background: `${h.accent}14`, color: h.accentSoft }}
-                          >
-                            <ImageIcon className="size-5" strokeWidth={1.5} />
-                          </span>
-                          <span
-                            className="text-[11px] font-medium tracking-[0.02em]"
-                            style={{ color: h.accentSoft }}
-                          >
-                            Photo to come
-                          </span>
-                        </span>
-                      )}
-                      {/* Resting edge — a whisper of a hairline, never a hard border. */}
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 rounded-2xl"
-                        style={{ boxShadow: "inset 0 0 0 1px rgba(20,28,36,0.05)" }}
-                      />
-                      {/* Warms to the accent on hover, cross-fading over the resting edge. */}
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-[520ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:opacity-100"
-                        style={{ boxShadow: `inset 0 0 0 1px ${h.accent}40` }}
-                      />
-                      {partner.galleryUrl ? (
-                        <span className="absolute right-3.5 top-3.5 inline-flex size-8 translate-y-0.5 items-center justify-center rounded-full bg-white/95 text-[#161c22] opacity-0 shadow-sm backdrop-blur-sm transition-all duration-[520ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:translate-y-0 group-hover:opacity-100">
-                          <ArrowUpRight className="size-4" />
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-3.5">
-                      <p className="font-ui font-semibold text-[15px] tracking-[-0.01em] text-text transition-colors duration-[320ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:text-[var(--acc)]">
-                        {w.title}
-                      </p>
-                      <p className="mt-0.5 text-[12.5px] text-text-muted">
-                        {w.type}
-                        {w.year ? (
-                          <>
-                            <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-                            {w.year}
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                  </>
-                );
-                return partner.galleryUrl ? (
-                  <a
-                    key={w.title}
-                    href={partner.galleryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block rounded-2xl outline-none transition-[filter] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f1ea]"
-                    style={{ "--tw-ring-color": h.accent + "99" } as CSSProperties}
-                  >
-                    {media}
-                  </a>
-                ) : (
-                  <div key={w.title} className="group block">
-                    {media}
-                  </div>
-                );
-              })}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+              {partner.work.map((w) => (
+                <PartnerWorkCard key={w.title} work={w} hue={h} href={partner.galleryUrl} />
+              ))}
             </div>
           ) : (
             <ul className="mt-5 rounded-xl border border-border-subtle bg-white card-elev overflow-hidden divide-y divide-border-subtle/60">
