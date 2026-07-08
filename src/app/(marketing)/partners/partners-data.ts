@@ -367,6 +367,61 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "evoka-studio",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Evoka Studio",
+    monogram: "ES",
+    logo: "/partners/evoka-studio/logo.png",
+    logoDark: true,
+    principal: "Anthony Camuglia",
+    suburb: "Niddrie",
+    state: "VIC",
+    tagline:
+      "New homes, renovations and townhouse developments across Melbourne, carried from feasibility to construction documentation with care.",
+    disciplines: ["New builds", "Renovations", "Townhouse developments"],
+    google: { rating: 4.9, reviews: 17 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "17 reviews" },
+      { label: "Experience", value: "10+ yrs" },
+      { label: "Concept to documentation", value: "In house" },
+    ],
+    why: "Anthony brings ten years of residential design and delivery to every Evoka project, and it shows in where he starts: feasibility first, so owners know what a site can carry before the design begins. From there the studio keeps concept, town planning, interiors and documentation under one roof, and the result is drawings that price cleanly and build the way they were drawn.",
+    about:
+      "Evoka Studio is a Niddrie practice founded by Anthony Camuglia, designing new homes, renovations and townhouse developments across Melbourne. The studio works end to end, from feasibility analysis and schematic design through town planning, interior design and construction documentation, coordinating the engineers and surveyors a project needs along the way.",
+    facts: {
+      basedIn: "Niddrie, VIC",
+      serves: "Melbourne",
+      focus: "New builds, renovations and townhouses",
+    },
+    website: "https://www.evokastudio.com.au",
+    instagram: "https://www.instagram.com/evokastudio/",
+    linkedin: "https://www.linkedin.com/company/evoka-studio/",
+    galleryUrl: "https://www.evokastudio.com.au/projects",
+    work: [
+      {
+        title: "Pascoe Vale",
+        suburb: "Pascoe Vale",
+        type: "New home",
+        image: "/partners/evoka-studio/pascoe-vale.jpg",
+      },
+      {
+        title: "Richmond",
+        suburb: "Richmond",
+        type: "Rear extension",
+        image: "/partners/evoka-studio/richmond.jpg",
+      },
+      {
+        title: "Lalor",
+        suburb: "Lalor",
+        type: "Townhouse development",
+        image: "/partners/evoka-studio/lalor.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   {
