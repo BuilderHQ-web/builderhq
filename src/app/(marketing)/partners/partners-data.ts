@@ -741,6 +741,60 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "ultimate-design-and-drafting",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Design and drafting practice",
+    name: "Ultimate Design & Drafting",
+    monogram: "UD",
+    logo: "/partners/ultimate-design-and-drafting/logo.png",
+    logoDark: true,
+    principal: "Joey Bondin",
+    suburb: "Essendon",
+    state: "VIC",
+    tagline:
+      "Sophisticated, practical home design and drafting, with energy ratings and colour selection under the same roof.",
+    disciplines: ["Custom homes", "Drafting", "Energy ratings"],
+    stats: [
+      { label: "Established", value: "2006" },
+      { label: "Experience", value: "18+ yrs", sub: "residential and commercial" },
+      { label: "Energy ratings", value: "In house", sub: "thermal assessment and colour" },
+    ],
+    why: "Joey's team has been drawing Melbourne homes since 2006, and the practice is built around what actually gets projects moving: accurate drawings, honest timeframes and budgets treated with respect. Energy ratings, thermal assessment and colour selection sit in house alongside the drafting, so documentation arrives complete rather than in pieces. It is the kind of steady, practical outfit builders like pricing for, and owners like working with.",
+    about:
+      "Ultimate Design & Drafting is an Essendon practice founded by director Joey Bondin in 2006, designing homes and commercial projects across Melbourne for more than eighteen years. The team keeps thermal assessment, energy ratings and colour consultation in house alongside the design and drafting, and works to a brief it has held since the beginning: drawings that are accurate, on time, suited to how you live and honestly priced.",
+    facts: {
+      established: "2006",
+      basedIn: "Essendon, VIC",
+      serves: "Melbourne",
+      focus: "Homes, drafting and energy ratings",
+    },
+    website: "https://www.ultimatedesign.com.au",
+    instagram: "https://www.instagram.com/ultimatedesigndrafting/",
+    galleryUrl: "https://www.ultimatedesign.com.au/projects/",
+    work: [
+      {
+        title: "Strathtulloh",
+        suburb: "Strathtulloh",
+        type: "Acreage residence",
+        image: "/partners/ultimate-design-and-drafting/strathtulloh.jpg",
+      },
+      {
+        title: "Melbourne",
+        suburb: "Melbourne",
+        type: "Double-storey home",
+        image: "/partners/ultimate-design-and-drafting/melbourne.jpg",
+      },
+      {
+        title: "Taylors Hill",
+        suburb: "Taylors Hill",
+        type: "Single-storey home",
+        image: "/partners/ultimate-design-and-drafting/taylors-hill.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
