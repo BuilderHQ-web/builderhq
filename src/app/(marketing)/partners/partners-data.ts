@@ -864,6 +864,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "metro-building-designers",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Metro Building Designers",
+    monogram: "MB",
+    logo: "/partners/metro-building-designers/logo.png",
+    logoDark: true,
+    principal: "Glenn Nielsen",
+    suburb: "Reservoir",
+    state: "VIC",
+    tagline:
+      "Extensions, renovations, new homes and unit developments, designed around the way Melbourne families live.",
+    disciplines: ["Extensions and renovations", "New homes", "Unit developments"],
+    google: { rating: 4.9, reviews: 45 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "45 reviews" },
+      {
+        label: "Extensions and renovations",
+        value: "500+",
+        sub: "designed across Melbourne",
+      },
+      { label: "Experience", value: "20 yrs", sub: "director Glenn Nielsen" },
+    ],
+    awards: [
+      {
+        label: "Renovation/Addition $500,000 to $750,000",
+        sub: "HIA-CSR Victorian Housing and Kitchen & Bathroom Awards · Malvern, with builder Aviva Homes · 2024",
+      },
+      {
+        label: "Project Home up to $500,000",
+        sub: "HIA-CSR Victorian Housing and Kitchen & Bathroom Awards · Doreen, with builder Aviva Homes · 2024",
+      },
+    ],
+    why: "Metro Building Designers has drawn more than five hundred extensions and renovations for Melbourne families, and in 2024 that record stood up at the industry’s own judging: category wins for a Malvern renovation and a Doreen project home at the HIA-CSR Victorian Housing and Kitchen & Bathroom Awards, both built with Aviva Homes. Director Glenn Nielsen, a registered building practitioner with twenty years of experience, keeps the practice deliberately focused on small to medium residential projects, so every client works with their own design consultant from first sketch to permit. Proof at award level with attention at household scale is exactly the combination we look for.",
+    about:
+      "Metro Building Designers is a Reservoir practice led by director Glenn Nielsen, a building practitioner registered with the Victorian Building Authority who brings twenty years of residential design experience. The studio works on extensions, renovations, new homes and unit developments, deliberately held at small to medium scale so each client deals directly with their own design consultant, and counts more than five hundred extensions and renovations designed across Melbourne. Design, town planning and building permit applications are handled in house on fixed fees, and in 2024 two of the practice’s projects, a Doreen home and a Malvern renovation built with Aviva Homes, won their categories at the HIA-CSR Victorian Housing and Kitchen & Bathroom Awards.",
+    facts: {
+      basedIn: "Reservoir, VIC",
+      serves: "Melbourne",
+      focus: "Extensions, renovations and new homes",
+    },
+    website: "https://www.metrobd.com.au",
+    instagram: "https://www.instagram.com/metrobd/",
+    linkedin: "https://www.linkedin.com/in/glenn-nielsen-0a097a25/",
+    galleryUrl: "https://www.metrobd.com.au/gallery",
+    work: [
+      {
+        title: "Yarrambat",
+        suburb: "Yarrambat",
+        type: "New home",
+        image: "/partners/metro-building-designers/yarrambat.jpg",
+      },
+      {
+        title: "Suburban Melbourne",
+        suburb: "Melbourne",
+        type: "Dual occupancy",
+        image: "/partners/metro-building-designers/suburban-melbourne.jpg",
+      },
+      {
+        title: "Interiors",
+        suburb: "Melbourne",
+        type: "Bathroom",
+        image: "/partners/metro-building-designers/interiors.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
