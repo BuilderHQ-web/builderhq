@@ -795,6 +795,73 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "lateral-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Lateral Building Design",
+    monogram: "LB",
+    logo: "/partners/lateral-building-design/logo.png",
+    principal: "Donna and John Harding-Smith",
+    suburb: "Bayswater North",
+    state: "VIC",
+    tagline:
+      "Homes, townhouse developments and commercial projects, carried from first feasibility to approved permit since 2002.",
+    disciplines: ["New homes", "Townhouse developments", "Town planning"],
+    institution: {
+      name: "Design Matters National",
+      role: "Member",
+      note: "Formerly the Building Designers Association of Victoria",
+    },
+    stats: [
+      { label: "Established", value: "2002", sub: "23+ years in practice" },
+      {
+        label: "Planning permit success",
+        value: "96%",
+        sub: "as published by the practice",
+      },
+      {
+        label: "Building permit success",
+        value: "100%",
+        sub: "as published by the practice",
+      },
+    ],
+    why: "Lateral Building Design has been taking Melbourne projects from feasibility to approval since 2002, and the record is the argument: a 96 per cent success rate on planning permits and 100 per cent on building permits, as the practice publishes it. Founders Donna and John Harding-Smith built the firm on complementary ground, John a registered building practitioner in building design and architectural drafting, Donna an accountant keeping the business side disciplined, and the portfolio runs from single homes to multi-townhouse developments and childcare centres. That approvals literacy is precisely what we want beside owners heading into council.",
+    about:
+      "Lateral Building Design is a Bayswater North practice founded in July 2002 by Donna and John Harding-Smith. John, a registered building practitioner in building design and architectural drafting and a member of Design Matters National, leads the design work; Donna, an accountant across several industries before the practice, manages the business. The team designs new homes, extensions, townhouse developments and commercial buildings across Melbourne, and carries each project through town planning and building permit applications itself. Its published record, 96 per cent of planning permits and every building permit approved, reflects a practice organised around getting projects through.",
+    facts: {
+      established: "2002",
+      basedIn: "Bayswater North, VIC",
+      serves: "Melbourne",
+      focus: "Homes, townhouses and commercial",
+    },
+    website: "https://www.lateralbuildingdesign.com.au",
+    instagram: "https://www.instagram.com/lateralbuildingdesign/",
+    linkedin: "https://www.linkedin.com/company/lateral-building-design/",
+    galleryUrl: "https://www.lateralbuildingdesign.com.au/portfolio/",
+    work: [
+      {
+        title: "Heathmont",
+        suburb: "Heathmont",
+        type: "New home",
+        image: "/partners/lateral-building-design/heathmont.jpg",
+      },
+      {
+        title: "Interior",
+        suburb: "Melbourne",
+        type: "Living room and fireplace",
+        image: "/partners/lateral-building-design/interior.jpg",
+      },
+      {
+        title: "Suburban Melbourne",
+        suburb: "Melbourne",
+        type: "Pool and alfresco terrace",
+        image: "/partners/lateral-building-design/suburban-melbourne.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
