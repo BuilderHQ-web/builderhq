@@ -734,6 +734,67 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "ed-akgun",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage adviser",
+    name: "Ed Akgun",
+    monogram: "EA",
+    portrait: "/partners/ed-akgun/portrait.jpg",
+    suburb: "Mulgrave",
+    state: "VIC",
+    tagline:
+      "Mortgage advice for people buying and building, from a broker who spent a decade inside Australia's biggest bank.",
+    disciplines: ["Construction loans", "Refinancing", "Lender comparison"],
+    institution: {
+      name: "RateOne",
+      role: "Mortgage Adviser",
+      note: "Australian Credit Licence 422284",
+      logo: "/partners/ed-akgun/rateone.png",
+    },
+    stats: [
+      { label: "In lending and banking", value: "13+ yrs" },
+      { label: "With Commonwealth Bank", value: "10+ yrs", sub: "before broking" },
+      { label: "Lenders on the panel", value: "30+", sub: "via RateOne" },
+    ],
+    awards: [
+      {
+        label: "Top 25 Brokerage, six years running",
+        sub: "The Adviser · RateOne · 2016 to 2021",
+      },
+      {
+        label: "Better Business Awards, Victoria",
+        sub: "The Adviser · RateOne · 2019",
+      },
+      {
+        label: "MFAA Credit Adviser",
+        sub: "Dip. Finance and Mortgage Broking",
+      },
+    ],
+    why: "Ed spent ten years inside Commonwealth Bank, moving from mortgage lending through premier banking to senior relationship management, before crossing to broking. That history means he reads a lender's decision the way an insider does, and now he puts it to work for the client across a panel of more than thirty banks. He structures loans around the build ahead, pre-approvals that hold and progress payments that arrive on time, and he explains all of it in plain English.",
+    aboutLabel: "About Ed",
+    about:
+      "Ed Akgun is a mortgage adviser with RateOne, a full service broking firm named a Top 25 Brokerage by The Adviser six years running, with more than ten thousand clients across its Mulgrave and Airport West offices. Ed holds a Diploma of Finance and Mortgage Broking and is an MFAA accredited credit adviser. He came to broking after a decade with Commonwealth Bank, and works across purchases, refinancing and construction lending for clients throughout Melbourne, with RateOne's financial planning arm alongside when it is needed.",
+    facts: {
+      basedIn: "Mulgrave and Airport West, VIC",
+      serves: "Melbourne",
+      focus: "Home and construction lending",
+    },
+    website: "https://rateone.com.au",
+    instagram: "https://www.instagram.com/rateone.homeloans/",
+    linkedin: "https://www.linkedin.com/in/ed-akgun-528793116/",
+    servicesLabel: "Where Ed helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Comparing 30+ lenders on one panel",
+      "Land and house-and-land purchases",
+      "Refinancing to fund a build",
+      "First home and next home buyers",
+    ],
+    joined: "2026",
+  },
+  {
     slug: "keystone-lending",
     kind: "finance",
     name: "Keystone Lending Group",
