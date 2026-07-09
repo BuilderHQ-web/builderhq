@@ -92,7 +92,9 @@ export function HeroVisual() {
   const chips = CHIPS[role];
 
   return (
-    <div className="relative w-full max-w-[440px] sm:max-w-[540px] lg:max-w-[620px]">
+    // Phone cap is a percentage so the scene scales down ~10% and the
+    // whole hero fits one small-viewport frame; sm+ caps unchanged.
+    <div className="relative w-full max-w-[90%] sm:max-w-[540px] lg:max-w-[620px]">
       {/* Role-hued bloom behind the frame — re-lights per lens. */}
       <div
         aria-hidden
