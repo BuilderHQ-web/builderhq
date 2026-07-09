@@ -1049,8 +1049,8 @@ export const PARTNERS: Partner[] = [
     kind: "finance",
     draft: true,
     roleLabel: "Lending adviser",
-    name: "Billy Chok",
-    monogram: "BC",
+    name: "Billy",
+    monogram: "B",
     portrait: "/partners/billy-chok/portrait.jpg",
     suburb: "Melbourne",
     state: "VIC",
@@ -1071,7 +1071,7 @@ export const PARTNERS: Partner[] = [
     why: "Billy has seen lending from every seat that matters: broking from 2007, home finance at Westpac, then senior credit analysis at La Trobe Financial, where he was the person an application had to convince. He founded Cloud Financial Group in 2020 to put that whole picture to work for clients, from home loans through construction and development finance. He also develops property himself, so he has carried a construction loan from the borrower's side, and it shows in how he structures one: pre-approvals that hold, drawdowns that land on time, and no surprises at valuation.",
     aboutLabel: "About Billy",
     about:
-      "Billy Chok is the founder of Cloud Financial Group, a Melbourne based advisory arranging residential, commercial and development finance, with insurance alongside, for clients across Australia. His path to broking ran through both sides of the industry: home lending with Westpac, then senior credit analysis with La Trobe Financial, one of Australia's largest non bank lenders. That credit background shapes how the firm works, with applications built the way an assessor reads them, whether the project is a first build, a knockdown rebuild or a multi unit development.",
+      "Billy is the founder of Cloud Financial Group, a Melbourne based advisory arranging residential, commercial and development finance, with insurance alongside, for clients across Australia. His path to broking ran through both sides of the industry: home lending with Westpac, then senior credit analysis with La Trobe Financial, one of Australia's largest non bank lenders. That credit background shapes how the firm works, with applications built the way an assessor reads them, whether the project is a first build, a knockdown rebuild or a multi unit development.",
     facts: {
       basedIn: "Melbourne, VIC",
       serves: "Australia wide",
@@ -1138,6 +1138,7 @@ export const PARTNERS: Partner[] = [
       focus: "Home, investment and SMSF lending",
     },
     website: "https://www.inovayt.com.au",
+    instagram: "https://www.instagram.com/jasonpogorelecfinance/",
     linkedin: "https://www.linkedin.com/in/jason-pogorelec-2278b523/",
     servicesLabel: "Where Jason helps",
     services: [
