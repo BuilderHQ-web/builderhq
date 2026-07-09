@@ -841,6 +841,66 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "jason-pogorelec",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Senior finance broker",
+    name: "Jason Pogorelec",
+    monogram: "JP",
+    portrait: "/partners/jason-pogorelec/portrait.jpg",
+    suburb: "West Melbourne",
+    state: "VIC",
+    tagline:
+      "Finance broking for people building homes and portfolios, with strategy that looks past a single settlement.",
+    disciplines: ["Construction loans", "Investment lending", "SMSF"],
+    institution: {
+      name: "Inovayt",
+      role: "Senior Finance Broker",
+      note: "Finance, wealth and commercial, Australia wide",
+      logo: "/partners/jason-pogorelec/inovayt.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "Inovayt · 998 reviews" },
+      { label: "In finance broking", value: "15+ yrs" },
+      { label: "Industry honours", value: "9", sub: "2011 to 2022" },
+    ],
+    awards: [
+      {
+        label: "Top 20 Champion Broker, Victoria",
+        sub: "AFG · 2019 and 2020",
+      },
+      {
+        label: "Top 30 Young Broker of the Year, Australia",
+        sub: "2012, 2014 and 2015",
+      },
+      {
+        label: "Best Residential Broker, Finalist",
+        sub: "Better Business Awards · 2022",
+      },
+    ],
+    why: "Fifteen years with one firm is rare in broking, and it tells you how Jason works: analytical, organised and built around the client's next decade rather than a single settlement. He is the broker we point at owners thinking past one build, structuring lending across home, investment, commercial and SMSF so a construction loan today does not box the portfolio in tomorrow. Nine industry honours since 2011, from national young broker rankings to AFG's Champion Broker list, say the industry has noticed too.",
+    aboutLabel: "About Jason",
+    about:
+      "Jason Pogorelec is a senior finance broker with Inovayt, a national finance and wealth advisory with teams across Melbourne, Sydney, Brisbane and beyond, a 5.0 Google rating across nearly a thousand reviews, and the 2024 Australian Broking Awards Independent Office of the Year. With Inovayt since May 2011, Jason specialises in strategic lending for property portfolios, commercial purchases and refinancing, SMSF arrangements and residential banking, with one intent throughout: results that serve a client's financial goals for the long term, not a one off transaction.",
+    facts: {
+      basedIn: "West Melbourne, VIC",
+      serves: "Australia wide",
+      focus: "Home, investment and SMSF lending",
+    },
+    website: "https://www.inovayt.com.au",
+    linkedin: "https://www.linkedin.com/in/jason-pogorelec-2278b523/",
+    servicesLabel: "Where Jason helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Building a property portfolio strategically",
+      "Commercial purchases and refinancing",
+      "SMSF lending",
+      "Refinancing to fund a build",
+    ],
+    joined: "2026",
+  },
+  {
     slug: "keystone-lending",
     kind: "finance",
     name: "Keystone Lending Group",
