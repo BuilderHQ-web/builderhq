@@ -756,9 +756,10 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Sophisticated, practical home design and drafting, with energy ratings and colour selection under the same roof.",
     disciplines: ["Custom homes", "Drafting", "Energy ratings"],
+    google: { rating: 4.4, reviews: 20 },
     stats: [
-      { label: "Established", value: "2006" },
-      { label: "Experience", value: "18+ yrs", sub: "residential and commercial" },
+      { label: "Google rating", value: "4.4", star: true, sub: "20 reviews" },
+      { label: "Established", value: "2006", sub: "18+ years in practice" },
       { label: "Energy ratings", value: "In house", sub: "thermal assessment and colour" },
     ],
     why: "Joey's team has been drawing Melbourne homes since 2006, and the practice is built around what actually gets projects moving: accurate drawings, honest timeframes and budgets treated with respect. Energy ratings, thermal assessment and colour selection sit in house alongside the drafting, so documentation arrives complete rather than in pieces. It is the kind of steady, practical outfit builders like pricing for, and owners like working with.",
@@ -809,13 +810,14 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Homes, townhouse developments and commercial projects, carried from first feasibility to approved permit since 2002.",
     disciplines: ["New homes", "Townhouse developments", "Town planning"],
+    google: { rating: 4.4, reviews: 21 },
     institution: {
       name: "Design Matters National",
       role: "Member",
       note: "Formerly the Building Designers Association of Victoria",
     },
     stats: [
-      { label: "Established", value: "2002", sub: "23+ years in practice" },
+      { label: "Google rating", value: "4.4", star: true, sub: "21 reviews" },
       {
         label: "Planning permit success",
         value: "96%",
