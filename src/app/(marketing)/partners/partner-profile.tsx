@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Award, Check, Globe, Landmark, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
+import { cn } from "@/lib/utils";
 
 import { PARTNERS, type Partner } from "./partners-data";
 import { PartnerAvatar, PartnerWorkCard, partnerHue } from "./partner-ui";
@@ -259,7 +260,14 @@ export function PartnerProfileSections({
                   style={{ background: "linear-gradient(90deg, rgba(224,166,60,0.42), transparent)" }}
                 />
               </div>
-              <div className="relative mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-[rgba(224,166,60,0.16)]">
+              {/* A lone supporting honour sits centred; a pair divides. */}
+              <div
+                className={cn(
+                  "relative mt-6 grid grid-cols-1 gap-5",
+                  awards.length > 2 &&
+                    "sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-[rgba(224,166,60,0.16)]",
+                )}
+              >
                 {awards.slice(1, 3).map((a) => (
                   <div key={a.label} className="sm:px-6">
                     <p className="font-ui font-medium text-[13.5px] leading-snug text-white/90">
