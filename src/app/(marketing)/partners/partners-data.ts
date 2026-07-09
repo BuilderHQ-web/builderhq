@@ -683,6 +683,64 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "avankar-design-architects",
+    kind: "architect",
+    draft: true,
+    name: "Avankar Design Architects",
+    monogram: "AD",
+    logo: "/partners/avankar-design-architects/logo.png",
+    principal: "Baban Dizayi",
+    suburb: "Bundoora",
+    state: "VIC",
+    tagline:
+      "Architect led homes and interiors, with the concept held as the driving force from first sketch to delivery.",
+    disciplines: ["Custom homes", "Interior design", "Multi-dwelling"],
+    google: { rating: 4.9, reviews: 159 },
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "Member practice",
+      note: "Architect registration in VIC, NSW, QLD and WA",
+    },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "159 reviews" },
+      { label: "Experience", value: "35+ yrs", sub: "local and international" },
+      { label: "States registered in", value: "4", sub: "VIC, NSW, QLD and WA" },
+    ],
+    why: "Avankar brings the rigour of registered architects to residential work, and it shows in the process: a genuinely investigative first phase, a written design philosophy for every project, and the architectural concept held as the driving force from sketch through documentation to delivery. Principal architect Baban Dizayi is registered in four states, the team works in five languages, English, Arabic, Kurdish, Farsi and Dari, so briefs stay precise where they are often lost, and a 4.9 Google rating across 159 reviews says clients feel the difference.",
+    about:
+      "Avankar Design Architects is a Bundoora practice of architects, interior designers and specialists led by principal architect and director Baban Dizayi, with more than thirty five years of local and international experience behind it. A member practice of the Australian Institute of Architects, registered in Victoria, New South Wales, Queensland and Western Australia, the studio designs custom homes, interiors, multi-dwelling developments and commercial projects, weighing the environmental, social, functional and financial in every brief while the concept remains the driving force.",
+    facts: {
+      basedIn: "Bundoora, VIC",
+      serves: "Melbourne and interstate",
+      focus: "Homes, interiors and multi-dwelling",
+    },
+    website: "https://www.avankar.com.au",
+    instagram: "https://www.instagram.com/avankar_design/",
+    linkedin: "https://www.linkedin.com/company/avankar-design-architects/",
+    galleryUrl: "https://www.avankar.com.au/gallery.html",
+    work: [
+      {
+        title: "Shepparton",
+        suburb: "Shepparton",
+        type: "Custom home",
+        image: "/partners/avankar-design-architects/shepparton.jpg",
+      },
+      {
+        title: "Templestowe",
+        suburb: "Templestowe",
+        type: "Custom home",
+        image: "/partners/avankar-design-architects/templestowe.jpg",
+      },
+      {
+        title: "Doncaster",
+        suburb: "Doncaster",
+        type: "Interior design",
+        image: "/partners/avankar-design-architects/doncaster.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
