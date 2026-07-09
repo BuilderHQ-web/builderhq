@@ -771,7 +771,7 @@ export const PARTNERS: Partner[] = [
         sub: "Dip. Finance and Mortgage Broking",
       },
     ],
-    why: "Ed spent ten years inside Commonwealth Bank, moving from mortgage lending through premier banking to senior relationship management, before crossing to broking. That history means he reads a lender's decision the way an insider does, and now he puts it to work for the client across a panel of more than thirty banks. He structures loans around the build ahead, pre-approvals that hold and progress payments that arrive on time, and he explains all of it in plain English.",
+    why: "Ed spent ten years inside Commonwealth Bank, moving from mortgage lending through premier banking to senior relationship management, before crossing to broking. That history means he reads a lender's decision the way an insider does, and now he puts it to work for the client across a panel of more than thirty banks. He structures loans around the build ahead, pre-approvals that hold and progress payments that arrive on time. That blend of insider knowledge and client-side independence is exactly what we want beside an owner financing a build.",
     aboutLabel: "About Ed",
     about:
       "Ed Akgun is a mortgage adviser with RateOne, a full service broking firm named a Top 25 Brokerage by The Adviser six years running, with more than ten thousand clients across its Mulgrave and Airport West offices. Ed holds a Diploma of Finance and Mortgage Broking and is an MFAA accredited credit adviser. He came to broking after a decade with Commonwealth Bank, and works across purchases, refinancing and construction lending for clients throughout Melbourne, with RateOne's financial planning arm alongside when it is needed.",

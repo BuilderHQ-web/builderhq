@@ -207,7 +207,7 @@ export function PartnerProfileSections({
           carried large, and the supporting honours beneath a fine rule. */}
       {heroAward ? (
         <section
-          className="relative mt-2 overflow-hidden rounded-2xl border card-elev px-6 sm:px-10 py-8 sm:py-9 text-center"
+          className="relative mt-5 overflow-hidden rounded-2xl border card-elev px-6 sm:px-10 py-8 sm:py-9 text-center"
           style={{
             background: "linear-gradient(180deg, #161d26 0%, #10151c 100%)",
             borderColor: "rgba(224,166,60,0.32)",
