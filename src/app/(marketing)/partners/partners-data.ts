@@ -971,6 +971,7 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Home, construction and commercial lending, from a principal broker who invests in property herself.",
     disciplines: ["Construction loans", "First home buyers", "Complex approvals"],
+    google: { rating: 5.0, reviews: 569 },
     institution: {
       name: "Evergrow Finance",
       role: "Founder and Principal Broker",
@@ -978,9 +979,9 @@ export const PARTNERS: Partner[] = [
       logo: "/partners/maninder-kaur/evergrow.png",
     },
     stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "Evergrow · 569 reviews" },
       { label: "In finance broking", value: "10+ yrs" },
       { label: "Lenders on the panel", value: "45+", sub: "via Loan Market Group" },
-      { label: "Founded Evergrow", value: "2023" },
     ],
     why: "Maninder lives what she advises. A property investor and business owner herself, she has spent a decade in broking making difficult files work: self employed income, first homes, imperfect credit histories and construction lending among them. Clients get a problem solver who leaves no stone unturned, with a panel of more than forty five lenders behind her, and she works hand in hand with the agents, accountants and planners around a purchase, which is exactly how we like a broker to operate inside a build team.",
     aboutLabel: "About Maninder",
