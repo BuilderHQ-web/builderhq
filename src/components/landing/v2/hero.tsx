@@ -47,12 +47,12 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
 
         {/* Copy */}
         <div className="text-center lg:text-left order-1">
-          {/* Badge */}
+          {/* Badge — desktop and tablet only; the phone hero stays minimal. */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="block"
+            className="hidden sm:block"
           >
             <RoleSwap className="inline-block">
               <span
@@ -72,7 +72,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             transition={{ delay: 0.08, duration: 0.8, ease: EASE }}
           >
             <RoleSwap>
-              <h1 className="mt-4 sm:mt-6 lg:mt-8 font-ui font-semibold tracking-[-0.045em] leading-[1.03] text-[clamp(2.5rem,5.2vw+1rem,5.4rem)]">
+              <h1 className="mt-0 sm:mt-6 lg:mt-8 font-ui font-semibold tracking-[-0.045em] leading-[1.03] text-[clamp(2.5rem,5.2vw+1rem,5.4rem)]">
                 <span className="block text-text">{copy.h1a}</span>
                 <span className="block" style={{ color: pal.accentSoft }}>
                   {copy.h1b}
@@ -125,8 +125,8 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
                 </a>
               </div>
 
-              {/* Instant answers — the three facts a first visit needs. */}
-              <ul className="mt-4 lg:mt-7 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 px-2 lg:px-0">
+              {/* Instant answers — desktop and tablet only; hidden on the phone hero. */}
+              <ul className="mt-4 lg:mt-7 hidden sm:flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 px-2 lg:px-0">
                 {copy.facts.map((f) => (
                   <li key={f} className="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12.5px] font-medium text-text-muted">
                     <span aria-hidden className="size-[5px] rounded-full" style={{ background: pal.accent }} />
