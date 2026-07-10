@@ -1013,6 +1013,67 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "mq-design-group",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design studio",
+    name: "MQ Design Group",
+    monogram: "MQ",
+    logo: "/partners/mq-design-group/logo.png",
+    suburb: "Williamstown",
+    state: "VIC",
+    tagline:
+      "A studio of more than fifteen building designers, carrying projects from first concept to building permit across Victoria.",
+    disciplines: ["Custom homes", "Multi-residential", "Heritage restorations"],
+    google: { rating: 4.8, reviews: 76 },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "76 reviews" },
+      {
+        label: "Building designers",
+        value: "15+",
+        sub: "across the Williamstown studio",
+      },
+      {
+        label: "Combined experience",
+        value: "100+ yrs",
+        sub: "as the studio reports",
+      },
+    ],
+    why: "MQ Design Group, the Williamstown studio long known as Meraq Building Designers, brings something rare on our register: genuine scale. More than fifteen qualified building designers work under one roof, with collective experience the studio puts past one hundred years, so projects carry from first concept to building permit without ever resting on a single pair of hands. The range runs from heritage restorations and family homes to infill multi-unit and seniors living developments, backed by council relationships across Victoria and a 4.8 Google rating over seventy six reviews. For owners who want real depth behind their designer, few studios offer more.",
+    about:
+      "MQ Design Group is a Williamstown building design studio, established as Meraq Building Designers and now practising under the MQ name. The team numbers more than fifteen qualified building designers, with collective experience the studio reports at over one hundred years, and it works across the full breadth of residential design: heritage restorations, alterations and additions, new homes, infill multi-unit developments, seniors living and light commercial. Projects are carried from concept through town planning and building permit approvals in house, supported by longstanding council relationships throughout Victoria, and the studio's recent work runs deepest through Melbourne's inner west, Newport, Spotswood, Altona and beyond.",
+    facts: {
+      basedIn: "Williamstown, VIC",
+      serves: "Melbourne and Victoria",
+      focus: "Homes, multi-residential and heritage",
+    },
+    website: "https://www.meraq.com.au",
+    instagram: "https://www.instagram.com/mqdesigngroup/",
+    facebook: "https://www.facebook.com/meraqbuildingdesigners/",
+    galleryUrl: "https://www.meraq.com.au/projects/",
+    work: [
+      {
+        title: "Thomas",
+        suburb: "Melbourne",
+        type: "Double-storey home",
+        image: "/partners/mq-design-group/thomas.jpg",
+      },
+      {
+        title: "Townhouse development",
+        suburb: "Melbourne",
+        type: "Suburban Melbourne",
+        image: "/partners/mq-design-group/townhouse-development.jpg",
+      },
+      {
+        title: "Custom home",
+        suburb: "Melbourne",
+        type: "Suburban Melbourne",
+        image: "/partners/mq-design-group/custom-home.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
