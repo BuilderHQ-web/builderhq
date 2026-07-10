@@ -32,7 +32,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
   return (
     <section
       id="hero"
-      className="relative isolate pt-[5.25rem] sm:pt-24 lg:pt-20 pb-8 lg:pb-16 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden lg:min-h-[100svh] lg:flex lg:items-center"
+      className="relative isolate min-h-[100dvh] flex flex-col justify-center lg:flex-row lg:items-center pt-32 sm:pt-24 lg:pt-20 pb-10 sm:pb-8 lg:pb-16 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
     >
       <div className="mx-auto w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.12fr_1fr] gap-4 sm:gap-10 lg:gap-20 items-center">
         {/* Visual — leads on mobile, right column on desktop. */}
@@ -40,19 +40,19 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 1.0, ease: EASE }}
-          className="flex justify-center order-2 mt-1 lg:mt-0"
+          className="flex justify-center order-2 mt-7 sm:mt-1 lg:mt-0"
         >
           <HeroVisual />
         </motion.div>
 
         {/* Copy */}
         <div className="text-center lg:text-left order-1">
-          {/* Badge */}
+          {/* Badge — desktop and tablet only; the phone hero stays minimal. */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="block"
+            className="hidden sm:block"
           >
             <RoleSwap className="inline-block">
               <span
@@ -72,7 +72,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             transition={{ delay: 0.08, duration: 0.8, ease: EASE }}
           >
             <RoleSwap>
-              <h1 className="mt-4 sm:mt-6 lg:mt-8 font-ui font-semibold tracking-[-0.045em] leading-[1.03] text-[clamp(2.5rem,5.2vw+1rem,5.4rem)]">
+              <h1 className="mt-0 sm:mt-6 lg:mt-8 font-ui font-semibold tracking-[-0.045em] leading-[1.03] text-[clamp(2.5rem,5.2vw+1rem,5.4rem)]">
                 <span className="block text-text">{copy.h1a}</span>
                 <span className="block" style={{ color: pal.accentSoft }}>
                   {copy.h1b}
@@ -89,7 +89,14 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           >
             <RoleSwap>
               <p className="mt-3 lg:mt-7 mx-auto lg:mx-0 max-w-[30rem] lg:max-w-[36rem] text-[14.5px] sm:text-[17px] leading-[1.6] text-text-muted">
-                {copy.sub}
+                {copy.subMobile ? (
+                  <>
+                    <span className="sm:hidden">{copy.subMobile}</span>
+                    <span className="hidden sm:inline">{copy.sub}</span>
+                  </>
+                ) : (
+                  copy.sub
+                )}
               </p>
             </RoleSwap>
           </motion.div>
@@ -101,7 +108,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             transition={{ delay: 0.3, duration: 0.7, ease: EASE }}
           >
             <RoleSwap>
-              <div className="mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
+              <div className="mt-8 sm:mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
                 <Link
                   href={primary.href}
                   onClick={() => track("hero_cta", { role, label: primary.label })}
@@ -125,8 +132,8 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
                 </a>
               </div>
 
-              {/* Instant answers — the three facts a first visit needs. */}
-              <ul className="mt-4 lg:mt-7 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 px-2 lg:px-0">
+              {/* Instant answers — desktop and tablet only; hidden on the phone hero. */}
+              <ul className="mt-4 lg:mt-7 hidden sm:flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 px-2 lg:px-0">
                 {copy.facts.map((f) => (
                   <li key={f} className="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12.5px] font-medium text-text-muted">
                     <span aria-hidden className="size-[5px] rounded-full" style={{ background: pal.accent }} />
