@@ -34,6 +34,9 @@ export interface PartnerWork {
   year?: string;
   /** Optional project image; normalised by the work-strip treatment. */
   image?: string;
+  /** Direct link to this project on the partner's own site. Falls back
+   *  to the partner's galleryUrl when omitted. */
+  href?: string;
 }
 
 export interface PartnerStat {
@@ -312,7 +315,7 @@ export const PARTNERS: Partner[] = [
       { label: "Experience", value: "10+ yrs" },
       { label: "Concept to documentation", value: "In house" },
     ],
-    why: "Anthony brings ten years of residential design and delivery to every Evoka project, and it shows in where he starts: feasibility first, so owners know what a site can carry before the design begins. From there the studio keeps concept, town planning, interiors and documentation under one roof, and the result is drawings that price cleanly and build the way they were drawn.",
+    why: "Anthony brings ten years of residential design and delivery to every Evoka Studio project. The studio starts with feasibility, so owners understand what a site can carry before design begins. From there, concept design, town planning, and construction documentation are all handled under one roof, with a focus on creativity, transparency, and seamless delivery from the first sketch through to handover.",
     about:
       "Evoka Studio is a Niddrie practice founded by Anthony Camuglia, designing new homes, renovations and townhouse developments across Melbourne. The studio works end to end, from feasibility analysis and schematic design through town planning, interior design and construction documentation, coordinating the engineers and surveyors a project needs along the way.",
     facts: {
@@ -330,18 +333,21 @@ export const PARTNERS: Partner[] = [
         suburb: "Pascoe Vale",
         type: "New home",
         image: "/partners/evoka-studio/pascoe-vale.jpg",
+        href: "https://www.evokastudio.com.au/projects/cumberland-townhouses",
       },
       {
         title: "Richmond",
         suburb: "Richmond",
         type: "Rear extension",
         image: "/partners/evoka-studio/richmond.jpg",
+        href: "https://www.evokastudio.com.au/projects/terrace-seventy-seven",
       },
       {
         title: "Lalor",
         suburb: "Lalor",
         type: "Townhouse development",
         image: "/partners/evoka-studio/lalor.jpg",
+        href: "https://www.evokastudio.com.au/projects/lalor-edge-townhouses",
       },
     ],
     joined: "2026",
@@ -350,7 +356,7 @@ export const PARTNERS: Partner[] = [
     slug: "silverpoint-design-and-planning",
     kind: "architect",
     roleLabel: "Building design and planning practice",
-    name: "Silverpoint Design and Planning",
+    name: "SilverPoint Building Designers & Planning Consultants",
     monogram: "SP",
     logo: "/partners/silverpoint-design-and-planning/logo.png",
     suburb: "Camberwell",
@@ -364,9 +370,9 @@ export const PARTNERS: Partner[] = [
       { label: "Projects completed", value: "1,800+" },
       { label: "Experience", value: "40+ yrs" },
     ],
-    why: "Forty years of design and town planning have taught Silverpoint what Melbourne councils will approve, and they put that knowledge to work before a line is drawn. With design and planning under the one roof, schemes are shaped for approval from the start rather than negotiated after the fact. Accredited with HIA, Master Builders Victoria and the BPC, they are the steady hand we want on a complex site.",
+    why: "Forty years of design and town planning have taught SilverPoint what Melbourne councils will approve, and they put that knowledge to work before a line is drawn. With design and planning under the one roof, schemes are shaped for approval from the start rather than negotiated after the fact. Accredited with HIA, Master Builders Victoria and the BPC, they are the steady hand we want on a complex site.",
     about:
-      "Silverpoint is a Camberwell practice pairing building design with town planning consultancy, working across Melbourne for more than forty years. The team designs new homes, extensions, dual occupancies and multi-unit developments, and carries the planning side end to end: applications, subdivision and council negotiation. With HIA, Master Builders Victoria and BPC accreditation, and more than 1,800 projects completed, few practices know the approval process better.",
+      "SilverPoint is a Camberwell practice pairing building design with town planning consultancy, working across Melbourne for more than forty years. The team designs new homes, extensions, dual occupancies and multi-unit developments, and carries the planning side end to end: applications, subdivision and council negotiation. With HIA, Master Builders Victoria and BPC accreditation, and more than 1,800 projects completed, few practices know the approval process better.",
     facts: {
       basedIn: "Camberwell, VIC",
       serves: "Melbourne and surrounds",
