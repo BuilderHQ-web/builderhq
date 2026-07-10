@@ -11,6 +11,8 @@
  * the network → the whole picture (ecosystem) → questions → close.
  */
 
+import { partnerNavGroups } from "@/app/(marketing)/partners/partners-data";
+
 import { Canvas, RoleWash } from "./canvas";
 import { FlyingLabel } from "./flying-label";
 import { ScrollProgress } from "./scroll-progress";
@@ -47,7 +49,7 @@ export function Landing({
       <div className="lp-light">
       <Canvas />
 
-      <LandingNav authedHref={authedHref} />
+      <LandingNav authedHref={authedHref} partnerNav={partnerNavGroups()} />
 
       <main className="relative z-10">
         <Hero authedHref={authedHref} />
