@@ -404,7 +404,7 @@ export function PartnerProfileSections({
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {partner.work.map((w) => (
                 // Keyed by image: two projects may share a suburb title.
-                <PartnerWorkCard key={w.image ?? w.title} work={w} hue={h} href={partner.galleryUrl} />
+                <PartnerWorkCard key={w.image ?? w.title} work={w} hue={h} href={w.href ?? partner.galleryUrl} />
               ))}
             </div>
           ) : (
