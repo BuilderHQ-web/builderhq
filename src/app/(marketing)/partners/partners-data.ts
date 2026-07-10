@@ -933,6 +933,86 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "wowowa",
+    kind: "architect",
+    draft: true,
+    name: "WOWOWA",
+    monogram: "WO",
+    logo: "/partners/wowowa/logo.png",
+    principal: "Monique and Scott Woodward",
+    suburb: "Collingwood",
+    state: "VIC",
+    tagline:
+      "Award winning architecture and interiors from Collingwood, designing homes that tell their owners' stories.",
+    disciplines: ["Custom homes", "Interiors", "Public buildings"],
+    google: { rating: 5.0, reviews: 5 },
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "Both principals are Fellows",
+      note: "Monique Woodward serves as a National Councillor",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "5 reviews" },
+      {
+        label: "Industry honours",
+        value: "30+",
+        sub: "listed by the studio, 2013 to 2026",
+      },
+      {
+        label: "Principals",
+        value: "2",
+        sub: "registered architects, AIA Fellows",
+      },
+    ],
+    awards: [
+      {
+        label: "Melbourne Design Awards Gold Winner",
+        sub: "Four golds · 2019, 2021, 2023 and 2025",
+      },
+      {
+        label: "AIA Small Projects Award",
+        sub: "Australian Institute of Architects · Casa de Gatos · 2017",
+      },
+      {
+        label: "Australian Design Awards Gold",
+        sub: "Hampton Park Fab Lab · 2024",
+      },
+    ],
+    why: "WOWOWA is one of the most decorated studios on our register: four Melbourne Design Awards golds between 2019 and 2025, an Australian Institute of Architects award, and a published honours list that runs past thirty entries. Principals Monique and Scott Woodward are both registered architects and Fellows of the Institute, and Monique serves as a National Councillor, credentials few residential studios can match. The work itself is deeply personal, homes and interiors composed around their owners' stories, carried through with the command of colour the practice is known for. For owners who want architecture with genuine authorship, few introductions carry more weight.",
+    about:
+      "WOWOWA is a Collingwood architecture and interiors studio led by principals Monique and Scott Woodward, both registered architects and Fellows of the Australian Institute of Architects; Monique also serves as a National Councillor of the Institute. The practice designs custom homes, alterations and public buildings with a holistic approach that curates interiors, furniture and art alongside the architecture, honours Country, and is widely recognised for its command of colour. Its published honours run from an AIA Small Projects Award to four Melbourne Design Awards golds and a long line of Dulux Colour and Houses shortlistings, and its clients often arrive from demanding fields, medicine, technology and film, seeking homes designed as genuine sanctuaries.",
+    facts: {
+      basedIn: "Collingwood, VIC",
+      serves: "Melbourne",
+      focus: "Homes, interiors and public buildings",
+    },
+    website: "https://www.wowowa.com.au",
+    instagram: "https://www.instagram.com/wowowaarch/",
+    linkedin: "https://www.linkedin.com/company/wowowa/",
+    galleryUrl: "https://www.wowowa.com.au/projects/",
+    work: [
+      {
+        title: "Fitzroy North",
+        suburb: "Fitzroy North",
+        type: "Alteration and addition",
+        image: "/partners/wowowa/fitzroy-north.jpg",
+      },
+      {
+        title: "Glen Iris",
+        suburb: "Glen Iris",
+        type: "Family home",
+        image: "/partners/wowowa/glen-iris.jpg",
+      },
+      {
+        title: "Interiors",
+        suburb: "Melbourne",
+        type: "Kitchen",
+        image: "/partners/wowowa/interiors.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
