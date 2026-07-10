@@ -17,28 +17,33 @@
 import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
+import type { PartnerNavGroup } from "@/app/(marketing)/partners/partners-data";
 import { LENS, ROLE_META, ROLE_ORDER, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
 
 const LINKS = [
   { label: "How it Works", href: "#how" },
   { label: "Trust", href: "#trust" },
-  { label: "Our Partners", href: "#network" },
+  { label: "Our Partners", href: "/partners" },
   { label: "FAQs", href: "#faq" },
 ] as const;
 
 export function LandingNav({
   authedHref,
   homeAnchors = false,
+  partnerNav,
 }: {
   /** Dashboard href when a session exists; null when logged out. */
   authedHref: string | null;
   /** On non-landing pages, hash links resolve back to the home page. */
   homeAnchors?: boolean;
+  /** Live partners for the "Our Partners" dropdown (server-computed).
+   *  Absent or empty → the item stays a plain link to /partners. */
+  partnerNav?: PartnerNavGroup[];
 }) {
   const { role, docked, flight, setRole } = useRole();
   const [scrolled, setScrolled] = React.useState(false);
@@ -172,16 +177,20 @@ export function LandingNav({
 
           {/* Centre anchors — desktop */}
           <ul className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            {LINKS.map((l) => (
-              <li key={l.href}>
-                <a
-                  href={resolve(l.href)}
-                  className="inline-flex items-center text-[13.5px] font-medium text-text-muted hover:text-text px-3.5 py-2 rounded-full transition-colors duration-[160ms] leading-none"
-                >
-                  {l.label}
-                </a>
-              </li>
-            ))}
+            {LINKS.map((l) =>
+              l.label === "Our Partners" && partnerNav?.length ? (
+                <PartnersDropdown key={l.href} groups={partnerNav} />
+              ) : (
+                <li key={l.href}>
+                  <a
+                    href={resolve(l.href)}
+                    className="inline-flex items-center text-[13.5px] font-medium text-text-muted hover:text-text px-3.5 py-2 rounded-full transition-colors duration-[160ms] leading-none"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ),
+            )}
           </ul>
 
           {/* Right — desktop */}
@@ -306,5 +315,115 @@ export function LandingNav({
         ) : null}
       </AnimatePresence>
     </>
+  );
+}
+
+/**
+ * PartnersDropdown — the "Our Partners" nav item once real partners are
+ * live. Hover or click opens a two-column card of the live register
+ * (design practices | finance partners), each entry linking straight to
+ * its profile, with the full register a hairline below. Data arrives as
+ * a server-computed prop, so this stays a lightweight client component.
+ */
+function PartnersDropdown({ groups }: { groups: PartnerNavGroup[] }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLLIElement>(null);
+  const closeTimer = React.useRef<number | null>(null);
+
+  const openNow = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const closeSoon = () => {
+    closeTimer.current = window.setTimeout(() => setOpen(false), 140);
+  };
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onDown = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
+
+  return (
+    <li ref={ref} className="relative" onMouseEnter={openNow} onMouseLeave={closeSoon}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="inline-flex items-center gap-1 text-[13.5px] font-medium text-text-muted hover:text-text px-3.5 py-2 rounded-full transition-colors duration-[160ms] leading-none"
+      >
+        Our Partners
+        <ChevronDown
+          className={cn(
+            "size-3.5 text-text-dim transition-transform duration-200",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[520px] rounded-2xl border border-border-subtle bg-white shadow-[0_24px_64px_-16px_rgba(24,34,44,0.30)] p-2.5 z-50"
+          >
+            <div className="grid grid-cols-2 gap-1.5">
+              {groups.map((g) => (
+                <div key={g.label} className="min-w-0">
+                  <p className="px-3 pt-2 pb-1.5 text-[10px] font-medium tracking-[0.18em] uppercase text-text-dim">
+                    {g.label}
+                  </p>
+                  <ul>
+                    {g.items.map((it) => (
+                      <li key={it.href}>
+                        <Link
+                          href={it.href}
+                          onClick={() => setOpen(false)}
+                          className="block px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
+                        >
+                          <span className="block text-[13.5px] font-medium text-text leading-tight truncate">
+                            {it.label}
+                          </span>
+                          <span className="mt-0.5 block text-[11.5px] text-text-muted leading-tight truncate">
+                            {it.sub}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 pt-2 border-t border-border-subtle/70">
+              <Link
+                href="/partners"
+                onClick={() => setOpen(false)}
+                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
+              >
+                <span className="text-[13px] font-medium text-text">
+                  Explore the Preferred Partner register
+                </span>
+                <ArrowUpRight className="size-3.5 text-text-dim transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </li>
   );
 }

@@ -16,7 +16,7 @@ const COLUMNS: Array<{
     links: [
       { label: "How it works", href: "#how" },
       { label: "Trust and verification", href: "#trust" },
-      { label: "Architect Network", href: "#network" },
+      { label: "Preferred Partners", href: "/partners" },
       { label: "FAQs", href: "#faq" },
     ],
   },
