@@ -32,7 +32,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
   return (
     <section
       id="hero"
-      className="relative isolate min-h-[100svh] flex flex-col justify-center lg:flex-row lg:items-center pt-[5.25rem] sm:pt-24 lg:pt-20 pb-6 sm:pb-8 lg:pb-16 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
+      className="relative isolate min-h-[100dvh] flex flex-col justify-center lg:flex-row lg:items-center pt-24 lg:pt-20 pb-12 sm:pb-8 lg:pb-16 px-5 md:px-12 lg:px-20 xl:px-28 overflow-hidden"
     >
       <div className="mx-auto w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.12fr_1fr] gap-4 sm:gap-10 lg:gap-20 items-center">
         {/* Visual — leads on mobile, right column on desktop. */}
@@ -40,7 +40,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 1.0, ease: EASE }}
-          className="flex justify-center order-2 mt-1 lg:mt-0"
+          className="flex justify-center order-2 mt-7 sm:mt-1 lg:mt-0"
         >
           <HeroVisual />
         </motion.div>
@@ -89,7 +89,14 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           >
             <RoleSwap>
               <p className="mt-3 lg:mt-7 mx-auto lg:mx-0 max-w-[30rem] lg:max-w-[36rem] text-[14.5px] sm:text-[17px] leading-[1.6] text-text-muted">
-                {copy.sub}
+                {copy.subMobile ? (
+                  <>
+                    <span className="sm:hidden">{copy.subMobile}</span>
+                    <span className="hidden sm:inline">{copy.sub}</span>
+                  </>
+                ) : (
+                  copy.sub
+                )}
               </p>
             </RoleSwap>
           </motion.div>
@@ -101,7 +108,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             transition={{ delay: 0.3, duration: 0.7, ease: EASE }}
           >
             <RoleSwap>
-              <div className="mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
+              <div className="mt-8 sm:mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
                 <Link
                   href={primary.href}
                   onClick={() => track("hero_cta", { role, label: primary.label })}

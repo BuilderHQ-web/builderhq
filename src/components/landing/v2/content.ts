@@ -61,6 +61,10 @@ export interface LensCopy {
     h1a: string;
     h1b: string; // coloured second line
     sub: string;
+    /** Phone-only replacement for `sub` — roughly the homeowner sub's
+     *  length, so every lens wraps to the same two lines and the hero
+     *  composition holds. Omit when `sub` is already short enough. */
+    subMobile?: string;
     primary: Cta;
     secondary: Cta;
     /** Three instant answers under the CTAs — product facts only. */
@@ -262,6 +266,8 @@ export const LENS: Record<Role, LensCopy> = {
       h1a: "Choose better.",
       h1b: "Build smarter.",
       sub: "Full plans up front, owners ready to build, never more than three builders per project. Browse free, pay only to tender.",
+      subMobile:
+        "Full plans, ready owners, never more than three builders. Browse free, pay only to tender.",
       primary: { label: "Create your builder profile", href: "/signup?role=builder" },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["Browse every project free", "No lead fees", "No commission"],
@@ -397,6 +403,8 @@ export const LENS: Record<Role, LensCopy> = {
       h1a: "Your designs,",
       h1b: "in the right hands.",
       sub: "The Preferred Architect Network puts your practice in front of homeowners and builders already planning to build. No fees, no contracts, no obligation.",
+      subMobile:
+        "Your practice, in front of homeowners and builders planning to build. No fees, no contracts.",
       primary: { label: "Join the network", href: ARCHITECT_JOIN_HREF },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["No fees", "No contracts", "Opt out anytime"],
@@ -539,6 +547,8 @@ export const LENS: Record<Role, LensCopy> = {
       h1a: "Your next client",
       h1b: "is about to build.",
       sub: "Homeowners on BuilderHQ are planning builds, renovations and developments, and they ask us who to talk to about finance. Join our Preferred Finance Partner network and be the broker we introduce. No fees, no exclusivity.",
+      subMobile:
+        "Homeowners planning builds ask us who to talk to about finance. Be the broker we introduce.",
       primary: { label: "Join the network", href: FINANCE_JOIN_HREF },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["No fees", "No exclusivity", "Warm introductions"],
