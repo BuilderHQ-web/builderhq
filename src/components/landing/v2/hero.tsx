@@ -89,14 +89,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           >
             <RoleSwap>
               <p className="mt-3 lg:mt-7 mx-auto lg:mx-0 max-w-[30rem] lg:max-w-[36rem] text-[14.5px] sm:text-[17px] leading-[1.6] text-text-muted">
-                {copy.subMobile ? (
-                  <>
-                    <span className="sm:hidden">{copy.subMobile}</span>
-                    <span className="hidden sm:inline">{copy.sub}</span>
-                  </>
-                ) : (
-                  copy.sub
-                )}
+                {copy.sub}
               </p>
             </RoleSwap>
           </motion.div>
