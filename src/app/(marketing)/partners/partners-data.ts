@@ -1264,7 +1264,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "maninder-kaur",
     kind: "finance",
-    draft: true,
     roleLabel: "Principal broker",
     name: "Maninder Kaur",
     monogram: "MK",
