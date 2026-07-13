@@ -1601,6 +1601,68 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "paul-wojtaszak",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Principal broker",
+    name: "Paul Wojtaszak",
+    monogram: "PW",
+    portrait: "/partners/paul-wojtaszak/portrait.jpg",
+    suburb: "Griffith",
+    state: "ACT",
+    tagline:
+      "Home, investment and construction lending from a multi award Canberra broker, guiding clients with the clarity of a fixed star.",
+    disciplines: ["First home buyers", "Investment lending", "Land and build"],
+    google: { rating: 5.0, reviews: 126 },
+    institution: {
+      name: "Pollux Financial",
+      role: "Founder and Principal Broker",
+      note: "MFAA member · Credit representative under ACL 391237",
+      logo: "/partners/paul-wojtaszak/logo.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "126 reviews" },
+      { label: "In mortgage broking", value: "12 yrs", sub: "since 2014" },
+      { label: "Founder of Pollux", value: "2023", sub: "his own Canberra practice" },
+    ],
+    awards: [
+      {
+        label: "Platinum Achiever, four years running",
+        sub: "2020, 2021, 2022 and 2023",
+      },
+      {
+        label: "Top 5 Mortgage Broker in the ACT",
+        sub: "RateMyAgent · two years running",
+      },
+      {
+        label: "LMG Top 250 Brokers",
+        sub: "2025",
+      },
+    ],
+    why: "Paul is one of Canberra's most decorated brokers, and the record is not a matter of opinion: a five star rating across more than one hundred and twenty reviews, four consecutive years as a Platinum Achiever, and a place among the Top 5 brokers in the ACT two years running. He has spent twelve years in lending, eight of them as a partner at a leading Canberra brokerage before founding his own firm, Pollux Financial, in 2023. Named for the brightest star in Gemini, the practice is built on a guiding star idea: clear advice through the parts of property finance that most confuse people. For an owner planning a build, that clarity and that track record are exactly what we want on their side.",
+    aboutLabel: "About Paul",
+    about:
+      "Paul Wojtaszak is the founder and principal broker of Pollux Financial, a Griffith practice he established in 2023 after eight years as a partner at a leading Canberra brokerage. He has worked in mortgage broking since 2014, and came to it from senior finance roles in the Australian public service. A multiple Platinum Achiever and a RateMyAgent Top 5 broker in the ACT, he works across first home purchases, investment, land and build, refinancing and equity release, with access to lenders nationwide through the LMG network. His approach is deliberately clear and personal: understand the client's position, explain each step in plain terms, and structure the finance to put their goals within reach. He is a member of the MFAA and a credit representative under Australian Credit Licence 391237.",
+    facts: {
+      basedIn: "Griffith, ACT",
+      serves: "Canberra and nationwide",
+      focus: "Home, investment and construction lending",
+    },
+    website: "https://polluxfinancial.au/paul-wojtaszak/",
+    facebook: "https://www.facebook.com/p/Pollux-Financial-61556624043848/",
+    linkedin: "https://www.linkedin.com/in/paul-wojtaszak-437162118/",
+    servicesLabel: "Where Paul helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Land and build finance",
+      "Investment property finance",
+      "Refinancing and equity release",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
