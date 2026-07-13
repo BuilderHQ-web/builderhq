@@ -1219,6 +1219,68 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "csd-studio",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building and interior design studio",
+    name: "CSD Studio",
+    monogram: "CS",
+    logo: "/partners/csd-studio/logo.png",
+    principal: "Parampreet Kaur",
+    suburb: "Canberra",
+    state: "ACT",
+    tagline:
+      "An integrated building and interior design studio shaping homes and spaces across Canberra and Melbourne, considered inside and out.",
+    disciplines: ["Custom homes", "Renovations and additions", "Interior design"],
+    stats: [
+      { label: "In practice", value: "8+ yrs", sub: "architecture and interiors" },
+      {
+        label: "Master's degree",
+        value: "Interiors",
+        sub: "The Glasgow School of Art",
+      },
+      {
+        label: "Worked across",
+        value: "3 countries",
+        sub: "Australia, India and Dubai",
+      },
+    ],
+    why: "CSD Studio, short for Concept Space Design, is a building and interior design practice led by Parampreet Kaur, and its distinction is the range she brings to a brief. Param graduated top of her cohort with a Bachelor of Architecture, awarded the Gold Medal for outstanding all round performance, and holds a Master of Interior Design from the Glasgow School of Art, with work spanning high end residential, hospitality and commercial projects across Australia, India and Dubai. That breadth shows in the studio's approach: homes and spaces resolved holistically, inside and out, carried from concept and spatial planning through material selection, approvals and delivery. CSD works across Canberra and Melbourne on custom homes, renovations, secondary dwellings, dual occupancies and multi-unit projects. For an owner who wants design that is considered rather than decorated, Param is a genuinely capable pair of hands.",
+    about:
+      "CSD Studio, short for Concept Space Design, is a building and interior design practice led by its director, Parampreet Kaur. Param holds a Bachelor of Architecture, for which she received the Gold Medal for top all round performance, and a Master of Interior Design from the Glasgow School of Art, and brings more than eight years across the architecture and interior design industry in Australia, India and Dubai, spanning high end residential, hospitality, commercial and workplace projects. The studio offers an end to end service, from concept and spatial planning through material selection, approvals and project delivery, and works across custom homes, renovations and additions, secondary dwellings, dual occupancies, retail and commercial fit-outs and multi-unit developments in the ACT and Melbourne. Param's approach balances aesthetics, function and the needs of the people who use a space, aiming for work that is refined, enduring and purpose-driven.",
+    facts: {
+      basedIn: "Canberra, ACT",
+      serves: "Canberra and Melbourne",
+      focus: "Homes, interiors and multi-unit",
+    },
+    website: "https://www.csdstudio.com.au",
+    instagram: "https://www.instagram.com/csdstudio_au/",
+    facebook: "https://www.facebook.com/csdstudio.canberra/",
+    linkedin: "https://www.linkedin.com/in/param4988/",
+    galleryUrl: "https://www.csdstudio.com.au",
+    work: [
+      {
+        title: "Curved home",
+        suburb: "Canberra",
+        type: "New build",
+        image: "/partners/csd-studio/curved-home.jpg",
+      },
+      {
+        title: "Living room",
+        suburb: "Canberra",
+        type: "Interior",
+        image: "/partners/csd-studio/interior.jpg",
+      },
+      {
+        title: "Custom home",
+        suburb: "Canberra",
+        type: "New build",
+        image: "/partners/csd-studio/custom-home.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
