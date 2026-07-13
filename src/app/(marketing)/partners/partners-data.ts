@@ -1401,6 +1401,52 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "robert-stipanic",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Finance broker",
+    name: "Robert Stipanic",
+    monogram: "RS",
+    portrait: "/partners/robert-stipanic/portrait.jpg",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "Home and business lending from a broker with twenty five years in finance, sixteen of them inside the bank, offered mobile across Melbourne.",
+    disciplines: ["Home loans", "Business and commercial", "Refinancing"],
+    institution: {
+      name: "Mortgage Choice",
+      role: "Finance broker",
+      note: "Practising as Smartline Personal Mortgage Advisers",
+      logo: "/partners/robert-stipanic/mortgage-choice.png",
+    },
+    stats: [
+      { label: "In lending", value: "25 yrs", sub: "banking and broking" },
+      { label: "Inside Commonwealth Bank", value: "16 yrs", sub: "business and corporate finance" },
+      { label: "Appointments", value: "Mobile", sub: "across Melbourne" },
+    ],
+    why: "Robert spent sixteen years inside the Commonwealth Bank, rising from analyst to relationship executive in corporate and business finance, managing portfolios of commercial clients turning over ten million dollars and more, before he moved to broking in 2017. That is an unusually deep grounding for a mortgage broker: he has sat on the bank’s side of the table and understands how credit decisions are really made. Twenty five years in lending, a genuinely consultative manner, and a mobile service that comes to the client are exactly what we want beside an owner weighing up how to fund a build.",
+    aboutLabel: "About Robert",
+    about:
+      "Robert Stipanic is a Melbourne finance broker with more than twenty five years in lending. He spent sixteen of them at the Commonwealth Bank, progressing from financial analyst to relationship executive across business and corporate finance, where he looked after portfolios of commercial clients with turnover above ten million dollars, before becoming a broker in 2017. He practises as Smartline Personal Mortgage Advisers, part of the Mortgage Choice network, one of Australia’s largest broking groups with a panel of more than forty lenders. His approach is deliberately consultative: listen closely to a client’s situation and goals, then find the finance that genuinely suits their circumstances. He offers a mobile service across Melbourne and surrounds.",
+    facts: {
+      basedIn: "Melbourne, VIC",
+      serves: "Melbourne and surrounds",
+      focus: "Home and business lending",
+    },
+    website: "https://www.mortgagechoice.com.au/robert.stipanic/",
+    linkedin: "https://www.linkedin.com/in/robert-stipanic/",
+    servicesLabel: "Where Robert helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Home loans and refinancing",
+      "Business and commercial lending",
+      "Investment property finance",
+      "Self-employed and business owners",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
