@@ -1355,6 +1355,52 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "shan-chhetri",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage broker",
+    name: "Shan Chhetri",
+    monogram: "SC",
+    portrait: "/partners/shan-chhetri/portrait.jpg",
+    suburb: "Mickleham",
+    state: "VIC",
+    tagline:
+      "Home, first home and investment lending from a broker who is also a CPA, built on structure, cash flow and long-term cost.",
+    disciplines: ["First home buyers", "Investment lending", "Self-employed"],
+    institution: {
+      name: "Mortgage Choice",
+      role: "Mortgage broker",
+      note: "One of Australia’s longest established broking networks",
+      logo: "/partners/shan-chhetri/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Qualified as", value: "CPA", sub: "and a mortgage broker" },
+      { label: "Advice built on", value: "Structure", sub: "cash flow and long-term cost" },
+      { label: "Serves", value: "Local", sub: "Mickleham, Craigieburn, Greenvale" },
+    ],
+    why: "Shan is a Certified Practising Accountant as well as a mortgage broker, and that combination is exactly why we like him beside an owner planning a build. Where most brokers look at the loan, he reads the whole picture: how a facility is structured, what it does to cash flow, and what it truly costs over the life of the loan, not just the headline rate. First home buyers, growing families and business owners are his day to day, and the same rigour that makes a good accountant, careful with the numbers and clear about the trade offs, is what turns complex lending into a plan an owner can actually follow.",
+    aboutLabel: "About Shan",
+    about:
+      "Shan Chhetri is a Mickleham based mortgage broker and Certified Practising Accountant, working under Mortgage Choice, one of Australia’s longest established broking networks. He supports home buyers across Mickleham, Craigieburn and Greenvale, with particular depth for first home buyers, families and business owners, and brings years of accounting alongside his lending experience. His approach is deliberately practical: understand the client’s goals, structure the finance around cash flow and long term cost, and turn complex lending into simple, considered steps.",
+    facts: {
+      basedIn: "Mickleham, VIC",
+      serves: "Melbourne’s north",
+      focus: "Home, investment and business lending",
+    },
+    website: "https://www.mortgagechoice.com.au/shan.chhetri/",
+    linkedin: "https://www.linkedin.com/company/mortgage-choice/",
+    servicesLabel: "Where Shan helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Loan structuring for cash flow and cost",
+      "Lending for the self-employed and business owners",
+      "Refinancing and investment lending",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
