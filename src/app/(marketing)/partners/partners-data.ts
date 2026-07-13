@@ -986,6 +986,83 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "praeditos-designs",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "Praeditos Designs & Drafting",
+    monogram: "PD",
+    logo: "/partners/praeditos-designs/logo.png",
+    principal: "Jacob Woods",
+    suburb: "Canberra",
+    state: "ACT",
+    tagline:
+      "Concept design, drafting and approval-ready working drawings for Canberra homes, extensions and small commercial projects.",
+    disciplines: ["New homes", "Extensions and alterations", "Working drawings"],
+    google: { rating: 4.7, reviews: 19 },
+    stats: [
+      { label: "Google rating", value: "4.7", star: true, sub: "19 reviews" },
+      {
+        label: "Industry awards",
+        value: "4",
+        sub: "ServiceSeeking Top 10, 2023 to 2024",
+      },
+      {
+        label: "Building design since",
+        value: "2018",
+        sub: "Diploma qualified (CPP50911)",
+      },
+    ],
+    awards: [
+      {
+        label: "Top 10 Building Designer in Regional NSW",
+        sub: "ServiceSeeking.com.au · 2024",
+      },
+      {
+        label: "Top 10 Draftsman in Canberra, two years running",
+        sub: "ServiceSeeking.com.au · 2023 and 2024",
+      },
+      {
+        label: "Top 10 Draftsman in Regional NSW",
+        sub: "ServiceSeeking.com.au · 2024",
+      },
+    ],
+    why: "Praeditos is a Canberra building design and drafting practice led by Jacob Woods, and it has built an unusually strong record for a young studio: a 4.7 Google rating across nineteen reviews, and four ServiceSeeking Top 10 awards across two years, named among the top ten building designers and draftsmen in Canberra and regional New South Wales. Jacob has worked in building design since qualifying in 2018, and runs each project himself from first concept through to the detailed working drawings a build needs for approval and construction, with all drafting kept in house. For an owner heading into council in the ACT, that combination of design and documentation under one roof is exactly what keeps a project moving.",
+    about:
+      "Praeditos Designs & Drafting is a Canberra building design and drafting practice led by its director, Jacob Woods. Jacob completed a Diploma in Building Design in 2018 and has spent the years since designing and documenting homes, extensions and alterations across the ACT and surrounding New South Wales, working alongside a range of design and building companies before establishing his own practice. Praeditos focuses on residential and small commercial work, and carries each project through the full process, from initial concept and design advice to the detailed working drawings required for quoting, approval and construction. All drafting is completed in house, and the practice serves Canberra, Queanbeyan, Yass and the surrounding region, as well as remotely across Australia.",
+    facts: {
+      basedIn: "Canberra, ACT",
+      serves: "Canberra, Queanbeyan and surrounding NSW",
+      focus: "Homes, extensions and small commercial",
+    },
+    website: "https://www.praeditosdesigns.com.au",
+    linkedin: "https://www.linkedin.com/in/jacob-woods-3999732b2/",
+    facebook:
+      "https://www.facebook.com/p/Praeditos-Designs-Drafting-100089866880565/",
+    galleryUrl: "https://www.praeditosdesigns.com.au/projects",
+    work: [
+      {
+        title: "Contemporary home",
+        suburb: "Canberra region",
+        type: "New home, two-storey",
+        image: "/partners/praeditos-designs/contemporary.jpg",
+      },
+      {
+        title: "Rendered family home",
+        suburb: "Canberra region",
+        type: "New home, two-storey",
+        image: "/partners/praeditos-designs/rendered-home.jpg",
+      },
+      {
+        title: "Single-storey home",
+        suburb: "Canberra region",
+        type: "New home",
+        image: "/partners/praeditos-designs/single-storey.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
