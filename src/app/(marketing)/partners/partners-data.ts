@@ -1663,6 +1663,53 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "austin-rulfs",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Founder and director",
+    name: "Austin Rulfs",
+    monogram: "AR",
+    portrait: "/partners/austin-rulfs/portrait.jpg",
+    suburb: "Adelaide",
+    state: "SA",
+    tagline:
+      "Smarter home and investment lending from an Adelaide founder who has spent close to two decades helping Australians build wealth through property.",
+    disciplines: ["Investment lending", "Construction loans", "First home buyers"],
+    google: { rating: 4.9, reviews: 140 },
+    institution: {
+      name: "Zanda Wealth Mortgage Brokers",
+      role: "Founder and Director",
+      note: "Credit Representative 370592 under Australian Credit Licence 389328",
+      logo: "/partners/austin-rulfs/logo.png",
+    },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "140 reviews" },
+      { label: "Lenders on panel", value: "100+", sub: "across Australia" },
+      { label: "In finance since", value: "2006", sub: "close to two decades" },
+    ],
+    why: "Austin has spent close to two decades in property and finance. He founded Zanda Finance in 2006 and built Zanda Wealth into a practice known less for chasing the lowest rate than for structuring lending around a client's longer plan, whether that is a first home or a growing investment portfolio. His team works across a panel of more than one hundred lenders, and his own record is strong: a 4.9 rating across 140 reviews, and a place among the top five brokers in South Australia as ranked by Connective, the broking network he operates under. For an owner planning a build, that mix of investment thinking and lender breadth is exactly the kind of counsel we want on their side.",
+    aboutLabel: "About Austin",
+    about:
+      "Austin Rulfs is the founder and director of Zanda Wealth Mortgage Brokers, an Adelaide firm he has built over close to two decades in property and finance. He launched Zanda Finance in 2006 and established Zanda Wealth as a property investment practice in 2014, and today the two work side by side: one helping clients arrange the right finance, the other helping them use it to build long term wealth. He works across first home buyers, upgraders, investors and refinancers, with access to more than one hundred lenders, and holds a Diploma of Financial Services and Mortgage Broking Management. His approach is deliberately plain: understand where a client wants to be in ten years, then structure the lending to help them get there. He operates as a credit representative under Australian Credit Licence 389328.",
+    facts: {
+      basedIn: "Adelaide, SA",
+      serves: "Adelaide and nationwide",
+      focus: "Home, investment and construction lending",
+    },
+    website: "https://zandawealth.com.au/about-austin-rulfs/",
+    linkedin: "https://au.linkedin.com/in/austin-rulfs-28624172",
+    servicesLabel: "Where Austin helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment property and portfolio finance",
+      "Refinancing and restructuring",
+      "Bridging finance for upgraders",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
