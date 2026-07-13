@@ -1758,11 +1758,11 @@ export const PARTNERS: Partner[] = [
   {
     slug: "tim-murphy",
     kind: "finance",
-    draft: true,
     roleLabel: "Mortgage broker",
     name: "Tim Murphy",
     monogram: "TM",
     portrait: "/partners/tim-murphy/portrait.jpg",
+    logoFloat: "/partners/tim-murphy/logo-float-v2.png",
     suburb: "Melbourne",
     state: "VIC",
     tagline:
