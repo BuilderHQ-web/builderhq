@@ -1140,6 +1140,85 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "architects-ring-associates",
+    kind: "architect",
+    draft: true,
+    name: "Architects Ring & Associates",
+    monogram: "AR",
+    logo: "/partners/architects-ring-associates/logo.png",
+    principal: "Terence Ring",
+    suburb: "Kingston",
+    state: "ACT",
+    tagline:
+      "One of Canberra's most awarded architecture practices, designing homes and buildings across the capital since 1991.",
+    disciplines: ["Custom homes", "Multi-unit and commercial", "Interiors"],
+    google: { rating: 4.8, reviews: 12 },
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "Member practice",
+      note: "Registered architects · ACT 967, NSW 11797",
+    },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "12 reviews" },
+      {
+        label: "Established",
+        value: "1991",
+        sub: "founder in Canberra since 1975",
+      },
+      { label: "Industry awards", value: "100+", sub: "local and national" },
+    ],
+    awards: [
+      {
+        label: "ACT House of the Year, twelve times",
+        sub: "Master Builders ACT",
+      },
+      {
+        label: "MBA National House of the Year, three times",
+        sub: "Master Builders Australia",
+      },
+      {
+        label: "AIA President's Award",
+        sub: "Australian Institute of Architects · 2004",
+      },
+    ],
+    why: "Architects Ring & Associates is one of Canberra's most awarded architecture practices, and one of its most senior. Founded in 1991 by Terence Ring, who has designed in the capital since 1975, the studio has been named ACT House of the Year twelve times and MBA National House of the Year three times, among more than one hundred local and national awards. Terry himself holds the Australian Institute of Architects President's Award and the ACT Chapter Medallion for Architecture, and the practice's commissions range from luxury homes to an extension of the Governor-General's residence, alongside community and Indigenous housing work. Its architects are registered in the ACT and NSW, and few practices know Canberra's sites and planning rules as intimately. For an owner planning something of ambition in the capital, this is about as assured as an introduction gets.",
+    about:
+      "Architects Ring & Associates is a Kingston based architecture and interior design practice, founded in 1991 by its director Terence Ring, who has practised in Canberra since 1975 and taught architecture and interior design at the Canberra Institute of Technology. The firm began in a home studio in Griffith through one of Australia's worst recessions and grew into one of the capital's most established, now working from a multi-storey building it designed on Wentworth Avenue. ARAA designs across the luxury residential, commercial, multi-unit and heritage sectors, and gives back through Indigenous and community housing, places of worship and an annual schools mentoring program. Its work has won more than one hundred awards, including the ACT House of the Year twelve times and the MBA National House of the Year three times, and Terry holds the AIA President's Award and the ACT Chapter Medallion for Architecture. The practice designs around the idea of 'genius loci', a sense of place, and many of its homes are still owned by the clients who first commissioned them decades ago.",
+    facts: {
+      established: "1991",
+      basedIn: "Kingston, ACT",
+      serves: "Canberra and NSW",
+      focus: "Homes, interiors and commercial",
+    },
+    website: "https://araa.com.au",
+    instagram: "https://www.instagram.com/araa_canberra/",
+    facebook:
+      "https://www.facebook.com/people/Architects-Ring-Associates/100063538931839/",
+    linkedin: "https://www.linkedin.com/in/terry-terence-ring-45831a3b/",
+    galleryUrl: "https://araa.com.au/houses/",
+    work: [
+      {
+        title: "Bruce Residence",
+        suburb: "Bruce",
+        type: "New home",
+        image: "/partners/architects-ring-associates/bruce.jpg",
+      },
+      {
+        title: "Tennyson Project",
+        suburb: "Canberra",
+        type: "Custom home",
+        image: "/partners/architects-ring-associates/tennyson.jpg",
+      },
+      {
+        title: "Hughes Extension",
+        suburb: "Hughes",
+        type: "Extension and addition",
+        image: "/partners/architects-ring-associates/hughes.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
