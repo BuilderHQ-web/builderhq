@@ -1762,7 +1762,7 @@ export const PARTNERS: Partner[] = [
     name: "Tim Murphy",
     monogram: "TM",
     portrait: "/partners/tim-murphy/portrait.jpg",
-    logoFloat: "/partners/tim-murphy/logo-float-v3.png",
+    logoFloat: "/partners/tim-murphy/logo-float-v4.png",
     suburb: "Melbourne",
     state: "VIC",
     tagline:
