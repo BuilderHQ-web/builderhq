@@ -193,7 +193,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "summerhill-building-designers",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design practice",
     name: "Summerhill Building Designers",
     monogram: "SB",
@@ -1044,7 +1043,7 @@ export const PARTNERS: Partner[] = [
     name: "Ed Akgun",
     monogram: "EA",
     portrait: "/partners/ed-akgun/portrait.jpg",
-    suburb: "Mulgrave",
+    suburb: "Airport West",
     state: "VIC",
     tagline:
       "Mortgage advice for people buying and building, from a broker who spent a decade inside Australia's biggest bank.",
@@ -1077,9 +1076,9 @@ export const PARTNERS: Partner[] = [
     why: "Ed spent ten years inside Commonwealth Bank, moving from mortgage lending through premier banking to senior relationship management, before crossing to broking. That history means he reads a lender's decision the way an insider does, and now he puts it to work for the client across a panel of more than thirty banks. He structures loans around the build ahead, pre-approvals that hold and progress payments that arrive on time. That blend of insider knowledge and client-side independence is exactly what we want beside an owner financing a build.",
     aboutLabel: "About Ed",
     about:
-      "Ed Akgun is a mortgage adviser with RateOne, a full service broking firm named a Top 25 Brokerage by The Adviser six years running, with more than ten thousand clients across its Mulgrave and Airport West offices. Ed holds a Diploma of Finance and Mortgage Broking and is an MFAA accredited credit adviser. He came to broking after a decade with Commonwealth Bank, and works across purchases, refinancing and construction lending for clients throughout Melbourne, with RateOne's financial planning arm alongside when it is needed.",
+      "Ed Akgun is a mortgage adviser with RateOne, a full service broking firm named a Top 25 Brokerage by The Adviser six years running, with more than ten thousand clients across its Melbourne offices. Ed holds a Diploma of Finance and Mortgage Broking and is an MFAA accredited credit adviser. He came to broking after a decade with Commonwealth Bank, and works across purchases, refinancing and construction lending for clients throughout Melbourne, with RateOne's financial planning arm alongside when it is needed.",
     facts: {
-      basedIn: "Mulgrave and Airport West, VIC",
+      basedIn: "Airport West, VIC",
       serves: "Melbourne",
       focus: "Home and construction lending",
     },
@@ -1634,7 +1633,7 @@ export function partnerNavGroups(): PartnerNavGroup[] {
     href: `/partners/${p.slug}`,
   });
   return [
-    { label: "Design practices", items: ARCHITECT_PARTNERS.map(item) },
+    { label: "Design partners", items: ARCHITECT_PARTNERS.map(item) },
     { label: "Finance partners", items: FINANCE_PARTNERS.map(item) },
   ].filter((g) => g.items.length > 0);
 }

@@ -51,8 +51,8 @@ const AU_STATES = ["VIC", "NSW", "QLD", "ACT", "SA", "WA", "TAS", "NT"] as const
 type AuState = (typeof AU_STATES)[number];
 
 const NEED_OPTIONS: Array<{ value: IntroNeed; label: string }> = [
-  { value: "architect", label: "An architect" },
-  { value: "finance", label: "A finance broker" },
+  { value: "architect", label: "A designer" },
+  { value: "finance", label: "A broker" },
   { value: "both", label: "Both" },
 ];
 
@@ -70,7 +70,7 @@ const COPY: Record<
   }
 > = {
   architect: {
-    kicker: "Preferred Architect Network",
+    kicker: "Preferred Design Partner Network",
     heading: "Join the network",
     sub: "Register your practice to be introduced to homeowners and builders already planning to build. No fees, no obligation.",
     firmLabel: "Practice name",
@@ -94,7 +94,7 @@ const COPY: Record<
   intro: {
     kicker: "Preferred Partner Introductions",
     heading: "Request an introduction",
-    sub: "Tell us what your build needs and we introduce an architect or finance broker we know and trust. No charge, no obligation.",
+    sub: "Tell us what your build needs and we introduce a building designer or finance broker we know and trust. No charge, no obligation.",
     emailPlaceholder: "you@email.com",
     submitLabel: "Request introduction",
     footnote:

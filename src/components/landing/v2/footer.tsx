@@ -57,8 +57,8 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
             <p className="max-w-[44ch] text-[14px] leading-[1.7] text-text-muted">
               BuilderHQ is where Australia’s residential builds get organised.
               Homeowners tender their plans, verified builders price real work,
-              and architects get seen and referred. Free for homeowners, no
-              commission, ever.
+              and building designers get seen and referred. Free for homeowners,
+              no commission, ever.
             </p>
             {/* Talk to a person — the trust signal almost no marketplace
                 offers. Real numbers, real reply. */}

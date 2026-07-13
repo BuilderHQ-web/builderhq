@@ -535,8 +535,8 @@ function ArchitectScene({ step }: { step: number }) {
         <Card accent className="flex items-center gap-2.5 px-3.5 py-3">
           <span className="size-9 shrink-0 rounded-lg text-[12px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>SN</span>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: INK }}>Studio North Architects</p>
-            <p className="text-[10.5px]" style={{ color: DIM }}>Canberra · residential + heritage</p>
+            <p className="text-[13px] font-semibold" style={{ color: INK }}>Studio North Design</p>
+            <p className="text-[10.5px]" style={{ color: DIM }}>Melbourne · residential + heritage</p>
           </div>
           <Badge><Star className="size-2.5" /> Partner</Badge>
         </Card>
@@ -604,7 +604,7 @@ function ArchitectScene({ step }: { step: number }) {
 
   // 3 · Join the network (free)
   return (
-    <Frame crumb="Preferred Architect Network" avatar="SN">
+    <Frame crumb="Preferred Design Partner Network" avatar="SN">
       <Card accent className="p-3.5">
         <div className="flex items-center gap-2.5">
           <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>

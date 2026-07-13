@@ -36,7 +36,7 @@ const BLURB: Record<Role, string> = {
 const WORD: Record<Role, string> = {
   homeowner: "Homeowner",
   builder: "Builder",
-  architect: "Architect",
+  architect: "Building Designer",
   finance: "Finance Broker",
 };
 
