@@ -11,7 +11,10 @@
  * the network → the whole picture (ecosystem) → questions → close.
  */
 
-import { partnerNavGroups } from "@/app/(marketing)/partners/partners-data";
+import {
+  livePartnerLogos,
+  partnerNavGroups,
+} from "@/app/(marketing)/partners/partners-data";
 
 import { Canvas, RoleWash } from "./canvas";
 import { FlyingLabel } from "./flying-label";
@@ -20,6 +23,7 @@ import type { Role } from "./content";
 import { RoleProvider } from "./role";
 import { LandingNav } from "./nav";
 import { Hero } from "./hero";
+import { PartnerMarquee } from "./partner-marquee";
 import { RoleSelector } from "./role-selector";
 import { Problem } from "./problem";
 import { Spine } from "./spine";
@@ -53,6 +57,7 @@ export function Landing({
 
       <main className="relative z-10">
         <Hero authedHref={authedHref} />
+        <PartnerMarquee logos={livePartnerLogos()} />
         <RoleSelector />
         <SectionDivider n="01" label="The problem" />
         <Problem />

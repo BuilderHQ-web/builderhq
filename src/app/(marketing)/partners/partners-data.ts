@@ -72,6 +72,11 @@ export interface Partner {
   /** The logo is light-on-dark (its own dark background): render it
    *  full-bleed on a dark tile instead of contained on white. */
   logoDark?: boolean;
+  /** Normalised single-ink silhouette of the mark (transparent bg,
+   *  trimmed), for the landing trust strip where logos float on the
+   *  canvas. Generated when a partner goes live — see memory notes:
+   *  scripts pipeline produces <dir>/logo-float-v2.png via PIL. */
+  logoFloat?: string;
   /** The person the portrait shows, credited quietly for trust. */
   principal?: string;
   /** The institution an individual partner works with (e.g. a bank staff
@@ -147,6 +152,7 @@ export const PARTNERS: Partner[] = [
     name: "House Design Solutions",
     monogram: "HD",
     logo: "/partners/house-design-solutions/logo.png",
+    logoFloat: "/partners/house-design-solutions/logo-float-v2.png",
     principal: "Paul A. Mete",
     suburb: "Albert Park",
     state: "VIC",
@@ -197,6 +203,7 @@ export const PARTNERS: Partner[] = [
     name: "Summerhill Building Designers",
     monogram: "SB",
     logo: "/partners/summerhill-building-designers/logo.png",
+    logoFloat: "/partners/summerhill-building-designers/logo-float-v2.png",
     logoDark: true,
     principal: "Robert",
     suburb: "Melbourne",
@@ -301,6 +308,7 @@ export const PARTNERS: Partner[] = [
     name: "Evoka Studio",
     monogram: "ES",
     logo: "/partners/evoka-studio/logo.png",
+    logoFloat: "/partners/evoka-studio/logo-float-v2.png",
     logoDark: true,
     principal: "Anthony Camuglia",
     suburb: "Niddrie",
@@ -358,6 +366,7 @@ export const PARTNERS: Partner[] = [
     name: "SilverPoint Building Designers & Planning Consultants",
     monogram: "SP",
     logo: "/partners/silverpoint-design-and-planning/logo.png",
+    logoFloat: "/partners/silverpoint-design-and-planning/logo-float-v2.png",
     suburb: "Camberwell",
     state: "VIC",
     tagline:
@@ -784,6 +793,7 @@ export const PARTNERS: Partner[] = [
     name: "Metro Building Designers",
     monogram: "MB",
     logo: "/partners/metro-building-designers/logo.png",
+    logoFloat: "/partners/metro-building-designers/logo-float-v2.png",
     logoDark: true,
     principal: "Glenn Nielsen",
     suburb: "Reservoir",
@@ -1338,6 +1348,7 @@ export const PARTNERS: Partner[] = [
     name: "Ed Akgun",
     monogram: "EA",
     portrait: "/partners/ed-akgun/portrait.jpg",
+    logoFloat: "/partners/ed-akgun/logo-float-v2.png",
     suburb: "Airport West",
     state: "VIC",
     tagline:
@@ -1398,6 +1409,7 @@ export const PARTNERS: Partner[] = [
     name: "Billy",
     monogram: "B",
     portrait: "/partners/billy-chok/portrait.jpg",
+    logoFloat: "/partners/billy-chok/logo-float-v2.png",
     suburb: "Melbourne",
     state: "VIC",
     tagline:
@@ -1562,6 +1574,7 @@ export const PARTNERS: Partner[] = [
     name: "Maninder Kaur",
     monogram: "MK",
     portrait: "/partners/maninder-kaur/portrait.jpg",
+    logoFloat: "/partners/maninder-kaur/logo-float-v2.png",
     suburb: "Campbellfield",
     state: "VIC",
     tagline:
@@ -2040,4 +2053,40 @@ export function partnerNavGroups(): PartnerNavGroup[] {
     { label: "Design partners", items: ARCHITECT_PARTNERS.map(item) },
     { label: "Finance partners", items: FINANCE_PARTNERS.map(item) },
   ].filter((g) => g.items.length > 0);
+}
+
+export type PartnerLogo = {
+  slug: string;
+  /** Accessible name — the practice, or the broker's firm. */
+  name: string;
+  src: string;
+  /** Pre-normalised floating mark (logoFloat) — render as-is. */
+  norm: boolean;
+  /** Fallback only: light-on-dark source mark, invert before floating. */
+  dark: boolean;
+};
+
+/**
+ * Every LIVE partner's mark, for the landing trust strip. Prefers the
+ * normalised logo-float-v2.png silhouette (generated when a partner goes
+ * live); falls back to the raw logo — design practices carry their
+ * own, finance partners their firm's. Derived from the register, so a
+ * partner going live appears on the landing page automatically.
+ */
+export function livePartnerLogos(): PartnerLogo[] {
+  return PARTNERS.filter((p) => !p.draft).flatMap((p) => {
+    const src = p.logoFloat ?? p.logo ?? p.institution?.logo;
+    if (!src) return [];
+    return [
+      {
+        slug: p.slug,
+        // The ink file inherits its owner: the practice's own mark, or
+        // the finance partner's firm mark (institution).
+        name: p.logo ? p.name : (p.institution?.name ?? p.name),
+        src,
+        norm: p.logoFloat != null,
+        dark: p.logoDark === true,
+      },
+    ];
+  });
 }
