@@ -26,7 +26,7 @@ export const ROLE_META: Record<
 > = {
   homeowner: { chip: "I’m a homeowner", chipShort: "Homeowner", dock: "For Homeowners" },
   builder: { chip: "I’m a builder", chipShort: "Builder", dock: "For Builders" },
-  architect: { chip: "I’m an architect", chipShort: "Architect", dock: "For Architects" },
+  architect: { chip: "I’m a building designer", chipShort: "Building designer", dock: "For Building Designers" },
   finance: { chip: "I’m a finance broker", chipShort: "Finance", dock: "For Finance Brokers" },
 };
 
@@ -219,7 +219,7 @@ export const LENS: Record<Role, LensCopy> = {
     network: {
       h2a: "Need a designer",
       h2b: "or a broker?",
-      body: "Our Preferred Partner networks connect you with architects and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
+      body: "Our Preferred Partner networks connect you with building designers and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
       cta: { label: "Request an introduction", href: REQUEST_INTRO_HREF },
     },
     faq: [
@@ -344,7 +344,7 @@ export const LENS: Record<Role, LensCopy> = {
       place: "Built in Melbourne, for Australia.",
       panelTitle: "Before a project reaches you",
       gates: [
-        { label: "Plans attached", detail: "Real architectural drawings, not a wish list" },
+        { label: "Plans attached", detail: "Real working drawings, not a wish list" },
         { label: "Scope defined", detail: "Type, size, land and budget band up front" },
         { label: "Owner confirmed", detail: "A real person, ready to receive tenders" },
         { label: "Capped at three", detail: "Your unlock buys a seat at a small table" },
@@ -352,9 +352,9 @@ export const LENS: Record<Role, LensCopy> = {
       panelFooter: "No recycled leads. No stale listings. Only work worth pricing.",
     },
     network: {
-      h2a: "Architects and brokers,",
+      h2a: "Building designers and brokers,",
       h2b: "in your corner.",
-      body: "Our Preferred Partner networks cover the people your clients lean on too: architects for design, finance brokers for lending. When a job needs one, we make the introduction. Already work with someone great? Send them our way.",
+      body: "Our Preferred Partner networks cover the people your clients lean on too: building designers for design, finance brokers for lending. When a job needs one, we make the introduction. Already work with someone great? Send them our way.",
       cta: { label: "Meet our partners", switchTo: "architect" },
     },
     faq: [
@@ -408,7 +408,7 @@ export const LENS: Record<Role, LensCopy> = {
       h2a: "Great practices deserve",
       h2b: "better referrals.",
       blurb:
-        "Every week, homeowners and builders ask us the same question: do you know a good architect? We’d rather answer with practices we actually know.",
+        "Every week, homeowners and builders ask us the same question: do you know a good building designer? We’d rather answer with practices we actually know.",
       chaos: [
         { icon: "message", text: "“Know a good builder?” · every week" },
         { icon: "coffee", text: "Referral promised over coffee · forgotten" },
@@ -434,7 +434,7 @@ export const LENS: Record<Role, LensCopy> = {
         {
           title: "Get referred",
           headline: "Warm referrals, never cold leads.",
-          body: "When a homeowner asks us for an architect, we introduce one who fits: right style, right area, right stage. A real introduction, never a resold lead.",
+          body: "When a homeowner asks us for a building designer, we introduce one who fits: right style, right area, right stage. A real introduction, never a resold lead.",
         },
         {
           title: "Stay ahead",
@@ -469,7 +469,7 @@ export const LENS: Record<Role, LensCopy> = {
         },
       ],
       footer:
-        "We grow when good architects look good. That’s the whole model.",
+        "We grow when good building designers look good. That’s the whole model.",
     },
     proof: {
       h2a: "Every practice,",
@@ -490,9 +490,9 @@ export const LENS: Record<Role, LensCopy> = {
       h2b: "practices receive.",
       body: "The network exists to make quality practices easier to find, and to give our homeowners somewhere trustworthy to start. Partners receive, at no cost:",
       bullets: [
-        "A feature in the BuilderHQ Preferred Architect Network",
+        "A feature in the BuilderHQ Preferred Partner network",
         "Your projects promoted across our channels, always tagged",
-        "Referrals when owners and builders ask us for an architect",
+        "Referrals when owners and builders ask us for a building designer",
         "The monthly BuilderHQ Market Update",
         "First look as client-side tendering tools roll out",
       ],
@@ -509,7 +509,7 @@ export const LENS: Record<Role, LensCopy> = {
       },
       {
         q: "Why is BuilderHQ doing this?",
-        a: "Because our homeowners keep asking for architect recommendations, and our builders look for architects to collaborate with. Recommending practices we know makes the whole platform stronger.",
+        a: "Because our homeowners keep asking for building designer recommendations, and our builders look for designers to collaborate with. Recommending practices we know makes the whole platform stronger.",
       },
       {
         q: "Can our clients tender their projects through BuilderHQ?",
@@ -521,7 +521,7 @@ export const LENS: Record<Role, LensCopy> = {
       },
     ],
     close: {
-      h2a: "Good architects should be",
+      h2a: "Good building designers should be",
       h2b: "easy to find.",
       sub: "Join the practices we feature, promote and refer.",
       primary: { label: "Join the network", href: ARCHITECT_JOIN_HREF },
@@ -689,7 +689,7 @@ export const ECOSYSTEM = {
       line: "Plans in, tenders back, control kept.",
     },
     {
-      who: "Architects",
+      who: "Building designers",
       bring: "bring the design",
       line: "Featured, referred and kept in the loop.",
     },

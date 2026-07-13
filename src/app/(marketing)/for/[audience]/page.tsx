@@ -21,7 +21,7 @@ const AUDIENCES: Record<string, { role: Role; title: string; description: string
   },
   architects: {
     role: "architect",
-    title: "BuilderHQ for architects: the Preferred Architect Network",
+    title: "BuilderHQ for building designers: the Preferred Design Partner Network",
     description:
       "A hand picked network of practices we feature, promote and refer to homeowners and builders. No fees, no contracts, no catch.",
   },

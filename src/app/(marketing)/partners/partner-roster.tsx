@@ -22,8 +22,8 @@ type Active = "all" | "architect" | "finance";
 
 const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
   { key: "all", label: "All partners", href: "/partners" },
-  { key: "architect", label: "Architects", href: "/partners/architects" },
-  { key: "finance", label: "Finance brokers", href: "/partners/finance-brokers" },
+  { key: "architect", label: "Design partners", href: "/partners/architects" },
+  { key: "finance", label: "Finance partners", href: "/partners/finance-brokers" },
 ];
 
 export function PartnersRegister({ active }: { active: Active }) {
@@ -52,8 +52,8 @@ export function PartnersRegister({ active }: { active: Active }) {
       <div className="mt-10 flex flex-col gap-16 lg:gap-20">
         {(active === "all" || active === "architect") && (
           <PartnerSection
-            label="Architecture practices"
-            intro="Practices doing considered residential work, who we are glad to point homeowners toward."
+            label="Design partners"
+            intro="Building designers and architects doing considered residential work, who we are glad to point homeowners toward."
             partners={ARCHITECT_PARTNERS}
           />
         )}
@@ -76,7 +76,7 @@ export function PartnersRegister({ active }: { active: Active }) {
       {active === "finance" ? (
         <CrossLink
           href="/partners/architects"
-          text="Still need a designer? Meet our architecture partners"
+          text="Still need a designer? Meet our design partners"
         />
       ) : null}
 
@@ -95,7 +95,7 @@ export function PartnersRegister({ active }: { active: Active }) {
               No fees, no contracts, and leaving takes one email.
             </p>
             <div className="mt-6 flex flex-wrap gap-2.5">
-              <JoinButton href="#join-architect" kind="architect" label="Join as an architect" />
+              <JoinButton href="#join-architect" kind="architect" label="Join as a building designer" />
               <JoinButton href="#join-finance" kind="finance" label="Join as a finance broker" />
             </div>
           </div>
