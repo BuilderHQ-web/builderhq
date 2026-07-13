@@ -1063,6 +1063,83 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "paul-tilse-architects",
+    kind: "architect",
+    draft: true,
+    name: "Paul Tilse Architects",
+    monogram: "PT",
+    logo: "/partners/paul-tilse-architects/logo.png",
+    principal: "Paul Tilse",
+    suburb: "Kingston",
+    state: "ACT",
+    tagline:
+      "Award winning architecture and interiors from a Canberra studio working across homes, commercial and government projects since 2003.",
+    disciplines: ["Custom homes", "Renovations and extensions", "Interiors"],
+    google: { rating: 4, reviews: 3 },
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "ACT Architecture Award winner",
+      note: "A registered architecture practice since 2003",
+    },
+    stats: [
+      { label: "Google rating", value: "4.0", star: true, sub: "3 reviews" },
+      { label: "Established", value: "2003", sub: "over twenty years" },
+      {
+        label: "Industry awards",
+        value: "20+",
+        sub: "for its projects, 2013 to 2025",
+      },
+    ],
+    awards: [
+      {
+        label: "MBA ACT House of the Year",
+        sub: "2024 · the Pavilion House, with builder Brother Projects",
+      },
+      {
+        label: "HIA National Bathroom of the Year",
+        sub: "2020 · the Furneaux House",
+      },
+      {
+        label: "Renovation and extension over $2.5 million",
+        sub: "MBA ACT 2025 · the Ricotta House",
+      },
+    ],
+    why: "Paul Tilse Architects is one of Canberra's most awarded residential practices. Established in 2003, the studio has spent more than twenty years designing homes, interiors and commercial work for private and government clients, and its projects have collected a long line of honours: the 2024 MBA ACT House of the Year for the Pavilion House, a national HIA Bathroom of the Year, and an ACT Architecture Award among more than twenty across the past decade. Paul Tilse and his team are registered architects who treat each brief as a problem to resolve into a clear, considered building, and their work is regularly published in titles such as The Local Project and Home Beautiful. For an owner who wants genuine architecture in the capital, this is a practice of real standing.",
+    about:
+      "Paul Tilse Architects is a Kingston based architecture and interiors studio established in 2003. Over more than twenty years it has delivered residential, commercial and retail projects across Canberra, Sydney, Melbourne and Queensland, for private and government clients, and works at every scale from a bespoke kitchen to a whole new home. The practice is led by registered architect Paul Tilse, and treats each commission as a fresh problem, synthesising the client's requirements into an efficient and vibrant architectural form. Its projects have been widely recognised, with MBA ACT and HIA awards including the 2024 House of the Year, and have been published across titles including The Local Project, Home Beautiful and The Design Files.",
+    facts: {
+      established: "2003",
+      basedIn: "Kingston, ACT",
+      serves: "Canberra and the eastern states",
+      focus: "Homes, interiors and commercial",
+    },
+    website: "https://paultilsearchitects.com.au",
+    instagram: "https://www.instagram.com/paul_tilse_architects/",
+    linkedin: "https://www.linkedin.com/in/paul-tilse-5481759/",
+    galleryUrl: "https://paultilsearchitects.com.au/works/",
+    work: [
+      {
+        title: "Pavilion House",
+        suburb: "Canberra",
+        type: "New home",
+        image: "/partners/paul-tilse-architects/pavilion.jpg",
+      },
+      {
+        title: "Oblique House",
+        suburb: "Canberra",
+        type: "Kitchen and interiors",
+        image: "/partners/paul-tilse-architects/oblique.jpg",
+      },
+      {
+        title: "Ricotta House",
+        suburb: "Canberra",
+        type: "Renovation and extension",
+        image: "/partners/paul-tilse-architects/ricotta.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
