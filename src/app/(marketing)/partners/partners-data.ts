@@ -1499,6 +1499,61 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "rhys-elmi",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage broker",
+    name: "Rhys Elmi",
+    monogram: "RE",
+    portrait: "/partners/rhys-elmi/portrait.jpg",
+    suburb: "Cheltenham",
+    state: "VIC",
+    tagline:
+      "A first home buyer specialist and property investor himself, guiding buyers through every step with a teacher’s patience.",
+    disciplines: ["First home buyers", "Investment lending", "Construction loans"],
+    google: { rating: 5.0, reviews: 147 },
+    institution: {
+      name: "Mortgage Choice Cheltenham",
+      role: "Broker and business partner",
+      note: "Part of the Mortgage Choice network",
+      logo: "/partners/rhys-elmi/mortgage-choice.png",
+    },
+    stats: [
+      {
+        label: "Google rating",
+        value: "5.0",
+        star: true,
+        sub: "Cheltenham office · 147 reviews",
+      },
+      { label: "Broking since", value: "2021", sub: "business partner since 2024" },
+      { label: "Before broking", value: "Teacher", sub: "five years in education" },
+    ],
+    why: "Rhys came to broking from an unusual place: five years teaching at a private school on the Mornington Peninsula, before buying his own first home in 2020 set him on a change of career. That teacher’s instinct to explain things clearly still defines how he works, and it is why first home buyers seek him out. He has guided many young clients through their first purchase from start to finish, invests in property himself, and became a business partner at the five star rated Mortgage Choice Cheltenham practice in 2024. With the team’s genuine depth in construction lending, he is a natural fit beside an owner financing a build.",
+    aboutLabel: "About Rhys",
+    about:
+      "Rhys Elmi is a Cheltenham mortgage broker who joined Mortgage Choice in 2021 and became a business partner at the firm’s Cheltenham practice in July 2024. He came to lending after five years teaching at a private school on the Mornington Peninsula, a change prompted by buying his own first home in 2020 and studying through the pandemic to make the move. An active property investor himself, he specialises in first home buyers, helping them understand the preparation a strong loan application needs, and works across investment, construction and refinancing through the Mortgage Choice network. Clients rate the Cheltenham practice five stars across 147 reviews.",
+    facts: {
+      basedIn: "Cheltenham, VIC",
+      serves: "Melbourne",
+      focus: "First home, investment and construction lending",
+    },
+    website:
+      "https://www.mortgagechoice.com.au/shaun.curtis/our-team/team-profiles/rhys-elmi/",
+    instagram: "https://www.instagram.com/home_loan_helper/",
+    facebook: "https://www.facebook.com/rhyselmimortgagebroker",
+    linkedin: "https://www.linkedin.com/in/rhys-elmi-43ab2911a/",
+    servicesLabel: "Where Rhys helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Getting a first application approval ready",
+      "Investment property finance",
+      "Refinancing to a better deal",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
