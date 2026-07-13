@@ -102,7 +102,7 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
       className="relative px-5 md:px-10 py-12 lg:py-0 lg:min-h-[32svh] lg:flex lg:flex-col lg:justify-center"
     >
       <div className="mx-auto w-full max-w-[1180px]">
-        <p className="flex items-center justify-center gap-2.5 mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim">
+        <p className="flex items-center justify-center gap-2.5 mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim text-center">
           <span aria-hidden className="h-px w-6 bg-text-faint/40" />
           A network of trusted industry partners
           <span aria-hidden className="h-px w-6 bg-text-faint/40" />
