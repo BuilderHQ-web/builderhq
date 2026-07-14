@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUpRight, Award, CalendarDays, Check, Globe, Landmark, S
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { cn } from "@/lib/utils";
 
-import { PARTNERS, type Partner } from "./partners-data";
+import { PARTNERS, partnerStates, type Partner } from "./partners-data";
 import { PartnerAvatar, PartnerWorkCard, partnerHue } from "./partner-ui";
 
 /**
@@ -35,7 +35,7 @@ export function partnerHeaderProps(partner: Partner) {
     kicker: `Preferred Partner · ${kindLabel(partner)}`,
     title: partner.name,
     sub: partner.tagline,
-    meta: `${partner.suburb}, ${partner.state} · In the network since ${partner.joined}`,
+    meta: `${partner.suburb}, ${partnerStates(partner).join(" + ")} · In the network since ${partner.joined}`,
   };
 }
 
@@ -663,7 +663,7 @@ function MiniPartner({ partner }: { partner: Partner }) {
         <span className="block text-[12px] text-text-dim truncate">
           {kindLabel(partner)}
           <span aria-hidden className="mx-1.5 text-text-faint">·</span>
-          {partner.suburb}, {partner.state}
+          {partner.suburb}, {partnerStates(partner).join(" + ")}
         </span>
       </span>
       <ArrowUpRight className="size-4 shrink-0 text-text-faint transition-transform duration-[200ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
