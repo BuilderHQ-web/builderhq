@@ -2070,7 +2070,9 @@ export const PARTNERS: Partner[] = [
     tagline:
       "A Liverpool studio designing about seventy homes a year across Sydney, the Illawarra and Newcastle, with fluency on both sides of the drawings: design and construction.",
     disciplines: ["New homes", "Duplexes and dual occupancy", "Renovations"],
+    google: { rating: 5, reviews: 17 },
     stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "17 reviews" },
       {
         label: "Homes designed",
         value: "70",
@@ -2080,11 +2082,6 @@ export const PARTNERS: Partner[] = [
         label: "In the industry",
         value: "10+ yrs",
         sub: "across design and construction",
-      },
-      {
-        label: "Established",
-        value: "2018",
-        sub: "led by Abdul Moussa",
       },
     ],
     awards: [
