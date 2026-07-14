@@ -150,10 +150,10 @@ export default function BuildBriefHub() {
               Read the latest edition
             </Link>
             <a
-              href="/build-brief/feed.xml"
+              href="#editions"
               className="inline-flex items-center rounded-full ring-1 ring-white/20 px-6 py-3 text-[13px] font-ui font-semibold text-white/85 hover:bg-white/10 transition-colors"
             >
-              RSS feed
+              All editions
             </a>
           </div>
           <div aria-hidden className="h-14 sm:h-20" />
@@ -172,7 +172,7 @@ export default function BuildBriefHub() {
         </p>
 
         {/* editions */}
-        <div className="mt-12 sm:mt-16">
+        <div id="editions" className="mt-12 sm:mt-16 scroll-mt-28">
           <div className="flex items-center justify-center gap-2.5 mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim">
             <span aria-hidden className="h-px w-6 bg-text-faint/40" />
             All editions
