@@ -1291,6 +1291,74 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "levan-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Levan Design",
+    monogram: "LD",
+    logo: "/partners/levan-design/logo.png",
+    principal: "Natasha Levan",
+    suburb: "Eltham",
+    state: "VIC",
+    tagline:
+      "A boutique Eltham practice where one designer carries your home from first sketch to documentation, as she has for more than two decades.",
+    disciplines: ["New homes", "Renovations and extensions", "Interior design"],
+    google: { rating: 5.0, reviews: 13 },
+    institution: {
+      name: "Design Matters National",
+      role: "Member",
+      note: "Registered building practitioner · Victorian Building Authority",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "13 reviews" },
+      {
+        label: "In the industry",
+        value: "30+ yrs",
+        sub: "designing since 1994",
+      },
+      {
+        label: "Her own practice",
+        value: "2003",
+        sub: "Levan Design, Eltham",
+      },
+    ],
+    why: "Levan Design is the register's boutique in the truest sense: one designer, Natasha Levan, who has drawn buildings for more than thirty years and has run her own residential practice since 2003. The record behind that is unusually complete, commercial and institutional work, multi-storey apartments and interiors before five years inside Englehart Homes, one of Melbourne's established custom builders, where she learned how houses actually get priced and built. Every client gets a five star experience by the numbers, a perfect rating across thirteen reviews, and gets Natasha herself from first sketch to final documentation. She is a registered building practitioner with the Victorian Building Authority and a member of Design Matters National. For owners in Melbourne's north east who want one considered pair of hands on their home, this is the introduction.",
+    about:
+      "Levan Design is a residential building design practice in Eltham, run by its principal, Natasha Levan, since 2003. Natasha has worked in building design since 1994, beginning with a South Melbourne architectural firm and building a portfolio that spans commercial and institutional projects, multi-storey apartments and interiors, before five years with Englehart Homes drew her to residential design for good. The practice is deliberately small and personal: new homes, renovations, extensions and interiors, designed and documented by the same hand throughout, with an eye shaped by a lifelong interest in art and architecture. Natasha holds an Associate Diploma in Architectural Drafting, is a registered building practitioner with the Victorian Building Authority, and is a member of Design Matters National.",
+    facts: {
+      established: "2003",
+      basedIn: "Eltham, VIC",
+      serves: "Melbourne's north east and beyond",
+      focus: "Homes, extensions and interiors",
+    },
+    website: "https://www.levandesign.com.au",
+    instagram: "https://www.instagram.com/levan_design/",
+    linkedin: "https://www.linkedin.com/in/natasha-levan-839967b8/",
+    galleryUrl: "https://www.levandesign.com.au/projects",
+    work: [
+      {
+        title: "Rathmines Street",
+        suburb: "Melbourne",
+        type: "Rear extension",
+        image: "/partners/levan-design/rathmines.jpg",
+      },
+      {
+        title: "Argyle Street",
+        suburb: "Melbourne",
+        type: "Kitchen and interiors",
+        image: "/partners/levan-design/argyle.jpg",
+      },
+      {
+        title: "Florence Street",
+        suburb: "Melbourne",
+        type: "Kitchen and dining",
+        image: "/partners/levan-design/florence.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
