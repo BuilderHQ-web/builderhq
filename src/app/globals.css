@@ -284,6 +284,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
   scroll-padding-top: 96px;
+  /* Keep the layout width stable when page height crosses the viewport
+     (e.g. client-side filtering) — otherwise the scrollbar popping in and
+     out nudges the whole centred column sideways. */
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
