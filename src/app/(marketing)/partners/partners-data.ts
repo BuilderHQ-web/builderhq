@@ -1442,6 +1442,83 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "sydesign",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design studio",
+    name: "Sydesign",
+    monogram: "SY",
+    logo: "/partners/sydesign/logo.png",
+    principal: "Shady Younes",
+    suburb: "Stanmore",
+    state: "NSW",
+    tagline:
+      "A Sydney studio of twenty five years, designing homes that stand out while fitting in, and steering them through council to completion.",
+    disciplines: ["New homes", "Renovations and additions", "Multi-residential"],
+    google: { rating: 4.9, reviews: 107 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "107 reviews" },
+      {
+        label: "Established",
+        value: "2000",
+        sub: "twenty five years in Sydney",
+      },
+      {
+        label: "Best of Houzz",
+        value: "3",
+        sub: "Design and Service, 2024 and 2025",
+      },
+    ],
+    awards: [
+      {
+        label: "Best of Houzz Design, two years running",
+        sub: "Houzz · 2024 and 2025",
+      },
+      {
+        label: "Best of Houzz Service",
+        sub: "Houzz · 2025",
+      },
+      {
+        label: "Best of Houzz Winner",
+        sub: "Houzz · three years running, to 2020",
+      },
+    ],
+    why: "Sydesign has spent twenty five years designing homes for Sydney, and the numbers behind the studio are hard to argue with: a 4.9 rating across 107 reviews, the deepest review base of any design practice on our register, and Best of Houzz honours in both design and service across multiple years. Founded in 2000 by principal Shady Younes, the Stanmore studio pairs a boutique team of designers and technicians with an international blend of influences, and carries each project from concept through development applications, complying development and working drawings. That fluency with Sydney's councils and private certifiers is precisely what a NSW owner needs beside them, approvals are where Sydney projects live or die, and this studio navigates them daily.",
+    about:
+      "Sydesign is a building design studio in Stanmore, in Sydney's inner west, founded in 2000 by principal Shady Younes. The studio designs new homes, renovations and additions, and multi-residential projects across Sydney, working as a small, close team of designers and technicians who carry each commission from concept design through development applications or complying development to full working drawings. Long experience with Sydney's local councils and private certifiers keeps approvals moving, and the studio composes the right team for each project's scale and setting. Its work balances big picture aesthetics with fine detail, designed to respond to changing environments and ways of living, and has been recognised with Best of Houzz awards for both design and service across multiple years.",
+    facts: {
+      established: "2000",
+      basedIn: "Stanmore, NSW",
+      serves: "Sydney",
+      focus: "Homes, additions and multi-residential",
+    },
+    website: "https://www.sydesign.com.au",
+    instagram: "https://www.instagram.com/sydesign_sydney/",
+    linkedin: "https://www.linkedin.com/in/shady-younes-75ba9185/",
+    galleryUrl: "https://www.sydesign.com.au/projects",
+    work: [
+      {
+        title: "Cabarita House",
+        suburb: "Cabarita",
+        type: "New home and pool",
+        image: "/partners/sydesign/cabarita.jpg",
+      },
+      {
+        title: "Hunters Hill",
+        suburb: "Hunters Hill",
+        type: "New family home",
+        image: "/partners/sydesign/hunters-hill.jpg",
+      },
+      {
+        title: "Bateau Bay",
+        suburb: "Bateau Bay",
+        type: "Courtyard living",
+        image: "/partners/sydesign/bateau-bay.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
