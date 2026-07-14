@@ -130,6 +130,9 @@ export interface Partner {
   facebook?: string;
   /** LinkedIn page, shown as a compact icon beside the other links. */
   linkedin?: string;
+  /** Direct booking link (e.g. Calendly) — renders as a calendar icon in
+   *  the profile's link cluster, beside the socials. */
+  booking?: string;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
   galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
@@ -1818,9 +1821,15 @@ export const PARTNERS: Partner[] = [
       note: "Australian Credit Licence 422284",
       logo: "/partners/ed-akgun/rateone.png",
     },
+    google: { rating: 4.9, reviews: 135 },
     stats: [
+      {
+        label: "Google rating",
+        value: "4.9",
+        star: true,
+        sub: "RateOne · 135 reviews",
+      },
       { label: "In lending and banking", value: "13+ yrs" },
-      { label: "With Commonwealth Bank", value: "10+ yrs", sub: "before broking" },
       { label: "Lenders on the panel", value: "30+", sub: "via RateOne" },
     ],
     awards: [
@@ -1849,6 +1858,7 @@ export const PARTNERS: Partner[] = [
     website: "https://rateone.com.au",
     instagram: "https://www.instagram.com/rateone.homeloans/",
     linkedin: "https://www.linkedin.com/in/ed-akgun-528793116/",
+    booking: "https://calendly.com/ed--d4a0/30min/",
     servicesLabel: "Where Ed helps",
     services: [
       "Construction loans and progress payments",

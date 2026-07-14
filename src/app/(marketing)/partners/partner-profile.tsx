@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Award, Check, Globe, Landmark, Star } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Award, CalendarDays, Check, Globe, Landmark, Star } from "lucide-react";
 
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { cn } from "@/lib/utils";
@@ -377,6 +377,18 @@ export function PartnerProfileSections({
                 className="inline-flex size-9 items-center justify-center rounded-full border border-border-subtle bg-surface-2 text-text-muted transition-colors hover:border-border-strong hover:text-text"
               >
                 <LinkedInGlyph className="size-4" />
+              </a>
+            ) : null}
+            {partner.booking ? (
+              <a
+                href={partner.booking}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Book a time with ${partner.name}`}
+                title={`Book a time with ${partner.name}`}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border-subtle bg-surface-2 text-text-muted transition-colors hover:border-border-strong hover:text-text"
+              >
+                <CalendarDays className="size-4" />
               </a>
             ) : null}
           </span>
