@@ -17,6 +17,7 @@ const COLUMNS: Array<{
       { label: "How it works", href: "#how" },
       { label: "Trust and verification", href: "#trust" },
       { label: "Preferred Partners", href: "/partners" },
+      { label: "The Build Brief", href: "/build-brief" },
       { label: "FAQs", href: "#faq" },
     ],
   },

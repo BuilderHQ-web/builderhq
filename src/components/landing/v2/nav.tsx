@@ -29,6 +29,7 @@ const LINKS = [
   { label: "How it Works", href: "#how" },
   { label: "Trust", href: "#trust" },
   { label: "Our Partners", href: "/partners" },
+  { label: "Build Brief", href: "/build-brief" },
   { label: "FAQs", href: "#faq" },
 ] as const;
 
@@ -303,6 +304,10 @@ export function LandingNav({
                 <div className="flex items-center gap-4 text-[12px] text-text-dim">
                   <Link href="/about" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
                     About
+                  </Link>
+                  <span aria-hidden className="text-text-faint/40">·</span>
+                  <Link href="/build-brief" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">
+                    Build Brief
                   </Link>
                   <span aria-hidden className="text-text-faint/40">·</span>
                   <Link href="/faq" onClick={() => setMobileOpen(false)} className="hover:text-text transition-colors">

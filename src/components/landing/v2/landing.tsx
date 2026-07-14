@@ -22,6 +22,7 @@ import { ScrollProgress } from "./scroll-progress";
 import type { Role } from "./content";
 import { RoleProvider } from "./role";
 import { LandingNav } from "./nav";
+import { BuildBriefStrip } from "./build-brief-strip";
 import { Hero } from "./hero";
 import { PartnerMarquee } from "./partner-marquee";
 import { RoleSelector } from "./role-selector";
@@ -73,6 +74,7 @@ export function Landing({
         <Ecosystem />
         <SectionDivider n="07" label="What people say" />
         <Testimonials />
+        <BuildBriefStrip />
         <SectionDivider n="08" label="Questions" />
         <FAQ />
         <Close authedHref={authedHref} />
