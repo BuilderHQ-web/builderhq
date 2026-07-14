@@ -1991,6 +1991,71 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "chevli-architects",
+    kind: "architect",
+    draft: true,
+    name: "Chevli Architects",
+    monogram: "CA",
+    logo: "/partners/chevli-architects/logo.png",
+    principal: "Vikram and Sejal Chevli",
+    suburb: "Giralang",
+    state: "ACT",
+    tagline:
+      "A design led practice with studios in Canberra and Surat, bringing two decades of experience across three continents to homes, terraces and mixed use projects in the ACT.",
+    disciplines: ["New homes", "Multi-residential", "Mixed use"],
+    stats: [
+      {
+        label: "Registered architect",
+        value: "ACT",
+        sub: "Vikram Chevli · registration 2638",
+      },
+      {
+        label: "Leadership experience",
+        value: "20+ yrs",
+        sub: "across India, the USA and Australia",
+      },
+      {
+        label: "Established",
+        value: "2021",
+        sub: "studios in Canberra and Surat",
+      },
+    ],
+    why: "Chevli Architects reads a site the way few Canberra practices can, through two climates at once: a studio in Canberra, a studio in Surat, and a design philosophy built on responding to the physical, cultural and climatic context of a place. Principal architect Vikram Chevli is ACT registered and came to his own practice the long way: seven years at Stewart Architecture, then design director at JWLand's design arm, where he drove a mixed use development of 241 apartments from concept to handover. Co founder Sejal Chevli adds fifteen plus years across India, the United States and Australia, including six years on education and public school projects. That is large project discipline applied at house scale, with materials, finishes and natural light doing the talking.",
+    about:
+      "Chevli Architects is a design led architecture practice founded in 2021 by Vikram and Sejal Chevli, with studios in Canberra and Surat, India, the two cities the practice calls home. Vikram, the managing director and principal architect, is registered in the ACT and trained at CEPT Ahmedabad, the Bezalel Academy in Jerusalem and the University of New Mexico; he spent seven years with Stewart Architecture and three as design director at JWLand's design studio, delivering mixed use developments from concept to completion. Sejal brings more than fifteen years across India, the United States and Australia, spanning education and public buildings, sustainable residential work and six years with CCJ Architects. The practice works across homes, terraces, apartments and mixed use projects, designing places that respond to their physical, cultural and climatic context, with experiential quality carried through the sensitive use of materials, finishes and natural light.",
+    facts: {
+      established: "2021",
+      basedIn: "Giralang, ACT",
+      serves: "Canberra and surrounds",
+      focus: "Homes, multi-residential and mixed use",
+    },
+    website: "https://chevliarchitects.com.au",
+    instagram: "https://www.instagram.com/chevliarchitects/",
+    linkedin: "https://www.linkedin.com/company/chevli-architects/",
+    galleryUrl: "https://chevliarchitects.com.au/projects/",
+    work: [
+      {
+        title: "Dawn, Braddon",
+        suburb: "Braddon",
+        type: "Apartments, as design director",
+        image: "/partners/chevli-architects/dawn-braddon.jpg",
+      },
+      {
+        title: "Denman Prospect terraces",
+        suburb: "Denman Prospect",
+        type: "Multi-residential",
+        image: "/partners/chevli-architects/denman-prospect.jpg",
+      },
+      {
+        title: "Canberra living room",
+        suburb: "Canberra",
+        type: "Interior",
+        image: "/partners/chevli-architects/canberra-interior.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
