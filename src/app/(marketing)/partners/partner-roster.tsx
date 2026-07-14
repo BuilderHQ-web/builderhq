@@ -6,6 +6,7 @@ import { PartnerForm } from "@/components/landing/v2/partner-form";
 import {
   ARCHITECT_PARTNERS,
   FINANCE_PARTNERS,
+  partnerStates,
   type Partner,
 } from "./partners-data";
 import {
@@ -41,7 +42,9 @@ export function PartnersRegister({ active }: { active: Active }) {
         : [...ARCHITECT_PARTNERS, ...FINANCE_PARTNERS];
   const stateCounts: Record<string, number> = {};
   for (const p of activePartners) {
-    stateCounts[p.state] = (stateCounts[p.state] ?? 0) + 1;
+    for (const s of partnerStates(p)) {
+      stateCounts[s] = (stateCounts[s] ?? 0) + 1;
+    }
   }
 
   return (
@@ -218,7 +221,7 @@ function PartnerSection({
         </h2>
         <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
         <span className="text-[12px] tabular-nums text-text-dim shrink-0">
-          <SectionCount states={partners.map((p) => p.state)} />
+          <SectionCount stateLists={partners.map((p) => partnerStates(p))} />
         </span>
       </div>
       <p className="mt-3 max-w-[58ch] text-[14.5px] leading-[1.65] text-text-muted">
@@ -229,7 +232,7 @@ function PartnerSection({
           emptyLabel={emptyLabel}
           items={partners.map((p) => ({
             key: p.slug,
-            state: p.state,
+            states: partnerStates(p),
             node: <PartnerRow partner={p} />,
           }))}
         />
@@ -269,7 +272,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
               Preferred Partner
             </span>
             <span className="ml-auto hidden sm:inline-flex items-center gap-2">
-              <StateBadge state={partner.state} />
+              {partnerStates(partner).map((s) => (
+                <StateBadge key={s} state={s} />
+              ))}
               {partner.google ? (
                 <GoogleRating
                   rating={partner.google.rating}
@@ -287,7 +292,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
             {partner.tagline}
           </p>
           <span className="mt-3 flex sm:hidden items-center gap-2">
-            <StateBadge state={partner.state} />
+            {partnerStates(partner).map((s) => (
+              <StateBadge key={s} state={s} />
+            ))}
             {partner.google ? (
               <GoogleRating
                 rating={partner.google.rating}

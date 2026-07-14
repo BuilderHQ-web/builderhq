@@ -91,6 +91,10 @@ export interface Partner {
   servicesLabel?: string;
   suburb: string;
   state: string;
+  /** All states the partner practises in, when more than one — drives the
+   *  row badges, the map counts and the state filter. `state` remains the
+   *  primary (home) state. */
+  states?: string[];
   /** The one-line "known for" that carries the roster row. */
   tagline: string;
   /** Short discipline tags, 2–3, shown as the row's meta line. */
@@ -1918,6 +1922,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "hyperspace",
+    kind: "architect",
+    draft: true,
+    name: "Hyperspace Architecture",
+    monogram: "HS",
+    logo: "/partners/hyperspace/logo.png",
+    principal: "Meetu Sharma Saxena and Vishal Saxena",
+    suburb: "Braddon",
+    state: "ACT",
+    states: ["ACT", "NSW"],
+    tagline:
+      "A registered architecture practice in both the ACT and New South Wales, carrying projects from feasibility through planning to architecture and interiors, with buildability designed in from the first sketch.",
+    disciplines: ["New homes", "Multi-residential", "Heritage and interiors"],
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "A+ member practice",
+      note: "Registered architects · ACT 2456, NSW 11796",
+    },
+    google: { rating: 4.5, reviews: 16 },
+    stats: [
+      { label: "Google rating", value: "4.5", star: true, sub: "16 reviews" },
+      {
+        label: "Leadership experience",
+        value: "50+ yrs",
+        sub: "combined, across three countries",
+      },
+      {
+        label: "Established",
+        value: "2017",
+        sub: "a Canberra studio of eight",
+      },
+    ],
+    why: "Hyperspace is registered to practise on both sides of the border, a rarity on our register: architects registered in the ACT and New South Wales, an A+ member practice of the Australian Institute of Architects, and an approved NSW Design and Building Practitioner for Class 2 multi dwelling work to unlimited height. Founders Meetu Sharma Saxena and Vishal Saxena bring more than fifty years of combined experience across India, the UAE and Australia, including high value projects worth hundreds of millions of dollars, and the studio's portfolio runs from custom homes to heritage works at the Australian War Memorial. Every design is grounded in buildability, how the building actually goes together, priced and sequenced, which is exactly the discipline an owner wants between a concept and a contract.",
+    about:
+      "Hyperspace Architecture is a Braddon based practice founded in 2017 by Meetu Sharma Saxena and Vishal Saxena, architects who entered the profession in 2000 and practised across India and the UAE before settling in Australia in 2009. The studio of eight offers an end to end service, from feasibility and planning advice through architecture and interior design to delivery, and lodges development applications across the ACT and NSW councils. Its sectors span custom homes, knockdown rebuilds, dual occupancies, apartments and townhouses, childcare and education, commercial fit outs and heritage conservation, including heritage works at the Australian War Memorial. The practice is an A+ member of the Australian Institute of Architects, holds architect registrations in the ACT and New South Wales, and is an approved NSW Design and Building Practitioner for Class 2 buildings to unlimited height. Designs are underpinned by close study of each site and a construction first mindset, so what is drawn is what can be built, efficiently and cost effectively.",
+    facts: {
+      established: "2017",
+      basedIn: "Braddon, ACT",
+      serves: "Canberra and NSW",
+      focus: "Homes, multi-residential and heritage",
+    },
+    website: "https://www.hyper-space.com.au",
+    instagram: "https://www.instagram.com/hyperspace_architecture/",
+    facebook: "https://www.facebook.com/Hyperspace.Architecture/",
+    linkedin: "https://www.linkedin.com/company/hyperspacedesigns/",
+    galleryUrl: "https://www.hyper-space.com.au/projects",
+    work: [
+      {
+        title: "Deakin house",
+        suburb: "Deakin",
+        type: "New home",
+        image: "/partners/hyperspace/deakin-house.jpg",
+      },
+      {
+        title: "Deakin poolside",
+        suburb: "Deakin",
+        type: "New home and pool",
+        image: "/partners/hyperspace/deakin-poolside.jpg",
+      },
+      {
+        title: "Jumping Creek",
+        suburb: "NSW",
+        type: "New home",
+        image: "/partners/hyperspace/jumping-creek.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
@@ -2661,6 +2734,11 @@ export const ARCHITECT_PARTNERS = PARTNERS.filter(
 export const FINANCE_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "finance" && !p.draft,
 );
+
+/** Every state a partner practises in — `states` when set, else `[state]`. */
+export function partnerStates(p: Partner): string[] {
+  return p.states ?? [p.state];
+}
 
 export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);

@@ -337,11 +337,13 @@ export function StateFilteredRows({
   items,
   emptyLabel,
 }: {
-  items: Array<{ key: string; state: string; node: ReactNode }>;
+  items: Array<{ key: string; states: string[]; node: ReactNode }>;
   emptyLabel: string;
 }) {
   const { selected, setSelected } = useContext(StateFilterContext);
-  const visible = selected ? items.filter((i) => i.state === selected) : items;
+  const visible = selected
+    ? items.filter((i) => i.states.includes(selected))
+    : items;
 
   if (visible.length === 0 && selected) {
     return (
@@ -371,10 +373,10 @@ export function StateFilteredRows({
 }
 
 /** The live count beside a section header — follows the state selection. */
-export function SectionCount({ states }: { states: string[] }) {
+export function SectionCount({ stateLists }: { stateLists: string[][] }) {
   const { selected } = useContext(StateFilterContext);
   const n = selected
-    ? states.filter((s) => s === selected).length
-    : states.length;
+    ? stateLists.filter((l) => l.includes(selected)).length
+    : stateLists.length;
   return <>{n}</>;
 }
