@@ -65,8 +65,10 @@ export function PartnersRegister({ active }: { active: Active }) {
       </section>
 
       {/* The toolbar: what kind of partner on the left, where in the
-          country on the right — the register's two axes, side by side. */}
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          country on the right — the register's two axes, side by side.
+          Top-aligned so the segmented control sits level with the
+          "Across Australia" kicker. */}
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
         <SegmentedNav active={active} />
         <AustraliaStateMap counts={stateCounts} />
       </div>
