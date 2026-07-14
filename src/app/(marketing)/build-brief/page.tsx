@@ -243,12 +243,14 @@ export default function BuildBriefHub() {
                     {p.standfirst}
                   </p>
                   <p className="mt-5 flex items-center gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.author.portrait}
-                      alt={p.author.name}
-                      className="size-9 rounded-full object-cover grayscale ring-1 ring-[#101820]/10"
-                    />
+                    {p.author.portrait ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.author.portrait}
+                        alt={p.author.name}
+                        className="size-9 rounded-full object-cover grayscale ring-1 ring-[#101820]/10"
+                      />
+                    ) : null}
                     <span className="text-[12.5px] text-text-dim leading-tight">
                       <span className="font-ui font-semibold text-text">
                         {p.author.name}
