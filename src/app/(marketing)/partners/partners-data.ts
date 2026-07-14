@@ -1519,6 +1519,87 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "design-unity",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Design Unity",
+    monogram: "DU",
+    logo: "/partners/design-unity/logo.png",
+    principal: "Warren Jenkins",
+    suburb: "Warragul",
+    state: "VIC",
+    tagline:
+      "Designing custom homes across Gippsland and Melbourne's south east since 1999, weighing construction cost, running cost and environmental impact in every set of drawings.",
+    disciplines: ["Custom homes", "Interior design", "Town planning"],
+    stats: [
+      {
+        label: "Industry awards",
+        value: "30+",
+        sub: "across two decades of practice",
+      },
+      {
+        label: "Established",
+        value: "1999",
+        sub: "designing homes for over 25 years",
+      },
+      {
+        label: "Best of Houzz",
+        value: "2",
+        sub: "Design and Service, 2018",
+      },
+    ],
+    awards: [
+      {
+        label: "Best of Houzz, Design and Service",
+        sub: "Houzz · 2018",
+      },
+      {
+        label: "Abode Awards, winner",
+        sub: "2012",
+      },
+      {
+        label: "Casey Business Awards, winner",
+        sub: "2012",
+      },
+    ],
+    why: "Design Unity has been designing homes under Warren Jenkins since 1999, and the practice thinks about cost the way owners have to live with it. Every design is weighed for its construction cost and its ongoing running costs together, alongside function and environmental impact, a discipline most practices never formalise. More than 30 industry awards back the approach, including Best of Houzz honours for both design and service, and the service span runs well past the drawings: interior design, town planning, project tendering, consultant coordination and project management are all carried in house. For owners building in Gippsland or Melbourne's south east, that is a rare combination of design ambition and delivery control.",
+    about:
+      "Design Unity is a building design practice in Warragul, led by Warren Jenkins and designing custom homes across Gippsland and Melbourne's south east since 1999. The practice takes a whole of life view of every project, balancing construction cost, ongoing running costs, function and environmental impact from the first sketch, and its work has been recognised with more than 30 industry awards, including Best of Houzz honours for design and service and business excellence awards across Melbourne's south east. Services run from concept design and architectural drafting through interior design, town planning and project tendering to consultant coordination and project management, supported by a settled network of builders, consultants and suppliers built over two decades. The result is a practice that carries a home from first idea to handover with the same team accountable throughout.",
+    facts: {
+      established: "1999",
+      basedIn: "Warragul, VIC",
+      serves: "Gippsland and Melbourne's south east",
+      focus: "Custom homes, designed whole of life",
+    },
+    website: "https://designunity.com.au",
+    instagram: "https://www.instagram.com/design_unity/",
+    facebook: "https://www.facebook.com/people/Design-Unity/100063648185991/",
+    linkedin: "https://www.linkedin.com/company/design-unity/",
+    galleryUrl: "https://designunity.com.au/completed-projects/",
+    work: [
+      {
+        title: "Resort-style living",
+        suburb: "Victoria",
+        type: "New home and pool",
+        image: "/partners/design-unity/work-1.jpg",
+      },
+      {
+        title: "Family entertainer",
+        suburb: "Victoria",
+        type: "New home, court and pool",
+        image: "/partners/design-unity/work-2.jpg",
+      },
+      {
+        title: "Alfresco laneway",
+        suburb: "Victoria",
+        type: "Outdoor living",
+        image: "/partners/design-unity/work-3.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
