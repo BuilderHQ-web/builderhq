@@ -100,7 +100,6 @@ function perspectiveSchema(p: BriefPerspective) {
           name: p.author.name,
           jobTitle: "Founder",
           worksFor: { "@id": `${SITE}/#organization` },
-          image: `${SITE}${p.author.portrait}`,
         },
         publisher: { "@id": `${SITE}/#organization` },
         isPartOf: { "@id": `${SITE}/build-brief#periodical` },
@@ -253,12 +252,14 @@ export default async function PerspectivePage({
           {/* Byline band. */}
           <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-white/12 pt-6">
             <span className="inline-flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.author.portrait}
-                alt={p.author.name}
-                className="size-11 rounded-full object-cover grayscale ring-1 ring-white/25"
-              />
+              {p.author.portrait ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={p.author.portrait}
+                  alt={p.author.name}
+                  className="size-11 rounded-full object-cover grayscale ring-1 ring-white/25"
+                />
+              ) : null}
               <span className="leading-tight">
                 <span className="block text-[13.5px] font-ui font-semibold text-white">
                   {p.author.name}
@@ -295,12 +296,14 @@ export default async function PerspectivePage({
             About the author
           </p>
           <div className="mt-4 flex items-start gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.author.portrait}
-              alt={p.author.name}
-              className="size-14 rounded-full object-cover grayscale ring-1 ring-[#101820]/10 shrink-0"
-            />
+            {p.author.portrait ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={p.author.portrait}
+                alt={p.author.name}
+                className="size-14 rounded-full object-cover grayscale ring-1 ring-[#101820]/10 shrink-0"
+              />
+            ) : null}
             <p className="text-[14.5px] leading-[1.7] text-text-muted">
               {p.aboutAuthor}
             </p>

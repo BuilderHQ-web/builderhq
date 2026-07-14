@@ -414,7 +414,7 @@ export type BriefPerspective = {
   standfirst: string;
   /** The bold lede paragraph. */
   lede: string;
-  author: { name: string; role: string; portrait: string };
+  author: { name: string; role: string; portrait?: string };
   dateISO: string;
   displayDate: string;
   readingMins: number;
@@ -434,7 +434,6 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
     author: {
       name: "Moe Akbulut",
       role: "Founder, BuilderHQ",
-      portrait: "/build-brief/perspectives/moe-akbulut.jpg",
     },
     dateISO: "2026-07-14",
     displayDate: "14 July 2026",
