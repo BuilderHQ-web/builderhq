@@ -999,11 +999,11 @@ export const PARTNERS: Partner[] = [
   {
     slug: "praeditos-designs",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design and drafting",
     name: "Praeditos Designs & Drafting",
     monogram: "PD",
     logo: "/partners/praeditos-designs/logo.png",
+    logoFloat: "/partners/praeditos-designs/logo-float-v2.png",
     principal: "Jacob Woods",
     suburb: "Canberra",
     state: "ACT",
@@ -1294,11 +1294,11 @@ export const PARTNERS: Partner[] = [
   {
     slug: "levan-design",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design practice",
     name: "Levan Design",
     monogram: "LD",
     logo: "/partners/levan-design/logo.png",
+    logoFloat: "/partners/levan-design/logo-float-v2.png",
     principal: "Natasha Levan",
     suburb: "Eltham",
     state: "VIC",
@@ -1686,16 +1686,13 @@ export const PARTNERS: Partner[] = [
     tagline:
       "One of Canberra's most awarded residential practices: a Braddon studio of more than twenty architects and designers, designing homes across the capital and the coast since 2001.",
     disciplines: ["New homes", "Renovations and extensions", "Multi-residential"],
+    google: { rating: 4, reviews: 11 },
     stats: [
+      { label: "Google rating", value: "4.0", star: true, sub: "11 reviews" },
       {
         label: "Industry awards",
         value: "50+",
         sub: "MBA, HIA and AIA, 2010 to 2025",
-      },
-      {
-        label: "Established",
-        value: "2001",
-        sub: "Dowse Norwood and Associates",
       },
       {
         label: "Architects and designers",
