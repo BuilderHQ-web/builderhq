@@ -385,3 +385,210 @@ export const BRIEF_AUDIENCES: Array<{
   { key: "builders", label: "Builders", href: "/for/builders" },
   { key: "brokers", label: "Finance brokers", href: "/for/finance-brokers" },
 ];
+
+/* ── Perspectives ─────────────────────────────────────────────────────
+ * Signed essays from the desk of BuilderHQ — opinion, not the weekly
+ * briefing. They live beside the editions on the hub, unnumbered and
+ * bylined, and render at /build-brief/perspectives/[slug].
+ */
+
+export type PerspectiveBlock =
+  | { kind: "p"; text: string }
+  | { kind: "h2"; text: string }
+  | { kind: "quote"; text: string }
+  | {
+      kind: "table";
+      head: [string, string];
+      rows: Array<{ term: string; body: string }>;
+    };
+
+export type BriefPerspective = {
+  slug: string;
+  /** Small caps tag row, e.g. "Opinion · Residential construction". */
+  tag: string;
+  /** Headline, minus the accent tail. */
+  title: string;
+  /** Trailing words of the headline, rendered in the accent colour. */
+  titleAccent: string;
+  /** Italic serif deck under the headline. */
+  standfirst: string;
+  /** The bold lede paragraph. */
+  lede: string;
+  author: { name: string; role: string; portrait: string };
+  dateISO: string;
+  displayDate: string;
+  readingMins: number;
+  blocks: PerspectiveBlock[];
+  aboutAuthor: string;
+};
+
+export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
+  {
+    slug: "choosing-a-builder-word-of-mouth",
+    tag: "Opinion · Residential construction",
+    title: "Why choosing a builder still comes down to",
+    titleAccent: "word of mouth",
+    standfirst:
+      "And why Australia's construction industry needs a better procurement model.",
+    lede: "Residential construction has digitised design, approvals and project delivery. Yet one of its most important decisions, selecting the right builder, is still too often made through informal networks, incomplete comparisons and limited market visibility.",
+    author: {
+      name: "Moe Akbulut",
+      role: "Founder, BuilderHQ",
+      portrait: "/build-brief/perspectives/moe-akbulut.jpg",
+    },
+    dateISO: "2026-07-14",
+    displayDate: "14 July 2026",
+    readingMins: 6,
+    blocks: [
+      {
+        kind: "p",
+        text: "For most Australians, building a home will be one of the largest and most consequential financial commitments they ever make. Yet the process used to select the builder responsible for delivering it has changed remarkably little.",
+      },
+      {
+        kind: "p",
+        text: "Homeowners still begin with recommendations from friends, Google searches, social media groups, display villages, or whichever builder happens to respond first. Architects and designers often draw on trusted relationships. Builders rely heavily on referrals and repeat networks to secure work.",
+      },
+      {
+        kind: "p",
+        text: "These channels are not inherently flawed. Reputation, experience and professional relationships will always matter in construction. But for a decision carrying substantial financial, contractual and emotional risk, the industry should ask a more difficult question: are they enough?",
+      },
+      { kind: "h2", text: "An industry built on trust, but not enough transparency" },
+      {
+        kind: "p",
+        text: "Residential construction has become more complex. Homes are more highly specified, regulatory requirements continue to evolve, project costs are significant, and clients expect greater certainty before committing.",
+      },
+      {
+        kind: "p",
+        text: "Despite that complexity, there is still no widely adopted procurement framework that allows a homeowner to assess suitable builders against consistent criteria such as relevant experience, project type, geographic coverage, availability, financial capacity, delivery model and current workload.",
+      },
+      {
+        kind: "p",
+        text: "Instead, many owners create a shortlist from a small personal network and proceed without knowing which other builders may have been capable, available or better suited to the project. The issue is not that word of mouth produces poor builders. The issue is that it produces a narrow market view.",
+      },
+      {
+        kind: "quote",
+        text: "For a decision involving hundreds of thousands of dollars, and often millions, a narrow market view is no longer good enough.",
+      },
+      { kind: "h2", text: "Imagine if property were sold the same way" },
+      {
+        kind: "p",
+        text: "When Australians decide to sell a home, they do not privately approach one or two buyers recommended by a friend and hope the market has been tested. They list the property, present structured information, and create visibility among qualified participants.",
+      },
+      {
+        kind: "p",
+        text: "Residential building projects are different. Many remain effectively invisible to the wider builder market. Capable builders may never know a suitable project exists. Homeowners may never discover them. Architects can spend significant time making individual introductions and coordinating tender participation manually.",
+      },
+      {
+        kind: "p",
+        text: "The result is not always a bad outcome. But it can reduce competition, limit choice, and make it harder to establish whether the selected builder represents the right fit and fair market value.",
+      },
+      { kind: "h2", text: "The real objective is not more quotes" },
+      {
+        kind: "p",
+        text: "A better procurement model should not be measured by how many builders are asked to price a project. Sending incomplete documentation to a large group can waste time, dilute accountability, and burden builders with low-probability tendering costs.",
+      },
+      {
+        kind: "p",
+        text: "The objective should be better matching: a smaller number of appropriately qualified builders, selected because the project aligns with their experience, operating area, construction type, capacity and commercial appetite.",
+      },
+      {
+        kind: "p",
+        text: "That distinction matters. A specialist renovation builder may be well suited to a complex extension but not a multi-unit development. A high-end custom builder may deliver exceptional work but be commercially unsuitable for a straightforward project. A builder with the right portfolio may still be the wrong choice if its programme is already stretched.",
+      },
+      {
+        kind: "p",
+        text: "Procurement should identify these differences before the tender, not after the contract is signed.",
+      },
+      { kind: "h2", text: "What a better model should provide" },
+      {
+        kind: "table",
+        head: ["Principle", "What it means"],
+        rows: [
+          {
+            term: "Structured project information",
+            body: "Builders should receive a consistent brief: available documentation, project status, location, budget expectations and procurement timeframe.",
+          },
+          {
+            term: "Fit-based participation",
+            body: "Tender invitations should reflect relevant capability and genuine availability, rather than broad lead distribution.",
+          },
+          {
+            term: "Comparable submissions",
+            body: "Owners and consultants should be able to assess inclusions, exclusions, programme, methodology and commercial terms on a more consistent basis.",
+          },
+          {
+            term: "Transparent decision-making",
+            body: "Price should remain important, but it should be considered alongside experience, capacity, communication, risk and project alignment.",
+          },
+        ],
+      },
+      { kind: "h2", text: "Better procurement benefits every participant" },
+      {
+        kind: "p",
+        text: "For homeowners, the benefit is greater confidence that the market has been considered properly, and that the selected builder is suited to the project, not simply the most familiar name.",
+      },
+      {
+        kind: "p",
+        text: "For builders, it means access to opportunities that match their capability and pipeline, rather than paying for or pricing unsuitable leads with little prospect of conversion.",
+      },
+      {
+        kind: "p",
+        text: "For architects and building designers, it can reduce the administrative burden of sourcing participants, issuing information repeatedly, and managing an inconsistent tender process.",
+      },
+      {
+        kind: "p",
+        text: "For developers, lenders and consultants, earlier market engagement can produce more useful feedback on buildability, programme and cost before key decisions become difficult to reverse.",
+      },
+      {
+        kind: "p",
+        text: "Better matching at the beginning cannot remove every risk from construction. It can, however, reduce avoidable misalignment, one of the most common causes of friction once a project is underway.",
+      },
+      {
+        kind: "quote",
+        text: "The future of builder selection is not less trust. It is trust supported by better information, broader visibility and a more disciplined process.",
+      },
+      { kind: "h2", text: "Technology should support judgement, not replace it" },
+      {
+        kind: "p",
+        text: "Construction is a relationship-driven industry, and it should remain one. A digital procurement model should not reduce builder selection to a price ranking or an automated score.",
+      },
+      {
+        kind: "p",
+        text: "The best outcomes still depend on professional judgement, clear communication, thorough due diligence, and trust between the client, design team and builder. Technology can strengthen that process by improving access to information, organising comparisons, and widening visibility among suitable participants.",
+      },
+      {
+        kind: "p",
+        text: "In other words, the goal is not to remove relationships from procurement. It is to ensure relationships are supported by a more complete and transparent decision-making process.",
+      },
+      { kind: "h2", text: "The next evolution of residential construction" },
+      {
+        kind: "p",
+        text: "Australian construction has already transformed how homes are designed, documented, approved and managed. Procurement is the next logical area for change.",
+      },
+      {
+        kind: "p",
+        text: "Consumers now expect transparency and comparison when making major financial decisions. Residential construction should not be exempt simply because the industry has traditionally operated through informal networks.",
+      },
+      {
+        kind: "p",
+        text: "Choosing the right builder will always involve judgement. But that judgement should be informed by a genuine view of the market, structured information, and a clear understanding of project fit.",
+      },
+      {
+        kind: "p",
+        text: "Australia has transformed how property is bought and sold. It is time to apply the same expectation of visibility and informed choice to how homes are built.",
+      },
+    ],
+    aboutAuthor:
+      "Moe Akbulut is the founder of BuilderHQ, and a residential builder and developer. BuilderHQ is an Australian platform focused on improving how homeowners, architects, designers and builders connect and manage the early procurement process.",
+  },
+];
+
+export function briefPerspectives(): BriefPerspective[] {
+  return [...BRIEF_PERSPECTIVES].sort((a, b) =>
+    b.dateISO.localeCompare(a.dateISO),
+  );
+}
+
+export function getPerspective(slug: string): BriefPerspective | undefined {
+  return BRIEF_PERSPECTIVES.find((p) => p.slug === slug);
+}

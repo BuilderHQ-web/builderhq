@@ -16,6 +16,7 @@ BuilderHQ also runs the Preferred Partner register, a hand-picked network of bui
 ## The Build Brief
 
 - [The Build Brief](https://builderhq.com.au/build-brief): five minutes on the economics of getting homes built in Australia. Housing starts, building approvals, construction costs, and the decisions that matter. Plain, sourced, every Friday.
+- [Why choosing a builder still comes down to word of mouth](https://builderhq.com.au/build-brief/perspectives/choosing-a-builder-word-of-mouth): a founder perspective by Moe Akbulut on why Australian residential construction needs a better procurement model, and what fit-based builder selection should provide.
 - [RSS feed](https://builderhq.com.au/build-brief/feed.xml)
 
 ## Preferred Partners

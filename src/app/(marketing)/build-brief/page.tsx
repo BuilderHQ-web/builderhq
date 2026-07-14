@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import {
   briefIssues,
+  briefPerspectives,
   issueNo,
   latestIssue,
 } from "./brief-data";
@@ -119,6 +120,7 @@ function hubSchema() {
 export default function BuildBriefHub() {
   const issues = briefIssues();
   const latest = latestIssue();
+  const perspectives = briefPerspectives();
 
   return (
     <BriefShell>
@@ -207,6 +209,63 @@ export default function BuildBriefHub() {
             ))}
           </div>
         </div>
+
+        {/* perspectives — signed essays, unnumbered, beside the editions */}
+        {perspectives.length > 0 ? (
+          <div className="mt-12 sm:mt-16">
+            <div className="flex items-center justify-center gap-2.5 mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim">
+              <span aria-hidden className="h-px w-6 bg-text-faint/40" />
+              Perspectives
+              <span aria-hidden className="h-px w-6 bg-text-faint/40" />
+            </div>
+            <div className="flex flex-col gap-6">
+              {perspectives.map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/build-brief/perspectives/${p.slug}`}
+                  className="group block rounded-2xl bg-white border-l-[3px] border-accent-light ring-1 ring-[#101820]/[0.06] card-elev px-6 py-7 sm:px-10 sm:py-9 transition-all duration-300 hover:-translate-y-0.5 hover:ring-[#101820]/[0.12]"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+                    <p className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold">
+                      A Founder Perspective · Opinion
+                    </p>
+                    <p className="text-[11.5px] tracking-[0.08em] text-text-dim">
+                      {p.displayDate}
+                    </p>
+                  </div>
+                  <h2
+                    className="mt-3 leading-[1.12] text-[clamp(1.5rem,1.8vw+0.8rem,2.15rem)] text-text max-w-[30ch]"
+                    style={SERIF}
+                  >
+                    {p.title} {p.titleAccent}
+                  </h2>
+                  <p className="mt-3 text-[14.5px] leading-[1.65] text-text-muted max-w-[74ch] italic" style={SERIF}>
+                    {p.standfirst}
+                  </p>
+                  <p className="mt-5 flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.author.portrait}
+                      alt={p.author.name}
+                      className="size-9 rounded-full object-cover grayscale ring-1 ring-[#101820]/10"
+                    />
+                    <span className="text-[12.5px] text-text-dim leading-tight">
+                      <span className="font-ui font-semibold text-text">
+                        {p.author.name}
+                      </span>{" "}
+                      · {p.author.role}
+                      <span aria-hidden className="mx-1.5 text-text-faint">·</span>
+                      {p.readingMins} min read
+                    </span>
+                    <span className="ml-auto hidden sm:inline text-[13px] font-ui font-semibold text-text group-hover:text-accent-light transition-colors">
+                      Read the essay →
+                    </span>
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* inside every edition */}
         <BriefCard className="mt-12 sm:mt-16">
