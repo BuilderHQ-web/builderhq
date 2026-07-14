@@ -1533,7 +1533,9 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Designing custom homes across Gippsland and Melbourne's south east since 1999, weighing construction cost, running cost and environmental impact in every set of drawings.",
     disciplines: ["Custom homes", "Interior design", "Town planning"],
+    google: { rating: 5, reviews: 4 },
     stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "4 reviews" },
       {
         label: "Industry awards",
         value: "30+",
@@ -1543,11 +1545,6 @@ export const PARTNERS: Partner[] = [
         label: "Established",
         value: "1999",
         sub: "designing homes for over 25 years",
-      },
-      {
-        label: "Best of Houzz",
-        value: "2",
-        sub: "Design and Service, 2018",
       },
     ],
     awards: [
@@ -1672,6 +1669,85 @@ export const PARTNERS: Partner[] = [
         suburb: "Hawker",
         type: "Interior detail",
         image: "/partners/neighbourhood-architecture/hawker-ensuite.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "dna-architects",
+    kind: "architect",
+    draft: true,
+    name: "DNA Architects",
+    monogram: "DA",
+    logo: "/partners/dna-architects/logo.png",
+    principal: "AJ Bala and four fellow directors",
+    suburb: "Braddon",
+    state: "ACT",
+    tagline:
+      "One of Canberra's most awarded residential practices: a Braddon studio of more than twenty architects and designers, designing homes across the capital and the coast since 2001.",
+    disciplines: ["New homes", "Renovations and extensions", "Multi-residential"],
+    stats: [
+      {
+        label: "Industry awards",
+        value: "50+",
+        sub: "MBA, HIA and AIA, 2010 to 2025",
+      },
+      {
+        label: "Established",
+        value: "2001",
+        sub: "Dowse Norwood and Associates",
+      },
+      {
+        label: "Architects and designers",
+        value: "20+",
+        sub: "led by five directors",
+      },
+    ],
+    awards: [
+      {
+        label: "House of the Year, HIA and Master Builders",
+        sub: "ACT and Southern NSW · 2022",
+      },
+      {
+        label: "Townhouse Villa Development of the Year, twice",
+        sub: "HIA Australia · 2020 and 2021",
+      },
+      {
+        label: "National Medium Density, winner",
+        sub: "Master Builders Australia · 2021",
+      },
+    ],
+    why: "DNA Architects is the largest design practice on our register, and the awards case is hard to match: more than fifty MBA, HIA and AIA honours, House of the Year from both HIA and Master Builders in 2022, and HIA Australia's national Townhouse Villa Development of the Year twice. Established in 2001 by Glen Dowse and Ross Norwood, the Braddon studio now runs more than twenty architects and designers under five directors, four of them registered architects, including a Fellow of the Australian Institute of Architects. Director AJ Bala, a registered architect, leads client work with the collaborative, people focused approach the practice was built on. A studio this decorated that still draws most of its work from repeat clients and referrals is exactly the kind of partner we want beside an owner.",
+    about:
+      "DNA Architects, Dowse Norwood and Associates, is a registered architecture practice in Braddon, established in 2001 by Glen Dowse and Ross Norwood and grown to a studio of more than twenty architects and designers under five directors, among them AJ Bala, a registered architect. The practice designs new homes, renovations and multi-residential projects across Canberra and southern New South Wales, alongside commercial and interior work, and its record spans more than fifty industry honours, including House of the Year from both HIA and Master Builders in 2022, HIA Australia's national Townhouse Villa Development of the Year in 2020 and 2021, and a national medium density award from Master Builders Australia. The studio listens first and designs to the site and the client rather than to a house style, an approach that keeps most of its work arriving through repeat clients and referrals.",
+    facts: {
+      established: "2001",
+      basedIn: "Braddon, ACT",
+      serves: "Canberra and southern NSW",
+      focus: "Homes, multi-residential and interiors",
+    },
+    website: "https://dnaa.com.au",
+    instagram: "https://www.instagram.com/dna_architects/",
+    linkedin: "https://www.linkedin.com/company/dna-architects-pty-ltd/",
+    galleryUrl: "https://dnaa.com.au/portfolio/",
+    work: [
+      {
+        title: "Guerilla Bay house",
+        suburb: "Guerilla Bay",
+        type: "Coastal home",
+        image: "/partners/dna-architects/guerilla-bay.jpg",
+      },
+      {
+        title: "Curved roof house",
+        suburb: "Canberra",
+        type: "House and pool",
+        image: "/partners/dna-architects/curved-house.jpg",
+      },
+      {
+        title: "Black and timber kitchen",
+        suburb: "Canberra",
+        type: "Interior",
+        image: "/partners/dna-architects/kitchen.jpg",
       },
     ],
     joined: "2026",
