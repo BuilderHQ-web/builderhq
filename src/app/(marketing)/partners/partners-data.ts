@@ -2722,11 +2722,14 @@ export const PARTNERS: Partner[] = [
   {
     slug: "rhys-elmi",
     kind: "finance",
-    draft: true,
     roleLabel: "Mortgage broker",
     name: "Rhys Elmi",
     monogram: "RE",
     portrait: "/partners/rhys-elmi/portrait.jpg",
+    /* The canonical Mortgage Choice lockup float (owned by tim-murphy's
+       asset dir) — livePartnerLogos dedupes identical srcs, so the brand
+       shows once in the marquee however many MC brokers are live. */
+    logoFloat: "/partners/tim-murphy/logo-float-v4.png",
     suburb: "Cheltenham",
     state: "VIC",
     tagline:
@@ -2992,9 +2995,13 @@ export type PartnerLogo = {
  * partner going live appears on the landing page automatically.
  */
 export function livePartnerLogos(): PartnerLogo[] {
+  // Several partners can share one brand mark (e.g. Mortgage Choice
+  // brokers) — the marquee shows each mark once.
+  const seen = new Set<string>();
   return PARTNERS.filter((p) => !p.draft).flatMap((p) => {
     const src = p.logoFloat ?? p.logo ?? p.institution?.logo;
-    if (!src) return [];
+    if (!src || seen.has(src)) return [];
+    seen.add(src);
     return [
       {
         slug: p.slug,
