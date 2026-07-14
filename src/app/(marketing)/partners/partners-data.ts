@@ -2056,6 +2056,87 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "elite-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Elite Building Design",
+    monogram: "EB",
+    logo: "/partners/elite-building-design/logo.png",
+    principal: "Abdul Moussa",
+    suburb: "Liverpool",
+    state: "NSW",
+    tagline:
+      "A Liverpool studio designing about seventy homes a year across Sydney, the Illawarra and Newcastle, with fluency on both sides of the drawings: design and construction.",
+    disciplines: ["New homes", "Duplexes and dual occupancy", "Renovations"],
+    stats: [
+      {
+        label: "Homes designed",
+        value: "70",
+        sub: "a year, Sydney to Newcastle",
+      },
+      {
+        label: "In the industry",
+        value: "10+ yrs",
+        sub: "across design and construction",
+      },
+      {
+        label: "Established",
+        value: "2018",
+        sub: "led by Abdul Moussa",
+      },
+    ],
+    awards: [
+      {
+        label: "Local Business Awards, winner",
+        sub: "Liverpool City · 2022",
+      },
+      {
+        label: "Australian Small Business Champion, finalist",
+        sub: "2022",
+      },
+      {
+        label: "Outstanding Business Person, finalist",
+        sub: "Local Business Awards · 2022 · Abdul Moussa",
+      },
+    ],
+    why: "Elite Building Design works at a pace most studios never see, about seventy homes a year across Sydney, the Illawarra and Newcastle, and it shows in how buildable the drawings are. Director Abdul Moussa brings more than a decade across both building design and construction, so designs arrive practical and priced before they ever reach a builder's estimator: duplexes and dual occupancies that fit their sites, and luxury homes with the detail owners actually asked for. The practice took the Liverpool City Local Business Award in 2022, with national Small Business Champion finalist recognition the same year. For owners in Sydney's south west and beyond, this is design that respects the budget and survives the build.",
+    about:
+      "Elite Building Design is a Liverpool based building design practice established in 2018 and led by director Abdul Moussa, a building designer with more than ten years across the design and construction industry. The studio designs new homes, duplexes and dual occupancies, renovations and extensions, and carries clients from the first design consultation through council approval to completion, drawing on construction knowledge that keeps designs practical, priced and approvable. Working across Sydney, the Illawarra and Newcastle at around seventy homes a year, the practice pairs volume with a luxury standard of finish. It was named Liverpool City's Local Business Award winner in 2022, a year that also brought finalist honours at the Australian Small Business Champion Awards and a personal finalist listing for Abdul as Outstanding Business Person of the Year.",
+    facts: {
+      established: "2018",
+      basedIn: "Liverpool, NSW",
+      serves: "Sydney, Illawarra and Newcastle",
+      focus: "Homes, duplexes and dual occupancy",
+    },
+    website: "https://elitebuildingdesign.com.au",
+    instagram: "https://www.instagram.com/elite_building_design/",
+    facebook: "https://www.facebook.com/EliteBuildingDesign/",
+    linkedin: "https://www.linkedin.com/in/abdul-moussa-236b50240/",
+    galleryUrl: "https://elitebuildingdesign.com.au/",
+    work: [
+      {
+        title: "Gregory Hills",
+        suburb: "Gregory Hills",
+        type: "New home",
+        image: "/partners/elite-building-design/gregory-hills.jpg",
+      },
+      {
+        title: "Residence Lurnea",
+        suburb: "Lurnea",
+        type: "Duplex",
+        image: "/partners/elite-building-design/lurnea.jpg",
+      },
+      {
+        title: "Harrington Grove",
+        suburb: "Harrington Park",
+        type: "Ensuite",
+        image: "/partners/elite-building-design/harrington-grove.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
