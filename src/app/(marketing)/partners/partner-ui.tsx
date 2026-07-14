@@ -144,6 +144,32 @@ export function PartnerAvatar({
   );
 }
 
+/**
+ * <StateBadge> — the state identifier chip, same family as the Google
+ * rating chip: a quiet pill with the accent dot, so a row reads
+ * "who · where · how rated" at a glance as the register goes national.
+ */
+export function StateBadge({
+  state,
+  className,
+}: {
+  state: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-2 px-2.5 h-[26px] text-[11px] font-ui font-semibold tracking-[0.1em] text-text",
+        className,
+      )}
+    >
+      <span aria-hidden className="size-[5px] rounded-full bg-accent-light" />
+      <span className="sr-only">Based in </span>
+      {state}
+    </span>
+  );
+}
+
 const STAR_GOLD = "#e0a63c";
 
 export function GoogleRating({

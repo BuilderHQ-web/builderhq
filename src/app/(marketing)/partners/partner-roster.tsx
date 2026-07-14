@@ -8,7 +8,13 @@ import {
   FINANCE_PARTNERS,
   type Partner,
 } from "./partners-data";
-import { GoogleRating, PartnerAvatar, partnerHue } from "./partner-ui";
+import {
+  AustraliaStateMap,
+  SectionCount,
+  StateFilteredRows,
+  StateFilterProvider,
+} from "./partner-state-filter";
+import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-ui";
 
 /**
  * PartnersRegister — the body shared by /partners, /partners/architects and
@@ -27,8 +33,19 @@ const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
 ];
 
 export function PartnersRegister({ active }: { active: Active }) {
+  const activePartners =
+    active === "architect"
+      ? ARCHITECT_PARTNERS
+      : active === "finance"
+        ? FINANCE_PARTNERS
+        : [...ARCHITECT_PARTNERS, ...FINANCE_PARTNERS];
+  const stateCounts: Record<string, number> = {};
+  for (const p of activePartners) {
+    stateCounts[p.state] = (stateCounts[p.state] ?? 0) + 1;
+  }
+
   return (
-    <>
+    <StateFilterProvider>
       {/* How the register works — the three rules, framed warmly. */}
       <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-8 py-6 sm:py-7 mb-10">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
@@ -47,7 +64,12 @@ export function PartnersRegister({ active }: { active: Active }) {
         </div>
       </section>
 
-      <SegmentedNav active={active} />
+      {/* The toolbar: what kind of partner on the left, where in the
+          country on the right — the register's two axes, side by side. */}
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        <SegmentedNav active={active} />
+        <AustraliaStateMap counts={stateCounts} />
+      </div>
 
       <div className="mt-10 flex flex-col gap-16 lg:gap-20">
         {(active === "all" || active === "architect") && (
@@ -55,6 +77,7 @@ export function PartnersRegister({ active }: { active: Active }) {
             label="Design partners"
             intro="Building designers and architects doing considered residential work, who we are glad to point homeowners toward."
             partners={ARCHITECT_PARTNERS}
+            emptyLabel="design partners"
           />
         )}
         {(active === "all" || active === "finance") && (
@@ -62,6 +85,7 @@ export function PartnersRegister({ active }: { active: Active }) {
             label="Finance partners"
             intro="Brokers with real construction finance experience, and clients who speak well of them."
             partners={FINANCE_PARTNERS}
+            emptyLabel="finance partners"
           />
         )}
       </div>
@@ -126,7 +150,7 @@ export function PartnersRegister({ active }: { active: Active }) {
 
       {/* Sentinel-driven modal (joins + introduction requests). */}
       <PartnerForm />
-    </>
+    </StateFilterProvider>
   );
 }
 
@@ -177,10 +201,12 @@ function PartnerSection({
   label,
   intro,
   partners,
+  emptyLabel,
 }: {
   label: string;
   intro: string;
   partners: Partner[];
+  emptyLabel: string;
 }) {
   return (
     <section>
@@ -190,16 +216,21 @@ function PartnerSection({
         </h2>
         <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
         <span className="text-[12px] tabular-nums text-text-dim shrink-0">
-          {partners.length}
+          <SectionCount states={partners.map((p) => p.state)} />
         </span>
       </div>
       <p className="mt-3 max-w-[58ch] text-[14.5px] leading-[1.65] text-text-muted">
         {intro}
       </p>
-      <div className="mt-6 flex flex-col gap-3.5">
-        {partners.map((p) => (
-          <PartnerRow key={p.slug} partner={p} />
-        ))}
+      <div className="mt-6">
+        <StateFilteredRows
+          emptyLabel={emptyLabel}
+          items={partners.map((p) => ({
+            key: p.slug,
+            state: p.state,
+            node: <PartnerRow partner={p} />,
+          }))}
+        />
       </div>
     </section>
   );
@@ -235,29 +266,33 @@ function PartnerRow({ partner }: { partner: Partner }) {
             >
               Preferred Partner
             </span>
-            {partner.google ? (
-              <GoogleRating
-                rating={partner.google.rating}
-                reviews={partner.google.reviews}
-                className="ml-auto hidden sm:inline-flex"
-              />
-            ) : null}
+            <span className="ml-auto hidden sm:inline-flex items-center gap-2">
+              <StateBadge state={partner.state} />
+              {partner.google ? (
+                <GoogleRating
+                  rating={partner.google.rating}
+                  reviews={partner.google.reviews}
+                />
+              ) : null}
+            </span>
           </div>
           <p className="mt-1 text-[12.5px] text-text-dim">
-            {partner.suburb}, {partner.state}
+            {partner.suburb}
             <span aria-hidden className="mx-2 text-text-faint">·</span>
             {partner.disciplines.join("  ·  ")}
           </p>
           <p className="mt-2.5 max-w-[60ch] text-[14px] leading-[1.6] text-text-muted">
             {partner.tagline}
           </p>
-          {partner.google ? (
-            <GoogleRating
-              rating={partner.google.rating}
-              reviews={partner.google.reviews}
-              className="mt-3 sm:hidden"
-            />
-          ) : null}
+          <span className="mt-3 flex sm:hidden items-center gap-2">
+            <StateBadge state={partner.state} />
+            {partner.google ? (
+              <GoogleRating
+                rating={partner.google.rating}
+                reviews={partner.google.reviews}
+              />
+            ) : null}
+          </span>
         </div>
 
         <ArrowUpRight
