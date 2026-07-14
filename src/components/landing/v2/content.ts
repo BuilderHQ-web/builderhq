@@ -26,7 +26,7 @@ export const ROLE_META: Record<
 > = {
   homeowner: { chip: "I’m a homeowner", chipShort: "Homeowner", dock: "For Homeowners" },
   builder: { chip: "I’m a builder", chipShort: "Builder", dock: "For Builders" },
-  architect: { chip: "I’m a building designer", chipShort: "Building designer", dock: "For Building Designers" },
+  architect: { chip: "I’m a building designer", chipShort: "Building Designer", dock: "For Building Designers" },
   finance: { chip: "I’m a finance broker", chipShort: "Finance", dock: "For Finance Brokers" },
 };
 
