@@ -1752,6 +1752,89 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "atria-designs",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design studio",
+    name: "Atria Designs",
+    monogram: "AD",
+    logo: "/partners/atria-designs/logo.png",
+    principal: "Samuel Kassis",
+    suburb: "Rouse Hill",
+    state: "NSW",
+    tagline:
+      "The Rouse Hill studio behind Australia's Display Home of the Year 2024, designing custom homes for owners and display homes for the country's best builders since 2015.",
+    disciplines: ["Custom homes", "Duplexes", "Commercial projects"],
+    institution: {
+      name: "Building Designers Association of Australia",
+      role: "Member",
+      note: "Director a BDAA member since 2016",
+    },
+    google: { rating: 4.5, reviews: 23 },
+    stats: [
+      { label: "Google rating", value: "4.5", star: true, sub: "23 reviews" },
+      {
+        label: "Industry honours",
+        value: "14",
+        sub: "across BDAA, HIA and MBA, since 2016",
+      },
+      {
+        label: "Established",
+        value: "2015",
+        sub: "BDAA Rookie of the Year in 2016",
+      },
+    ],
+    awards: [
+      {
+        label: "Australian Display Home of the Year",
+        sub: "HIA · 2024 · Jacks Point, with Horizon Homes",
+      },
+      {
+        label: "National Design Awards, winner",
+        sub: "Building Designers Association of Australia · 2023 · Mid Century Haven",
+      },
+      {
+        label: "Master Builders NSW award, winner",
+        sub: "2023 · Mid Century Haven, with Evolution Building Co",
+      },
+    ],
+    why: "Atria Designs is the studio behind Australia's Display Home of the Year, the HIA's national award for 2024, won with builder Horizon Homes, and it backs that with a BDAA National Design Award of its own in 2023. That double is rare: recognition from the housing industry's biggest body and from the building designers' peak body, on top of fourteen industry honours since 2016. Founded by Samuel Kassis in 2015 and named BDAA Rookie of the Year within its first year, the Rouse Hill studio designs custom homes, duplexes and commercial projects, and is trusted by some of Australia's best builders and developers for their display and volume work. For owners that combination matters: boutique attention on your project, backed by the discipline of a studio that designs for the industry's best.",
+    about:
+      "Atria Designs is a building design studio in Rouse Hill, in Sydney's Hills District, founded by Samuel Kassis in 2015 and named BDAA Rookie of the Year within its first year. The team designs custom homes, renovations, duplexes and commercial projects across Sydney, and is also the design partner behind display and volume homes for some of Australia's best builders and developers, work that won HIA's Australian Display Home of the Year in 2024 and NSW Display Home of the Year in 2023 with Horizon Homes. The studio's own shelf carries a BDAA National Design Award for Mid Century Haven in 2023, and the team brings close to twenty years of industry experience to each commission. Its promise is a client experience worth having: your needs first, clear communication before, during and after the process, and designs that keep working for the people living in them years on.",
+    facts: {
+      established: "2015",
+      basedIn: "Rouse Hill, NSW",
+      serves: "Sydney and NSW",
+      focus: "Custom homes, duplexes and display homes",
+    },
+    website: "https://www.atriadesigns.com.au",
+    instagram: "https://www.instagram.com/atria_designs/",
+    facebook: "https://www.facebook.com/atriadesigns.au",
+    linkedin: "https://www.linkedin.com/company/atria-designs-au/",
+    galleryUrl: "https://www.atriadesigns.com.au/project-gallery/",
+    work: [
+      {
+        title: "Lennox Street",
+        suburb: "Sydney",
+        type: "Duplex",
+        image: "/partners/atria-designs/lennox-street.jpg",
+      },
+      {
+        title: "The Oasis",
+        suburb: "Sydney",
+        type: "Single storey living",
+        image: "/partners/atria-designs/the-oasis.jpg",
+      },
+      {
+        title: "Poolside home",
+        suburb: "Sydney",
+        type: "New home and pool",
+        image: "/partners/atria-designs/poolside-home.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
