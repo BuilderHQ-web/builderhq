@@ -1600,6 +1600,82 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "neighbourhood-architecture",
+    kind: "architect",
+    draft: true,
+    name: "Neighbourhood Architecture",
+    monogram: "NA",
+    logo: "/partners/neighbourhood-architecture/logo.png",
+    principal: "Chris Clode and Brendan McGregor",
+    suburb: "Kingston",
+    state: "ACT",
+    tagline:
+      "Registered architects at the Kingston Foreshore designing solar passive, energy efficient homes, with every design's energy rating modelled from the first sketch.",
+    disciplines: ["New homes", "Renovations and extensions", "Solar passive design"],
+    google: { rating: 5.0, reviews: 13 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "13 reviews" },
+      {
+        label: "MBA and HIA honours",
+        value: "16",
+        sub: "including three wins, 2022 to 2025",
+      },
+      {
+        label: "Registered architect",
+        value: "ACT + NSW",
+        sub: "registrations 2618 and 11914",
+      },
+    ],
+    awards: [
+      {
+        label: "Sustainable Residential Project, winner",
+        sub: "Master Builders ACT · 2025 · Tocumwal Revival",
+      },
+      {
+        label: "Custom Built Home, winner",
+        sub: "Master Builders ACT · 2022 · Flow House",
+      },
+      {
+        label: "People's Choice Award, winner",
+        sub: "Master Builders ACT · 2022 · Flow House",
+      },
+    ],
+    why: "Neighbourhood Architecture pairs a registered architect with an energy efficiency specialist, and the results have come fast: sixteen Master Builders and HIA honours since 2022, including the Master Builders ACT award for Sustainable Residential Project in 2025, and a perfect 5.0 Google rating. Director Chris Clode is a registered architect in the ACT and New South Wales; co director Brendan McGregor is an accredited HIA GreenSmart Professional who led design at an energy performance focused Canberra studio before co founding the practice. Every home is modelled in NatHERS approved energy rating software from the first sketch, so comfort and running costs are designed in rather than assessed at the end. In Canberra's climate, that discipline pays for itself every winter.",
+    about:
+      "Neighbourhood Architecture is a registered architecture practice at the Kingston Foreshore in Canberra, established in 2021 by directors Chris Clode and Brendan McGregor. The practice designs new homes, renovations and extensions across Canberra and southern New South Wales, built around solar passive design: orientation, natural light, ventilation and thermal mass doing the work before any heating or cooling is switched on. Every design is modelled in NatHERS approved energy rating software from the first sketch rather than assessed for efficiency at the end, and the approach has earned sixteen Master Builders and HIA honours since 2022, including three wins. Chris is a registered architect in the ACT and New South Wales with a Masters in Architecture from the University of Canberra; Brendan is an accredited HIA GreenSmart Professional with a Certificate IV in Home Energy Efficiency and Sustainability. Together they lead a small team that stays with each home from concept design through approvals to completion.",
+    facts: {
+      established: "2021",
+      basedIn: "Kingston, ACT",
+      serves: "Canberra and southern NSW",
+      focus: "Solar passive, energy efficient homes",
+    },
+    website: "https://neighbourhoodarchitecture.com.au",
+    instagram: "https://www.instagram.com/neighbourhood_architecture/",
+    facebook: "https://www.facebook.com/Neighbourhoodarchitecture/",
+    galleryUrl: "https://neighbourhoodarchitecture.com.au/projects/",
+    work: [
+      {
+        title: "Denman Prospect house",
+        suburb: "Denman Prospect",
+        type: "New home",
+        image: "/partners/neighbourhood-architecture/denman-prospect.jpg",
+      },
+      {
+        title: "Hawker house",
+        suburb: "Hawker",
+        type: "New home and pool",
+        image: "/partners/neighbourhood-architecture/hawker.jpg",
+      },
+      {
+        title: "Hawker ensuite",
+        suburb: "Hawker",
+        type: "Interior detail",
+        image: "/partners/neighbourhood-architecture/hawker-ensuite.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
