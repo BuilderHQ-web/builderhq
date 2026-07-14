@@ -2137,6 +2137,69 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "design-plus-drafting",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "Design Plus Drafting",
+    monogram: "DP",
+    logo: "/partners/design-plus-drafting/logo.png",
+    principal: "Scott Nicholson",
+    suburb: "Leichhardt",
+    state: "NSW",
+    tagline:
+      "Sydney's Inner West design and drafting studio, reimagining homes from attic conversions to full knockdown rebuilds, with the approvals process handled end to end.",
+    disciplines: ["New homes and knockdown rebuilds", "Extensions and additions", "Attic conversions"],
+    google: { rating: 4.9, reviews: 62 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "62 reviews" },
+      {
+        label: "Designing since",
+        value: "1994",
+        sub: "three decades of design and drafting",
+      },
+      {
+        label: "Drafting projects",
+        value: "10,000+",
+        sub: "via parent company Drawable, since 2007",
+      },
+    ],
+    why: "Design Plus Drafting holds one of the deepest review bases of any design practice on our register, a 4.9 rating across 62 reviews, and it comes from doing the unglamorous parts well: development applications, complying development, council coordination and consultant management, handled for clients rather than handed to them. Director Scott Nicholson leads a Leichhardt team whose working knowledge of Sydney's councils means potential issues are caught in the drawings, not in the assessment queue. Behind the studio sits Drawable, a drafting operation that has completed more than ten thousand projects since 2007, so documentation depth is the house strength. From attic conversions to full knockdown rebuilds, this is the Inner West's steady hand.",
+    about:
+      "Design Plus Drafting is a building design and drafting studio in Leichhardt, in Sydney's Inner West, led by director Scott Nicholson and tracing its design arc back to 1994. The team works across residential, commercial and corporate projects: home extensions and additions, attic conversions, new homes and full knockdown rebuilds, with every design developed to be achievable and compliant with the relevant codes. The studio prepares high quality drawings and full documentation for development applications and complying development, coordinates the required consultants directly, and applies years of experience with Sydney councils to give each application its best chance of a smooth approval. The practice is the building design division of Drawable, a drafting company that has completed more than ten thousand projects for trade businesses across Australia and the Pacific Rim since 2007, and it serves clients in any style and location across New South Wales.",
+    facts: {
+      established: "1994",
+      basedIn: "Leichhardt, NSW",
+      serves: "Sydney and NSW",
+      focus: "Homes, extensions and approvals",
+    },
+    website: "https://www.designplusdrafting.com.au",
+    instagram: "https://www.instagram.com/designplusdraftingau/",
+    linkedin: "https://www.linkedin.com/company/design-plus-drafting/",
+    galleryUrl: "https://www.designplusdrafting.com.au/",
+    work: [
+      {
+        title: "Hurlstone Park",
+        suburb: "Hurlstone Park",
+        type: "New home and pool",
+        image: "/partners/design-plus-drafting/hurlstone-park.jpg",
+      },
+      {
+        title: "Monterey",
+        suburb: "Monterey",
+        type: "New home",
+        image: "/partners/design-plus-drafting/monterey.jpg",
+      },
+      {
+        title: "Central Coast",
+        suburb: "Central Coast",
+        type: "Hillside home",
+        image: "/partners/design-plus-drafting/central-coast.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
