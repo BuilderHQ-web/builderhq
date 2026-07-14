@@ -1359,6 +1359,89 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "maxa-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Sustainable building design",
+    name: "Maxa Design",
+    monogram: "MD",
+    logo: "/partners/maxa-design/logo.png",
+    principal: "Sven and Dawn Maxa",
+    suburb: "Blackburn",
+    state: "VIC",
+    tagline:
+      "Australia's sustainable design specialists: award winning eco and Passivhaus homes, designed to brief and budget by a carbon neutral practice.",
+    disciplines: ["Passivhaus and eco homes", "New homes", "Renovations"],
+    google: { rating: 4.7, reviews: 19 },
+    institution: {
+      name: "Design Matters National",
+      role: "Member practice",
+      note: "Principal Sven Maxa · Certified Passivhaus Designer · registered in every state",
+    },
+    stats: [
+      { label: "Google rating", value: "4.7", star: true, sub: "19 reviews" },
+      {
+        label: "Industry awards",
+        value: "25+",
+        sub: "including Design of the Year, twice",
+      },
+      {
+        label: "Established",
+        value: "2004",
+        sub: "carbon neutral, a team of nine",
+      },
+    ],
+    awards: [
+      {
+        label: "Building Design of the Year, twice",
+        sub: "Design Matters National · Canal Haus 2023 · Donvale 2020",
+      },
+      {
+        label: "10 Star Sustainable Design Challenge, winner",
+        sub: "BDAV 2015 · the Arc, Australia's first 10 star relocatable home",
+      },
+      {
+        label: "Best Small Sustainable Practice",
+        sub: "Sustainability Awards · 2023",
+      },
+    ],
+    why: "Maxa Design is the sustainability authority on our register, and the record reads like it. The practice has been named Building Design of the Year twice, for Canal Haus in 2023 and Donvale in 2020, holds more than two dozen industry awards from a published honours list that runs to nearly fifty entries, and designed the Arc, Australia's first 10 star rated relocatable home. Principal Sven Maxa is a Certified Passivhaus Designer, a registered building practitioner in every Australian state, a past member of Design Matters National's Committee of Management and a former awards judge, and the practice itself is carbon neutral. What makes that record useful to an owner is the discipline behind it: two decades of designing high performance homes to brief and to budget, proving sustainable and beautiful are the same project.",
+    about:
+      "Maxa Design is a Blackburn based building design practice founded in 2004 by Sven and Dawn Maxa, and grown from a husband and wife studio into a team of nine. The practice specialises in eco and energy efficient homes, from new builds and renovations through to certified Passivhaus projects, designed with a practical, can-do approach that holds to brief and budget. Its work has collected more than two dozen awards, including Building Design of the Year twice and the BDAV 10 Star Sustainable Design Challenge for the Arc, Australia's first 10 star rated relocatable home. Sven, a Certified Passivhaus Designer registered in every Australian state, presents regularly to industry and advocates for eco home design; Dawn has shaped the practice's growth through business, marketing and interiors, including the couple's award winning Nunawading home featured in Inside Out. The practice is carbon neutral.",
+    facts: {
+      established: "2004",
+      basedIn: "Blackburn, VIC",
+      serves: "Melbourne, with projects interstate",
+      focus: "Eco, energy efficient and Passivhaus homes",
+    },
+    website: "https://www.maxadesign.com.au",
+    instagram: "https://www.instagram.com/maxadesign_",
+    facebook: "https://www.facebook.com/maxadesign",
+    linkedin: "https://www.linkedin.com/company/maxa-design/",
+    galleryUrl: "https://www.maxadesign.com.au/projects",
+    work: [
+      {
+        title: "Canal Haus",
+        suburb: "Queensland",
+        type: "Canal-front new home",
+        image: "/partners/maxa-design/canal-haus.jpg",
+      },
+      {
+        title: "Surrey Hills",
+        suburb: "Surrey Hills",
+        type: "New family home",
+        image: "/partners/maxa-design/surrey-hills.jpg",
+      },
+      {
+        title: "Kyneton",
+        suburb: "Kyneton",
+        type: "Kitchen and interiors",
+        image: "/partners/maxa-design/kyneton.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
