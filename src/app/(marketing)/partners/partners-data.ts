@@ -1835,6 +1835,89 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "dawes-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "Dawes Design & Drafting Group",
+    monogram: "DD",
+    logo: "/partners/dawes-design/logo.png",
+    principal: "Troy Dawes",
+    suburb: "Narre Warren",
+    state: "VIC",
+    tagline:
+      "More than two thousand completed Victorian projects: a Narre Warren studio designing new homes, extensions and multi unit projects across Melbourne, the Peninsula and Gippsland since 1997.",
+    disciplines: ["New homes", "Extensions and renovations", "Multi-unit developments"],
+    institution: {
+      name: "Victorian Building Authority",
+      role: "Registered Building Practitioner",
+      note: "Director Troy Dawes · registered since 1997",
+    },
+    google: { rating: 5, reviews: 21 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "21 reviews" },
+      {
+        label: "Projects completed",
+        value: "2,198",
+        sub: "1,037 new homes moved into",
+      },
+      {
+        label: "Designing since",
+        value: "1996",
+        sub: "VBA registered practitioner since 1997",
+      },
+    ],
+    awards: [
+      {
+        label: "Best Home $500k to $600k, first place",
+        sub: "Master Builders Victoria · 2021",
+      },
+      {
+        label: "Renovation and Extension over $500k, first place",
+        sub: "Master Builders Victoria · 2015",
+      },
+      {
+        label: "HIA award, category winner",
+        sub: "2016 · Warragul Extension",
+      },
+    ],
+    why: "Dawes Design has the numbers of a big practice and the manner of a small one: 2,198 completed projects, 1,037 new homes moved into, and a director who still works with every client one on one. Troy Dawes has designed Victorian homes since 1996 and has held Victorian Building Authority registration since 1997, and his projects have taken first place at the Master Builders Victoria awards in both 2015 and 2021, with an HIA category win for the Warragul Extension in 2016. A 5.0 Google rating across 21 reviews says the process still feels personal at that scale. For owners, this is a studio that has already solved whatever a site can throw at a project, and documents it so the permits move.",
+    about:
+      "Dawes Design & Drafting Group is a building design practice headquartered in Narre Warren, with offices in Scoresby and Warragul, serving Melbourne, the Mornington Peninsula and Gippsland. Director Troy Dawes has designed for Victoria since 1996 and has been a registered building practitioner with the Victorian Building Authority since 1997; the current practice was established in 2007 as a rebranding of Troy Dawes Design, founded in 1997. The studio designs new homes, extensions and renovations, dual occupancies and multi unit developments, and works deliberately as a small practice, with Troy developing each project alongside the client from first concept to approved drawings, supported by a settled network of town planners, engineers, surveyors and thermal assessors. Accurate, detailed documentation is the house discipline, drawn so town planning and building permits move without drama, and the record now stands at 2,198 completed projects and more than a thousand new homes.",
+    facts: {
+      established: "1997",
+      basedIn: "Narre Warren, VIC",
+      serves: "Melbourne, Mornington Peninsula and Gippsland",
+      focus: "Homes, extensions and multi unit design",
+    },
+    website: "https://dawesdesign.com.au",
+    instagram: "https://www.instagram.com/dawesdesign/",
+    facebook: "https://www.facebook.com/dawesdesign/",
+    linkedin: "https://au.linkedin.com/pub/troy-dawes/69/5bb/820",
+    galleryUrl: "https://dawesdesign.com.au/",
+    work: [
+      {
+        title: "Mt Eliza Extension",
+        suburb: "Mount Eliza",
+        type: "Extension",
+        image: "/partners/dawes-design/mt-eliza.jpg",
+      },
+      {
+        title: "Warragul Dwelling",
+        suburb: "Warragul",
+        type: "New home",
+        image: "/partners/dawes-design/warragul-dwelling.jpg",
+      },
+      {
+        title: "Warragul Addition",
+        suburb: "Warragul",
+        type: "Addition",
+        image: "/partners/dawes-design/warragul-addition.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
