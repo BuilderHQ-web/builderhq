@@ -1,0 +1,36 @@
+# BuilderHQ
+
+> BuilderHQ (builderhq.com.au) is Australia's residential construction tendering platform. Homeowners and developers list their project once, with full architectural plans, and up to three verified builders price it on the same scope, so quotes are comparable like for like. Free for homeowners; every builder is ABN and licence checked; never more than three builders per project. Based in Melbourne, operating Australia wide.
+
+BuilderHQ also runs the Preferred Partner register, a hand-picked network of building designers, architects and finance brokers it introduces to owners and builders (no one pays to be listed), and publishes The Build Brief, a weekly briefing on the economics of getting homes built in Australia.
+
+## Platform
+
+- [How BuilderHQ works](https://builderhq.com.au/): list a project with full plans, up to three verified builders price the same scope, compare and appoint.
+- [For builders](https://builderhq.com.au/for/builders): tender-ready projects with full working drawings, owners ready to build, never more than three builders per job.
+- [For building designers](https://builderhq.com.au/for/architects): the Preferred Design Partner Network, featured and referred at no cost.
+- [For finance brokers](https://builderhq.com.au/for/finance-brokers): the Preferred Finance Partner Program, warm introductions when owners ask for finance.
+- [FAQs](https://builderhq.com.au/faq)
+- [About BuilderHQ](https://builderhq.com.au/about)
+
+## The Build Brief
+
+- [The Build Brief](https://builderhq.com.au/build-brief): five minutes on the economics of getting homes built in Australia. Housing starts, building approvals, construction costs, and the decisions that matter. Plain, sourced, every Friday.
+- [RSS feed](https://builderhq.com.au/build-brief/feed.xml)
+
+## Preferred Partners
+
+- [Preferred Partner register](https://builderhq.com.au/partners): building designers and finance brokers BuilderHQ knows well enough to introduce. Personally invited, no paid placements.
+- [Design partners](https://builderhq.com.au/partners/architects)
+- [Finance partners](https://builderhq.com.au/partners/finance-brokers)
+
+## Contact
+
+- Email: info@builderhq.com.au
+- [Book a call](https://builderhq.com.au/book-a-call)
+
+## Optional
+
+- [Sitemap](https://builderhq.com.au/sitemap.xml)
+- [Privacy](https://builderhq.com.au/privacy)
+- [Terms](https://builderhq.com.au/terms)
