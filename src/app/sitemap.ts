@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 
-import { briefIssues } from "@/app/(marketing)/build-brief/brief-data";
+import {
+  briefIssues,
+  briefPerspectives,
+} from "@/app/(marketing)/build-brief/brief-data";
 import { PARTNERS } from "@/app/(marketing)/partners/partners-data";
 
 /**
@@ -56,5 +59,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "yearly",
   }));
 
-  return [...staticPages, ...partnerPages, ...briefPages];
+  const perspectivePages: MetadataRoute.Sitemap = briefPerspectives().map(
+    (p) => ({
+      url: `${SITE}/build-brief/perspectives/${p.slug}`,
+      lastModified: new Date(`${p.dateISO}T07:00:00+10:00`),
+      priority: 0.8,
+      changeFrequency: "yearly",
+    }),
+  );
+
+  return [...staticPages, ...partnerPages, ...briefPages, ...perspectivePages];
 }
