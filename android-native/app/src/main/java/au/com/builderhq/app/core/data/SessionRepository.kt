@@ -119,6 +119,17 @@ class SessionRepository @Inject constructor(
         _state.value = SessionState.SignedOut
     }
 
+    /**
+     * Push a fresh user into the signed-in state without a network
+     * round-trip — used when a flow already holds the updated user
+     * (e.g. onboarding submit returns it with needsOnboarding=false).
+     */
+    fun applyUser(user: User) {
+        if (_state.value is SessionState.SignedIn) {
+            _state.value = SessionState.SignedIn(user)
+        }
+    }
+
     /** Persist tokens + flip to SignedIn. Shared by login / verify / reset. */
     private suspend fun establish(s: AuthSessionDto): User {
         tokenStore.save(

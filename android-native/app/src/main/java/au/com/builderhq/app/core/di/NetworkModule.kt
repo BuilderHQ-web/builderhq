@@ -10,6 +10,7 @@ import au.com.builderhq.app.core.network.DashboardApi
 import au.com.builderhq.app.core.network.MessagingApi
 import au.com.builderhq.app.core.network.OwnerApi
 import au.com.builderhq.app.core.network.OwnerTendersApi
+import au.com.builderhq.app.core.network.ProfileApi
 import au.com.builderhq.app.core.network.ProjectsApi
 import au.com.builderhq.app.core.network.RefreshApi
 import au.com.builderhq.app.core.network.TendersApi
@@ -110,6 +111,10 @@ object NetworkModule {
     @Provides @Singleton
     fun ownerTendersApi(@AuthClient retrofit: Retrofit): OwnerTendersApi =
         retrofit.create(OwnerTendersApi::class.java)
+
+    @Provides @Singleton
+    fun profileApi(@AuthClient retrofit: Retrofit): ProfileApi =
+        retrofit.create(ProfileApi::class.java)
 
     // R2 presigned uploads go through the un-authenticated client.
     @Provides @Singleton
