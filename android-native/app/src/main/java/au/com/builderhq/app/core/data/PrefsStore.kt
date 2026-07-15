@@ -27,8 +27,19 @@ class PrefsStore @Inject constructor(
     fun coachmarkSeen(): Boolean = prefs.getBoolean(KEY_COACHMARK, false)
     fun setCoachmarkSeen() { prefs.edit().putBoolean(KEY_COACHMARK, true).apply() }
 
+    /**
+     * Last-seen suggested-project count for the home feed's "+N NEW"
+     * badge. −1 = never recorded (first visit shows no badge, just
+     * records the baseline). Key mirrors iOS's @AppStorage name.
+     */
+    fun builderSnapSuggested(): Int = prefs.getInt(KEY_SNAP_SUGGESTED, -1)
+    fun setBuilderSnapSuggested(count: Int) {
+        prefs.edit().putInt(KEY_SNAP_SUGGESTED, count).apply()
+    }
+
     private companion object {
         const val KEY_ONBOARDING = "onboarding_seen_v1"
         const val KEY_COACHMARK = "coachmark_seen_v1"
+        const val KEY_SNAP_SUGGESTED = "builder.snap.suggested"
     }
 }

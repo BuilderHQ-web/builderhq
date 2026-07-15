@@ -56,6 +56,7 @@ import au.com.builderhq.app.core.design.rememberHaptics
 import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
 import au.com.builderhq.app.core.model.Role
+import au.com.builderhq.app.feature.home.BuilderHomeScreen
 import au.com.builderhq.app.feature.marketplace.MarketplaceScreen
 import au.com.builderhq.app.feature.messaging.InboxScreen
 import au.com.builderhq.app.feature.owner.OwnerDashboardScreen
@@ -89,9 +90,15 @@ class ShellViewModel @Inject constructor(
 
 private data class Tab(val label: String, val icon: ImageVector)
 
-private val TABS = listOf(
+/**
+ * Owner:   Home (dashboard) · Projects (mine) · Inbox · You
+ * Builder: Home (dashboard) · Browse (marketplace) · Inbox · You
+ * Mirrors the iOS tab shell — the builder's second tab is discovery,
+ * their tenders/projects live on the Home pipeline.
+ */
+private fun tabsFor(owner: Boolean) = listOf(
     Tab("Home", Icons.Rounded.GridView),
-    Tab("Projects", Icons.Rounded.Explore),
+    Tab(if (owner) "Projects" else "Browse", Icons.Rounded.Explore),
     Tab("Inbox", Icons.Rounded.ChatBubbleOutline),
     Tab("You", Icons.Rounded.Person),
 )
@@ -134,20 +141,20 @@ fun MainScaffold(
             ) { tab ->
                 when (tab) {
                     0 -> if (owner) OwnerDashboardScreen(onOpenProject = onOpenProject, onCreateProject = onCreateProject)
-                         else MarketplaceScreen(onOpenProject = onOpenProject)
+                         else BuilderHomeScreen(onOpenProject = onOpenProject)
                     1 -> if (owner) OwnerProjectsScreen(onOpenProject = onOpenProject, onCreateProject = onCreateProject)
-                         else PlaceholderScreen("Projects", "Browse the marketplace and manage your projects here.", Icons.Rounded.Explore)
+                         else MarketplaceScreen(onOpenProject = onOpenProject)
                     2 -> InboxScreen(onOpenConversation = onOpenConversation)
                     else -> ProfileScreen()
                 }
             }
-            BottomBar(selected, unread) { if (it != selected) haptics.tick(); selected = it }
+            BottomBar(tabsFor(owner), selected, unread) { if (it != selected) haptics.tick(); selected = it }
         }
     }
 }
 
 @Composable
-private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
+private fun BottomBar(tabs: List<Tab>, selected: Int, unread: Int, onSelect: (Int) -> Unit) {
     val c = Bhq.colors
     Box(Modifier.fillMaxWidth()) {
         // blueprint top hairline
@@ -170,7 +177,7 @@ private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
                 .padding(top = 9.dp, bottom = 5.dp),
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val tabW = maxWidth / TABS.size
+                val tabW = maxWidth / tabs.size
                 val pillW = 50.dp
                 // A single pill that glides to the active tab.
                 val pillX by animateDpAsState(
@@ -187,7 +194,7 @@ private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
                         .background(c.accent.copy(alpha = 0.12f)),
                 )
                 Row(Modifier.fillMaxWidth()) {
-                    TABS.forEachIndexed { i, tab ->
+                    tabs.forEachIndexed { i, tab ->
                         BarTab(tab.label, tab.icon, i == selected, badge = if (i == 2) unread else 0) { onSelect(i) }
                     }
                 }
