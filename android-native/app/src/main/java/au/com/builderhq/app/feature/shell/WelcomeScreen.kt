@@ -32,11 +32,8 @@ import au.com.builderhq.app.core.design.theme.DisplaySerif
 import au.com.builderhq.app.core.design.components.GhostButton
 import au.com.builderhq.app.core.design.components.Kicker
 import au.com.builderhq.app.core.design.components.PrimaryButton
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit, onLogin: () -> Unit) {
@@ -57,7 +54,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onLogin: () -> Unit) {
                 Text(
                     "Tender your build.",
                     fontSize = 46.sp, lineHeight = 50.sp,
-                    fontWeight = FontWeight.SemiBold, color = TextPrimary,
+                    fontWeight = FontWeight.SemiBold, color = Bhq.colors.text,
                 )
             }
             Reveal(visible, 2) {
@@ -65,14 +62,14 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onLogin: () -> Unit) {
                     "In days.",
                     fontSize = 48.sp, lineHeight = 52.sp,
                     fontFamily = DisplaySerif, fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Normal, color = AccentLight,
+                    fontWeight = FontWeight.Normal, color = Bhq.colors.accentLight,
                 )
             }
             Spacer(Modifier.height(18.dp))
             Reveal(visible, 3) {
                 Text(
                     "Upload your plans. Verified builders match, unlock, and tender. You compare side-by-side and decide.",
-                    fontSize = 16.sp, lineHeight = 24.sp, color = TextMuted,
+                    fontSize = 16.sp, lineHeight = 24.sp, color = Bhq.colors.textMuted,
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -80,7 +77,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit, onLogin: () -> Unit) {
                 Text(
                     "VERIFIED BUILDERS · ABN-CHECKED · AUSTRALIA-WIDE",
                     fontSize = 10.sp, letterSpacing = 1.4.sp,
-                    fontWeight = FontWeight.SemiBold, color = TextDim,
+                    fontWeight = FontWeight.SemiBold, color = Bhq.colors.textDim,
                 )
             }
             Spacer(Modifier.height(34.dp))

@@ -26,19 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** Big, tappable selectable card — used for the "I'm an owner / builder"
  *  choice. Selected state lights the border teal, glows, and shows a check. */
@@ -53,7 +46,7 @@ fun RoleSelectCard(
 ) {
     val shape = RoundedCornerShape(16.dp)
     val border by animateColorAsState(
-        if (selected) Accent else BlueprintLine.copy(alpha = 0.14f),
+        if (selected) Bhq.colors.accent else Bhq.colors.blueprintLine.copy(alpha = 0.14f),
         label = "roleBorder",
     )
     Row(
@@ -62,12 +55,12 @@ fun RoleSelectCard(
             .then(
                 if (selected) Modifier.shadow(
                     12.dp, shape,
-                    ambientColor = Accent.copy(alpha = 0.25f),
-                    spotColor = Accent.copy(alpha = 0.35f),
+                    ambientColor = Bhq.colors.accent.copy(alpha = 0.25f),
+                    spotColor = Bhq.colors.accent.copy(alpha = 0.35f),
                 ) else Modifier,
             )
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF141E2E), Color(0xFF0C1322))))
+            .background(Bhq.brushes.card)
             .border(if (selected) 1.5.dp else 1.dp, border, shape)
             .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(16.dp),
@@ -77,34 +70,34 @@ fun RoleSelectCard(
             Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (selected) Accent.copy(alpha = 0.16f) else Color(0x14FFFFFF)),
+                .background(if (selected) Bhq.colors.accent.copy(alpha = 0.16f) else Bhq.colors.fillSubtle),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon, contentDescription = null,
-                tint = if (selected) AccentLight else TextMuted,
+                tint = if (selected) Bhq.colors.accentLight else Bhq.colors.textMuted,
                 modifier = Modifier.size(22.dp),
             )
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Bhq.colors.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(2.dp))
-            Text(subtitle, color = TextMuted, fontSize = 13.sp, lineHeight = 17.sp)
+            Text(subtitle, color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 17.sp)
         }
         Spacer(Modifier.width(10.dp))
         Box(
             Modifier
                 .size(22.dp)
                 .clip(RoundedCornerShape(50))
-                .background(if (selected) Accent else Color.Transparent)
-                .border(1.5.dp, if (selected) Accent else TextDim, RoundedCornerShape(50)),
+                .background(if (selected) Bhq.colors.accent else Color.Transparent)
+                .border(1.5.dp, if (selected) Bhq.colors.accent else Bhq.colors.textDim, RoundedCornerShape(50)),
             contentAlignment = Alignment.Center,
         ) {
             if (selected) {
                 Icon(
                     Icons.Rounded.Check, contentDescription = "Selected",
-                    tint = AccentContrast, modifier = Modifier.size(14.dp),
+                    tint = Bhq.colors.accentContrast, modifier = Modifier.size(14.dp),
                 )
             }
         }

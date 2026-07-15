@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Brand canvas — used for the window background so cold-start matches
-         the Compose dark theme (no white flash). -->
+    <!-- Window background for cold start — cream in values/, navy in
+         values-night/ — so the first frame matches the Compose theme
+         (no flash). -->
+    <color name="bhq_window_bg">#ECE7DD</color>
+    <!-- Brand constants (launcher/splash art). Mode-independent. -->
     <color name="bhq_canvas">#06080F</color>
     <color name="bhq_accent">#00D4C8</color>
 </resources>

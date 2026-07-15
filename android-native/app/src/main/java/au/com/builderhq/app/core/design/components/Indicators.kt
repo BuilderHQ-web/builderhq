@@ -18,13 +18,11 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
 
 /** Animated circular progress ring with a teal sweep + faint track. */
@@ -40,17 +38,18 @@ fun ProgressRing(
         animationSpec = tween(900, easing = Motion.EaseOutSoft),
         label = "ring",
     )
+    val c = Bhq.colors
     Canvas(modifier.size(diameter)) {
         val stroke = Stroke(width = thickness.toPx(), cap = StrokeCap.Round)
         val inset = thickness.toPx() / 2f
         val arcSize = Size(size.width - thickness.toPx(), size.height - thickness.toPx())
         drawArc(
-            color = Accent.copy(alpha = 0.18f),
+            color = c.accent.copy(alpha = 0.18f),
             startAngle = 0f, sweepAngle = 360f, useCenter = false,
             topLeft = Offset(inset, inset), size = arcSize, style = stroke,
         )
         drawArc(
-            brush = Brush.sweepGradient(listOf(Accent, AccentLight, Accent)),
+            brush = Brush.sweepGradient(listOf(c.accent, c.accentLight, c.accent)),
             startAngle = -90f, sweepAngle = 360f * animated, useCenter = false,
             topLeft = Offset(inset, inset), size = arcSize, style = stroke,
         )
@@ -69,18 +68,19 @@ fun SkeletonBox(
         infiniteRepeatable(tween(1400, easing = LinearEasing)),
         label = "shimmer",
     )
+    val c = Bhq.colors
     Box(
         modifier
             .clip(RoundedCornerShape(cornerRadius))
             .drawWithCache {
                 val w = size.width
                 val band = Brush.linearGradient(
-                    listOf(Color(0x0AFFFFFF), Color(0x1FFFFFFF), Color(0x0AFFFFFF)),
+                    listOf(c.fillFaint, c.fillStrong, c.fillFaint),
                     start = Offset(w * (x * 2f - 1f), 0f),
                     end = Offset(w * (x * 2f), 0f),
                 )
                 onDrawBehind {
-                    drawRect(Color(0xFF0E131F))
+                    drawRect(c.surface)
                     drawRect(band)
                 }
             },

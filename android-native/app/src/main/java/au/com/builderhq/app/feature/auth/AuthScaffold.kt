@@ -24,10 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import au.com.builderhq.app.core.design.components.AmbientBackground
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** Shared chrome for every auth screen: the ambient backdrop, an optional
  *  circular back button, and a keyboard-aware scrolling content column. */
@@ -51,14 +50,14 @@ fun AuthScaffold(
                     Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Color(0x14FFFFFF))
+                        .background(Bhq.colors.fillSubtle)
                         .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Back",
-                        tint = TextPrimary,
+                        tint = Bhq.colors.text,
                         modifier = Modifier.size(20.dp),
                     )
                 }

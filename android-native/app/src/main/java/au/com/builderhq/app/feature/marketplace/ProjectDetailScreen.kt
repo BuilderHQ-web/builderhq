@@ -81,15 +81,8 @@ import au.com.builderhq.app.core.design.components.SaveButton
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.pressable
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.BuilderTenderSnapshotDto
@@ -263,7 +256,7 @@ private fun DetailContent(
                 Spacer(Modifier.height(24.dp))
                 Kicker("The brief")
                 Spacer(Modifier.height(10.dp))
-                Text(p.description, color = TextMuted, fontSize = 15.sp, lineHeight = 23.sp)
+                Text(p.description, color = Bhq.colors.textMuted, fontSize = 15.sp, lineHeight = 23.sp)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -332,7 +325,7 @@ private fun Hero(p: ProjectFieldsDto, saved: Boolean, onBack: () -> Unit, onTogg
                 .graphicsLayer { translationY = scroll * 0.5f }
                 .background(
                     Brush.verticalGradient(
-                        0f to Color(0x22050810), 0.5f to Color(0x99050810), 1f to Color(0xFF06080F),
+                        0f to Color(0x22050810), 0.5f to Bhq.colors.scrimSoft, 1f to Bhq.colors.canvas,
                     ),
                 ),
         )
@@ -347,16 +340,16 @@ private fun Hero(p: ProjectFieldsDto, saved: Boolean, onBack: () -> Unit, onTogg
             Pill(ProjectLabels.type(p.type), accent = true)
             Spacer(Modifier.height(12.dp))
             Text(
-                p.title, color = TextPrimary, fontSize = 28.sp, lineHeight = 32.sp,
+                p.title, color = Bhq.colors.text, fontSize = 28.sp, lineHeight = 32.sp,
                 fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = AccentLight, modifier = Modifier.size(15.dp))
+                Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(15.dp))
                 Spacer(Modifier.width(5.dp))
                 Text(
                     locationLine(p),
-                    color = TextMuted, fontSize = 14.sp,
+                    color = Bhq.colors.textMuted, fontSize = 14.sp,
                 )
             }
         }
@@ -399,14 +392,14 @@ private fun SpecTile(label: String, value: String, modifier: Modifier = Modifier
     Box(
         modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFF131C2B), Color(0xFF0C1320))))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+            .background(Bhq.brushes.row)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
         Column {
-            Text(label.uppercase(), color = TextDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
+            Text(label.uppercase(), color = Bhq.colors.textDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
             Spacer(Modifier.height(6.dp))
-            Text(value, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(value, color = Bhq.colors.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -432,10 +425,10 @@ private fun UnlockCard(
             when (unlock.pricing.kind) {
                 "free" -> {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text("Free", color = AccentLight, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                        Text("Free", color = Bhq.colors.accentLight, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "\$${unlock.basePriceAud}", color = TextDim, fontSize = 16.sp,
+                            "\$${unlock.basePriceAud}", color = Bhq.colors.textDim, fontSize = 16.sp,
                             textDecoration = TextDecoration.LineThrough,
                             modifier = Modifier.padding(bottom = 4.dp),
                         )
@@ -443,24 +436,24 @@ private fun UnlockCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "Founding access" + (unlock.pricing.remainingThisCycle?.let { " · $it left this cycle" } ?: ""),
-                        color = TextMuted, fontSize = 13.sp,
+                        color = Bhq.colors.textMuted, fontSize = 13.sp,
                     )
                 }
                 "paid" -> {
-                    Text("\$${unlock.pricing.priceAud ?: unlock.basePriceAud}", color = TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                    Text("\$${unlock.pricing.priceAud ?: unlock.basePriceAud}", color = Bhq.colors.text, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
-                    Text("One-off unlock for this project", color = TextMuted, fontSize = 13.sp)
+                    Text("One-off unlock for this project", color = Bhq.colors.textMuted, fontSize = 13.sp)
                 }
                 else -> {
-                    Text("Fully tendered", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Fully tendered", color = Bhq.colors.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text("All ${unlock.unlockCap} builder slots are taken.", color = TextMuted, fontSize = 13.sp)
+                    Text("All ${unlock.unlockCap} builder slots are taken.", color = Bhq.colors.textMuted, fontSize = 13.sp)
                 }
             }
             Spacer(Modifier.height(16.dp))
             Text(
                 "Unlock to reveal the full plans${if (documentCount > 0) " ($documentCount)" else ""}, the exact address, and the owner — then submit your tender.",
-                color = TextMuted, fontSize = 13.sp, lineHeight = 19.sp,
+                color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 19.sp,
             )
             if (unlock.canUnlock) {
                 Spacer(Modifier.height(20.dp))
@@ -488,16 +481,16 @@ private fun UnlockConfirmSheet(
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val free = unlock.pricing.kind == "free"
     val price = unlock.pricing.priceAud ?: unlock.basePriceAud
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Color(0xFF0C1320)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Bhq.colors.sheet) {
         Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 28.dp)) {
             Kicker("Confirm unlock")
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(if (free) "Free" else "\$$price", color = AccentLight, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                Text(if (free) "Free" else "\$$price", color = Bhq.colors.accentLight, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                 if (free) {
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        "\$${unlock.basePriceAud}", color = TextDim, fontSize = 15.sp,
+                        "\$${unlock.basePriceAud}", color = Bhq.colors.textDim, fontSize = 15.sp,
                         textDecoration = TextDecoration.LineThrough, modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
@@ -505,7 +498,7 @@ private fun UnlockConfirmSheet(
             Spacer(Modifier.height(4.dp))
             Text(
                 if (free) "Founding access — this unlock is on us." else "One-off unlock for this project.",
-                color = TextMuted, fontSize = 13.sp,
+                color = Bhq.colors.textMuted, fontSize = 13.sp,
             )
 
             Spacer(Modifier.height(22.dp))
@@ -514,15 +507,15 @@ private fun UnlockConfirmSheet(
 
             Text(
                 "You'll see the full plans${if (documentCount > 0) " ($documentCount)" else ""}, the exact address, and the owner — and take one of ${unlock.unlockCap} builder slots.",
-                color = TextMuted, fontSize = 13.sp, lineHeight = 20.sp,
+                color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 20.sp,
             )
 
             if (unlockError != null) {
                 Spacer(Modifier.height(14.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Lock, contentDescription = null, tint = Danger, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Rounded.Lock, contentDescription = null, tint = Bhq.colors.danger, modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(unlockError, color = Danger, fontSize = 13.sp)
+                    Text(unlockError, color = Bhq.colors.danger, fontSize = 13.sp)
                 }
             }
 
@@ -552,7 +545,7 @@ private fun StepRail() {
                         .weight(1f)
                         .height(1.5.dp)
                         .padding(horizontal = 8.dp)
-                        .background(BlueprintLine.copy(alpha = 0.22f)),
+                        .background(Bhq.colors.blueprintLine.copy(alpha = 0.22f)),
                 )
             }
         }
@@ -564,14 +557,14 @@ private fun NumStep(n: Int, label: String, active: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(22.dp).clip(CircleShape)
-                .background(if (active) Accent else Color.White.copy(alpha = 0.06f))
-                .border(if (active) 0.dp else 1.dp, BlueprintLine.copy(alpha = 0.2f), CircleShape),
+                .background(if (active) Bhq.colors.accent else Color.White.copy(alpha = 0.06f))
+                .border(if (active) 0.dp else 1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text("$n", color = if (active) AccentContrast else TextDim, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("$n", color = if (active) Bhq.colors.accentContrast else Bhq.colors.textDim, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.width(7.dp))
-        Text(label, color = if (active) TextPrimary else TextMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = if (active) Bhq.colors.text else Bhq.colors.textMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -599,21 +592,21 @@ private fun UnlockedBody(
         MessageOwnerButton(owner.name.trim().split(" ").firstOrNull().orEmpty(), messaging, onMessageOwner)
         if (messageError != null) {
             Spacer(Modifier.height(8.dp))
-            Text(messageError, color = Danger, fontSize = 13.sp)
+            Text(messageError, color = Bhq.colors.danger, fontSize = 13.sp)
         }
         Spacer(Modifier.height(24.dp))
     }
     Kicker("Plans & documents")
     Spacer(Modifier.height(10.dp))
     if (docs.isEmpty()) {
-        Text("No documents attached yet.", color = TextMuted, fontSize = 14.sp)
+        Text("No documents attached yet.", color = Bhq.colors.textMuted, fontSize = 14.sp)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             docs.forEach { DocumentRow(it, opening = it.id == openingDocId, onOpen = { onOpenDocument(it.id) }) }
         }
         if (docError != null) {
             Spacer(Modifier.height(10.dp))
-            Text(docError, color = Danger, fontSize = 13.sp)
+            Text(docError, color = Bhq.colors.danger, fontSize = 13.sp)
         }
     }
     Spacer(Modifier.height(24.dp))
@@ -641,11 +634,11 @@ private fun MyTenderCard(t: BuilderTenderSnapshotDto) {
             }
             if (t.totalPriceAud != null) {
                 Spacer(Modifier.height(12.dp))
-                Text("$" + "%,d".format(t.totalPriceAud), color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("$" + "%,d".format(t.totalPriceAud), color = Bhq.colors.text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
             t.durationWeeks?.let {
                 Spacer(Modifier.height(4.dp))
-                Text("$it weeks", color = TextMuted, fontSize = 13.sp)
+                Text("$it weeks", color = Bhq.colors.textMuted, fontSize = 13.sp)
             }
         }
     }
@@ -658,18 +651,18 @@ private fun MessageOwnerButton(firstName: String, busy: Boolean, onClick: () -> 
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, Accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+            .border(1.dp, Bhq.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
             .pressable(enabled = !busy, onClick = onClick)
             .padding(vertical = 13.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (busy) {
-            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AccentLight, strokeWidth = 2.dp)
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Bhq.colors.accentLight, strokeWidth = 2.dp)
         } else {
-            Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = AccentLight, modifier = Modifier.size(17.dp))
+            Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(8.dp))
-            Text(label, color = AccentLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(label, color = Bhq.colors.accentLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -679,23 +672,23 @@ private fun OwnerCard(owner: UnlockedOwnerDto) {
     CardSurface(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(46.dp).clip(CircleShape).background(Accent.copy(alpha = 0.16f)),
+                Modifier.size(46.dp).clip(CircleShape).background(Bhq.colors.accent.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(owner.name.take(1).uppercase(), color = AccentLight, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(owner.name.take(1).uppercase(), color = Bhq.colors.accentLight, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(owner.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(owner.name, color = Bhq.colors.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Rounded.Verified, contentDescription = null, tint = Accent, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Rounded.Verified, contentDescription = null, tint = Bhq.colors.accent, modifier = Modifier.size(15.dp))
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
                     if (owner.publishedProjectCount <= 1) "First project on BuilderHQ"
                     else "${owner.publishedProjectCount} projects published",
-                    color = TextMuted, fontSize = 13.sp,
+                    color = Bhq.colors.textMuted, fontSize = 13.sp,
                 )
             }
         }
@@ -708,27 +701,27 @@ private fun DocumentRow(doc: ProjectDocumentDto, opening: Boolean, onOpen: () ->
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFF131C2B), Color(0xFF0C1320))))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+            .background(Bhq.brushes.row)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
             .pressable(enabled = !opening, onClick = onOpen)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Description, contentDescription = null, tint = AccentLight, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Description, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(doc.filename.ifBlank { "Document" }, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(doc.filename.ifBlank { "Document" }, color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
             Text(
                 listOfNotNull(ProjectLabels.pretty(doc.category), humanSize(doc.sizeBytes)).joinToString(" · "),
-                color = TextDim, fontSize = 12.sp,
+                color = Bhq.colors.textDim, fontSize = 12.sp,
             )
         }
         Spacer(Modifier.width(10.dp))
         if (opening) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = AccentLight, strokeWidth = 2.dp)
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Bhq.colors.accentLight, strokeWidth = 2.dp)
         } else {
-            Icon(Icons.Rounded.OpenInNew, contentDescription = "Open", tint = TextDim, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.OpenInNew, contentDescription = "Open", tint = Bhq.colors.textDim, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -788,9 +781,9 @@ private fun DetailMessage(title: String, subtitle: String, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text(subtitle, color = TextMuted, fontSize = 14.sp)
+            Text(subtitle, color = Bhq.colors.textMuted, fontSize = 14.sp)
         }
     }
 }
@@ -803,7 +796,7 @@ private fun CircleIcon(icon: ImageVector, label: String, tint: Color, onClick: (
         Modifier
             .size(42.dp)
             .clip(CircleShape)
-            .background(Color(0x66060A12))
+            .background(Bhq.colors.scrimFaint)
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

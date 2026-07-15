@@ -36,10 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.Gold
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.Warning
+import au.com.builderhq.app.core.design.theme.Bhq
+import au.com.builderhq.app.core.design.theme.BhqColors
 
 // ── Project status labels / colors ──────────────────────────────────
 
@@ -52,11 +50,11 @@ internal fun ownerStatusLabel(status: String): String = when (status) {
     else -> status.replaceFirstChar { it.uppercase() }
 }
 
-internal fun ownerStatusColor(status: String): Color = when (status) {
-    "published", "tendering" -> Accent
-    "draft" -> Warning
-    "awarded" -> Gold
-    else -> TextDim
+internal fun ownerStatusColor(status: String, c: BhqColors): Color = when (status) {
+    "published", "tendering" -> c.accent
+    "draft" -> c.warning
+    "awarded" -> c.gold
+    else -> c.textDim
 }
 
 internal fun isLive(status: String): Boolean = status == "published" || status == "tendering"
@@ -114,7 +112,7 @@ internal fun AnimatedCount(
 
 @Composable
 internal fun StatusPill(status: String) {
-    val color = ownerStatusColor(status)
+    val color = ownerStatusColor(status, Bhq.colors)
     val live = isLive(status)
     Row(
         Modifier
@@ -139,10 +137,10 @@ internal fun StatusPill(status: String) {
 
 @Composable
 internal fun MetricChip(icon: ImageVector, value: String, active: Boolean) {
-    val tint = if (active) Accent else TextDim
+    val tint = if (active) Bhq.colors.accent else Bhq.colors.textDim
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
-        Text(value, color = if (active) Accent else TextDim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(value, color = tint, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }

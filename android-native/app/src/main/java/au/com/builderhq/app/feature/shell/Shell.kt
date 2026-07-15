@@ -53,11 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.builderhq.app.core.design.components.AmbientBackground
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.TextDim
 import au.com.builderhq.app.core.model.Role
 import au.com.builderhq.app.feature.marketplace.MarketplaceScreen
 import au.com.builderhq.app.feature.messaging.InboxScreen
@@ -76,7 +73,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import au.com.builderhq.app.core.data.MessagingCenter
-import au.com.builderhq.app.core.design.theme.AccentContrast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -152,6 +148,7 @@ fun MainScaffold(
 
 @Composable
 private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
+    val c = Bhq.colors
     Box(Modifier.fillMaxWidth()) {
         // blueprint top hairline
         Box(
@@ -161,14 +158,14 @@ private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
                 .height(1.dp)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color.Transparent, BlueprintLine.copy(alpha = 0.22f), Color.Transparent),
+                        listOf(Color.Transparent, c.blueprintLine.copy(alpha = 0.22f), Color.Transparent),
                     ),
                 ),
         )
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(Color(0xE60A1018), Color(0xF205070D))))
+                .background(Brush.verticalGradient(listOf(c.scrimStrong, c.scrimHeavy)))
                 .navigationBarsPadding()
                 .padding(top = 9.dp, bottom = 5.dp),
         ) {
@@ -187,7 +184,7 @@ private fun BottomBar(selected: Int, unread: Int, onSelect: (Int) -> Unit) {
                         .width(pillW)
                         .height(32.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Accent.copy(alpha = 0.12f)),
+                        .background(c.accent.copy(alpha = 0.12f)),
                 )
                 Row(Modifier.fillMaxWidth()) {
                     TABS.forEachIndexed { i, tab ->
@@ -207,7 +204,8 @@ private fun RowScope.BarTab(
     badge: Int,
     onClick: () -> Unit,
 ) {
-    val color by animateColorAsState(if (active) AccentLight else TextDim, label = "tab")
+    val c = Bhq.colors
+    val color by animateColorAsState(if (active) c.accentLight else c.textDim, label = "tab")
     val scale by animateFloatAsState(if (active) 1.12f else 1f, spring(dampingRatio = 0.5f, stiffness = 520f), label = "tabScale")
     Column(
         Modifier
@@ -229,13 +227,13 @@ private fun RowScope.BarTab(
                         .defaultMinSize(minWidth = 16.dp)
                         .height(16.dp)
                         .clip(CircleShape)
-                        .background(Accent)
+                        .background(c.accent)
                         .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         if (badge > 9) "9+" else "$badge",
-                        color = AccentContrast, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                        color = c.accentContrast, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     )
                 }

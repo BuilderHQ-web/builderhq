@@ -16,20 +16,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import kotlinx.coroutines.delay
 
 /** Round initials avatar — the messaging identity unit. */
 @Composable
 internal fun InitialsAvatar(initials: String, modifier: Modifier = Modifier, size: Int = 48) {
     Box(
-        modifier.size(size.dp).clip(CircleShape).background(Accent.copy(alpha = 0.16f)),
+        modifier.size(size.dp).clip(CircleShape).background(Bhq.colors.accent.copy(alpha = 0.16f)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             initials.ifBlank { "·" }.take(2).uppercase(),
-            color = AccentLight,
+            color = Bhq.colors.accentLight,
             fontWeight = FontWeight.Bold,
             fontSize = (size * 0.36f).sp,
         )

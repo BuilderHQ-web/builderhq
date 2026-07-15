@@ -37,11 +37,7 @@ import au.com.builderhq.app.core.design.components.Pill
 import au.com.builderhq.app.core.design.components.ProjectCoverArt
 import au.com.builderhq.app.core.design.components.SaveButton
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.dto.ProjectRowDto
 
@@ -62,7 +58,7 @@ fun ProjectCard(
                     Modifier
                         .fillMaxWidth()
                         .height(150.dp)
-                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC0A0E16)))),
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Bhq.colors.scrimStrong))),
                 )
                 Row(
                     Modifier.fillMaxWidth().padding(12.dp),
@@ -80,22 +76,22 @@ fun ProjectCard(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         if (slotsLeft == 0) "Fully tendered" else "$slotsLeft of ${project.unlockCap} slots open",
-                        color = Color(0xFFD6E2F2), fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                        color = Bhq.colors.blueprintPale, fontSize = 11.sp, fontWeight = FontWeight.Medium,
                     )
                 }
             }
             Column(Modifier.padding(16.dp)) {
                 Text(
-                    project.title, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
+                    project.title, color = Bhq.colors.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = TextDim, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = Bhq.colors.textDim, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
                         ProjectLabels.location(project.suburb, project.state).ifBlank { "Australia" },
-                        color = TextMuted, fontSize = 13.sp,
+                        color = Bhq.colors.textMuted, fontSize = 13.sp,
                     )
                 }
                 val spec = listOfNotNull(
@@ -104,7 +100,7 @@ fun ProjectCard(
                 )
                 if (spec.isNotEmpty()) {
                     Spacer(Modifier.height(7.dp))
-                    Text(spec.joinToString("   ·   "), color = TextDim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(spec.joinToString("   ·   "), color = Bhq.colors.textDim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
                 Spacer(Modifier.height(14.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -127,11 +123,11 @@ fun ProjectCard(
 private fun ProjectCardCta(isUnlocked: Boolean, slotsLeft: Int) {
     when {
         isUnlocked -> Pill("Unlocked", accent = true)
-        slotsLeft == 0 -> Text("Full", color = TextDim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        slotsLeft == 0 -> Text("Full", color = Bhq.colors.textDim, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         else -> Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Bolt, contentDescription = null, tint = AccentLight, modifier = Modifier.size(15.dp))
+            Icon(Icons.Rounded.Bolt, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(3.dp))
-            Text("Unlock", color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text("Unlock", color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -144,7 +140,7 @@ private fun UnlockDots(filled: Int, cap: Int) {
                 Modifier
                     .size(7.dp)
                     .clip(CircleShape)
-                    .background(if (i < filled) Accent else Color.White.copy(alpha = 0.3f)),
+                    .background(if (i < filled) Bhq.colors.accent else Color.White.copy(alpha = 0.3f)),
             )
         }
     }

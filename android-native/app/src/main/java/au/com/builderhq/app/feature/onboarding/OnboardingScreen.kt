@@ -59,11 +59,7 @@ import au.com.builderhq.app.core.design.components.Kicker
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.pressable
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.model.Role
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -181,10 +177,10 @@ private fun PageContent(page: OnbPage, pageOffset: Float) {
             Spacer(Modifier.height(16.dp))
             Text(
                 accentTitle(page.title, page.accent),
-                color = TextPrimary, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold,
+                color = Bhq.colors.text, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(14.dp))
-            Text(page.body, color = TextMuted, fontSize = 15.sp, lineHeight = 23.sp)
+            Text(page.body, color = Bhq.colors.textMuted, fontSize = 15.sp, lineHeight = 23.sp)
             Spacer(Modifier.height(28.dp))
         }
     }
@@ -193,7 +189,7 @@ private fun PageContent(page: OnbPage, pageOffset: Float) {
 /** Headline with the [accent] phrase painted in the brand gradient. */
 @Composable
 private fun accentTitle(title: String, accent: String) = buildAnnotatedString {
-    val brush = Brush.linearGradient(listOf(AccentLight, Accent))
+    val brush = Brush.linearGradient(listOf(Bhq.colors.accentLight, Bhq.colors.accent))
     val idx = title.indexOf(accent)
     if (idx < 0) {
         append(title)
@@ -252,7 +248,7 @@ private fun PageDots(count: Int, current: Int) {
                     .width(w)
                     .height(7.dp)
                     .clip(CircleShape)
-                    .background(if (active) Accent else Color.White.copy(alpha = 0.22f)),
+                    .background(if (active) Bhq.colors.accent else Color.White.copy(alpha = 0.22f)),
             )
         }
     }
@@ -260,18 +256,19 @@ private fun PageDots(count: Int, current: Int) {
 
 @Composable
 private fun NextCircle(onClick: () -> Unit) {
+    val c = Bhq.colors
     Box(
         Modifier
             .size(56.dp)
-            .shadow(elevation = 14.dp, shape = CircleShape, ambientColor = Accent, spotColor = Accent)
+            .shadow(elevation = 14.dp, shape = CircleShape, ambientColor = c.accent, spotColor = c.accent)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(AccentLight, Accent)))
+            .background(Brush.linearGradient(listOf(c.accentLight, c.accent)))
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Next",
-            tint = AccentContrast, modifier = Modifier.size(22.dp),
+            tint = c.accentContrast, modifier = Modifier.size(22.dp),
         )
     }
 }

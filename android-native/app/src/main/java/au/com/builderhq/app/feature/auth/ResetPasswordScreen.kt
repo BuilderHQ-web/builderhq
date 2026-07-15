@@ -24,7 +24,7 @@ import au.com.builderhq.app.core.data.SessionRepository
 import au.com.builderhq.app.core.design.components.BhqTextField
 import au.com.builderhq.app.core.design.components.OtpInput
 import au.com.builderhq.app.core.design.components.PrimaryButton
-import au.com.builderhq.app.core.design.theme.TextDim
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.network.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -132,7 +132,7 @@ fun ResetPasswordScreen(
         Spacer(Modifier.height(20.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             if (ui.resendIn > 0) {
-                Text("Resend code in ${ui.resendIn}s", color = TextDim, fontSize = 13.sp)
+                Text("Resend code in ${ui.resendIn}s", color = Bhq.colors.textDim, fontSize = 13.sp)
             } else {
                 AuthTextLink(
                     "Didn't get it?",

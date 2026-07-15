@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Window-chrome theme only. The real UI theming is Compose
-         (BuilderHqTheme). Dark, no action bar, transparent system bars for
+         (BuilderHqTheme). No action bar, transparent system bars for
          edge-to-edge; the brand canvas as the window background kills the
-         cold-start flash. -->
-    <style name="Theme.BuilderHQ" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/bhq_canvas</item>
+         cold-start flash. This values/ variant is LIGHT; values-night/
+         carries the dark variant, so cold start follows the SYSTEM mode.
+         An in-app override lands one frame later behind the splash. -->
+    <style name="Theme.BuilderHQ" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bhq_window_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
 </resources>

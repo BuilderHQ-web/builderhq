@@ -35,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -50,20 +49,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.DisplaySerif
-import au.com.builderhq.app.core.design.theme.Gold
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.Success
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class CelebrationTone(val color: Color) { ACCENT(Accent), SUCCESS(Success), GOLD(Gold) }
+enum class CelebrationTone { ACCENT, SUCCESS, GOLD }
 
 /**
  * Full-screen achievement moment. Staged choreography: medallion springs in,
@@ -82,6 +75,7 @@ fun CelebrationScene(
     tone: CelebrationTone,
     onCta: () -> Unit,
 ) {
+    val c = Bhq.colors
     val haptics = rememberHaptics()
     var stage by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -92,14 +86,18 @@ fun CelebrationScene(
         delay(220); stage = 4; haptics.confirm()
         delay(240); stage = 5
     }
-    val color = tone.color
+    val color = when (tone) {
+        CelebrationTone.ACCENT -> c.accent
+        CelebrationTone.SUCCESS -> c.success
+        CelebrationTone.GOLD -> c.gold
+    }
     val ring by animateFloatAsState(if (stage >= 1) 1f else 0f, tween(950, easing = Motion.EaseOutSoft), label = "ring")
     val medScale by animateFloatAsState(if (stage >= 1) 1f else 0.5f, spring(dampingRatio = 0.5f, stiffness = 520f), label = "med")
     val burst by animateFloatAsState(if (stage >= 2) 1f else 0f, tween(900, easing = Motion.EaseOut), label = "burst")
     val infinite = rememberInfiniteTransition(label = "ripple")
     val rip by infinite.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "rip")
 
-    Box(Modifier.fillMaxSize().background(Color(0xF405070D)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(c.scrimHeavy), contentAlignment = Alignment.Center) {
         Column(
             Modifier.padding(36.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -128,7 +126,7 @@ fun CelebrationScene(
                     val tl = Offset(sw / 2, sw / 2)
                     drawArc(color.copy(0.15f), -90f, 360f, false, topLeft = tl, size = box, style = Stroke(sw))
                     drawArc(
-                        brush = Brush.sweepGradient(listOf(color, AccentLight, color)),
+                        brush = Brush.sweepGradient(listOf(color, c.accentLight, color)),
                         startAngle = -90f, sweepAngle = 360f * ring, useCenter = false,
                         topLeft = tl, size = box, style = Stroke(sw, cap = StrokeCap.Round),
                     )
@@ -138,10 +136,10 @@ fun CelebrationScene(
                         .size(80.dp)
                         .graphicsLayer { scaleX = medScale; scaleY = medScale }
                         .clip(RoundedCornerShape(50))
-                        .background(Brush.verticalGradient(listOf(AccentLight, color))),
+                        .background(Brush.verticalGradient(listOf(c.accentLight, color))),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(icon, contentDescription = null, tint = AccentContrast, modifier = Modifier.size(40.dp))
+                    Icon(icon, contentDescription = null, tint = c.accentContrast, modifier = Modifier.size(40.dp))
                 }
             }
 
@@ -154,7 +152,7 @@ fun CelebrationScene(
                             append(titleEmphasis)
                         }
                     },
-                    color = TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                    color = c.text, fontSize = 30.sp, fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -163,7 +161,7 @@ fun CelebrationScene(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(detail, color = color, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(8.dp))
-                    Text(subtitle, color = TextMuted, fontSize = 14.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
+                    Text(subtitle, color = c.textMuted, fontSize = 14.sp, lineHeight = 21.sp, textAlign = TextAlign.Center)
                     if (metric != null) {
                         Spacer(Modifier.height(14.dp))
                         Box(

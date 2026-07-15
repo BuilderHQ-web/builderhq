@@ -65,7 +65,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -91,23 +90,13 @@ import au.com.builderhq.app.core.design.components.ProgressRing
 import au.com.builderhq.app.core.design.components.SegmentedControl
 import au.com.builderhq.app.core.design.components.pressable
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.FiguresMono
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.Success
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
-import au.com.builderhq.app.core.design.theme.Warning
 import au.com.builderhq.app.core.model.TradeCatalog
 import kotlinx.coroutines.launch
 import java.time.YearMonth
 
-private val FieldFill = Brush.verticalGradient(listOf(Color(0xFF121A28), Color(0xFF0C1320)))
 private val VALIDITY_OPTIONS = listOf(7, 14, 30, 60, 90)
 
 @Composable
@@ -160,7 +149,7 @@ private fun ComposerForm(ui: ComposerUi, vm: TenderComposerViewModel, onBack: ()
         )
 
         Spacer(Modifier.height(20.dp))
-        Text("QUOTE VALIDITY", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+        Text("QUOTE VALIDITY", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
         Spacer(Modifier.height(8.dp))
         SegmentedControl(
             options = VALIDITY_OPTIONS.map { "${it}d" },
@@ -169,7 +158,7 @@ private fun ComposerForm(ui: ComposerUi, vm: TenderComposerViewModel, onBack: ()
         )
 
         Spacer(Modifier.height(20.dp))
-        Text("PROPOSED START", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+        Text("PROPOSED START", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
         Spacer(Modifier.height(8.dp))
         MonthStepper(ui.startMonth, onStep = { delta -> vm.onStartMonth(stepMonth(ui.startMonth, delta)) })
 
@@ -184,7 +173,7 @@ private fun ComposerForm(ui: ComposerUi, vm: TenderComposerViewModel, onBack: ()
         Spacer(Modifier.height(24.dp))
         Kicker("Exclusions")
         Spacer(Modifier.height(6.dp))
-        Text("What's not included — keeps your quote honest.", color = TextDim, fontSize = 12.sp)
+        Text("What's not included — keeps your quote honest.", color = Bhq.colors.textDim, fontSize = 12.sp)
         Spacer(Modifier.height(12.dp))
         ExclusionsSection(ui.exclusions, vm::addExclusion, vm::removeExclusion)
 
@@ -195,7 +184,7 @@ private fun ComposerForm(ui: ComposerUi, vm: TenderComposerViewModel, onBack: ()
 
         if (ui.error != null) {
             Spacer(Modifier.height(18.dp))
-            Text(ui.error, color = Danger, fontSize = 13.sp)
+            Text(ui.error, color = Bhq.colors.danger, fontSize = 13.sp)
         }
 
         Spacer(Modifier.height(24.dp))
@@ -207,7 +196,7 @@ private fun ComposerForm(ui: ComposerUi, vm: TenderComposerViewModel, onBack: ()
             Spacer(Modifier.height(10.dp))
             Text(
                 "Before you submit: ${ui.missing.joinToString(", ") { missingLabel(it) }}.",
-                color = TextMuted, fontSize = 13.sp,
+                color = Bhq.colors.textMuted, fontSize = 13.sp,
             )
         }
         Spacer(Modifier.height(40.dp))
@@ -239,15 +228,15 @@ private fun Header(ui: ComposerUi, onBack: () -> Unit) {
         CircleBtn(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text("Your tender", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("Your tender", color = Bhq.colors.text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
                 if (ui.canSubmit) "Ready to submit" else "$done of 3 essentials done",
-                color = if (ui.canSubmit) AccentLight else TextMuted, fontSize = 13.sp,
+                color = if (ui.canSubmit) Bhq.colors.accentLight else Bhq.colors.textMuted, fontSize = 13.sp,
             )
         }
         Box(contentAlignment = Alignment.Center) {
             ProgressRing(progress = done / 3f, diameter = 48.dp, thickness = 5.dp)
-            Text("$done/3", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("$done/3", color = Bhq.colors.text, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -261,19 +250,19 @@ private fun AutosaveChip(state: SaveState) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             when (state) {
                 SaveState.Saving -> {
-                    CircularProgressIndicator(modifier = Modifier.size(11.dp), color = TextDim, strokeWidth = 1.5.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(11.dp), color = Bhq.colors.textDim, strokeWidth = 1.5.dp)
                     Spacer(Modifier.width(7.dp))
-                    Text("Saving…", color = TextDim, fontSize = 12.sp)
+                    Text("Saving…", color = Bhq.colors.textDim, fontSize = 12.sp)
                 }
                 SaveState.Saved -> {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Accent, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Bhq.colors.accent, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Saved", color = TextMuted, fontSize = 12.sp)
+                    Text("Saved", color = Bhq.colors.textMuted, fontSize = 12.sp)
                 }
                 SaveState.Failed -> {
-                    Icon(Icons.Rounded.CloudOff, contentDescription = null, tint = Danger, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Rounded.CloudOff, contentDescription = null, tint = Bhq.colors.danger, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Couldn't save — we'll retry", color = Danger, fontSize = 12.sp)
+                    Text("Couldn't save — we'll retry", color = Bhq.colors.danger, fontSize = 12.sp)
                 }
                 SaveState.Idle -> Unit
             }
@@ -286,15 +275,15 @@ private fun AutosaveChip(state: SaveState) {
 @Composable
 private fun MonthStepper(month: String?, onStep: (Int) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(FieldFill)
-            .border(1.dp, BlueprintLine.copy(alpha = 0.16f), RoundedCornerShape(14.dp))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Bhq.brushes.field)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.16f), RoundedCornerShape(14.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CircleBtn(Icons.Rounded.ChevronLeft, "Earlier", { onStep(-1) }, small = true)
         Text(
             monthLabel(month),
-            color = if (month == null) TextMuted else TextPrimary,
+            color = if (month == null) Bhq.colors.textMuted else Bhq.colors.text,
             fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
@@ -308,10 +297,10 @@ private fun MonthStepper(month: String?, onStep: (Int) -> Unit) {
 private fun CostBreakdown(ui: ComposerUi, vm: TenderComposerViewModel, onAdd: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Kicker("Cost breakdown")
-        if (ui.lineSum > 0) Text(formatAud(ui.lineSum), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        if (ui.lineSum > 0) Text(formatAud(ui.lineSum), color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
     Spacer(Modifier.height(6.dp))
-    Text("Optional, but a trade breakdown wins trust.", color = TextDim, fontSize = 12.sp)
+    Text("Optional, but a trade breakdown wins trust.", color = Bhq.colors.textDim, fontSize = 12.sp)
     Spacer(Modifier.height(12.dp))
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -331,9 +320,9 @@ private fun CostBreakdown(ui: ComposerUi, vm: TenderComposerViewModel, onAdd: ()
     if (variance != null && ui.priceValue != null) {
         Spacer(Modifier.height(10.dp))
         when {
-            variance == 0L -> VarianceNote("Breakdown matches your price.", Success)
-            variance > 0L -> VarianceNote("Breakdown is ${formatAud(variance)} over your price.", Warning)
-            else -> VarianceNote("${formatAud(-variance)} of your price isn't itemised yet.", TextMuted)
+            variance == 0L -> VarianceNote("Breakdown matches your price.", Bhq.colors.success)
+            variance > 0L -> VarianceNote("Breakdown is ${formatAud(variance)} over your price.", Bhq.colors.warning)
+            else -> VarianceNote("${formatAud(-variance)} of your price isn't itemised yet.", Bhq.colors.textMuted)
         }
     }
 }
@@ -341,14 +330,14 @@ private fun CostBreakdown(ui: ComposerUi, vm: TenderComposerViewModel, onAdd: ()
 @Composable
 private fun CostLineRow(line: LineRow, onAmount: (String) -> Unit, onLabel: (String) -> Unit, onRemove: () -> Unit) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(FieldFill)
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Bhq.brushes.field)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
             .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 if (line.trade == "other") "Custom line" else TradeCatalog.label(line.trade),
-                color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             AmountField(line.amount, onAmount)
@@ -357,17 +346,17 @@ private fun CostLineRow(line: LineRow, onAmount: (String) -> Unit, onLabel: (Str
                 Modifier.size(28.dp).clip(RoundedCornerShape(50)).clickable(remember { MutableInteractionSource() }, indication = null, onClick = onRemove),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = TextDim, modifier = Modifier.size(16.dp))
+                Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = Bhq.colors.textDim, modifier = Modifier.size(16.dp))
             }
         }
         if (line.trade == "other") {
             Spacer(Modifier.height(8.dp))
             BasicTextField(
                 value = line.label, onValueChange = onLabel,
-                textStyle = TextStyle(color = TextPrimary, fontSize = 13.sp),
-                cursorBrush = SolidColor(Accent),
+                textStyle = TextStyle(color = Bhq.colors.text, fontSize = 13.sp),
+                cursorBrush = SolidColor(Bhq.colors.accent),
                 decorationBox = { inner ->
-                    if (line.label.isEmpty()) Text("Name this line (e.g. Pool)", color = TextDim, fontSize = 13.sp)
+                    if (line.label.isEmpty()) Text("Name this line (e.g. Pool)", color = Bhq.colors.textDim, fontSize = 13.sp)
                     inner()
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -380,19 +369,19 @@ private fun CostLineRow(line: LineRow, onAmount: (String) -> Unit, onLabel: (Str
 private fun AmountField(value: String, onChange: (String) -> Unit) {
     Row(
         Modifier.width(132.dp).clip(RoundedCornerShape(10.dp)).background(Color(0x14000000))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.14f), RoundedCornerShape(10.dp))
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.14f), RoundedCornerShape(10.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("$", color = TextDim, fontSize = 14.sp)
+        Text("$", color = Bhq.colors.textDim, fontSize = 14.sp)
         Spacer(Modifier.width(2.dp))
         BasicTextField(
             value = value, onValueChange = onChange,
-            textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
-            singleLine = true, cursorBrush = SolidColor(Accent),
+            textStyle = TextStyle(color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+            singleLine = true, cursorBrush = SolidColor(Bhq.colors.accent),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             decorationBox = { inner ->
-                if (value.isEmpty()) Text("0", color = TextDim, fontSize = 14.sp)
+                if (value.isEmpty()) Text("0", color = Bhq.colors.textDim, fontSize = 14.sp)
                 inner()
             },
             modifier = Modifier.weight(1f),
@@ -404,14 +393,14 @@ private fun AmountField(value: String, onChange: (String) -> Unit) {
 private fun AddTradeButton(onAdd: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-            .border(1.dp, Accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+            .border(1.dp, Bhq.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
             .pressable(onClick = onAdd)
             .padding(vertical = 13.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentLight, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
-        Text("Add a trade", color = AccentLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text("Add a trade", color = Bhq.colors.accentLight, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -426,9 +415,9 @@ private fun VarianceNote(text: String, color: Color) {
 @Composable
 private fun TradePickerSheet(taken: Set<String>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Color(0xFF0C1320)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Bhq.colors.sheet) {
         Text(
-            "Add a trade", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+            "Add a trade", color = Bhq.colors.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
         )
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp)) {
@@ -439,13 +428,13 @@ private fun TradePickerSheet(taken: Set<String>, onPick: (String) -> Unit, onDis
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(trade.label, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(trade.label, color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         if (trade.hint != null) {
                             Spacer(Modifier.height(2.dp))
-                            Text(trade.hint, color = TextDim, fontSize = 12.sp)
+                            Text(trade.hint, color = Bhq.colors.textDim, fontSize = 12.sp)
                         }
                     }
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentLight, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -459,7 +448,7 @@ private fun TradePickerSheet(taken: Set<String>, onPick: (String) -> Unit, onDis
 @Composable
 private fun ReviewSheet(ui: ComposerUi, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Color(0xFF0C1320)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Bhq.colors.sheet) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -470,9 +459,9 @@ private fun ReviewSheet(ui: ComposerUi, onConfirm: () -> Unit, onDismiss: () -> 
             Spacer(Modifier.height(16.dp))
             Text(
                 ui.priceValue?.let { formatAud(it) } ?: "No price set",
-                color = AccentLight, fontSize = 34.sp, fontWeight = FontWeight.Bold,
+                color = Bhq.colors.accentLight, fontSize = 34.sp, fontWeight = FontWeight.Bold,
             )
-            Text("Total price to the owner", color = TextMuted, fontSize = 13.sp)
+            Text("Total price to the owner", color = Bhq.colors.textMuted, fontSize = 13.sp)
 
             Spacer(Modifier.height(22.dp))
             ReviewRow("Build duration", ui.durationWeeks.toIntOrNull()?.let { "$it weeks" } ?: "—")
@@ -482,7 +471,7 @@ private fun ReviewSheet(ui: ComposerUi, onConfirm: () -> Unit, onDismiss: () -> 
             val lines = ui.lines.filter { (it.amount.toLongOrNull() ?: 0L) > 0 }
             if (lines.isNotEmpty()) {
                 Spacer(Modifier.height(20.dp))
-                Text("COST BREAKDOWN", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+                Text("COST BREAKDOWN", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
                 Spacer(Modifier.height(10.dp))
                 lines.forEach { l ->
                     ReviewRow(
@@ -494,35 +483,35 @@ private fun ReviewSheet(ui: ComposerUi, onConfirm: () -> Unit, onDismiss: () -> 
                 ui.variance?.let { v ->
                     Spacer(Modifier.height(8.dp))
                     when {
-                        v == 0L -> Text("Breakdown matches your price.", color = Success, fontSize = 12.sp)
-                        v > 0L -> Text("Breakdown is ${formatAud(v)} over your price.", color = Warning, fontSize = 12.sp)
-                        else -> Text("${formatAud(-v)} of your price isn't itemised.", color = TextMuted, fontSize = 12.sp)
+                        v == 0L -> Text("Breakdown matches your price.", color = Bhq.colors.success, fontSize = 12.sp)
+                        v > 0L -> Text("Breakdown is ${formatAud(v)} over your price.", color = Bhq.colors.warning, fontSize = 12.sp)
+                        else -> Text("${formatAud(-v)} of your price isn't itemised.", color = Bhq.colors.textMuted, fontSize = 12.sp)
                     }
                 }
             }
 
             if (ui.pitch.isNotBlank()) {
                 Spacer(Modifier.height(20.dp))
-                Text("YOUR PITCH", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+                Text("YOUR PITCH", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
                 Spacer(Modifier.height(8.dp))
-                Text(ui.pitch, color = TextMuted, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(ui.pitch, color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 21.sp)
             }
             if (ui.exclusions.isNotEmpty()) {
                 Spacer(Modifier.height(20.dp))
-                Text("EXCLUSIONS", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+                Text("EXCLUSIONS", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
                 Spacer(Modifier.height(8.dp))
-                Text(ui.exclusions.joinToString("  ·  "), color = TextMuted, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(ui.exclusions.joinToString("  ·  "), color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 21.sp)
             }
             if (ui.conditions.isNotBlank()) {
                 Spacer(Modifier.height(20.dp))
-                Text("CONDITIONS", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+                Text("CONDITIONS", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
                 Spacer(Modifier.height(8.dp))
-                Text(ui.conditions, color = TextMuted, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(ui.conditions, color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 21.sp)
             }
 
             if (ui.error != null) {
                 Spacer(Modifier.height(16.dp))
-                Text(ui.error, color = Danger, fontSize = 13.sp)
+                Text(ui.error, color = Bhq.colors.danger, fontSize = 13.sp)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -545,10 +534,10 @@ private fun ReviewRow(label: String, value: String, dim: Boolean = false) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = TextMuted, fontSize = 14.sp)
+        Text(label, color = Bhq.colors.textMuted, fontSize = 14.sp)
         Text(
             value,
-            color = if (dim) TextMuted else TextPrimary,
+            color = if (dim) Bhq.colors.textMuted else Bhq.colors.text,
             fontSize = 14.sp,
             fontWeight = if (dim) FontWeight.Medium else FontWeight.SemiBold,
         )
@@ -562,18 +551,18 @@ private fun TextArea(value: String, onValueChange: (String) -> Unit, label: Stri
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(14.dp)
-    val border by animateColorAsState(if (focused) Accent else BlueprintLine.copy(alpha = 0.16f), label = "areaBorder")
+    val border by animateColorAsState(if (focused) Bhq.colors.accent else Bhq.colors.blueprintLine.copy(alpha = 0.16f), label = "areaBorder")
     Column {
-        Text(label.uppercase(), color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+        Text(label.uppercase(), color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
         Spacer(Modifier.height(7.dp))
         Box(
-            Modifier.fillMaxWidth().clip(shape).background(FieldFill).border(1.5.dp, border, shape).padding(14.dp),
+            Modifier.fillMaxWidth().clip(shape).background(Bhq.brushes.field).border(1.5.dp, border, shape).padding(14.dp),
         ) {
-            if (value.isEmpty()) Text(placeholder, color = TextDim, fontSize = 15.sp, lineHeight = 21.sp)
+            if (value.isEmpty()) Text(placeholder, color = Bhq.colors.textDim, fontSize = 15.sp, lineHeight = 21.sp)
             BasicTextField(
                 value = value, onValueChange = onValueChange,
-                textStyle = TextStyle(color = TextPrimary, fontSize = 15.sp, lineHeight = 21.sp),
-                cursorBrush = SolidColor(Accent), interactionSource = interaction,
+                textStyle = TextStyle(color = Bhq.colors.text, fontSize = 15.sp, lineHeight = 21.sp),
+                cursorBrush = SolidColor(Bhq.colors.accent), interactionSource = interaction,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
             )
         }
@@ -587,15 +576,15 @@ private fun TextArea(value: String, onValueChange: (String) -> Unit, label: Stri
 @Composable
 private fun HeroPriceField(raw: String, value: Long?, onChange: (String) -> Unit) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("TOTAL PRICE (AUD)", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+        Text("TOTAL PRICE (AUD)", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
         Spacer(Modifier.height(12.dp))
         Box(contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text("$", color = if (value != null) AccentLight else TextDim, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+                Text("$", color = if (value != null) Bhq.colors.accentLight else Bhq.colors.textDim, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
                 Spacer(Modifier.width(2.dp))
                 Text(
                     if (value != null) "%,d".format(value) else "0",
-                    color = if (value != null) TextPrimary else TextDim,
+                    color = if (value != null) Bhq.colors.text else Bhq.colors.textDim,
                     fontFamily = FiguresMono, fontSize = 46.sp, fontWeight = FontWeight.Bold,
                 )
             }
@@ -608,7 +597,7 @@ private fun HeroPriceField(raw: String, value: Long?, onChange: (String) -> Unit
             )
         }
         Spacer(Modifier.height(8.dp))
-        Box(Modifier.width(120.dp).height(2.dp).clip(RoundedCornerShape(50)).background(if (value != null) Accent else BlueprintLine.copy(alpha = 0.2f)))
+        Box(Modifier.width(120.dp).height(2.dp).clip(RoundedCornerShape(50)).background(if (value != null) Bhq.colors.accent else Bhq.colors.blueprintLine.copy(alpha = 0.2f)))
     }
 }
 
@@ -626,25 +615,25 @@ private fun ExclusionsSection(items: List<String>, onAdd: (String) -> Unit, onRe
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(FieldFill)
-                    .border(1.dp, BlueprintLine.copy(alpha = 0.14f), RoundedCornerShape(12.dp))
+                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Bhq.brushes.field)
+                    .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.14f), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 13.dp),
             ) {
-                if (draft.isEmpty()) Text("e.g. Landscaping, pool", color = TextDim, fontSize = 14.sp)
+                if (draft.isEmpty()) Text("e.g. Landscaping, pool", color = Bhq.colors.textDim, fontSize = 14.sp)
                 BasicTextField(
                     value = draft, onValueChange = { draft = it.take(80) }, singleLine = true,
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp), cursorBrush = SolidColor(Accent),
+                    textStyle = TextStyle(color = Bhq.colors.text, fontSize = 14.sp), cursorBrush = SolidColor(Bhq.colors.accent),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             Spacer(Modifier.width(8.dp))
             Box(
                 Modifier.size(46.dp).clip(RoundedCornerShape(12.dp))
-                    .background(if (draft.isBlank()) Accent.copy(alpha = 0.3f) else Accent)
+                    .background(if (draft.isBlank()) Bhq.colors.accent.copy(alpha = 0.3f) else Bhq.colors.accent)
                     .pressable(enabled = draft.isNotBlank()) { onAdd(draft); draft = "" },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add exclusion", tint = AccentContrast, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.Add, contentDescription = "Add exclusion", tint = Bhq.colors.accentContrast, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -653,14 +642,14 @@ private fun ExclusionsSection(items: List<String>, onAdd: (String) -> Unit, onRe
 @Composable
 private fun ExclusionChip(text: String, onRemove: () -> Unit) {
     Row(
-        Modifier.clip(RoundedCornerShape(50)).background(Color(0x14FFFFFF))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
+        Modifier.clip(RoundedCornerShape(50)).background(Bhq.colors.fillSubtle)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
             .padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, color = TextMuted, fontSize = 13.sp)
+        Text(text, color = Bhq.colors.textMuted, fontSize = 13.sp)
         Spacer(Modifier.width(6.dp))
-        Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = TextDim, modifier = Modifier.size(14.dp).pressable(onClick = onRemove))
+        Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = Bhq.colors.textDim, modifier = Modifier.size(14.dp).pressable(onClick = onRemove))
     }
 }
 
@@ -668,6 +657,7 @@ private fun ExclusionChip(text: String, onRemove: () -> Unit) {
 
 @Composable
 private fun SubmittedView(onDone: () -> Unit) {
+    val c = Bhq.colors
     val haptics = rememberHaptics()
     val checkScale = remember { Animatable(0f) }
     val ring = remember { Animatable(0f) }
@@ -687,14 +677,14 @@ private fun SubmittedView(onDone: () -> Unit) {
                 val p = ring.value
                 if (p in 0.001f..0.999f) {
                     drawCircle(
-                        color = Accent.copy(alpha = (1f - p) * 0.5f),
+                        color = c.accent.copy(alpha = (1f - p) * 0.5f),
                         radius = (size.minDimension / 2f) * (0.5f + p * 0.5f),
                         style = Stroke(width = 3.dp.toPx()),
                     )
                 }
             }
             Icon(
-                Icons.Rounded.CheckCircle, contentDescription = null, tint = Accent,
+                Icons.Rounded.CheckCircle, contentDescription = null, tint = c.accent,
                 modifier = Modifier
                     .size(86.dp)
                     .graphicsLayer { scaleX = checkScale.value; scaleY = checkScale.value },
@@ -707,11 +697,11 @@ private fun SubmittedView(onDone: () -> Unit) {
                 slideInVertically(tween(Motion.BASE, easing = Motion.EaseOut)) { it / 3 },
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Tender submitted", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Tender submitted", color = Bhq.colors.text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "The owner has been notified. You'll hear back through your inbox — keep an eye out.",
-                    color = TextMuted, fontSize = 15.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
+                    color = Bhq.colors.textMuted, fontSize = 15.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(30.dp))
                 PrimaryButton("Done", onClick = onDone, modifier = Modifier.fillMaxWidth())
@@ -737,9 +727,9 @@ private fun LoadFailed(message: String, onBack: () -> Unit) {
             Modifier.fillMaxSize().padding(36.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
         ) {
-            Text("Couldn't start your tender", color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+            Text("Couldn't start your tender", color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text(message, color = TextMuted, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(message, color = Bhq.colors.textMuted, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
@@ -748,11 +738,11 @@ private fun LoadFailed(message: String, onBack: () -> Unit) {
 private fun CircleBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, small: Boolean = false) {
     val s = if (small) 32.dp else 42.dp
     Box(
-        Modifier.size(s).clip(RoundedCornerShape(50)).background(Color(0x14FFFFFF))
+        Modifier.size(s).clip(RoundedCornerShape(50)).background(Bhq.colors.fillSubtle)
             .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = TextPrimary, modifier = Modifier.size(if (small) 20.dp else 20.dp))
+        Icon(icon, contentDescription = label, tint = Bhq.colors.text, modifier = Modifier.size(if (small) 20.dp else 20.dp))
     }
 }
 

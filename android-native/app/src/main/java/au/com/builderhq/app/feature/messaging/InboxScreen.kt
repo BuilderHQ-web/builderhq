@@ -35,8 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,21 +50,13 @@ import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.StaggeredEntrance
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.ConversationDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private val RowFill = Brush.verticalGradient(listOf(Color(0xFF131C2B), Color(0xFF0C1320)))
 
 data class InboxUi(
     val loading: Boolean = true,
@@ -176,11 +166,11 @@ private fun InboxHeader(totalUnread: Int) {
     ) {
         Kicker("Inbox")
         Spacer(Modifier.height(7.dp))
-        Text("Messages", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+        Text("Messages", color = Bhq.colors.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(2.dp))
         Text(
             if (totalUnread > 0) "$totalUnread unread" else "All conversations",
-            color = if (totalUnread > 0) AccentLight else TextMuted, fontSize = 13.sp,
+            color = if (totalUnread > 0) Bhq.colors.accentLight else Bhq.colors.textMuted, fontSize = 13.sp,
         )
     }
 }
@@ -192,8 +182,8 @@ private fun ConversationRow(c: ConversationDto, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(RowFill)
-            .border(1.dp, BlueprintLine.copy(alpha = if (unread) 0.22f else 0.10f), RoundedCornerShape(18.dp))
+            .background(Bhq.brushes.row)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = if (unread) 0.22f else 0.10f), RoundedCornerShape(18.dp))
             .pressable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -204,24 +194,24 @@ private fun ConversationRow(c: ConversationDto, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     c.other.displayName.ifBlank { "BuilderHQ member" },
-                    color = TextPrimary, fontSize = 15.sp,
+                    color = Bhq.colors.text, fontSize = 15.sp,
                     fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     formatInboxTime(c.lastMessageAtIso),
-                    color = if (unread) AccentLight else TextDim, fontSize = 11.sp,
+                    color = if (unread) Bhq.colors.accentLight else Bhq.colors.textDim, fontSize = 11.sp,
                     fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal,
                 )
             }
             Spacer(Modifier.height(2.dp))
-            Text(c.projectTitle, color = TextDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(c.projectTitle, color = Bhq.colors.textDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(5.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     c.lastMessagePreview ?: "Conversation started",
-                    color = if (unread) TextMuted else TextDim, fontSize = 13.sp,
+                    color = if (unread) Bhq.colors.textMuted else Bhq.colors.textDim, fontSize = 13.sp,
                     fontWeight = if (unread) FontWeight.Medium else FontWeight.Normal,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                 )
@@ -241,13 +231,13 @@ private fun UnreadBadge(count: Int) {
             .defaultMinSize(minWidth = 20.dp)
             .height(20.dp)
             .clip(CircleShape)
-            .background(Accent)
+            .background(Bhq.colors.accent)
             .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             if (count > 99) "99+" else "$count",
-            color = AccentContrast, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+            color = Bhq.colors.accentContrast, fontSize = 10.sp, fontWeight = FontWeight.Bold,
         )
     }
 }
@@ -260,7 +250,7 @@ private fun InboxSkeleton() {
     ) {
         repeat(4) {
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(RowFill).padding(14.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Bhq.brushes.row).padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SkeletonBox(Modifier.size(48.dp), cornerRadius = 24.dp)
@@ -286,16 +276,16 @@ private fun InboxEmpty(title: String, copy: String, onRetry: (() -> Unit)? = nul
             ) {
                 Box(
                     Modifier.size(66.dp).clip(RoundedCornerShape(20.dp))
-                        .background(Accent.copy(alpha = 0.10f))
-                        .border(1.dp, BlueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
+                        .background(Bhq.colors.accent.copy(alpha = 0.10f))
+                        .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = AccentLight, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(28.dp))
                 }
                 Spacer(Modifier.height(18.dp))
-                Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                Text(title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
-                Text(copy, color = TextMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
+                Text(copy, color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
                 if (onRetry != null) {
                     Spacer(Modifier.height(22.dp))
                     PrimaryButton("Try again", onClick = onRetry)

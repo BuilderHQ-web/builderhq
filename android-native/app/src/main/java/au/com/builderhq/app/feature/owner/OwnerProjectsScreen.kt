@@ -59,14 +59,7 @@ import au.com.builderhq.app.core.design.components.ProjectCoverArt
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.StaggeredEntrance
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.SurfaceElev
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.brandDisplay
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
@@ -171,14 +164,14 @@ fun OwnerProjectsScreen(
                 .navigationBarsPadding()
                 .padding(20.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Accent)
+                .background(Bhq.colors.accent)
                 .pressable(onClick = onCreateProject)
                 .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentContrast, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentContrast, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("New project", color = AccentContrast, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text("New project", color = Bhq.colors.accentContrast, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -188,7 +181,7 @@ private fun Header(query: String, onQuery: (String) -> Unit, scope: OwnerScope, 
     Column(Modifier.statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 8.dp)) {
         Kicker("Your portfolio")
         Spacer(Modifier.height(7.dp))
-        Text(brandDisplay("Your", "projects"), color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+        Text(brandDisplay(Bhq.colors, "Your", "projects"), color = Bhq.colors.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(14.dp))
         SearchField(query, onQuery)
         Spacer(Modifier.height(12.dp))
@@ -200,26 +193,26 @@ private fun Header(query: String, onQuery: (String) -> Unit, scope: OwnerScope, 
 private fun SearchField(query: String, onQuery: (String) -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(50))
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .background(Bhq.colors.fillSubtle)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Search, contentDescription = null, tint = TextDim, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.Search, contentDescription = null, tint = Bhq.colors.textDim, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (query.isEmpty()) Text("Search your projects", color = TextDim, fontSize = 14.sp)
+            if (query.isEmpty()) Text("Search your projects", color = Bhq.colors.textDim, fontSize = 14.sp)
             BasicTextField(
                 value = query, onValueChange = onQuery,
                 singleLine = true,
-                textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
-                cursorBrush = SolidColor(Accent),
+                textStyle = TextStyle(color = Bhq.colors.text, fontSize = 14.sp),
+                cursorBrush = SolidColor(Bhq.colors.accent),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         if (query.isNotEmpty()) {
             Icon(
-                Icons.Rounded.Close, contentDescription = "Clear", tint = TextDim,
+                Icons.Rounded.Close, contentDescription = "Clear", tint = Bhq.colors.textDim,
                 modifier = Modifier.size(18.dp).pressable { onQuery("") },
             )
         }
@@ -233,12 +226,12 @@ private fun ScopePills(scope: OwnerScope, onScope: (OwnerScope) -> Unit) {
             val on = s == scope
             Box(
                 Modifier.clip(RoundedCornerShape(50))
-                    .background(if (on) Accent else Color(0x14FFFFFF))
-                    .border(1.dp, if (on) Color.Transparent else BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
+                    .background(if (on) Bhq.colors.accent else Bhq.colors.fillSubtle)
+                    .border(1.dp, if (on) Color.Transparent else Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
                     .pressable(onClick = { onScope(s) })
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
-                Text(s.label, color = if (on) AccentContrast else TextMuted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(s.label, color = if (on) Bhq.colors.accentContrast else Bhq.colors.textMuted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -254,9 +247,9 @@ private fun OwnerProjectCard(p: OwnerProjectRowDto, onClick: () -> Unit) {
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.title.ifBlank { "Untitled project" }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(p.title.ifBlank { "Untitled project" }, color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(5.dp))
-                Text(ProjectLabels.location(p.suburb, p.state).ifBlank { "Location not set" }, color = TextMuted, fontSize = 12.sp)
+                Text(ProjectLabels.location(p.suburb, p.state).ifBlank { "Location not set" }, color = Bhq.colors.textMuted, fontSize = 12.sp)
                 Spacer(Modifier.height(9.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusPill(p.status)
@@ -315,16 +308,16 @@ private fun ProjectsEmpty(title: String, body: String, cta: String?, onCta: () -
             ) {
                 Box(
                     Modifier.size(64.dp).clip(RoundedCornerShape(20.dp))
-                        .background(Accent.copy(alpha = 0.10f))
-                        .border(1.dp, BlueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
+                        .background(Bhq.colors.accent.copy(alpha = 0.10f))
+                        .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentLight, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.height(18.dp))
-                Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Text(body, color = TextMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(body, color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 if (cta != null) {
                     Spacer(Modifier.height(22.dp))
                     PrimaryButton(cta, onClick = onCta, leadingIcon = Icons.Rounded.Add)
