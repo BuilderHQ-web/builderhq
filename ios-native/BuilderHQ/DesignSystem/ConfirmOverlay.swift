@@ -26,7 +26,6 @@ struct ConfirmOverlay: View {
         ZStack {
             Rectangle()
                 .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
                 .ignoresSafeArea()
                 .opacity(appear ? 1 : 0)
             Color.black.opacity(appear ? 0.4 : 0)

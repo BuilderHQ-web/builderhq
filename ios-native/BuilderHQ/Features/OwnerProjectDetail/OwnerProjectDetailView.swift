@@ -248,7 +248,7 @@ struct OwnerProjectDetailView: View {
             switch p.status {
             case "published": return ("LIVE", Palette.success)
             case "tendering": return ("TENDERING", Palette.accent)
-            case "awarded":   return ("AWARDED", Color(hex: 0xF5C24A))
+            case "awarded":   return ("AWARDED", Palette.gold)
             case "archived":  return ("ARCHIVED", Palette.textDim)
             default:          return ("DRAFT", Palette.warning)
             }

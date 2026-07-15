@@ -131,7 +131,7 @@ private struct PipelineCard: View {
     }
 
     private func dotColor(_ i: Int) -> Color { i == 2 ? goldEdge : Palette.accent }
-    private var goldEdge: Color { Color(hex: 0xF5C24A) }
+    private var goldEdge: Color { Palette.gold }
 
     private var stageLabel: String {
         switch tender.status {

@@ -67,17 +67,16 @@ enum Typography {
 
 // MARK: - Font registration
 
-/// Loads bundled custom fonts (Instrument Serif) at launch.
+/// Loads bundled custom fonts (Instrument Serif, OFL) at launch.
 ///
-/// On RN these are loaded via @expo-google-fonts. Here we register
-/// the TTF files we ship in `Resources/Fonts/` with CoreText so
-/// `Font.custom("InstrumentSerif-Italic", ...)` resolves.
-///
-/// The font files need to be added to `Resources/Fonts/` and listed
-/// in Info.plist's `UIAppFonts` array — that's handled by xcodegen
-/// resource bundling + we explicitly call this on app launch as a
-/// belt-and-braces in case Info.plist registration races with
-/// SwiftUI's first render.
+/// The TTFs live in `Resources/Fonts/` and are bundled wholesale by
+/// xcodegen's `BuilderHQ/Resources` resource path. Runtime CoreText
+/// registration (`.process` scope) is the ONLY registration path —
+/// there is deliberately no `UIAppFonts` Info.plist array, which is
+/// unnecessary when registering at launch like this. Once registered,
+/// `Font.custom("InstrumentSerif-Italic", ...)` resolves everywhere.
+/// If a file is missing the guard falls through silently and SwiftUI
+/// falls back to the system serif.
 enum FontRegistration {
     static func registerCustomFonts() {
         let fonts = [

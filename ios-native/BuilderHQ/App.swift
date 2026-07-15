@@ -16,6 +16,12 @@ struct BuilderHQApp: App {
     /// the entire app tree observes the same session.
     @State private var session = AuthSession()
 
+    /// User-selected appearance (System / Light / Dark) — set from
+    /// Settings, applied at the root so every Palette dynamic color,
+    /// sheet, and the status bar follows in one move.
+    @AppStorage(AppearanceMode.storageKey)
+    private var appearanceRaw = AppearanceMode.system.rawValue
+
     init() {
         // Load Instrument Serif at app launch so it's ready by the
         // first paint. SwiftUI's `.custom(...)` font lookup is name-
@@ -28,8 +34,17 @@ struct BuilderHQApp: App {
         // TabView is supposed to do this but iOS quietly fights back
         // with system blue on some renderer paths — locking it at the
         // appearance level is the only durable fix.
-        let brandTeal = UIColor(Palette.accent)
-        let unselected = UIColor(Palette.textDim)
+        //
+        // Built as UIKit dynamic providers directly: appearance
+        // proxies snapshot whatever they're handed, and
+        // `UIColor(Color)` can flatten a dynamic SwiftUI color to its
+        // current resolution — these must keep adapting per theme.
+        let brandTeal = UIColor(hex: 0x00D4C8)
+        let unselected = UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(hex: 0x5A6789)   // Palette.textDim, dark
+                : UIColor(hex: 0x78828D)   // Palette.textDim, light
+        }
 
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithDefaultBackground()
@@ -71,7 +86,9 @@ struct BuilderHQApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(
+                    (AppearanceMode(rawValue: appearanceRaw) ?? .system).colorScheme
+                )
                 .tint(Palette.accent)
         }
     }
