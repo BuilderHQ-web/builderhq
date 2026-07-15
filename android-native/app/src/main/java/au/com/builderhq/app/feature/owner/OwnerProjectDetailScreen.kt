@@ -65,15 +65,7 @@ import au.com.builderhq.app.core.design.components.Kicker
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.Surface1
-import au.com.builderhq.app.core.design.theme.SurfaceElev
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.OwnerProjectDetailDto
@@ -188,23 +180,23 @@ private fun DetailContent(ui: OwnerDetailUi, vm: OwnerProjectDetailViewModel, on
                     Spacer(Modifier.height(24.dp))
                     Kicker("Scope")
                     Spacer(Modifier.height(10.dp))
-                    Text(p.description!!, color = TextMuted, fontSize = 15.sp, lineHeight = 23.sp)
+                    Text(p.description!!, color = Bhq.colors.textMuted, fontSize = 15.sp, lineHeight = 23.sp)
                 }
 
                 Spacer(Modifier.height(24.dp))
                 Kicker("Location")
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = AccentLight, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(fullAddress(p), color = TextMuted, fontSize = 14.sp)
+                    Text(fullAddress(p), color = Bhq.colors.textMuted, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.height(24.dp))
                 Kicker("Documents")
                 Spacer(Modifier.height(10.dp))
                 if (detail.documents.isEmpty()) {
-                    Text("No documents yet. Add architectural plans to publish.", color = TextMuted, fontSize = 14.sp)
+                    Text("No documents yet. Add architectural plans to publish.", color = Bhq.colors.textMuted, fontSize = 14.sp)
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         detail.documents.forEach { DocRow(it) }
@@ -215,7 +207,7 @@ private fun DetailContent(ui: OwnerDetailUi, vm: OwnerProjectDetailViewModel, on
                 DeleteRow { confirmDelete = true }
                 if (ui.deleteError != null) {
                     Spacer(Modifier.height(8.dp))
-                    Text(ui.deleteError, color = Danger, fontSize = 13.sp)
+                    Text(ui.deleteError, color = Bhq.colors.danger, fontSize = 13.sp)
                 }
                 Spacer(Modifier.height(120.dp))
             }
@@ -226,7 +218,7 @@ private fun DetailContent(ui: OwnerDetailUi, vm: OwnerProjectDetailViewModel, on
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xF205070D))))
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Bhq.colors.scrimHeavy)))
                 .navigationBarsPadding()
                 .padding(20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -243,17 +235,17 @@ private fun DetailContent(ui: OwnerDetailUi, vm: OwnerProjectDetailViewModel, on
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { if (!ui.deleting) confirmDelete = false },
-            containerColor = Surface1,
-            titleContentColor = TextPrimary,
-            textContentColor = TextMuted,
+            containerColor = Bhq.colors.surface,
+            titleContentColor = Bhq.colors.text,
+            textContentColor = Bhq.colors.textMuted,
             title = { Text("Delete project?") },
             text = { Text("This permanently removes the project. Builders who unlocked it will lose access.") },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; vm.delete(onBack) }) {
-                    Text("Delete", color = Danger, fontWeight = FontWeight.SemiBold)
+                    Text("Delete", color = Bhq.colors.danger, fontWeight = FontWeight.SemiBold)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel", color = TextMuted) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel", color = Bhq.colors.textMuted) } },
         )
     }
 }
@@ -267,12 +259,12 @@ private fun Hero(p: ProjectFieldsDto) {
     CardSurface(Modifier.fillMaxWidth().padding(top = 8.dp), shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(22.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(7.dp).clip(CircleShape).background(Accent).graphicsLayer { alpha = pulse })
+                Box(Modifier.size(7.dp).clip(CircleShape).background(Bhq.colors.accent).graphicsLayer { alpha = pulse })
                 Spacer(Modifier.width(8.dp))
-                Text("YOUR PROJECT", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.2.sp)
+                Text("YOUR PROJECT", color = Bhq.colors.accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.2.sp)
             }
             Spacer(Modifier.height(14.dp))
-            Text(p.title, color = TextPrimary, fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(p.title, color = Bhq.colors.text, fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusPill(p.status)
@@ -282,7 +274,7 @@ private fun Hero(p: ProjectFieldsDto) {
             p.publishedAtIso?.let {
                 daysSince(it)?.let { d ->
                     Spacer(Modifier.height(10.dp))
-                    Text(if (d == 0) "Published today" else "Published ${d}d ago", color = TextDim, fontSize = 12.sp)
+                    Text(if (d == 0) "Published today" else "Published ${d}d ago", color = Bhq.colors.textDim, fontSize = 12.sp)
                 }
             }
         }
@@ -305,15 +297,15 @@ private fun StatsRow(unlocks: Int, tenders: Int, unread: Int) {
 @Composable
 private fun StatCell(label: String, value: Int, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        AnimatedCount(value, color = if (value > 0) AccentLight else TextPrimary, fontSize = 24.sp)
+        AnimatedCount(value, color = if (value > 0) Bhq.colors.accentLight else Bhq.colors.text, fontSize = 24.sp)
         Spacer(Modifier.height(2.dp))
-        Text(label.uppercase(), color = TextDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
+        Text(label.uppercase(), color = Bhq.colors.textDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp)
     }
 }
 
 @Composable
 private fun Divider() {
-    Box(Modifier.height(34.dp).width(1.dp).background(BlueprintLine.copy(alpha = 0.12f)))
+    Box(Modifier.height(34.dp).width(1.dp).background(Bhq.colors.blueprintLine.copy(alpha = 0.12f)))
 }
 
 // ── Details ─────────────────────────────────────────────────────────
@@ -337,12 +329,12 @@ private fun DetailsCard(p: ProjectFieldsDto) {
         Column(Modifier.padding(18.dp)) {
             rows.forEachIndexed { i, (label, value) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(label, color = TextMuted, fontSize = 14.sp)
-                    Text(value, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(label, color = Bhq.colors.textMuted, fontSize = 14.sp)
+                    Text(value, color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
-                if (i < rows.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(BlueprintLine.copy(alpha = 0.07f)))
+                if (i < rows.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(Bhq.colors.blueprintLine.copy(alpha = 0.07f)))
             }
-            if (rows.isEmpty()) Text("Add details to help builders quote accurately.", color = TextMuted, fontSize = 14.sp)
+            if (rows.isEmpty()) Text("Add details to help builders quote accurately.", color = Bhq.colors.textMuted, fontSize = 14.sp)
         }
     }
 }
@@ -350,16 +342,16 @@ private fun DetailsCard(p: ProjectFieldsDto) {
 @Composable
 private fun DocRow(doc: ProjectDocumentDto) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(SurfaceElev)
-            .border(1.dp, BlueprintLine.copy(alpha = 0.10f), RoundedCornerShape(14.dp)).padding(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Bhq.colors.surfaceElev)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.10f), RoundedCornerShape(14.dp)).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Description, contentDescription = null, tint = AccentLight, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Description, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(doc.filename.ifBlank { "Document" }, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(doc.filename.ifBlank { "Document" }, color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
-            Text(ProjectLabels.pretty(doc.category) ?: "Document", color = TextDim, fontSize = 12.sp)
+            Text(ProjectLabels.pretty(doc.category) ?: "Document", color = Bhq.colors.textDim, fontSize = 12.sp)
         }
     }
 }
@@ -368,12 +360,12 @@ private fun DocRow(doc: ProjectDocumentDto) {
 private fun DeleteRow(onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-            .background(Danger.copy(alpha = 0.06f))
-            .border(1.dp, Danger.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
+            .background(Bhq.colors.danger.copy(alpha = 0.06f))
+            .border(1.dp, Bhq.colors.danger.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
             .pressable(onClick = onClick).padding(vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
     ) {
-        Text("Delete project", color = Danger, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text("Delete project", color = Bhq.colors.danger, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -382,22 +374,22 @@ private fun DeleteRow(onClick: () -> Unit) {
 @Composable
 private fun GhostFullButton(text: String, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(Color(0x14FFFFFF))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(Bhq.colors.fillSubtle)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
             .pressable(onClick = onClick).padding(vertical = 15.dp),
         horizontalArrangement = Arrangement.Center,
     ) {
-        Text(text, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun CircleBtn(icon: ImageVector, label: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(42.dp).clip(CircleShape).background(Color(0x66060A12)).pressable(onClick = onClick),
+        Modifier.size(42.dp).clip(CircleShape).background(Bhq.colors.scrimFaint).pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = TextPrimary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = label, tint = Bhq.colors.text, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -426,9 +418,9 @@ private fun DetailMessage(title: String, subtitle: String, onBack: () -> Unit) {
             CircleBtn(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
         }
         Column(Modifier.fillMaxSize().padding(36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
-            Text(subtitle, color = TextMuted, fontSize = 14.sp)
+            Text(subtitle, color = Bhq.colors.textMuted, fontSize = 14.sp)
         }
     }
 }

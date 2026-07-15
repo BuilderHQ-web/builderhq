@@ -42,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,13 +54,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextPrimary
-
-private val FieldFill = Brush.verticalGradient(listOf(Color(0xFF121A28), Color(0xFF0C1320)))
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** The premium text field: floating caps label, blueprint hairline that
  *  ignites teal (with a soft glow) on focus, password reveal toggle, and an
@@ -88,9 +81,9 @@ fun BhqTextField(
     val shape = RoundedCornerShape(14.dp)
     val borderColor by animateColorAsState(
         targetValue = when {
-            error != null -> Danger
-            focused -> Accent
-            else -> BlueprintLine.copy(alpha = 0.16f)
+            error != null -> Bhq.colors.danger
+            focused -> Bhq.colors.accent
+            else -> Bhq.colors.blueprintLine.copy(alpha = 0.16f)
         },
         label = "fieldBorder",
     )
@@ -98,7 +91,7 @@ fun BhqTextField(
     Column(modifier) {
         Text(
             label.uppercase(),
-            color = if (error != null) Danger else TextDim,
+            color = if (error != null) Bhq.colors.danger else Bhq.colors.textDim,
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.6.sp,
@@ -110,12 +103,12 @@ fun BhqTextField(
                 .then(
                     if (focused) Modifier.shadow(
                         10.dp, shape,
-                        ambientColor = Accent.copy(alpha = 0.25f),
-                        spotColor = Accent.copy(alpha = 0.35f),
+                        ambientColor = Bhq.colors.accent.copy(alpha = 0.25f),
+                        spotColor = Bhq.colors.accent.copy(alpha = 0.35f),
                     ) else Modifier,
                 )
                 .clip(shape)
-                .background(FieldFill)
+                .background(Bhq.brushes.field)
                 .border(1.5.dp, borderColor, shape)
                 .padding(horizontal = 14.dp, vertical = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -123,22 +116,22 @@ fun BhqTextField(
             if (leadingIcon != null) {
                 Icon(
                     leadingIcon, contentDescription = null,
-                    tint = if (focused) Accent else TextDim,
+                    tint = if (focused) Bhq.colors.accent else Bhq.colors.textDim,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(10.dp))
             }
             Box(Modifier.weight(1f)) {
                 if (value.isEmpty()) {
-                    Text(placeholder, color = TextDim, fontSize = 16.sp)
+                    Text(placeholder, color = Bhq.colors.textDim, fontSize = 16.sp)
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 16.sp),
+                    textStyle = TextStyle(color = Bhq.colors.text, fontSize = 16.sp),
                     singleLine = true,
                     enabled = enabled,
-                    cursorBrush = SolidColor(Accent),
+                    cursorBrush = SolidColor(Bhq.colors.accent),
                     visualTransformation = if (isPassword && hidden) {
                         PasswordVisualTransformation()
                     } else {
@@ -168,7 +161,7 @@ fun BhqTextField(
                 Icon(
                     if (hidden) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
                     contentDescription = if (hidden) "Show password" else "Hide password",
-                    tint = TextDim,
+                    tint = Bhq.colors.textDim,
                     modifier = Modifier.size(20.dp).clickable { hidden = !hidden },
                 )
             }
@@ -176,7 +169,7 @@ fun BhqTextField(
         AnimatedVisibility(visible = error != null) {
             Text(
                 error ?: "",
-                color = Danger,
+                color = Bhq.colors.danger,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 6.dp, start = 2.dp),
             )
@@ -234,9 +227,9 @@ private fun OtpCell(char: String, active: Boolean, isError: Boolean) {
     val shape = RoundedCornerShape(12.dp)
     val border by animateColorAsState(
         when {
-            isError -> Danger
-            active || filled -> Accent
-            else -> BlueprintLine.copy(alpha = 0.16f)
+            isError -> Bhq.colors.danger
+            active || filled -> Bhq.colors.accent
+            else -> Bhq.colors.blueprintLine.copy(alpha = 0.16f)
         },
         label = "otpBorder",
     )
@@ -252,22 +245,22 @@ private fun OtpCell(char: String, active: Boolean, isError: Boolean) {
             .then(
                 if (active) Modifier.shadow(
                     10.dp, shape,
-                    ambientColor = Accent.copy(alpha = 0.30f),
-                    spotColor = Accent.copy(alpha = 0.40f),
+                    ambientColor = Bhq.colors.accent.copy(alpha = 0.30f),
+                    spotColor = Bhq.colors.accent.copy(alpha = 0.40f),
                 ) else Modifier,
             )
             .clip(shape)
-            .background(FieldFill)
+            .background(Bhq.brushes.field)
             .border(1.5.dp, border, shape),
         contentAlignment = Alignment.Center,
     ) {
         if (filled) {
-            Text(char, color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+            Text(char, color = Bhq.colors.text, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         } else if (active) {
             Box(
                 Modifier
                     .size(width = 2.dp, height = 24.dp)
-                    .background(Accent.copy(alpha = caretAlpha)),
+                    .background(Bhq.colors.accent.copy(alpha = caretAlpha)),
             )
         }
     }

@@ -36,15 +36,12 @@ import au.com.builderhq.app.core.design.components.Pill
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.ProgressRing
 import au.com.builderhq.app.core.design.components.SkeletonBox
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** Home tab (for now): a living gallery of the design system. */
 @Composable
 fun DesignGalleryScreen() {
+    val c = Bhq.colors
     Column(
         Modifier
             .fillMaxSize()
@@ -55,8 +52,8 @@ fun DesignGalleryScreen() {
         Spacer(Modifier.height(8.dp))
         Kicker("Design system")
         Spacer(Modifier.height(12.dp))
-        Text("BuilderHQ", fontSize = 40.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-        Text("Android · foundation online", fontSize = 14.sp, color = AccentLight)
+        Text("BuilderHQ", fontSize = 40.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+        Text("Android · foundation online", fontSize = 14.sp, color = c.accentLight)
         Spacer(Modifier.height(24.dp))
 
         CardSurface(Modifier.fillMaxWidth()) {
@@ -71,8 +68,8 @@ fun DesignGalleryScreen() {
                     ProgressRing(progress = 0.6f, diameter = 76.dp)
                     Spacer(Modifier.width(20.dp))
                     Column {
-                        Text("3 of 5", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        Text("free unlocks this cycle", fontSize = 13.sp, color = TextMuted)
+                        Text("3 of 5", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = c.text)
+                        Text("free unlocks this cycle", fontSize = 13.sp, color = c.textMuted)
                     }
                 }
             }
@@ -108,6 +105,7 @@ fun DesignGalleryScreen() {
 
 @Composable
 fun PlaceholderScreen(title: String, subtitle: String, icon: ImageVector) {
+    val c = Bhq.colors
     Box(
         Modifier.fillMaxSize().statusBarsPadding().padding(28.dp),
         contentAlignment = Alignment.Center,
@@ -117,16 +115,16 @@ fun PlaceholderScreen(title: String, subtitle: String, icon: ImageVector) {
                 Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Accent.copy(alpha = 0.10f))
-                    .border(1.dp, BlueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
+                    .background(c.accent.copy(alpha = 0.10f))
+                    .border(1.dp, c.blueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = AccentLight, modifier = Modifier.size(28.dp))
+                Icon(icon, contentDescription = null, tint = c.accentLight, modifier = Modifier.size(28.dp))
             }
             Spacer(Modifier.height(16.dp))
-            Text(title, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text(title, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = c.text)
             Spacer(Modifier.height(6.dp))
-            Text(subtitle, fontSize = 14.sp, color = TextMuted, textAlign = TextAlign.Center)
+            Text(subtitle, fontSize = 14.sp, color = c.textMuted, textAlign = TextAlign.Center)
         }
     }
 }

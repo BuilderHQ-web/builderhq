@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,15 +56,7 @@ import au.com.builderhq.app.core.design.components.Kicker
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.Success
-import au.com.builderhq.app.core.design.theme.SurfaceElev
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.ProjectDocumentDto
@@ -289,11 +280,11 @@ fun EditProjectScreen(
         }
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x14FFFFFF)).pressable(onClick = onBack), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = TextPrimary, modifier = Modifier.size(18.dp))
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Bhq.colors.fillSubtle).pressable(onClick = onBack), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Bhq.colors.text, modifier = Modifier.size(18.dp))
                 }
                 Spacer(Modifier.width(14.dp))
-                Text("Edit project", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text("Edit project", color = Bhq.colors.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             }
             if (ui.loading) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -301,7 +292,7 @@ fun EditProjectScreen(
                 }
             } else if (ui.error != null && ui.projectId.isBlank()) {
                 Box(Modifier.fillMaxSize().padding(36.dp), contentAlignment = Alignment.Center) {
-                    Text(ui.error, color = TextMuted, fontSize = 14.sp)
+                    Text(ui.error, color = Bhq.colors.textMuted, fontSize = 14.sp)
                 }
             } else {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -317,15 +308,15 @@ fun EditProjectScreen(
                             Spacer(Modifier.height(8.dp))
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ui.suburbOptions.forEach { s ->
-                                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(SurfaceElev).border(1.dp, BlueprintLine.copy(alpha = 0.1f), RoundedCornerShape(12.dp)).pressable { vm.chooseSuburb(s) }.padding(12.dp)) {
-                                        Text("${s.suburb}, ${s.state}", color = TextPrimary, fontSize = 14.sp)
+                                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Bhq.colors.surfaceElev).border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.1f), RoundedCornerShape(12.dp)).pressable { vm.chooseSuburb(s) }.padding(12.dp)) {
+                                        Text("${s.suburb}, ${s.state}", color = Bhq.colors.text, fontSize = 14.sp)
                                     }
                                 }
                             }
                         }
                         if (ui.fields.suburb.isNotBlank()) {
                             Spacer(Modifier.height(10.dp))
-                            Text("${ui.fields.suburb}, ${ui.fields.state}", color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text("${ui.fields.suburb}, ${ui.fields.state}", color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(14.dp))
                             WizardField("Street address", ui.fields.addressLine1, vm::setStreet, "Street address")
                         }
@@ -337,7 +328,7 @@ fun EditProjectScreen(
                         MonthGrid("Target start", ui.fields.targetStartMonth) { v -> vm.update { it.copy(targetStartMonth = v) } }
                     }
                     EditSection("Documents") { EditDocs(ui, vm, pickDoc) }
-                    ui.saveError?.let { Text(it, color = Danger, fontSize = 13.sp) }
+                    ui.saveError?.let { Text(it, color = Bhq.colors.danger, fontSize = 13.sp) }
                     Spacer(Modifier.height(16.dp))
                 }
                 Row(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(20.dp)) {
@@ -387,7 +378,7 @@ private fun EditSpecs(ui: EditUi, vm: EditProjectViewModel) {
                 BandPicker("Extension type", EDIT_EXT_TYPES.map { it to (ProjectLabels.pretty(it) ?: it) }, f.extensionType) { v -> vm.update { it.copy(extensionType = v) } }
                 BandPicker("Extension size", EDIT_EXT_SIZES.map { it to (ProjectLabels.sizeBand(it) ?: it) }, f.extensionSizeBand) { v -> vm.update { it.copy(extensionSizeBand = v) } }
             }
-            else -> Text("This project's type can't be changed here.", color = TextMuted, fontSize = 13.sp)
+            else -> Text("This project's type can't be changed here.", color = Bhq.colors.textMuted, fontSize = 13.sp)
         }
     }
 }
@@ -403,16 +394,16 @@ private fun EditDocs(ui: EditUi, vm: EditProjectViewModel, pickDoc: (String, Str
         }
         Spacer(Modifier.height(2.dp))
         Row(
-            Modifier.clip(RoundedCornerShape(50)).border(1.dp, Accent.copy(alpha = 0.35f), RoundedCornerShape(50))
+            Modifier.clip(RoundedCornerShape(50)).border(1.dp, Bhq.colors.accent.copy(alpha = 0.35f), RoundedCornerShape(50))
                 .pressable { pickDoc("architectural", "application/pdf") }.padding(horizontal = 14.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentLight, modifier = Modifier.size(15.dp))
+            Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(6.dp))
-            Text("Add architectural plan", color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text("Add architectural plan", color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
         if (!ui.hasArchitectural) {
-            Text("An architectural plan is required to publish.", color = TextDim, fontSize = 12.sp)
+            Text("An architectural plan is required to publish.", color = Bhq.colors.textDim, fontSize = 12.sp)
         }
     }
 }
@@ -420,19 +411,19 @@ private fun EditDocs(ui: EditUi, vm: EditProjectViewModel, pickDoc: (String, Str
 @Composable
 private fun DocLine(name: String, category: String?, state: DocState, onRemove: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(SurfaceElev).border(1.dp, BlueprintLine.copy(alpha = 0.1f), RoundedCornerShape(14.dp)).padding(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Bhq.colors.surfaceElev).border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.1f), RoundedCornerShape(14.dp)).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when (state) {
-            DocState.UPLOADING -> CircularProgressIndicator(Modifier.size(16.dp), color = AccentLight, strokeWidth = 2.dp)
-            DocState.DONE -> Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = Success, modifier = Modifier.size(16.dp))
-            DocState.FAILED -> Icon(Icons.Rounded.Close, contentDescription = null, tint = Danger, modifier = Modifier.size(16.dp))
+            DocState.UPLOADING -> CircularProgressIndicator(Modifier.size(16.dp), color = Bhq.colors.accentLight, strokeWidth = 2.dp)
+            DocState.DONE -> Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = Bhq.colors.success, modifier = Modifier.size(16.dp))
+            DocState.FAILED -> Icon(Icons.Rounded.Close, contentDescription = null, tint = Bhq.colors.danger, modifier = Modifier.size(16.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(name, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            category?.let { Text(it, color = TextDim, fontSize = 12.sp) }
+            Text(name, color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            category?.let { Text(it, color = Bhq.colors.textDim, fontSize = 12.sp) }
         }
-        Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = TextDim, modifier = Modifier.size(16.dp).pressable(onClick = onRemove))
+        Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = Bhq.colors.textDim, modifier = Modifier.size(16.dp).pressable(onClick = onRemove))
     }
 }

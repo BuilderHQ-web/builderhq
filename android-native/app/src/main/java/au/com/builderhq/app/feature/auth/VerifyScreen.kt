@@ -21,7 +21,7 @@ import androidx.lifecycle.viewModelScope
 import au.com.builderhq.app.core.data.SessionRepository
 import au.com.builderhq.app.core.design.components.OtpInput
 import au.com.builderhq.app.core.design.components.PrimaryButton
-import au.com.builderhq.app.core.design.theme.TextDim
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.network.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -131,7 +131,7 @@ fun VerifyScreen(
         Spacer(Modifier.height(20.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             if (ui.resendIn > 0) {
-                Text("Resend code in ${ui.resendIn}s", color = TextDim, fontSize = 13.sp)
+                Text("Resend code in ${ui.resendIn}s", color = Bhq.colors.textDim, fontSize = 13.sp)
             } else {
                 AuthTextLink(
                     "Didn't get it?",
@@ -147,7 +147,7 @@ fun VerifyScreen(
         Spacer(Modifier.height(10.dp))
         Text(
             "Your code expires 15 minutes after it's sent. Can't find it? Check your spam or promotions folder.",
-            color = TextDim, fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center,
+            color = Bhq.colors.textDim, fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
     }

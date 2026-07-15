@@ -61,15 +61,8 @@ import au.com.builderhq.app.core.design.components.ProjectCoverArt
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.StaggeredEntrance
 import au.com.builderhq.app.core.design.components.pressable
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.DisplaySerif
-import au.com.builderhq.app.core.design.theme.SurfaceElev
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.OwnerDashboardDto
@@ -189,13 +182,13 @@ private fun GreetingHeader(firstName: String, data: OwnerDashboardDto) {
     val day = LocalDate.now().dayOfMonth
     Column(Modifier.statusBarsPadding().padding(top = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(Accent))
+            Box(Modifier.size(6.dp).clip(CircleShape).background(Bhq.colors.accent))
             Spacer(Modifier.width(8.dp))
-            Text("$weekday · $month $day", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
+            Text("$weekday · $month $day", color = Bhq.colors.accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
         }
         Spacer(Modifier.height(10.dp))
-        Text(part, color = TextMuted, fontSize = 22.sp, fontWeight = FontWeight.Medium)
-        Text("$firstName.", color = AccentLight, fontSize = 38.sp, lineHeight = 42.sp, fontFamily = DisplaySerif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)
+        Text(part, color = Bhq.colors.textMuted, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+        Text("$firstName.", color = Bhq.colors.accentLight, fontSize = 38.sp, lineHeight = 42.sp, fontFamily = DisplaySerif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)
         Spacer(Modifier.height(10.dp))
         Ticker(data)
     }
@@ -220,7 +213,7 @@ private fun Ticker(data: OwnerDashboardDto) {
         transitionSpec = { (fadeIn(tween(400)) + androidx.compose.animation.slideInVertically { it / 2 }) togetherWith (fadeOut(tween(250)) + androidx.compose.animation.slideOutVertically { -it / 2 }) },
         label = "ticker",
     ) { idx ->
-        Text(lines[idx], color = TextDim, fontSize = 14.sp)
+        Text(lines[idx], color = Bhq.colors.textDim, fontSize = 14.sp)
     }
 }
 
@@ -232,12 +225,12 @@ private fun EmptyHero(onCreate: () -> Unit) {
         Column(Modifier.padding(24.dp)) {
             Kicker("Get started")
             Spacer(Modifier.height(14.dp))
-            Text("Publish your", color = TextPrimary, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
-            Text("first project.", color = AccentLight, fontSize = 34.sp, lineHeight = 38.sp, fontFamily = DisplaySerif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)
+            Text("Publish your", color = Bhq.colors.text, fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
+            Text("first project.", color = Bhq.colors.accentLight, fontSize = 34.sp, lineHeight = 38.sp, fontFamily = DisplaySerif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)
             Spacer(Modifier.height(12.dp))
             Text(
                 "Upload your plans, set your details, and verified builders will start tendering — usually within days.",
-                color = TextMuted, fontSize = 15.sp, lineHeight = 22.sp,
+                color = Bhq.colors.textMuted, fontSize = 15.sp, lineHeight = 22.sp,
             )
             Spacer(Modifier.height(20.dp))
             PrimaryButton("Publish a project", onClick = onCreate, leadingIcon = Icons.Rounded.Add, modifier = Modifier.fillMaxWidth())
@@ -252,23 +245,23 @@ private fun PortfolioHero(data: OwnerDashboardDto, onCreate: () -> Unit) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Kicker("Your portfolio")
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(Accent.copy(alpha = 0.12f))
-                        .border(1.dp, Accent.copy(alpha = 0.4f), RoundedCornerShape(50))
+                    Modifier.clip(RoundedCornerShape(50)).background(Bhq.colors.accent.copy(alpha = 0.12f))
+                        .border(1.dp, Bhq.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(50))
                         .pressable(onClick = onCreate).padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = AccentLight, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("New", color = AccentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("New", color = Bhq.colors.accentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(Modifier.height(18.dp))
-            AnimatedCount(data.stats.totalTenders, color = AccentLight, fontSize = 56.sp)
-            Text("tenders received", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            AnimatedCount(data.stats.totalTenders, color = Bhq.colors.accentLight, fontSize = 56.sp)
+            Text("tenders received", color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             val active = data.stats.activeProjects
             Text(
                 "across $active active project${if (active == 1) "" else "s"}",
-                color = TextMuted, fontSize = 13.sp,
+                color = Bhq.colors.textMuted, fontSize = 13.sp,
             )
         }
     }
@@ -296,21 +289,21 @@ private fun PulseTile(label: String, value: Int, icon: ImageVector, modifier: Mo
     Box(
         modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(if (active) Accent.copy(alpha = 0.08f) else SurfaceElev)
-            .border(1.dp, if (active) Accent.copy(alpha = 0.22f) else BlueprintLine.copy(alpha = 0.10f), RoundedCornerShape(16.dp))
+            .background(if (active) Bhq.colors.accent.copy(alpha = 0.08f) else Bhq.colors.surfaceElev)
+            .border(1.dp, if (active) Bhq.colors.accent.copy(alpha = 0.22f) else Bhq.colors.blueprintLine.copy(alpha = 0.10f), RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
         Column {
             Box(
                 Modifier.size(30.dp).clip(RoundedCornerShape(9.dp))
-                    .background(if (active) Accent.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.04f)),
+                    .background(if (active) Bhq.colors.accent.copy(alpha = 0.16f) else Bhq.colors.fillFaint),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = if (active) AccentLight else TextDim, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = null, tint = if (active) Bhq.colors.accentLight else Bhq.colors.textDim, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.height(12.dp))
-            AnimatedCount(value, color = if (active) TextPrimary else TextMuted, fontSize = 26.sp)
-            Text(label.uppercase(), color = TextDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
+            AnimatedCount(value, color = if (active) Bhq.colors.text else Bhq.colors.textMuted, fontSize = 26.sp)
+            Text(label.uppercase(), color = Bhq.colors.textDim, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
         }
     }
 }
@@ -328,26 +321,26 @@ private fun OwnerRaceCard(p: OwnerProjectRowDto, onClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusPill(p.status)
                     Spacer(Modifier.width(8.dp))
-                    Text(ageLabel(p.publishedAt ?: p.createdAt), color = TextDim, fontSize = 11.sp)
+                    Text(ageLabel(p.publishedAt ?: p.createdAt), color = Bhq.colors.textDim, fontSize = 11.sp)
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Text(p.title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(p.title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(14.dp))
             UnlockRace(p.stats.unlockCount, cap = 3)
             Spacer(Modifier.height(8.dp))
             Text(
                 if (p.stats.unlockCount == 0) "No builders unlocked yet" else "${p.stats.unlockCount} of 3 builders unlocked",
-                color = TextMuted, fontSize = 12.sp,
+                color = Bhq.colors.textMuted, fontSize = 12.sp,
             )
             Spacer(Modifier.height(14.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(BlueprintLine.copy(alpha = 0.10f)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Bhq.colors.blueprintLine.copy(alpha = 0.10f)))
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("$tenders", color = if (hot) AccentLight else TextMuted, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("$tenders", color = if (hot) Bhq.colors.accentLight else Bhq.colors.textMuted, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(6.dp))
-                    Text("tender${if (tenders == 1) "" else "s"}", color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 3.dp))
+                    Text("tender${if (tenders == 1) "" else "s"}", color = Bhq.colors.textMuted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 3.dp))
                 }
                 ReviewPill(hot)
             }
@@ -362,8 +355,8 @@ private fun UnlockRace(filled: Int, cap: Int) {
             Box(
                 Modifier.weight(1f).height(7.dp).clip(RoundedCornerShape(50))
                     .background(
-                        if (i < filled) Brush.horizontalGradient(listOf(AccentLight, Accent))
-                        else Brush.horizontalGradient(listOf(SurfaceElev, SurfaceElev)),
+                        if (i < filled) Brush.horizontalGradient(listOf(Bhq.colors.accentLight, Bhq.colors.accent))
+                        else Brush.horizontalGradient(listOf(Bhq.colors.surfaceElev, Bhq.colors.surfaceElev)),
                     ),
             )
         }
@@ -374,12 +367,12 @@ private fun UnlockRace(filled: Int, cap: Int) {
 private fun ReviewPill(hot: Boolean) {
     Box(
         Modifier.clip(RoundedCornerShape(50))
-            .background(if (hot) Accent else Color.White.copy(alpha = 0.06f))
+            .background(if (hot) Bhq.colors.accent else Color.White.copy(alpha = 0.06f))
             .padding(horizontal = 16.dp, vertical = 9.dp),
     ) {
         Text(
             if (hot) "Review" else "View",
-            color = if (hot) AccentContrast else TextMuted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            color = if (hot) Bhq.colors.accentContrast else Bhq.colors.textMuted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
         )
     }
 }
@@ -389,8 +382,8 @@ private fun ReviewPill(hot: Boolean) {
 @Composable
 private fun DraftRow(p: OwnerProjectRowDto, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(SurfaceElev)
-            .border(1.dp, BlueprintLine.copy(alpha = 0.10f), RoundedCornerShape(16.dp))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Bhq.colors.surfaceElev)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.10f), RoundedCornerShape(16.dp))
             .pressable(onClick = onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -399,9 +392,9 @@ private fun DraftRow(p: OwnerProjectRowDto, onClick: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(p.title.ifBlank { "Untitled project" }, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(p.title.ifBlank { "Untitled project" }, color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(4.dp))
-            Text(ProjectLabels.location(p.suburb, p.state).ifBlank { "Location not set" }, color = TextMuted, fontSize = 12.sp)
+            Text(ProjectLabels.location(p.suburb, p.state).ifBlank { "Location not set" }, color = Bhq.colors.textMuted, fontSize = 12.sp)
         }
         Spacer(Modifier.width(10.dp))
         StatusPill(p.status)
@@ -411,17 +404,17 @@ private fun DraftRow(p: OwnerProjectRowDto, onClick: () -> Unit) {
 @Composable
 private fun ActivityRow(title: String, body: String?, createdAt: String?) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
-        Box(Modifier.padding(top = 5.dp).size(7.dp).clip(CircleShape).background(Accent.copy(alpha = 0.7f)))
+        Box(Modifier.padding(top = 5.dp).size(7.dp).clip(CircleShape).background(Bhq.colors.accent.copy(alpha = 0.7f)))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(title, color = Bhq.colors.text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             if (!body.isNullOrBlank()) {
                 Spacer(Modifier.height(2.dp))
-                Text(body, color = TextMuted, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(body, color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             daysSince(createdAt)?.let {
                 Spacer(Modifier.height(3.dp))
-                Text(if (it == 0) "Today" else "${it}d ago", color = TextDim, fontSize = 11.sp)
+                Text(if (it == 0) "Today" else "${it}d ago", color = Bhq.colors.textDim, fontSize = 11.sp)
             }
         }
     }
@@ -434,7 +427,7 @@ private fun SectionLabel(text: String, count: Int) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Kicker(text)
         Spacer(Modifier.width(8.dp))
-        Text("$count", color = TextDim, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text("$count", color = Bhq.colors.textDim, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -459,9 +452,9 @@ private fun DashError(message: String, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Couldn't load your dashboard", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        Text("Couldn't load your dashboard", color = Bhq.colors.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
-        Text(message, color = TextMuted, fontSize = 14.sp)
+        Text(message, color = Bhq.colors.textMuted, fontSize = 14.sp)
         Spacer(Modifier.height(20.dp))
         PrimaryButton("Try again", onClick = onRetry)
     }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark cold-start window background (see values/colors.xml). -->
+    <color name="bhq_window_bg">#06080F</color>
+</resources>

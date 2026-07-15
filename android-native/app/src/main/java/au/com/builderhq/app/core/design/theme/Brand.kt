@@ -1,5 +1,6 @@
 package au.com.builderhq.app.core.design.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -7,7 +8,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.graphics.Brush
 
 /**
  * The brand's typographic voice.
@@ -22,15 +22,30 @@ import androidx.compose.ui.graphics.Brush
 val DisplaySerif: FontFamily = FontFamily.Serif
 val FiguresMono: FontFamily = FontFamily.Monospace
 
-private val AccentBrush = Brush.linearGradient(listOf(AccentLight, Accent))
-
 /**
  * A headline where [accent] is painted in serif-italic + the brand gradient
- * and [plain] stays in the surrounding sans. e.g. brandDisplay("Tender your", "build.").
+ * and [plain] stays in the surrounding sans. Takes the active palette so the
+ * gradient stays legible in both modes: luminous teal on dark, deep teal on
+ * light (bright #00D4C8 is a fill color, not a text color, on cream).
+ *
+ *   Text(brandDisplay(Bhq.colors, "Tender your", "build."))
  */
-fun brandDisplay(plain: String, accent: String): AnnotatedString = buildAnnotatedString {
-    if (plain.isNotEmpty()) append(if (plain.endsWith(" ")) plain else "$plain ")
-    withStyle(SpanStyle(brush = AccentBrush, fontFamily = DisplaySerif, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal)) {
-        append(accent)
+fun brandDisplay(c: BhqColors, plain: String, accent: String): AnnotatedString {
+    val accentBrush = Brush.linearGradient(
+        if (c.isDark) listOf(c.accentLight, c.accent)
+        else listOf(c.accentLight, c.accentDeep),
+    )
+    return buildAnnotatedString {
+        if (plain.isNotEmpty()) append(if (plain.endsWith(" ")) plain else "$plain ")
+        withStyle(
+            SpanStyle(
+                brush = accentBrush,
+                fontFamily = DisplaySerif,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Normal,
+            ),
+        ) {
+            append(accent)
+        }
     }
 }

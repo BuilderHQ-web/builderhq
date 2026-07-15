@@ -28,7 +28,7 @@ import androidx.lifecycle.viewModelScope
 import au.com.builderhq.app.core.data.SessionRepository
 import au.com.builderhq.app.core.design.components.BhqTextField
 import au.com.builderhq.app.core.design.components.PrimaryButton
-import au.com.builderhq.app.core.design.theme.AccentLight
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.network.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -91,7 +91,7 @@ fun LoginScreen(
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             Text(
-                "Forgot password?", color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                "Forgot password?", color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.clickable(remember { MutableInteractionSource() }, indication = null, onClick = onForgot),
             )
         }

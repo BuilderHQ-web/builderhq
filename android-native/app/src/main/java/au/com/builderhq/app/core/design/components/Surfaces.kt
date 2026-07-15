@@ -24,10 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.TextMuted
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** Frosted, lifted card: gradient fill, blueprint-blue hairline border,
  *  top-edge light catch, accent-tinted shadow. The unit of premium. */
@@ -42,12 +39,12 @@ fun CardSurface(
             .shadow(
                 elevation = 16.dp,
                 shape = shape,
-                ambientColor = Accent.copy(alpha = 0.22f),
-                spotColor = Accent.copy(alpha = 0.30f),
+                ambientColor = Bhq.colors.accent.copy(alpha = 0.22f),
+                spotColor = Bhq.colors.accent.copy(alpha = 0.30f),
             )
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF162033), Color(0xFF0C1424))))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), shape),
+            .background(Bhq.brushes.card)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), shape),
     ) {
         Box(
             Modifier
@@ -56,7 +53,7 @@ fun CardSurface(
                 .height(1.dp)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color.Transparent, Color(0x14CFE6FF), Color.Transparent),
+                        listOf(Color.Transparent, Bhq.colors.cardEdge, Color.Transparent),
                     ),
                 ),
         )
@@ -73,12 +70,12 @@ fun Kicker(text: String, modifier: Modifier = Modifier) {
                 .width(22.dp)
                 .height(2.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Accent),
+                .background(Bhq.colors.accent),
         )
         Spacer(Modifier.width(10.dp))
         Text(
             text = text.uppercase(),
-            color = Accent,
+            color = Bhq.colors.accent,
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 2.2.sp,
@@ -99,15 +96,15 @@ fun Pill(
             .clip(shape)
             .border(
                 1.dp,
-                if (accent) Accent.copy(alpha = 0.40f) else BlueprintLine.copy(alpha = 0.14f),
+                if (accent) Bhq.colors.accent.copy(alpha = 0.40f) else Bhq.colors.blueprintLine.copy(alpha = 0.14f),
                 shape,
             )
-            .background(if (accent) Accent.copy(alpha = 0.10f) else Color.Transparent)
+            .background(if (accent) Bhq.colors.accent.copy(alpha = 0.10f) else Color.Transparent)
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(
             text.uppercase(),
-            color = if (accent) AccentLight else TextMuted,
+            color = if (accent) Bhq.colors.accentLight else Bhq.colors.textMuted,
             fontSize = 9.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.4.sp,

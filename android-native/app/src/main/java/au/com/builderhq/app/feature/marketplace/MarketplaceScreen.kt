@@ -62,7 +62,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -85,15 +84,9 @@ import au.com.builderhq.app.core.design.components.SegmentedControl
 import au.com.builderhq.app.core.design.components.SkeletonBox
 import au.com.builderhq.app.core.design.components.StaggeredEntrance
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
 import au.com.builderhq.app.core.design.theme.brandDisplay
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
 import au.com.builderhq.app.core.model.ProjectLabels
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.FoundingAccessDto
@@ -314,7 +307,7 @@ private fun ProjectList(ui: MarketplaceUi, vm: MarketplaceViewModel, onOpenProje
         if (ui.loadingMore) {
             item {
                 Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(22.dp), color = AccentLight, strokeWidth = 2.dp)
+                    CircularProgressIndicator(Modifier.size(22.dp), color = Bhq.colors.accentLight, strokeWidth = 2.dp)
                 }
             }
         }
@@ -336,18 +329,18 @@ private fun MarketplaceHeader(ui: MarketplaceUi, vm: MarketplaceViewModel) {
             Column {
                 Kicker("The marketplace")
                 Spacer(Modifier.height(7.dp))
-                Text(brandDisplay("Find your next", "build"), color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+                Text(brandDisplay(Bhq.colors, "Find your next", "build"), color = Bhq.colors.text, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
             }
             Box(
                 Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color(0x14FFFFFF))
-                    .border(1.dp, BlueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
+                    .background(Bhq.colors.fillSubtle)
+                    .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.14f), RoundedCornerShape(50))
                     .clickable(remember { MutableInteractionSource() }, indication = null, onClick = vm::refresh),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = AccentLight, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = Bhq.colors.accentLight, modifier = Modifier.size(20.dp))
             }
         }
         if (ui.allowance != null) {
@@ -372,23 +365,23 @@ private fun MarketplaceHeader(ui: MarketplaceUi, vm: MarketplaceViewModel) {
 @Composable
 private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier.height(44.dp).clip(RoundedCornerShape(50)).background(Color(0x14FFFFFF))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 14.dp),
+        modifier.height(44.dp).clip(RoundedCornerShape(50)).background(Bhq.colors.fillSubtle)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Search, contentDescription = null, tint = TextDim, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.Search, contentDescription = null, tint = Bhq.colors.textDim, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (query.isEmpty()) Text("Search projects", color = TextDim, fontSize = 14.sp)
+            if (query.isEmpty()) Text("Search projects", color = Bhq.colors.textDim, fontSize = 14.sp)
             BasicTextField(
                 value = query, onValueChange = onQuery, singleLine = true,
-                textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
-                cursorBrush = SolidColor(Accent), modifier = Modifier.fillMaxWidth(),
+                textStyle = TextStyle(color = Bhq.colors.text, fontSize = 14.sp),
+                cursorBrush = SolidColor(Bhq.colors.accent), modifier = Modifier.fillMaxWidth(),
             )
         }
         if (query.isNotEmpty()) {
             Icon(
-                Icons.Rounded.Close, contentDescription = "Clear", tint = TextDim,
+                Icons.Rounded.Close, contentDescription = "Clear", tint = Bhq.colors.textDim,
                 modifier = Modifier.size(18.dp).clickable(remember { MutableInteractionSource() }, indication = null) { onQuery("") },
             )
         }
@@ -400,20 +393,20 @@ private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
     Box {
         Box(
             Modifier.size(44.dp).clip(RoundedCornerShape(50))
-                .background(if (activeCount > 0) Accent.copy(alpha = 0.14f) else Color(0x14FFFFFF))
-                .border(1.dp, if (activeCount > 0) Accent.copy(alpha = 0.4f) else BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
+                .background(if (activeCount > 0) Bhq.colors.accent.copy(alpha = 0.14f) else Bhq.colors.fillSubtle)
+                .border(1.dp, if (activeCount > 0) Bhq.colors.accent.copy(alpha = 0.4f) else Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.Tune, contentDescription = "Filters", tint = if (activeCount > 0) AccentLight else TextMuted, modifier = Modifier.size(20.dp))
+            Icon(Icons.Rounded.Tune, contentDescription = "Filters", tint = if (activeCount > 0) Bhq.colors.accentLight else Bhq.colors.textMuted, modifier = Modifier.size(20.dp))
         }
         if (activeCount > 0) {
             Box(
-                Modifier.align(Alignment.TopEnd).size(18.dp).clip(CircleShape).background(Accent)
-                    .border(2.dp, Color(0xFF06080F), CircleShape),
+                Modifier.align(Alignment.TopEnd).size(18.dp).clip(CircleShape).background(Bhq.colors.accent)
+                    .border(2.dp, Bhq.colors.canvas, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("$activeCount", color = AccentContrast, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text("$activeCount", color = Bhq.colors.accentContrast, fontSize = 9.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -424,16 +417,16 @@ private fun FoundingChip(fba: FoundingAccessDto) {
     Row(
         Modifier
             .clip(RoundedCornerShape(50))
-            .background(Accent.copy(alpha = 0.10f))
-            .border(1.dp, Accent.copy(alpha = 0.35f), RoundedCornerShape(50))
+            .background(Bhq.colors.accent.copy(alpha = 0.10f))
+            .border(1.dp, Bhq.colors.accent.copy(alpha = 0.35f), RoundedCornerShape(50))
             .padding(horizontal = 11.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Bolt, contentDescription = null, tint = AccentLight, modifier = Modifier.size(13.dp))
+        Icon(Icons.Rounded.Bolt, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(6.dp))
         Text(
             "${fba.remainingThisCycle} of ${fba.monthlyQuota} free unlocks this cycle",
-            color = AccentLight, fontSize = 11.sp, fontWeight = FontWeight.Medium,
+            color = Bhq.colors.accentLight, fontSize = 11.sp, fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -480,16 +473,16 @@ private fun StateView(
                     Modifier
                         .size(66.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Accent.copy(alpha = 0.10f))
-                        .border(1.dp, BlueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
+                        .background(Bhq.colors.accent.copy(alpha = 0.10f))
+                        .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.18f), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(icon, contentDescription = null, tint = AccentLight, modifier = Modifier.size(28.dp))
+                    Icon(icon, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(28.dp))
                 }
                 Spacer(Modifier.height(18.dp))
-                Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                Text(title, color = Bhq.colors.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
-                Text(subtitle, color = TextMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
+                Text(subtitle, color = Bhq.colors.textMuted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
                 if (actionLabel != null && onAction != null) {
                     Spacer(Modifier.height(22.dp))
                     PrimaryButton(actionLabel, onClick = onAction)
@@ -529,7 +522,7 @@ private fun FilterSheet(current: MktFilters, onApply: (MktFilters) -> Unit, onCl
     var type by remember { mutableStateOf(current.type) }
     var budgets by remember { mutableStateOf(current.budgets) }
     var state by remember { mutableStateOf(current.state) }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Color(0xFF0C1320)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Bhq.colors.sheet) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 28.dp),
         ) {
@@ -560,7 +553,7 @@ private fun FilterSheet(current: MktFilters, onApply: (MktFilters) -> Unit, onCl
 
 @Composable
 private fun FilterLabel(text: String) {
-    Text(text.uppercase(), color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
+    Text(text.uppercase(), color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.4.sp)
     Spacer(Modifier.height(10.dp))
 }
 
@@ -569,12 +562,12 @@ private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (selected) Accent.copy(alpha = 0.16f) else Color(0x14FFFFFF))
-            .border(1.dp, if (selected) Accent.copy(alpha = 0.5f) else BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .background(if (selected) Bhq.colors.accent.copy(alpha = 0.16f) else Bhq.colors.fillSubtle)
+            .border(1.dp, if (selected) Bhq.colors.accent.copy(alpha = 0.5f) else Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(50))
             .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
     ) {
-        Text(label, color = if (selected) AccentLight else TextMuted, fontSize = 13.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
+        Text(label, color = if (selected) Bhq.colors.accentLight else Bhq.colors.textMuted, fontSize = 13.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
     }
 }
 
@@ -588,7 +581,7 @@ private fun HowItWorksCoach(onDismiss: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xCC03070D))
+            .background(Bhq.colors.scrimStrong)
             .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
         contentAlignment = Alignment.BottomCenter,
     ) {
@@ -607,7 +600,7 @@ private fun HowItWorksCoach(onDismiss: () -> Unit) {
                 Column(Modifier.padding(22.dp)) {
                     Kicker("How BuilderHQ works")
                     Spacer(Modifier.height(14.dp))
-                    Text("Three steps to your next build", color = TextPrimary, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text("Three steps to your next build", color = Bhq.colors.text, fontSize = 21.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(20.dp))
                     CoachStep(1, Icons.Rounded.Bolt, "Browse live projects", "Filter to the work that fits your trade.")
                     Spacer(Modifier.height(16.dp))
@@ -629,18 +622,18 @@ private fun CoachStep(n: Int, icon: ImageVector, title: String, body: String) {
             Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .background(Accent.copy(alpha = 0.12f))
-                .border(1.dp, Accent.copy(alpha = 0.30f), RoundedCornerShape(13.dp)),
+                .background(Bhq.colors.accent.copy(alpha = 0.12f))
+                .border(1.dp, Bhq.colors.accent.copy(alpha = 0.30f), RoundedCornerShape(13.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = AccentLight, modifier = Modifier.size(19.dp))
+            Icon(icon, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(19.dp))
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(2.dp))
-            Text(body, color = TextMuted, fontSize = 13.sp, lineHeight = 18.sp)
+            Text(body, color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 18.sp)
         }
-        Text("$n", color = TextDim, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text("$n", color = Bhq.colors.textDim, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }

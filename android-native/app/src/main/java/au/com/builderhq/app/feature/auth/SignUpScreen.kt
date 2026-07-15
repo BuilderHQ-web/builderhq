@@ -29,7 +29,7 @@ import au.com.builderhq.app.core.data.SessionRepository
 import au.com.builderhq.app.core.design.components.BhqTextField
 import au.com.builderhq.app.core.design.components.PrimaryButton
 import au.com.builderhq.app.core.design.components.RoleSelectCard
-import au.com.builderhq.app.core.design.theme.TextDim
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.network.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -101,7 +101,7 @@ fun SignUpScreen(
         AuthHeader("Create your account", "Let's build.", "Two minutes to set up, then you're tendering.")
         Spacer(Modifier.height(26.dp))
 
-        Text("I'M A", color = TextDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
+        Text("I'M A", color = Bhq.colors.textDim, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.6.sp)
         Spacer(Modifier.height(10.dp))
         RoleSelectCard(
             "Project owner", "I have plans and want builders to tender.",
@@ -155,7 +155,7 @@ fun SignUpScreen(
         Spacer(Modifier.height(14.dp))
         Text(
             "By continuing you agree to our Terms and Privacy Policy.",
-            color = TextDim, fontSize = 12.sp, lineHeight = 16.sp,
+            color = Bhq.colors.textDim, fontSize = 12.sp, lineHeight = 16.sp,
         )
         Spacer(Modifier.height(18.dp))
         AuthTextLink("Already have an account?", "Sign in", onLogin, Modifier.fillMaxWidth())

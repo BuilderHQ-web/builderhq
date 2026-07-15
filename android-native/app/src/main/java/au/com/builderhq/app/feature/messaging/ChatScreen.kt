@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -67,14 +66,7 @@ import au.com.builderhq.app.core.data.MessagingRepository
 import au.com.builderhq.app.core.design.components.AmbientBackground
 import au.com.builderhq.app.core.design.components.pressable
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.TextDim
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.network.ApiResult
 import au.com.builderhq.app.core.network.dto.ConversationDto
 import au.com.builderhq.app.core.network.dto.MessageDto
@@ -224,7 +216,7 @@ fun ChatScreen(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when {
                     ui.conversation != null -> ThreadBody(ui, Modifier.fillMaxSize())
-                    ui.loading -> CenterBox { CircularProgressIndicator(color = AccentLight, strokeWidth = 2.dp, modifier = Modifier.size(26.dp)) }
+                    ui.loading -> CenterBox { CircularProgressIndicator(color = Bhq.colors.accentLight, strokeWidth = 2.dp, modifier = Modifier.size(26.dp)) }
                     else -> ErrorCenter(ui.error ?: "Couldn't load this conversation.", vm::retry)
                 }
             }
@@ -240,7 +232,7 @@ private fun ThreadHeader(conv: ConversationDto?, onBack: () -> Unit, onOpenProje
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0x99070D18))
+            .background(Bhq.colors.scrimSoft)
             .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -253,7 +245,7 @@ private fun ThreadHeader(conv: ConversationDto?, onBack: () -> Unit, onOpenProje
             Column(Modifier.weight(1f)) {
                 Text(
                     conv.other.displayName.ifBlank { "BuilderHQ member" },
-                    color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                    color = Bhq.colors.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(1.dp))
@@ -272,12 +264,12 @@ private fun PresenceLine(conv: ConversationDto) {
     val active = (millisSince(conv.other.lastReadAtIso) ?: Long.MAX_VALUE) < 5 * 60 * 1000
     if (active) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(Accent))
+            Box(Modifier.size(6.dp).clip(CircleShape).background(Bhq.colors.accent))
             Spacer(Modifier.width(5.dp))
-            Text("Active now", color = AccentLight, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            Text("Active now", color = Bhq.colors.accentLight, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         }
     } else {
-        Text(conv.projectTitle, color = TextDim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(conv.projectTitle, color = Bhq.colors.textDim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -328,12 +320,12 @@ private fun DateSeparator(label: String) {
         Box(
             Modifier
                 .clip(RoundedCornerShape(50))
-                .background(Color(0x0DFFFFFF))
-                .border(1.dp, BlueprintLine.copy(alpha = 0.10f), RoundedCornerShape(50))
+                .background(Bhq.colors.fillFaint)
+                .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.10f), RoundedCornerShape(50))
                 .padding(horizontal = 12.dp, vertical = 5.dp),
         ) {
             Text(
-                label.uppercase(), color = TextMuted, fontSize = 10.sp,
+                label.uppercase(), color = Bhq.colors.textMuted, fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold, letterSpacing = 1.2.sp,
             )
         }
@@ -369,17 +361,17 @@ private fun Bubble(
                 .then(
                     if (isOther) {
                         Modifier
-                            .background(Color(0x14FFFFFF))
-                            .border(1.dp, BlueprintLine.copy(alpha = 0.10f), shape)
+                            .background(Bhq.colors.fillSubtle)
+                            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.10f), shape)
                     } else {
-                        Modifier.background(Brush.linearGradient(listOf(Accent, Color(0xFF00B3A8))))
+                        Modifier.background(Brush.linearGradient(listOf(Bhq.colors.accent, Bhq.colors.accentDeep)))
                     },
                 )
                 .padding(horizontal = 14.dp, vertical = 9.dp),
         ) {
             Text(
                 message.body,
-                color = if (isOther) TextPrimary else AccentContrast,
+                color = if (isOther) Bhq.colors.text else Bhq.colors.accentContrast,
                 fontSize = 15.sp, lineHeight = 20.sp,
             )
         }
@@ -389,14 +381,14 @@ private fun Bubble(
                 Modifier.padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(formatClockTime(message.createdAtIso), color = TextDim, fontSize = 10.sp)
+                Text(formatClockTime(message.createdAtIso), color = Bhq.colors.textDim, fontSize = 10.sp)
                 if (showReceipt) {
                     Spacer(Modifier.width(4.dp))
                     when {
-                        pending -> Icon(Icons.Rounded.Schedule, "Sending", tint = TextDim, modifier = Modifier.size(12.dp))
+                        pending -> Icon(Icons.Rounded.Schedule, "Sending", tint = Bhq.colors.textDim, modifier = Modifier.size(12.dp))
                         isReadBy(otherLastReadIso, message.createdAtIso) ->
-                            Icon(Icons.Rounded.DoneAll, "Read", tint = AccentLight, modifier = Modifier.size(13.dp))
-                        else -> Icon(Icons.Rounded.Done, "Sent", tint = TextDim, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Rounded.DoneAll, "Read", tint = Bhq.colors.accentLight, modifier = Modifier.size(13.dp))
+                        else -> Icon(Icons.Rounded.Done, "Sent", tint = Bhq.colors.textDim, modifier = Modifier.size(13.dp))
                     }
                 }
             }
@@ -410,12 +402,12 @@ private fun SystemRow(message: MessageDto) {
         Box(
             Modifier
                 .clip(RoundedCornerShape(14.dp))
-                .background(Accent.copy(alpha = 0.10f))
-                .border(1.dp, Accent.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
+                .background(Bhq.colors.accent.copy(alpha = 0.10f))
+                .border(1.dp, Bhq.colors.accent.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
                 .padding(horizontal = 14.dp, vertical = 6.dp),
         ) {
             Text(
-                message.body, color = AccentLight, fontSize = 11.5f.sp,
+                message.body, color = Bhq.colors.accentLight, fontSize = 11.5f.sp,
                 fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
             )
         }
@@ -431,18 +423,18 @@ private fun EmptyThread(otherName: String, modifier: Modifier) {
     ) {
         Box(
             Modifier.size(60.dp).clip(CircleShape)
-                .background(Accent.copy(alpha = 0.10f))
-                .border(1.dp, Accent.copy(alpha = 0.30f), CircleShape),
+                .background(Bhq.colors.accent.copy(alpha = 0.10f))
+                .border(1.dp, Bhq.colors.accent.copy(alpha = 0.30f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = AccentLight, modifier = Modifier.size(24.dp))
+            Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Bhq.colors.accentLight, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(14.dp))
-        Text("Say hello", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text("Say hello", color = Bhq.colors.text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         Text(
             "Send the first message to $otherName.",
-            color = TextMuted, fontSize = 13.sp, lineHeight = 19.sp, textAlign = TextAlign.Center,
+            color = Bhq.colors.textMuted, fontSize = 13.sp, lineHeight = 19.sp, textAlign = TextAlign.Center,
         )
     }
 }
@@ -463,13 +455,13 @@ private fun Composer(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xCC070D18))
+            .background(Bhq.colors.scrimStrong)
             .navigationBarsPadding()
             .imePadding()
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         if (sendError != null) {
-            Text(sendError, color = Danger, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
+            Text(sendError, color = Bhq.colors.danger, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
         }
         Row(verticalAlignment = Alignment.Bottom) {
             Box(
@@ -477,16 +469,16 @@ private fun Composer(
                     .weight(1f)
                     .heightIn(min = 44.dp, max = 130.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(Color(0x14FFFFFF))
-                    .border(1.dp, BlueprintLine.copy(alpha = 0.12f), RoundedCornerShape(22.dp))
+                    .background(Bhq.colors.fillSubtle)
+                    .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.12f), RoundedCornerShape(22.dp))
                     .padding(horizontal = 14.dp, vertical = 11.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                if (draft.isEmpty()) Text("Message", color = TextDim, fontSize = 15.sp)
+                if (draft.isEmpty()) Text("Message", color = Bhq.colors.textDim, fontSize = 15.sp)
                 BasicTextField(
                     value = draft, onValueChange = { draft = it }, enabled = enabled,
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 15.sp, lineHeight = 20.sp),
-                    cursorBrush = SolidColor(Accent),
+                    textStyle = TextStyle(color = Bhq.colors.text, fontSize = 15.sp, lineHeight = 20.sp),
+                    cursorBrush = SolidColor(Bhq.colors.accent),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -514,10 +506,10 @@ private fun Composer(
 @Composable
 private fun SendButton(enabled: Boolean, onClick: () -> Unit) {
     Box(
-        Modifier.size(44.dp).clip(CircleShape).background(Accent).pressable(enabled = enabled, onClick = onClick),
+        Modifier.size(44.dp).clip(CircleShape).background(Bhq.colors.accent).pressable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Rounded.ArrowUpward, contentDescription = "Send", tint = AccentContrast, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.ArrowUpward, contentDescription = "Send", tint = Bhq.colors.accentContrast, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -529,12 +521,12 @@ private fun CircleIconBtn(icon: ImageVector, label: String, onClick: () -> Unit)
         Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(Color(0x14FFFFFF))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.10f), CircleShape)
+            .background(Bhq.colors.fillSubtle)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.10f), CircleShape)
             .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = TextPrimary, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = label, tint = Bhq.colors.text, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -550,13 +542,13 @@ private fun ErrorCenter(message: String, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(message, color = TextMuted, fontSize = 14.sp, textAlign = TextAlign.Center)
+        Text(message, color = Bhq.colors.textMuted, fontSize = 14.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(14.dp))
         Box(
-            Modifier.clip(RoundedCornerShape(50)).border(1.dp, Accent.copy(alpha = 0.4f), RoundedCornerShape(50))
+            Modifier.clip(RoundedCornerShape(50)).border(1.dp, Bhq.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(50))
                 .pressable(onClick = onRetry).padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text("Try again", color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text("Try again", color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

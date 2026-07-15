@@ -28,9 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.TextMuted
+import au.com.builderhq.app.core.design.theme.Bhq
 
 /** The premium primary CTA: teal fill, breathing-light shadow glow, a tactile
  *  0.97 press scale, and an inline spinner while [loading]. */
@@ -55,11 +53,11 @@ fun PrimaryButton(
             .shadow(
                 elevation = if (active) 14.dp else 0.dp,
                 shape = shape,
-                ambientColor = Accent.copy(alpha = 0.45f),
-                spotColor = Accent.copy(alpha = 0.60f),
+                ambientColor = Bhq.colors.accent.copy(alpha = 0.45f),
+                spotColor = Bhq.colors.accent.copy(alpha = 0.60f),
             )
             .clip(shape)
-            .background(if (active) Accent else Accent.copy(alpha = 0.35f))
+            .background(if (active) Bhq.colors.accent else Bhq.colors.accent.copy(alpha = 0.35f))
             .clickable(interaction, indication = null, enabled = active) { haptics.press(); onClick() }
             .padding(horizontal = 26.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -68,15 +66,15 @@ fun PrimaryButton(
         if (loading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
-                color = AccentContrast,
+                color = Bhq.colors.accentContrast,
                 strokeWidth = 2.dp,
             )
         } else {
             if (leadingIcon != null) {
-                Icon(leadingIcon, contentDescription = null, tint = AccentContrast, modifier = Modifier.size(18.dp))
+                Icon(leadingIcon, contentDescription = null, tint = Bhq.colors.accentContrast, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text, color = AccentContrast, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(text, color = Bhq.colors.accentContrast, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -96,6 +94,6 @@ fun GhostButton(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, color = TextMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(text, color = Bhq.colors.textMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }

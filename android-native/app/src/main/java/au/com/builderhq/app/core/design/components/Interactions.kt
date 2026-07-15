@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
+import au.com.builderhq.app.core.design.theme.Bhq
 import au.com.builderhq.app.core.design.theme.Motion
 import kotlinx.coroutines.delay
 
@@ -99,12 +99,12 @@ fun SaveButton(
             pulse.animateTo(1f, spring(dampingRatio = 0.6f, stiffness = 700f))
         }
     }
-    val tint by animateColorAsState(if (saved) Accent else Color.White, label = "saveTint")
+    val tint by animateColorAsState(if (saved) Bhq.colors.accent else Color.White, label = "saveTint")
     Box(
         modifier
             .size(diameter.dp)
             .clip(CircleShape)
-            .background(Color(0x66060A12))
+            .background(Bhq.colors.scrimFaint)
             .clickable(remember { MutableInteractionSource() }, indication = null) { haptics.tick(); onClick() },
         contentAlignment = Alignment.Center,
     ) {

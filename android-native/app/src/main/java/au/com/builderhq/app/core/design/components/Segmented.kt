@@ -28,14 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import au.com.builderhq.app.core.design.rememberHaptics
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentContrast
-import au.com.builderhq.app.core.design.theme.TextMuted
+import au.com.builderhq.app.core.design.theme.Bhq
 
 private val BarHeight = 38.dp
 
@@ -63,7 +60,7 @@ fun SegmentedControl(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(50))
-            .background(Color(0x14FFFFFF))
+            .background(Bhq.colors.fillSubtle)
             .padding(4.dp),
     ) {
         BoxWithConstraints {
@@ -81,12 +78,12 @@ fun SegmentedControl(
                     .height(BarHeight)
                     .alpha(thumbAlpha)
                     .clip(RoundedCornerShape(50))
-                    .background(Accent),
+                    .background(Bhq.colors.accent),
             )
             Row(Modifier.fillMaxWidth().height(BarHeight)) {
                 options.forEachIndexed { i, label ->
                     val on = i == selectedIndex
-                    val color by animateColorAsState(if (on) AccentContrast else TextMuted, label = "segText")
+                    val color by animateColorAsState(if (on) Bhq.colors.accentContrast else Bhq.colors.textMuted, label = "segText")
                     Box(
                         Modifier
                             .weight(1f)

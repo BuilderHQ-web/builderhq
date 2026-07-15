@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,12 +41,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import au.com.builderhq.app.core.data.SnackController
 import au.com.builderhq.app.core.data.SnackMessage
-import au.com.builderhq.app.core.design.theme.Accent
-import au.com.builderhq.app.core.design.theme.AccentLight
-import au.com.builderhq.app.core.design.theme.BlueprintLine
-import au.com.builderhq.app.core.design.theme.Danger
-import au.com.builderhq.app.core.design.theme.TextMuted
-import au.com.builderhq.app.core.design.theme.TextPrimary
+import au.com.builderhq.app.core.design.theme.Bhq
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import javax.inject.Inject
@@ -83,13 +77,13 @@ fun SnackHost() {
 
 @Composable
 private fun SnackCard(m: SnackMessage, onAction: () -> Unit, onDismiss: () -> Unit) {
-    val tint = if (m.isError) Danger else AccentLight
+    val tint = if (m.isError) Bhq.colors.danger else Bhq.colors.accentLight
     Row(
         Modifier
             .shadow(18.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black, spotColor = Color.Black)
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFF16202F), Color(0xFF0C1422))))
-            .border(1.dp, BlueprintLine.copy(alpha = 0.16f), RoundedCornerShape(16.dp))
+            .background(Bhq.brushes.card)
+            .border(1.dp, Bhq.colors.blueprintLine.copy(alpha = 0.16f), RoundedCornerShape(16.dp))
             .padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -97,19 +91,19 @@ private fun SnackCard(m: SnackMessage, onAction: () -> Unit, onDismiss: () -> Un
             Icon(if (m.isError) Icons.Rounded.ErrorOutline else Icons.Rounded.Info, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.width(12.dp))
-        Text(m.text, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false))
+        Text(m.text, color = Bhq.colors.text, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false))
         if (m.actionLabel != null) {
             Spacer(Modifier.width(12.dp))
             Box(
-                Modifier.clip(RoundedCornerShape(50)).background(Accent.copy(alpha = 0.14f))
+                Modifier.clip(RoundedCornerShape(50)).background(Bhq.colors.accent.copy(alpha = 0.14f))
                     .pressable(onClick = onAction).padding(horizontal = 14.dp, vertical = 7.dp),
             ) {
-                Text(m.actionLabel, color = AccentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(m.actionLabel, color = Bhq.colors.accentLight, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         } else {
             Spacer(Modifier.width(4.dp))
             Box(Modifier.clip(CircleShape).pressable(onClick = onDismiss).padding(8.dp)) {
-                Text("✕", color = TextMuted, fontSize = 13.sp)
+                Text("✕", color = Bhq.colors.textMuted, fontSize = 13.sp)
             }
         }
     }
