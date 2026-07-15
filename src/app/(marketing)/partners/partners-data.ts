@@ -2197,6 +2197,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "mt-martha-design-drafting",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "Mt. Martha design + drafting",
+    monogram: "MD",
+    logo: "/partners/mt-martha-design-drafting/logo.png",
+    principal: "Adam Doherty",
+    suburb: "Mornington",
+    state: "VIC",
+    tagline:
+      "The Mornington studio drawing more than 150 Peninsula projects a year, led by a building designer who has been at the board since 1983.",
+    disciplines: ["New homes", "Renovations and additions", "Townhouse developments"],
+    institution: {
+      name: "Design Matters National",
+      role: "Member",
+      note: "Registered Building Practitioner · Building Designer (Architectural)",
+    },
+    google: { rating: 4.5, reviews: 10 },
+    stats: [
+      { label: "Google rating", value: "4.5", star: true, sub: "10 reviews" },
+      {
+        label: "Projects a year",
+        value: "150+",
+        sub: "for owners, builders and developers",
+      },
+      {
+        label: "Designing since",
+        value: "1983",
+        sub: "his own practice since 1992",
+      },
+    ],
+    why: "Adam Doherty has been designing buildings since 1983, and the Peninsula has noticed: his deliberately small Mornington practice turns out more than 150 building design projects a year for owners, builders and developers, and has become the preferred designer for many of the Peninsula's premium builders. The work spans new homes, including passive solar and sustainable designs, major renovations, and townhouse developments, with a town planning fluency that keeps Peninsula applications moving. His own Barkly Street House carries a commendation from the Building Designers Association of Victoria. Four decades at the board, a settled process and the principal's personal attention on every job: that is what steady looks like.",
+    about:
+      "Mt. Martha design + drafting is a building design practice in Mornington, led by principal Adam Doherty, a building designer since 1983 who has run his own Peninsula practice since 1992. The studio designs new homes, including passive solar and sustainable solutions, major renovations and additions, and townhouse developments and subdivisions, and prepares town planning and building permit applications, coordinating surveys, engineering, soil reports and energy ratings so each project arrives approval ready. Deliberately small, the practice gives every client personal and attentive service while carrying more than 150 projects a year across the Mornington Peninsula and Melbourne's bayside, from Mount Eliza and Frankston to Sorrento and Portsea. Adam holds a Certificate of Technology in Architectural Drafting, is a registered building practitioner, and is a member of Design Matters National, Victoria's building design association, whose professional development program keeps the practice current on regulation and product alike.",
+    facts: {
+      established: "1992",
+      basedIn: "Mornington, VIC",
+      serves: "Mornington Peninsula and bayside Melbourne",
+      focus: "Homes, townhouses and town planning",
+    },
+    website: "https://www.mtmarthadrafting.com.au",
+    instagram: "https://www.instagram.com/mtmarthadesign/",
+    facebook: "https://www.facebook.com/MtMarthaDesignandDrafting",
+    linkedin: "https://www.linkedin.com/in/mtmarthadrafting/",
+    galleryUrl: "https://www.mtmarthadrafting.com.au/projects/",
+    work: [
+      {
+        title: "Barkly Street House",
+        suburb: "Mornington",
+        type: "The designer's own home",
+        image: "/partners/mt-martha-design-drafting/barkly-street.jpg",
+      },
+      {
+        title: "Mornington home",
+        suburb: "Mornington",
+        type: "New home",
+        image: "/partners/mt-martha-design-drafting/mornington.jpg",
+      },
+      {
+        title: "Sorrento kitchen",
+        suburb: "Sorrento",
+        type: "Interior",
+        image: "/partners/mt-martha-design-drafting/sorrento.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
