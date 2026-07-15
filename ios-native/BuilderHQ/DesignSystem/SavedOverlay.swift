@@ -26,7 +26,6 @@ struct SavedOverlay: View {
         ZStack {
             Rectangle()
                 .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
                 .ignoresSafeArea()
             Color.black.opacity(0.3).ignoresSafeArea()
 

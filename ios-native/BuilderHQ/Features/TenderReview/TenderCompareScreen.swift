@@ -18,7 +18,7 @@ import SwiftUI
 
 /// The peak-moment gold (tender awarded). Local — distinct from the
 /// teal/amber semantic tokens.
-private let goldTint = Color(hex: 0xF5C24A)
+private let goldTint = Palette.gold
 
 struct TenderCompareScreen: View {
     @State private var vm: TenderCompareViewModel

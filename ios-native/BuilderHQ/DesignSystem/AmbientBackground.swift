@@ -20,6 +20,7 @@
 import SwiftUI
 
 struct AmbientBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var pulse: Double = 0
     /// Very slow horizontal drift on the top-right bloom — adds life
     /// without ever drawing attention. ±3% over 18 seconds.
@@ -28,31 +29,49 @@ struct AmbientBackground: View {
     /// the bloom traces a soft figure-8 over time.
     @State private var bloomDriftY: Double = 0
 
+    private var isDark: Bool { colorScheme == .dark }
+
     var body: some View {
         ZStack {
-            // 1. Base canvas — subtle multi-stop with a faint
-            //    warm-cyan tilt in the middle so the screen feels
-            //    layered, not flat black. Restrained on purpose;
+            // 1. Base canvas — subtle multi-stop so the screen feels
+            //    layered, not flat. Dark: the original navy ramp with
+            //    a faint warm-cyan tilt. Light: the web's cream field
+            //    warming toward the base. Restrained on purpose；
             //    this is brand atmosphere, not a focal point.
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: 0x0A1622), location: 0.0),
-                    .init(color: Color(hex: 0x07111B), location: 0.4),
-                    .init(color: Color(hex: 0x04080F), location: 0.75),
-                    .init(color: Color(hex: 0x02050A), location: 1.0),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            if isDark {
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: 0x0A1622), location: 0.0),
+                        .init(color: Color(hex: 0x07111B), location: 0.4),
+                        .init(color: Color(hex: 0x04080F), location: 0.75),
+                        .init(color: Color(hex: 0x02050A), location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            } else {
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: 0xECE7DD), location: 0.0),
+                        .init(color: Color(hex: 0xF1EDE4), location: 0.45),
+                        .init(color: Color(hex: 0xE9E4D8), location: 0.8),
+                        .init(color: Color(hex: 0xE3DDD0), location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
 
             // 2. Soft accent blooms — depth + light. Tuned so the
-            //    breath is felt, not seen.
+            //    breath is felt, not seen. Light mode runs the same
+            //    geometry at whisper strength with normal compositing
+            //    (screen-blend washes out on a bright field).
             GeometryReader { geo in
                 ZStack {
                     RadialGradient(
                         colors: [
-                            Palette.accent.opacity(0.22 + pulse),
-                            Palette.accent.opacity(0.06),
+                            Palette.accent.opacity((isDark ? 0.22 : 0.09) + pulse),
+                            Palette.accent.opacity(isDark ? 0.06 : 0.03),
                             .clear,
                         ],
                         center: UnitPoint(
@@ -65,8 +84,8 @@ struct AmbientBackground: View {
 
                     RadialGradient(
                         colors: [
-                            Palette.accent.opacity(0.14),
-                            Palette.accent.opacity(0.04),
+                            Palette.accent.opacity(isDark ? 0.14 : 0.06),
+                            Palette.accent.opacity(isDark ? 0.04 : 0.02),
                             .clear,
                         ],
                         center: UnitPoint(x: 0.05, y: 1.0),
@@ -74,17 +93,19 @@ struct AmbientBackground: View {
                         endRadius: geo.size.width * 0.75
                     )
 
-                    RadialGradient(
-                        colors: [
-                            Color(hex: 0x1A4E5C).opacity(0.16),
-                            Color(hex: 0x1A4E5C).opacity(0.04),
-                            .clear,
-                        ],
-                        center: UnitPoint(x: 0.5, y: 0.35),
-                        startRadius: 30,
-                        endRadius: geo.size.width * 0.9
-                    )
-                    .blendMode(.screen)
+                    if isDark {
+                        RadialGradient(
+                            colors: [
+                                Color(hex: 0x1A4E5C).opacity(0.16),
+                                Color(hex: 0x1A4E5C).opacity(0.04),
+                                .clear,
+                            ],
+                            center: UnitPoint(x: 0.5, y: 0.35),
+                            startRadius: 30,
+                            endRadius: geo.size.width * 0.9
+                        )
+                        .blendMode(.screen)
+                    }
 
                     // Secondary brand-blue depth bloom, low + left.
                     // Gives the atmosphere a teal→blue depth axis so
@@ -92,32 +113,31 @@ struct AmbientBackground: View {
                     // brand's secondary blue finally earning its keep.
                     RadialGradient(
                         colors: [
-                            Palette.blue.opacity(0.13),
-                            Palette.blue.opacity(0.03),
+                            Palette.blue.opacity(isDark ? 0.13 : 0.05),
+                            Palette.blue.opacity(isDark ? 0.03 : 0.015),
                             .clear,
                         ],
                         center: UnitPoint(x: 0.16, y: 0.82),
                         startRadius: 0,
                         endRadius: geo.size.width * 0.95
                     )
-                    .blendMode(.screen)
+                    .blendMode(isDark ? .screen : .normal)
                 }
             }
 
             // 3. Blueprint graph-paper grid — the brand substrate.
-            //    Major/minor rules in blueprint-blue, vignette-masked
-            //    so it concentrates toward the centre and fades at the
-            //    edges. Visible in the dark gutters around content; the
-            //    frosted cards diffuse it where they overlap. This is
-            //    the personality layer that makes the whole app feel
-            //    like it lives on drafting paper.
+            //    Major/minor rules vignette-masked so they concentrate
+            //    toward the centre and fade at the edges. blueprintLine
+            //    is dynamic (blueprint-blue on dark, ink on light) so
+            //    the grid reads as drafting paper in both modes.
             GridOverlay()
-                .opacity(0.06)
+                .opacity(isDark ? 0.06 : 0.045)
 
             // 4. Subtle noise — kills any banding in the long
-            //    gradient + adds OLED-friendly texture
+            //    gradient + adds texture (OLED-friendly on dark,
+            //    paper-grain on light).
             NoiseOverlay()
-                .opacity(0.035)
+                .opacity(isDark ? 0.035 : 0.02)
                 .blendMode(.overlay)
         }
         .background(Palette.canvas)

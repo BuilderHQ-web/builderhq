@@ -109,7 +109,7 @@ struct ActivityTimeline: View {
 
     static func style(for kind: String) -> (String, Color) {
         let k = kind.lowercased()
-        if k.contains("award") { return ("trophy.fill", Color(hex: 0xF5C24A)) }
+        if k.contains("award") { return ("trophy.fill", Palette.gold) }
         if k.contains("shortlist") { return ("star.fill", Palette.blue) }
         if k.contains("reject") || k.contains("declin") { return ("xmark.circle.fill", Palette.textDim) }
         if k.contains("tender") { return ("paperplane.fill", Palette.accent) }

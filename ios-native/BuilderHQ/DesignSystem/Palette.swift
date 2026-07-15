@@ -1,81 +1,99 @@
-/// Palette — the 13-color BuilderHQ system, Swift-native edition.
+/// Palette — the BuilderHQ color system, now a dual palette behind one
+/// static API.
 ///
-/// 1:1 port of `mobile/lib/theme.ts` palette tokens so the brand reads
-/// identical between the (archived) RN build and this native one. If
-/// either changes, mirror the change to the other until the RN build
-/// is fully retired.
+/// Every token is backed by a `UIColor(dynamicProvider:)` pair, so the
+/// ~1,900 existing `Palette.*` call sites resolve per trait collection
+/// with zero call-site changes:
 ///
-/// Naming convention matches the RN tokens for cognitive continuity.
+///   · DARK — the original brand-locked look (deep navy canvas,
+///     blueprint borders, luminous teal). Values unchanged.
+///   · LIGHT — the builderhq.com.au web app's cream / ink / deep-teal
+///     `@theme` block ported 1:1. Same rule as the web: bright teal
+///     (#00D4C8) is for FILLS and glows; teal used AS TEXT drops to
+///     the deep readable pair (#0A7D73 / #077E76). Borders swap from
+///     blueprint-blue to the web's ink-alpha ramp.
+///
+/// Derived-opacity tokens (hairlines, muted washes) are explicit pairs
+/// — NOT `.opacity()` off a base — because the light ramp uses
+/// different alphas than the dark one.
+///
+/// Generative art surfaces (AmbientBackground, ProjectCoverArt,
+/// CelebrationScene) own their palettes per mode via
+/// `@Environment(\.colorScheme)` — they are the sanctioned exception
+/// to "no hex outside this file."
 
 import SwiftUI
+import UIKit
 
 enum Palette {
     // ── Canvas + surfaces ─────────────────────────────────────────
-    static let canvas       = Color(hex: 0x06080F)
-    static let surface      = Color(hex: 0x0E131F)
-    static let surfaceElev  = Color(hex: 0x141A2A)
+    static let canvas       = dyn(0x06080F, 0xECE7DD)
+    static let surface      = dyn(0x0E131F, 0xFFFFFF)
+    static let surfaceElev  = dyn(0x141A2A, 0xFAF8F3)
 
     // ── Borders ───────────────────────────────────────────────────
     //
-    // Blueprint-blue tinted, NOT neutral grey — the brand contract
-    // (`reference/landing`) specifies `rgba(100,180,255, 0.06–0.18)`.
-    // 0x64B4FF == (100,180,255). Tinting every hairline this way is
-    // the single most identity-defining token change: the whole app's
-    // edges read like draughting lines on blueprint paper rather than
-    // generic dark-mode strokes. Every component references these
-    // tokens, so this propagates everywhere at once.
-    static let blueprintLine    = Color(hex: 0x64B4FF)
-    static let hairline         = Color(hex: 0x64B4FF).opacity(0.08)
-    static let hairlineStrong   = Color(hex: 0x64B4FF).opacity(0.17)
-    static let hairlineAccent   = Color(hex: 0x00D4C8).opacity(0.30)
+    // Dark: blueprint-blue tinted, NOT neutral grey — the brand
+    // contract; the app's edges read like draughting lines on
+    // blueprint paper. Light: the web's ink ramp rgba(24,34,44,…) so
+    // edges read like print rules on paper stock.
+    static let blueprintLine    = dyn(0x64B4FF, 0x18222C)
+    static let hairline         = dyn(0x64B4FF, 0.08, 0x18222C, 0.10)
+    static let hairlineStrong   = dyn(0x64B4FF, 0.17, 0x18222C, 0.22)
+    static let hairlineAccent   = dyn(0x00D4C8, 0.30, 0x099489, 0.35)
 
     // ── Text ──────────────────────────────────────────────────────
-    static let text         = Color(hex: 0xF5F7FF)
-    static let textMuted    = Color(hex: 0x8E9BB8)
-    static let textDim      = Color(hex: 0x5A6789)
+    static let text         = dyn(0xF5F7FF, 0x161C22)
+    static let textMuted    = dyn(0x8E9BB8, 0x48535D)
+    static let textDim      = dyn(0x5A6789, 0x78828D)
 
     // ── Accent (brand teal) ───────────────────────────────────────
-    static let accent          = Color(hex: 0x00D4C8)
-    static let accentLight     = Color(hex: 0x7EF5ED)
-    static let accentMuted     = Color(hex: 0x00D4C8).opacity(0.08)
-    static let accentGlow      = Color(hex: 0x00D4C8).opacity(0.40)
-    static let accentContrast  = Color(hex: 0x031118)
+    static let accent          = dyn(0x00D4C8, 0x00D4C8)
+    /// Teal as TEXT: luminous on dark, deep + readable on light.
+    static let accentLight     = dyn(0x7EF5ED, 0x0A7D73)
+    static let accentMuted     = dyn(0x00D4C8, 0.08, 0x099489, 0.12)
+    static let accentGlow      = dyn(0x00D4C8, 0.40, 0x00D4C8, 0.35)
+    static let accentContrast  = dyn(0x031118, 0x031118)
 
     // ── Secondary brand blue ──────────────────────────────────────
     //
     // The landing's secondary brand colour (#1A5FD4), used ONLY in
-    // gradients + depth blooms — never as a flat fill or a CTA. Gives
-    // the teal-monochrome palette a second axis so heroes, washes and
-    // the ambient atmosphere gain real depth (teal foreground → blue
-    // depth) instead of reading as one flat hue.
-    static let blue        = Color(hex: 0x1A5FD4)
-    static let blueLight   = Color(hex: 0x5B8DEF)
-    static let blueDeep    = Color(hex: 0x0E3A8C)
-    static let blueGlow    = Color(hex: 0x1A5FD4).opacity(0.32)
+    // gradients + depth blooms — never as a flat fill or a CTA.
+    static let blue        = dyn(0x1A5FD4, 0x1A5FD4)
+    static let blueLight   = dyn(0x5B8DEF, 0x2D63D6)
+    static let blueDeep    = dyn(0x0E3A8C, 0x0E3A8C)
+    static let blueGlow    = dyn(0x1A5FD4, 0.32, 0x1A5FD4, 0.30)
 
     /// Teal → blue diagonal — the signature "depth" gradient for
-    /// hero washes, the FBA ring, celebration backdrops.
+    /// hero washes, the FBA ring, celebration backdrops. Built from
+    /// dynamic stops, so it resolves per trait automatically.
     static let accentToBlue = LinearGradient(
-        colors: [Color(hex: 0x00D4C8), Color(hex: 0x1A5FD4)],
+        colors: [accent, blue],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
     // ── Semantic ─────────────────────────────────────────────────
-    static let success          = Color(hex: 0x5EEAD4)
-    static let successMuted     = Color(hex: 0x5EEAD4).opacity(0.10)
-    static let warning          = Color(hex: 0xFBBF24)
-    static let warningMuted     = Color(hex: 0xFBBF24).opacity(0.10)
-    static let danger           = Color(hex: 0xFB7185)
-    static let dangerMuted      = Color(hex: 0xFB7185).opacity(0.10)
+    // Light values match the web's oklch semantic set.
+    static let success          = dyn(0x5EEAD4, 0x008A48)
+    static let successMuted     = dyn(0x5EEAD4, 0.10, 0x008A48, 0.12)
+    static let warning          = dyn(0xFBBF24, 0xB26A08)
+    static let warningMuted     = dyn(0xFBBF24, 0.10, 0xB26A08, 0.12)
+    static let danger           = dyn(0xFB7185, 0xCC272E)
+    static let dangerMuted      = dyn(0xFB7185, 0.10, 0xCC272E, 0.12)
+    /// Award / winner accents (trophy tint, awarded pills, winning-
+    /// tender edges). Deep amber on light so it stays readable on
+    /// cream and white cards.
+    static let gold             = dyn(0xF5C24A, 0x8C5A12)
 
     /// The signature accent-italic gradient — used on display titles
     /// where one word gets the Instrument Serif italic treatment.
-    /// Mirrors the landing page's "accent-italic" device.
+    /// Dark: ice-white into luminous teal. Light: the deep teal pair
+    /// (bright teal is a fill color, not a text color, on cream).
     static let accentItalicGradient = LinearGradient(
         colors: [
-            Color(hex: 0xEEF6FF),
-            Color(hex: 0x7EF5ED),
+            dyn(0xEEF6FF, 0x0A7D73),
+            dyn(0x7EF5ED, 0x077E76),
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -83,60 +101,79 @@ enum Palette {
 
     // ── Premium card system ──────────────────────────────────────
     //
-    // The dashboard adopts a "floating-on-the-background" treatment:
-    // every card has a 1px top-edge highlight, a soft drop shadow,
-    // and a subtle top-down gradient inside the fill. These tokens
-    // are what the CardSurface modifier reaches for.
-
-    /// Top stop on the card fill gradient — slightly lighter than the
-    /// resting surface so the card has a "light from above" feel.
-    static let cardTop           = Color(hex: 0x162033)
-    /// Bottom stop on the card fill gradient — slightly darker than
-    /// the resting surface so the card recedes at the base.
-    static let cardBottom        = Color(hex: 0x0C1424)
-    /// 1px highlight rendered along the top edge of every premium
-    /// card. A cool near-white so the "light catches the top edge"
-    /// read stays crisp while leaning faintly blueprint.
-    static let cardEdgeHighlight = Color(hex: 0xCFE6FF).opacity(0.07)
-    /// Border for premium cards — blueprint-blue tinted, slightly
-    /// stronger than `hairline` so the card edge stays crisp even
-    /// with the inner gradient.
-    static let cardBorder        = Color(hex: 0x64B4FF).opacity(0.12)
-    /// Drop-shadow tone for floating cards. A very-soft accent-tinted
-    /// shadow sells the depth more than pure black.
-    static let cardShadow        = Color(hex: 0x00D4C8).opacity(0.10)
+    // Dashboard cards float on the background: 1px top-edge
+    // highlight, soft drop shadow, subtle top-down gradient in the
+    // fill. Dark keeps the navy float; light reads as white paper on
+    // cream with an ink shadow.
+    static let cardTop           = dyn(0x162033, 0xFFFFFF)
+    static let cardBottom        = dyn(0x0C1424, 0xFAF8F3)
+    static let cardEdgeHighlight = dyn(0xCFE6FF, 0.07, 0xFFFFFF, 0.70)
+    static let cardBorder        = dyn(0x64B4FF, 0.12, 0x18222C, 0.14)
+    static let cardShadow        = dyn(0x00D4C8, 0.10, 0x18222C, 0.08)
 
     // MARK: - Time-of-day accent
 
     /// Subtly shifted accent based on the user's local clock — a
-    /// nearly-imperceptible warmth in the morning, the standard
-    /// brand teal during work hours, a cooler turquoise in the
-    /// evening + late night.
+    /// nearly-imperceptible warmth in the morning, the standard brand
+    /// teal during work hours, a cooler turquoise in the evening +
+    /// late night. Light mode shifts the same way through the deep
+    /// readable teals.
     ///
-    /// Used on personal-feel surfaces (greeting accent line, FBA
-    /// hero ring) — NOT on system elements like CTAs or status
-    /// pills, which stick to the canonical `accent` so brand reads
-    /// consistent across the app.
+    /// Used on personal-feel surfaces (greeting accent line, FBA hero
+    /// ring) — NOT on system elements like CTAs or status pills.
     static func accentForTime(_ date: Date = .now) -> Color {
         let hour = Calendar.current.component(.hour, from: date)
         switch hour {
-        case 5..<9:    return Color(hex: 0x14E0CC)  // dawn — slightly warmer cyan
-        case 9..<17:   return Color(hex: 0x00D4C8)  // canonical brand teal
-        case 17..<21:  return Color(hex: 0x00BFB8)  // dusk — cooler, slightly darker
-        default:       return Color(hex: 0x09A8A0)  // night — deeper, calmer teal
+        case 5..<9:    return dyn(0x14E0CC, 0x0E8A7E)  // dawn
+        case 9..<17:   return dyn(0x00D4C8, 0x0A7D73)  // work hours
+        case 17..<21:  return dyn(0x00BFB8, 0x08706A)  // dusk
+        default:       return dyn(0x09A8A0, 0x06615C)  // night
         }
+    }
+
+    // MARK: - Dynamic pair builders
+
+    private static func dyn(_ dark: UInt32, _ light: UInt32) -> Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(hex: dark)
+                : UIColor(hex: light)
+        })
+    }
+
+    private static func dyn(
+        _ dark: UInt32, _ darkAlpha: CGFloat,
+        _ light: UInt32, _ lightAlpha: CGFloat
+    ) -> Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(hex: dark, alpha: darkAlpha)
+                : UIColor(hex: light, alpha: lightAlpha)
+        })
     }
 }
 
-// MARK: - Hex initializer
+// MARK: - Hex initializers
 
 extension Color {
     /// `Color(hex: 0x00D4C8)` — the convenience missing from SwiftUI.
     /// Splits the integer into RGB components in sRGB color space.
+    /// Static (non-adaptive) — used by art surfaces that own their
+    /// own per-mode palettes.
     init(hex: UInt32, opacity: Double = 1.0) {
         let r = Double((hex >> 16) & 0xFF) / 255.0
         let g = Double((hex >> 8)  & 0xFF) / 255.0
         let b = Double(hex         & 0xFF) / 255.0
         self.init(.sRGB, red: r, green: g, blue: b, opacity: opacity)
+    }
+}
+
+extension UIColor {
+    /// UIKit twin of `Color(hex:)` for the dynamic-provider closures.
+    convenience init(hex: UInt32, alpha: CGFloat = 1.0) {
+        let r = CGFloat((hex >> 16) & 0xFF) / 255.0
+        let g = CGFloat((hex >> 8)  & 0xFF) / 255.0
+        let b = CGFloat(hex         & 0xFF) / 255.0
+        self.init(red: r, green: g, blue: b, alpha: alpha)
     }
 }

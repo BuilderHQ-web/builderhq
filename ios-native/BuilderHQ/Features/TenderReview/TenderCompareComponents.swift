@@ -182,7 +182,7 @@ struct QuoteCard: View {
         .opacity(isRejected ? 0.55 : 1)
     }
 
-    private var goldEdge: Color { Color(hex: 0xF5C24A) }
+    private var goldEdge: Color { Palette.gold }
 
     // ── header ──
     private var headerRow: some View {

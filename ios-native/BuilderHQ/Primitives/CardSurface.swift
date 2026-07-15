@@ -98,6 +98,8 @@ struct CardSurface: ViewModifier {
     var cornerRadius: CGFloat = 22
     var borderColor: Color? = nil
 
+    @Environment(\.colorScheme) private var colorScheme
+
     func body(content: Content) -> some View {
         let resolvedBorder = borderColor
             ?? elevation.borderOverride
@@ -116,22 +118,33 @@ struct CardSurface: ViewModifier {
                     //    design system.
                     shape.fill(elevation.material)
 
-                    // 2. Subtle brand-tinted wash. Dark teal-gray
-                    //    at low opacity — aligns the system
+                    // 2. Subtle brand-tinted wash aligning the system
                     //    material to our identity without painting
-                    //    over the gradient bleed-through.
+                    //    over the gradient bleed-through. Dark: the
+                    //    blueprint teal-gray glass. Light: a white
+                    //    paper wash so cards read as stock lifted off
+                    //    the cream field.
                     shape.fill(
-                        LinearGradient(
-                            colors: [
-                                // Top stop leans a touch more blueprint-
-                                // blue so the card glass harmonises with
-                                // the new blue-tinted edges + atmosphere.
-                                Color(hex: 0x112A45).opacity(elevation.washOpacity + 0.04),
-                                Color(hex: 0x05101C).opacity(elevation.washOpacity),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        colorScheme == .dark
+                            ? LinearGradient(
+                                colors: [
+                                    // Top stop leans a touch more blueprint-
+                                    // blue so the card glass harmonises with
+                                    // the blue-tinted edges + atmosphere.
+                                    Color(hex: 0x112A45).opacity(elevation.washOpacity + 0.04),
+                                    Color(hex: 0x05101C).opacity(elevation.washOpacity),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            : LinearGradient(
+                                colors: [
+                                    Color(hex: 0xFFFFFF).opacity(elevation.washOpacity + 0.30),
+                                    Color(hex: 0xFAF8F3).opacity(elevation.washOpacity + 0.22),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                     )
                 }
             )

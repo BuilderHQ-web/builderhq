@@ -4,22 +4,26 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import au.com.builderhq.app.R
 
 /**
  * The brand's typographic voice.
  *
- * Two faces: an editorial **serif** for the display accent (the one
- * serif-italic word per headline — the single most identity-defining type
- * decision, shared with the web + iOS apps) and the system sans for all UI.
- * Tabular figures use mono. We use the system serif/mono so there are zero
- * bundled assets and no runtime font fetch — swap [DisplaySerif] to a bundled
- * Instrument Serif `res/font` later and every headline upgrades for free.
+ * Two faces: **Instrument Serif** (bundled, OFL — the same editorial
+ * face the web app and iOS use) for the display accent (the one
+ * serif-italic word per headline — the single most identity-defining
+ * type decision), and the system sans for all UI. Tabular figures use
+ * mono.
  */
-val DisplaySerif: FontFamily = FontFamily.Serif
+val DisplaySerif: FontFamily = FontFamily(
+    Font(R.font.instrument_serif_regular, weight = FontWeight.Normal, style = FontStyle.Normal),
+    Font(R.font.instrument_serif_italic, weight = FontWeight.Normal, style = FontStyle.Italic),
+)
 val FiguresMono: FontFamily = FontFamily.Monospace
 
 /**

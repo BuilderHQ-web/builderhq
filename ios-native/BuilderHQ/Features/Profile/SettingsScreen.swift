@@ -18,6 +18,9 @@ struct SettingsScreen: View {
     @AppStorage("notif.tenders") private var notifTenders = true
     @AppStorage("notif.activity") private var notifActivity = true
 
+    @AppStorage(AppearanceMode.storageKey)
+    private var appearanceRaw = AppearanceMode.system.rawValue
+
     @State private var confirmSignOut = false
     @State private var confirmDelete = false
     @State private var showDeleteInfo = false
@@ -33,6 +36,7 @@ struct SettingsScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     account
+                    appearance
                     notifications
                     legal
                     support
@@ -97,6 +101,38 @@ struct SettingsScreen: View {
                 navRow(icon: "person.text.rectangle.fill", title: "Edit profile")
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Appearance
+
+    private var appearance: some View {
+        section("Appearance", footnote: "System follows your phone's appearance.") {
+            ForEach(AppearanceMode.allCases) { mode in
+                appearanceRow(mode)
+            }
+        }
+    }
+
+    private func appearanceRow(_ mode: AppearanceMode) -> some View {
+        Press(haptic: .select) {
+            appearanceRaw = mode.rawValue
+        } content: {
+            HStack(spacing: 12) {
+                iconTile(mode.icon, Palette.accent)
+                Text(mode.label)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Palette.text)
+                Spacer()
+                if appearanceRaw == mode.rawValue {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Palette.accentLight)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 13)
+            .contentShape(Rectangle())
         }
     }
 
