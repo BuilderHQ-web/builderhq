@@ -23,12 +23,16 @@ import au.com.builderhq.app.core.data.SessionRepository
 import au.com.builderhq.app.core.data.SessionState
 import au.com.builderhq.app.core.design.components.SnackHost
 import au.com.builderhq.app.core.design.theme.Motion
+import au.com.builderhq.app.core.model.Role
 import au.com.builderhq.app.feature.auth.AuthNavHost
 import au.com.builderhq.app.feature.onboarding.OnboardingScreen
+import au.com.builderhq.app.feature.onboarding.builder.BuilderWizard
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private enum class RootGate { Intro, BuilderWizard, Main }
 
 @HiltViewModel
 class RootViewModel @Inject constructor(
@@ -68,16 +72,32 @@ fun RootApp(onReady: () -> Unit) {
         when (s) {
             is SessionState.Loading -> Unit // system splash covers this frame
             is SessionState.SignedOut -> AuthNavHost()
-            is SessionState.SignedIn -> AnimatedContent(
-                targetState = vm.onboardingSeen,
-                transitionSpec = {
-                    fadeIn(tween(Motion.SLOW, easing = Motion.EaseOutSoft))
-                        .togetherWith(fadeOut(tween(Motion.BASE)))
-                },
-                label = "onboardingGate",
-            ) { seen ->
-                if (seen) MainNavHost(role = s.user.role)
-                else OnboardingScreen(role = s.user.role, onDone = vm::completeOnboarding)
+            is SessionState.SignedIn -> {
+                // Three gates, in order: the client-side intro carousel,
+                // then the SERVER needsOnboarding gate (builders must
+                // complete the profile/approval wizard before the shell;
+                // owners pass through until their setup screen ships),
+                // then the main shell.
+                val gate = when {
+                    !vm.onboardingSeen -> RootGate.Intro
+                    s.user.needsOnboarding && s.user.role == Role.BUILDER -> RootGate.BuilderWizard
+                    else -> RootGate.Main
+                }
+                AnimatedContent(
+                    targetState = gate,
+                    transitionSpec = {
+                        fadeIn(tween(Motion.SLOW, easing = Motion.EaseOutSoft))
+                            .togetherWith(fadeOut(tween(Motion.BASE)))
+                    },
+                    label = "onboardingGate",
+                ) { g ->
+                    when (g) {
+                        RootGate.Intro ->
+                            OnboardingScreen(role = s.user.role, onDone = vm::completeOnboarding)
+                        RootGate.BuilderWizard -> BuilderWizard()
+                        RootGate.Main -> MainNavHost(role = s.user.role)
+                    }
+                }
             }
         }
       }
