@@ -31,7 +31,7 @@
  */
 
 import "server-only";
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -40,6 +40,7 @@ import { fail, ok, type Result } from "@/lib/result";
 
 import { users } from "@/modules/users/schema";
 
+import { userDevices } from "./schema";
 import type { PushPayload, PushSendResult, PushSkipReason } from "./types";
 
 // ── constants ───────────────────────────────────────────────────────────
@@ -91,6 +92,108 @@ export async function clearToken(
     .set({ expoPushToken: null, expoPushTokenUpdatedAt: null })
     .where(eq(users.id, userId));
   return ok({ ok: true });
+}
+
+// ── device registry CRUD (native clients) ───────────────────────────────
+
+/**
+ * Register (or refresh) a native device token. Multi-device: one row
+ * per token, upserted on the token itself so a device changing hands
+ * (new sign-in on the same phone) moves the row to the new user
+ * rather than duplicating it. Re-registration bumps `last_seen_at` —
+ * the freshness stamp the send layer uses once it fans out over this
+ * table.
+ *
+ * Storage is additive for now: sends still read the legacy
+ * `users.expo_push_token` column pair. The native send pipeline
+ * (APNs / FCM) switches `sendToUsers` over to this registry.
+ */
+export async function registerDevice(
+  userId: string,
+  input: {
+    token: string;
+    platform: "ios" | "android";
+    provider: "apns" | "fcm" | "expo";
+    deviceLabel?: string | null;
+  },
+): Promise<Result<{ ok: true }>> {
+  const token = input.token.trim();
+  if (!isPlausibleDeviceToken(input.provider, token)) {
+    return fail("validation", `Not a valid ${input.provider} device token.`);
+  }
+  await db
+    .insert(userDevices)
+    .values({
+      userId,
+      platform: input.platform,
+      provider: input.provider,
+      token,
+      deviceLabel: input.deviceLabel ?? null,
+    })
+    .onConflictDoUpdate({
+      target: userDevices.token,
+      set: {
+        userId,
+        platform: input.platform,
+        provider: input.provider,
+        deviceLabel: input.deviceLabel ?? null,
+        lastSeenAt: new Date(),
+        revokedAt: null,
+      },
+    });
+  return ok({ ok: true });
+}
+
+/**
+ * Revoke one device row — sign-out on that device. Scoped to the
+ * calling user so one account can't kill another's registration by
+ * guessing tokens.
+ */
+export async function revokeDevice(
+  userId: string,
+  token: string,
+): Promise<Result<{ ok: true }>> {
+  await db
+    .update(userDevices)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(eq(userDevices.userId, userId), eq(userDevices.token, token.trim())),
+    );
+  return ok({ ok: true });
+}
+
+/**
+ * Revoke every device the user has — account deletion and
+ * "log out everywhere" both land here.
+ */
+export async function revokeAllDevices(
+  userId: string,
+): Promise<Result<{ ok: true }>> {
+  await db
+    .update(userDevices)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(userDevices.userId, userId), isNull(userDevices.revokedAt)));
+  return ok({ ok: true });
+}
+
+/**
+ * Cheap per-provider shape check. Not a guarantee — the provider is
+ * the final validator at send time — just enough to reject garbage
+ * and catch provider/token mix-ups at registration.
+ */
+function isPlausibleDeviceToken(
+  provider: "apns" | "fcm" | "expo",
+  token: string,
+): boolean {
+  if (token.length < 20 || token.length > 4096 || /\s/.test(token)) {
+    return false;
+  }
+  if (provider === "expo") return isExpoPushToken(token);
+  // APNs device tokens are 32+ bytes rendered as hex (64+ chars).
+  if (provider === "apns") return /^[0-9a-fA-F]{64,}$/.test(token);
+  // FCM registration tokens are opaque — length/whitespace is all
+  // we can assert.
+  return true;
 }
 
 // ── push send (called from dispatch layers) ─────────────────────────────
