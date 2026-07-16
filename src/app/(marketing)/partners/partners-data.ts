@@ -2421,6 +2421,71 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
 
+  {
+    slug: "the-builders-project",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "The Builders Project",
+    monogram: "TB",
+    logo: "/partners/the-builders-project/logo.png",
+    principal: "Miguel and Kristina Raveche",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "A design-led Melbourne builder run by husband-and-wife team Miguel and Kristina Raveche, shaping custom homes, renovations and extensions where light, proportion and material are chosen with intention.",
+    disciplines: ["Custom homes", "Renovations", "Extensions"],
+    google: { rating: 4.9, reviews: 17 },
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "17 reviews" },
+      {
+        label: "Established",
+        value: "2016",
+        sub: "husband-and-wife led",
+      },
+      {
+        label: "In the craft",
+        value: "10+ yrs",
+        sub: "design-led building",
+      },
+    ],
+    why: "The Builders Project is what happens when a builder cares about design as much as a designer does. Miguel and Kristina Raveche run the studio as a husband-and-wife team, and it shows in how personal the work feels: every material, finish and light-filled corner is chosen with intention, and the client stays part of the conversation from first concept to final handover. The results are calm, considered homes, whether that is a ground-up custom build or a heritage house reworked around the way its owners actually live. Since 2016 that approach has earned a near-perfect Google rating and a quietly loyal following across Melbourne. For an owner who wants a builder who will sweat the detail and keep the process collaborative rather than transactional, this is a genuinely special one.",
+    about:
+      "The Builders Project is a Melbourne building company specialising in custom homes, renovations and extensions, founded in 2016 by husband-and-wife team Miguel and Kristina Raveche. Built on the belief that great homes begin with thoughtful design and quality craftsmanship, the studio pairs practical building expertise with a real appreciation for architecture, weighing natural light, spatial planning, materials and finishing details on every project. Its team of builders, designers and skilled tradespeople works closely with clients, consultants and trades from concept through to completion, with clear communication and transparency the whole way. The result is homes that feel considered, timeless and built to last.",
+    facts: {
+      established: "2016",
+      experience: "10+ yrs",
+      basedIn: "Melbourne, VIC",
+      serves: "Melbourne",
+      focus: "Custom homes, renovations and extensions",
+    },
+    website: "https://www.thebuildersproject.melbourne",
+    instagram: "https://www.instagram.com/thebuildersproject/",
+    facebook: "https://www.facebook.com/thebuildersproject/",
+    galleryUrl: "https://www.thebuildersproject.melbourne/photo-albums",
+    work: [
+      {
+        title: "Heritage extension",
+        suburb: "Melbourne",
+        type: "Renovation and extension",
+        image: "/partners/the-builders-project/extension.jpg",
+      },
+      {
+        title: "Custom kitchen",
+        suburb: "Melbourne",
+        type: "Bespoke joinery",
+        image: "/partners/the-builders-project/kitchen.jpg",
+      },
+      {
+        title: "Living room",
+        suburb: "Melbourne",
+        type: "Interior",
+        image: "/partners/the-builders-project/living.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
   {
