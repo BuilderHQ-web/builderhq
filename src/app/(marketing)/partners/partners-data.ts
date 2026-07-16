@@ -2354,6 +2354,73 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
 
+  {
+    slug: "mardo-building-co",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "Mardo Building Co",
+    monogram: "MB",
+    logo: "/partners/mardo-building-co/logo.png",
+    principal: "Wafa Ismael",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "An owner-run, VBA-registered Melbourne builder with fifteen years behind it: fixed-price contracts, a single point of contact and a ten-year workmanship warranty on every custom home, extension and renovation.",
+    disciplines: ["Custom homes", "Extensions and second storeys", "Renovations"],
+    google: { rating: 5, reviews: 23 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "23 reviews" },
+      {
+        label: "Projects completed",
+        value: "100+",
+        sub: "homes and renovations",
+      },
+      {
+        label: "Building since",
+        value: "15+ yrs",
+        sub: "owner-run team",
+      },
+    ],
+    why: "Mardo is the kind of builder you hire when you want the process to be as calm as the result. Wafa Ismael runs every project himself, with a settled in-house crew rather than a rotating cast of subcontractors, so the person who quotes your job is the person accountable for it at handover. That structure is why the guarantees actually hold: a fixed price locked in before work starts, one point of contact the whole way through, and a ten-year workmanship warranty on the finished home. Across fifteen years and more than a hundred Melbourne homes, extensions and renovations, that consistency has earned a spotless five-star record. For an owner who wants certainty on price, timeline and finish, Mardo is a genuinely safe pair of hands.",
+    about:
+      "Mardo Building Co is a VBA registered residential builder working across metropolitan Melbourne, founded and led by Wafa Ismael with more than fifteen years in the industry. The team builds new custom homes and townhouses, single and double storey extensions and additions, and full kitchen, bathroom and laundry renovations, and manages council permits and architectural planning along the way. Every project is run by the owner and a consistent crew of the company's own licensed and insured tradespeople, which is how Mardo holds to fixed-price contracts, on-time completion and a ten-year workmanship warranty. The result the company is known for is simple: a higher standard of finish, delivered without surprises.",
+    facts: {
+      experience: "15+ yrs",
+      basedIn: "Melbourne, VIC",
+      serves: "Metropolitan Melbourne",
+      focus: "Custom homes, extensions and renovations",
+    },
+    website: "https://mardobuildingco.com.au",
+    instagram: "https://www.instagram.com/mardobuildingco/",
+    facebook: "https://www.facebook.com/p/Mardo-Building-Co-100063984045301/",
+    galleryUrl: "https://mardobuildingco.com.au/projects-hub/",
+    work: [
+      {
+        title: "Keilor Park",
+        suburb: "Keilor Park",
+        type: "Home renovation",
+        image: "/partners/mardo-building-co/house.jpg",
+        href: "https://mardobuildingco.com.au/projects-hub/keilor-park-project/",
+      },
+      {
+        title: "Frankston",
+        suburb: "Frankston",
+        type: "Bathroom renovation",
+        image: "/partners/mardo-building-co/bathroom.jpg",
+        href: "https://mardobuildingco.com.au/projects-hub/frankston-project/",
+      },
+      {
+        title: "Blackburn North",
+        suburb: "Blackburn North",
+        type: "Kitchen renovation",
+        image: "/partners/mardo-building-co/kitchen.jpg",
+        href: "https://mardobuildingco.com.au/projects-hub/blackburn-north-project/",
+      },
+    ],
+    joined: "2026",
+  },
+
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
   {
