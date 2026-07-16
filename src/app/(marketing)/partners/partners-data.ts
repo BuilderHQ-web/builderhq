@@ -2330,18 +2330,18 @@ export const PARTNERS: Partner[] = [
     galleryUrl: "https://elevatebuilding.com.au/",
     work: [
       {
-        title: "Pinnacle",
-        suburb: "Melbourne",
-        type: "Custom home",
-        image: "/partners/elevate-building-group/pinnacle.jpg",
-        href: "https://elevatebuilding.com.au/portfolio-pinnacle/",
-      },
-      {
         title: "Carn",
         suburb: "Melbourne",
         type: "Renovation and extension",
         image: "/partners/elevate-building-group/carn.jpg",
         href: "https://elevatebuilding.com.au/portfolio-carn/",
+      },
+      {
+        title: "Pinnacle",
+        suburb: "Melbourne",
+        type: "Custom home",
+        image: "/partners/elevate-building-group/pinnacle.jpg",
+        href: "https://elevatebuilding.com.au/portfolio-pinnacle/",
       },
       {
         title: "Waterloo",
