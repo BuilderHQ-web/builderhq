@@ -1842,11 +1842,11 @@ export const PARTNERS: Partner[] = [
   {
     slug: "dawes-design",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design and drafting",
     name: "Dawes Design & Drafting Group",
     monogram: "DD",
     logo: "/partners/dawes-design/logo.png",
+    logoFloat: "/partners/dawes-design/logo-float-v2.png",
     principal: "Troy Dawes",
     suburb: "Narre Warren",
     state: "VIC",
@@ -2059,16 +2059,16 @@ export const PARTNERS: Partner[] = [
   {
     slug: "elite-building-design",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design practice",
     name: "Elite Building Design",
     monogram: "EB",
     logo: "/partners/elite-building-design/logo.png",
+    logoFloat: "/partners/elite-building-design/logo-float-v2.png",
     principal: "Abdul Moussa",
-    suburb: "Liverpool",
+    suburb: "Belmore",
     state: "NSW",
     tagline:
-      "A Liverpool studio designing about seventy homes a year across Sydney, the Illawarra and Newcastle, with fluency on both sides of the drawings: design and construction.",
+      "A Belmore studio designing about seventy homes a year across Sydney, the Illawarra and Newcastle, with fluency on both sides of the drawings: design and construction.",
     disciplines: ["New homes", "Duplexes and dual occupancy", "Renovations"],
     google: { rating: 5, reviews: 17 },
     stats: [
@@ -2100,10 +2100,10 @@ export const PARTNERS: Partner[] = [
     ],
     why: "Elite Building Design works at a pace most studios never see, about seventy homes a year across Sydney, the Illawarra and Newcastle, and it shows in how buildable the drawings are. Director Abdul Moussa brings more than a decade across both building design and construction, so designs arrive practical and priced before they ever reach a builder's estimator: duplexes and dual occupancies that fit their sites, and luxury homes with the detail owners actually asked for. The practice took the Liverpool City Local Business Award in 2022, with national Small Business Champion finalist recognition the same year. For owners in Sydney's south west and beyond, this is design that respects the budget and survives the build.",
     about:
-      "Elite Building Design is a Liverpool based building design practice established in 2018 and led by director Abdul Moussa, a building designer with more than ten years across the design and construction industry. The studio designs new homes, duplexes and dual occupancies, renovations and extensions, and carries clients from the first design consultation through council approval to completion, drawing on construction knowledge that keeps designs practical, priced and approvable. Working across Sydney, the Illawarra and Newcastle at around seventy homes a year, the practice pairs volume with a luxury standard of finish. It was named Liverpool City's Local Business Award winner in 2022, a year that also brought finalist honours at the Australian Small Business Champion Awards and a personal finalist listing for Abdul as Outstanding Business Person of the Year.",
+      "Elite Building Design is a Belmore based building design practice established in 2018 and led by director Abdul Moussa, a building designer with more than ten years across the design and construction industry. The studio designs new homes, duplexes and dual occupancies, renovations and extensions, and carries clients from the first design consultation through council approval to completion, drawing on construction knowledge that keeps designs practical, priced and approvable. Working across Sydney, the Illawarra and Newcastle at around seventy homes a year, the practice pairs volume with a luxury standard of finish. It was named Liverpool City's Local Business Award winner in 2022, a year that also brought finalist honours at the Australian Small Business Champion Awards and a personal finalist listing for Abdul as Outstanding Business Person of the Year.",
     facts: {
       established: "2018",
-      basedIn: "Liverpool, NSW",
+      basedIn: "Belmore, NSW",
       serves: "Sydney, Illawarra and Newcastle",
       focus: "Homes, duplexes and dual occupancy",
     },

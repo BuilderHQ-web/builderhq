@@ -173,6 +173,11 @@ function SegmentedNav({ active }: { active: Active }) {
           <Link
             key={s.key}
             href={s.href}
+            // Switching lens keeps the register in place — the three
+            // routes stay distinct for SEO/outreach, but toggling
+            // between them holds your scroll position instead of
+            // snapping back to the top.
+            scroll={false}
             aria-current={on ? "page" : undefined}
             className={
               on
