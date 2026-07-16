@@ -24,7 +24,7 @@
  * do not audition them.
  */
 
-export type PartnerKind = "architect" | "finance";
+export type PartnerKind = "architect" | "builder" | "finance";
 
 export interface PartnerWork {
   title: string;
@@ -2262,6 +2262,93 @@ export const PARTNERS: Partner[] = [
         suburb: "Sorrento",
         type: "Interior",
         image: "/partners/mt-martha-design-drafting/sorrento.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+
+  /* ── Build partners ─────────────────────────────────────────────── */
+  /* Real, in review (draft). New partner kind: registered builders we
+     would put in front of a homeowner. Not yet wired into the public
+     register (no segment, no /partners/builders route) — reachable only
+     via /partners/preview/[slug] until we roll the lens out. */
+  {
+    slug: "elevate-building-group",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "Elevate Building Group",
+    monogram: "EB",
+    logo: "/partners/elevate-building-group/logo.png",
+    principal: "Matthew Menichelli",
+    suburb: "Greensborough",
+    state: "VIC",
+    tagline:
+      "An award-winning Melbourne master builder: national and state Master Builders honours, two winning 'Block' builds, and custom homes, renovations and extensions delivered to that standard.",
+    disciplines: ["Custom homes", "Renovations and extensions", "Knockdown rebuilds"],
+    google: { rating: 5, reviews: 11 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "11 reviews" },
+      {
+        label: "Wins on 'The Block'",
+        value: "2x",
+        sub: "featured for four seasons",
+      },
+      {
+        label: "Combined experience",
+        value: "40+ yrs",
+        sub: "master-builder team",
+      },
+    ],
+    awards: [
+      {
+        label: "National Excellence Awards, winner",
+        sub: "Master Builders Australia · 2024",
+      },
+      {
+        label: "Excellence in Housing Awards, winner",
+        sub: "Master Builders Victoria · 2025",
+      },
+      {
+        label: "Best Custom Home, winner",
+        sub: "Master Builders Victoria · 2022",
+      },
+    ],
+    why: "Elevate is the kind of builder other builders keep an eye on. Matthew Menichelli took his team from a carpentry business to a national Master Builders winner in little more than a decade, with back to back Excellence in Housing honours in Victoria and two winning builds on 'The Block' along the way. The work spans bespoke custom homes, luxury renovations and extensions, multi residential and basement construction, all held to the standard those awards imply. What makes this a genuine introduction is the company they keep: Elevate has earned the trust of some of Australia's most respected designers, and repays it with builds that land on brief, on budget and on time. For an owner planning something serious, this is a proven pair of hands near the top of the Melbourne market.",
+    about:
+      "Elevate Building Group is an award-winning Melbourne building company led by director Matthew Menichelli, a registered Master Builder and VBA registered building practitioner. Based in Greensborough and working across Melbourne's northern and eastern suburbs, the team specialises in custom and luxury homes, alongside knockdown rebuilds, single and double storey extensions, full renovations, townhouse and multi residential developments, basement construction and commercial fit outs. Backed by more than forty years of combined industry experience, Elevate works hand in hand with leading architects and designers to deliver homes tailored to each owner's block, budget and brief, and also carries out building inspections across Melbourne.",
+    facts: {
+      experience: "40+ yrs combined",
+      basedIn: "Greensborough, VIC",
+      serves: "Melbourne, north and east",
+      focus: "Custom homes, renovations and extensions",
+    },
+    website: "https://elevatebuilding.com.au",
+    instagram: "https://www.instagram.com/elevate_building_group/",
+    facebook: "https://www.facebook.com/elevatebuild",
+    linkedin: "https://www.linkedin.com/in/matthew-menichelli-3ab770265/",
+    galleryUrl: "https://elevatebuilding.com.au/",
+    work: [
+      {
+        title: "Pinnacle",
+        suburb: "Melbourne",
+        type: "Custom home",
+        image: "/partners/elevate-building-group/pinnacle.jpg",
+        href: "https://elevatebuilding.com.au/portfolio-pinnacle/",
+      },
+      {
+        title: "Carn",
+        suburb: "Melbourne",
+        type: "Renovation and extension",
+        image: "/partners/elevate-building-group/carn.jpg",
+        href: "https://elevatebuilding.com.au/portfolio-carn/",
+      },
+      {
+        title: "Waterloo",
+        suburb: "Melbourne",
+        type: "Renovation and extension",
+        image: "/partners/elevate-building-group/waterloo.jpg",
+        href: "https://elevatebuilding.com.au/portfolio-waterloo/",
       },
     ],
     joined: "2026",

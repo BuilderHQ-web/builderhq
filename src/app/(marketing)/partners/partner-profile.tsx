@@ -19,6 +19,7 @@ const STAR_GOLD = "#e0a63c";
 
 export const KIND_LABEL = {
   architect: "Architecture practice",
+  builder: "Building company",
   finance: "Finance partner",
 } as const;
 
