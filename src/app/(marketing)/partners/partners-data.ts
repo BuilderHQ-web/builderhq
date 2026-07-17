@@ -2674,6 +2674,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "delcon-design-and-construct",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Design and construct builder",
+    name: "Delcon Design and Construct",
+    monogram: "DC",
+    logo: "/partners/delcon-design-and-construct/logo.png",
+    principal: "Daniel Ellul",
+    suburb: "Tullamarine",
+    state: "VIC",
+    tagline:
+      "The Melbourne design and construct team that makes multi-unit development simple, led by an investor director who builds as if the project were his own.",
+    disciplines: ["Multi-unit developments", "Custom homes", "Design and construct"],
+    google: { rating: 5.0, reviews: 18 },
+    institution: {
+      name: "Master Builders Victoria",
+      role: "Member",
+      note: "Registered building practitioner · Victorian Building Authority",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "18 reviews" },
+      {
+        label: "Building since",
+        value: "2010",
+        sub: "design and construct, Melbourne",
+      },
+      {
+        label: "Construction experience",
+        value: "40+ yrs",
+        sub: "behind the delcon team",
+      },
+    ],
+    why: "Multi-unit development is where most owners get lost, and it is exactly the process delcon was established in 2010 to simplify. The Tullamarine team runs the whole journey under one roof, feasibility, building design, subdivision, project management and construction, so an inexperienced or time poor investor is never left coordinating consultants on their own. Director Daniel Ellul is an active property investor himself, and every client deals with him directly, borrowing that experience first hand. The practice is a member of Master Builders Victoria, a registered building practitioner with the VBA, and holds a perfect 5.0 across 18 Google reviews. For an owner weighing a duplex, a townhouse project or a custom home, this is a develop-with-confidence introduction.",
+    about:
+      "delcon design and construct is a boutique residential design and construction company in Tullamarine, established in 2010 from a vision to simplify the multi-unit development process. Led by owner director Daniel Ellul and backed by more than forty years of construction industry experience, the team carries projects from feasibility and building design through subdivision, project management and full construction, working with a hand-picked group of creative designers, quality suppliers and skilled trades. As active property investors themselves, the delcon team brings first-hand development experience to every job, and clients always have immediate access to the director. The primary focus is enabling clients to succeed with multi-unit and dual occupancy developments, and the same design and construct discipline goes into custom family homes, delivered on time and on budget. delcon is a registered building practitioner with the Victorian Building Authority and a member of Master Builders Victoria.",
+    facts: {
+      established: "2010",
+      basedIn: "Tullamarine, VIC",
+      serves: "Melbourne",
+      focus: "Multi-unit developments and custom homes",
+    },
+    website: "https://delcon.net.au",
+    instagram: "https://www.instagram.com/delcon_design_and_construct/",
+    facebook: "https://www.facebook.com/DelconDesignAndConstruct/",
+    linkedin: "https://www.linkedin.com/in/daniel-ellul-3b752560/",
+    galleryUrl: "https://delcon.net.au/",
+    work: [
+      {
+        title: "Pascoe Vale",
+        suburb: "Pascoe Vale",
+        type: "Side-by-side townhouses",
+        image: "/partners/delcon-design-and-construct/pascoe-vale.jpg",
+      },
+      {
+        title: "Altona North",
+        suburb: "Altona North",
+        type: "Multi-unit development",
+        image: "/partners/delcon-design-and-construct/altona-north.jpg",
+      },
+      {
+        title: "Essendon",
+        suburb: "Essendon",
+        type: "Bathroom",
+        image: "/partners/delcon-design-and-construct/essendon.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
