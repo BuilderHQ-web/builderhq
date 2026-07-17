@@ -1683,10 +1683,10 @@ export const PARTNERS: Partner[] = [
   {
     slug: "dna-architects",
     kind: "architect",
-    draft: true,
     name: "DNA Architects",
     monogram: "DA",
     logo: "/partners/dna-architects/logo.png",
+    logoFloat: "/partners/dna-architects/logo-float-v2.png",
     principal: "AJ Bala and four fellow directors",
     suburb: "Braddon",
     state: "ACT",
