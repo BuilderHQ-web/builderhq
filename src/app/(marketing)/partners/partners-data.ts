@@ -2743,6 +2743,69 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "de-lune-construction",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Architectural builder",
+    name: "de Lune Construction",
+    monogram: "DL",
+    logo: "/partners/de-lune-construction/logo.png",
+    principal: "Fletcher Thompson",
+    suburb: "Hawthorn",
+    state: "VIC",
+    tagline:
+      "A Hawthorn construction team led by an architecture graduate with dual builder registration, carrying Melbourne's complex architectural projects from concept to completion.",
+    disciplines: ["Complex architectural builds", "New homes", "Commercial projects"],
+    google: { rating: 5.0, reviews: 2 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "2 reviews" },
+      {
+        label: "Experience",
+        value: "15 yrs",
+        sub: "complex architectural builds",
+      },
+      {
+        label: "Builder registration",
+        value: "Dual",
+        sub: "residential and commercial",
+      },
+    ],
+    why: "Fletcher Thompson sits between two worlds, and that is exactly why we introduce him. A degree in architecture on one side, registration as both a residential and a commercial builder on the other: design vision and precise execution in the same pair of hands. His practice runs on the belief that construction is the continuation of architecture, protecting the architect's intent through rigorous on-site delivery, with fifteen years of expertise behind it. The current book says plenty, from the completed Malvern Residence to commercial builds for Programa and Curve Cycling Melbourne. For an owner taking on an architecturally ambitious home, this is the builder who speaks the architect's language fluently and builds it faithfully.",
+    about:
+      "de Lune Construction is a Hawthorn based building company founded and led by director Fletcher Thompson, who pairs a degree in architecture with registration as both a residential and commercial builder. The team specialises in complex architectural builds across Melbourne, working closely with clients, architects and consultants from concept to completion, with an approach built on seamless communication, detailed planning and innovative problem solving. The practice holds that construction is the continuation of architecture: the drawings are protected through rigorous on-site execution, so the idea that was designed is the building that gets delivered. Its portfolio spans residential projects such as the Malvern and Nicholson residences alongside commercial work including Programa HQ and Curve Cycling Melbourne.",
+    facts: {
+      experience: "15 yrs",
+      basedIn: "Hawthorn, VIC",
+      serves: "Melbourne",
+      focus: "Complex architectural builds",
+    },
+    website: "https://www.delune.com.au",
+    instagram: "https://www.instagram.com/deluneconstruction",
+    linkedin: "https://www.linkedin.com/in/fletcher-thompson-2155a184/",
+    galleryUrl: "https://www.delune.com.au/",
+    work: [
+      {
+        title: "Calacatta kitchen",
+        suburb: "Melbourne",
+        type: "Interior",
+        image: "/partners/de-lune-construction/kitchen.jpg",
+      },
+      {
+        title: "Stone powder room",
+        suburb: "Melbourne",
+        type: "Interior",
+        image: "/partners/de-lune-construction/powder.jpg",
+      },
+      {
+        title: "Hydronic slab pour",
+        suburb: "Melbourne",
+        type: "On site",
+        image: "/partners/de-lune-construction/onsite.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
