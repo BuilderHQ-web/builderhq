@@ -2485,6 +2485,69 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "inverloch-builders",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "Inverloch Builders",
+    monogram: "IB",
+    logo: "/partners/inverloch-builders/logo.png",
+    principal: "Andrew Kempster",
+    suburb: "Inverloch",
+    state: "VIC",
+    tagline:
+      "The Bass Coast builder that brings builder, designer and engineer to the table from day one, so the home you design is the home you can afford to build.",
+    disciplines: ["Custom homes", "Major renovations", "Coastal builds"],
+    google: { rating: 4.8, reviews: 20 },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "20 reviews" },
+      {
+        label: "Experience",
+        value: "30+ yrs",
+        sub: "custom homes and major renovations",
+      },
+      {
+        label: "Builder at the table",
+        value: "Day one",
+        sub: "early builder involvement model",
+      },
+    ],
+    why: "Most building stress starts the same way: a home is designed first, and what it costs to build is discovered later. Inverloch Builders is set up to prevent exactly that. Director Andrew Kempster runs an early builder involvement model that brings builder, designer, engineer and client together from the very start, so every idea is tested for cost and buildability before it hardens into drawings. Behind it sits more than thirty years of experience, an in-house carpentry crew the practice calls its backbone, and a deliberate cap on how many projects are taken each year so that none of them are rushed. Clients rate the experience 4.8 across 20 Google reviews, and the word that keeps appearing is the one that matters most on a build: listens. For owners on the Bass Coast, this is the steady local hand.",
+    about:
+      "Inverloch Builders is a custom home and renovation builder on Victoria's Bass Coast, led by director Andrew Kempster, a registered building practitioner. The team designs and delivers new custom homes, major renovations and transformations of existing properties across Inverloch and the surrounding coast and hinterland, from Venus Bay, Phillip Island and San Remo through to Leongatha, Korumburra, Walkerville and Foster. Its early builder involvement approach aligns builder, designer, engineer and client from the first conversation, keeping every decision practical, affordable and achievable, and its in-house carpentry team is backed by a network of subcontractors and suppliers the practice has worked with for years. The number of projects taken on each year is deliberately limited, with a focus on building beyond minimum standards: durable structures, considered detail and healthier homes with natural light and clean air.",
+    facts: {
+      experience: "30+ yrs",
+      basedIn: "Inverloch, VIC",
+      serves: "Bass Coast and South Gippsland",
+      focus: "Custom homes and major renovations",
+    },
+    website: "https://www.inverlochbuilders.com.au",
+    instagram: "https://www.instagram.com/inverlochbuilders/",
+    facebook: "https://www.facebook.com/Inverlochbuilders/",
+    galleryUrl: "https://www.inverlochbuilders.com.au/",
+    work: [
+      {
+        title: "Poolside pavilion",
+        suburb: "Bass Coast",
+        type: "Custom home",
+        image: "/partners/inverloch-builders/pool.jpg",
+      },
+      {
+        title: "Black barn house",
+        suburb: "South Gippsland",
+        type: "Custom home",
+        image: "/partners/inverloch-builders/barn.jpg",
+      },
+      {
+        title: "Cathedral living room",
+        suburb: "Bass Coast",
+        type: "Interior",
+        image: "/partners/inverloch-builders/living.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
