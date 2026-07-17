@@ -2137,11 +2137,11 @@ export const PARTNERS: Partner[] = [
   {
     slug: "design-plus-drafting",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design and drafting",
     name: "Design Plus Drafting",
     monogram: "DP",
     logo: "/partners/design-plus-drafting/logo.png",
+    logoFloat: "/partners/design-plus-drafting/logo-float-v2.png",
     principal: "Scott Nicholson",
     suburb: "Leichhardt",
     state: "NSW",
