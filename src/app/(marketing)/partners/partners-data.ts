@@ -2806,6 +2806,74 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "pache-built",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "Pache Built",
+    monogram: "PB",
+    logo: "/partners/pache-built/logo.png",
+    principal: "Matthew Pace",
+    suburb: "Spotswood",
+    state: "VIC",
+    tagline:
+      "A Spotswood builder crafting high-end homes across Melbourne's inner west, with certified Passive Haus skills behind healthier, higher-performing builds.",
+    disciplines: ["Custom homes", "Renovations and extensions", "Passive House builds"],
+    google: { rating: 5.0, reviews: 30 },
+    institution: {
+      name: "Australian Passive Haus Association",
+      role: "Member",
+      note: "Certified Passive Haus Tradesperson · HIA member · VBA registered",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "30 reviews" },
+      {
+        label: "Experience",
+        value: "17+ yrs",
+        sub: "tradesman turned builder",
+      },
+      {
+        label: "Passive Haus",
+        value: "Certified",
+        sub: "healthier, higher-performing homes",
+      },
+    ],
+    why: "Thirty Google reviews, every one of them five stars: that is the deepest perfect record on our builder register, and it belongs to a tradesman. Matthew Pace spent seventeen years on the tools before building Pache Built around the things sites often lose: relationships, precision craftsmanship and finishes that last. The practice is also a rarity in Melbourne's west, a Certified Passive Haus Tradesperson business and Australian Passive Haus Association member, pairing traditional carpentry with building science for homes that are healthier, cheaper to run and better to live in. From Spotswood and Yarraville renovations to full custom builds, this is quality you can walk through, and clients who cannot stop saying so.",
+    about:
+      "Pache Built is a residential building company in Spotswood, established in 2012 and led by founder Matthew Pace, a tradesman turned builder with more than seventeen years of industry experience. The team designs and delivers custom homes, renovations, extensions and Passive House builds across Melbourne's inner west, from Spotswood, Yarraville, Williamstown, Newport and Seddon through to Altona, and inner-north suburbs such as Brunswick and Fitzroy. Grounded in relationships, precision craftsmanship and a commitment to lifting the standard of residential construction, the practice combines traditional carpentry and timber detailing with forward-thinking building principles for healthier, cost-effective, sustainable and higher-performing homes. Matthew is a VBA registered building practitioner, a Housing Industry Association member, and a Certified Passive Haus Tradesperson with membership of the Australian Passive Haus Association.",
+    facts: {
+      established: "2012",
+      basedIn: "Spotswood, VIC",
+      serves: "Melbourne's inner west",
+      focus: "Custom homes, renovations and Passive House builds",
+    },
+    website: "https://pachebuilt.com",
+    instagram: "https://www.instagram.com/pache_built/",
+    facebook: "https://www.facebook.com/people/Pache-Built/100063840708805/",
+    galleryUrl: "https://pachebuilt.com/",
+    work: [
+      {
+        title: "Edithvale",
+        suburb: "Edithvale",
+        type: "Kitchen and extension",
+        image: "/partners/pache-built/edithvale.jpg",
+      },
+      {
+        title: "Spotswood",
+        suburb: "Spotswood",
+        type: "Bathroom renovation",
+        image: "/partners/pache-built/spotswood.jpg",
+      },
+      {
+        title: "Altona North",
+        suburb: "Altona North",
+        type: "Bathroom renovation",
+        image: "/partners/pache-built/altona-north.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
