@@ -16,6 +16,8 @@ BuilderHQ also runs the Preferred Partner register, a hand-picked network of bui
 ## The Build Brief
 
 - [The Build Brief](https://builderhq.com.au/build-brief): five minutes on the economics of getting homes built in Australia. Housing starts, building approvals, construction costs, and the decisions that matter. Plain, sourced, every Friday.
+- [Issue 002, 17 July 2026](https://builderhq.com.au/build-brief/issue-002): Victoria's new building rules in plain terms (First Resort Home Warranty, rectification orders, financial standing as a licence condition), Australia as the world's most labour-constrained construction market, and auctions giving way to negotiation.
+- [Issue 001, 10 July 2026](https://builderhq.com.au/build-brief/issue-001): housing starts against the 1.2 million home target, May building approvals, new dwelling construction costs, and how to compare three builder quotes fairly.
 - [Why choosing a builder still comes down to word of mouth](https://builderhq.com.au/build-brief/perspectives/choosing-a-builder-word-of-mouth): a founder perspective by Moe Akbulut on why Australian residential construction needs a better procurement model, and what fit-based builder selection should provide.
 - [RSS feed](https://builderhq.com.au/build-brief/feed.xml)
 

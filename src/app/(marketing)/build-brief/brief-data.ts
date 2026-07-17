@@ -18,6 +18,14 @@
  *     is the canonical record)
  */
 
+import type { BriefChartSpec } from "./brief-charts";
+
+/**
+ * Copy strings support one inline mark: `[label](href)` renders as a
+ * link (internal via next/link, external in a new tab). Everything
+ * else is plain text — the publication stays data, not markup.
+ */
+
 export interface BriefTakes {
   owners: string;
   designers: string;
@@ -31,11 +39,15 @@ export interface BriefSignal {
   /** Segment name, e.g. "The Number", "Approval Watch", "Cost Pulse". */
   kicker: string;
   headline: string;
+  /** Trailing words of the headline, rendered in the accent colour. */
+  headlineAccent?: string;
   stat: { value: string; label: string; sub?: string };
   /** Small comparison rows rendered as a native chart-style list. */
   rows?: Array<{ label: string; value: string; accent?: boolean }>;
   rowsTitle?: string;
-  body: string;
+  /** In-code chart (Issue 002 onward) — see brief-charts.tsx. */
+  chart?: BriefChartSpec;
+  body: string[];
   source: string;
   takes: BriefTakes;
 }
@@ -56,20 +68,39 @@ export interface BriefIssue {
   /** The issue's lead headline (also the SEO title core). */
   title: string;
   standfirst: string;
+  /** Verbatim title tag override — used absolute, no site suffix. */
+  seoTitle?: string;
   seoDescription: string;
   keywords: string[];
   ogImage: string;
   note: {
+    /** Small-caps line above the heading, e.g. "This week from the
+     *  BuilderHQ team". */
+    eyebrow?: string;
     heading: string;
     paragraphs: string[];
     signoff: string;
   };
+  /** Section intro line above Market Watch, e.g. "Three signals. For
+   *  everyone in the build." */
+  signalsIntro?: string;
   signals: BriefSignal[];
   feature: {
     kicker: string;
     headline: string;
+    headlineAccent?: string;
+    /** Italic serif deck under the headline. */
+    standfirst?: string;
+    /** Lede paragraph(s) ahead of any sub-sections. */
     paragraphs: string[];
-    quoteDoc: {
+    /** Sub-headed blocks, rendered as real h3 sections. */
+    sections?: Array<{ heading: string; paragraphs: string[] }>;
+    /** "The fine print" — optional expandable block. */
+    finePrint?: { title: string; items: string[] };
+    /** Newspaper fact box beside the article — key figures pulled
+     *  from the copy, never new claims. */
+    factBox?: { title: string; rows: Array<{ k: string; v: string }> };
+    quoteDoc?: {
       docTitle: string;
       docSubtitle: string;
       rows: BriefQuoteDocRow[];
@@ -77,19 +108,29 @@ export interface BriefIssue {
       footnotes: string[];
       annotations: Array<{ n: string; term: string; def: string }>;
     };
+    source?: string;
     takes: BriefTakes;
   };
-  project: {
+  /** Absent = the section does not render for that edition. */
+  project?: {
     kicker: string;
-    name: string;
-    studio: string;
-    recognition: string;
-    body: string;
+    /** Named-project form (Issue 001). */
+    name?: string;
+    studio?: string;
+    recognition?: string;
+    /** Editorial-headline form (Issue 002 onward). */
+    headline?: string;
+    headlineAccent?: string;
+    body: string[];
     pullQuote: string;
-    credit: string;
+    credit?: string;
+    /** Optional licensed photograph. The card renders typographic
+     *  when absent — the outbound link is the point of the item. */
+    image?: { src: string; alt: string; credit: string };
     /** Outbound link to the original coverage — we do not republish
      *  third-party photography. */
     link?: { label: string; href: string };
+    source?: string;
     takes: BriefTakes;
   };
   voices: {
@@ -98,18 +139,26 @@ export interface BriefIssue {
     quote: string;
     attribution: string;
     role: string;
-    body: string;
-    takes: BriefTakes;
+    body: string[];
+    source?: string;
+    takes?: BriefTakes;
   };
-  partnerCorner: {
+  /** Absent = the section does not render (content pending). */
+  partnerCorner?: {
     /** Live partner slug — the section pulls name, logo and profile
      *  link from the register. */
     partnerSlug: string;
     headline: string;
     principal: string;
     principalRole: string;
-    principalQuote: string;
+    /** In the partner's own voice — only ever supplied, never written
+     *  for them. */
+    principalQuote?: string;
     portrait?: string;
+    /** Editorial deck — one statement line above the copy. */
+    deck?: string;
+    /** Compact stat row from the register record. */
+    stats?: Array<{ value: string; label: string; star?: boolean }>;
     why: string;
     practice: string;
     welcome: string;
@@ -118,6 +167,18 @@ export interface BriefIssue {
     question: string;
     body: string;
   };
+  /** End-of-page blocks (Issue 002 onward). */
+  share?: string;
+  subscribeLine?: string;
+  furtherReading?: Array<{ label: string; href: string }>;
+  /** Visible, grouped source list with working links (Issue 002
+   *  onward) — the colophon `sources` remains the one-line credit. */
+  sourceGroups?: Array<{
+    heading: string;
+    links: Array<{ label: string; href: string }>;
+  }>;
+  /** Back-cover credit line rendered under the source list. */
+  creditLine?: string;
   /** Colophon — datasets and publications used. */
   sources: string[];
 }
@@ -172,7 +233,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           { label: "Pace needed for the target", value: "60,000" },
           { label: "Gap to close", value: "~12,000 starts" },
         ],
-        body: "About 12,000 starts below the quarterly pace the 1.2 million-home target implies. The demand is strong; the opportunity is in turning it into homes.",
+        body: [
+          "About 12,000 starts below the quarterly pace the 1.2 million-home target implies. The demand is strong; the opportunity is in turning it into homes.",
+        ],
         source: "ABS Building Activity · Treasury, 2026",
         takes: {
           owners: "Line up finance, design and builder before you commit.",
@@ -198,7 +261,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           { label: "Private dwellings excl. houses", value: "-10.4%" },
           { label: "Value of residential approved", value: "-5.7%" },
         ],
-        body: "Detached homes are leading, while apartments and townhouses have more ground to make up. Both matter for supply near infrastructure.",
+        body: [
+          "Detached homes are leading, while apartments and townhouses have more ground to make up. Both matter for supply near infrastructure.",
+        ],
         source: "ABS Building Approvals, May 2026",
         takes: {
           owners: "Test townhouse or dual-occupancy feasibility early.",
@@ -223,7 +288,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           { label: "Owner-occupier lending", value: "-6.9%" },
           { label: "First home buyer lending", value: "-4.3%" },
         ],
-        body: "Costs are climbing while new lending has cooled, so it pays to plan feasibility early. New lending eased 6.2% last quarter.",
+        body: [
+          "Costs are climbing while new lending has cooled, so it pays to plan feasibility early. New lending eased 6.2% last quarter.",
+        ],
         source: "ABS CPI & Lending Indicators, 2026",
         takes: {
           owners: "Check how long a quote holds, and keep a contingency.",
@@ -293,7 +360,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       name: "House in a Garden",
       studio: "Edition Office",
       recognition: "Victorian Architecture Awards 2026 · winner",
-      body: "This year's Victorian Architecture Award winner treats landscape as part of the architecture, not a finishing layer. Privacy, outlook and light are resolved by the garden from the first sketch.",
+      body: [
+        "This year's Victorian Architecture Award winner treats landscape as part of the architecture, not a finishing layer. Privacy, outlook and light are resolved by the garden from the first sketch.",
+      ],
       pullQuote:
         "The strongest projects use landscape to solve privacy, light and outlook from the very beginning.",
       credit: "Photography by Maxime Delvaux, published with the original coverage.",
@@ -314,7 +383,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       quote: "The housing target will be won or lost before construction starts.",
       attribution: "Attributed to Tom Devitt",
       role: "Senior Economist, Housing Industry Association",
-      body: "HIA's Tom Devitt notes Australia needs about 240,000 homes a year, and started 197,340 in the year to March. The encouraging part is where the leverage sits: much of the gap is decided before a site even begins, in design, approval, finance and contracts.",
+      body: [
+        "HIA's Tom Devitt notes Australia needs about 240,000 homes a year, and started 197,340 in the year to March. The encouraging part is where the leverage sits: much of the gap is decided before a site even begins, in design, approval, finance and contracts.",
+      ],
       takes: {
         owners: "Resolve finance, design and builder early to keep momentum.",
         designers: "Approvals and documentation shape the timeline too.",
@@ -350,6 +421,390 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "Consumer Affairs Victoria",
       "ArchitectureAU",
       "ArchDaily",
+    ],
+  },
+  {
+    slug: "issue-002",
+    number: 2,
+    date: "2026-07-17",
+    displayDate: "Friday, 17 July 2026",
+    title:
+      "Victoria's new building rules, the labour squeeze, and the return of negotiation.",
+    standfirst:
+      "Victoria's building rules changed on 1 July. Australia is now the world's most labour-constrained construction market. And auctions are giving way to negotiation.",
+    seoTitle: "The Build Brief 002: Victoria's New Building Rules | BuilderHQ",
+    seoDescription:
+      "Victoria's building rules changed on 1 July. Australia is now the world's most labour-constrained construction market. And auctions are giving way to negotiation.",
+    keywords: [
+      "australian residential construction news",
+      "victoria building regulations july 2026",
+      "first resort home warranty victoria",
+      "construction labour shortage australia",
+      "building approvals australia",
+      "melbourne auction clearance rates",
+      "dwellings under construction australia",
+      "construction cost inflation 2026",
+      "home warranty $400,000 victoria",
+      "rectification orders victoria",
+      "data centre construction melbourne",
+    ],
+    ogImage: "/build-brief/og-issue-002.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading: "Three things moved this week.",
+      paragraphs: [
+        "Victoria's building rules changed on 1 July, and the detail is now landing in contracts being signed today. Australia became the most labour-constrained construction market in the world. And buyers quietly got their leverage back.",
+        "This edition leans practical. The Feature sets out Victoria's new buyer protections in plain terms, including the dates that decide which scheme covers your job. If you are signing a contract in Victoria this month, that is the section to read.",
+        "One note on reading the numbers. Approvals and activity are not the same thing. An approval is a permit, a promise that a home could be built. Activity is the work itself. Both were published this month, and they did not tell the same story. That gap is this week's real signal.",
+        "If The Build Brief is new to you, [our first edition](/build-brief/issue-001) sets out what we are here to do.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "The Number",
+        headline: "The pipeline is full. The industry is finishing,",
+        headlineAccent: "not starting.",
+        stat: {
+          value: "243,864",
+          label: "dwellings under construction, March quarter 2026",
+          sub: "90,972 are detached houses",
+        },
+        chart: {
+          kind: "bars",
+          title: "The pipeline against the flow, March quarter 2026",
+          desc: "Dwellings under construction dwarf both the quarter's commencements and completions.",
+          valueHeading: "Dwellings, March quarter 2026",
+          bars: [
+            {
+              label: "Under construction",
+              value: 243864,
+              display: "243,864",
+              accent: true,
+            },
+            { label: "Commenced", value: 48012, display: "48,012" },
+            { label: "Completed", value: 43816, display: "43,816" },
+          ],
+        },
+        body: [
+          "Australia has 243,864 homes under construction, including 90,972 detached houses. Starts fell 11.2% over the quarter to 48,012, yet they are still 11.7% higher than a year ago, and completions held at 43,816. The industry is busy finishing what it already had rather than breaking new ground.",
+          "Approvals are a promise. Commencements are the work, and the space between the two is where capacity bites. Related reading: [how we think about comparing builders before a start](/build-brief/perspectives/choosing-a-builder-word-of-mouth).",
+        ],
+        source:
+          "ABS Building Activity, Australia, March quarter 2026 (released 8 July 2026)",
+        takes: {
+          owners:
+            "A deep pipeline means good trades are already committed. Book early. When you are ready, [post your project](/signup?role=owner).",
+          designers:
+            "Documentation quality decides how fast a job moves from permit to site.",
+          builders:
+            "The backlog is real work. Sequencing and cash flow matter more than chasing new leads.",
+          brokers:
+            "Longer builds stretch construction facilities. Check expiry dates before drawdown.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Cost Pulse",
+        headline: "Residential is not only competing with",
+        headlineAccent: "residential anymore.",
+        stat: {
+          value: "100%",
+          label:
+            "Australian and New Zealand cities reporting construction labour shortages",
+          sub: "cost inflation forecast 5.4% in 2026",
+        },
+        chart: {
+          kind: "bars",
+          title: "Markets reporting construction labour shortages",
+          desc: "Share of surveyed construction markets reporting labour shortages, by region.",
+          valueHeading: "Share of surveyed markets",
+          max: 100,
+          bars: [
+            {
+              label: "Australia & New Zealand",
+              value: 100,
+              display: "100%",
+              accent: true,
+            },
+            { label: "European Union", value: 93, display: "93%" },
+            { label: "North America", value: 79, display: "79%" },
+            { label: "Global average", value: 71, display: "71%" },
+          ],
+        },
+        body: [
+          "Turner & Townsend rates Australia and New Zealand the most labour-constrained construction markets in the world, with shortages reported in every city surveyed, against a global average of 71%. Labour availability is now the single biggest driver of construction costs. Input costs, by contrast, have stabilised over the past year.",
+          "The pressure has become sectoral. Data centres are the top performing sector in both Melbourne and Sydney, and 83% of markets report shortages in the mechanical, electrical and plumbing trades those projects consume. May's record $10.83 billion of non-residential approvals was driven by large data centre projects in Victoria and New South Wales. Add health, defence and the run-up to Brisbane 2032, and the trades a home needs are being bid for by projects a home cannot outbid.",
+          "Regional construction cost inflation is forecast at 5.4% this year, easing to 4.9% in 2027.",
+        ],
+        source:
+          "Turner & Townsend Global Construction Market Intelligence, reported by Build Australia, 9 July 2026; ABS Building Approvals, May 2026",
+        takes: {
+          owners:
+            "Waiting does not automatically make a build cheaper. Trade availability, not material price, will set your timeline.",
+          designers:
+            "Design complexity now has a clearer labour-cost consequence. Bring buildability forward.",
+          builders:
+            "Your mechanical, electrical and plumbing subcontractors are being courted. Capacity is a strategic question, not a back-office one. When you have room, [browse projects that fit your capacity](/signup?role=builder).",
+          brokers:
+            "Labour escalation can move a final build cost after approval. Contingency is doing real work this year.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "Market Mood",
+        headline: "The market has moved from theatre to",
+        headlineAccent: "negotiation.",
+        stat: {
+          value: "30%",
+          label: "national auction share of new listings, June 2026",
+          sub: "clearance rate 52.7%, lowest since July 2022",
+        },
+        chart: {
+          kind: "slope",
+          title: "Auction share of new listings",
+          desc: "The national share of auctions to new listings fell from about 45% in November 2025 to just over 30% in June 2026, against a long-term average of around 28%.",
+          valueHeading: "Auction share of new listings",
+          points: [
+            { label: "Nov 2025", value: 45, display: "~45%" },
+            { label: "Jun 2026", value: 30, display: "~30%" },
+          ],
+          reference: { value: 28, display: "28%", label: "long-term average" },
+          domain: [22, 50],
+        },
+        body: [
+          "The national share of auctions to new listings fell from nearly 45% in November 2025 to just over 30% in June 2026, led by Sydney and Melbourne, against a long-term average of around 28%. Some of that is the ordinary swing from spring selling season to winter. The part that is not seasonal is the clearance rate, which fell from a peak of 72% in late September 2025 to 52.7% in late March, the lowest since July 2022.",
+          "As clearances fall and withdrawals rise, vendors are choosing private treaty over a public campaign that might not sell. Cotality attributes the broader cooling to the cumulative effect of rate rises, cost of living pressure and policy uncertainty. With the share still above its long-run average, there is room for it to fall further.",
+          "For anyone buying a site, a knockdown or a renovator, the negotiating table has moved.",
+        ],
+        source: "Cotality Monthly Housing Chart Pack, July 2026",
+        takes: {
+          owners:
+            "There may be more room to negotiate on land and renovator stock than there was six months ago. Before you commit, [get a preliminary estimate](/estimate_request_landing_page).",
+          designers:
+            "Clients may take longer to commit. Stage feasibility so the early decisions feel safe.",
+          builders:
+            "The pipeline is less automatic. Clarity and trust before contract matter more.",
+          brokers:
+            "Pre-approvals, valuations and deposit positions need closer monitoring in a softer market.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "Victoria's building rules changed on 1 July. Here is what",
+      headlineAccent: "actually moved.",
+      standfirst:
+        "The largest change to Victorian domestic building regulation in years commenced this month. Three things matter most, and one date decides which set applies to you.",
+      paragraphs: [
+        "The Building Legislation Amendment (Buyer Protections) Act 2025 commenced on 1 July, alongside provisions from the Building Legislation and Treasury Legislation (Tax Relief) Amendment Act 2026. Three things matter most.",
+      ],
+      sections: [
+        {
+          heading: "Insurance: from last resort to first resort",
+          paragraphs: [
+            "Domestic Building Insurance has been replaced by the First Resort Home Warranty Scheme for contracts signed on or after 1 July 2026, on work over $20,000 in buildings of three storeys or less. Cover rises from $300,000 to $400,000.",
+            'The phrase that matters is "first resort". Under DBI, an owner could claim only if the builder died, disappeared or became insolvent. Under Home Warranty, an owner can claim where work is incomplete, defective or non-compliant and the builder is unable or unwilling to put it right. Major defects are covered for six years, others for two.',
+            "The Building and Plumbing Commission is now the sole, not-for-profit provider. The private domestic building insurance market closed on 1 July. Existing DBI policies run on their own terms until they expire, and cover does not transfer.",
+          ],
+        },
+        {
+          heading: "Rectification orders: a ten-year reach, backwards",
+          paragraphs: [
+            "The BPC can now direct a builder or a developer to fix defective, non-compliant or incomplete work, up to ten years after completion, extendable by VCAT. The power is retrospective, so it reaches homes finished before 1 July. The BPC can also issue a rectification costs order, recovering the cost of investigating and monitoring compliance.",
+          ],
+        },
+        {
+          heading: "Registration: financial standing becomes a licence condition",
+          paragraphs: [
+            "The BPC can set minimum financial requirements for domestic building practitioners. A two-year transition runs to 30 June 2028, with the requirements expected to apply from 1 July 2028. Practitioners will need to satisfy them to become registered and to stay registered. It is the same direction the platform takes with [verified builders on BuilderHQ](/#trust).",
+          ],
+        },
+        {
+          heading: "Three practical notes",
+          paragraphs: [
+            "The premium is paid to the BPC within ten business days of the contract being signed or work starting, whichever comes first, and the owner is covered from signing. Victorian HIA contract templates issued before 1 July should not be used for new jobs. And industry has asked that dispute resolution keep pace with the new cover, which is a fair point: the scheme's value to owners and builders alike depends on claims moving quickly.",
+          ],
+        },
+      ],
+      finePrint: {
+        title: "Also worth knowing",
+        items: [
+          "Developers of apartment buildings of four storeys or more must notify the BPC before applying for an occupancy permit, from 1 July 2026.",
+          "Developer bonds of 2% of total build cost do not effectively commence until 1 July 2027, applying where a building permit is issued on or after that date. Decennial insurance will be an alternative.",
+          "A new building permit levy of 0.37 cents in the dollar applies to non-regional Class 2 to 8 buildings where the cost of work is $1.5 million or more, replacing the cladding rectification levy.",
+          "Further Domestic Building Contracts Act reforms are expected from 1 December 2026.",
+        ],
+      },
+      factBox: {
+        title: "The detail that matters",
+        rows: [
+          { k: "1 July 2026", v: "Home Warranty replaces DBI for new contracts" },
+          { k: "$400,000", v: "cover, up from $300,000" },
+          { k: "6 yrs · 2 yrs", v: "major defects · other defects" },
+          { k: "10 years", v: "rectification reach, retrospective" },
+          { k: "1 July 2028", v: "financial standing expected to apply" },
+        ],
+      },
+      source:
+        "Building and Plumbing Commission; Maddocks, 8 July 2026; Victorian Government",
+      takes: {
+        owners:
+          "Check your contract date. It decides which scheme covers you. When quotes arrive, [compare tenders side by side](/#how).",
+        designers:
+          "Defect definitions now sit closer to documentation. Specify clearly.",
+        builders:
+          "New contracts, new premium timing, new obligations. Update the paperwork this month.",
+        brokers:
+          "Warranty cover and builder financial standing now travel together.",
+      },
+    },
+    voices: {
+      kicker: "Voices · From the Frontline",
+      headline: "Momentum is real. So are the new headwinds.",
+      quote:
+        "The data continues to reflect the good momentum in Australian home building",
+      attribution: "Tim Reardon",
+      role: "Chief Economist, Housing Industry Association",
+      body: [
+        "Private house approvals reached 10,537 in May, the highest since September 2021 and a fourth consecutive month above 10,000, up 13.2% on the year. Victorian new home approvals rose 15.0% over the three months to May against the same quarter a year earlier, behind only Tasmania and Queensland.",
+        "Reardon credits population growth and low unemployment for the underlying demand, while noting that rising interest rates, fuel costs and international turmoil have started to weigh on confidence. The Reserve Bank has lifted the cash rate three times this year to 4.35%, held in June, and next decides on 11 August.",
+        "Both things are true at once, and the space between them is where early planning earns its keep. Building in Victoria? [Victorian builders on the platform](/for/builders) pick up projects that fit their capacity.",
+      ],
+      source:
+        "HIA Economics, July 2026; ABS Building Approvals, May 2026; Reserve Bank of Australia",
+    },
+    partnerCorner: {
+      partnerSlug: "levan-design",
+      headline: "Meet Levan Design.",
+      principal: "Natasha Levan",
+      principalRole: "Principal, Levan Design",
+      portrait: "/build-brief/issue-002/natasha-levan.jpg",
+      // principalQuote is pending from the partner — the layout renders
+      // it the moment it lands in this entry.
+      deck: "One pair of hands, from the first sketch to the last drawing.",
+      stats: [
+        { value: "30+ yrs", label: "designing buildings" },
+        { value: "2003", label: "her practice, Eltham" },
+        { value: "5.0", label: "13 Google reviews", star: true },
+      ],
+      why: "Natasha Levan has drawn buildings for more than thirty years, and she still draws every one herself. Commercial work, apartments and interiors came first, then five years inside Englehart Homes learning how houses are priced and built. Since 2003, all of it has gone into one thing: homes for Melbourne's north east, done properly.",
+      practice:
+        "Deliberately small, by design: new homes, renovations, extensions and interiors, each carried by the same hand from feasibility to documentation. Registered building practitioner with the Victorian Building Authority; member of Design Matters National.",
+      welcome:
+        "Featured from our Preferred Design Partners register. We are glad to put our name behind Natasha, and to introduce her work to owners across Melbourne.",
+    },
+    overToYou: {
+      question:
+        "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    share:
+      "Forward The Build Brief to someone planning, designing, financing or building a home.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      { label: "Read Issue 001", href: "/build-brief/issue-001" },
+      {
+        label: "Read the full opinion piece",
+        href: "/build-brief/perspectives/choosing-a-builder-word-of-mouth",
+      },
+    ],
+    sourceGroups: [
+      {
+        heading: "Market Watch 01 · 243,864",
+        links: [
+          {
+            label: "ABS, Building Activity, Australia, March quarter 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-activity-australia/latest-release",
+          },
+        ],
+      },
+      {
+        heading: "Market Watch 02 · 100%",
+        links: [
+          {
+            label:
+              'Build Australia, "Construction costs rise as labour shortages worsen and demand grows", 9 July 2026 (Turner & Townsend Global Construction Market Intelligence)',
+            href: "https://www.buildaustralia.com.au/news_article/construction-costs-rise-as-labour-shortages-worsen/",
+          },
+          {
+            label: 'ABS, "Dwelling approvals fall in May"',
+            href: "https://www.abs.gov.au/media-centre/media-releases/dwelling-approvals-fall-may",
+          },
+        ],
+      },
+      {
+        heading: "Market Watch 03 · 30%",
+        links: [
+          {
+            label: "Cotality, Monthly Housing Chart Pack, July 2026",
+            href: "https://www.cotality.com/au/insights/articles/monthly-housing-chart-pack-july-2026",
+          },
+          {
+            label:
+              'Mortgage Professional Australia, "Fewer vendors testing market at auction as clearance rates slide"',
+            href: "https://www.mpamag.com/au/news/general/fewer-vendors-testing-market-at-auction-as-clearance-rates-slide/582467",
+          },
+        ],
+      },
+      {
+        heading: "The Feature · Victoria's 1 July reforms",
+        links: [
+          {
+            label: 'Building and Plumbing Commission, "Home Warranty insurance"',
+            href: "https://www.bpc.vic.gov.au/news/2026/home-warranty-insurance-coming-soon",
+          },
+          {
+            label: "BPC, Domestic Building Insurance and Home Warranty",
+            href: "https://www.bpc.vic.gov.au/home-owners/insurance-for-domestic-building-work/domestic-building-insurance-and-home-warranty",
+          },
+          {
+            label: 'Maddocks, "Building reforms continue in Victoria", 8 July 2026',
+            href: "https://www.maddocks.com.au/insights/building-reforms-continue-in-victoria-amendments-commencing-on-1-july-2026-and-other-upcoming-changes-to-building-legislation",
+          },
+          {
+            label: 'Victorian Government, "Better domestic building insurance"',
+            href: "https://www.vic.gov.au/better-domestic-building-insurance",
+          },
+          {
+            label:
+              'HIA, "How new Buyer Protection and insurance laws affect builders in Victoria"',
+            href: "https://hia.com.au/resources-and-advice/managing-your-business/managing-compliance/articles/how-new-buyer-protection-and-insurance-laws-affect-builders-in-victoria",
+          },
+        ],
+      },
+      {
+        heading: "Voices",
+        links: [
+          {
+            label:
+              'HIA Economics, "Detached house approvals continue to pick up", July 2026',
+            href: "https://hia.com.au/our-industry/newsroom/economic-research-and-forecasting/2026/07/detached-house-approvals-continue-to-pick-up",
+          },
+          {
+            label: "ABS Building Approvals, May 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia/latest-release",
+          },
+          {
+            label: "RBA, Monetary Policy Decision, June 2026",
+            href: "https://www.rba.gov.au/media-releases/2026/mr-26-15.html",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Australian Bureau of Statistics, the Reserve Bank of Australia, the Housing Industry Association, Turner & Townsend, Cotality, Build Australia, the Building and Plumbing Commission and Maddocks. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Australian Bureau of Statistics",
+      "the Reserve Bank of Australia",
+      "the Housing Industry Association",
+      "Turner & Townsend",
+      "Cotality",
+      "Build Australia",
+      "the Building and Plumbing Commission",
+      "Maddocks",
     ],
   },
 ];
