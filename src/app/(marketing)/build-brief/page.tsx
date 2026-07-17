@@ -202,6 +202,22 @@ export default function BuildBriefHub() {
                 <p className="mt-3 text-[14.5px] leading-[1.65] text-text-muted max-w-[74ch]">
                   {issue.standfirst}
                 </p>
+                {/* the edition's three headline signals */}
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-y-3 border-y border-[#101820]/[0.07] py-4 sm:divide-x sm:divide-[#101820]/[0.07]">
+                  {issue.signals.map((s) => (
+                    <div key={s.n} className="sm:px-7 sm:first:pl-0 sm:last:pr-0">
+                      <p className="text-[24px] leading-none text-text" style={SERIF}>
+                        {s.stat.value}
+                      </p>
+                      <p className="mt-1.5 text-[10.5px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+                        {s.kicker}
+                      </p>
+                      <p className="mt-1 text-[12px] leading-[1.45] text-text-muted max-w-[26ch]">
+                        {s.stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
                 <p className="mt-5 text-[13px] font-ui font-semibold text-text group-hover:text-accent-light transition-colors">
                   Read the edition →
                 </p>
