@@ -2611,6 +2611,69 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "grg-construction",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Renovation and extension builder",
+    name: "GRG Construction",
+    monogram: "GR",
+    logo: "/partners/grg-construction/logo.png",
+    principal: "Gian Riboni",
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "A Melbourne renovation and extension specialist that does things right the first time, with one hands-on team from permits to final finishes.",
+    disciplines: ["Renovations", "Extensions", "New builds"],
+    google: { rating: 5.0, reviews: 3 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "3 reviews" },
+      {
+        label: "Experience",
+        value: "10+ yrs",
+        sub: "renovations, extensions and new builds",
+      },
+      {
+        label: "Project management",
+        value: "Hands‑on",
+        sub: "permits to final finishes",
+      },
+    ],
+    why: "GRG Construction was founded on a simple discipline: do it right the first time. Director Gian Riboni leads a team of builders and tradespeople with more than ten years in the industry, and runs projects the way owners wish every builder would: clear timelines and upfront communication, premium materials backed by quality assurance, and hands-on management of every detail from permits through to final finishes. The Google record is short and spotless, five stars from every client who has left one. For an owner reworking or extending a Melbourne home who wants one accountable team across the whole job, this is a builder worth meeting.",
+    about:
+      "GRG Construction is a Melbourne building company specialising in residential renovations and extensions, alongside new custom builds, led by director Gian Riboni. Founded on a passion for high-quality construction, the team pairs more than ten years of industry experience with a hands-on approach to every project: transparent planning and timelines, upfront communication, premium materials and expert techniques, and project management that covers everything from permits to the final finish. Licensed and insured, the practice takes the time to understand each client's vision and tailors every renovation, extension or new build to the way they live.",
+    facts: {
+      experience: "10+ yrs",
+      basedIn: "Melbourne, VIC",
+      serves: "Melbourne",
+      focus: "Renovations, extensions and new builds",
+    },
+    website: "https://grgconstruction.com.au",
+    instagram: "https://www.instagram.com/grgconstruction/",
+    facebook: "https://www.facebook.com/61581396730686/",
+    galleryUrl: "https://grgconstruction.com.au/",
+    work: [
+      {
+        title: "Craigieburn",
+        suburb: "Craigieburn",
+        type: "Renovation",
+        image: "/partners/grg-construction/craigieburn.jpg",
+      },
+      {
+        title: "St Kilda",
+        suburb: "St Kilda",
+        type: "Outdoor extension",
+        image: "/partners/grg-construction/stkilda.jpg",
+      },
+      {
+        title: "Two-storey frame",
+        suburb: "Melbourne",
+        type: "New build",
+        image: "/partners/grg-construction/frame.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
