@@ -2548,6 +2548,69 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "a1-custom-homes",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "A1 Custom Homes",
+    monogram: "A1",
+    logo: "/partners/a1-custom-homes/logo.png",
+    principal: "Ankush Arora",
+    suburb: "Epping",
+    state: "VIC",
+    tagline:
+      "An Epping builder for Melbourne's north and west, carrying homes from planning permit to keys, with townhouses and multi-units alongside new builds.",
+    disciplines: ["New homes", "Townhouses and multi-units", "Renovations and extensions"],
+    google: { rating: 5.0, reviews: 12 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "12 reviews" },
+      {
+        label: "Experience",
+        value: "10 yrs",
+        sub: "across Melbourne's growth corridors",
+      },
+      {
+        label: "Planning and permits",
+        value: "In-house",
+        sub: "council applications handled end to end",
+      },
+    ],
+    why: "Every client A1 Custom Homes has heard from on Google says the same thing: five stars, twelve times over. Director Ankush Arora, a registered building practitioner, has spent a decade building where Melbourne is growing fastest, the northern and western corridors, and the practice is shaped around the part owners dread most: planning. Permits are prepared and lodged in-house, so approvals arrive on time and projects start when they should. The range runs wider than most, from custom new homes and knockdown rebuilds to townhouses and multi-unit developments, with renovations and extensions in between. For an owner building in the north or west who wants one team from council to keys, this is a strong pair of hands.",
+    about:
+      "A1 Custom Homes is a residential building company in Epping, led by director Ankush Arora, a registered building practitioner. The team designs and delivers new custom homes, knockdown rebuilds, renovations and extensions, and townhouse and multi-unit developments across Melbourne's northern and western suburbs, working in communities such as Wollert, Donnybrook, Mickleham, Wallan, Sunbury, Tarneit, Truganina, Fraser Rise and Melton. Planning permits are handled in-house, with applications prepared and lodged with council so projects are approved and started on time. The practice works comfortably in both contemporary and conventional design, takes client preferences as the starting point for every build, and treats feedback as part of how the service improves.",
+    facts: {
+      experience: "10 yrs",
+      basedIn: "Epping, VIC",
+      serves: "Melbourne's north and west",
+      focus: "New homes, townhouses and multi-units",
+    },
+    website: "https://a1customhomes.com.au",
+    instagram: "https://www.instagram.com/OFFICIALA1CUSTOMHOMES",
+    facebook: "https://www.facebook.com/a1customhome/",
+    galleryUrl: "https://a1customhomes.com.au/",
+    work: [
+      {
+        title: "Corner block home",
+        suburb: "Melbourne's north",
+        type: "New home",
+        image: "/partners/a1-custom-homes/facade.jpg",
+      },
+      {
+        title: "White kitchen and dining",
+        suburb: "Melbourne's west",
+        type: "Interior",
+        image: "/partners/a1-custom-homes/kitchen.jpg",
+      },
+      {
+        title: "Marble bathroom",
+        suburb: "Melbourne's north",
+        type: "Interior",
+        image: "/partners/a1-custom-homes/bathroom.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
