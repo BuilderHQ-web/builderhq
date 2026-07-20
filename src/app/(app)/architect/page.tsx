@@ -89,6 +89,11 @@ export default async function ArchitectDashboard() {
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
   const isFirstTime = projects.length === 0;
 
+  const dateline = new Intl.DateTimeFormat("en-AU", {
+    weekday: "long", day: "numeric", month: "long",
+    timeZone: "Australia/Melbourne",
+  }).format(new Date());
+
   return (
     <div>
       {/* ── Hero ──────────────────────────────────────────────────────── */}
@@ -103,27 +108,16 @@ export default async function ArchitectDashboard() {
         />
         <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 pb-10 sm:pb-12">
           <div className="mx-auto max-w-[980px]">
-            <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
-              {profile?.practiceName ?? "Your studio"}
+            <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium">
+              Studio · {dateline}
             </span>
-            <h1 className="mt-4 font-display uppercase tracking-[-0.018em] leading-[0.92] text-[clamp(2.2rem,4vw+1rem,3.8rem)]">
-              {isFirstTime ? (
-                <>
-                  Run your first{" "}
-                  <span className="text-accent-light">tender.</span>
-                </>
-              ) : (
-                <>
-                  Welcome back,{" "}
-                  <span className="text-accent-light">{firstName}.</span>
-                </>
-              )}
+            <h1 className="mt-2 font-display uppercase tracking-[-0.018em] leading-[0.95] text-[30px] sm:text-[42px] text-text break-words">
+              {profile?.practiceName ?? firstName}
             </h1>
-            <p className="mt-4 max-w-[56ch] text-[14px] sm:text-[15px] leading-[1.7] text-text-subtle">
+            <p className="mt-4 max-w-[56ch] text-[13px] sm:text-[14px] leading-[1.7] text-text-muted">
               {isFirstTime
-                ? "Upload a client's project, choose who prices it, and hand your client a comparison no PDF can give them. You stay in control at every step."
-                : "Your tender file at a glance. Start a new tender any time. Your client and your builders join when you say so."}
+                ? "Upload a client's project, choose how it goes to market, and hand your client a structured comparison. You decide who you invite and when your client joins."
+                : "Your tender file, your builders and your client access, in one place. Start a new tender any time."}
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">

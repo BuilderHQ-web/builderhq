@@ -30,7 +30,6 @@ import { unlockPriceFor } from "@/modules/projects/pricing";
 // Constants path (NOT the module index) so we don't pull
 // `unlocks/service.ts` — which is `server-only` — into the client bundle.
 import { UNLOCK_CAP } from "@/modules/unlocks/constants";
-import { Sparkles } from "lucide-react";
 
 const TYPE_META: Record<
   MarketplacePreview["type"],
@@ -193,12 +192,8 @@ export function ProjectCard({
               Unlocked
             </span>
           ) : fbaActive ? (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent bg-[linear-gradient(135deg,rgba(0,212,200,0.20),rgba(26,95,212,0.18))] text-[9px] tracking-[0.16em] uppercase text-accent-light font-semibold"
-              style={{ boxShadow: "0 0 10px rgba(0,212,200,0.22)" }}
-            >
-              <Sparkles className="size-2.5" />
-              Free · FBA
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent bg-[rgba(0,212,200,0.08)] text-[9px] tracking-[0.16em] uppercase text-accent-light font-semibold">
+              Complimentary
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-subtle bg-bg-deep/60 backdrop-blur-sm text-[9px] tracking-[0.16em] uppercase text-text-muted">
@@ -247,15 +242,10 @@ export function ProjectCard({
         {!isUnlocked && fbaActive ? (
           <div className="absolute bottom-3 right-3 text-right">
             <div className="text-[9px] tracking-[0.18em] uppercase text-text-muted/80 mb-1">
-              Unlock cost
+              Entry
             </div>
-            <div className="flex items-baseline justify-end gap-1.5">
-              <span className="font-display text-[16px] leading-none text-text-dim line-through decoration-[rgba(24,34,44,0.34)] decoration-[1.5px] tabular-nums">
-                ${priceAud}
-              </span>
-              <span className="font-display text-[26px] leading-none text-accent-light tabular-nums">
-                $0
-              </span>
+            <div className="font-display text-[16px] leading-none text-accent-light">
+              Complimentary
             </div>
           </div>
         ) : null}

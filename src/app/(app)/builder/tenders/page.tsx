@@ -77,11 +77,10 @@ export default async function MyTendersPage() {
               My tenders
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text">
-              Your tender pipeline
+              The tender book
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
-              {tenders.length} tender
-              {tenders.length === 1 ? "" : "s"} across all projects.
+              Every tender you have started, {tenders.length} in all.
             </p>
           </div>
           <Link
@@ -97,7 +96,7 @@ export default async function MyTendersPage() {
           <EmptyState
             icon={<FileText className="size-5" />}
             title="No tenders yet"
-            description="Unlock a project and submit your first tender — autosaves as you go, locks on submit, owner sees it side-by-side with the others."
+            description="Take a spot on a project and submit your first tender. It saves as you work, locks on submission, and is compared like for like with the others."
             primary={{ label: "Browse projects", href: "/builder/browse" }}
           />
         ) : (
@@ -191,13 +190,7 @@ function Row({
   const slug = project?.slug;
   return (
     <Link
-      href={
-        slug && tender.status === "draft"
-          ? `/builder/projects/${slug}/tender`
-          : slug
-          ? `/builder/projects/${slug}/tender`
-          : "#"
-      }
+      href={slug ? `/builder/projects/${slug}/tender` : "/builder/tenders"}
       className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.6fr_1fr_1fr_auto] gap-x-3 gap-y-1 sm:gap-4 px-4 sm:px-5 py-4 items-center transition-colors hover:bg-[rgba(0,212,200,0.025)] border-b border-border-subtle/60 last:border-b-0"
     >
       <div className="min-w-0">

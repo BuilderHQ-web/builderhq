@@ -12,7 +12,6 @@ import {
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
-import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { EmptyState } from "@/components/app/empty-state";
 import { Reveal } from "@/components/app/reveal";
 
@@ -31,7 +30,12 @@ export default async function UnlockedPage() {
       countMySaved(userId),
       getFbaStatus(userId),
     ]);
-  const projects = await listByIds(unlockedIds);
+  const fetched = await listByIds(unlockedIds);
+  // listByIds orders by publish date; restore unlock-recency order.
+  const orderIndex = new Map(unlockedIds.map((id, i) => [id, i]));
+  const projects = [...fetched].sort(
+    (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+  );
   const savedSet = new Set(savedIds);
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
@@ -58,14 +62,13 @@ export default async function UnlockedPage() {
           <BuilderSectionTabs
             counts={{ saved: savedCount, unlocked: unlockedCount }}
           />
-          <FbaQuotaPill status={fbaStatus} />
         </div>
 
         {projects.length === 0 ? (
           <EmptyState
             icon={<UnlockIcon className="size-5" />}
             title="No unlocks yet"
-            description="When you unlock a project, it appears here with full access — exact address, owner contact, and downloadable documents."
+            description="Every project you hold a spot on appears here with full access: the address, the contact, and the documents."
             primary={{ label: "Browse projects", href: "/builder/browse" }}
           />
         ) : (

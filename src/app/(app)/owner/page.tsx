@@ -1,72 +1,112 @@
 /**
- * Owner dashboard — level-10.
+ * Owner dashboard — the desk, owner edition.
  *
- * Reading order top-to-bottom is deliberate:
- *
- *   1. Hero            — single greeting + the only action the owner
- *                        ever needs the most: upload a new project.
- *   2. Pulse strip     — four hard numbers that frame the whole rest
- *                        of the page (active projects, tenders received,
- *                        total quoted value, decisions waiting).
- *   3. Decisions       — submitted/shortlisted tenders the owner hasn't
- *                        acted on, sorted by validity-expiring urgency.
- *                        This is the "do this" column.
- *   4. Project pulse   — one row per active project with its own KPI
- *                        roll-up, freshness, and an algorithmic
- *                        recommendation badge.
- *   5. Activity feed   — recent tender events across all projects.
- *   6. Recent projects — cards (drafts + published) for direct access.
- *   7. Shortcuts       — common actions, soft accent panel.
- *
- * Each section earns its place by surfacing an actionable signal,
- * not just data.
+ * Same design language as the builder reference screen: a letterhead
+ * masthead with the owner's name and a three-figure ledger, one
+ * ranked queue of what needs them, the project file as registry rows,
+ * and a quiet rail. No greeting hero, no gamified tiles, no verdict
+ * copy. The page answers "what needs me" in five seconds and gets out
+ * of the way.
  */
 
-import { Suspense } from "react";
 import Link from "next/link";
-
-import { NextActions } from "./next-actions";
-import {
-  Plus,
-  ArrowUpRight,
-  FileSpreadsheet,
-  MessageSquare,
-  Folders,
-  Activity,
-  Wallet,
-  ShieldCheck,
-  Hourglass,
-  TrendingUp,
-  AlertTriangle,
-  Trophy,
-  Clock,
-  Sparkles,
-} from "lucide-react";
-
 import { redirect } from "next/navigation";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  ClipboardCheck,
+  FileText,
+  Folder,
+  Landmark,
+  Mail,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { dashboardForRole } from "@/lib/dashboard-route";
 import {
   getOwnerDashboardData,
   type OwnerDashboardData,
-  type PulseRecommendation,
 } from "@/modules/dashboards";
+import { countUnreadForUser, listForUser } from "@/modules/messaging";
+import { logger } from "@/lib/logger";
+import { cn } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
 import { UNLOCK_CAP } from "@/modules/unlocks";
-import { cn } from "@/lib/utils";
-import { SectionKicker } from "@/components/app/section-kicker";
-import { Reveal } from "@/components/app/reveal";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
+async function safe<T>(label: string, p: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await p;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "owner_dashboard.query_failed", label, msg },
+      "owner dashboard query failed — using fallback",
+    );
+    return fallback;
+  }
+}
+
 const TYPE_LABEL: Record<Project["type"], string> = {
   single_dwelling: "Single dwelling",
-  multi_dwelling: "Multi-dwelling",
+  multi_dwelling: "Multi dwelling",
   renovation: "Renovation",
   extension: "Extension",
 };
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  published: "Live",
+  tendering: "Tendering",
+  awarded: "Awarded",
+  archived: "Archived",
+};
+
+const aud = (n: number) =>
+  new Intl.NumberFormat("en-AU", {
+    style: "currency", currency: "AUD", maximumFractionDigits: 0,
+  }).format(n);
+
+const compactAud = (n: number) =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}m`
+    : n >= 1_000
+      ? `$${Math.round(n / 1_000)}k`
+      : aud(n);
+
+function ago(d: Date): string {
+  const mins = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60000));
+  if (mins < 60) return `${Math.max(1, mins)}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Melbourne",
+  });
+}
+
+const EMPTY_DATA = (firstName: string): OwnerDashboardData => ({
+  meta: { firstName },
+  projects: { total: 0, active: 0, draft: 0, recent: [], list: [] },
+  tenders: {
+    total: 0,
+    byStatus: { submitted: 0, shortlisted: 0, awarded: 0, rejected: 0 },
+    totalQuotedValueAud: 0,
+    avgDaysToDecisionAwarded: null,
+    awaitingDecision: 0,
+  },
+  decisionsWaiting: [],
+  pulses: [],
+  activity: [],
+});
 
 export default async function OwnerDashboard({
   searchParams,
@@ -74,1114 +114,653 @@ export default async function OwnerDashboard({
   searchParams?: Promise<{ welcome?: string }>;
 }) {
   const session = await auth();
-  // Defence-in-depth: only project owners belong on this dashboard. A
-  // builder/admin who lands here (e.g. an old link) is bounced to their
-  // own dashboard rather than seeing the owner page under their chrome.
   if (session?.user?.role && session.user.role !== "project_owner") {
     redirect(dashboardForRole(session.user.role));
   }
-  const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
+  const userId = session?.user?.id;
+  const fullName = session?.user?.name ?? "Project owner";
+  const firstName = fullName.split(" ")[0] || "Project owner";
 
-  const data: OwnerDashboardData = session?.user
-    ? await getOwnerDashboardData(session.user.id!, firstName)
-    : EMPTY_DATA(firstName);
+  const [data, unreadCount, conversations] = await Promise.all([
+    userId
+      ? safe("dashboard", getOwnerDashboardData(userId, firstName), EMPTY_DATA(firstName))
+      : Promise.resolve(EMPTY_DATA(firstName)),
+    userId ? safe("unread", countUnreadForUser(userId), 0) : 0,
+    userId ? safe("conversations", listForUser(userId), []) : [],
+  ]);
 
   const isFirstTime = data.projects.total === 0;
-  // After magic-link redemption, /auth/magic redirects here with
-  // ?welcome=published (project went live) or ?welcome=finish
-  // (still draft, needs more details). Used by the banner below.
   const welcome = (await searchParams)?.welcome;
+  const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
+
+  const dateline = new Intl.DateTimeFormat("en-AU", {
+    weekday: "long", day: "numeric", month: "long",
+    timeZone: "Australia/Melbourne",
+  }).format(new Date());
+
+  // ── the desk queue ────────────────────────────────────────────────
+  type DeskRow = {
+    key: string;
+    href: string;
+    tone: "warn" | "neutral";
+    title: string;
+    line: string;
+    metric: string | null;
+  };
+  const queue: DeskRow[] = [];
+  for (const d of data.decisionsWaiting) {
+    const exp = d.daysUntilExpiry;
+    queue.push({
+      key: `decision-${d.tenderId}`,
+      href: `/owner/projects/${d.projectSlug}/tenders`,
+      tone: d.urgency === "danger" || d.urgency === "warn" ? "warn" : "neutral",
+      title: `${d.builderName} · ${d.projectTitle}`,
+      line:
+        exp !== null && exp < 0
+          ? "This tender's validity has lapsed. The builder may withdraw it."
+          : exp === 0
+            ? "This tender's price holds until today."
+            : exp !== null
+              ? `${d.status === "shortlisted" ? "Shortlisted tender awaiting your decision." : "Tender awaiting your decision."} Price holds ${exp} more day${exp === 1 ? "" : "s"}.`
+              : d.status === "shortlisted"
+                ? "Shortlisted tender awaiting your decision."
+                : "Tender awaiting your decision.",
+      metric: d.totalPriceAud !== null ? compactAud(d.totalPriceAud) : null,
+    });
+  }
+  for (const p of data.projects.list) {
+    if (p.status === "draft") {
+      queue.push({
+        key: `draft-${p.id}`,
+        href: `/owner/projects/${p.slug}/edit`,
+        tone: "neutral",
+        title: p.title,
+        line: "Draft project. Finish the details and publish to open the round.",
+        metric: null,
+      });
+    }
+  }
+  const QUEUE_LIMIT = 7;
+  const queueShown = queue.slice(0, QUEUE_LIMIT);
+  // decisionsWaiting is capped server-side; count the truncated ones
+  // so the badge and the masthead ledger can never disagree.
+  const hiddenDecisions = Math.max(
+    0,
+    data.tenders.awaitingDecision - data.decisionsWaiting.length,
+  );
+  const queueOverflow =
+    queue.length - queueShown.length + hiddenDecisions;
+  const queueTotal = queue.length + hiddenDecisions;
 
   return (
     <div>
       {welcome === "published" || welcome === "finish" ? (
-        <AdsFunnelWelcomeBanner mode={welcome} />
+        <WelcomeBanner mode={welcome} />
       ) : null}
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border-subtle">
+
+      {/* ── masthead ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden border-b border-border-subtle bg-bg-deep/30">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
+              "radial-gradient(ellipse 60% 50% at 30% 0%, rgba(0,212,200,0.06), transparent 65%)",
           }}
         />
-        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
-          <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
-            <span className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
-              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
-              {isFirstTime ? "Welcome to BuilderHQ" : "Project hub"}
-            </span>
-            <h1 className="mt-5 sm:mt-6 font-display uppercase tracking-[-0.018em] leading-[0.9] text-[clamp(2.5rem,5vw+1rem,5rem)]">
-              Hi{" "}
-              <span
-                className="text-accent-light"
-                style={{
-                  textShadow:
-                    "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
-                }}
-              >
-                {firstName}
-              </span>
-              .
-            </h1>
-            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.65] sm:leading-[1.7] text-text-subtle">
-              {isFirstTime
-                ? "Upload a residential project once. Verified Australian builders match, unlock, and tender. You compare side-by-side and decide."
-                : data.tenders.awaitingDecision > 0
-                  ? `You have ${data.tenders.awaitingDecision} tender${data.tenders.awaitingDecision === 1 ? "" : "s"} waiting on a decision.`
-                  : `${data.projects.active} project${data.projects.active === 1 ? "" : "s"} live · ${data.tenders.total} tender${data.tenders.total === 1 ? "" : "s"} received across the platform.`}
-            </p>
-            <Link
-              href="/owner/projects/new"
-              className={cn(
-                "group mt-7 sm:mt-9 inline-flex items-center justify-center gap-2.5 h-12 px-6 sm:px-7 rounded-full w-full sm:w-auto max-w-sm",
-                "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
-                "transition-colors duration-[160ms] hover:bg-accent-hover",
-                "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
-              )}
-            >
-              <Plus className="size-4" />
-              Upload a new project
-              <ArrowUpRight className="size-4 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-            {!isFirstTime ? (
-              <Link
-                href="/owner/projects"
-                className="mt-5 inline-flex items-center gap-1.5 text-[12.5px] text-text-muted hover:text-text transition-colors"
-              >
-                View all projects
-                <ArrowUpRight className="size-3.5 opacity-60" />
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      </section>
+        <div className="relative px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+          <div className="mx-auto max-w-[1200px] flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
+            <div className="min-w-0">
+              <p className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+                Project owner · {dateline}
+              </p>
+              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[42px] leading-[0.95] text-text break-words">
+                {fullName}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {data.projects.active > 0 ? (
+                  <OwnerChip tone="accent" icon={<ShieldCheck className="size-3" />}>
+                    {data.projects.active} project
+                    {data.projects.active === 1 ? "" : "s"} live
+                  </OwnerChip>
+                ) : null}
+                {data.projects.draft > 0 ? (
+                  <OwnerChip>
+                    {data.projects.draft} draft
+                    {data.projects.draft === 1 ? "" : "s"}
+                  </OwnerChip>
+                ) : null}
+                {isFirstTime ? <OwnerChip>New account</OwnerChip> : null}
+              </div>
+            </div>
 
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 flex flex-col gap-8 sm:gap-10">
-        {/* ── Pulse strip ───────────────────────────────────────────── */}
-        {!isFirstTime ? (
-          <Reveal immediate delay={0.04}>
-            <section>
-              <SectionKicker>At a glance</SectionKicker>
-              <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <PulseTile
-                  tone="teal"
-                  icon={<Activity className="size-4" />}
-                  label="Active projects"
-                  value={String(data.projects.active)}
-                  sub={
-                    data.projects.draft > 0
-                      ? `${data.projects.draft} draft${data.projects.draft === 1 ? "" : "s"} in progress`
-                      : data.projects.active > 0
-                        ? "Visible to matched builders"
-                        : "Upload your first to start"
-                  }
-                />
-                <PulseTile
-                  tone={data.tenders.awaitingDecision > 0 ? "amber" : "teal"}
-                  icon={<Hourglass className="size-4" />}
-                  label="Decisions waiting"
-                  value={String(data.tenders.awaitingDecision)}
-                  sub={
-                    data.tenders.awaitingDecision === 0
-                      ? "All caught up"
-                      : "Submitted + shortlisted"
-                  }
-                />
-                <PulseTile
-                  tone="blue"
-                  icon={<Wallet className="size-4" />}
-                  label="Total quoted"
-                  value={
-                    data.tenders.totalQuotedValueAud > 0
-                      ? formatAudCompact(data.tenders.totalQuotedValueAud)
-                      : "—"
-                  }
+            {isFirstTime ? (
+              <Link
+                href="/owner/projects/new"
+                className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shrink-0"
+              >
+                <Plus className="size-4" />
+                Upload your project
+              </Link>
+            ) : (
+              <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border-subtle bg-border-subtle w-full lg:w-auto lg:shrink-0">
+                <LedgerStat
+                  label="Tenders received"
+                  value={String(data.tenders.total)}
                   sub={
                     data.tenders.total > 0
-                      ? `Across ${data.tenders.total} tender${data.tenders.total === 1 ? "" : "s"}`
-                      : "No tenders yet"
+                      ? `${compactAud(data.tenders.totalQuotedValueAud)} quoted`
+                      : "None yet"
                   }
                 />
-                <PulseTile
-                  tone="rose"
-                  icon={<Clock className="size-4" />}
-                  label="Avg. decision"
-                  value={
-                    data.tenders.avgDaysToDecisionAwarded != null
-                      ? `${data.tenders.avgDaysToDecisionAwarded}d`
-                      : "—"
-                  }
+                <LedgerStat
+                  label="Awaiting you"
+                  value={String(data.tenders.awaitingDecision)}
                   sub={
-                    data.tenders.byStatus.awarded > 0
-                      ? `From ${data.tenders.byStatus.awarded} awarded`
+                    data.tenders.awaitingDecision > 0
+                      ? "Decisions to make"
+                      : "Nothing pending"
+                  }
+                />
+                <LedgerStat
+                  label="Awarded"
+                  value={String(data.tenders.byStatus.awarded)}
+                  sub={
+                    data.tenders.avgDaysToDecisionAwarded !== null
+                      ? `${data.tenders.avgDaysToDecisionAwarded}d to decide, on average`
                       : "No awards yet"
                   }
                 />
               </div>
-            </section>
-          </Reveal>
-        ) : null}
-
-        {/* ── Next Actions ──────────────────────────────────────────── */}
-        {session?.user?.id ? (
-          <Reveal immediate delay={0.06}>
-            <Suspense fallback={null}>
-              <NextActions
-                userId={session.user.id}
-                totalProjects={data.projects.total}
-                tendersAwaitingDecision={data.tenders.awaitingDecision}
-                firstWaitingProjectSlug={
-                  data.decisionsWaiting[0]?.projectSlug ?? null
-                }
-              />
-            </Suspense>
-          </Reveal>
-        ) : null}
-
-        {/* ── Decisions waiting (prominent) ─────────────────────────── */}
-        {data.decisionsWaiting.length > 0 ? (
-          <Reveal immediate delay={0.08}>
-            <DecisionsWaitingCallout decisions={data.decisionsWaiting} />
-          </Reveal>
-        ) : null}
-
-        {/* ── Per-project pulse ────────────────────────────────────── */}
-        {data.pulses.length > 0 ? (
-          <Reveal immediate delay={0.12}>
-            <section>
-              <SectionHeader
-                title="Project pulse"
-                description="Each active project at a glance — tenders, prices, freshness."
-              />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {data.pulses.map((p) => (
-                  <ProjectPulseCard key={p.project.id} pulse={p} />
-                ))}
-              </div>
-            </section>
-          </Reveal>
-        ) : null}
-
-        {/* ── Activity + Recent projects + Shortcuts ────────────────── */}
-        <Reveal immediate delay={0.16}>
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {/* Activity feed (col-span-2) */}
-            <div className="lg:col-span-2">
-              {data.activity.length > 0 ? (
-                <ActivityFeed events={data.activity} />
-              ) : (
-                <RecentProjectsPanel
-                  recent={data.projects.recent}
-                  isFirstTime={isFirstTime}
-                />
-              )}
-            </div>
-            {/* Shortcuts (col-span-1) */}
-            <Panel tone="accent" title="Shortcuts" description="Common actions.">
-              <ul className="px-3 py-2 flex flex-col gap-1">
-                <Shortcut
-                  icon={<Plus className="size-4" />}
-                  title="New project"
-                  sub="Start a draft"
-                  href="/owner/projects/new"
-                  primary
-                />
-                <Shortcut
-                  icon={<Folders className="size-4" />}
-                  title="My projects"
-                  sub={`${data.projects.total} total · ${data.projects.draft} draft`}
-                  href="/owner/projects"
-                />
-                <Shortcut
-                  icon={<FileSpreadsheet className="size-4" />}
-                  title="Tender comparison"
-                  sub={
-                    data.tenders.total > 0
-                      ? `${data.tenders.total} received`
-                      : "Side-by-side review"
-                  }
-                  href="/owner/tenders"
-                />
-                <Shortcut
-                  icon={<MessageSquare className="size-4" />}
-                  title="Messages"
-                  sub="Builder conversations"
-                  href="/owner/messages"
-                />
-              </ul>
-            </Panel>
-          </section>
-        </Reveal>
-
-        {/* If we showed activity, show recent projects below it. */}
-        {data.activity.length > 0 ? (
-          <Reveal immediate delay={0.20}>
-            <section>
-              <RecentProjectsPanel
-                recent={data.projects.recent}
-                isFirstTime={isFirstTime}
-              />
-            </section>
-          </Reveal>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-// ── PulseTile (KPI card) ────────────────────────────────────────────────
-
-type Tone = "teal" | "blue" | "amber" | "rose";
-
-function PulseTile({
-  tone,
-  icon,
-  label,
-  value,
-  sub,
-}: {
-  tone: Tone;
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  const styles: Record<Tone, { bg: string; ring: string; num: string; glow: string }> = {
-    teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
-      ring: "border-border-accent/40",
-      num: "text-accent-light",
-      glow: "rgba(0,212,200,0.18)",
-    },
-    blue: {
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(120,180,255,0.20)]",
-      num: "text-[#bfd6ff]",
-      glow: "rgba(26,95,212,0.20)",
-    },
-    amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(251,184,64,0.22)]",
-      num: "text-[#ffd887]",
-      glow: "rgba(251,184,64,0.18)",
-    },
-    rose: {
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(255,120,150,0.20)]",
-      num: "text-[#ffc0cd]",
-      glow: "rgba(255,120,150,0.16)",
-    },
-  };
-  const t = styles[tone];
-
-  return (
-    <div
-      className={cn(
-        "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
-        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
-        t.ring,
-      )}
-      style={{ background: t.bg }}
-    >
-      <span
-        aria-hidden
-        className="absolute -top-12 -right-12 size-40 rounded-full opacity-50 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle, ${t.glow}, transparent 70%)`,
-        }}
-      />
-      <div className="relative flex items-center gap-2 mb-3 text-text-dim">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted">
-          {icon}
-        </span>
-        <span className="text-[10px] tracking-[0.18em] uppercase">{label}</span>
-      </div>
-      <div
-        className={cn(
-          "relative font-display tracking-[-0.01em] leading-none tabular-nums text-[28px] sm:text-[36px]",
-          t.num,
-        )}
-      >
-        {value}
-      </div>
-      <div className="relative mt-2 text-[11px] sm:text-[11.5px] text-text-dim leading-[1.4]">
-        {sub}
-      </div>
-    </div>
-  );
-}
-
-// ── Decisions waiting callout ───────────────────────────────────────────
-
-function DecisionsWaitingCallout({
-  decisions,
-}: {
-  decisions: OwnerDashboardData["decisionsWaiting"];
-}) {
-  return (
-    <section
-      className={cn(
-        "relative overflow-hidden rounded-md border border-warning/30",
-        "bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(250,248,243,0.6)_70%)]",
-        "shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]",
-      )}
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,181,71,0.22), transparent 70%)",
-        }}
-      />
-      <div className="relative px-4 sm:px-6 lg:px-7 py-5 sm:py-6 lg:py-7">
-        <div className="flex items-start gap-3 mb-5">
-          <span className="size-9 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
-            <Hourglass className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-warning font-ui font-medium">
-              Decisions waiting
-            </span>
-            <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
-              {decisions.length} tender{decisions.length === 1 ? "" : "s"} on
-              your desk
-            </h2>
-            <p className="mt-1.5 text-[12.5px] leading-[1.55] text-text-muted max-w-[58ch]">
-              Sorted by validity expiring soonest. Tenders left too long can
-              be withdrawn — pick a winner before the timer runs out.
-            </p>
-          </div>
-        </div>
-
-        <ul className="flex flex-col gap-2">
-          {decisions.map((d) => (
-            <DecisionRow key={d.tenderId} decision={d} />
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function DecisionRow({
-  decision,
-}: {
-  decision: OwnerDashboardData["decisionsWaiting"][number];
-}) {
-  const urgencyCls =
-    decision.urgency === "danger"
-      ? "border-[rgba(255,120,120,0.40)] bg-[rgba(255,120,120,0.06)] text-[rgba(255,160,160,0.95)]"
-      : decision.urgency === "warn"
-        ? "border-warning/30 bg-[rgba(255,181,71,0.04)] text-warning"
-        : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-dim";
-  const expiryLabel =
-    decision.daysUntilExpiry == null
-      ? "—"
-      : decision.daysUntilExpiry < 0
-        ? "Expired"
-        : decision.daysUntilExpiry === 0
-          ? "Today"
-          : `${decision.daysUntilExpiry}d`;
-
-  return (
-    <li>
-      <Link
-        href={`/owner/projects/${decision.projectSlug}/tenders`}
-        className="group grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] hover:border-border-strong hover:bg-[rgba(24,34,44,0.045)] transition-colors"
-      >
-        <span
-          className="size-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-border-accent text-accent-light shrink-0 row-span-1 sm:row-span-1"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-          }}
-        >
-          {decision.builderInitials}
-        </span>
-        <div className="min-w-0 col-span-2 sm:col-span-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[13px] font-semibold text-text truncate">
-              {decision.builderName}
-            </span>
-            {decision.builderVerified ? (
-              <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[9px] tracking-[0.10em] uppercase text-accent-light"
-                title="ABN + Licence verified"
-              >
-                <ShieldCheck className="size-2.5" />
-                Verified
-              </span>
-            ) : null}
-            <span
-              className={cn(
-                "inline-flex items-center px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.16em] uppercase",
-                decision.status === "shortlisted"
-                  ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                  : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
-              )}
-            >
-              {decision.status}
-            </span>
-          </div>
-          <div className="text-[11px] text-text-dim truncate mt-0.5">
-            {decision.projectTitle}
-          </div>
-        </div>
-        <span className="font-display text-[16px] tabular-nums text-text shrink-0 justify-self-end">
-          {decision.totalPriceAud != null
-            ? formatAudCompact(decision.totalPriceAud)
-            : "—"}
-        </span>
-        <span
-          className={cn(
-            "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0 col-start-3 sm:col-start-auto justify-self-end",
-            urgencyCls,
-          )}
-        >
-          {expiryLabel}
-        </span>
-        <ArrowUpRight className="hidden sm:block size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
-      </Link>
-    </li>
-  );
-}
-
-// ── Project pulse card ─────────────────────────────────────────────────
-
-function ProjectPulseCard({
-  pulse,
-}: {
-  pulse: OwnerDashboardData["pulses"][number];
-}) {
-  const { project, analytics, awaitingDecision, recommendation, unlockCount } =
-    pulse;
-  const recommendationMeta = REC_META[recommendation];
-  const hasTenders = analytics.count > 0;
-  // No-tender projects deep-link to the detail page (activity + who's
-  // unlocked); once tenders land, jump straight to the comparison.
-  const href = hasTenders
-    ? `/owner/projects/${project.slug}/tenders`
-    : `/owner/projects/${project.slug}`;
-
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group relative overflow-hidden rounded-md border p-4 sm:p-5 transition-[border-color,background-color] duration-[260ms]",
-        recommendationMeta.cardCls,
-      )}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-16 -right-12 size-44 rounded-full opacity-40"
-        style={{
-          background: recommendationMeta.glow,
-        }}
-      />
-      <div className="relative flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-1">
-            {TYPE_LABEL[project.type]}
-            {project.suburb ? ` · ${project.suburb}, ${project.state}` : ""}
-          </div>
-          <h3 className="font-ui font-semibold text-[15px] tracking-[-0.005em] text-text truncate">
-            {project.title}
-          </h3>
-        </div>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 px-2 py-1 rounded-sm border text-[9px] tracking-[0.14em] uppercase font-semibold shrink-0",
-            recommendationMeta.badgeCls,
-          )}
-        >
-          {recommendationMeta.icon}
-          {recommendationMeta.label}
-        </span>
-      </div>
-
-      {hasTenders ? (
-        <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <PulseStat
-            label="Tenders"
-            value={String(analytics.count)}
-            sub={
-              analytics.uniqueBuilders === analytics.count
-                ? null
-                : `${analytics.uniqueBuilders} unique`
-            }
-          />
-          <PulseStat
-            label="Median"
-            value={
-              analytics.price.median != null
-                ? formatAudCompact(analytics.price.median)
-                : "—"
-            }
-            sub={null}
-          />
-          <PulseStat
-            label="Spread"
-            value={
-              analytics.price.spread != null
-                ? `${Math.round(analytics.price.spread * 100)}%`
-                : "—"
-            }
-            sub={null}
-          />
-          <PulseStat
-            label="Awaiting"
-            value={String(awaitingDecision)}
-            sub={null}
-            highlight={awaitingDecision > 0}
-          />
-        </div>
-      ) : (
-        // Waiting on the first tender — price stats are meaningless, so lead
-        // with the signal that actually matters: are builders unlocking?
-        <div className="relative grid grid-cols-3 gap-3">
-          <PulseStat
-            label="Unlocks"
-            value={String(unlockCount)}
-            sub={`of ${UNLOCK_CAP} spots`}
-            highlight={unlockCount > 0}
-          />
-          <PulseStat label="Tenders" value="0" sub="awaiting" />
-          <PulseStat
-            label="Live"
-            value={analytics.daysLive != null ? `${analytics.daysLive}d` : "—"}
-            sub="on market"
-          />
-        </div>
-      )}
-
-      <div className="relative mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between gap-3 text-[11px] text-text-dim">
-        <span className="truncate">
-          {hasTenders ? (
-            <>
-              {analytics.daysLive != null
-                ? `Live ${analytics.daysLive}d`
-                : project.status === "draft"
-                  ? "Draft — not published"
-                  : "Not yet live"}
-              {unlockCount > 0 ? ` · ${unlockCount} unlocked` : ""}
-              {analytics.daysSinceLatest != null
-                ? ` · last tender ${humanAgo(analytics.daysSinceLatest)}`
-                : ""}
-            </>
-          ) : unlockCount > 0 ? (
-            "Builders are reviewing — tenders usually follow within days"
-          ) : (
-            "Builders notified — a bell + email lands on each unlock"
-          )}
-        </span>
-        <span className="inline-flex items-center gap-1 group-hover:text-accent-light transition-colors shrink-0">
-          {hasTenders ? "Open comparison" : "View project"}
-          <ArrowUpRight className="size-3" />
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-function PulseStat({
-  label,
-  value,
-  sub,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  sub: string | null;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <div className="text-[8.5px] tracking-[0.18em] uppercase text-text-dim mb-1">
-        {label}
-      </div>
-      <div
-        className={cn(
-          "font-display tabular-nums leading-none",
-          highlight ? "text-accent-light" : "text-text",
-        )}
-        style={{ fontSize: 18 }}
-      >
-        {value}
-      </div>
-      {sub ? (
-        <div className="mt-0.5 text-[10px] text-text-dim leading-[1.4]">
-          {sub}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-const REC_META: Record<
-  PulseRecommendation,
-  {
-    label: string;
-    icon: React.ReactNode;
-    badgeCls: string;
-    cardCls: string;
-    glow: string;
-  }
-> = {
-  awaiting_decision: {
-    label: "Awaiting you",
-    icon: <Hourglass className="size-3" />,
-    badgeCls: "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
-    cardCls:
-      "border-warning/30 bg-[linear-gradient(180deg,rgba(255,181,71,0.04),rgba(250,248,243,0.78))] hover:border-warning/50",
-    glow: "radial-gradient(circle, rgba(255,181,71,0.20), transparent 70%)",
-  },
-  fresh_arrival: {
-    label: "Fresh tender",
-    icon: <Sparkles className="size-3" />,
-    badgeCls:
-      "border-border-accent bg-accent-muted/40 text-accent-light",
-    cardCls:
-      "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.78))] hover:border-border-accent/60",
-    glow: "radial-gradient(circle, rgba(0,212,200,0.22), transparent 70%)",
-  },
-  no_tenders_yet: {
-    label: "No tenders yet",
-    icon: <Hourglass className="size-3" />,
-    badgeCls:
-      "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
-    cardCls:
-      "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
-    glow: "radial-gradient(circle, rgba(120,180,255,0.10), transparent 70%)",
-  },
-  decision_made: {
-    label: "Awarded",
-    icon: <Trophy className="size-3" />,
-    badgeCls:
-      "border-border-accent bg-accent-muted/40 text-accent-light",
-    cardCls:
-      "border-border-accent/45 bg-[linear-gradient(180deg,rgba(0,212,200,0.05),rgba(250,248,243,0.78))]",
-    glow: "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
-  },
-  healthy_spread: {
-    label: "Healthy spread",
-    icon: <TrendingUp className="size-3" />,
-    badgeCls:
-      "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
-    cardCls:
-      "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
-    glow: "radial-gradient(circle, rgba(120,180,255,0.10), transparent 70%)",
-  },
-  wide_spread: {
-    label: "Wide spread",
-    icon: <AlertTriangle className="size-3" />,
-    badgeCls:
-      "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
-    cardCls:
-      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(250,248,243,0.78))]",
-    glow: "radial-gradient(circle, rgba(255,181,71,0.16), transparent 70%)",
-  },
-  dormant: {
-    label: "Review scope",
-    icon: <AlertTriangle className="size-3" />,
-    badgeCls:
-      "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning",
-    cardCls:
-      "border-warning/25 bg-[linear-gradient(180deg,rgba(255,181,71,0.03),rgba(250,248,243,0.78))]",
-    glow: "radial-gradient(circle, rgba(255,181,71,0.16), transparent 70%)",
-  },
-};
-
-// ── Activity feed ──────────────────────────────────────────────────────
-
-function ActivityFeed({
-  events,
-}: {
-  events: OwnerDashboardData["activity"];
-}) {
-  return (
-    <Panel
-      tone="default"
-      title="Recent activity"
-      description="Tender events across all your projects."
-    >
-      <ul className="border-t border-border-subtle/60">
-        {events.map((e, i, arr) => (
-          <li
-            key={i}
-            className={cn(
-              "px-4 sm:px-6 py-3 flex items-center gap-3",
-              i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
             )}
-          >
-            <ActivityIcon kind={e.kind} />
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] text-text">
-                {e.kind === "tender_submitted" ? (
-                  <>
-                    <span className="font-semibold">{e.builderName}</span>{" "}
-                    submitted a tender on{" "}
-                    <span className="font-medium">{e.projectTitle}</span>
-                    {e.totalPriceAud != null ? (
-                      <>
-                        {" "}
-                        ·{" "}
-                        <span className="font-mono tabular-nums text-accent-light">
-                          {formatAudCompact(e.totalPriceAud)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── working area ─────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+        <div className="mx-auto max-w-[1200px]">
+          {isFirstTime ? (
+            <FirstProjectPrimer />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
+              {/* left — the work */}
+              <div className="space-y-6 min-w-0">
+                {/* on your desk */}
+                <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
+                  <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
+                        <ClipboardCheck className="size-3.5" />
+                        On your desk
+                      </span>
+                      {queueTotal > 0 ? (
+                        <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums">
+                          {queueTotal}
                         </span>
-                      </>
-                    ) : null}
-                  </>
-                ) : e.kind === "tender_awarded" ? (
-                  <>
-                    Awarded{" "}
-                    <span className="font-medium">{e.projectTitle}</span> to{" "}
-                    <span className="font-semibold">{e.builderName}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold">{e.builderName}</span>{" "}
-                    withdrew their tender on{" "}
-                    <span className="font-medium">{e.projectTitle}</span>
-                  </>
-                )}
+                      ) : null}
+                    </div>
+                    <Link
+                      href="/owner/tenders"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
+                    >
+                      All tenders
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  </header>
+
+                  {queueShown.length === 0 ? (
+                    <div className="px-4 sm:px-6 py-10 text-center">
+                      <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent-light text-navy">
+                        <Check className="size-4" strokeWidth={3} />
+                      </span>
+                      <p className="font-ui font-semibold text-[13.5px] text-text">
+                        A clear desk
+                      </p>
+                      <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[44ch] mx-auto">
+                        Nothing needs you right now. New tenders and decisions
+                        appear here the moment they arrive.
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-border-subtle/50">
+                      {queueShown.map((row) => (
+                        <li key={row.key}>
+                          <Link
+                            href={row.href}
+                            className="flex items-center gap-3.5 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+                          >
+                            <span
+                              className={cn(
+                                "size-2 rounded-full shrink-0",
+                                row.tone === "warn"
+                                  ? "bg-[#c99422]"
+                                  : "bg-[rgba(24,34,44,0.22)]",
+                              )}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-ui font-medium text-[13.5px] text-text truncate">
+                                {row.title}
+                              </span>
+                              <span className="block text-[11.5px] leading-[1.5] text-text-muted truncate">
+                                {row.line}
+                              </span>
+                            </span>
+                            {row.metric ? (
+                              <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                                {row.metric}
+                              </span>
+                            ) : null}
+                            <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {queueOverflow > 0 ? (
+                    <Link
+                      href={hiddenDecisions > 0 ? "/owner/tenders" : "/owner/projects"}
+                      className="block px-4 sm:px-6 py-2.5 border-t border-border-subtle/50 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                    >
+                      {queueOverflow} more{" "}
+                      {hiddenDecisions > 0 ? "across your tenders" : "in your project file"}
+                      <ArrowRight className="inline size-3 ml-1" />
+                    </Link>
+                  ) : null}
+                </section>
+
+                {/* the project file */}
+                <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+                  <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
+                    <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
+                      <Folder className="size-3.5" />
+                      The project file
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Link
+                        href="/owner/projects"
+                        className="text-[11.5px] text-text-muted hover:text-text transition-colors"
+                      >
+                        All projects
+                      </Link>
+                      <Link
+                        href="/owner/projects/new"
+                        className="inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
+                      >
+                        <Plus className="size-3" />
+                        New project
+                      </Link>
+                    </div>
+                  </header>
+                  <ul className="divide-y divide-border-subtle/50">
+                    {data.pulses.map((pulse) => (
+                      <ProjectFileRow key={pulse.project.id} pulse={pulse} />
+                    ))}
+                    {data.projects.list
+                      .filter((p) => p.status === "draft")
+                      .map((p) => (
+                        <PlainProjectRow key={p.id} p={p} />
+                      ))}
+                    {data.pulses.length === 0 && data.projects.draft === 0
+                      ? data.projects.recent.map((p) => (
+                          <PlainProjectRow key={p.id} p={p} />
+                        ))
+                      : null}
+                  </ul>
+                </section>
               </div>
-              <div className="text-[10.5px] text-text-dim mt-0.5">
-                {humanAgoFromDate(e.at)}
+
+              {/* rail */}
+              <div className="space-y-6 min-w-0">
+                {/* correspondence */}
+                <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
+                  <header className="px-4 py-3.5 border-b border-border-subtle/60 flex items-center justify-between gap-3">
+                    <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
+                      <Mail className="size-3.5" />
+                      Correspondence
+                    </span>
+                    <Link
+                      href="/owner/messages"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors"
+                    >
+                      Messages
+                    </Link>
+                  </header>
+                  {unreadThreads.length === 0 ? (
+                    <p className="px-4 py-5 text-[12px] text-text-dim">
+                      {unreadCount > 0
+                        ? `${unreadCount} unread in Messages.`
+                        : "Nothing unread."}
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border-subtle/50">
+                      {unreadThreads.map((c) => (
+                        <li key={c.id}>
+                          <Link
+                            href="/owner/messages"
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-bg-elev transition-colors"
+                          >
+                            <span className="size-8 rounded-full bg-surface-3 text-text-muted text-[10.5px] font-ui font-semibold flex items-center justify-center shrink-0">
+                              {c.other.initials}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[12.5px] font-ui font-medium text-text truncate">
+                                {c.other.displayName}
+                              </span>
+                              <span className="block text-[11px] text-text-dim truncate">
+                                {c.lastMessagePreview ?? c.projectTitle}
+                              </span>
+                            </span>
+                            <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums shrink-0">
+                              {c.unreadCount}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                {/* the record */}
+                {data.activity.length > 0 ? (
+                  <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
+                    <header className="px-4 py-3.5 border-b border-border-subtle/60">
+                      <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
+                        <FileText className="size-3.5" />
+                        The record
+                      </span>
+                    </header>
+                    <ul className="divide-y divide-border-subtle/40">
+                      {data.activity.slice(0, 5).map((e, i) => (
+                        <li key={i} className="px-4 py-2.5 flex items-baseline gap-2.5">
+                          <span
+                            className={cn(
+                              "size-1.5 rounded-full shrink-0 self-center",
+                              e.kind === "tender_awarded"
+                                ? "bg-[#0a9c91]"
+                                : e.kind === "tender_submitted"
+                                  ? "bg-accent"
+                                  : "bg-[rgba(24,34,44,0.22)]",
+                            )}
+                          />
+                          <span className="min-w-0 flex-1 text-[11.5px] leading-[1.5] text-text-muted">
+                            {e.kind === "tender_submitted"
+                              ? `${e.builderName} submitted a tender on ${e.projectTitle}${e.totalPriceAud != null ? ` at ${compactAud(e.totalPriceAud)}` : ""}.`
+                              : e.kind === "tender_awarded"
+                                ? `${e.projectTitle} awarded to ${e.builderName}.`
+                                : `${e.builderName} withdrew their tender on ${e.projectTitle}.`}
+                          </span>
+                          <span className="text-[10px] text-text-dim shrink-0">
+                            {ago(e.at)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                {/* the book */}
+                {data.tenders.total > 0 ? (
+                  <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
+                    <header className="px-4 py-3.5 border-b border-border-subtle/60">
+                      <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
+                        <Landmark className="size-3.5" />
+                        The book
+                      </span>
+                    </header>
+                    <div className="grid grid-cols-2 gap-px bg-border-subtle">
+                      {(
+                        [
+                          ["Submitted", data.tenders.byStatus.submitted],
+                          ["Shortlisted", data.tenders.byStatus.shortlisted],
+                          ["Awarded", data.tenders.byStatus.awarded],
+                          ["Declined", data.tenders.byStatus.rejected],
+                        ] as const
+                      ).map(([label, n]) => (
+                        <div key={label} className="bg-bg-raised px-4 py-3">
+                          <p className="font-display text-[20px] leading-none text-text tabular-nums">
+                            {n}
+                          </p>
+                          <p className="mt-1 text-[9.5px] tracking-[0.14em] uppercase text-text-dim">
+                            {label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
               </div>
             </div>
-            <Link
-              href={`/owner/projects/${e.projectSlug}/tenders`}
-              className="text-[10.5px] text-text-dim hover:text-accent-light transition-colors shrink-0"
-            >
-              View →
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Panel>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function ActivityIcon({
-  kind,
+/* ── masthead pieces ────────────────────────────────────────────────── */
+
+function OwnerChip({
+  children,
+  tone = "neutral",
+  icon,
 }: {
-  kind: OwnerDashboardData["activity"][number]["kind"];
+  children: React.ReactNode;
+  tone?: "neutral" | "accent";
+  icon?: React.ReactNode;
 }) {
-  if (kind === "tender_awarded") {
-    return (
-      <span className="size-7 rounded-md border border-border-accent bg-accent-muted/40 flex items-center justify-center text-accent-light shrink-0">
-        <Trophy className="size-3.5" />
-      </span>
-    );
-  }
-  if (kind === "tender_withdrawn") {
-    return (
-      <span className="size-7 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center text-warning shrink-0">
-        <AlertTriangle className="size-3.5" />
-      </span>
-    );
-  }
   return (
-    <span className="size-7 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] flex items-center justify-center text-accent-light shrink-0">
-      <Sparkles className="size-3.5" />
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-[11px] font-ui",
+        tone === "accent"
+          ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-[#0a7d73] font-semibold"
+          : "border-border-subtle text-text-muted",
+      )}
+    >
+      {icon}
+      {children}
     </span>
   );
 }
 
-// ── Recent projects panel + helpers ────────────────────────────────────
-
-function RecentProjectsPanel({
-  recent,
-  isFirstTime,
-}: {
-  recent: Project[];
-  isFirstTime: boolean;
-}) {
-  return (
-    <Panel
-      tone="default"
-      title="Recent projects"
-      description="Drafts and published work in your account."
-      action={
-        recent.length > 0 ? (
-          <Link
-            href="/owner/projects"
-            className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-          >
-            View all
-          </Link>
-        ) : null
-      }
-    >
-      {isFirstTime ? (
-        <div className="px-4 sm:px-6 py-12 text-center">
-          <div
-            aria-hidden
-            className="mx-auto size-12 rounded-full bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light mb-5"
-            style={{ boxShadow: "0 0 32px rgba(0,212,200,0.18)" }}
-          >
-            <Folders className="size-5" />
-          </div>
-          <h3 className="font-ui font-semibold text-[15px] text-text">
-            Your first project is one upload away
-          </h3>
-          <p className="mt-2 mx-auto max-w-[44ch] text-[12.5px] leading-[1.6] text-text-dim">
-            Drag in your architectural plans, fill three short sections, and
-            publish to start receiving tenders.
-          </p>
-          <Link
-            href="/owner/projects/new"
-            className={cn(
-              "mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-full",
-              "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
-              "transition-colors duration-[160ms] hover:bg-accent-hover",
-            )}
-          >
-            <Plus className="size-3.5" />
-            Upload your first project
-          </Link>
-        </div>
-      ) : (
-        <div className="border-t border-border-subtle/60">
-          {recent.map((p, i, arr) => (
-            <Link
-              key={p.id}
-              href={
-                p.status === "draft"
-                  ? `/owner/projects/${p.slug}/edit`
-                  : `/owner/projects/${p.slug}`
-              }
-              className={cn(
-                "grid grid-cols-[1fr_auto_auto] gap-3 sm:gap-4 items-center px-4 sm:px-6 py-4 transition-colors hover:bg-[rgba(0,212,200,0.025)]",
-                i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
-              )}
-            >
-              <div className="min-w-0">
-                <div className="text-[13.5px] font-semibold text-text truncate">
-                  {p.title}
-                </div>
-                <div className="text-[11px] text-text-dim truncate">
-                  {TYPE_LABEL[p.type]}
-                  {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
-                </div>
-              </div>
-              <span
-                className={cn(
-                  "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
-                  p.status === "draft"
-                    ? "border-border-subtle text-text-dim"
-                    : "border-border-accent text-accent-light",
-                )}
-              >
-                {p.status}
-              </span>
-              <ArrowUpRight className="size-3.5 text-text-faint" />
-            </Link>
-          ))}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-// ── shared atoms ────────────────────────────────────────────────────────
-
-type PanelTone = "default" | "accent" | "muted";
-
-function Panel({
-  tone = "default",
-  title,
-  description,
-  action,
-  className,
-  children,
-}: {
-  tone?: PanelTone;
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const toneCls =
-    tone === "accent"
-      ? "border-border-accent/40 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(250,248,243,0.6))]"
-      : tone === "muted"
-        ? "border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))]"
-        : "border-border-subtle bg-surface-1 card-elev";
-
-  return (
-    <section
-      className={cn(
-        "rounded-md border overflow-hidden transform-gpu",
-        "shadow-[0_12px_32px_-18px_rgba(15,23,32,0.19)]",
-        toneCls,
-        className,
-      )}
-    >
-      <header className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-            {title}
-          </h2>
-          {description ? (
-            <p className="text-[12px] text-text-dim">{description}</p>
-          ) : null}
-        </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </header>
-      {children}
-    </section>
-  );
-}
-
-function Shortcut({
-  icon,
-  title,
+function LedgerStat({
+  label,
+  value,
   sub,
-  href,
-  primary,
 }: {
-  icon: React.ReactNode;
-  title: string;
+  label: string;
+  value: string;
   sub: string;
-  href: string;
-  primary?: boolean;
 }) {
+  return (
+    <div className="bg-bg-raised px-3 sm:px-5 py-3.5 min-w-0 lg:min-w-[118px]">
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-[24px] leading-none text-text tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
+    </div>
+  );
+}
+
+/* ── project file rows ──────────────────────────────────────────────── */
+
+function ProjectFileRow({
+  pulse,
+}: {
+  pulse: OwnerDashboardData["pulses"][number];
+}) {
+  const p = pulse.project;
+  const spots = p.tenderSpots ?? UNLOCK_CAP;
+  const href =
+    pulse.tenderCount > 0
+      ? `/owner/projects/${p.slug}/tenders`
+      : `/owner/projects/${p.slug}`;
   return (
     <li>
       <Link
         href={href}
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] transition-colors duration-[160ms]",
-          primary
-            ? "bg-accent-muted/40 border border-border-accent text-accent-light hover:bg-accent-muted/70"
-            : "hover:bg-[rgba(24,34,44,0.035)]",
-        )}
+        className="flex items-center gap-4 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
       >
+        <span className="min-w-0 flex-1">
+          <span className="block font-ui font-medium text-[13.5px] text-text truncate">
+            {p.title}
+          </span>
+          <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
+            {TYPE_LABEL[p.type]}
+            {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
+          </span>
+        </span>
+        <span className="text-right shrink-0 hidden sm:block">
+          <span className="block text-[12px] font-ui font-semibold text-text tabular-nums">
+            {pulse.tenderCount > 0
+              ? `${pulse.tenderCount} tender${pulse.tenderCount === 1 ? "" : "s"}`
+              : `${Math.min(pulse.unlockCount, spots)} of ${spots} spots taken`}
+          </span>
+          <span className="block text-[10.5px] text-text-dim">
+            {pulse.awaitingDecision > 0
+              ? `${pulse.awaitingDecision} awaiting your decision`
+              : pulse.tenderCount > 0
+                ? "Ready for your review"
+                : pulse.unlockCount > 0
+                  ? "Builders preparing tenders"
+                  : "Open for entries"}
+          </span>
+        </span>
         <span
           className={cn(
-            "size-8 rounded-md flex items-center justify-center shrink-0",
-            primary
-              ? "bg-accent-muted border border-border-accent text-accent-light"
-              : "border border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted",
+            "shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold",
+            p.status === "published" || p.status === "tendering"
+              ? "bg-[rgba(0,212,200,0.1)] text-accent-light"
+              : p.status === "awarded"
+                ? "bg-[rgba(224,178,92,0.12)] text-[#8a6a2f]"
+                : "bg-[rgba(24,34,44,0.06)] text-text-muted",
           )}
         >
-          {icon}
+          {STATUS_LABEL[p.status] ?? p.status}
         </span>
-        <div className="flex flex-col flex-1 min-w-0">
-          <span
-            className={cn(
-              "font-medium truncate",
-              primary ? "text-accent-light" : "text-text",
-            )}
-          >
-            {title}
-          </span>
-          <span className="text-[11px] text-text-dim truncate">{sub}</span>
-        </div>
-        <ArrowUpRight className="size-3.5 text-text-faint shrink-0" />
+        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
       </Link>
     </li>
   );
 }
 
-function SectionHeader({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
+function PlainProjectRow({ p }: { p: Project }) {
   return (
-    <header className="mb-5 flex items-end justify-between gap-3">
-      <div>
-        <SectionKicker>{title}</SectionKicker>
-        {description ? (
-          <p className="text-[12.5px] text-text-dim mt-2">{description}</p>
-        ) : null}
-      </div>
-    </header>
+    <li>
+      <Link
+        href={
+          p.status === "draft"
+            ? `/owner/projects/${p.slug}/edit`
+            : `/owner/projects/${p.slug}`
+        }
+        className="flex items-center gap-4 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block font-ui font-medium text-[13.5px] text-text truncate">
+            {p.title}
+          </span>
+          <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
+            {TYPE_LABEL[p.type]}
+            {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
+          </span>
+        </span>
+        <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold bg-[rgba(24,34,44,0.06)] text-text-muted">
+          {STATUS_LABEL[p.status] ?? p.status}
+        </span>
+        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+      </Link>
+    </li>
   );
 }
 
-// ── format helpers ─────────────────────────────────────────────────────
+/* ── first-run primer ───────────────────────────────────────────────── */
 
-function formatAudCompact(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
-  return `$${n}`;
-}
-
-function humanAgo(days: number): string {
-  if (days === 0) return "today";
-  if (days === 1) return "1d ago";
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
-}
-
-function humanAgoFromDate(d: Date): string {
-  const ms = Date.now() - d.getTime();
-  const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return humanAgo(days);
-}
-
-/**
- * One-shot welcome banner shown after the /start ads-funnel magic-
- * link redemption. Two variants:
- *   · "published" — project went live; celebrate + tell them what's next.
- *   · "finish"    — wizard wasn't complete enough to publish; nudge
- *                   them to keep going.
- */
-function AdsFunnelWelcomeBanner({ mode }: { mode: "published" | "finish" }) {
-  const isPublished = mode === "published";
+function FirstProjectPrimer() {
+  const STEPS = [
+    {
+      n: "01",
+      title: "Upload your project",
+      line: "Drop your architectural plans in. The details pre-fill and you review them step by step.",
+    },
+    {
+      n: "02",
+      title: "Verified builders tender",
+      line: "Verified builders take a spot and price the same documents, against the same structured scope.",
+    },
+    {
+      n: "03",
+      title: "Compare and decide",
+      line: "Every tender arrives side by side: price, allowances, conditions and coverage, like for like.",
+    },
+  ];
   return (
-    <div className="px-4 sm:px-6 lg:px-10 pt-6">
-      <div className="mx-auto max-w-[860px] rounded-2xl border border-border-accent bg-accent-muted/50 backdrop-blur-sm px-5 py-4 flex items-start gap-4">
-        <span
-          aria-hidden
-          className="mt-0.5 inline-flex items-center justify-center size-8 rounded-full bg-accent/20 border border-border-accent-strong shrink-0"
-        >
-          <span className="size-2 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.8)]" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-accent-light text-[10px] tracking-[0.22em] uppercase font-ui font-semibold">
-            {isPublished ? "Project live" : "Almost there"}
+    <div className="max-w-[760px]">
+      <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
+        <header className="px-4 sm:px-6 py-5 border-b border-border-subtle/60">
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+            How your tender runs
+          </span>
+          <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
+            One upload, compared like for like
+          </h2>
+        </header>
+        <ul className="divide-y divide-border-subtle/50">
+          {STEPS.map((s) => (
+            <li key={s.n} className="flex items-start gap-4 px-4 sm:px-6 py-4">
+              <span className="font-mono text-[10px] tracking-[0.18em] text-accent-light mt-1 shrink-0">
+                {s.n}
+              </span>
+              <span className="min-w-0">
+                <span className="block font-ui font-semibold text-[13.5px] text-text">
+                  {s.title}
+                </span>
+                <span className="block mt-0.5 text-[12px] leading-[1.6] text-text-muted">
+                  {s.line}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="px-4 sm:px-6 py-4 border-t border-border-subtle/60">
+          <Link
+            href="/owner/projects/new"
+            className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"
+          >
+            <Plus className="size-4" />
+            Upload your project
+            <ArrowUpRight className="size-4" />
+          </Link>
+          <p className="mt-2.5 text-[11px] text-text-dim">
+            Your street address is shared only with the verified builders who take a spot on your round.
           </p>
-          <p className="mt-1 text-text text-[14px] sm:text-[14.5px] leading-[1.55] font-body">
-            {isPublished
-              ? "You're verified and your project is now visible to verified Australian builders. Tenders typically arrive within 3–7 days."
-              : "You're verified. A few more details on your project and we'll open it up to verified builders."}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ── ads-funnel welcome ─────────────────────────────────────────────── */
+
+function WelcomeBanner({ mode }: { mode: "published" | "finish" }) {
+  return (
+    <div className="px-4 sm:px-6 lg:px-10 pt-5">
+      <div className="mx-auto max-w-[1200px] rounded-xl border border-border-accent/50 bg-[rgba(0,212,200,0.05)] px-4 sm:px-5 py-3.5 flex items-start gap-3">
+        <span className="size-2 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)] mt-1.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="font-ui font-semibold text-[13px] text-text">
+            {mode === "published" ? "Your project is live" : "Nearly there"}
+          </p>
+          <p className="mt-0.5 text-[12px] leading-[1.55] text-text-muted">
+            {mode === "published"
+              ? "You are verified and your project is visible to verified builders. The first tenders usually arrive within three to seven days."
+              : "You are verified. Add the remaining details to your project and it opens to verified builders."}
           </p>
         </div>
       </div>
     </div>
   );
-}
-
-function EMPTY_DATA(firstName: string): OwnerDashboardData {
-  return {
-    meta: { firstName },
-    projects: { total: 0, active: 0, draft: 0, recent: [], list: [] },
-    tenders: {
-      total: 0,
-      byStatus: { submitted: 0, shortlisted: 0, awarded: 0, rejected: 0 },
-      totalQuotedValueAud: 0,
-      avgDaysToDecisionAwarded: null,
-      awaitingDecision: 0,
-    },
-    decisionsWaiting: [],
-    pulses: [],
-    activity: [],
-  };
 }

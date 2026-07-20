@@ -16,7 +16,6 @@ import {
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
-import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { EmptyState } from "@/components/app/empty-state";
 import { Reveal } from "@/components/app/reveal";
 import { Input, Select } from "@/components/ui/input";
@@ -92,7 +91,7 @@ export default async function BrowsePage({
               Browse
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[44px] leading-[0.95] text-text">
-              Find tender-ready work
+              Open tender rounds
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
               {projects.length} project{projects.length === 1 ? "" : "s"} live across Australia.
@@ -106,7 +105,6 @@ export default async function BrowsePage({
           <BuilderSectionTabs
             counts={{ saved: savedCount, unlocked: unlockedCount }}
           />
-          <FbaQuotaPill status={fbaStatus} />
         </div>
 
         {/* Filter bar — server form, GET-style */}
@@ -178,7 +176,7 @@ function FilterBar({ params }: { params: SearchParams }) {
           type="text"
           name="q"
           defaultValue={params.q ?? ""}
-          placeholder="Search by title…"
+          placeholder="Search by title"
           className="sm:col-span-2 lg:col-span-1"
         />
         <Select name="type" defaultValue={params.type ?? ""}>

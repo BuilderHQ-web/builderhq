@@ -93,6 +93,12 @@ interface Props {
     | null;
   /** The signed-in user's id — needed to decide bubble alignment. */
   meId: string;
+  /**
+   * Where "view project" links live for this mount. Architects mount
+   * the owner-scope shell at /architect/messages, so the base cannot
+   * be derived from scope alone. Defaults per scope.
+   */
+  projectBase?: string;
 }
 
 export function MessagesShell({
@@ -101,6 +107,7 @@ export function MessagesShell({
   initialActiveId,
   initialActiveThread,
   meId,
+  projectBase,
 }: Props) {
   const router = useRouter();
   const search = useSearchParams();
@@ -284,6 +291,7 @@ export function MessagesShell({
       />
       <ThreadPane
         scope={scope}
+        projectBase={projectBase}
         meId={meId}
         thread={thread}
         loading={threadLoading}
@@ -519,6 +527,7 @@ function ListEmpty({
 
 function ThreadPane({
   scope,
+  projectBase,
   meId,
   thread,
   loading,
@@ -530,6 +539,7 @@ function ThreadPane({
   className,
 }: {
   scope: RoleScope;
+  projectBase?: string;
   meId: string;
   thread:
     | { conversation: ConversationListItem; messages: Message[] }
@@ -553,6 +563,7 @@ function ThreadPane({
           <ThreadHeader
             conv={thread.conversation}
             scope={scope}
+            projectBase={projectBase}
             onBack={onBack}
           />
           <MessageScroll messages={thread.messages} meId={meId} />
@@ -603,10 +614,12 @@ function ThreadEmpty({
 function ThreadHeader({
   conv,
   scope,
+  projectBase,
   onBack,
 }: {
   conv: ConversationListItem;
   scope: RoleScope;
+  projectBase?: string;
   onBack: () => void;
 }) {
   // Owner viewing the thread → "Builder · Synergy"; builder viewing → "Owner · …"
@@ -622,10 +635,8 @@ function ThreadHeader({
         Project owner
       </span>
     );
-  const projectHref =
-    scope === "builder"
-      ? `/builder/projects/${conv.projectSlug}`
-      : `/owner/projects/${conv.projectSlug}`;
+  const base = projectBase ?? (scope === "builder" ? "/builder" : "/owner");
+  const projectHref = `${base}/projects/${conv.projectSlug}`;
 
   return (
     <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border-subtle bg-surface-2">

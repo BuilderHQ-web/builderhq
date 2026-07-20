@@ -70,7 +70,7 @@ export default async function SettingsPage() {
   if (role === "project_owner") {
     navItems.push({
       id: "owner-prefs",
-      label: "You & your projects",
+      label: "Your projects",
       icon: <Briefcase className="size-3" />,
     });
   }
@@ -104,10 +104,10 @@ export default async function SettingsPage() {
         title="Settings"
         description={
           role === "builder"
-            ? "Identity, password, and per-device preferences. Your public builder profile — company, licences, service areas — lives in its own editor."
+            ? "Identity, password, and per-device preferences. Your public builder profile, including company, licences and service areas, lives in its own editor."
             : role === "project_owner"
               ? "Identity, password, project defaults, and per-device preferences."
-              : "Update your profile, security, and preferences across BuilderHQ."
+              : "Your identity, security, and preferences across BuilderHQ."
         }
       />
 
@@ -146,7 +146,7 @@ export default async function SettingsPage() {
               kicker="Profile"
               icon={<User className="size-3.5" />}
               title="Identity"
-              description="Your name, contact phone, and email across BuilderHQ. Email changes need re-verification — reach out to support to swap addresses."
+              description="Your name, contact phone, and email across BuilderHQ. Email changes need re-verification. Contact support to swap addresses."
             >
               <ProfileForm
                 defaultFirstName={user.firstName ?? ""}
@@ -164,8 +164,8 @@ export default async function SettingsPage() {
                 id="owner-prefs"
                 kicker="Project preferences"
                 icon={<Briefcase className="size-3.5" />}
-                title="You & your projects"
-                description="How builders see you when they unlock a project, plus saved defaults so new project uploads don't start from a blank state."
+                title="Your projects"
+                description="How builders see you when they unlock a project, plus saved defaults for new project uploads."
               >
                 <OwnerSettingsForm
                   defaults={{
@@ -189,7 +189,7 @@ export default async function SettingsPage() {
                 kicker="Public profile"
                 icon={<Hammer className="size-3.5" />}
                 title="What owners see"
-                description="Your company identity, licences, service areas, and the rest of the public-facing profile lives in its own editor — built for the depth that page deserves."
+                description="Your company identity, licences, service areas, and the rest of the public-facing profile live in their own editor."
               >
                 <Link
                   href="/builder/profile"
@@ -218,7 +218,7 @@ export default async function SettingsPage() {
               title="Password"
               description={
                 user.passwordHash
-                  ? "Choose a strong password — minimum 10 characters. You'll be signed out of this device after changing."
+                  ? "Choose a strong password of at least 10 characters. You will be signed out of this device after changing."
                   : "You signed in with a magic link. Optionally add a password for faster sign-in next time. Minimum 10 characters."
               }
             >
@@ -233,7 +233,7 @@ export default async function SettingsPage() {
               kicker="Preferences"
               icon={<Sliders className="size-3.5" />}
               title="App behaviour"
-              description="Per-device settings that follow you on this browser. Toggle once and they stick."
+              description="Per-device settings that follow you on this browser."
             >
               <PreferencesForm
                 initialMarketingEmailsEnabled={marketingEmailsEnabled}
@@ -256,7 +256,7 @@ export default async function SettingsPage() {
                 kicker="Danger zone"
                 icon={<AlertTriangle className="size-3.5" />}
                 title="Permanent actions"
-                description="Delete your account. Your personal details get scrubbed; projects and tenders you transacted on stay visible to the other party with a 'Deleted user' label."
+                description="Delete your account. Your personal details are removed; projects and tenders you transacted on stay visible to the other party under a 'Deleted user' label."
               >
                 <DeleteAccountForm />
               </SettingsSection>
