@@ -3748,6 +3748,57 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "luke-brodie",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage broker",
+    name: "Luke Brodie",
+    monogram: "LB",
+    portrait: "/partners/luke-brodie/portrait.jpg",
+    suburb: "Sydney",
+    state: "NSW",
+    tagline:
+      "A boutique Sydney broker who takes the complex files in his stride, from SMSF and trust lending to guiding first home buyers through their first approval.",
+    disciplines: ["SMSF and trusts", "Self-employed", "First home buyers"],
+    google: { rating: 5.0, reviews: 6 },
+    institution: {
+      name: "BetterLend",
+      role: "Founder and mortgage broker",
+      note: "Backed by Partnership Finance Group",
+      logo: "/partners/luke-brodie/betterlend.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "6 reviews" },
+      {
+        label: "In mortgage broking",
+        value: "5+ yrs",
+        sub: "founder of BetterLend",
+      },
+      { label: "Lenders on the panel", value: "30+", sub: "100+ loan products" },
+    ],
+    why: "Luke came to broking from an unusual direction, after more than a decade in sound design and creative production, much of it running companies of his own. That founder’s instinct still shapes how he works: he takes on the files many brokers would rather pass over, the self-managed super fund purchases, the trust and company structures, the applications from business owners and contractors that do not fit a bank’s template. Having been a small business owner himself, he reads a self-employed borrower’s position with real understanding, and much of his work comes to him by referral as a result. For an owner financing a build, where how the loan is structured can matter as much as the rate, his comfort with complexity and his readiness to see a difficult file all the way through are what earn him a place in the network.",
+    aboutLabel: "About Luke",
+    about:
+      "Luke Brodie is the founder of BetterLend, a boutique Sydney brokerage he runs himself, working with each client directly from first enquiry through to settlement rather than passing them between a call centre and a processing team. He draws on a panel of more than thirty lenders and over a hundred loan products, and operates with the backing of Partnership Finance Group, which gives an independent practice priority access to lenders and bespoke lending solutions. His work spans first home buyers, investors and more technical cases such as self-managed super fund and trust borrowing, and he stays involved well beyond settlement, treating each client as a lasting relationship rather than a one-off deal.",
+    facts: {
+      basedIn: "Sydney, NSW",
+      serves: "Sydney and New South Wales",
+      focus: "First home, investment and complex lending",
+    },
+    website: "https://betterlend.com.au/luke-brodie/",
+    linkedin: "https://www.linkedin.com/in/luke-brodie/",
+    servicesLabel: "Where Luke helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Self-managed super fund (SMSF) lending",
+      "Trust and company structures",
+      "Self-employed and complex applications",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
