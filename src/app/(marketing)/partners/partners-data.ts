@@ -3748,6 +3748,58 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "julie-judge",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Finance broker",
+    name: "Julie Judge",
+    monogram: "JJ",
+    portrait: "/partners/julie-judge/portrait.jpg",
+    suburb: "Sydney",
+    state: "NSW",
+    tagline:
+      "A Sydney finance broker at her best with the applications others find hard, structuring lending for self-employed clients and business owners, including those running construction and engineering firms.",
+    disciplines: ["Self-employed lending", "Business and commercial", "Complex income structures"],
+    google: { rating: 5.0, reviews: 46 },
+    institution: {
+      name: "Mortgage Pass",
+      role: "Founder and finance broker",
+      note: "MFAA member",
+      logo: "/partners/julie-judge/mortgage-pass.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "46 reviews" },
+      {
+        label: "In finance broking",
+        value: "5+ yrs",
+        sub: "founder of Mortgage Pass",
+      },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    why: "Julie came to broking after years in business, working alongside self-employed owners across a range of industries, and it shapes the work she takes on. Where many brokers are most comfortable with a straightforward salaried application, she is at her best with the ones that are not: project based income, layered business structures, the tradies and the construction and engineering operators whose financials never fit a simple template. She knows what a lender needs to see, and how to position a business’s real strength so it is recognised. Her clients return the trust, with a five star rating across more than forty reviews, and for an owner financing a build, many of whom are self-employed or run their own firm, she is exactly the kind of broker we want beside them.",
+    aboutLabel: "About Julie",
+    about:
+      "Julie Judge is the founder of Mortgage Pass, a Sydney brokerage that spans both mortgage and business finance, working from offices in the Sydney CBD and Merrylands. On the residential side she helps clients buy a first home, purchase an investment property or refinance to ease cash flow; on the business side she arranges commercial and industrial property lending, cash flow funding and asset finance. She works across a panel of more than thirty five lenders, holds a Diploma of Finance and Mortgage Broking Management, and is a member of the Mortgage and Finance Association of Australia, operating as a credit representative under Australian Credit Licence 387025. Clients tend to describe the same things: plain English, a calm and personal process, and approvals secured where other brokers could not.",
+    facts: {
+      basedIn: "Sydney, NSW",
+      serves: "Sydney and across Australia",
+      focus: "Home, business and commercial lending",
+    },
+    website: "https://mortgagepass.com.au/finance-broker-julie-judge/",
+    instagram: "https://www.instagram.com/mortgage_pass/",
+    linkedin: "https://www.linkedin.com/in/julie-judge-2b6274b7/",
+    servicesLabel: "Where Julie helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Self-employed and business owner lending",
+      "Home purchase, investment and refinance",
+      "Commercial, industrial and retail property",
+      "Business cash flow and asset finance",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
