@@ -2874,6 +2874,79 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "create-build-enjoy",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Outdoor structures specialist",
+    name: "Create Build Enjoy",
+    monogram: "CB",
+    logo: "/partners/create-build-enjoy/logo.png",
+    suburb: "Fyshwick",
+    state: "ACT",
+    states: ["ACT", "NSW"],
+    tagline:
+      "Canberra's outdoor specialists and authorised Stratco dealer, turning backyards into rooms with patios, opening roofs and outdoor kitchens, supplied and installed under one price.",
+    disciplines: [
+      "Patios, carports and pergolas",
+      "Opening and louvre roofs",
+      "Decking, sunrooms and outdoor rooms",
+    ],
+    google: { rating: 5.0, reviews: 70 },
+    institution: {
+      name: "Stratco",
+      role: "Authorised Outback dealer and installer",
+      note: "Australia's leading outdoor structures manufacturer",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "70 reviews" },
+      {
+        label: "In Canberra",
+        value: "15 yrs",
+        sub: "outdoor construction",
+      },
+      {
+        label: "Price promise",
+        value: "Supply + install",
+        sub: "one comprehensive quote",
+      },
+    ],
+    why: "Seventy five-star reviews and not a single one lower: that is the deepest perfect record on our entire register, and it belongs to the team that will build your backyard. Create Build Enjoy has spent fifteen years turning Canberra yards into rooms, patios, carports, pergolas, opening and louvre roofs, decking, sunrooms and outdoor kitchens, as an authorised Stratco Outback dealer and installer, so the structure over your head carries the name of Australia's leading manufacturer. Everything comes as one supply-and-install price, and the business is licensed in both the ACT and New South Wales, holds a builder's licence and carries an ACT Secure Local Jobs certificate. For a homeowner or developer who wants an outdoor space done properly and backed to last, this is a rare five-star pair of hands.",
+    about:
+      "Create Build Enjoy, CBE, is a Canberra outdoor construction company based in Fyshwick, with fifteen years of service in the local building industry. The team specialises in transforming outdoor spaces: patios, carports, pergolas, opening and louvre roofs, decking, sunrooms, granny flats, extensions and outdoor blinds, delivered as a comprehensive supply-and-install package. As an authorised Stratco Outback dealer and installer, CBE partners with Australia's leading manufacturer of outdoor structures and building products, pairing that product quality with its own craftsmanship and reliability. The business holds a builder's licence, is licensed in both the ACT and New South Wales, and carries an ACT Government Secure Local Jobs certificate, working across residential and commercial projects from single patios to multi-unit developments and custom opening-roof installations.",
+    facts: {
+      experience: "15 yrs",
+      basedIn: "Fyshwick, ACT",
+      serves: "Canberra and surrounding NSW",
+      focus: "Patios, opening roofs and outdoor rooms",
+    },
+    website: "https://createbuild.com.au",
+    instagram: "https://www.instagram.com/create.build.enjoy/",
+    facebook: "https://www.facebook.com/141248096444815",
+    linkedin: "https://www.linkedin.com/company/96955711/",
+    galleryUrl: "https://createbuild.com.au/",
+    work: [
+      {
+        title: "Flat-roof pavilion",
+        suburb: "Canberra",
+        type: "Patio and outdoor kitchen",
+        image: "/partners/create-build-enjoy/pavilion.jpg",
+      },
+      {
+        title: "Gabled outdoor room",
+        suburb: "Canberra",
+        type: "Patio and entertaining",
+        image: "/partners/create-build-enjoy/outdoor-room.jpg",
+      },
+      {
+        title: "Stone bathroom",
+        suburb: "Canberra",
+        type: "Extension",
+        image: "/partners/create-build-enjoy/bathroom.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
