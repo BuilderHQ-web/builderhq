@@ -2266,6 +2266,70 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "banksia-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Banksia Building Design",
+    monogram: "BB",
+    logo: "/partners/banksia-building-design/logo.png",
+    principal: "Claire",
+    suburb: "Killara",
+    state: "NSW",
+    tagline:
+      "A Sydney building design studio built on honest advice, where a degree-qualified designer takes your home personally from first sketch to council approval.",
+    disciplines: ["New homes and knockdown rebuilds", "Extensions and additions", "DA and CDC approvals"],
+    google: { rating: 5.0, reviews: 4 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "4 reviews" },
+      {
+        label: "Experience",
+        value: "10 yrs",
+        sub: "architecture and residential design",
+      },
+      {
+        label: "Qualified",
+        value: "Degree",
+        sub: "Bachelor of Architectural Studies",
+      },
+    ],
+    why: "Banksia exists because its founder watched the industry do the opposite of what she believed in. Claire, the studio's principal designer, holds a Bachelor of Architectural Studies and nearly a decade in residential design, and she started Banksia after seeing clients oversold and misled by businesses chasing a sale rather than giving honest advice. Her answer is a practice where integrity comes first: transparent guidance at every step, a designer who genuinely listens, and one degree-qualified pair of hands on your home from first sketch through the development application. Early clients have returned a perfect five stars, and the through-line in the work is a designer's eye for natural light, craftsmanship and the balance of indoor and outdoor living. For a Sydney homeowner who wants their designer in their corner, this is a considered, trustworthy introduction.",
+    about:
+      "Banksia Building Design is a residential building design studio serving Sydney, led by its principal designer, Claire, who holds a Bachelor of Architectural Studies and has spent close to a decade specialising in residential projects. The practice designs new homes and knockdown rebuilds, first and ground floor extensions, internal renovations and granny flats, and prepares and lodges development applications and complying development certificates, drawing on real experience with Sydney's councils. Founded on a commitment to honest, transparent advice, the studio pairs a fresh contemporary perspective with years of professional experience, and works closely with each client so the finished design reflects the way they actually live. A love of craftsmanship and the outdoors runs through the work, shaping how each home handles natural light and the connection between indoor and outdoor space.",
+    facts: {
+      experience: "10 yrs",
+      basedIn: "Killara, NSW",
+      serves: "Sydney and NSW",
+      focus: "Homes, extensions and approvals",
+    },
+    website: "https://www.banksiabuildingdesign.com.au",
+    instagram: "https://www.instagram.com/banksiabuildingdesign/",
+    facebook: "https://www.facebook.com/BanksiaBuildingDesign",
+    linkedin: "https://www.linkedin.com/company/banksia-building-design/",
+    galleryUrl: "https://www.banksiabuildingdesign.com.au/projects",
+    work: [
+      {
+        title: "Glass pavilion",
+        suburb: "Sydney",
+        type: "Alterations and additions",
+        image: "/partners/banksia-building-design/rear-extension.jpg",
+      },
+      {
+        title: "Contemporary new home",
+        suburb: "Sydney",
+        type: "New build",
+        image: "/partners/banksia-building-design/new-build.jpg",
+      },
+      {
+        title: "Spa terrace",
+        suburb: "Sydney",
+        type: "Deck and landscaping",
+        image: "/partners/banksia-building-design/terrace.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
