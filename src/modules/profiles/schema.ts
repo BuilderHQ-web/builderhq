@@ -144,6 +144,43 @@ export const projectOwnerProfiles = pgTable(
   ],
 );
 
+// ── architect_profiles ──────────────────────────────────────────────────
+
+/**
+ * The studio identity behind an architect account. Deliberately light:
+ * architects run tenders for clients, so the platform-facing identity
+ * is the practice, not a licence dossier. Verification depth (design
+ * registrations, memberships) can layer on later without a reshape.
+ */
+export const architectProfiles = pgTable(
+  "architect_profiles",
+  {
+    userId: uuid()
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    /** Trading name of the practice, e.g. "Banksia Building Design". */
+    practiceName: text().notNull(),
+
+    /** Studio's home base — pre-fills tender defaults, never published. */
+    suburb: text(),
+    state: australianStateEnum(),
+
+    contactPhone: text(),
+
+    /** Set when the architect completes onboarding. Null = in progress. */
+    onboardingCompletedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("architect_profiles_state_idx").on(t.state)],
+);
+
 // ── builder_profiles ────────────────────────────────────────────────────
 
 export const builderProfiles = pgTable(
@@ -367,6 +404,7 @@ export const builderProjectCategories = pgTable(
 
 // ── inferred types ──────────────────────────────────────────────────────
 
+export type ArchitectProfile = typeof architectProfiles.$inferSelect;
 export type ProjectOwnerProfile = typeof projectOwnerProfiles.$inferSelect;
 export type NewProjectOwnerProfile = typeof projectOwnerProfiles.$inferInsert;
 

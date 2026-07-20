@@ -42,7 +42,7 @@ export type MobileAuthFailureCode =
 export type RequireMobileAuthResult =
   | {
       ok: true;
-      value: { userId: string; role: "project_owner" | "builder" | "admin" };
+      value: { userId: string; role: "project_owner" | "builder" | "admin" | "architect" };
     }
   | {
       ok: false;

@@ -14,5 +14,6 @@ export default async function OnboardingDispatcher() {
   const session = await auth();
   const role = session?.user?.role ?? null;
   if (role === "builder") redirect("/onboarding/builder");
+  if (role === "architect") redirect("/onboarding/architect");
   redirect("/onboarding/owner");
 }

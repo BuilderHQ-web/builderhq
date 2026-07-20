@@ -14,5 +14,6 @@
 export function dashboardForRole(role: string | null | undefined): string {
   if (role === "admin") return "/admin";
   if (role === "builder") return "/builder";
+  if (role === "architect") return "/architect";
   return "/owner";
 }

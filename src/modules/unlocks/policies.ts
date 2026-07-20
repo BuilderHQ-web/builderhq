@@ -8,7 +8,7 @@
 
 export type ActorContext = {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 };
 
 /** Only builders can unlock projects. */

@@ -17,7 +17,7 @@ type ApprovalStatus =
   | "suspended";
 
 type UserStatus = "pending_verification" | "active" | "suspended" | "banned";
-type Role = "project_owner" | "builder" | "admin" | null;
+type Role = "project_owner" | "builder" | "admin" | "architect" | null;
 
 const APPROVAL_META: Record<
   ApprovalStatus,
@@ -54,6 +54,7 @@ const ROLE_LABEL: Record<NonNullable<Role>, string> = {
   project_owner: "Owner",
   builder: "Builder",
   admin: "Admin",
+  architect: "Architect",
 };
 
 export function RoleBadge({ role }: { role: Role }) {

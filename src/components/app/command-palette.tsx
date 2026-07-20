@@ -54,7 +54,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-type Role = "project_owner" | "builder" | "admin";
+type Role = "project_owner" | "builder" | "admin" | "architect";
 
 interface Command {
   id: string;

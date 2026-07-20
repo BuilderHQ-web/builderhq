@@ -395,13 +395,13 @@ export const LENS: Record<Role, LensCopy> = {
   /* ── ARCHITECT — design literate, allergic to sales. Give, don't ask. ── */
   architect: {
     hero: {
-      badge: "Now inviting partner practices",
+      badge: "For architects and designers",
       h1a: "Your designs,",
       h1b: "in the right hands.",
-      sub: "We put your practice in front of homeowners and builders planning to build.",
-      primary: { label: "Join the network", href: ARCHITECT_JOIN_HREF },
+      sub: "Run structured tenders for your clients, with your builders or ours, and keep your name on the work.",
+      primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["By invitation", "Featured and referred", "Your name on your work"],
+      facts: ["Free for practices", "Open, private or hybrid tenders", "Your name on your work"],
     },
     problem: {
       kicker: "The idea",

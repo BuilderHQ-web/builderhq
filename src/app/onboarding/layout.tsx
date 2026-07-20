@@ -35,6 +35,7 @@ export default async function OnboardingLayout({
   const done = await hasCompletedOnboarding(session.user.id, role);
   if (done) {
     if (role === "builder") redirect("/builder");
+    if (role === "architect") redirect("/architect");
     redirect("/owner");
   }
 

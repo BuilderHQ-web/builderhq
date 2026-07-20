@@ -61,7 +61,7 @@ export interface MobileBuilderPublicProfile {
 
 interface Viewer {
   userId: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 }
 
 export async function buildBuilderPublicProfile(

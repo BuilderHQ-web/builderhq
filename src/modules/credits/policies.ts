@@ -7,7 +7,7 @@
 
 export type ActorContext = {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 };
 
 /** Builders can read their own FBA status; admins can read any. */

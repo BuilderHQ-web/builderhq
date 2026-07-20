@@ -66,6 +66,24 @@ export {
   computeTenderAnalytics,
 } from "./service";
 
+// The structured submission instrument (question set + helpers).
+export {
+  INSTRUMENT_VERSION,
+  INSTRUMENT_SECTIONS,
+  SCOPE_STATES,
+  scopeMatrixRows,
+  allQuestions,
+  getQuestion,
+  requiredQuestionIds,
+} from "./instrument";
+export type {
+  InstrumentQuestion,
+  InstrumentQuestionType,
+  InstrumentSection,
+  InstrumentOption,
+  ScopeState,
+} from "./instrument";
+
 // Policies.
 export {
   canCreateTender,

@@ -22,7 +22,7 @@
 
 import "server-only";
 import { after } from "next/server";
-import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -393,6 +393,9 @@ export async function listForMarketplace(
   const conds = [
     inArray(projects.status, ["published", "tendering"]),
     isNull(projects.deletedAt),
+    // Private rounds are invisible to the marketplace — only builders
+    // the runner invited can reach them (via their invite, not browse).
+    ne(projects.tenderMode, "private"),
   ];
 
   if (filters.q && filters.q.trim()) {
@@ -461,6 +464,8 @@ export async function listForMarketplace(
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
       description: projects.description,
+      tenderMode: projects.tenderMode,
+      tenderSpots: projects.tenderSpots,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -503,6 +508,8 @@ export async function getMarketplacePreview(
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
       description: projects.description,
+      tenderMode: projects.tenderMode,
+      tenderSpots: projects.tenderSpots,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })
@@ -512,6 +519,8 @@ export async function getMarketplacePreview(
         eq(projects.slug, slug),
         inArray(projects.status, ["published", "tendering"]),
         isNull(projects.deletedAt),
+        // Private rounds never resolve via the marketplace path.
+        ne(projects.tenderMode, "private"),
       ),
     );
   // Touch `list` to satisfy lint without using it functionally.
@@ -570,6 +579,8 @@ export async function listByIds(ids: string[]): Promise<MarketplacePreview[]> {
       targetStartMonth: projects.targetStartMonth,
       targetCompletionMonth: projects.targetCompletionMonth,
       description: projects.description,
+      tenderMode: projects.tenderMode,
+      tenderSpots: projects.tenderSpots,
       publishedAt: projects.publishedAt,
       createdAt: projects.createdAt,
     })

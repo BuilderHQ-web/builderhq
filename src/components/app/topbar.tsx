@@ -28,7 +28,7 @@ interface TopbarProps {
     name: string | null;
     email: string | null | undefined;
     image: string | null | undefined;
-    role: "project_owner" | "builder" | "admin" | null;
+    role: "project_owner" | "builder" | "admin" | "architect" | null;
   };
   /** True when the builder has an active Founding Builder Access grant. */
   isFounding?: boolean;
@@ -41,6 +41,7 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
   project_owner: "Owner",
   builder: "Builder",
   admin: "Admin",
+  architect: "Architect",
 };
 
 export function Topbar({
