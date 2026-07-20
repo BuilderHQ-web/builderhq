@@ -2330,6 +2330,72 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "niche-home-designs",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "Niche Home Designs",
+    monogram: "NH",
+    logo: "/partners/niche-home-designs/logo.png",
+    principal: "Nick Nikolaidis",
+    suburb: "Sydney",
+    state: "NSW",
+    tagline:
+      "A multi award winning Sydney studio designing bespoke homes since 1994, known for a signature modern look and for carrying every project hands on through council approval.",
+    disciplines: ["New homes", "Alterations and additions", "Multi residential and sustainable"],
+    institution: {
+      name: "Building Designers Association of Australia",
+      role: "Accredited Building Designer",
+      note: "Director Nick Nikolaidis",
+    },
+    google: { rating: 5, reviews: 8 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "8 reviews" },
+      { label: "Completed projects", value: "1,400" },
+      { label: "Designing since", value: "1994", sub: "over 30 years" },
+    ],
+    awards: [
+      { label: "Residential Buildings over 450 sqm, winner", sub: "HIA NSW · Blakehurst Dwelling" },
+      { label: "Low Density Multi Residential, winner", sub: "BDA NSW · Kangaroo Point Dwellings" },
+      { label: "New Houses, winner", sub: "BDA Sydney · Connells Point Dwelling" },
+    ],
+    why: "Niche Home Designs has been designing bespoke Sydney homes since 1994, and the record is hard to argue with: around 1,400 completed projects and eighteen industry awards, among them state wins with the Building Designers Association and the HIA and finalist places at national level. What we value as much as the trophies is that this is still a hands on studio: director Nick Nikolaidis works on each home himself, and the practice has spent three decades learning exactly how to carry a design through a development application and council. For an owner heading to tender, that is the combination that matters, a home designed to an award standard, drawn by people who know how to get it approved and built.",
+    about:
+      "Niche Home Designs is a multi award winning building design studio founded in Sydney in 1994 and led by its director, Nick Nikolaidis, an accredited building designer and member of the Building Designers Association of Australia. The studio designs new homes, alterations and additions, multi residential projects and sustainable homes, working for the most part across southern Sydney’s St George area. Its process is deliberately hands on: a site visit and detailed brief, concept sketches, then the development application and council approval, followed by the documentation needed for a construction certificate. Years of working with councils and building authorities, alongside a settled network of industry consultants, sit behind that, and the studio pairs its signature modern look with whatever style a client has in mind.",
+    facts: {
+      established: "1994",
+      basedIn: "Sydney, NSW",
+      serves: "Sydney",
+      focus: "New homes, additions and multi residential",
+    },
+    website: "https://nichehomedesigns.com.au/",
+    instagram: "https://www.instagram.com/nichehomedesigns/",
+    facebook: "https://www.facebook.com/nichehomedesigns",
+    linkedin: "https://www.linkedin.com/company/niche-home-designs/",
+    galleryUrl: "https://nichehomedesigns.com.au/",
+    work: [
+      {
+        title: "Sylvania Waters Residence",
+        suburb: "Sylvania Waters",
+        type: "New home",
+        image: "/partners/niche-home-designs/sylvania-waters-1.jpg",
+      },
+      {
+        title: "Sylvania Waters Dwelling",
+        suburb: "Sylvania Waters",
+        type: "New home",
+        image: "/partners/niche-home-designs/sylvania-waters-2.jpg",
+      },
+      {
+        title: "Sans Souci Dwelling",
+        suburb: "Sans Souci",
+        type: "New home",
+        image: "/partners/niche-home-designs/sans-souci.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
