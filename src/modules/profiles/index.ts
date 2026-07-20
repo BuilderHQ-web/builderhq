@@ -64,6 +64,7 @@ export {
   submitBuilderForApproval,
   // Cross-cutting
   hasCompletedOnboarding,
+  listApprovedBuildersPublic,
   // Zod schemas (consumed by server actions)
   ownerProfileSchema,
   architectProfileSchema,
@@ -77,6 +78,7 @@ export {
   type BuilderLicenceInput,
   type BuilderProfileBundle,
   type OwnerContact,
+  type DirectoryBuilder,
 } from "./service";
 
 // Policies

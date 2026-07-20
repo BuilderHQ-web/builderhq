@@ -130,6 +130,10 @@ export type MarketplaceFilters = {
 /** Patch for a project — every field optional. Service validates the
  *  patch at runtime against the project's type. */
 export type UpdateProjectInput = Partial<{
+  /** How the round runs. Locked once the project is published. */
+  tenderMode: ProjectRow["tenderMode"];
+  /** Builder spots 2–5. NULL = platform default (3). Locked once published. */
+  tenderSpots: number | null;
   title: string;
   type: ProjectRow["type"];
   addressLine1: string | null;

@@ -9,6 +9,8 @@ import { isUnlocked } from "@/modules/unlocks";
 import {
   getActiveTenderForBuilder,
   getProjectOwnerForTender,
+  listResponsesForTender,
+  checklistProgress,
 } from "@/modules/tenders";
 import { getOwnerContactPublic } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
@@ -31,7 +33,15 @@ export default async function TenderRoute({
   if (!session?.user) redirect(`/login?next=/builder/projects/${slug}/tender`);
   const userId = session.user.id!;
 
-  const previewR = await getMarketplacePreview(slug);
+  // Private rounds never resolve via the marketplace path — fall back
+  // for invited builders, who must hold an unlock to see anything.
+  let previewR = await getMarketplacePreview(slug);
+  if (!previewR.ok) {
+    previewR = await getMarketplacePreview(slug, { includePrivate: true });
+    if (previewR.ok && !(await isUnlocked(userId, previewR.value.id))) {
+      notFound();
+    }
+  }
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
@@ -45,6 +55,16 @@ export default async function TenderRoute({
   const docs = existing
     ? await listForTenderUnchecked(existing.id)
     : [];
+
+  // Checklist progress for the submission-standard entry card + gate.
+  const checklist = existing
+    ? await (async () => {
+        const responses = await listResponsesForTender(userId, existing.id);
+        return responses.ok
+          ? checklistProgress(existing, responses.value)
+          : null;
+      })()
+    : null;
 
   // Award-handoff: when the builder has won this tender, surface
   // owner contact + name so they can reach out directly. Skip the
@@ -65,6 +85,7 @@ export default async function TenderRoute({
       initialTender={existing}
       initialDocs={docs}
       ownerContact={ownerContact}
+      initialChecklist={checklist}
     />
   );
 }

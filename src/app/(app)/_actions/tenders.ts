@@ -26,6 +26,9 @@ import {
   getTenderForBuilder,
   getProjectOwnerForTender,
   computeReadiness,
+  checklistProgress,
+  listResponsesForTender,
+  saveTenderResponses,
   canCreateTender,
   canEditTender,
   canWithdrawTender,
@@ -33,6 +36,7 @@ import {
   type ActorContext,
   type CostLineInput,
   type SubmissionReadiness,
+  type ChecklistProgress,
   type Tender,
   type TenderWithLines,
   type UpdateTenderInput,
@@ -306,4 +310,38 @@ export async function listActiveTenderDocsForOwnerAction(
   }
   const docs = await listForTenderUnchecked(tenderId, { activeOnly: true });
   return ok(docs);
+}
+
+
+// ── submission checklist ─────────────────────────────────────────────────
+
+/**
+ * Autosave a batch of checklist answers. Returns fresh checklist
+ * progress so the wizard's rail and the submit gate stay live.
+ */
+export async function saveTenderResponsesAction(
+  tenderId: string,
+  entries: Array<{ qid: string; value: unknown }>,
+): Promise<Result<{ saved: number; checklist: ChecklistProgress | null }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const t = await getTenderForBuilder(a.value.id, tenderId);
+  if (!t) return fail("not_found", "Tender not found.");
+  if (!canEditTender(a.value, t)) {
+    return fail("forbidden", "This tender can no longer be edited.");
+  }
+  return saveTenderResponses(a.value.id, tenderId, entries);
+}
+
+/** Current checklist progress for a tender (for the form's gate card). */
+export async function getTenderChecklistAction(
+  tenderId: string,
+): Promise<Result<ChecklistProgress | null>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const t = await getTenderForBuilder(a.value.id, tenderId);
+  if (!t) return fail("not_found", "Tender not found.");
+  const responses = await listResponsesForTender(a.value.id, tenderId);
+  if (!responses.ok) return responses;
+  return ok(checklistProgress(t, responses.value));
 }

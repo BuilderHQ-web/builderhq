@@ -481,9 +481,16 @@ export async function listForMarketplace(
 /** Fetch a single preview by slug (used by the builder detail page). */
 export async function getMarketplacePreview(
   slug: string,
+  opts: {
+    /**
+     * Resolve private-round projects too. The caller MUST have already
+     * verified (or immediately verify) that the builder holds an unlock
+     * or a live invite — this flag only lifts the marketplace filter,
+     * it does not authorise anything.
+     */
+    includePrivate?: boolean;
+  } = {},
 ): Promise<Result<MarketplacePreview>> {
-  const list = await listForMarketplace({ limit: 1 });
-  // Cheap path: re-run the listForMarketplace query but scoped to slug.
   const [row] = await db
     .select({
       id: projects.id,
@@ -519,12 +526,11 @@ export async function getMarketplacePreview(
         eq(projects.slug, slug),
         inArray(projects.status, ["published", "tendering"]),
         isNull(projects.deletedAt),
-        // Private rounds never resolve via the marketplace path.
-        ne(projects.tenderMode, "private"),
+        // Private rounds never resolve via the marketplace path —
+        // only via includePrivate for invited/unlocked builders.
+        ...(opts.includePrivate ? [] : [ne(projects.tenderMode, "private")]),
       ),
     );
-  // Touch `list` to satisfy lint without using it functionally.
-  void list;
   if (!row) return fail("not_found", "Project not found.");
   const [withCounts] = await attachMarketplaceCounts([row]);
   return ok(withCounts!);
@@ -805,6 +811,24 @@ export function validateSaveReadiness(p: ProjectRow): Record<string, string> {
  *  reasons; service maps them to a single validation error. */
 function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   const out: string[] = [];
+
+  // Tender round settings — validated here, locked after publish so a
+  // live round's rules can't shift under builders who already unlocked.
+  if (patch.tenderSpots !== undefined && patch.tenderSpots !== null) {
+    if (
+      !Number.isInteger(patch.tenderSpots) ||
+      patch.tenderSpots < 2 ||
+      patch.tenderSpots > 5
+    ) {
+      out.push("Builder spots must be between 2 and 5.");
+    }
+  }
+  if (
+    (patch.tenderMode !== undefined || patch.tenderSpots !== undefined) &&
+    p.status !== "draft"
+  ) {
+    out.push("Tender round settings are locked once the project is live.");
+  }
 
   if (patch.title !== undefined && !patch.title.trim()) {
     out.push("Title can't be empty.");

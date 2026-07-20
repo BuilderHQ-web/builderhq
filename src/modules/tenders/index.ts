@@ -64,7 +64,20 @@ export {
   countAwardedForBuilder,
   // Analytics roll-up helper
   computeTenderAnalytics,
+  // Submission checklist
+  checklistProgress,
+  listResponsesForTender,
+  saveTenderResponses,
+  // Builder invites (private/hybrid rounds)
+  createBuilderInvite,
+  listBuilderInvites,
+  revokeBuilderInvite,
+  getBuilderInviteByToken,
+  markBuilderInviteJoined,
 } from "./service";
+export type { CreateBuilderInviteInput } from "./service";
+export type { ChecklistProgress } from "./types";
+export type { TenderBuilderInviteRow, TenderResponseRow } from "./schema";
 
 // The structured submission instrument (question set + helpers).
 export {

@@ -356,6 +356,42 @@ export async function completeArchitectOnboarding(
   return ok({ ok: true });
 }
 
+// ── Builder directory (for tender round invitations) ─────────────────────
+
+export interface DirectoryBuilder {
+  userId: string;
+  name: string;
+  suburb: string | null;
+  state: string | null;
+  yearsInOperation: number | null;
+}
+
+/**
+ * Approved builders, public identity only — powers the "invite from
+ * the directory" picker on private/hybrid rounds. No contact details.
+ */
+export async function listApprovedBuildersPublic(): Promise<DirectoryBuilder[]> {
+  const rows = await db
+    .select({
+      userId: builderProfiles.userId,
+      companyName: builderProfiles.companyName,
+      tradingName: builderProfiles.tradingName,
+      suburb: builderProfiles.businessSuburb,
+      state: builderProfiles.businessState,
+      yearsInOperation: builderProfiles.yearsInOperation,
+    })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.approvalStatus, "approved"))
+    .orderBy(asc(builderProfiles.companyName));
+  return rows.map((r) => ({
+    userId: r.userId,
+    name: r.tradingName ?? r.companyName,
+    suburb: r.suburb,
+    state: r.state,
+    yearsInOperation: r.yearsInOperation,
+  }));
+}
+
 // ── Builder profile ──────────────────────────────────────────────────────
 
 export interface BuilderProfileBundle {

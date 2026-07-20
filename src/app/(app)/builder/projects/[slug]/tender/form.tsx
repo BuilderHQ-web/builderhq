@@ -44,6 +44,7 @@ import { TRADES, type TradeId } from "@/modules/tenders/trades";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import type {
+  ChecklistProgress,
   CostLineInput,
   TenderWithLines,
   UpdateTenderInput,
@@ -100,6 +101,7 @@ export function TenderForm({
   initialTender,
   initialDocs,
   ownerContact,
+  initialChecklist,
 }: {
   preview: MarketplacePreview;
   priceAud: number;
@@ -107,6 +109,8 @@ export function TenderForm({
   initialDocs: Document[];
   /** Set when the builder has won this tender — surfaces contact info. */
   ownerContact: OwnerContact | null;
+  /** Server-computed submission-checklist progress (null = no draft yet). */
+  initialChecklist: ChecklistProgress | null;
 }) {
   const router = useRouter();
   const [tender, setTender] = useState<TenderWithLines | null>(initialTender);
@@ -383,13 +387,21 @@ export function TenderForm({
 
   // ── readiness for the submit button ───────────────────────────────
 
-  const ready =
+  // The structured checklist gates submission on instrument tenders
+  // (legacy drafts without a version are exempt, mirroring the server).
+  const checklistDone = tender
+    ? tender.instrumentVersion == null || (initialChecklist?.complete ?? false)
+    : false;
+
+  const numbersReady =
     !!totalPrice &&
     totalPrice > 0 &&
     !!duration &&
     duration > 0 &&
     !!validity &&
     validity > 0;
+
+  const ready = numbersReady && checklistDone;
 
   // ── render ────────────────────────────────────────────────────────
 
@@ -537,6 +549,18 @@ export function TenderForm({
             </div>
           </Section>
 
+          {/* SECTION 1B — Submission checklist (the instrument). Gates
+                submission; entry card lives right under the number so
+                the two required pieces sit together. */}
+          {!tender || tender.instrumentVersion != null ? (
+            <ChecklistCard
+              slug={preview.slug}
+              hasDraft={!!tender}
+              isLocked={isLocked}
+              checklist={initialChecklist}
+            />
+          ) : null}
+
           {/* SECTION 2 — Cost breakdown */}
           <Collapsible
             open={open.breakdown}
@@ -671,6 +695,7 @@ export function TenderForm({
               </div>
               <TocLink href="#section-tender-documents" label="Documents" />
               <TocLink href="#section-the-number" label="The number" />
+              <TocLink href="#section-checklist" label="Checklist" />
               <TocLink href="#section-cost-breakdown" label="Cost breakdown" />
               <TocLink href="#section-scope" label="Scope" />
               <TocLink href="#section-your-pitch" label="Your pitch" />
@@ -698,6 +723,7 @@ export function TenderForm({
                       !totalPrice && "total price",
                       !duration && "duration",
                       !validity && "validity",
+                      !checklistDone && "submission checklist",
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -1261,6 +1287,119 @@ function LiveSummaryCard({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Entry card for the structured submission checklist — the instrument
+ * that makes every tender comparable like for like. Required for
+ * submission, so it sits directly under the headline numbers with its
+ * own progress state.
+ */
+function ChecklistCard({
+  slug,
+  hasDraft,
+  isLocked,
+  checklist,
+}: {
+  slug: string;
+  hasDraft: boolean;
+  isLocked: boolean;
+  checklist: ChecklistProgress | null;
+}) {
+  const complete = checklist?.complete ?? false;
+  const answered = checklist?.answered ?? 0;
+  const required = checklist?.required ?? 0;
+  const pct =
+    required > 0 ? Math.round((answered / required) * 100) : 0;
+
+  return (
+    <section
+      id="section-checklist"
+      className={cn(
+        "rounded-md border bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]",
+        complete
+          ? "border-border-subtle"
+          : "border-border-accent/50 ring-1 ring-[rgba(0,212,200,0.14)]",
+      )}
+    >
+      <div className="px-4 sm:px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <span
+              className={cn(
+                "size-9 rounded-md border flex items-center justify-center shrink-0",
+                complete
+                  ? "border-border-accent bg-[rgba(0,212,200,0.08)] text-accent-light"
+                  : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light",
+              )}
+            >
+              {complete ? (
+                <Check className="size-4" strokeWidth={3} />
+              ) : (
+                <ListChecks className="size-4" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="font-ui font-semibold text-[13.5px] text-text">
+                Submission checklist
+                <span className="ml-2 align-middle text-[9px] tracking-[0.14em] uppercase text-text-dim border border-border-subtle rounded-full px-1.5 py-0.5">
+                  Required
+                </span>
+              </p>
+              <p className="mt-0.5 text-[11.5px] leading-[1.55] text-text-dim max-w-[520px]">
+                {complete
+                  ? "Complete. Your tender will be compared like for like on scope, allowances and conditions."
+                  : hasDraft
+                    ? "The structured set every builder answers, so your price is compared on the same scope as everyone else. About ten minutes."
+                    : "Starts once your draft exists. Enter your price above and it saves automatically."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            {hasDraft && checklist ? (
+              <div className="text-right">
+                <p className="font-display text-[18px] leading-none text-text tabular-nums">
+                  {answered}
+                  <span className="text-text-dim text-[13px]">/{required}</span>
+                </p>
+                <p className="mt-0.5 text-[9.5px] tracking-[0.14em] uppercase text-text-dim">
+                  Answered
+                </p>
+              </div>
+            ) : null}
+            {hasDraft && !isLocked ? (
+              <Link
+                href={`/builder/projects/${slug}/tender/checklist`}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-10 px-5 rounded-full font-ui font-semibold text-[12.5px] transition-colors",
+                  complete
+                    ? "border border-border-strong text-text hover:bg-surface-2"
+                    : "bg-accent text-accent-contrast hover:bg-accent-hover",
+                )}
+              >
+                {complete
+                  ? "Review answers"
+                  : answered > 0
+                    ? "Continue"
+                    : "Start the checklist"}
+                <ArrowUpRight className="size-3.5" />
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {hasDraft && checklist && !complete ? (
+          <div className="mt-4 h-[3px] rounded-full bg-border-subtle/60 overflow-hidden">
+            <div
+              className="h-full bg-accent transition-[width] duration-300"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

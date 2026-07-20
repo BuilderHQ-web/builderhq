@@ -35,7 +35,15 @@ export default async function BuilderProjectPage({
   if (!session?.user) redirect(`/login?next=/builder/projects/${slug}`);
   const userId = session.user.id!;
 
-  const previewR = await getMarketplacePreview(slug);
+  // Private rounds never resolve via the marketplace path — fall back
+  // for invited builders, who must hold an unlock to see anything.
+  let previewR = await getMarketplacePreview(slug);
+  if (!previewR.ok) {
+    previewR = await getMarketplacePreview(slug, { includePrivate: true });
+    if (previewR.ok && !(await isUnlocked(userId, previewR.value.id))) {
+      notFound();
+    }
+  }
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
