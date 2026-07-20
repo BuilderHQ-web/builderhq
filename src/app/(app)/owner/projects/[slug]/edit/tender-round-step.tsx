@@ -518,6 +518,22 @@ function DirectoryPicker({
         toast.error(r.error.message ?? "Could not send the invitation.");
         return;
       }
+      if (r.value.deferred) {
+        toast.success(
+          `${b.name} invited.`,
+          "They will be emailed the moment this project goes live.",
+        );
+      } else if (r.value.emailed) {
+        toast.success(
+          `${b.name} invited.`,
+          "They have been emailed and notified on BuilderHQ.",
+        );
+      } else {
+        toast.message(
+          `${b.name} invited, but the email could not be sent.`,
+          "Copy their private link from the list and send it directly.",
+        );
+      }
       onInvited();
     },
     [projectId, onInvited],
@@ -626,7 +642,22 @@ function EmailInviteForm({
     setEmail("");
     setContactName("");
     setCompany("");
-    toast.success("Invitation created. Copy the link and send it over.");
+    if (r.value.deferred) {
+      toast.success(
+        "Invitation saved.",
+        "We will email the builder the moment this project goes live. The link is in the list if you want to share it sooner.",
+      );
+    } else if (r.value.emailed) {
+      toast.success(
+        "Invitation sent.",
+        "We have emailed the builder their private link. You can copy it from the list if you want to follow up directly.",
+      );
+    } else {
+      toast.message(
+        "Invitation created, but the email could not be sent.",
+        "Copy the builder's private link from the list and send it to them directly.",
+      );
+    }
     onInvited();
   }, [projectId, email, contactName, company, emailOk, onInvited]);
 
@@ -636,9 +667,9 @@ function EmailInviteForm({
   return (
     <div className="mt-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)] p-3.5 space-y-3">
       <p className="text-[11.5px] leading-[1.55] text-text-dim">
-        For a builder you already work with who is not on BuilderHQ yet. You
-        get a private link to send them; it signs them in straight to this
-        project, free.
+        For a builder you already work with who is not on BuilderHQ yet. We
+        email them a personal invitation with their private link; it takes
+        them straight to this project, at no cost to them.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input

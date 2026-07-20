@@ -34,6 +34,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 import { projects } from "./schema";
+import { tenderBuilderInvites } from "@/modules/tenders/schema";
 import { documents } from "@/modules/documents/schema";
 import { users } from "@/modules/users/schema";
 import {
@@ -122,11 +123,41 @@ export async function dispatchProjectPublishedEvent(
       }),
     ]);
 
-    // 2. Fan-out to all eligible builders (enqueues to the outbox).
-    await fanOutToBuilders(ctx, builderUrl);
+    // 2. Network fan-out (enqueues to the outbox) — open and hybrid
+    // rounds only. A PRIVATE round never announces itself to the
+    // network; its builders are invited by hand.
+    if (ctx.project.tenderMode !== "private") {
+      await fanOutToBuilders(ctx, builderUrl);
+    }
+
+    // 3. Invitations created while the project was still a draft were
+    // deferred (an invite email to a closed round reads as a broken
+    // link) — the round is open now, so they go out.
+    const pendingInvites = await db
+      .select({ id: tenderBuilderInvites.id })
+      .from(tenderBuilderInvites)
+      .where(
+        and(
+          eq(tenderBuilderInvites.projectId, projectId),
+          eq(tenderBuilderInvites.status, "invited"),
+        ),
+      );
+    if (pendingInvites.length > 0) {
+      const { dispatchBuilderInvite } = await import(
+        "@/modules/tenders/dispatch"
+      );
+      await Promise.allSettled(
+        pendingInvites.map((inv) => dispatchBuilderInvite(inv.id)),
+      );
+    }
 
     logger.info(
-      { event: "project.dispatch.ok", projectId, kind: "project_published" },
+      {
+        event: "project.dispatch.ok",
+        projectId,
+        kind: "project_published",
+        invitesSent: pendingInvites.length,
+      },
       "project_published dispatch complete",
     );
   } catch (err) {
@@ -147,6 +178,7 @@ interface DispatchContext {
     suburb: string | null;
     state: string | null;
     budgetBand: string | null;
+    tenderMode: "open" | "private" | "hybrid";
     documentCount: number;
   };
   owner: {
@@ -169,6 +201,7 @@ async function gatherContext(
       projectSuburb: projects.suburb,
       projectState: projects.state,
       projectBudgetBand: projects.budgetBand,
+      projectTenderMode: projects.tenderMode,
       ownerId: users.id,
       ownerEmail: users.email,
       ownerName: users.name,
@@ -204,6 +237,7 @@ async function gatherContext(
       suburb: row.projectSuburb,
       state: row.projectState,
       budgetBand: row.projectBudgetBand,
+      tenderMode: row.projectTenderMode,
       documentCount: docs?.value ?? 0,
     },
     owner: {

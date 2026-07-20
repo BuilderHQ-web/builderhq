@@ -42,6 +42,7 @@ import {
   INSTRUMENT_SECTIONS,
   SCOPE_STATES,
   scopeMatrixRows,
+  isAnswerComplete,
   type InstrumentQuestion,
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
@@ -57,33 +58,9 @@ type AnswerPatch = unknown | ((prev: unknown) => unknown);
 
 const MATRIX_ROWS = scopeMatrixRows();
 
-/* ── answer completeness (client-strict) ────────────────────────────── */
-
-function isAnswered(q: InstrumentQuestion, v: unknown): boolean {
-  if (v === undefined || v === null) return false;
-  switch (q.type) {
-    case "bool":
-      return typeof v === "boolean";
-    case "select":
-      return typeof v === "string" && v.length > 0;
-    case "multi":
-      return Array.isArray(v) && v.length > 0;
-    case "number":
-    case "currency":
-    case "percent":
-      return typeof v === "number" && Number.isFinite(v);
-    case "text":
-      return String(v).trim().length > 0;
-    case "month":
-      return typeof v === "string" && v.length > 0;
-    case "items":
-      return Array.isArray(v) && v.length > 0;
-    case "matrix": {
-      const m = (v ?? {}) as Record<string, string>;
-      return MATRIX_ROWS.every((r) => !!m[r.id]);
-    }
-  }
-}
+// Answer completeness is shared with the server (isAnswerComplete in
+// instrument.ts) so the progress ring here and the submit gate there
+// can never disagree.
 
 function gatePasses(q: InstrumentQuestion, answers: Answers): boolean {
   if (!q.showIf) return true;
@@ -141,9 +118,15 @@ export function ChecklistWizard({
     try {
       const r = await saveTenderResponsesAction(tenderId, entries);
       if (!r.ok) {
-        // Put the batch back so the next change retries it.
-        for (const e of entries) {
-          if (!pending.current.has(e.qid)) pending.current.set(e.qid, e.value);
+        // Transient failures (network, DB) retry on the next change.
+        // Validation failures are deterministic — requeueing them would
+        // poison every later batch into an endless retry loop, so the
+        // batch is dropped; values stay in local state and re-queue the
+        // next time their field is edited.
+        if (r.error.code !== "validation") {
+          for (const e of entries) {
+            if (!pending.current.has(e.qid)) pending.current.set(e.qid, e.value);
+          }
         }
         setSaveState("error");
         toast.error("Couldn't save", r.error.message);
@@ -204,7 +187,7 @@ export function ChecklistWizard({
     const perSection = INSTRUMENT_SECTIONS.map((s) => {
       const visible = s.questions.filter((q) => gatePasses(q, answers));
       const required = visible.filter((q) => q.required);
-      const answered = required.filter((q) => isAnswered(q, answers[q.id]));
+      const answered = required.filter((q) => isAnswerComplete(q, answers[q.id]));
       return {
         id: s.id,
         required: required.length,
@@ -517,7 +500,7 @@ function QuestionRow({
   value: unknown;
   onAnswer: (qid: string, value: AnswerPatch) => void;
 }) {
-  const done = isAnswered(q, value);
+  const done = isAnswerComplete(q, value);
 
   return (
     <div className="px-4 sm:px-6 py-5">
@@ -630,6 +613,7 @@ function AnswerControl({
         <NumberBox
           value={typeof value === "number" ? value : null}
           unit={q.type === "percent" ? "%" : q.unit}
+          max={q.type === "percent" ? 100 : undefined}
           onChange={(v) => onAnswer(q.id, v)}
         />
       );
@@ -650,6 +634,7 @@ function AnswerControl({
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onAnswer(q.id, e.target.value)}
           rows={2}
+          maxLength={2000}
           placeholder="Optional"
           className="w-full px-3.5 py-2.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[13px] leading-[1.55] text-text placeholder:text-text-dim/60 focus:outline-none focus:border-border-accent transition-colors resize-y"
         />
@@ -743,10 +728,12 @@ function CurrencyBox({
 function NumberBox({
   value,
   unit,
+  max,
   onChange,
 }: {
   value: number | null;
   unit?: string;
+  max?: number;
   onChange: (v: number | null) => void;
 }) {
   return (
@@ -756,9 +743,16 @@ function NumberBox({
         inputMode="numeric"
         value={value ?? ""}
         min={0}
+        max={max}
         onChange={(e) => {
-          const v = e.target.value === "" ? null : Number(e.target.value);
-          onChange(v !== null && Number.isFinite(v) ? v : null);
+          const raw = e.target.value === "" ? null : Number(e.target.value);
+          // min/max attributes don't stop typed values — clamp before
+          // emitting so the save path never sees an out-of-range number.
+          const v =
+            raw !== null && Number.isFinite(raw)
+              ? Math.min(max ?? Infinity, Math.max(0, raw))
+              : null;
+          onChange(v);
         }}
         placeholder="0"
         className="flex-1 min-w-0 px-3.5 bg-transparent border-0 outline-none focus-visible:shadow-none text-text font-display text-[14px] tabular-nums"
@@ -809,6 +803,7 @@ function ItemsEditor({
                   type="text"
                   value={typeof row[f.key] === "string" ? (row[f.key] as string) : ""}
                   onChange={(e) => setCell(i, f.key, e.target.value)}
+                  maxLength={500}
                   placeholder={f.label}
                   className="flex-1 min-w-[160px] h-10 px-3 rounded-md border border-border-subtle bg-surface-1 text-[12.5px] text-text placeholder:text-text-dim/60 focus:outline-none focus:border-border-accent transition-colors"
                 />
@@ -825,9 +820,30 @@ function ItemsEditor({
                 </span>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  value={num === null ? "" : num.toLocaleString("en-AU")}
+                  inputMode={f.type === "percent" ? "decimal" : "numeric"}
+                  value={
+                    num === null
+                      ? ""
+                      : f.type === "percent"
+                        ? String(num)
+                        : num.toLocaleString("en-AU")
+                  }
                   onChange={(e) => {
+                    if (f.type === "percent") {
+                      // Stage shares are legitimately decimal ("12.5").
+                      // Stripping the point would silently turn 12.5
+                      // into 125, so parse it properly and clamp.
+                      const cleaned = e.target.value.replace(/[^\d.]/g, "");
+                      const n = cleaned === "" ? null : Number(cleaned);
+                      setCell(
+                        i,
+                        f.key,
+                        n !== null && Number.isFinite(n)
+                          ? Math.min(100, Math.max(0, n))
+                          : null,
+                      );
+                      return;
+                    }
                     const cleaned = e.target.value.replace(/[^\d]/g, "");
                     setCell(i, f.key, cleaned === "" ? null : Number(cleaned));
                   }}

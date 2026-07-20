@@ -7,6 +7,7 @@
  */
 
 import { requireActor } from "@/lib/actor";
+import { limiters } from "@/lib/ratelimit";
 import { fail, type Result } from "@/lib/result";
 import {
   createBuilderInvite,
@@ -34,9 +35,17 @@ async function requireRunner() {
 export async function createBuilderInviteAction(
   projectId: string,
   input: CreateBuilderInviteInput,
-): Promise<Result<TenderBuilderInviteRow>> {
+): Promise<
+  Result<TenderBuilderInviteRow & { emailed: boolean; deferred: boolean }>
+> {
   const actor = await requireRunner();
   if (!actor.ok) return actor;
+  // Every successful create can fire an email to a typed address —
+  // rate-limited per runner on top of the per-project ceiling.
+  const rl = await limiters.builderInvite.limit(`user:${actor.value.id}`);
+  if (!rl.success) {
+    return fail("rate_limited", "Too many invitations at once. Try again in a few minutes.");
+  }
   return createBuilderInvite(actor.value.id, projectId, input);
 }
 

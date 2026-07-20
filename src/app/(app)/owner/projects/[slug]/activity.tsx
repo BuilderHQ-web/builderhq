@@ -34,6 +34,7 @@ type Stage = "live" | "unlocked" | "tendering";
 
 export function ProjectActivity({
   slug,
+  basePath,
   state,
   unlockCount,
   tenderCount,
@@ -41,6 +42,8 @@ export function ProjectActivity({
   builders,
 }: {
   slug: string;
+  /** "/owner" or "/architect" — where this project's pages live. */
+  basePath: string;
   state: string | null;
   unlockCount: number;
   tenderCount: number;
@@ -58,6 +61,7 @@ export function ProjectActivity({
         tenderCount={tenderCount}
         state={state}
         slug={slug}
+        basePath={basePath}
       />
 
       {builders.length > 0 ? (
@@ -104,12 +108,14 @@ function StatusBanner({
   tenderCount,
   state,
   slug,
+  basePath,
 }: {
   stage: Stage;
   unlockCount: number;
   tenderCount: number;
   state: string | null;
   slug: string;
+  basePath: string;
 }) {
   const whereLabel = state ? `across ${state}` : "in your area";
   const cfg = {
@@ -131,7 +137,7 @@ function StatusBanner({
       body: "Compare them side-by-side — price, timeline, inclusions — and award the builder you trust. You can keep messaging them first.",
       cta: {
         label: "Compare tenders",
-        href: `/owner/projects/${slug}/tenders`,
+        href: `${basePath}/projects/${slug}/tenders`,
       },
     },
   }[stage];

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
+import { projectsBase } from "@/lib/dashboard-route";
 import { getBySlugForOwner } from "@/modules/projects";
 import { listTendersForOwner, computeTenderAnalytics } from "@/modules/tenders";
 import { countUnlocksForProject } from "@/modules/unlocks";
@@ -21,6 +22,7 @@ export default async function ProjectTendersPage({
   const { slug } = await params;
   const session = await auth();
   if (!session?.user) redirect(`/login?next=/owner/projects/${slug}/tenders`);
+  const base = projectsBase(session.user.role);
   const userId = session.user.id!;
 
   const r = await getBySlugForOwner(userId, slug);
@@ -42,7 +44,7 @@ export default async function ProjectTendersPage({
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1400px]">
         <Link
-          href={`/owner/projects/${project.slug}`}
+          href={`${base}/projects/${project.slug}`}
           className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
         >
           <ArrowLeft className="size-3.5" />
@@ -101,7 +103,7 @@ export default async function ProjectTendersPage({
                   : "Verified builders are reviewing your project now. The first priced tenders usually arrive within 3–7 days of going live, and appear here for side-by-side comparison."}
               </p>
               <Link
-                href={`/owner/projects/${project.slug}`}
+                href={`${base}/projects/${project.slug}`}
                 className={cn(
                   buttonVariants({ variant: "subtle", size: "md" }),
                   "mt-5 gap-1.5",

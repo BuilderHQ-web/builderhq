@@ -35,14 +35,19 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-import { tenders } from "./schema";
+import { tenders, tenderBuilderInvites } from "./schema";
 import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users/schema";
-import { builderProfiles, projectOwnerProfiles } from "@/modules/profiles/schema";
+import {
+  builderProfiles,
+  projectOwnerProfiles,
+  architectProfiles,
+} from "@/modules/profiles/schema";
 
 import { create as createNotification } from "@/modules/notifications";
 import { sendToUser as sendPushToUser } from "@/modules/push";
 import {
+  sendBuilderTenderInvitationEmail,
   sendTenderSubmittedEmail,
   sendTenderSubmittedBuilderEmail,
   sendTenderSubmittedOpsEmail,
@@ -398,5 +403,156 @@ export async function dispatchTenderEvent(
       { event: "tender.dispatch.failed", tenderId, kind, msg },
       "tender dispatch failed — continuing",
     );
+  }
+}
+
+/**
+ * Invitation fan-out for private / hybrid rounds. Fired by
+ * createBuilderInvite after the row lands. Same contract as
+ * dispatchTenderEvent: internally try/catch'd, never blocks or rolls
+ * back the invite the runner just created.
+ *
+ * Off-platform invitees get the email only (there is no user row to
+ * notify). On-platform builders also get a bell notification; no
+ * mobile push, because the mobile app has no invite redemption route
+ * yet — the email link handles the full journey on web.
+ */
+/**
+ * Collapse runner-controlled text to one clean line before it enters
+ * an email subject or body: strips control characters, collapses
+ * whitespace, caps length. Defence in depth — the values are already
+ * validated at entry, but an email to an off-platform stranger is the
+ * one surface where a crafted string does real reputational damage.
+ */
+function cleanLine(s: string, max: number): string {
+  return s
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+export async function dispatchBuilderInvite(
+  inviteId: string,
+): Promise<{ emailed: boolean }> {
+  try {
+    const inviterUsers = alias(users, "inviter_users");
+    const inviteeUsers = alias(users, "invitee_users");
+    const [row] = await db
+      .select({
+        // invite
+        email: tenderBuilderInvites.email,
+        contactName: tenderBuilderInvites.contactName,
+        builderUserId: tenderBuilderInvites.builderUserId,
+        inviteToken: tenderBuilderInvites.inviteToken,
+        // project
+        projectId: projects.id,
+        projectTitle: projects.title,
+        projectSuburb: projects.suburb,
+        projectState: projects.state,
+        // inviter (the runner) — practice name preferred for architects
+        inviterName: inviterUsers.name,
+        inviterPractice: architectProfiles.practiceName,
+        // on-platform invitee
+        inviteeEmail: inviteeUsers.email,
+        inviteeName: inviteeUsers.name,
+      })
+      .from(tenderBuilderInvites)
+      .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+      .innerJoin(
+        inviterUsers,
+        eq(inviterUsers.id, tenderBuilderInvites.invitedBy),
+      )
+      .leftJoin(
+        architectProfiles,
+        eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+      )
+      .leftJoin(
+        inviteeUsers,
+        eq(inviteeUsers.id, tenderBuilderInvites.builderUserId),
+      )
+      .where(eq(tenderBuilderInvites.id, inviteId))
+      .limit(1);
+    if (!row) {
+      logger.warn(
+        { event: "tender_invite.dispatch.no_context", inviteId },
+        "tender invite dispatch — no context found",
+      );
+      return { emailed: false };
+    }
+
+    const onPlatform = !!row.builderUserId;
+    const to = onPlatform ? row.inviteeEmail : row.email;
+    if (!to) {
+      logger.warn(
+        { event: "tender_invite.dispatch.no_recipient", inviteId },
+        "tender invite dispatch — no recipient email",
+      );
+      return { emailed: false };
+    }
+
+    const firstFromName = (n: string | null) =>
+      n ? (n.split(" ")[0] ?? null) : null;
+    const inviterName = cleanLine(
+      row.inviterPractice ?? row.inviterName ?? "The project team",
+      80,
+    );
+    const projectTitle = cleanLine(row.projectTitle, 120);
+    const projectLocation = row.projectSuburb
+      ? cleanLine(
+          `${row.projectSuburb}, ${row.projectState ?? ""}`.replace(/, $/, ""),
+          80,
+        )
+      : null;
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const inviteUrl = `${base}/invite/b/${row.inviteToken}`;
+
+    const [emailResult] = await Promise.allSettled([
+      sendBuilderTenderInvitationEmail({
+        to,
+        contactFirstName: onPlatform
+          ? firstFromName(row.inviteeName)
+          : firstFromName(row.contactName),
+        inviterName,
+        projectTitle,
+        projectLocation,
+        inviteUrl,
+        onPlatform,
+      }),
+      ...(onPlatform
+        ? [
+            createNotification({
+              userId: row.builderUserId!,
+              kind: "tender_invited",
+              title: `Invited to tender on ${projectTitle}`,
+              body: `${inviterName} has invited you. Invited builders take part at no cost.`,
+              actionUrl: inviteUrl,
+              projectId: row.projectId,
+            }),
+          ]
+        : []),
+    ]);
+
+    const emailed =
+      emailResult.status === "fulfilled" && emailResult.value.ok;
+    if (emailed) {
+      logger.info(
+        { event: "tender_invite.dispatch.ok", inviteId, onPlatform },
+        "tender invite dispatch completed",
+      );
+    } else {
+      logger.warn(
+        { event: "tender_invite.dispatch.email_failed", inviteId, onPlatform },
+        "tender invite created but the email did not send",
+      );
+    }
+    return { emailed };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "tender_invite.dispatch.failed", inviteId, msg },
+      "tender invite dispatch failed — continuing",
+    );
+    return { emailed: false };
   }
 }

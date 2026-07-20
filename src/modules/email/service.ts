@@ -51,6 +51,7 @@ import { TenderShortlistedEmail } from "@/emails/TenderShortlistedEmail";
 import { TenderAwardedEmail } from "@/emails/TenderAwardedEmail";
 import { TenderRejectedEmail } from "@/emails/TenderRejectedEmail";
 import { TenderWithdrawnEmail } from "@/emails/TenderWithdrawnEmail";
+import { BuilderTenderInvitationEmail } from "@/emails/BuilderTenderInvitationEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -2081,6 +2082,63 @@ export async function sendAuthSigninLinkEmail(
   logger.info(
     { event: "email.auth_signin_link.sent", to: input.to, resendId: data.id },
     "sign-in link email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── builder tender invitation (private / hybrid rounds) ─────────────────
+
+interface SendBuilderTenderInvitationEmailInput {
+  to: string;
+  contactFirstName: string | null;
+  inviterName: string;
+  projectTitle: string;
+  projectLocation: string | null;
+  inviteUrl: string;
+  onPlatform: boolean;
+}
+
+/**
+ * The formal letter of invitation a hand-picked builder receives for
+ * a private or hybrid tender round. Fired by the tenders dispatch
+ * when a runner creates the invite; the same personal link the
+ * runner can copy from the round step.
+ */
+export async function sendBuilderTenderInvitationEmail(
+  input: SendBuilderTenderInvitationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Invitation to tender: ${input.projectTitle}`;
+  const props = {
+    contactFirstName: input.contactFirstName,
+    inviterName: input.inviterName,
+    projectTitle: input.projectTitle,
+    projectLocation: input.projectLocation,
+    inviteUrl: input.inviteUrl,
+    onPlatform: input.onPlatform,
+  };
+  const [html, text] = await Promise.all([
+    render(BuilderTenderInvitationEmail(props)),
+    render(BuilderTenderInvitationEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "tender-invitation" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.builder_tender_invitation.failed", to: input.to, code: error.name, message: error.message },
+      "builder_tender_invitation email send failed",
+    );
+    return fail("external_error", "Couldn't send the invitation email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.builder_tender_invitation.sent", to: input.to, resendId: data.id },
+    "builder_tender_invitation email sent",
   );
   return ok({ id: data.id });
 }

@@ -747,3 +747,133 @@ export function requiredQuestionIds(
   }
   return ids;
 }
+
+/* ── answer validation ──────────────────────────────────────────────── */
+
+const MATRIX_ROW_IDS = new Set(scopeMatrixRows().map((r) => r.id));
+const SCOPE_STATE_VALUES = new Set<string>(SCOPE_STATES.map((s) => s.value));
+
+/**
+ * Save-time shape check: is this a well-formed value for the question
+ * type? Deliberately permissive of PARTIAL answers (a half-marked
+ * matrix, an items row mid-typing) — completeness is a separate,
+ * stricter question answered by isAnswerComplete. `null` always
+ * passes: it is how an answer is cleared.
+ */
+export function isValidAnswerShape(
+  q: InstrumentQuestion,
+  v: unknown,
+): boolean {
+  if (v === null) return true;
+  switch (q.type) {
+    case "bool":
+      return typeof v === "boolean";
+    case "select":
+      return (
+        typeof v === "string" && (q.options ?? []).some((o) => o.value === v)
+      );
+    case "multi":
+      return (
+        Array.isArray(v) &&
+        v.every(
+          (x) =>
+            typeof x === "string" &&
+            (q.options ?? []).some((o) => o.value === x),
+        )
+      );
+    case "number":
+    case "currency":
+      return typeof v === "number" && Number.isFinite(v) && v >= 0;
+    case "percent":
+      return typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 100;
+    case "text":
+      return typeof v === "string" && v.length <= 2000;
+    case "month":
+      return typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+    case "items": {
+      if (!Array.isArray(v) || v.length > 50) return false;
+      const fields = q.itemFields ?? [];
+      const keys = new Set(fields.map((f) => f.key));
+      return v.every((row) => {
+        if (row === null || typeof row !== "object" || Array.isArray(row)) {
+          return false;
+        }
+        return Object.entries(row as Record<string, unknown>).every(
+          ([k, val]) => {
+            if (!keys.has(k)) return false;
+            if (val === null) return true;
+            const f = fields.find((ff) => ff.key === k)!;
+            if (f.type === "text") {
+              return typeof val === "string" && val.length <= 500;
+            }
+            return (
+              typeof val === "number" &&
+              Number.isFinite(val) &&
+              val >= 0 &&
+              (f.type !== "percent" || val <= 100)
+            );
+          },
+        );
+      });
+    }
+    case "matrix": {
+      if (typeof v !== "object" || Array.isArray(v)) return false;
+      return Object.entries(v as Record<string, unknown>).every(
+        ([rowId, state]) =>
+          MATRIX_ROW_IDS.has(rowId as TradeId) &&
+          typeof state === "string" &&
+          SCOPE_STATE_VALUES.has(state),
+      );
+    }
+  }
+}
+
+/**
+ * Gate-time completeness: does this value FULLY answer the question?
+ * The single definition shared by the checklist UI (progress ring,
+ * "complete" banner) and the server submit gate, so the client can
+ * never claim complete for a submission the server would refuse.
+ */
+export function isAnswerComplete(q: InstrumentQuestion, v: unknown): boolean {
+  if (v === undefined || v === null) return false;
+  // Completeness implies savability: a value the save path would refuse
+  // (out-of-range percent, oversized text) must never show as "done".
+  if (!isValidAnswerShape(q, v)) return false;
+  switch (q.type) {
+    case "bool":
+      return typeof v === "boolean";
+    case "select":
+      return typeof v === "string" && v.length > 0;
+    case "multi":
+      return Array.isArray(v) && v.length > 0;
+    case "number":
+    case "currency":
+    case "percent":
+      return typeof v === "number" && Number.isFinite(v);
+    case "text":
+      return typeof v === "string" && v.trim().length > 0;
+    case "month":
+      return typeof v === "string" && v.length > 0;
+    case "items": {
+      if (!Array.isArray(v) || v.length === 0) return false;
+      const fields = q.itemFields ?? [];
+      return v.every((row) => {
+        if (row === null || typeof row !== "object") return false;
+        const r = row as Record<string, unknown>;
+        return fields.every((f) =>
+          f.type === "text"
+            ? typeof r[f.key] === "string" &&
+              (r[f.key] as string).trim().length > 0
+            : typeof r[f.key] === "number" && Number.isFinite(r[f.key]),
+        );
+      });
+    }
+    case "matrix": {
+      if (typeof v !== "object" || Array.isArray(v)) return false;
+      const m = v as Record<string, unknown>;
+      return scopeMatrixRows().every(
+        (r) => typeof m[r.id] === "string" && SCOPE_STATE_VALUES.has(m[r.id] as string),
+      );
+    }
+  }
+}

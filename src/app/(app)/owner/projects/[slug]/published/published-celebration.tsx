@@ -21,10 +21,13 @@ export function PublishedCelebration({
   title,
   slug,
   state,
+  basePath,
 }: {
   title: string;
   slug: string;
   state: string | null;
+  /** "/owner" or "/architect" — where this project's pages live. */
+  basePath: string;
 }) {
   const reduce = !!useReducedMotion();
   const where = state ? `across ${state}` : "in your area";
@@ -95,7 +98,7 @@ export function PublishedCelebration({
               className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3"
             >
               <Link
-                href={`/owner/projects/${slug}`}
+                href={`${basePath}/projects/${slug}`}
                 className={cn(
                   buttonVariants({ variant: "primary", size: "lg" }),
                   "gap-2 w-full sm:w-auto",
@@ -105,7 +108,7 @@ export function PublishedCelebration({
                 <ArrowRight className="size-4" />
               </Link>
               <Link
-                href="/owner"
+                href={basePath}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "lg" }),
                   "gap-2 w-full sm:w-auto",

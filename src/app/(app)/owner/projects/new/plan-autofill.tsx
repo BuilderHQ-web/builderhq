@@ -20,7 +20,7 @@
  */
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FileUp, ShieldCheck, ArrowLeft, RotateCcw, PencilLine } from "lucide-react";
 
 import {
@@ -122,6 +122,9 @@ export function PlanAutofill({
   onBack: () => void;
 }) {
   const router = useRouter();
+  // Mounted under both /owner and /architect — stay on the same base.
+  const pathname = usePathname();
+  const base = pathname.startsWith("/architect") ? "/architect" : "/owner";
   const [phase, setPhase] = useState<Phase>("upload");
   const [dragOver, setDragOver] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
@@ -220,7 +223,7 @@ export function PlanAutofill({
 
     // 4 - into the normal wizard, pre-filled, with the review banner.
     router.push(
-      `/owner/projects/${slug}/edit?from=autofill&filled=${count}`,
+      `${base}/projects/${slug}/edit?from=autofill&filled=${count}`,
     );
   }
 

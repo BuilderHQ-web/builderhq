@@ -359,7 +359,12 @@ function DrawerLink({
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === "/owner" || href === "/builder" || href === "/admin") {
+  if (
+    href === "/owner" ||
+    href === "/builder" ||
+    href === "/admin" ||
+    href === "/architect"
+  ) {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(href + "/");

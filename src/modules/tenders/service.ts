@@ -47,11 +47,13 @@ import { users } from "@/modules/users";
 import { builderProfiles } from "@/modules/profiles/schema";
 import { documents } from "@/modules/documents/schema";
 
-import { dispatchTenderEvent } from "./dispatch";
+import { dispatchTenderEvent, dispatchBuilderInvite } from "./dispatch";
 import {
   INSTRUMENT_VERSION,
   getQuestion,
   requiredQuestionIds,
+  isValidAnswerShape,
+  isAnswerComplete,
 } from "./instrument";
 import {
   getOrCreateConversation,
@@ -1045,7 +1047,19 @@ export function checklistProgress(
   if (t.instrumentVersion == null) return null;
   const answers = new Map(responses.map((r) => [r.qid, r.value]));
   const required = requiredQuestionIds(answers);
-  const answered = required.filter((qid) => answers.has(qid)).length;
+  // An answer only counts when it FULLY answers the question (every
+  // matrix row marked, every items row filled) — same definition the
+  // checklist UI uses, so client "complete" and the submit gate agree.
+  const answered = required.filter((qid) => {
+    const q = getQuestion(qid);
+    if (!q) return false;
+    const raw = answers.get(qid);
+    const v =
+      typeof raw === "object" && raw !== null && "v" in raw
+        ? (raw as { v: unknown }).v
+        : raw;
+    return isAnswerComplete(q, v);
+  }).length;
   return {
     version: t.instrumentVersion,
     required: required.length,
@@ -1091,8 +1105,15 @@ export async function saveTenderResponses(
     return fail("validation", "Too many answers in one batch.");
   }
   for (const e of entries) {
-    if (!getQuestion(e.qid)) {
+    const q = getQuestion(e.qid);
+    if (!q) {
       return fail("validation", `Unknown question: ${e.qid}`);
+    }
+    // Shape-check every value against its question type so the
+    // response store only ever holds well-formed answers (partial is
+    // fine — completeness is judged at the submit gate, not here).
+    if (!isValidAnswerShape(q, e.value ?? null)) {
+      return fail("validation", `Invalid answer for ${e.qid}.`);
     }
   }
 
@@ -1147,12 +1168,22 @@ export async function createBuilderInvite(
   runnerId: string,
   projectId: string,
   input: CreateBuilderInviteInput,
-): Promise<Result<TenderBuilderInviteRow>> {
+): Promise<
+  Result<
+    TenderBuilderInviteRow & {
+      /** The invitation email went out (allowlist-suppressed counts as sent). */
+      emailed: boolean;
+      /** Project still a draft — the email goes out at publish instead. */
+      deferred: boolean;
+    }
+  >
+> {
   const [project] = await db
     .select({
       id: projects.id,
       ownerId: projects.ownerId,
       tenderMode: projects.tenderMode,
+      status: projects.status,
     })
     .from(projects)
     .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
@@ -1167,12 +1198,43 @@ export async function createBuilderInvite(
   }
 
   const onPlatform = !!input.builderUserId;
-  if (!onPlatform) {
+  if (onPlatform) {
+    // The invite (and its email) must target an approved builder — the
+    // same criteria the directory picker lists. Anything else is an
+    // arbitrary userId handed to the action.
+    const [target] = await db
+      .select({ userId: builderProfiles.userId })
+      .from(builderProfiles)
+      .where(
+        and(
+          eq(builderProfiles.userId, input.builderUserId!),
+          eq(builderProfiles.approvalStatus, "approved"),
+        ),
+      )
+      .limit(1);
+    if (!target) {
+      return fail("validation", "Select an approved builder from the directory.");
+    }
+  } else {
     const email = (input.email ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return fail("validation", "Enter a valid email for the builder.");
     }
     input = { ...input, email };
+  }
+
+  // Hard per-project ceiling across ALL invite rows (any status), so a
+  // revoke-and-recreate loop can't turn one project into an email
+  // cannon. Generous: a 5-spot round never needs more than this.
+  const [inviteTally] = await db
+    .select({ n: count() })
+    .from(tenderBuilderInvites)
+    .where(eq(tenderBuilderInvites.projectId, projectId));
+  if ((inviteTally?.n ?? 0) >= 25) {
+    return fail(
+      "validation",
+      "This project has reached its invitation limit. Contact support if you need more.",
+    );
   }
 
   // No duplicate live invites for the same builder / email.
@@ -1206,7 +1268,15 @@ export async function createBuilderInvite(
     })
     .returning();
   if (!row) return fail("internal", "Could not create the invitation.");
-  return ok(row);
+
+  // Invitation email (+ bell notification for on-platform builders).
+  // Internally try/catch'd: a flaky send never fails the invite. On a
+  // DRAFT project the email is deferred until publish — an invitation
+  // to a round that isn't open yet reads as a broken link.
+  const deferred = project.status === "draft";
+  const emailed = deferred ? false : (await dispatchBuilderInvite(row.id)).emailed;
+
+  return ok({ ...row, emailed, deferred });
 }
 
 export async function listBuilderInvites(

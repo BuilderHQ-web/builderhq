@@ -45,6 +45,7 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   "tender_shortlisted", // → builder
   "tender_awarded", // → builder
   "tender_rejected", // → builder
+  "tender_invited", // → builder (hand-picked for a private/hybrid round)
   // Project events
   "project_published", // → builders (bulk fan-out, gated by marketing flag)
   "project_unlocked", // → owner (a builder unlocked their project)

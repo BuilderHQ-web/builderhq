@@ -97,6 +97,10 @@ export const limiters = {
   verifyResend: make("verify_resend", 3, 600),
   /** Project unlock spam — per user. */
   unlock: make("unlock", 30, 60),
+  /** Builder tender invitations — per runner. Each successful create
+   *  fires a platform-branded email to an address the runner typed,
+   *  so this stays tight. */
+  builderInvite: make("builder_invite", 10, 600),
   /** Plan AI auto-fill (Claude PDF extraction) — per user. Each call is
    *  a costly model invocation, so this is kept deliberately tight. */
   extractPlans: make("extract_plans", 8, 300),

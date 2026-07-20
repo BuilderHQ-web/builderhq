@@ -836,6 +836,14 @@ function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   if (patch.postcode != null && !/^\d{4}$/.test(patch.postcode)) {
     out.push("Postcode must be 4 digits.");
   }
+  // Suburb feeds the auto-generated title, which reaches marketplace
+  // cards and now email subject lines — keep it a plain place name.
+  if (patch.suburb != null && patch.suburb.trim() !== "") {
+    const s = patch.suburb.trim();
+    if (s.length > 60 || !/^[A-Za-z][A-Za-z\s'.\-]*$/.test(s)) {
+      out.push("Enter a valid suburb name.");
+    }
+  }
   if (
     patch.targetStartMonth != null &&
     patch.targetStartMonth.trim() !== "" &&

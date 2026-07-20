@@ -88,6 +88,8 @@ export {
   allQuestions,
   getQuestion,
   requiredQuestionIds,
+  isValidAnswerShape,
+  isAnswerComplete,
 } from "./instrument";
 export type {
   InstrumentQuestion,

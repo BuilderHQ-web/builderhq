@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Home,
   Building,
@@ -277,6 +277,10 @@ export function ProjectWizard({
   flagMissingRequired?: boolean;
 }) {
   const router = useRouter();
+  // The wizard mounts at /owner/... and /architect/... — every internal
+  // navigation stays on the base the runner came in on.
+  const pathname = usePathname();
+  const base = pathname.startsWith("/architect") ? "/architect" : "/owner";
   const [project, setProject] = useState<Project>(initialProject);
   const [docs, setDocs] = useState<Document[]>(initialDocs);
   const [report, setReport] = useState<PublishabilityReport | null>(initialReport);
@@ -382,9 +386,9 @@ export function ProjectWizard({
       !celebratedRef.current
     ) {
       celebratedRef.current = true;
-      router.push(`/owner/projects/${project.slug}/published`);
+      router.push(`${base}/projects/${project.slug}/published`);
     }
-  }, [project.status, project.slug, initialProject.status, router]);
+  }, [project.status, project.slug, initialProject.status, router, base]);
 
   const refreshDocs = useCallback(async () => {
     const r = await listProjectDocumentsAction(project.id);
@@ -447,8 +451,8 @@ export function ProjectWizard({
       return;
     }
     toast.message("Draft deleted");
-    router.push("/owner/projects");
-  }, [project.id, router]);
+    router.push(`${base}/projects`);
+  }, [project.id, router, base]);
 
   // ── render ───────────────────────────────────────────────────────────
 
@@ -472,11 +476,13 @@ export function ProjectWizard({
         </div>
 
         {/* Progress tracker */}
+        {/* Steps stay jumpable on live projects: fields lock
+            individually, and the round step keeps its invitation
+            manager active for live rounds. */}
         <ProgressTracker
           step={step}
           checkpoints={checkpoints}
           onJump={goStep}
-          locked={isPublished}
         />
       </header>
 
@@ -560,6 +566,7 @@ export function ProjectWizard({
 
       <PublishBar
         project={project}
+        basePath={base}
         report={report}
         publishing={publishing}
         allDone={allDone}
@@ -636,12 +643,10 @@ function ProgressTracker({
   step,
   checkpoints,
   onJump,
-  locked,
 }: {
   step: Step;
   checkpoints: Record<Step, boolean>;
   onJump: (s: Step) => void;
-  locked: boolean;
 }) {
   const STEPS: Array<{ id: Step; title: string; sub: string; icon: LucideIcon }> = [
     { id: 1, title: "About", sub: "Title + address", icon: Sparkles },
@@ -665,7 +670,6 @@ function ProgressTracker({
             <button
               key={s.id}
               type="button"
-              disabled={locked}
               onClick={() => onJump(s.id)}
               className="relative group flex flex-col items-center text-center"
             >
@@ -677,7 +681,7 @@ function ProgressTracker({
                     : isDone
                     ? "border-border-accent/60 bg-accent-muted/40 text-accent-light"
                     : "border-border-subtle bg-bg-deep text-text-dim",
-                  !locked && "group-hover:border-border-accent",
+                  "group-hover:border-border-accent",
                 )}
               >
                 {isDone && !isActive ? (
@@ -1476,6 +1480,7 @@ function FileChip({
 
 function PublishBar({
   project,
+  basePath,
   report,
   publishing,
   allDone,
@@ -1483,6 +1488,7 @@ function PublishBar({
   onPublish,
 }: {
   project: Project;
+  basePath: string;
   report: PublishabilityReport | null;
   publishing: boolean;
   allDone: boolean;
@@ -1528,7 +1534,7 @@ function PublishBar({
         </div>
         {isPublished ? (
           <a
-            href={`/owner/projects/${project.slug}`}
+            href={`${basePath}/projects/${project.slug}`}
             className="inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors shrink-0"
           >
             <span className="hidden sm:inline">View project</span>

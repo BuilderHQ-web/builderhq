@@ -25,6 +25,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
 import { ProjectMessagingPanel } from "@/components/app/messaging/project-thread";
 import { ProjectActivity } from "./activity";
+import { projectsBase } from "@/lib/dashboard-route";
 
 export async function generateMetadata({
   params,
@@ -112,6 +113,8 @@ export default async function ProjectDetailPage({
   const session = await auth();
   if (!session?.user) redirect(`/login?next=/owner/projects/${slug}`);
 
+  const base = projectsBase(session.user.role);
+
   const r = await getBySlugForOwner(session.user.id!, slug);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
@@ -121,7 +124,7 @@ export default async function ProjectDetailPage({
 
   // Drafts always go to the wizard.
   if (project.status === "draft") {
-    redirect(`/owner/projects/${slug}/edit`);
+    redirect(`${base}/projects/${slug}/edit`);
   }
 
   // Independent reads — fan out in parallel. `builders` is the unlock
@@ -165,7 +168,7 @@ export default async function ProjectDetailPage({
             ) : null}
           </div>
           <Link
-            href={`/owner/projects/${project.slug}/edit`}
+            href={`${base}/projects/${project.slug}/edit`}
             className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
           >
             <Pencil className="size-3.5" />
@@ -180,6 +183,7 @@ export default async function ProjectDetailPage({
             to the tender comparison once tenders arrive. */}
         <Reveal immediate>
           <ProjectActivity
+            basePath={base}
             slug={project.slug}
             state={project.state}
             unlockCount={builders.length}
@@ -303,7 +307,7 @@ export default async function ProjectDetailPage({
                 </ul>
               )}
               <Link
-                href={`/owner/projects/${project.slug}/edit`}
+                href={`${base}/projects/${project.slug}/edit`}
                 className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
               >
                 Manage documents
@@ -326,7 +330,7 @@ export default async function ProjectDetailPage({
                 </p>
               )}
               <Link
-                href={`/owner/projects/${project.slug}/tenders`}
+                href={`${base}/projects/${project.slug}/tenders`}
                 className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
               >
                 {tenderCount > 0 ? "Compare tenders" : "View tender stream"}
@@ -393,7 +397,7 @@ export default async function ProjectDetailPage({
               scope="owner"
               meId={session.user.id!}
               initialConversations={conversations}
-              inboxHref="/owner/messages"
+              inboxHref={`${base}/messages`}
             />
           </Reveal>
         </section>
