@@ -5,7 +5,13 @@ import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
 import { auth } from "@/modules/auth";
 import { projectsBase } from "@/lib/dashboard-route";
 import { getBySlugForOwner } from "@/modules/projects";
-import { listTendersForOwner, computeTenderAnalytics } from "@/modules/tenders";
+import {
+  listTendersForOwner,
+  listResponsesForProjectTenders,
+  computeTenderAnalytics,
+  summariseInstrument,
+  type TenderInstrumentSummary,
+} from "@/modules/tenders";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -32,13 +38,28 @@ export default async function ProjectTendersPage({
   }
   const project = r.value;
 
-  const [tenders, unlockCount] = await Promise.all([
+  const [tenders, unlockCount, responsesByTender] = await Promise.all([
     listTendersForOwner(project.id),
     countUnlocksForProject(project.id),
+    listResponsesForProjectTenders(project.id),
   ]);
   // Roll-up analytics computed server-side so the page paints with
   // numbers ready (no client-side calc flicker on first frame).
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
+
+  // Instrument summaries — the like-for-like layer. Null for tenders
+  // submitted before the standard (no instrument version).
+  const summaries: Record<string, TenderInstrumentSummary | null> = {};
+  for (const t of tenders) {
+    const responses = responsesByTender.get(t.id);
+    summaries[t.id] =
+      t.instrumentVersion != null && responses && responses.length > 0
+        ? summariseInstrument(responses, {
+            totalPriceAud: t.totalPriceAud,
+            projectState: project.state,
+          })
+        : null;
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
@@ -119,6 +140,7 @@ export default async function ProjectTendersPage({
             tenders={tenders}
             analytics={analytics}
             projectTitle={project.title}
+            summaries={summaries}
           />
         )}
       </div>

@@ -67,6 +67,7 @@ export {
   // Submission checklist
   checklistProgress,
   listResponsesForTender,
+  listResponsesForProjectTenders,
   saveTenderResponses,
   // Builder invites (private/hybrid rounds)
   createBuilderInvite,
@@ -98,6 +99,24 @@ export type {
   InstrumentOption,
   ScopeState,
 } from "./instrument";
+
+// Comparison derivation (pure — client-safe).
+export {
+  summariseInstrument,
+  deriveExposure,
+  deriveCoverage,
+  deriveRiskFlags,
+  formatAnswer,
+  formatAud,
+  answersDiffer,
+} from "./comparison";
+export type {
+  TenderInstrumentSummary,
+  RiskFlag,
+  RiskSeverity,
+  AllowanceExposure,
+  CoverageSummary,
+} from "./comparison";
 
 // Policies.
 export {

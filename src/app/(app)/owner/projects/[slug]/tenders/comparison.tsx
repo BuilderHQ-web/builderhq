@@ -73,7 +73,15 @@ import {
 } from "@/app/(app)/_actions/tenders";
 import { getBuilderDownloadUrlAction } from "@/app/(app)/_actions/marketplace";
 import { TRADES, tradeLabel, type TradeId } from "@/modules/tenders/trades";
-import type { TenderAnalytics, TenderForOwner } from "@/modules/tenders";
+import type {
+  TenderAnalytics,
+  TenderForOwner,
+  TenderInstrumentSummary,
+} from "@/modules/tenders";
+import {
+  InstrumentCompare,
+  InstrumentComparePlaceholder,
+} from "./instrument-compare";
 import type { Document } from "@/modules/documents";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
@@ -132,10 +140,13 @@ export function TendersComparison({
   tenders: initialTenders,
   analytics,
   projectTitle,
+  summaries,
 }: {
   tenders: TenderForOwner[];
   analytics: TenderAnalytics;
   projectTitle: string;
+  /** Instrument summaries by tender id; null = pre-standard tender. */
+  summaries: Record<string, TenderInstrumentSummary | null>;
 }) {
   const [tenders, setTenders] = useState(initialTenders);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -358,6 +369,19 @@ export function TendersComparison({
               decisionTradeCount={decisionTradeCount}
               exclusionDecisionCount={exclusionDecisionCount}
             />
+          ) : null}
+
+          {/* The like-for-like read — instrument-powered comparison.
+                Keyed by the selection so section open/toggle state
+                resets when the compared set changes. */}
+          {selected.some((t) => summaries[t.id]) ? (
+            <InstrumentCompare
+              key={selected.map((t) => t.id).join("|")}
+              selected={selected}
+              summaries={summaries}
+            />
+          ) : selected.length > 0 ? (
+            <InstrumentComparePlaceholder count={selected.length} />
           ) : null}
 
           {/* Detail sections */}

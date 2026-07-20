@@ -1146,6 +1146,43 @@ export async function saveTenderResponses(
   return ok({ saved: entries.length, checklist: checklistProgress(row, all) });
 }
 
+/**
+ * All instrument responses for a project's decision-visible tenders
+ * (submitted / shortlisted / awarded / rejected) in one query, grouped
+ * by tender. Powers the comparison page — no per-tender N+1.
+ */
+export async function listResponsesForProjectTenders(
+  projectId: string,
+): Promise<Map<string, Array<{ qid: string; value: unknown }>>> {
+  const rows = await db
+    .select({
+      tenderId: tenderResponses.tenderId,
+      qid: tenderResponses.qid,
+      value: tenderResponses.value,
+    })
+    .from(tenderResponses)
+    .innerJoin(tenders, eq(tenders.id, tenderResponses.tenderId))
+    .where(
+      and(
+        eq(tenders.projectId, projectId),
+        isNull(tenders.deletedAt),
+        inArray(tenders.status, [
+          "submitted",
+          "shortlisted",
+          "awarded",
+          "rejected",
+        ]),
+      ),
+    );
+  const byTender = new Map<string, Array<{ qid: string; value: unknown }>>();
+  for (const r of rows) {
+    const arr = byTender.get(r.tenderId) ?? [];
+    arr.push({ qid: r.qid, value: r.value });
+    byTender.set(r.tenderId, arr);
+  }
+  return byTender;
+}
+
 // ── builder invites (private / hybrid rounds) ────────────────────────────
 
 export interface CreateBuilderInviteInput {
