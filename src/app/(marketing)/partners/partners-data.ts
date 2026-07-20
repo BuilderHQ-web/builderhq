@@ -3748,6 +3748,57 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "william-kiln",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Finance broker",
+    name: "William Kiln",
+    monogram: "WK",
+    portrait: "/partners/william-kiln/portrait.jpg",
+    suburb: "Lower North Shore",
+    state: "NSW",
+    tagline:
+      "A broker who spent fifteen years building and pricing the major banks’ own mortgage products, now using that inside knowledge to structure lending on the client’s side.",
+    disciplines: ["Loan structuring", "Investment lending", "Commercial and development"],
+    google: { rating: 5.0, reviews: 10 },
+    institution: {
+      name: "Cumulus Capital",
+      role: "Managing director",
+      note: "MFAA and AFCA member",
+      logo: "/partners/william-kiln/cumulus-capital.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
+      {
+        label: "In banking and finance",
+        value: "15+ yrs",
+        sub: "product and pricing side",
+      },
+      { label: "Lenders on the panel", value: "40+" },
+    ],
+    why: "Will spent more than fifteen years on the inside of Australian lending, in product and pricing roles at Macquarie, Westpac and Commonwealth Bank, and as Head of Mortgages at ING, where the job was to build the very home loan products and set the pricing that brokers and borrowers later work with. Few brokers understand as precisely how a lender weighs risk, structures credit and arrives at a yes, because he helped design those systems from the inside, and he later co-founded a lending fintech before opening his own brokerage. For an owner financing a build, where how the loan is structured can decide what gets approved, having someone who has sat on the bank’s side of the table is a genuine advantage, and it is why we wanted him in the network.",
+    aboutLabel: "About Will",
+    about:
+      "William Kiln is the managing director of Cumulus Capital, a finance brokerage on Sydney’s Lower North Shore that he built around a straightforward idea: that lending should be clear, well structured and made to hold up over time, rather than rushed toward whatever product is quickest to place. He advises homeowners, property investors and business owners, and gives as much weight to explaining the trade-offs as to arranging the loan, with a standing review of each client’s position every six months once a loan is in place. Cumulus is bank-agnostic and accredited across a panel of more than forty lenders, and because an MFAA approved broker is paid by the lender on settlement, his advice carries no cost to the client. The practice holds credit authorisation under Australian Credit Licence 389328.",
+    facts: {
+      basedIn: "Lower North Shore, Sydney",
+      serves: "Sydney and nationwide",
+      focus: "Home, investment and commercial lending",
+    },
+    website: "https://www.cumuluscapital.com.au/",
+    linkedin: "https://www.linkedin.com/in/willkiln/",
+    servicesLabel: "Where Will helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Home loans, first purchase to refinance",
+      "Investment property and portfolio lending",
+      "Commercial and development finance",
+      "Loan structuring, reviewed every six months",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
