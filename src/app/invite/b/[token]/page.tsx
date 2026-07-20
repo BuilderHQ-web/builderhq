@@ -43,10 +43,13 @@ export const dynamic = "force-dynamic";
 
 export default async function BuilderInvitePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ accept?: string }>;
 }) {
   const { token } = await params;
+  const { accept } = await searchParams;
 
   const r = await getBuilderInviteByToken(token);
   if (!r.ok) {
@@ -166,6 +169,29 @@ export default async function BuilderInvitePage({
         eyebrow="Tender invitation"
         title="This tender round has closed"
         body="This project is no longer accepting tenders. If you were expecting to take part, get in touch with the project runner."
+      />
+    );
+  }
+
+  // Accepting occupies one of the round's tender spots, so it is an
+  // explicit step — a stray click from a dashboard row or an email
+  // preview must not consume a spot silently.
+  if (accept !== "1") {
+    return (
+      <InviteCard
+        icon={<Mail className="size-5" />}
+        eyebrow="Tender invitation"
+        title={project.title}
+        body="You have been invited to price this project. Accepting takes one of the round's tender spots and opens the full project to you, at no cost. The drawings, specifications and requirements are ready once you are in."
+        actions={
+          <Link
+            href={`/invite/b/${token}?accept=1`}
+            className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-navy font-ui font-semibold text-[13px] hover:opacity-90 transition-opacity"
+          >
+            Accept the invitation
+            <ArrowUpRight className="size-4" />
+          </Link>
+        }
       />
     );
   }

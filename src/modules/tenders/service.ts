@@ -44,7 +44,7 @@ import type { ChecklistProgress } from "./types";
 import { unlocks } from "@/modules/unlocks/schema";
 import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users";
-import { builderProfiles } from "@/modules/profiles/schema";
+import { builderProfiles, architectProfiles } from "@/modules/profiles/schema";
 import { documents } from "@/modules/documents/schema";
 
 import { dispatchTenderEvent, dispatchBuilderInvite } from "./dispatch";
@@ -1181,6 +1181,111 @@ export async function listResponsesForProjectTenders(
     byTender.set(r.tenderId, arr);
   }
   return byTender;
+}
+
+/**
+ * Pending private/hybrid-round invitations addressed to an on-platform
+ * builder — the dashboard's "you have been asked to price this" rows.
+ * Unredeemed only: once joined, the project lives in their unlocked
+ * list and the invite has done its job.
+ */
+export async function listInvitesForBuilder(builderUserId: string): Promise<
+  Array<{
+    inviteId: string;
+    inviteToken: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+  }>
+> {
+  const inviterUsers = users;
+  const rows = await db
+    .select({
+      inviteId: tenderBuilderInvites.id,
+      inviteToken: tenderBuilderInvites.inviteToken,
+      projectTitle: projects.title,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    // A builder who already holds a spot (paid, founding, or an earlier
+    // redemption) has nothing pending — the invite row would misstate
+    // their standing.
+    .leftJoin(
+      unlocks,
+      and(
+        eq(unlocks.projectId, tenderBuilderInvites.projectId),
+        eq(unlocks.builderId, builderUserId),
+      ),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "invited"),
+        isNull(unlocks.id),
+        isNull(projects.deletedAt),
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  return rows.map((r) => ({
+    inviteId: r.inviteId,
+    inviteToken: r.inviteToken,
+    projectTitle: r.projectTitle,
+    projectSuburb: r.projectSuburb,
+    projectState: r.projectState,
+    inviterName: r.practiceName ?? r.inviterName ?? "A project runner",
+    invitedAt: r.invitedAt,
+  }));
+}
+
+/**
+ * The builder's unfinished drafts with project context — the desk
+ * queue's "pick this back up" rows.
+ */
+export async function listDraftTendersForBuilder(builderId: string): Promise<
+  Array<{
+    tenderId: string;
+    projectSlug: string;
+    projectTitle: string;
+    updatedAt: Date;
+    totalPriceAud: number | null;
+  }>
+> {
+  const rows = await db
+    .select({
+      tenderId: tenders.id,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      updatedAt: tenders.updatedAt,
+      totalPriceAud: tenders.totalPriceAud,
+    })
+    .from(tenders)
+    .innerJoin(projects, eq(projects.id, tenders.projectId))
+    .where(
+      and(
+        eq(tenders.builderId, builderId),
+        eq(tenders.status, "draft"),
+        isNull(tenders.deletedAt),
+        isNull(projects.deletedAt),
+        // Only rounds still open — a draft on an archived or decided
+        // project is a dead row that would 404 from the dashboard.
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .orderBy(desc(tenders.updatedAt));
+  return rows;
 }
 
 // ── builder invites (private / hybrid rounds) ────────────────────────────

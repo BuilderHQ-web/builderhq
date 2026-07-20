@@ -72,6 +72,8 @@ export {
   // Builder invites (private/hybrid rounds)
   createBuilderInvite,
   listBuilderInvites,
+  listInvitesForBuilder,
+  listDraftTendersForBuilder,
   revokeBuilderInvite,
   getBuilderInviteByToken,
   markBuilderInviteJoined,
