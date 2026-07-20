@@ -207,7 +207,7 @@ export type ClaimPreview = {
   email: string;
   firstName: string | null;
   name: string | null;
-  role: "project_owner" | "builder" | "admin" | null;
+  role: "project_owner" | "builder" | "admin" | "architect" | null;
   expiresAt: Date;
 };
 

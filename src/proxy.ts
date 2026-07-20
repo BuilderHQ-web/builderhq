@@ -20,12 +20,13 @@ import { authConfig } from "@/modules/auth/config";
 
 const { auth } = NextAuth(authConfig);
 
-const APP_PREFIXES = ["/owner", "/builder", "/admin", "/settings", "/onboarding"] as const;
+const APP_PREFIXES = ["/owner", "/builder", "/architect", "/admin", "/settings", "/onboarding"] as const;
 const AUTH_PREFIXES = ["/login", "/signup"] as const;
 
 function dashboardForRole(role: string | null | undefined) {
   if (role === "admin") return "/admin";
   if (role === "builder") return "/builder";
+  if (role === "architect") return "/architect";
   return "/owner";
 }
 

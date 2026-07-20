@@ -37,12 +37,16 @@ import { projects } from "@/modules/projects/schema";
  *   founding  — founding-builder monthly credit consumed
  *   paid      — Stripe payment intent settled (step 5)
  *   admin     — granted manually by admin override
+ *   invited   — hand-picked for a private/hybrid round by the project
+ *               runner; free, still occupies a tender spot
  */
 export const unlockSourceEnum = pgEnum("unlock_source", [
   "free",
   "founding",
   "paid",
   "admin",
+  // Appended last: pg ALTER TYPE ADD VALUE appends safely.
+  "invited",
 ]);
 
 // ── unlocks ──────────────────────────────────────────────────────────────

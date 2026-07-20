@@ -80,11 +80,15 @@ export type MarketplacePreview = {
   documentCount: number;
   /**
    * Number of builders who have unlocked this project. Bounded
-   * [0, UNLOCK_CAP] under normal operation. Drives the "X / 3 spots"
+   * [0, tender spots] under normal operation. Drives the "X / N spots"
    * marketplace indicator + the "FULL" disabled state on the unlock
-   * CTA. Imported from @/modules/unlocks for the actual cap.
+   * CTA.
    */
   unlockedCount: number;
+  /** How this round is run. Private rounds never reach the marketplace. */
+  tenderMode: ProjectRow["tenderMode"];
+  /** Builder spots for this round. NULL = platform default (3). */
+  tenderSpots: number | null;
   publishedAt: Date | null;
   createdAt: Date;
 };

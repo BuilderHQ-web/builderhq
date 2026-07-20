@@ -9,7 +9,7 @@
 
 export type ActorContext = {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 };
 
 /** Builder reads their own; admin reads anyone's. */

@@ -9,18 +9,25 @@ import type { ProjectRow } from "./schema";
 
 export type ActorContext = {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 };
 
-/** Owners can create projects; admins always can. */
+/**
+ * Roles that run projects. Architects run tenders on behalf of
+ * clients — the project row's ownerId is simply "the account running
+ * this project", owner or architect alike.
+ */
+const RUNNER_ROLES = new Set(["project_owner", "architect"]);
+
+/** Runners can create projects; admins always can. */
 export function canCreate(actor: ActorContext): boolean {
-  return actor.role === "project_owner" || actor.role === "admin";
+  return RUNNER_ROLES.has(actor.role) || actor.role === "admin";
 }
 
-/** Owner can edit their own; admin always can. */
+/** A runner can edit their own; admin always can. */
 export function canEdit(actor: ActorContext, project: ProjectRow): boolean {
   if (actor.role === "admin") return true;
-  if (actor.role === "project_owner" && project.ownerId === actor.id) return true;
+  if (RUNNER_ROLES.has(actor.role) && project.ownerId === actor.id) return true;
   return false;
 }
 
