@@ -3748,6 +3748,59 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "alex-burley",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage adviser",
+    name: "Alex Burley",
+    monogram: "AB",
+    portrait: "/partners/alex-burley/portrait.jpg",
+    suburb: "Beacon Hill",
+    state: "NSW",
+    tagline:
+      "A Northern Beaches adviser who came up through financial advice, sourcing home loans that fit the bigger picture and answer to you, not the banks.",
+    disciplines: ["First home buyers", "Investment lending", "Refinancing"],
+    google: { rating: 4.8, reviews: 6 },
+    institution: {
+      name: "Mortgage Choice",
+      role: "Franchise owner and adviser",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/alex-burley/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "6 reviews" },
+      {
+        label: "In finance and banking",
+        value: "14+ yrs",
+        sub: "financial advice background",
+      },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    why: "Alex spent years in financial advice before he came to broking, including a long stretch in advice remediation with Deloitte, NAB and OCG, reviewing past advice and helping put things right for clients. He came away with a clear view of what good advice looks like, and brings that same discipline to home lending: understand what a client is really trying to achieve, then source a loan that fits the bigger financial picture rather than tick the box on a single transaction. A Beacon Hill local who owns his Mortgage Choice franchise on the Northern Beaches, with more than fourteen years in finance and banking and a panel of over thirty five lenders behind him, he is exactly the measured, planning minded adviser we like beside an owner financing a build.",
+    aboutLabel: "About Alex",
+    about:
+      "Alex Burley owns the Mortgage Choice franchise on Sydney’s Northern Beaches, based in Beacon Hill where he lives and works. He came to broking after more than fourteen years in finance and banking, including a long period in financial advice and advice remediation with Deloitte, NAB and OCG. A former financial adviser, he treats a home loan as one part of a client’s wider financial position rather than a standalone product, and works across first home buyers, investors and those refinancing. With more than thirty five lenders on his panel he shops the market on his clients’ behalf, and because he is paid by the lender on settlement, his advice comes at no cost to the client in most cases. Trust, transparency and tailored advice are the terms he returns to most.",
+    facts: {
+      basedIn: "Beacon Hill, NSW",
+      serves: "Sydney’s Northern Beaches",
+      focus: "Home, investment and refinance lending",
+    },
+    website: "https://www.mortgagechoice.com.au/alex.burley/",
+    instagram: "https://www.instagram.com/mortgagechoice_alexburley/",
+    facebook: "https://www.facebook.com/MortgageChoiceAlexBurley/",
+    linkedin: "https://www.linkedin.com/in/alex-burley-a1632022/",
+    servicesLabel: "Where Alex helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment property finance",
+      "Refinancing to a better deal",
+      "Lending that fits your bigger financial picture",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
