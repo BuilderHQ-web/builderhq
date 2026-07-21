@@ -296,9 +296,16 @@ export function PartnerProfileSections({
         >
           Why we introduce them
         </p>
-        <p className="mt-5 max-w-[62ch] font-ui text-[17px] sm:text-[18px] leading-[1.75] text-text">
-          {partner.why}
-        </p>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          {partner.why.split(/\n\n+/).map((para, i) => (
+            <p
+              key={i}
+              className="font-ui text-[17px] sm:text-[18px] leading-[1.75] text-text"
+            >
+              {para}
+            </p>
+          ))}
+        </div>
         <p className="mt-6 text-[12px] text-text-dim">
           Chosen and introduced by the BuilderHQ team.
         </p>
@@ -309,9 +316,13 @@ export function PartnerProfileSections({
         <SectionLabel hue={h.accent}>
           {partner.aboutLabel ?? (partner.kind === "architect" ? "The practice" : "The business")}
         </SectionLabel>
-        <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.8] text-text-subtle">
-          {partner.about}
-        </p>
+        <div className="mt-4 max-w-[62ch] space-y-4">
+          {partner.about.split(/\n\n+/).map((para, i) => (
+            <p key={i} className="text-[15px] leading-[1.8] text-text-subtle">
+              {para}
+            </p>
+          ))}
+        </div>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           {partner.principal ? (
             <p className="text-[13px] text-text-muted">
