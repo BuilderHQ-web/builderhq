@@ -3954,33 +3954,147 @@ export type PartnerLogo = {
   norm: boolean;
   /** Fallback only: light-on-dark source mark, invert before floating. */
   dark: boolean;
+  /** Optional per-mark size multiplier for optical balance in the
+   *  marquee (1 = standard row height). */
+  scale?: number;
 };
 
 /**
- * Every LIVE partner's mark, for the landing trust strip. Prefers the
- * normalised logo-float-v2.png silhouette (generated when a partner goes
- * live); falls back to the raw logo — design practices carry their
- * own, finance partners their firm's. Derived from the register, so a
- * partner going live appears on the landing page automatically.
+ * The homepage trust strip is HAND-CURATED (2026-07-21 decision): a
+ * partner going live does NOT add their mark to the marquee any more.
+ * Curate deliberately — one mark per brand, the array order is the
+ * display order, `scale` balances optical weight. Slugs still link to
+ * each partner's public profile. Full-colour lockups prepared for the
+ * marquee live in /public/marquee; single-ink floats stay in each
+ * partner's asset dir. This list affects ONLY the homepage marquee —
+ * partner profiles render their own logos independently.
  */
+export const MARQUEE_LOGOS: PartnerLogo[] = [
+  {
+    slug: "house-design-solutions",
+    name: "House Design Solutions",
+    src: "/partners/house-design-solutions/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "luke-brodie",
+    name: "BetterLend",
+    src: "/marquee/betterlend.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "evoka-studio",
+    name: "Evoka Studio",
+    src: "/partners/evoka-studio/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "maninder-kaur",
+    name: "Evergrow Finance",
+    src: "/partners/maninder-kaur/logo-float-v2.png",
+    norm: true,
+    dark: false,
+    scale: 1.15,
+  },
+  {
+    slug: "metro-building-designers",
+    name: "Metro Building Designers",
+    src: "/partners/metro-building-designers/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "julie-judge",
+    name: "Mortgage Pass",
+    src: "/marquee/mortgage-pass.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "levan-design",
+    name: "Levan Design",
+    src: "/partners/levan-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "ed-akgun",
+    name: "RateOne",
+    src: "/partners/ed-akgun/logo-float-v2.png",
+    norm: true,
+    dark: false,
+    scale: 1.15,
+  },
+  {
+    slug: "dna-architects",
+    name: "DNA Architects",
+    src: "/marquee/dna-architects.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "summerhill-building-designers",
+    name: "Summerhill Building Designers",
+    src: "/partners/summerhill-building-designers/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "tim-murphy",
+    name: "Mortgage Choice",
+    src: "/partners/tim-murphy/logo-float-v4.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "silverpoint-design-and-planning",
+    name: "SilverPoint Design and Planning",
+    src: "/partners/silverpoint-design-and-planning/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "billy-chok",
+    name: "Cloud Financial Group",
+    src: "/partners/billy-chok/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "praeditos-designs",
+    name: "Praeditos Designs",
+    src: "/partners/praeditos-designs/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "dawes-design",
+    name: "Dawes Design",
+    src: "/partners/dawes-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "elite-building-design",
+    name: "Elite Building Design",
+    src: "/partners/elite-building-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "design-plus-drafting",
+    name: "Design Plus Drafting",
+    src: "/partners/design-plus-drafting/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+];
+
+/** The curated homepage marquee set (see MARQUEE_LOGOS). Kept as a
+ *  function so existing consumers stay untouched. */
 export function livePartnerLogos(): PartnerLogo[] {
-  // Several partners can share one brand mark (e.g. Mortgage Choice
-  // brokers) — the marquee shows each mark once.
-  const seen = new Set<string>();
-  return PARTNERS.filter((p) => !p.draft).flatMap((p) => {
-    const src = p.logoFloat ?? p.logo ?? p.institution?.logo;
-    if (!src || seen.has(src)) return [];
-    seen.add(src);
-    return [
-      {
-        slug: p.slug,
-        // The ink file inherits its owner: the practice's own mark, or
-        // the finance partner's firm mark (institution).
-        name: p.logo ? p.name : (p.institution?.name ?? p.name),
-        src,
-        norm: p.logoFloat != null,
-        dark: p.logoDark === true,
-      },
-    ];
-  });
+  return MARQUEE_LOGOS;
 }
