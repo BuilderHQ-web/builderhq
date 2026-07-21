@@ -452,10 +452,11 @@ export function TenderForm({
       ) : null}
 
       <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1500px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-5 sm:gap-6">
-        {/* Main column */}
-        <div className="space-y-5 min-w-0">
-          {/* SECTION 0 — Documents (promoted to first position so it
-                can't be missed; accent ring signals "important"). */}
+        {/* Main column — ruled sections on the canvas; white marks
+              objects (inputs, dockets, rows), never section shells. */}
+        <div className="space-y-10 min-w-0">
+          {/* SECTION 0 — Documents (first position so it can't be
+                missed; the one teal-wash emphasis panel on the page). */}
           <DocsRailCard
             docs={docs}
             activeUploads={activeUploads}
@@ -487,9 +488,10 @@ export function TenderForm({
           <Section
             icon={<Wallet className="size-4" />}
             title="The number"
-            sub="Required. Total price + duration + validity period."
+            sub="Your price, your build time, and how long the offer stands."
+            meta="Required"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
               <Field label="Total price" required hint="GST inclusive">
                 <PriceInput
                   value={totalPrice}
@@ -569,8 +571,8 @@ export function TenderForm({
             title="Cost breakdown"
             sub={
               lines.length > 0
-                ? `${lines.length} trade${lines.length === 1 ? "" : "s"} filled · transparency = trust`
-                : "Optional. Itemise by trade — owners reward this with quicker decisions."
+                ? `${lines.length} trade${lines.length === 1 ? "" : "s"} priced.`
+                : "Optional. Price each trade so the owner can see how your number is built."
             }
             badge={lines.length > 0 ? "Filled" : "Optional"}
           >
@@ -592,7 +594,7 @@ export function TenderForm({
             onToggle={() => setOpen((o) => ({ ...o, scope: !o.scope }))}
             icon={<Hammer className="size-4" />}
             title="Scope"
-            sub="Optional. Exclusions + caveats."
+            sub="Optional. What your price excludes and any conditions attached to it."
             badge={
               exclusions.length > 0 || conditions.trim()
                 ? "Filled"
@@ -600,7 +602,7 @@ export function TenderForm({
             }
           >
             <div className="space-y-5">
-              <Field label="Exclusions" hint="things the owner has to handle separately">
+              <Field label="Exclusions" hint="work the owner arranges separately">
                 <TagInput
                   values={exclusions}
                   disabled={isLocked}
@@ -636,10 +638,10 @@ export function TenderForm({
             onToggle={() => setOpen((o) => ({ ...o, pitch: !o.pitch }))}
             icon={<Sparkles className="size-4" />}
             title="Your pitch"
-            sub="Optional. Why you — track record, similar projects, your approach."
+            sub="Optional. Your track record and how you would approach this build."
             badge={pitch.trim() ? "Filled" : "Optional"}
           >
-            <Field label="Why you" hint="track record, similar projects, what makes you a fit">
+            <Field label="Why you">
               <textarea
                 defaultValue={pitch}
                 disabled={isLocked}
@@ -689,7 +691,7 @@ export function TenderForm({
               ready={ready}
             />
 
-            <div className="rounded-md border border-border-subtle bg-surface-1 card-elev p-3">
+            <div className="rounded-xl border border-border-subtle bg-surface-1 card-elev p-3">
               <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim mb-2 px-1">
                 Jump to section
               </div>
@@ -792,34 +794,40 @@ export function TenderForm({
 
 // ── Section / Collapsible ────────────────────────────────────────────────
 
+/** Ruled section on the canvas — icon + caps title + hairline running
+ *  right + quiet meta, one plain sentence, then the fields. The
+ *  letterhead convention; no white box. */
 function Section({
   icon,
   title,
   sub,
+  meta,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   sub?: string;
+  meta?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section
-      id={`section-${slug(title)}`}
-      className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]"
-    >
-      <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start gap-3">
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-            {title}
-          </h2>
-          {sub ? <p className="text-[12px] text-text-dim mt-0.5">{sub}</p> : null}
-        </div>
+    <section id={`section-${slug(title)}`}>
+      <header className="flex items-center gap-2.5">
+        <span className="text-accent-light [&_svg]:size-3.5">{icon}</span>
+        <h2 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
+          {title}
+        </h2>
+        <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
+        {meta ? (
+          <span className="text-[9.5px] tracking-[0.14em] uppercase text-text-dim shrink-0">
+            {meta}
+          </span>
+        ) : null}
       </header>
-      <div className="p-4 sm:p-6">{children}</div>
+      {sub ? (
+        <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted">{sub}</p>
+      ) : null}
+      <div className="pt-4">{children}</div>
     </section>
   );
 }
@@ -842,44 +850,38 @@ function Collapsible({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      id={`section-${slug(title)}`}
-      className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]"
-    >
+    <section id={`section-${slug(title)}`}>
       <button
         type="button"
         onClick={onToggle}
-        className="w-full text-left px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center gap-3 hover:bg-[rgba(24,34,44,0.03)] transition-colors"
+        className="w-full text-left flex items-center gap-2.5 group"
       >
-        <span className="size-8 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-              {title}
-            </h2>
-            {badge ? (
-              <span
-                className={cn(
-                  "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase",
-                  badge === "Filled"
-                    ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                    : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-dim",
-                )}
-              >
-                {badge}
-              </span>
-            ) : null}
-          </div>
-          {sub ? <p className="text-[12px] text-text-dim mt-0.5">{sub}</p> : null}
-        </div>
+        <span className="text-accent-light [&_svg]:size-3.5">{icon}</span>
+        <h2 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
+          {title}
+        </h2>
+        {badge ? (
+          <span
+            className={cn(
+              "px-1.5 py-0.5 border rounded-sm text-[8.5px] tracking-[0.16em] uppercase shrink-0",
+              badge === "Filled"
+                ? "border-border-accent bg-[rgba(0,212,200,0.07)] text-accent-light"
+                : "border-border-subtle text-text-dim",
+            )}
+          >
+            {badge}
+          </span>
+        ) : null}
+        <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
         {open ? (
-          <ChevronUp className="size-4 text-text-dim shrink-0" />
+          <ChevronUp className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
         ) : (
-          <ChevronDown className="size-4 text-text-dim shrink-0" />
+          <ChevronDown className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
         )}
       </button>
+      {sub ? (
+        <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted">{sub}</p>
+      ) : null}
       <AnimatePresence initial={false}>
         {open ? (
           <motion.div
@@ -889,7 +891,7 @@ function Collapsible({
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="p-4 sm:p-6">{children}</div>
+            <div className="pt-4">{children}</div>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -933,25 +935,24 @@ function CostBreakdown({
   const filledCount = lines.filter((l) => (l.amount ?? 0) > 0).length;
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-[11.5px] text-text-dim">
-          {filledCount > 0
-            ? `${filledCount} of ${TRADES.length - 1} trades filled`
-            : "Itemise by trade — leave blank to skip"}
+    <div className="space-y-5">
+      {/* Trade rows in canonical order (excl. Other) — a ruled table:
+            caps column headers, hairline dividers, paper on hover. */}
+      <div>
+        <div className="flex items-baseline justify-between gap-3 px-1 pb-2 border-b border-border-subtle">
+          <span className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+            {filledCount > 0
+              ? `Trades · ${filledCount} of ${TRADES.length - 1} priced`
+              : "Trades · leave blank to skip"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setHideEmpty((v) => !v)}
+            className="text-[10.5px] text-text-dim hover:text-accent-light transition-colors shrink-0"
+          >
+            {hideEmpty ? "Show all rows" : "Hide empty rows"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setHideEmpty((v) => !v)}
-          className="text-[11px] text-text-dim hover:text-accent-light transition-colors inline-flex items-center gap-1.5"
-        >
-          {hideEmpty ? "Show all rows" : "Hide empty rows"}
-        </button>
-      </div>
-
-      {/* Trade rows in canonical order (excl. Other) */}
-      <div className="rounded-md border border-border-subtle overflow-hidden">
         {TRADES.filter((t) => t.id !== "other").map((trade) => {
           const existing = linesByTrade.get(trade.id)?.[0];
           const filled = (existing?.amount ?? 0) > 0;
@@ -987,14 +988,16 @@ function CostBreakdown({
       </div>
 
       {/* Other lines */}
-      <div className="rounded-md border border-border-subtle overflow-hidden">
-        <div className="px-4 py-2 bg-[rgba(24,34,44,0.03)] border-b border-border-subtle text-[10px] tracking-[0.16em] uppercase text-text-dim flex items-center justify-between">
-          <span>Custom lines</span>
+      <div>
+        <div className="flex items-baseline justify-between gap-3 px-1 pb-2 border-b border-border-subtle">
+          <span className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
+            Custom lines
+          </span>
           <button
             type="button"
             onClick={onAddOther}
             disabled={isLocked}
-            className="text-[10.5px] text-accent-light hover:text-accent-deep transition-colors inline-flex items-center gap-1 normal-case tracking-normal"
+            className="text-[10.5px] text-accent-light hover:text-accent-deep transition-colors inline-flex items-center gap-1"
           >
             <Plus className="size-3" />
             Add line
@@ -1005,7 +1008,7 @@ function CostBreakdown({
           .map((l) => (
             <div
               key={l.id}
-              className="grid grid-cols-[1fr_120px_28px] sm:grid-cols-[1fr_180px_28px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0"
+              className="grid grid-cols-[1fr_120px_28px] sm:grid-cols-[1fr_180px_28px] gap-2 sm:gap-3 items-center px-1 py-2.5 border-b border-border-subtle/60"
             >
               <input
                 type="text"
@@ -1033,42 +1036,39 @@ function CostBreakdown({
             </div>
           ))}
         {lines.filter((l) => l.trade === "other").length === 0 ? (
-          <div className="px-4 py-3 text-[11.5px] text-text-dim/80">
+          <div className="px-1 pt-2.5 text-[11.5px] text-text-dim">
             No custom lines yet. Add one for things like builder&apos;s margin
             or contingency.
           </div>
         ) : null}
       </div>
 
-      {/* Totals + variance */}
-      <div
-        className={cn(
-          "rounded-md border p-4 transition-colors",
-          variance == null
-            ? "border-border-subtle bg-[rgba(24,34,44,0.025)]"
-            : variance === 0
-            ? "border-border-accent/50 bg-[rgba(0,212,200,0.04)]"
-            : "border-warning/30 bg-warning/[0.05]",
-        )}
-      >
-        <div className="grid grid-cols-3 gap-4">
-          <Stat label="Breakdown sum" value={breakdownSum} />
-          <Stat label="Tender total" value={totalPrice ?? 0} />
-          <Stat
-            label="Variance"
-            value={variance ?? 0}
-            tone={
-              variance == null
-                ? "neutral"
-                : variance === 0
-                ? "good"
-                : "warn"
-            }
-          />
+      {/* Totals + variance — a ruled ledger strip, not a boxed panel */}
+      <div>
+        <div className="grid grid-cols-3 divide-x divide-border-subtle border-y border-border-subtle">
+          <div className="py-3.5 pr-4 pl-1">
+            <Stat label="Breakdown sum" value={breakdownSum} />
+          </div>
+          <div className="py-3.5 px-4">
+            <Stat label="Tender total" value={totalPrice ?? 0} />
+          </div>
+          <div className="py-3.5 pl-4">
+            <Stat
+              label="Variance"
+              value={variance ?? 0}
+              tone={
+                variance == null
+                  ? "neutral"
+                  : variance === 0
+                  ? "good"
+                  : "warn"
+              }
+            />
+          </div>
         </div>
         {variance != null && variance !== 0 ? (
-          <div className="mt-3 text-[12px] text-warning flex items-start gap-2">
-            <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+          <div className="mt-3 px-1 text-[12px] text-[#8a6414] flex items-start gap-2">
+            <AlertTriangle className="size-3.5 shrink-0 mt-0.5 text-[#c99422]" />
             <span>
               Off by {formatAud(Math.abs(variance))}.{" "}
               <span className="text-text-dim">
@@ -1098,7 +1098,7 @@ function TradeRow({
   isLocked: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_140px] sm:grid-cols-[1fr_180px] gap-3 items-center px-3 sm:px-4 py-2.5 border-b border-border-subtle/60 last:border-b-0 transition-colors hover:bg-[rgba(24,34,44,0.025)]">
+    <div className="grid grid-cols-[1fr_140px] sm:grid-cols-[1fr_180px] gap-3 items-center px-1 py-2.5 border-b border-border-subtle/60 transition-colors hover:bg-surface-1">
       <div className="min-w-0">
         <div className="text-[12.5px] font-medium text-text">{tradeLabel}</div>
         {hint ? (
@@ -1128,7 +1128,7 @@ function Stat({
     tone === "good"
       ? "text-accent-light"
       : tone === "warn"
-      ? "text-warning"
+      ? "text-[#8a6414]"
       : "text-text";
   return (
     <div>
@@ -1166,26 +1166,13 @@ function LiveSummaryCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md border p-5",
+        "rounded-xl border p-5",
         ready
-          ? "border-border-accent/45 bg-[linear-gradient(160deg,rgba(0,212,200,0.06),rgba(250,248,243,0.78))]"
+          ? "border-border-accent/40 bg-[linear-gradient(150deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_70%)]"
           : "border-border-subtle bg-surface-1 card-elev",
-        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
       )}
     >
-      {/* corner glow when ready */}
-      {ready ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-12 -right-12 size-44 rounded-full opacity-40"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(0,212,200,0.30), transparent 70%)",
-          }}
-        />
-      ) : null}
-
-      <div className="relative">
+      <div>
         <div className="text-[10px] tracking-[0.2em] uppercase text-accent-light flex items-center gap-2">
           <Sparkles className="size-3" />
           Live summary
@@ -1231,7 +1218,7 @@ function LiveSummaryCard({
                   ? "text-text-dim/60"
                   : variance === 0
                   ? "text-accent-light"
-                  : "text-warning",
+                  : "text-[#8a6414]",
               )}
             >
               {variance == null
@@ -1262,7 +1249,7 @@ function LiveSummaryCard({
             "mt-4 px-3 py-2 rounded-sm border text-[11.5px] flex items-center gap-2",
             ready
               ? "border-border-accent/40 bg-[rgba(0,212,200,0.04)] text-accent-light"
-              : "border-warning/30 bg-warning/[0.04] text-warning",
+              : "border-[rgba(201,148,34,0.4)] bg-[rgba(201,148,34,0.06)] text-[#8a6414]",
           )}
         >
           {ready ? (
@@ -1314,18 +1301,35 @@ function ChecklistCard({
     required > 0 ? Math.round((answered / required) * 100) : 0;
 
   return (
-    <section
-      id="section-checklist"
-      className={cn(
-        "rounded-md border bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]",
-        complete
-          ? "border-border-subtle"
-          : "border-border-accent/50 ring-1 ring-[rgba(0,212,200,0.14)]",
-      )}
-    >
-      <div className="px-4 sm:px-6 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-start gap-3 min-w-0">
+    <section id="section-checklist">
+      <header className="flex items-center gap-2.5">
+        <span className="text-accent-light">
+          <ListChecks className="size-3.5" />
+        </span>
+        <h2 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
+          Submission checklist
+        </h2>
+        <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
+        <span className="text-[9.5px] tracking-[0.14em] uppercase text-text-dim shrink-0">
+          {complete ? "Complete" : "Required"}
+        </span>
+      </header>
+      <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted">
+        {complete
+          ? "Complete. Your tender will be compared like for like on scope, allowances and conditions."
+          : hasDraft
+            ? "The structured set every builder answers, so prices are compared on the same scope. About ten minutes."
+            : "Starts once your draft exists. Enter your price above and it saves automatically."}
+      </p>
+
+      <div className="pt-4">
+        <div
+          className={cn(
+            "rounded-lg border bg-surface-1 card-elev px-4 sm:px-5 py-4",
+            complete ? "border-border-subtle" : "border-border-accent/45",
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-4">
             <span
               className={cn(
                 "size-9 rounded-md border flex items-center justify-center shrink-0",
@@ -1340,40 +1344,28 @@ function ChecklistCard({
                 <ListChecks className="size-4" />
               )}
             </span>
-            <div className="min-w-0">
-              <p className="font-ui font-semibold text-[13.5px] text-text">
-                Submission checklist
-                <span className="ml-2 align-middle text-[9px] tracking-[0.14em] uppercase text-text-dim border border-border-subtle rounded-full px-1.5 py-0.5">
-                  Required
-                </span>
-              </p>
-              <p className="mt-0.5 text-[11.5px] leading-[1.55] text-text-dim max-w-[520px]">
+            <div className="min-w-0 flex-1">
+              <p className="font-ui font-semibold text-[13.5px] text-text tabular-nums">
                 {complete
-                  ? "Complete. Your tender will be compared like for like on scope, allowances and conditions."
-                  : hasDraft
-                    ? "The structured set every builder answers, so your price is compared on the same scope as everyone else. About ten minutes."
-                    : "Starts once your draft exists. Enter your price above and it saves automatically."}
+                  ? "All questions answered"
+                  : hasDraft && checklist
+                    ? `${answered} of ${required} answered`
+                    : "Waiting for your draft"}
               </p>
+              {hasDraft && checklist && !complete ? (
+                <div className="mt-2 h-[3px] rounded-full bg-border-subtle/60 overflow-hidden max-w-[320px]">
+                  <div
+                    className="h-full bg-accent transition-[width] duration-300"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              ) : null}
             </div>
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-            {hasDraft && checklist ? (
-              <div className="text-right">
-                <p className="font-display text-[18px] leading-none text-text tabular-nums">
-                  {answered}
-                  <span className="text-text-dim text-[13px]">/{required}</span>
-                </p>
-                <p className="mt-0.5 text-[9.5px] tracking-[0.14em] uppercase text-text-dim">
-                  Answered
-                </p>
-              </div>
-            ) : null}
             {hasDraft && !isLocked ? (
               <Link
                 href={`/builder/projects/${slug}/tender/checklist`}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-10 px-5 rounded-full font-ui font-semibold text-[12.5px] transition-colors",
+                  "inline-flex items-center gap-1.5 h-10 px-5 rounded-full font-ui font-semibold text-[12.5px] transition-colors shrink-0",
                   complete
                     ? "border border-border-strong text-text hover:bg-surface-2"
                     : "bg-accent text-accent-contrast hover:bg-accent-hover",
@@ -1389,15 +1381,6 @@ function ChecklistCard({
             ) : null}
           </div>
         </div>
-
-        {hasDraft && checklist && !complete ? (
-          <div className="mt-4 h-[3px] rounded-full bg-border-subtle/60 overflow-hidden">
-            <div
-              className="h-full bg-accent transition-[width] duration-300"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        ) : null}
       </div>
     </section>
   );
@@ -1427,66 +1410,31 @@ function DocsRailCard({
   return (
     <section
       id="section-tender-documents"
-      className={cn(
-        "relative overflow-hidden rounded-md",
-        // Stronger visual weight than the other sections — accent border
-        // + glow so the eye lands here first.
-        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.07),rgba(255,255,255,0.94)_45%,#ffffff)]",
-        "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.30),0_10px_28px_-18px_rgba(15,23,32,0.19)]",
-      )}
+      className="rounded-xl border border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_65%)]"
     >
-      {/* Soft accent halo top-right */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-20 -right-16 size-64 rounded-full opacity-50"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(0,212,200,0.20), transparent 70%)",
-        }}
-      />
-
-      <header className="relative px-4 sm:px-6 py-5 border-b border-border-subtle/60 flex items-start gap-3">
-        <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center shrink-0">
-          <Upload className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-              Step 1
+      <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-4">
+        <div>
+          <header className="flex items-center gap-2.5">
+            <span className="text-accent-light">
+              <Upload className="size-3.5" />
             </span>
-            <span className="text-text-dim/60 text-[10px]">·</span>
-            <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">
+            <h2 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
+              Tender documents
+            </h2>
+            <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
+            <span className="text-[9.5px] tracking-[0.14em] uppercase text-text-dim shrink-0">
               {docs.length === 0
-                ? "Recommended for every tender"
+                ? "Recommended"
                 : `${docs.length} attached`}
             </span>
-          </div>
-          <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
-            Tender documents
-          </h2>
-          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-text-muted max-w-[58ch]">
-            Drop your BoQ PDF, insurance certificates, and past-project sheets
-            here. Owners read these before they read your number — strong
-            documents win tenders.
+          </header>
+          <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted max-w-[58ch]">
+            Attach your bill of quantities, insurance certificates and past
+            project sheets. Owners read these before the price.
           </p>
         </div>
-      </header>
 
-      <div className="relative p-4 sm:p-6 space-y-4">
-        {/* AI-extract teaser */}
-        <div className="rounded-sm border border-border-accent/30 bg-[rgba(0,212,200,0.04)] px-3.5 py-2.5 flex items-start gap-2.5">
-          <Sparkles className="size-4 text-accent-light shrink-0 mt-0.5" />
-          <div className="text-[12px] leading-[1.55]">
-            <div className="text-accent-light font-semibold">
-              AI auto-fill — coming soon
-            </div>
-            <div className="text-text-dim">
-              Drop a tender PDF and we&apos;ll populate the form for your review.
-            </div>
-          </div>
-        </div>
-
-        {/* Drop zone — promoted to a full-width, taller target */}
+        {/* Drop zone — full-width target */}
         <label
           onDragOver={(e) => {
             e.preventDefault();
@@ -1499,10 +1447,10 @@ function DocsRailCard({
             onDropFiles(e.dataTransfer.files);
           }}
           className={cn(
-            "block cursor-pointer rounded-md border-2 border-dashed p-7 sm:p-9 text-center transition-colors",
+            "block cursor-pointer rounded-lg border border-dashed p-6 sm:p-8 text-center transition-colors",
             dragOver
-              ? "border-border-accent bg-[rgba(0,212,200,0.08)]"
-              : "border-border-subtle hover:border-border-accent/60 hover:bg-[rgba(0,212,200,0.03)] bg-[rgba(24,34,44,0.025)]",
+              ? "border-border-accent-strong bg-[rgba(0,212,200,0.08)]"
+              : "border-border-strong hover:border-border-accent bg-surface-1/60 hover:bg-surface-1",
             (isLocked || !hasDraft) && "opacity-50 pointer-events-none",
           )}
         >
@@ -1513,10 +1461,10 @@ function DocsRailCard({
             className="sr-only"
             onChange={(e) => e.target.files && onDropFiles(e.target.files)}
           />
-          <Upload className="mx-auto size-7 text-accent-light mb-2.5" />
-          <div className="text-[15px] font-semibold text-text">
+          <Upload className="mx-auto size-6 text-accent-light mb-2.5" />
+          <div className="text-[14px] font-ui font-semibold text-text">
             Drop files here, or{" "}
-            <span className="text-accent-light underline underline-offset-[6px] decoration-2">
+            <span className="text-accent-light underline underline-offset-4">
               browse
             </span>
           </div>
@@ -1531,7 +1479,7 @@ function DocsRailCard({
             {activeUploads.map((u) => (
               <div
                 key={u.id}
-                className="rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.03)] px-3 py-2 text-[11px]"
+                className="rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-[11px]"
               >
                 <div className="flex justify-between text-text-muted mb-1">
                   <span className="truncate mr-2">{u.filename}</span>
@@ -1569,13 +1517,13 @@ function DocsRailCard({
           </div>
         ) : null}
 
-        {/* Saved docs */}
+        {/* Saved docs — each one a paper object */}
         {docs.length > 0 ? (
           <ul className="space-y-1.5">
             {docs.map((d) => (
               <li
                 key={d.id}
-                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)]"
+                className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border-subtle bg-surface-1 card-elev"
               >
                 <div className="min-w-0">
                   <div className="text-[12px] font-medium text-text truncate">
@@ -1588,8 +1536,8 @@ function DocsRailCard({
                         d.status === "active"
                           ? "text-accent-light"
                           : d.status === "pending"
-                          ? "text-warning"
-                          : "text-danger",
+                          ? "text-[#8a6414]"
+                          : "text-[#a8433e]",
                       )}
                     >
                       {d.status}
@@ -1616,6 +1564,15 @@ function DocsRailCard({
             ))}
           </ul>
         ) : null}
+
+        {/* AI-extract note — one quiet line, no panel */}
+        <p className="text-[11px] leading-[1.55] text-text-dim flex items-start gap-2">
+          <Sparkles className="size-3.5 text-accent-light shrink-0 mt-[1px]" />
+          <span>
+            AI auto-fill is coming soon. Drop a tender PDF and the form will
+            populate for your review.
+          </span>
+        </p>
       </div>
     </section>
   );
@@ -1623,8 +1580,9 @@ function DocsRailCard({
 
 // ── Form atoms ───────────────────────────────────────────────────────────
 
+// Inputs are objects — paper fields on the canvas, hairline borders.
 const inputCls =
-  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent focus:bg-[rgba(0,212,200,0.025)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
+  "w-full h-11 px-3.5 rounded-md border border-border-subtle bg-surface-1 text-[13.5px] text-text placeholder:text-text-dim/70 focus:outline-none focus:border-border-accent disabled:opacity-60 disabled:cursor-not-allowed transition-colors";
 
 function Field({
   label,
@@ -1640,7 +1598,7 @@ function Field({
   return (
     <label className="block">
       <span className="flex items-baseline justify-between mb-1.5">
-        <span className="text-[10.5px] tracking-[0.18em] uppercase text-text-dim">
+        <span className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim">
           {label}
           {required ? <span className="text-accent-light ml-1">*</span> : null}
         </span>
@@ -1675,7 +1633,7 @@ function PriceInput({
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
+        "relative flex items-center rounded-md border border-border-subtle bg-surface-1 focus-within:border-border-accent",
         disabled && "opacity-60 cursor-not-allowed",
         size === "sm" ? "h-9" : "h-11",
       )}
@@ -1736,7 +1694,7 @@ function NumberInput({
   return (
     <div
       className={cn(
-        "relative flex items-center rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] h-11 focus-within:border-border-accent focus-within:bg-[rgba(0,212,200,0.025)]",
+        "relative flex items-center rounded-md border border-border-subtle bg-surface-1 h-11 focus-within:border-border-accent",
         disabled && "opacity-60 cursor-not-allowed",
       )}
     >
@@ -1812,7 +1770,7 @@ function TagInput({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] focus-within:border-border-accent",
+        "flex flex-wrap items-center gap-2 px-2 py-1.5 rounded-md border border-border-subtle bg-surface-1 focus-within:border-border-accent",
         disabled && "opacity-60 cursor-not-allowed",
       )}
     >
@@ -2190,7 +2148,7 @@ function FooterStatusLabel({
       return (
         <div className="text-[13px] text-accent-light flex items-center gap-2">
           <Check className="size-4" />
-          Submitted — locked. Owner is reviewing.
+          Submitted and locked. The owner is reviewing.
         </div>
       );
     case "shortlisted":
@@ -2211,7 +2169,7 @@ function FooterStatusLabel({
       return (
         <div className="text-[13px] text-text-dim flex items-center gap-2">
           <X className="size-4" />
-          Decision made — owner went with another builder.
+          Decision made. The owner went with another builder.
         </div>
       );
     case "withdrawn":

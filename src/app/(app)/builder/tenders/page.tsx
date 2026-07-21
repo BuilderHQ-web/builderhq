@@ -37,7 +37,7 @@ const STATUS_META: Record<
   },
   rejected: {
     label: "Rejected",
-    cls: "border-[rgba(255,120,120,0.40)] bg-[rgba(255,120,120,0.06)] text-[rgba(255,160,160,0.95)]",
+    cls: "border-[rgba(194,85,80,0.4)] bg-[rgba(194,85,80,0.06)] text-[#a8433e]",
   },
   withdrawn: {
     label: "Withdrawn",
@@ -152,15 +152,14 @@ function Bucket({
 }) {
   return (
     <section>
-      <header className="mb-3 flex items-baseline gap-3 flex-wrap">
-        <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
+      <header className="mb-3 flex items-center gap-3.5">
+        <h2 className="font-display uppercase tracking-[-0.012em] text-[17px] leading-none text-text shrink-0">
           {title}
         </h2>
-        <span className="text-[11.5px] text-text-dim">{subtitle}</span>
+        <span className="text-[11.5px] text-text-dim shrink-0">{subtitle}</span>
+        <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
       </header>
-      <div className="rounded-md border border-border-subtle overflow-hidden bg-surface-1 card-elev">
-        {children}
-      </div>
+      <div className="flex flex-col gap-2">{children}</div>
     </section>
   );
 }
@@ -188,16 +187,26 @@ function Row({
 }) {
   const meta = STATUS_META[tender.status];
   const slug = project?.slug;
+  const dateLabel = tender.submittedAt ? "Lodged" : "Updated";
+  const dateValue = (tender.submittedAt ?? tender.updatedAt).toLocaleDateString(
+    "en-AU",
+    { day: "numeric", month: "short", timeZone: "Australia/Melbourne" },
+  );
   return (
     <Link
       href={slug ? `/builder/projects/${slug}/tender` : "/builder/tenders"}
-      className="grid grid-cols-[1fr_auto] sm:grid-cols-[1.6fr_1fr_1fr_auto] gap-x-3 gap-y-1 sm:gap-4 px-4 sm:px-5 py-4 items-center transition-colors hover:bg-[rgba(0,212,200,0.025)] border-b border-border-subtle/60 last:border-b-0"
+      className={cn(
+        "group relative rounded-lg border border-border-subtle bg-surface-1 card-elev",
+        "transition-[border-color,box-shadow,transform] duration-200",
+        "hover:border-border-strong hover:card-elev-lg hover:-translate-y-px",
+        "grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(90px,auto))_auto] gap-x-5 gap-y-3 px-4 sm:px-5 py-4 items-center",
+      )}
     >
       <div className="min-w-0">
-        <div className="text-[13.5px] font-semibold text-text truncate">
+        <div className="text-[14px] font-ui font-semibold text-text truncate">
           {project?.title ?? "Project"}
         </div>
-        <div className="text-[11px] text-text-dim truncate">
+        <div className="mt-0.5 text-[11.5px] text-text-dim truncate">
           {project?.suburb
             ? `${project.suburb}, ${project.state}`
             : "Location pending"}
@@ -205,13 +214,13 @@ function Row({
       </div>
       <span
         className={cn(
-          "justify-self-end sm:hidden inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase shrink-0",
+          "justify-self-end lg:order-last inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase shrink-0",
           meta.cls,
         )}
       >
         {meta.label}
       </span>
-      <div className="text-[13px] text-text font-mono tabular-nums">
+      <RowKv label="Price">
         {tender.totalPriceAud != null
           ? new Intl.NumberFormat("en-AU", {
               style: "currency",
@@ -219,18 +228,31 @@ function Row({
               maximumFractionDigits: 0,
             }).format(tender.totalPriceAud)
           : "—"}
-      </div>
-      <div className="text-[12px] text-text-muted tabular-nums">
+      </RowKv>
+      <RowKv label="Duration">
         {tender.durationWeeks ? `${tender.durationWeeks} weeks` : "—"}
-      </div>
-      <span
-        className={cn(
-          "hidden sm:inline-flex justify-self-end items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase",
-          meta.cls,
-        )}
-      >
-        {meta.label}
-      </span>
+      </RowKv>
+      <RowKv label={dateLabel}>{dateValue}</RowKv>
     </Link>
+  );
+}
+
+/** Labelled figure on a tender row — the subheading over the value. */
+function RowKv({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[9px] tracking-[0.16em] uppercase text-text-dim">
+        {label}
+      </div>
+      <div className="mt-0.5 text-[13px] font-ui font-medium text-text tabular-nums truncate">
+        {children}
+      </div>
+    </div>
   );
 }

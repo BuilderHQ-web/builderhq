@@ -164,7 +164,7 @@ function FilterBar({ params }: { params: SearchParams }) {
   return (
     <form
       method="get"
-      className="rounded-md border border-border-subtle bg-surface-1 card-elev p-3 sm:p-4 lg:p-5"
+      className="border-y border-border-subtle/70 py-3 sm:py-4"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
         <Input

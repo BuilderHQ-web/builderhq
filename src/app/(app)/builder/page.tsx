@@ -36,10 +36,10 @@ import {
 
 import { auth } from "@/modules/auth";
 import { dashboardForRole } from "@/lib/dashboard-route";
-import { listForMarketplace, unlockPriceFor } from "@/modules/projects";
+import { listForMarketplace } from "@/modules/projects";
 import type { MarketplacePreview } from "@/modules/projects";
 import { getBuilderProfile } from "@/modules/profiles";
-import { countMySaved, listMyUnlockedProjectIds } from "@/modules/unlocks";
+import { listMySavedProjectIds, listMyUnlockedProjectIds } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import {
   listInvitesForBuilder,
@@ -53,6 +53,7 @@ import {
   type BuilderActivityEvent,
 } from "@/modules/dashboards";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
+import { ProjectCard } from "@/components/builder/project-card";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
@@ -113,22 +114,6 @@ function ago(d: Date): string {
   });
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  single_dwelling: "New build",
-  multi_dwelling: "Multi dwelling",
-  renovation: "Renovation",
-  extension: "Extension",
-};
-
-const BUDGET_LABEL: Record<string, string> = {
-  under_250k: "Under $250k",
-  "250k_500k": "$250k to $500k",
-  "500k_750k": "$500k to $750k",
-  "750k_1m": "$750k to $1m",
-  "1m_1_5m": "$1m to $1.5m",
-  over_1_5m: "Over $1.5m",
-};
-
 /* ── page ───────────────────────────────────────────────────────────── */
 
 export default async function BuilderDashboard() {
@@ -153,7 +138,7 @@ export default async function BuilderDashboard() {
       .filter((m) => m.statewide || m.suburb !== null) ?? [];
   const matchedCategories = profile?.categories.map((c) => c.category) ?? [];
 
-  const [dash, openRounds, invites, drafts, unreadCount, conversations, savedCount, fbaStatus, unlockedIds] =
+  const [dash, openRounds, invites, drafts, unreadCount, conversations, savedIds, fbaStatus, unlockedIds] =
     await Promise.all([
       userId
         ? safe("dashboard_rollup", getBuilderDashboardData(userId, firstName), EMPTY_DASH(firstName))
@@ -171,7 +156,7 @@ export default async function BuilderDashboard() {
       userId ? safe("draft_tenders", listDraftTendersForBuilder(userId), []) : [],
       userId ? safe("unread_count", countUnreadForUser(userId), 0) : 0,
       userId ? safe("conversations", listForUser(userId), []) : [],
-      userId ? safe("saved_count", countMySaved(userId), 0) : 0,
+      userId ? safe("saved_ids", listMySavedProjectIds(userId), []) : [],
       userId
         ? safe("fba_status", getFbaStatus(userId), { active: false, reason: "no_grant" } as const)
         : Promise.resolve({ active: false, reason: "no_grant" } as const),
@@ -192,6 +177,8 @@ export default async function BuilderDashboard() {
   const fullyVerified =
     verification.abnVerified && verification.anyLicenceVerified;
   const unlockedSet = new Set(unlockedIds);
+  const savedSet = new Set(savedIds);
+  const savedCount = savedIds.length;
   const complimentaryUnlocks =
     fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
@@ -402,7 +389,7 @@ export default async function BuilderDashboard() {
       {needsChecklist ? (
         <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
           <div className="px-4 sm:px-6 lg:px-10 py-5">
-            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+            <div className="mx-auto max-w-[1320px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
               <div className="min-w-0">
                 <p className="text-[10px] tracking-[0.22em] uppercase text-[#8a6414] font-ui font-semibold">
                   Registration
@@ -440,7 +427,7 @@ export default async function BuilderDashboard() {
 
       {/* ── working area — sections on the canvas ─────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
+        <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
           {/* left column — the work */}
           <div className="min-w-0 flex flex-col gap-10">
             {/* on your desk — the one toned panel on the page */}
@@ -595,16 +582,17 @@ export default async function BuilderDashboard() {
                   </Link>
                 </div>
               ) : (
-                <ul className="mt-5 flex flex-col gap-2">
+                <div className="mt-5 flex flex-col gap-3">
                   {openRounds.map((p) => (
-                    <OpenRoundRow
+                    <ProjectCard
                       key={p.id}
-                      p={p}
-                      entered={unlockedSet.has(p.id)}
-                      complimentary={complimentaryUnlocks}
+                      project={p}
+                      isSaved={savedSet.has(p.id)}
+                      isUnlocked={unlockedSet.has(p.id)}
+                      fbaActive={complimentaryUnlocks}
                     />
                   ))}
-                </ul>
+                </div>
               )}
             </section>
 
@@ -994,83 +982,6 @@ function DeskChip({
       ) : null}
       {children}
     </span>
-  );
-}
-
-/* ── open rounds row — a slim docket on the canvas ──────────────────── */
-
-function OpenRoundRow({
-  p,
-  entered,
-  complimentary,
-}: {
-  p: MarketplacePreview;
-  entered: boolean;
-  complimentary: boolean;
-}) {
-  const spots = p.tenderSpots ?? 3;
-  const taken = Math.min(p.unlockedCount, spots);
-  const left = Math.max(0, spots - taken);
-  const fee = unlockPriceFor(p.type);
-  return (
-    <li>
-      <Link
-        href={`/builder/projects/${p.slug}`}
-        className="flex items-center gap-4 px-4 sm:px-5 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2 min-w-0">
-            <span className="block font-ui font-medium text-[13.5px] text-text truncate">
-              {p.title}
-            </span>
-            {p.tenderMode === "hybrid" ? (
-              <span className="text-[9.5px] tracking-[0.1em] uppercase text-text-dim border border-border-subtle rounded-full px-1.5 py-0.5 shrink-0">
-                Hybrid round
-              </span>
-            ) : null}
-          </span>
-          <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
-            {TYPE_LABEL[p.type] ?? p.type}
-            {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
-            {p.budgetBand && BUDGET_LABEL[p.budgetBand]
-              ? ` · ${BUDGET_LABEL[p.budgetBand]}`
-              : ""}
-          </span>
-        </span>
-        <span className="text-right shrink-0">
-          {entered ? (
-            <span className="block text-[12px] font-ui font-semibold text-[#0a7d73]">
-              You hold a spot
-            </span>
-          ) : (
-            <>
-              <span
-                className={cn(
-                  "block text-[12px] font-ui font-semibold tabular-nums",
-                  left === 0
-                    ? "text-text-dim"
-                    : left === 1
-                      ? "text-[#8a6414]"
-                      : "text-[#0a7d73]",
-                )}
-              >
-                {left === 0
-                  ? "Round full"
-                  : `${left} of ${spots} spot${spots === 1 ? "" : "s"} open`}
-              </span>
-              {left > 0 ? (
-                <span className="block text-[10.5px] text-text-dim tabular-nums">
-                  {complimentary
-                    ? "Complimentary with founding access"
-                    : `$${fee} to enter`}
-                </span>
-              ) : null}
-            </>
-          )}
-        </span>
-        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-      </Link>
-    </li>
   );
 }
 

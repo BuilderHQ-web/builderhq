@@ -287,7 +287,7 @@ export function PublicBuilderProfile({
         {/* ── registered entity — the legal line as a credential strip ── */}
         {profile.abn || legalDiffers(profile) ? (
           <Reveal>
-            <section className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border-subtle bg-white card-elev px-6 sm:px-7 py-5">
+            <section className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border-subtle bg-surface-1 card-elev px-6 sm:px-7 py-5">
               <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
                 <Landmark className="size-4" />
               </span>
@@ -345,7 +345,7 @@ export function PublicBuilderProfile({
                     return (
                       <li
                         key={c}
-                        className="flex items-start gap-3 rounded-xl border border-border-subtle bg-white card-elev px-5 py-4"
+                        className="flex items-start gap-3 rounded-xl border border-border-subtle bg-surface-1 card-elev px-5 py-4"
                       >
                         <span className="mt-0.5 size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
                           <meta.icon className="size-3.5" />
@@ -517,7 +517,7 @@ function IdentityBand({
               "radial-gradient(closest-side, rgba(0,212,200,0.14), transparent 72%)",
           }}
         />
-        <div className="relative size-[168px] rounded-2xl overflow-hidden border border-border-subtle bg-white card-elev flex items-center justify-center">
+        <div className="relative size-[168px] rounded-2xl overflow-hidden border border-border-subtle bg-surface-1 card-elev flex items-center justify-center">
           {profile.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -662,7 +662,7 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
             const stateOnly = inState.find((a) => !a.suburb);
             const suburbs = inState.filter((a) => a.suburb);
             return (
-              <div key={state} className="bg-white p-4 sm:p-5">
+              <div key={state} className="bg-surface-1 p-4 sm:p-5">
                 <div className="flex items-baseline gap-3 mb-2.5">
                   <span className="font-ui font-semibold text-[17px] tracking-[-0.01em] text-text leading-none">
                     {state}
@@ -720,7 +720,7 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
       <div className="mt-5 rounded-xl border border-border-subtle overflow-hidden card-elev">
         <div className="flex flex-col gap-px bg-border-subtle">
           {licences.map((l) => (
-            <div key={l.id} className="bg-white p-4 sm:p-5">
+            <div key={l.id} className="bg-surface-1 p-4 sm:p-5">
               <div className="flex items-start gap-3.5">
                 <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
                   <ShieldCheck className="size-4" />
@@ -782,7 +782,7 @@ function CallToAction({
   viewerSignedIn: boolean;
 }) {
   return (
-    <section className="rounded-2xl border border-border-subtle bg-white card-elev overflow-hidden">
+    <section className="rounded-2xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
       <div className="px-6 sm:px-8 lg:px-10 py-8 sm:py-9 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
         <div>
           <span className="text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">

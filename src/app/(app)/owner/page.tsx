@@ -322,7 +322,7 @@ export default async function OwnerDashboard({
 
       {/* ── working area — sections on the canvas ─────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-        <div className="mx-auto max-w-[1200px]">
+        <div className="mx-auto max-w-[1320px]">
           {isFirstTime ? (
             <FirstProjectPrimer />
           ) : (
@@ -972,7 +972,7 @@ function FirstProjectPrimer() {
 function WelcomeBanner({ mode }: { mode: "published" | "finish" }) {
   return (
     <div className="px-4 sm:px-6 lg:px-10 pt-5">
-      <div className="mx-auto max-w-[1200px] rounded-xl border border-border-accent/50 bg-[rgba(0,212,200,0.05)] px-4 sm:px-5 py-3.5 flex items-start gap-3">
+      <div className="mx-auto max-w-[1320px] rounded-xl border border-border-accent/50 bg-[rgba(0,212,200,0.05)] px-4 sm:px-5 py-3.5 flex items-start gap-3">
         <span className="size-2 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)] mt-1.5 shrink-0" />
         <div className="min-w-0">
           <p className="font-ui font-semibold text-[13px] text-text">

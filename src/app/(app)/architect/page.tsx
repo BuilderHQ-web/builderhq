@@ -189,7 +189,7 @@ export default async function ArchitectDashboard() {
 
       {/* ── Body — sections on the canvas ─────────────────────────────── */}
       <section className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-        <div className="mx-auto max-w-[980px]">
+        <div className="mx-auto max-w-[1200px]">
           {isFirstTime ? (
             <FirstTenderPrimer />
           ) : (

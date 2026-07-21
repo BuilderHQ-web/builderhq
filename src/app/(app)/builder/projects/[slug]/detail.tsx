@@ -1093,6 +1093,8 @@ function UnlockBenefitsCard({
 
 // ── pieces ───────────────────────────────────────────────────────────────
 
+/** Ruled section — eyebrow + hairline running right, content on the
+ *  canvas. The letterhead convention; no white box. */
 function Card({
   title,
   icon,
@@ -1103,14 +1105,18 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <header className="px-5 py-3 border-b border-border-subtle/60 flex items-center gap-2">
-        <span className="text-accent-light [&_svg]:size-3">{icon}</span>
-        <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+    <section>
+      <header className="flex items-center gap-2.5">
+        <span className="text-accent-light [&_svg]:size-3.5">{icon}</span>
+        <h3 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
           {title}
         </h3>
+        <span
+          aria-hidden
+          className="h-px flex-1 bg-[rgba(24,34,44,0.10)]"
+        />
       </header>
-      <div className="p-5">{children}</div>
+      <div className="pt-4">{children}</div>
     </section>
   );
 }
