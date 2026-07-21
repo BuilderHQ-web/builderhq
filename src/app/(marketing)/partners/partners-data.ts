@@ -126,6 +126,10 @@ export interface Partner {
   /** Industry recognition, rendered as a gold plaque strip under the
    *  identity band. Lead with the biggest honour; keep to three. */
   awards?: { label: string; sub?: string }[];
+  /** A quieter recognition, shown on a compact dark strip rather than the
+   *  gold honours board — for a platform or service accolade (e.g. Best of
+   *  Houzz) that is not a formal design or industry award. */
+  accolade?: { label: string; sub?: string; tag?: string };
   website?: string;
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
@@ -2351,11 +2355,16 @@ export const PARTNERS: Partner[] = [
     stats: [
       { label: "Client rating", value: "5.0", star: true, sub: "on Houzz" },
       { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
-      { label: "Best of Houzz Service", value: "4×", sub: "including 2023 to 2025" },
+      { label: "Registered architects", value: "2", sub: "NSW and Rome" },
     ],
+    accolade: {
+      label: "Best of Houzz for Service",
+      sub: "2017, 2023, 2024 and 2025",
+      tag: "4× winner",
+    },
     why: "Studio LIRA is the kind of practice we are always looking for and rarely find: two architects who trained and qualified in Italy, registered here in New South Wales as well as in Rome, who carry a European sense of scale and restraint into everything they draw. They describe their own instinct as reaching the essence of things, no shortcuts, and it shows in work that feels considered and built to last rather than styled for the moment. Just as telling is how they work, listening first, so the architecture answers the client’s story rather than a house style. For an owner who wants genuine design intent and the rigour of registered architects behind a build, an introduction to LIRA is one we make with real confidence.",
     about:
-      "Studio LIRA is a Newtown based architecture and interiors studio founded by two Italian architects, after two decades in the profession between them, the last ten years spent in Sydney. Known until recently as RGAD, the studio works across new homes, alterations and additions, and commercial and retail fit-outs, and carries projects from the first conversation through to interiors and the furniture that finishes a room. Its sensibility comes from an Italian grounding in heritage, harmony and proportion, expressed through calm, timeless spaces and materials chosen to age with honesty. The practice has been recognised with Best of Houzz awards for service in 2023, 2024 and 2025.",
+      "Studio LIRA is a Newtown based architecture and interiors studio founded by two Italian architects, after two decades in the profession between them, the last ten years spent in Sydney. Known until recently as RGAD, the studio works across new homes, alterations and additions, and commercial and retail fit-outs, and carries projects from the first conversation through to interiors and the furniture that finishes a room. Its sensibility comes from an Italian grounding in heritage, harmony and proportion, expressed through calm, timeless spaces and materials chosen to age with honesty.",
     facts: {
       basedIn: "Newtown, NSW",
       serves: "Sydney",
