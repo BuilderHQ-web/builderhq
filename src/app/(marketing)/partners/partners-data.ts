@@ -2330,6 +2330,62 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "studio-lira",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Architecture and interiors",
+    name: "Studio LIRA",
+    monogram: "LI",
+    logo: "/partners/studio-lira/logo.png",
+    suburb: "Newtown",
+    state: "NSW",
+    tagline:
+      "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
+    disciplines: ["New homes", "Interiors and furniture", "Commercial fit-outs"],
+    institution: {
+      name: "NSW Architects Registration Board",
+      role: "Registered architects",
+      note: "NSW licence 13292",
+    },
+    stats: [
+      { label: "Client rating", value: "5.0", star: true, sub: "on Houzz" },
+      { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
+      { label: "Best of Houzz Service", value: "4×", sub: "including 2023 to 2025" },
+    ],
+    why: "Studio LIRA is the kind of practice we are always looking for and rarely find: two architects who trained and qualified in Italy, registered here in New South Wales as well as in Rome, who carry a European sense of scale and restraint into everything they draw. They describe their own instinct as reaching the essence of things, no shortcuts, and it shows in work that feels considered and built to last rather than styled for the moment. Just as telling is how they work, listening first, so the architecture answers the client’s story rather than a house style. For an owner who wants genuine design intent and the rigour of registered architects behind a build, an introduction to LIRA is one we make with real confidence.",
+    about:
+      "Studio LIRA is a Newtown based architecture and interiors studio founded by two Italian architects, after two decades in the profession between them, the last ten years spent in Sydney. Known until recently as RGAD, the studio works across new homes, alterations and additions, and commercial and retail fit-outs, and carries projects from the first conversation through to interiors and the furniture that finishes a room. Its sensibility comes from an Italian grounding in heritage, harmony and proportion, expressed through calm, timeless spaces and materials chosen to age with honesty. The practice has been recognised with Best of Houzz awards for service in 2023, 2024 and 2025.",
+    facts: {
+      basedIn: "Newtown, NSW",
+      serves: "Sydney",
+      focus: "New homes, interiors and fit-outs",
+    },
+    website: "https://studiolira.com.au/",
+    instagram: "https://www.instagram.com/studioliraarchitects/",
+    galleryUrl: "https://studiolira.com.au/",
+    work: [
+      {
+        title: "Castle Hill Residence",
+        suburb: "Castle Hill",
+        type: "New home",
+        image: "/partners/studio-lira/castle-hill-exterior.jpg",
+      },
+      {
+        title: "Castle Hill Interior",
+        suburb: "Castle Hill",
+        type: "Interior",
+        image: "/partners/studio-lira/castle-hill-interior.jpg",
+      },
+      {
+        title: "Double Bay Apartments",
+        suburb: "Double Bay",
+        type: "Multi residential",
+        image: "/partners/studio-lira/double-bay-apartments.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
