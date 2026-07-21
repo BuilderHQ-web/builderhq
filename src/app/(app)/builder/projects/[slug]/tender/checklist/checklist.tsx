@@ -229,7 +229,7 @@ export function ChecklistWizard({
 
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+              <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
                 <ShieldCheck className="size-3.5" />
                 BuilderHQ Submission Standard
               </span>
@@ -320,7 +320,7 @@ export function ChecklistWizard({
                       className={cn(
                         "size-[22px] rounded-full border flex items-center justify-center text-[10.5px] font-ui font-semibold shrink-0 transition-colors",
                         p.complete
-                          ? "bg-accent-light text-navy border-accent-light"
+                          ? "bg-accent text-accent-contrast border-accent-light"
                           : active
                             ? "border-border-accent text-accent-light"
                             : "border-border-subtle text-text-dim",
@@ -366,7 +366,7 @@ export function ChecklistWizard({
           {progress.complete ? (
             <div className="mb-5 rounded-md border border-border-accent/60 bg-[rgba(0,212,200,0.05)] px-4 sm:px-5 py-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="size-9 rounded-full bg-accent-light text-navy flex items-center justify-center shrink-0">
+                <span className="size-9 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
                   <Check className="size-4" strokeWidth={3} />
                 </span>
                 <div>

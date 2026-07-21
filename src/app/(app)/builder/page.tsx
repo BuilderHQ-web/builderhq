@@ -19,9 +19,18 @@
  *   builder's own work. Browsing is a destination (/builder/browse);
  *   the desk only surfaces what matched.
  *
- * Reading order: masthead (identity + standing + ledger) → on your
- * desk → open rounds → the book. Rail: standing, correspondence,
- * decisions, grandfathered founding note.
+ * Clarity system (round 2): every section announces itself with a
+ * kicker + display-scale title + one plain-language subline, so a new
+ * builder can tell what each block is without decoding the ledger
+ * vocabulary. Desk rows carry NAMED chips (Awarded / Invitation /
+ * Shortlisted / Expiring / Lapsed / Draft) instead of anonymous tone
+ * dots, and the registration checklist is a full-width band under the
+ * masthead — the one thing gating tendering is never below the fold.
+ *
+ * Reading order: masthead (identity + standing + ledger) →
+ * [registration band if unverified] → on your desk → open rounds →
+ * the tender book. Rail: standing, correspondence, the record,
+ * grandfathered founding note.
  */
 
 import Link from "next/link";
@@ -198,6 +207,18 @@ export default async function BuilderDashboard() {
   const complimentaryUnlocks =
     fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
+  // The registration checklist state: not approved, not declined, and
+  // at least one check still outstanding — the one state where
+  // something is asked of the builder before they can tender. Promoted
+  // to a full-width band. When both checks have passed (however they
+  // passed — web or mobile), the band never renders; the rail carries
+  // the "checks complete" note instead.
+  const needsChecklist =
+    !isApproved &&
+    approvalStatus !== "rejected" &&
+    approvalStatus !== "suspended" &&
+    !fullyVerified;
+
   const practiceName =
     profile?.profile?.tradingName ?? profile?.profile?.companyName ?? firstName;
   const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
@@ -207,11 +228,13 @@ export default async function BuilderDashboard() {
     timeZone: "Australia/Melbourne",
   }).format(new Date());
 
-  // ── the desk queue: one ranked list ───────────────────────────────
+  // ── the desk queue: one ranked list, every entry NAMED ────────────
+  type DeskTone = "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
   type DeskRow = {
     key: string;
     href: string;
-    tone: "win" | "invite" | "warn" | "neutral";
+    tone: DeskTone;
+    chip: string;
     title: string;
     line: string;
     metric: string | null;
@@ -224,6 +247,7 @@ export default async function BuilderDashboard() {
         key: `awarded-${a.tenderId}`,
         href: `/builder/projects/${a.projectSlug}/tender`,
         tone: "win",
+        chip: "Awarded",
         title: a.projectTitle,
         line: "Awarded to you. Contact details are on the tender.",
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
@@ -235,6 +259,7 @@ export default async function BuilderDashboard() {
       key: `invite-${inv.inviteId}`,
       href: `/invite/b/${inv.inviteToken}`,
       tone: "invite",
+      chip: "Invitation",
       title: inv.projectTitle,
       line: `${inv.inviterName} invited you to tender. Review and accept to take your spot.`,
       metric: ago(inv.invitedAt),
@@ -246,6 +271,7 @@ export default async function BuilderDashboard() {
         key: `short-${a.tenderId}`,
         href: `/builder/projects/${a.projectSlug}/tender`,
         tone: "neutral",
+        chip: "Shortlisted",
         title: a.projectTitle,
         line: "Shortlisted. You are in the final comparison.",
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
@@ -255,17 +281,20 @@ export default async function BuilderDashboard() {
   for (const a of dash.actionsNeeded) {
     if (a.reason === "expiring_soon") {
       const d = a.daysUntilExpiry;
+      const lapsed = d !== null && d < 0;
       queue.push({
         key: `expiry-${a.tenderId}`,
         href: `/builder/projects/${a.projectSlug}/tender`,
-        tone: "warn",
+        // The rollup computes urgency (≤3 days = danger); honour it so
+        // a lapsed price reads at a different weight to "5 days left".
+        tone: lapsed || a.urgency === "danger" ? "danger" : "warn",
+        chip: lapsed ? "Lapsed" : "Expiring",
         title: a.projectTitle,
-        line:
-          d !== null && d < 0
-            ? "Your price validity has lapsed. Withdraw or resubmit."
-            : d === 0
-              ? "Your price validity ends today."
-              : `Your price validity ends in ${d} day${d === 1 ? "" : "s"}.`,
+        line: lapsed
+          ? "Your price validity has lapsed. Withdraw or resubmit."
+          : d === 0
+            ? "Your price validity ends today."
+            : `Your price validity ends in ${d} day${d === 1 ? "" : "s"}.`,
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
       });
     }
@@ -274,7 +303,8 @@ export default async function BuilderDashboard() {
     queue.push({
       key: `draft-${dr.tenderId}`,
       href: `/builder/projects/${dr.projectSlug}/tender`,
-      tone: "neutral",
+      tone: "draft",
+      chip: "Draft",
       title: dr.projectTitle,
       line: `Draft tender in progress. Last worked on ${ago(dr.updatedAt)}.`,
       metric: dr.totalPriceAud !== null ? compactAud(dr.totalPriceAud) : "Unpriced",
@@ -389,6 +419,46 @@ export default async function BuilderDashboard() {
         </div>
       </section>
 
+      {/* ── registration band — the gate, never below the fold ───── */}
+      {needsChecklist ? (
+        <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+              <div className="min-w-0">
+                <p className="text-[10px] tracking-[0.22em] uppercase text-[#8a6414] font-ui font-semibold">
+                  Registration
+                </p>
+                <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                  {(verification.abnVerified ? 0 : 1) +
+                    (verification.anyLicenceVerified ? 0 : 1) ===
+                  1
+                    ? "One check stands between you and tendering"
+                    : "Two checks stand between you and tendering"}
+                </h2>
+                <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
+                  <ChecklistLine done={verification.abnVerified}>
+                    ABN verified against the Australian Business Register
+                  </ChecklistLine>
+                  <ChecklistLine done={verification.anyLicenceVerified}>
+                    Builder licence verified
+                  </ChecklistLine>
+                </ul>
+                <p className="mt-2 text-[11px] leading-[1.55] text-text-dim">
+                  Registration completes automatically the moment both checks pass.
+                </p>
+              </div>
+              <Link
+                href="/builder/profile"
+                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[12.5px] hover:bg-accent-hover transition-colors shrink-0"
+              >
+                Complete verification
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* ── working area ─────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
@@ -396,30 +466,29 @@ export default async function BuilderDashboard() {
           <div className="space-y-6 min-w-0">
             {/* on your desk */}
             <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
-              <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                    <ClipboardCheck className="size-3.5" />
-                    On your desk
-                  </span>
-                  {queue.length > 0 ? (
-                    <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums">
-                      {queue.length}
-                    </span>
-                  ) : null}
-                </div>
-                <Link
-                  href="/builder/tenders"
-                  className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                >
-                  My tenders
-                  <ArrowRight className="size-3" />
-                </Link>
-              </header>
+              <SectionHead
+                icon={<ClipboardCheck className="size-3.5" />}
+                kicker="Priority queue"
+                title="On your desk"
+                sub={
+                  queue.length === 0
+                    ? "Nothing needs your action right now."
+                    : `${queue.length} item${queue.length === 1 ? "" : "s"} need${queue.length === 1 ? "s" : ""} your attention, most important first.`
+                }
+                right={
+                  <Link
+                    href="/builder/tenders"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
+                  >
+                    My tenders
+                    <ArrowRight className="size-3" />
+                  </Link>
+                }
+              />
 
               {queueShown.length === 0 ? (
                 <div className="px-4 sm:px-6 py-10 text-center">
-                  <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent-light text-navy">
+                  <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent text-accent-contrast">
                     <Check className="size-4" strokeWidth={3} />
                   </span>
                   <p className="font-ui font-semibold text-[13.5px] text-text">
@@ -436,23 +505,30 @@ export default async function BuilderDashboard() {
                     <li key={row.key}>
                       <Link
                         href={row.href}
-                        className="flex items-center gap-3.5 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+                        className="relative flex items-center gap-3.5 pl-5 pr-4 sm:pl-7 sm:pr-6 py-3.5 hover:bg-bg-elev transition-colors group"
                       >
+                        {/* tone bar — full height, scannable down the list */}
                         <span
+                          aria-hidden
                           className={cn(
-                            "size-2 rounded-full shrink-0",
+                            "absolute left-0 top-0 bottom-0 w-[3px]",
                             row.tone === "win" && "bg-[#0a9c91]",
                             row.tone === "invite" &&
-                              "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.55)]",
+                              "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
                             row.tone === "warn" && "bg-[#c99422]",
+                            row.tone === "danger" && "bg-[#c25550]",
                             row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                            row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
                           )}
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="block font-ui font-medium text-[13.5px] text-text truncate">
-                            {row.title}
+                          <span className="flex items-center gap-2 min-w-0">
+                            <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                            <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                              {row.title}
+                            </span>
                           </span>
-                          <span className="block text-[11.5px] leading-[1.5] text-text-muted truncate">
+                          <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
                             {row.line}
                           </span>
                         </span>
@@ -480,38 +556,37 @@ export default async function BuilderDashboard() {
 
             {/* open rounds */}
             <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-              <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                    <Compass className="size-3.5" />
-                    Open rounds in your area
-                  </span>
-                  <p className="mt-1 text-[11.5px] text-text-dim">
-                    {serviceAreaMatch.length > 0
-                      ? matchedCategories.length === 1
-                        ? "Matched to your service area and category."
-                        : "Matched to your service area."
-                      : "Recent rounds across the register."}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {savedCount > 0 ? (
+              <SectionHead
+                icon={<Compass className="size-3.5" />}
+                kicker="The register"
+                title="Open rounds in your area"
+                sub={
+                  serviceAreaMatch.length > 0
+                    ? matchedCategories.length === 1
+                      ? "Live tender rounds matched to your service area and category."
+                      : "Live tender rounds matched to your service area."
+                    : "Recent rounds from across the register."
+                }
+                right={
+                  <>
+                    {savedCount > 0 ? (
+                      <Link
+                        href="/builder/saved"
+                        className="text-[11.5px] text-text-muted hover:text-text transition-colors"
+                      >
+                        Saved · {savedCount}
+                      </Link>
+                    ) : null}
                     <Link
-                      href="/builder/saved"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors"
+                      href="/builder/browse"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
                     >
-                      Saved · {savedCount}
+                      Browse all
+                      <ArrowRight className="size-3" />
                     </Link>
-                  ) : null}
-                  <Link
-                    href="/builder/browse"
-                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                  >
-                    Browse all
-                    <ArrowRight className="size-3" />
-                  </Link>
-                </div>
-              </header>
+                  </>
+                }
+              />
 
               {openRounds.length === 0 ? (
                 <div className="px-4 sm:px-6 py-10 text-center">
@@ -545,22 +620,24 @@ export default async function BuilderDashboard() {
               )}
             </section>
 
-            {/* the book */}
+            {/* the tender book */}
             {hasBook ? (
               <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-                <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                    <Landmark className="size-3.5" />
-                    The book
-                  </span>
-                  <Link
-                    href="/builder/tenders"
-                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                  >
-                    Every tender
-                    <ArrowRight className="size-3" />
-                  </Link>
-                </header>
+                <SectionHead
+                  icon={<Landmark className="size-3.5" />}
+                  kicker="Your ledger"
+                  title="The tender book"
+                  sub="Every tender you have lodged, by status."
+                  right={
+                    <Link
+                      href="/builder/tenders"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
+                    >
+                      Every tender
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  }
+                />
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-px bg-border-subtle">
                   {(
                     [
@@ -599,11 +676,9 @@ export default async function BuilderDashboard() {
             {/* standing */}
             {isApproved ? (
               <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                  Standing
-                </p>
+                <RailHead>Standing</RailHead>
                 <div className="mt-2.5 flex items-start gap-2.5">
-                  <span className="size-8 rounded-full bg-accent-light text-navy flex items-center justify-center shrink-0">
+                  <span className="size-8 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
                     <ShieldCheck className="size-4" />
                   </span>
                   <div className="min-w-0">
@@ -631,9 +706,7 @@ export default async function BuilderDashboard() {
               </section>
             ) : approvalStatus === "rejected" || approvalStatus === "suspended" ? (
               <section className="rounded-xl border border-[rgba(217,164,65,0.4)] bg-[rgba(217,164,65,0.05)] p-4">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
-                  Registration
-                </p>
+                <RailHead warn>Registration</RailHead>
                 <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
                   {approvalStatus === "rejected"
                     ? "Your registration was not approved"
@@ -652,11 +725,9 @@ export default async function BuilderDashboard() {
                   <ArrowUpRight className="size-3" />
                 </a>
               </section>
-            ) : approvalStatus === "pending_review" && fullyVerified ? (
+            ) : fullyVerified ? (
               <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                  Registration
-                </p>
+                <RailHead>Registration</RailHead>
                 <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
                   Checks complete. Your registration is with our team.
                 </p>
@@ -665,47 +736,14 @@ export default async function BuilderDashboard() {
                   queue. Most reviews finish within one business day.
                 </p>
               </section>
-            ) : (
-              <section className="rounded-xl border border-[rgba(217,164,65,0.4)] bg-[rgba(217,164,65,0.05)] p-4">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
-                  Registration
-                </p>
-                <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
-                  {(verification.abnVerified ? 0 : 1) +
-                    (verification.anyLicenceVerified ? 0 : 1) ===
-                  1
-                    ? "One check stands between you and tendering"
-                    : "Two checks stand between you and tendering"}
-                </p>
-                <ul className="mt-2.5 space-y-1.5">
-                  <ChecklistLine done={verification.abnVerified}>
-                    ABN verified against the Australian Business Register
-                  </ChecklistLine>
-                  <ChecklistLine done={verification.anyLicenceVerified}>
-                    Builder licence verified
-                  </ChecklistLine>
-                </ul>
-                <p className="mt-2.5 text-[11px] leading-[1.55] text-text-dim">
-                  Registration completes automatically the moment both checks
-                  pass.
-                </p>
-                <Link
-                  href="/builder/profile"
-                  className="mt-3 inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[12.5px] hover:bg-accent-hover transition-colors"
-                >
-                  Complete verification
-                  <ArrowRight className="size-3.5" />
-                </Link>
-              </section>
-            )}
+            ) : null}
 
             {/* correspondence */}
             <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
               <header className="px-4 py-3.5 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
-                  <Mail className="size-3.5" />
+                <RailHead icon={<Mail className="size-3.5" />}>
                   Correspondence
-                </span>
+                </RailHead>
                 <Link
                   href="/builder/messages"
                   className="text-[11.5px] text-text-muted hover:text-text transition-colors"
@@ -752,10 +790,12 @@ export default async function BuilderDashboard() {
             {dash.activity.length > 0 ? (
               <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
                 <header className="px-4 py-3.5 border-b border-border-subtle/60">
-                  <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
-                    <FileText className="size-3.5" />
+                  <RailHead icon={<FileText className="size-3.5" />}>
                     The record
-                  </span>
+                  </RailHead>
+                  <p className="mt-0.5 text-[10.5px] text-text-dim">
+                    Recent outcomes on your tenders.
+                  </p>
                 </header>
                 <ul className="divide-y divide-border-subtle/40">
                   {dash.activity.slice(0, 5).map((e, i) => (
@@ -768,9 +808,7 @@ export default async function BuilderDashboard() {
             {/* grandfathered founding note */}
             {fbaStatus.active ? (
               <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                  Founding access
-                </p>
+                <RailHead>Founding access</RailHead>
                 <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
                   {fbaStatus.remainingThisCycle} complimentary unlock
                   {fbaStatus.remainingThisCycle === 1 ? "" : "s"} left this
@@ -790,6 +828,103 @@ export default async function BuilderDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── section headers ────────────────────────────────────────────────── */
+
+/**
+ * Left-column section header: kicker + display title + one plain
+ * sentence. The clarity system — every section names itself at a
+ * scale the eye can land on, then explains itself in plain language.
+ */
+function SectionHead({
+  icon,
+  kicker,
+  title,
+  sub,
+  right,
+}: {
+  icon: React.ReactNode;
+  kicker: string;
+  title: string;
+  sub?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
+          {icon}
+          {kicker}
+        </span>
+        <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+          {title}
+        </h2>
+        {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
+      </div>
+      {right ? (
+        <div className="shrink-0 flex items-center gap-3 pt-0.5">{right}</div>
+      ) : null}
+    </header>
+  );
+}
+
+/** Rail section header — same kicker voice as the left column so the
+ *  page speaks one language, at the rail's quieter scale. */
+function RailHead({
+  children,
+  icon,
+  warn = false,
+}: {
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  warn?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold inline-flex items-center gap-2",
+        warn ? "text-[#8a6414]" : "text-accent-light",
+      )}
+    >
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+/** Named chip on every desk row — the event type in words, not a dot. */
+function DeskChip({
+  tone,
+  children,
+}: {
+  tone: "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.14em] uppercase font-ui font-semibold shrink-0",
+        tone === "win" &&
+          "border-border-accent bg-[rgba(0,212,200,0.07)] text-[#0a7d73]",
+        tone === "invite" && "border-border-accent text-[#0a7d73]",
+        tone === "neutral" && "border-border-subtle text-text-muted",
+        tone === "warn" &&
+          "border-[rgba(217,164,65,0.5)] bg-[rgba(217,164,65,0.08)] text-[#8a6414]",
+        tone === "danger" &&
+          "border-[rgba(194,85,80,0.45)] bg-[rgba(194,85,80,0.07)] text-[#a8433e]",
+        tone === "draft" && "border-border-subtle text-text-dim",
+      )}
+    >
+      {tone === "invite" ? (
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,200,0.6)]"
+        />
+      ) : null}
+      {children}
+    </span>
   );
 }
 
@@ -935,7 +1070,7 @@ function ChecklistLine({
         className={cn(
           "mt-[1px] size-[16px] rounded-full flex items-center justify-center shrink-0",
           done
-            ? "bg-accent-light text-navy"
+            ? "bg-accent text-accent-contrast"
             : "border border-[rgba(217,164,65,0.5)] text-transparent",
         )}
       >
@@ -956,21 +1091,26 @@ function ActivityLine({ e }: { e: BuilderActivityEvent }) {
           ? `Awarded ${e.projectTitle}.`
           : `Decision recorded on ${e.projectTitle}.`;
   return (
-    <li className="px-4 py-2.5 flex items-baseline gap-2.5">
-      <span
-        className={cn(
-          "size-1.5 rounded-full shrink-0 self-center",
-          e.kind === "awarded"
-            ? "bg-[#0a9c91]"
-            : e.kind === "shortlisted"
-              ? "bg-accent"
-              : "bg-[rgba(24,34,44,0.22)]",
-        )}
-      />
-      <span className="min-w-0 flex-1 text-[11.5px] leading-[1.5] text-text-muted">
-        {line}
-      </span>
-      <span className="text-[10px] text-text-dim shrink-0">{ago(e.at)}</span>
+    <li>
+      <Link
+        href={`/builder/projects/${e.projectSlug}/tender`}
+        className="px-4 py-2.5 flex items-baseline gap-2.5 hover:bg-bg-elev transition-colors"
+      >
+        <span
+          className={cn(
+            "size-1.5 rounded-full shrink-0 self-center",
+            e.kind === "awarded"
+              ? "bg-[#0a9c91]"
+              : e.kind === "shortlisted"
+                ? "bg-[#0a7d73]"
+                : "bg-[rgba(24,34,44,0.22)]",
+          )}
+        />
+        <span className="min-w-0 flex-1 text-[11.5px] leading-[1.5] text-text-muted">
+          {line}
+        </span>
+        <span className="text-[10px] text-text-dim shrink-0">{ago(e.at)}</span>
+      </Link>
     </li>
   );
 }

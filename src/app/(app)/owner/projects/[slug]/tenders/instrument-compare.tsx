@@ -121,7 +121,7 @@ export function InstrumentCompare({
       {/* Region header */}
       <header className="px-4 sm:px-6 py-5 border-b border-border-subtle/60 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
             <Scale className="size-3.5" />
             The like-for-like read
           </span>

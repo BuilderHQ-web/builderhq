@@ -64,7 +64,7 @@ export function PublishedCelebration({
           <motion.div variants={container} initial="hidden" animate="show">
             <motion.div
               variants={item}
-              className="mt-8 inline-flex items-center gap-2 text-[11px] tracking-[0.24em] uppercase text-accent font-ui font-medium"
+              className="mt-8 inline-flex items-center gap-2 text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium"
             >
               <span className="relative flex size-1.5">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />

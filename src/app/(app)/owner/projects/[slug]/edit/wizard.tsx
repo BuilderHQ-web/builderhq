@@ -462,7 +462,7 @@ export function ProjectWizard({
       <header className="border-b border-border-subtle bg-bg-deep/30">
         <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-7 flex items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
+            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60 mx-1">·</span>
@@ -1607,7 +1607,7 @@ function StatusPill({ status }: { status: Project["status"] }) {
     status === "draft"
       ? "border-border-subtle text-text-dim"
       : status === "published" || status === "tendering"
-      ? "border-border-accent text-accent"
+      ? "border-border-accent text-accent-light"
       : "border-border-subtle text-text-dim";
   return (
     <span
@@ -1703,7 +1703,7 @@ function Field({
         {label}
         {required ? (
           <span
-            className={error ? "text-danger ml-1" : "text-accent ml-1"}
+            className={error ? "text-danger ml-1" : "text-accent-light ml-1"}
           >
             *
           </span>
@@ -1759,7 +1759,7 @@ function RenovationScopeMultiSelect({
               className={[
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 h-9 text-[12.5px] font-ui font-semibold transition-colors disabled:opacity-50",
                 selected
-                  ? "border border-accent bg-accent-muted text-accent-light"
+                  ? "border border-border-accent-strong bg-accent-muted text-accent-light"
                   : "border border-border-strong bg-surface-1/40 text-text hover:border-border-accent",
               ].join(" ")}
             >

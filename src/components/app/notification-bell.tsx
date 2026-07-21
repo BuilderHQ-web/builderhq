@@ -149,7 +149,7 @@ export function NotificationBell({ initialUnreadCount }: Props) {
               "rounded-full text-[9px] font-semibold tracking-[0.02em]",
               "bg-accent text-accent-contrast",
               "flex items-center justify-center",
-              "shadow-[0_0_0_1.5px_rgba(6,15,25,1),_0_0_8px_rgba(0,212,200,0.5)]",
+              "shadow-[0_0_0_1.5px_var(--color-bg-raised),_0_0_8px_rgba(0,212,200,0.5)]",
             )}
             aria-hidden
           >
@@ -166,7 +166,7 @@ export function NotificationBell({ initialUnreadCount }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-[rgba(24,34,44,0.025)]">
           <div className="flex items-baseline gap-2">
-            <span className="text-[11px] tracking-[0.16em] uppercase text-accent font-semibold">
+            <span className="text-[11px] tracking-[0.16em] uppercase text-accent-light font-semibold">
               Notifications
             </span>
             {count > 0 ? (

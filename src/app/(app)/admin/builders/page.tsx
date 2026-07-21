@@ -170,7 +170,7 @@ export default async function AdminBuildersPage(props: {
                     href={`/admin/builders/${b.userId}`}
                     className="flex flex-col gap-0.5 min-w-0 group"
                   >
-                    <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent transition-colors">
+                    <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent-light transition-colors">
                       {b.companyName ?? b.name ?? b.email}
                     </span>
                     <span className="text-[12px] text-text-dim truncate">

@@ -44,7 +44,7 @@ export default async function SavedPage() {
       <div className="mx-auto max-w-[1320px]">
         <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <Bookmark className="size-3.5" />
               Saved
             </span>
@@ -71,14 +71,9 @@ export default async function SavedPage() {
             primary={{ label: "Browse projects", href: "/builder/browse" }}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
+          <div className="rounded-lg border border-border-subtle bg-border-subtle card-elev overflow-hidden flex flex-col gap-px">
             {projects.map((p, i) => (
-              <Reveal
-                key={p.id}
-                immediate
-                delay={Math.min(i * 0.04, 0.2)}
-                className="h-full"
-              >
+              <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.2)}>
                 <ProjectCard
                   project={p}
                   isSaved={true}

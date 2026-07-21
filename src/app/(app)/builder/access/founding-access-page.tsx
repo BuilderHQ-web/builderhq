@@ -146,7 +146,7 @@ function Hero({
         className="absolute inset-0 opacity-50 pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(142,252,244,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.04) 1px, transparent 1px)",
+            "linear-gradient(rgba(24,34,44,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.05) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
           maskImage:
             "radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 80%)",
@@ -261,7 +261,7 @@ function StatusPanel({
       {/* header row */}
       <div className="relative flex flex-wrap items-end justify-between gap-3 mb-7">
         <div>
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
             <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
             Live status
           </span>
@@ -400,7 +400,7 @@ function InactiveStatusPanel({
         "relative overflow-hidden rounded-md border p-5 sm:p-7 lg:p-9",
         stillEligible
           ? "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(250,248,243,0.6)_100%)]"
-          : "border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))]",
+          : "border-border-subtle bg-[linear-gradient(180deg,rgba(24,34,44,0.03),rgba(250,248,243,0.6))]",
       )}
     >
       <div className="flex items-start gap-4">
@@ -408,7 +408,7 @@ function InactiveStatusPanel({
           className={cn(
             "size-12 rounded-md flex items-center justify-center shrink-0 border",
             stillEligible
-              ? "border-accent/40 bg-[rgba(0,212,200,0.10)] text-accent"
+              ? "border-border-accent bg-[rgba(0,212,200,0.10)] text-accent-light"
               : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
           )}
         >
@@ -483,7 +483,7 @@ function CycleTimeline({
     <section>
       <header className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
             <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
             Grant timeline
           </span>
@@ -548,7 +548,7 @@ function CycleCard({
           className={cn(
             "text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border",
             tone === "current" &&
-              "border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent",
+              "border-border-accent-strong bg-[rgba(0,212,200,0.10)] text-accent-light",
             tone === "past" && "border-border-subtle text-text-muted",
             tone === "future" && "border-border-subtle/60 text-text-faint",
           )}
@@ -642,7 +642,7 @@ function CohortPanel({
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-0">
         <div className="p-5 sm:p-7 lg:p-9 border-b lg:border-b-0 lg:border-r border-border-subtle/60">
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
             <Trophy className="size-3" />
             Founding cohort
           </span>
@@ -717,7 +717,7 @@ function CohortPanel({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[10.5px] tracking-[0.04em] text-text-dim">
-            <Star className="size-3 text-accent" />
+            <Star className="size-3 text-accent-light" />
             New builders signing up after the cutoff move to pay-per-unlock.
           </div>
         </div>
@@ -769,7 +769,7 @@ function Benefits() {
   return (
     <section>
       <header className="mb-6">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
           <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
           What you get
         </span>
@@ -809,8 +809,8 @@ function BenefitCard({
         className={cn(
           "inline-flex size-9 rounded-md items-center justify-center mb-4",
           "border border-border-subtle bg-[rgba(0,212,200,0.06)] text-accent-light",
-          "transition-colors duration-[140ms] group-hover:text-accent",
-          "group-hover:border-accent/40",
+          "transition-colors duration-[140ms] group-hover:text-accent-deep",
+          "group-hover:border-border-accent",
         )}
       >
         <Icon className="size-4" />
@@ -854,7 +854,7 @@ function ForeverFounder() {
             for as long as BuilderHQ exists.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-[10.5px] tracking-[0.18em] uppercase text-accent font-medium">
+        <div className="flex items-center gap-2 text-[10.5px] tracking-[0.18em] uppercase text-accent-light font-medium">
           <Check className="size-3" />
           Lifetime
         </div>
@@ -1010,7 +1010,7 @@ function RefreshTicker({
           <>
             {String(hours).padStart(2, "0")}h{" "}
             {String(mins).padStart(2, "0")}m{" "}
-            <span className="text-accent">
+            <span className="text-accent-light">
               {String(secs).padStart(2, "0")}s
             </span>
           </>

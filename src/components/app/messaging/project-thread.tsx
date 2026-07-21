@@ -820,7 +820,7 @@ function EmptyPanel({
         </p>
         <Link
           href={inboxHref}
-          className="mt-5 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light hover:text-accent transition-colors"
+          className="mt-5 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light hover:text-accent-deep transition-colors"
         >
           Open full inbox
           <ArrowUpRight className="size-3" />

@@ -338,7 +338,7 @@ function DrawerLink({
       <Icon
         className={cn(
           "size-[18px] shrink-0 transition-colors",
-          active ? "text-accent" : "text-text-faint",
+          active ? "text-accent-light" : "text-text-faint",
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>

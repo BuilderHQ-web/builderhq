@@ -113,7 +113,7 @@ function SetInitialPasswordForm() {
       {state.ok ? (
         <div
           role="status"
-          className="rounded-tight border border-accent/30 bg-accent-muted/50 px-3 py-2 text-[13px] text-accent-light inline-flex items-center gap-2"
+          className="rounded-tight border border-border-accent bg-accent-muted/50 px-3 py-2 text-[13px] text-accent-light inline-flex items-center gap-2"
         >
           <CheckCircle2 className="size-3.5" strokeWidth={2.2} />
           Password set. You can sign in with it on any device now.

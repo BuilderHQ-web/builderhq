@@ -303,7 +303,7 @@ function SettingsSection({
         <span
           className={cn(
             "inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium",
-            tone === "danger" ? "text-warning" : "text-accent",
+            tone === "danger" ? "text-warning" : "text-accent-light",
           )}
         >
           {icon}

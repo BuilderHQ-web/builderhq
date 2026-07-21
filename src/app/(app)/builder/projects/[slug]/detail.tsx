@@ -1213,7 +1213,7 @@ function OwnerContactBlock({ contact }: { contact: OwnerContact }) {
 
       <a
         href="#messaging"
-        className="mt-2 inline-flex items-center gap-2 text-[11.5px] text-accent-light hover:text-accent transition-colors"
+        className="mt-2 inline-flex items-center gap-2 text-[11.5px] text-accent-light hover:text-accent-deep transition-colors"
       >
         <MessageSquare className="size-3.5" />
         Open conversation with owner

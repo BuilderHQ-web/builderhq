@@ -157,7 +157,7 @@ export default async function AdminDashboard() {
                       href={`/admin/builders/${b.userId}`}
                       className="flex flex-col gap-1 min-w-0"
                     >
-                      <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent">
+                      <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent-light">
                         {b.companyName ?? b.name ?? b.email}
                       </span>
                       <span className="text-[12px] text-text-dim truncate">

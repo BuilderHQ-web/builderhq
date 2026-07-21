@@ -286,7 +286,7 @@ const APPROVAL_META: Record<
   approved: {
     label: "Approved",
     icon: CheckCircle2,
-    cls: "border-border-accent/45 text-accent bg-[rgba(0,212,200,0.06)]",
+    cls: "border-border-accent/45 text-accent-light bg-[rgba(0,212,200,0.06)]",
   },
   rejected: {
     label: "Rejected",
@@ -555,7 +555,7 @@ function LogoUpload({
         )}
         {pending ? (
           <div className="absolute inset-0 bg-bg/60 backdrop-blur-sm flex items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-accent" />
+            <Loader2 className="size-5 animate-spin text-accent-light" />
           </div>
         ) : null}
       </div>
@@ -948,7 +948,7 @@ function CategoriesSection({ initial }: { initial: ProjectType[] }) {
                     className={cn(
                       "size-4 mt-0.5 shrink-0",
                       isOn
-                        ? "text-accent"
+                        ? "text-accent-light"
                         : "text-text-faint group-hover:text-text-muted",
                     )}
                   />
@@ -961,7 +961,7 @@ function CategoriesSection({ initial }: { initial: ProjectType[] }) {
                     </div>
                   </div>
                   {isOn ? (
-                    <Check className="size-3.5 text-accent ml-auto shrink-0" />
+                    <Check className="size-3.5 text-accent-light ml-auto shrink-0" />
                   ) : null}
                 </div>
               </button>
@@ -1543,7 +1543,7 @@ function AbnVerifyPanel({
           />
         </Field>
         {locked ? (
-          <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent">
+          <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent-light">
             <ShieldCheck className="size-3.5" />
             Verified
           </span>
@@ -1571,7 +1571,7 @@ function AbnVerifyPanel({
       {/* Autofill apply prompt — visible after a successful verify if data differs */}
       {pendingAutofill ? (
         <div className="mt-4 rounded-sm border border-border-accent/35 bg-[rgba(0,212,200,0.04)] p-4">
-          <p className="text-[11.5px] tracking-[0.04em] text-accent uppercase font-medium mb-2">
+          <p className="text-[11.5px] tracking-[0.04em] text-accent-light uppercase font-medium mb-2">
             The ABR returned the following. Apply these details?
           </p>
           <ul className="space-y-1 text-[12.5px] text-text-muted">
@@ -1641,7 +1641,7 @@ function AbnVerifyPanel({
 function AbnResultChip({ result }: { result: VerifyAbnResult }) {
   if (result.status === "verified") {
     return (
-      <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-accent">
+      <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light">
         <Check className="size-3" />
         Verified · {result.matchedName}
       </p>
@@ -1719,7 +1719,7 @@ function LicenceVerifyControl({
         })
       : null;
     return (
-      <span className="inline-flex items-center gap-1.5 text-[10.5px] tracking-[0.16em] uppercase font-medium text-accent">
+      <span className="inline-flex items-center gap-1.5 text-[10.5px] tracking-[0.16em] uppercase font-medium text-accent-light">
         <ShieldCheck className="size-3" />
         Verified
         {expires ? (

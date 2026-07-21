@@ -344,7 +344,7 @@ function ListPane({
       <div className="px-5 pt-6 pb-4 border-b border-border-subtle">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
               Inbox
             </span>
@@ -449,7 +449,7 @@ function ListItem({
           <span
             className={cn(
               "shrink-0 text-[10.5px] tracking-[0.04em]",
-              unread ? "text-accent" : "text-text-faint",
+              unread ? "text-accent-light" : "text-text-faint",
             )}
           >
             {previewLabel(item.lastMessageAt)}
@@ -596,7 +596,7 @@ function ThreadEmpty({
     >
       <div className="text-center px-6 max-w-[420px]">
         <div className="mx-auto size-14 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] flex items-center justify-center mb-5">
-          <MessageSquare className="size-6 text-accent" />
+          <MessageSquare className="size-6 text-accent-light" />
         </div>
         <h2 className="font-display uppercase tracking-[-0.012em] text-[24px] leading-[1.05] text-text">
           Pick a conversation
@@ -701,7 +701,7 @@ function SoundToggle() {
         "shrink-0 size-8 rounded-md flex items-center justify-center",
         "transition-[background-color,color] duration-[140ms]",
         enabled
-          ? "text-accent hover:bg-[rgba(0,212,200,0.10)]"
+          ? "text-accent-light hover:bg-[rgba(0,212,200,0.10)]"
           : "text-text-faint hover:text-text-muted hover:bg-surface-1",
       )}
     >

@@ -355,7 +355,7 @@ export function CommandPalette({ role }: Props) {
                 <Hint label="close" keys={["esc"]} />
               </div>
               <span className="hidden sm:inline-flex items-center gap-1 tracking-[0.04em]">
-                <Sparkles className="size-3 text-accent" />
+                <Sparkles className="size-3 text-accent-light" />
                 BuilderHQ
               </span>
             </div>
@@ -400,7 +400,7 @@ function CommandRow({
         className={cn(
           "size-7 rounded-sm border flex items-center justify-center shrink-0",
           active
-            ? "border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent"
+            ? "border-border-accent bg-[rgba(0,212,200,0.10)] text-accent-light"
             : "border-border-subtle bg-surface-1 text-text-faint group-hover:text-text-muted",
         )}
       >
@@ -417,7 +417,7 @@ function CommandRow({
       <span
         className={cn(
           "shrink-0 transition-[color,opacity] duration-[120ms]",
-          active ? "text-accent opacity-100" : "text-text-faint opacity-0",
+          active ? "text-accent-light opacity-100" : "text-text-faint opacity-0",
         )}
       >
         <CornerDownLeft className="size-3.5" />

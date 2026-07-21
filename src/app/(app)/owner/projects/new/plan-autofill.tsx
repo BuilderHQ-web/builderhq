@@ -292,7 +292,7 @@ export function PlanAutofill({
       </button>
 
       <div className="mb-7">
-        <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium">
           AI auto-fill from plans
         </span>
         <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[30px] sm:text-[40px] leading-[0.92] text-text">
@@ -358,7 +358,7 @@ export function PlanAutofill({
       ) : null}
 
       <div className="mt-5 flex items-start gap-2.5 text-text-dim">
-        <ShieldCheck className="size-4 shrink-0 mt-0.5 text-accent/70" />
+        <ShieldCheck className="size-4 shrink-0 mt-0.5 text-accent-light" />
         <p className="text-[12px] leading-[1.6] max-w-[58ch]">
           Your plans are read securely to fill the form. Nothing is published
           until you say so. You review and edit every detail first.

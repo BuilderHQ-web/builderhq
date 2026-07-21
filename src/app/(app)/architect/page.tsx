@@ -216,7 +216,7 @@ function FirstTenderPrimer() {
               className="rounded-xl border border-border-subtle bg-bg-raised p-4"
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] tracking-[0.18em] text-accent">
+                <span className="font-mono text-[10px] tracking-[0.18em] text-accent-light">
                   0{i + 1}
                 </span>
                 <s.icon className="size-4 text-text-faint" />

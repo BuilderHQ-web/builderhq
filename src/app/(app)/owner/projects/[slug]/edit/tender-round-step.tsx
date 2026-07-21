@@ -158,7 +158,7 @@ export function TenderRoundStep({
                     {m.icon}
                   </span>
                   {active ? (
-                    <span className="size-5 rounded-full bg-accent-light text-navy flex items-center justify-center">
+                    <span className="size-5 rounded-full bg-accent text-accent-contrast flex items-center justify-center">
                       <Check className="size-3" strokeWidth={3} />
                     </span>
                   ) : null}
@@ -701,7 +701,7 @@ function EmailInviteForm({
         className={cn(
           "inline-flex items-center gap-1.5 h-10 px-5 rounded-full font-ui font-semibold text-[12px] tracking-[0.02em] transition-colors",
           emailOk && !busy
-            ? "bg-accent-light text-navy hover:opacity-90"
+            ? "bg-accent text-accent-contrast hover:opacity-90"
             : "bg-surface-2 text-text-dim cursor-not-allowed",
         )}
       >

@@ -311,7 +311,7 @@ export default async function OwnerDashboard({
 
                   {queueShown.length === 0 ? (
                     <div className="px-4 sm:px-6 py-10 text-center">
-                      <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent-light text-navy">
+                      <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent text-accent-contrast">
                         <Check className="size-4" strokeWidth={3} />
                       </span>
                       <p className="font-ui font-semibold text-[13.5px] text-text">

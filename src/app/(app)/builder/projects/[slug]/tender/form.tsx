@@ -420,7 +420,7 @@ export function TenderForm({
 
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2 flex-wrap">
                 <FileText className="size-3.5" />
                 Tender
                 <span className="text-text-dim/60 mx-1">·</span>
@@ -994,7 +994,7 @@ function CostBreakdown({
             type="button"
             onClick={onAddOther}
             disabled={isLocked}
-            className="text-[10.5px] text-accent-light hover:text-accent transition-colors inline-flex items-center gap-1 normal-case tracking-normal"
+            className="text-[10.5px] text-accent-light hover:text-accent-deep transition-colors inline-flex items-center gap-1 normal-case tracking-normal"
           >
             <Plus className="size-3" />
             Add line
@@ -1186,7 +1186,7 @@ function LiveSummaryCard({
       ) : null}
 
       <div className="relative">
-        <div className="text-[10px] tracking-[0.2em] uppercase text-accent flex items-center gap-2">
+        <div className="text-[10px] tracking-[0.2em] uppercase text-accent-light flex items-center gap-2">
           <Sparkles className="size-3" />
           Live summary
         </div>
@@ -1431,7 +1431,7 @@ function DocsRailCard({
         "relative overflow-hidden rounded-md",
         // Stronger visual weight than the other sections — accent border
         // + glow so the eye lands here first.
-        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.04),rgba(24,34,44,0.45)_45%,rgba(250,248,243,0.78))]",
+        "border border-border-accent/55 bg-[linear-gradient(180deg,rgba(0,212,200,0.07),rgba(255,255,255,0.94)_45%,#ffffff)]",
         "shadow-[0_18px_44px_-22px_rgba(0,212,200,0.30),0_10px_28px_-18px_rgba(15,23,32,0.19)]",
       )}
     >
@@ -1451,7 +1451,7 @@ function DocsRailCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Step 1
             </span>
             <span className="text-text-dim/60 text-[10px]">·</span>
@@ -1642,7 +1642,7 @@ function Field({
       <span className="flex items-baseline justify-between mb-1.5">
         <span className="text-[10.5px] tracking-[0.18em] uppercase text-text-dim">
           {label}
-          {required ? <span className="text-accent ml-1">*</span> : null}
+          {required ? <span className="text-accent-light ml-1">*</span> : null}
         </span>
         {hint ? (
           <span className="text-[10px] text-text-dim/80 normal-case tracking-normal">
@@ -1866,7 +1866,7 @@ function StatusPill({
       : status === "submitted" || status === "shortlisted"
       ? "border-border-accent text-accent-light"
       : status === "awarded"
-      ? "border-border-accent text-accent"
+      ? "border-border-accent text-accent-light"
       : "border-border-subtle text-text-dim";
   return (
     <span
@@ -2101,7 +2101,7 @@ function AwardedBanner({
 }) {
   const displayName = contact.companyName ?? contact.name ?? "Project owner";
   return (
-    <div className="border-b border-accent/30">
+    <div className="border-b border-border-accent">
       <div
         className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 mx-auto max-w-[1500px]"
         style={{
@@ -2114,7 +2114,7 @@ function AwardedBanner({
             <Sparkles className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] tracking-[0.22em] uppercase text-accent font-semibold">
+            <div className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-semibold">
               You won this tender
             </div>
             <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
@@ -2197,14 +2197,14 @@ function FooterStatusLabel({
       return (
         <div className="text-[13px] text-accent-light flex items-center gap-2">
           <Check className="size-4" />
-          Shortlisted — you&apos;re a contender.
+          Shortlisted. Your tender is in contention.
         </div>
       );
     case "awarded":
       return (
-        <div className="text-[13px] text-accent flex items-center gap-2 font-medium">
+        <div className="text-[13px] text-accent-light flex items-center gap-2 font-medium">
           <Sparkles className="size-4" />
-          Awarded — owner contact is at the top of this page.
+          Awarded. The owner&apos;s contact details are at the top of this page.
         </div>
       );
     case "rejected":

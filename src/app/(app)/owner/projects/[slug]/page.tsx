@@ -340,7 +340,7 @@ export default async function ProjectDetailPage({
               )}
               <Link
                 href={`${base}/projects/${project.slug}/edit`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
               >
                 Manage documents
                 <ArrowUpRight className="size-3" />
@@ -363,7 +363,7 @@ export default async function ProjectDetailPage({
               )}
               <Link
                 href={`${base}/projects/${project.slug}/tenders`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
               >
                 {tenderCount > 0 ? "Compare tenders" : "View tender stream"}
                 <ArrowUpRight className="size-3" />

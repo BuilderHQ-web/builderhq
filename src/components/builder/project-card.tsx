@@ -1,18 +1,24 @@
 "use client";
 
 /**
- * ProjectCard — a registry docket, not a shop card.
+ * ProjectCard — one entry in the tender register.
  *
- * One open tender round as a builder reads it: what the project is,
- * where it is, the specification in a hairline ledger, and the honest
- * state of the round (spots remaining out of THIS round's capacity,
- * the fee to enter). No gradients, no glow, no scarcity theatrics —
- * the register presents facts and lets the work sell itself.
+ * The browse surface reads as a REGISTER, not a shop: one project per
+ * row, hairline-ruled, with the specification in fixed ledger columns
+ * so values align vertically across every row on the page. Owners of
+ * serious instruments (court lists, land registers, exchange boards)
+ * present rows; marketplaces present tiles. We present rows.
  *
- * Behaviour contract preserved from the previous card: the whole card
- * links to the project, the bookmark toggles via save/unsave actions
- * (optimistic-on-success), and the state badges keep their precedence
- * (round full > entered > complimentary > fee).
+ * Layout: identity (type · title · locality/budget) | spec ledger
+ * (beds/baths/dwellings-or-storeys/land-or-docs) | round state (spots +
+ * fee) | save. On mobile the row folds into a compact docket: identity,
+ * ledger strip, state footer.
+ *
+ * Behaviour contract preserved: the whole row links to the project,
+ * the bookmark toggles via save/unsave actions (optimistic-on-success),
+ * and state precedence holds (round full > entered > complimentary >
+ * fee). Parents render rows inside a `flex flex-col gap-px
+ * bg-border-subtle` container so hairlines separate entries.
  */
 
 import Link from "next/link";
@@ -59,7 +65,7 @@ const BUDGET_LABEL: Record<string, string> = {
   over_5m: "Over $5m",
 };
 
-// Compact tabular ranges — the cell header supplies the "Land m²" unit.
+// Compact tabular ranges — the cell label supplies the "Land m²" unit.
 const LAND_LABEL: Record<string, string> = {
   under_200: "<200",
   "200_400": "200-400",
@@ -109,124 +115,129 @@ export function ProjectCard({
   return (
     <Link
       href={`/builder/projects/${project.slug}`}
-      className={cn(
-        "group relative flex h-full flex-col rounded-lg border overflow-hidden",
-        "border-border-subtle bg-surface-1 card-elev",
-        "transition-[border-color,box-shadow] duration-200",
-        "hover:border-border-strong hover:card-elev-lg",
-      )}
+      className="group relative block bg-surface-1 transition-colors duration-150 hover:bg-bg-elev"
     >
-      {/* ── header: type + save ────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 px-4 pt-3.5">
-        <span className="inline-flex items-center gap-1.5 text-[9.5px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold min-w-0">
-          <meta.Icon className="size-3 shrink-0" />
-          <span className="truncate">{meta.label}</span>
-          {project.tenderMode === "hybrid" ? (
-            <span className="text-text-dim shrink-0">· Hybrid round</span>
-          ) : null}
-        </span>
-        <button
-          type="button"
-          onClick={onToggleSave}
-          disabled={pending}
-          title={saved ? "Saved" : "Save"}
-          className={cn(
-            "size-7 rounded-md border flex items-center justify-center transition-colors shrink-0",
-            saved
-              ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-accent-light"
-              : "border-border-subtle text-text-dim hover:text-text hover:border-border-strong",
-          )}
-        >
-          {pending ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : saved ? (
-            <BookmarkCheck className="size-3.5" />
-          ) : (
-            <Bookmark className="size-3.5" />
-          )}
-        </button>
-      </div>
+      {/* hover rule — a quiet accent edge, the register's only flourish */}
+      <span
+        aria-hidden
+        className="absolute left-0 top-0 bottom-0 w-[2.5px] bg-transparent group-hover:bg-accent-light/70 transition-colors duration-150 z-10"
+      />
 
-      {/* ── identity ───────────────────────────────────────────── */}
-      <div className="px-4 pt-2 pb-3.5">
-        <h3 className="font-ui font-semibold text-[14.5px] leading-[1.35] text-text line-clamp-2">
-          {project.title}
-        </h3>
-        <p className="mt-1 text-[11.5px] text-text-dim truncate">
-          {project.suburb
-            ? `${project.suburb}, ${project.state}`
-            : "Location on file"}
-          {project.budgetBand && BUDGET_LABEL[project.budgetBand]
-            ? ` · ${BUDGET_LABEL[project.budgetBand]}`
-            : ""}
-        </p>
-      </div>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_auto_208px_56px] lg:items-stretch">
+        {/* ── identity ─────────────────────────────────────────── */}
+        {/* pl/pr split deliberately: sm:px-5 would cascade over pr-14 at
+            sm-lg (padding-inline wins), collapsing the save-button reserve. */}
+        <div className="min-w-0 pl-4 sm:pl-5 pr-14 lg:pr-5 py-4">
+          <span className="inline-flex items-center gap-1.5 text-[9.5px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold min-w-0 max-w-full">
+            <meta.Icon className="size-3 shrink-0" />
+            <span className="truncate">{meta.label}</span>
+            {project.tenderMode === "hybrid" ? (
+              <span className="text-text-dim shrink-0">· Hybrid round</span>
+            ) : null}
+          </span>
+          <h3 className="mt-1.5 font-ui font-semibold text-[15px] leading-[1.35] text-text lg:truncate line-clamp-2 lg:line-clamp-none">
+            {project.title}
+          </h3>
+          <p className="mt-1 text-[11.5px] text-text-dim truncate">
+            {project.suburb
+              ? `${project.suburb}, ${project.state}`
+              : "Location on file"}
+            {project.budgetBand && BUDGET_LABEL[project.budgetBand]
+              ? ` · ${BUDGET_LABEL[project.budgetBand]}`
+              : ""}
+          </p>
+        </div>
 
-      {/* ── the specification ledger ───────────────────────────── */}
-      <div className="grid grid-cols-4 gap-px bg-border-subtle border-y border-border-subtle">
-        <LedgerCell
-          label="Beds"
-          value={project.bedrooms != null ? String(project.bedrooms) : null}
-        />
-        <LedgerCell
-          label="Baths"
-          value={project.bathrooms != null ? String(project.bathrooms) : null}
-        />
-        <LedgerCell
-          label={project.type === "multi_dwelling" ? "Dwellings" : "Storeys"}
-          value={
-            project.type === "multi_dwelling"
-              ? project.dwellingCount != null
-                ? String(project.dwellingCount)
-                : null
-              : project.floors != null
-                ? String(project.floors)
-                : null
-          }
-        />
-        <LedgerCell
-          label={
-            project.type === "renovation" || project.type === "extension"
-              ? "Docs"
-              : "Land m²"
-          }
-          value={
-            project.type === "renovation" || project.type === "extension"
-              ? String(project.documentCount)
-              : project.landSizeBand
-                ? (LAND_LABEL[project.landSizeBand] ?? null)
-                : null
-          }
-        />
-      </div>
+        {/* ── the specification ledger ─────────────────────────── */}
+        <div className="grid grid-cols-4 divide-x divide-border-subtle border-y lg:border-y-0 lg:border-l border-border-subtle">
+          <LedgerCell
+            label="Beds"
+            value={project.bedrooms != null ? String(project.bedrooms) : null}
+          />
+          <LedgerCell
+            label="Baths"
+            value={project.bathrooms != null ? String(project.bathrooms) : null}
+          />
+          <LedgerCell
+            label={project.type === "multi_dwelling" ? "Dwellings" : "Storeys"}
+            value={
+              project.type === "multi_dwelling"
+                ? project.dwellingCount != null
+                  ? String(project.dwellingCount)
+                  : null
+                : project.floors != null
+                  ? String(project.floors)
+                  : null
+            }
+          />
+          <LedgerCell
+            label={
+              project.type === "renovation" || project.type === "extension"
+                ? "Docs"
+                : "Land m²"
+            }
+            value={
+              project.type === "renovation" || project.type === "extension"
+                ? String(project.documentCount)
+                : project.landSizeBand
+                  ? (LAND_LABEL[project.landSizeBand] ?? null)
+                  : null
+            }
+          />
+        </div>
 
-      {/* ── the round's state ──────────────────────────────────── */}
-      <div className="mt-auto flex items-center justify-between gap-3 px-4 py-3">
-        <span
-          className={cn(
-            "text-[11.5px] font-ui tabular-nums",
-            isUnlocked
-              ? "text-[#0a7d73] font-semibold"
+        {/* ── the round's state ────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 lg:px-4 py-3 lg:py-0 lg:flex-col lg:items-start lg:justify-center lg:gap-1 lg:border-l lg:border-border-subtle">
+          <span
+            className={cn(
+              "text-[11.5px] font-ui tabular-nums",
+              isUnlocked
+                ? "text-[#0a7d73] font-semibold"
+                : isFull
+                  ? "text-text-dim"
+                  : left === 1
+                    ? "text-[#8a6414] font-semibold"
+                    : "text-text-muted",
+            )}
+          >
+            {isUnlocked
+              ? "You hold a spot"
               : isFull
-                ? "text-text-dim"
-                : left === 1
-                  ? "text-[#8a6414] font-semibold"
-                  : "text-text-muted",
-          )}
-        >
-          {isUnlocked
-            ? "You hold a spot"
-            : isFull
-              ? "Round full"
-              : `${left} of ${spots} spot${spots === 1 ? "" : "s"} open`}
-        </span>
-        <span className="text-[11px] text-text-dim tabular-nums shrink-0">
-          {isUnlocked || isFull
-            ? `${project.documentCount} document${project.documentCount === 1 ? "" : "s"}`
-            : fbaActive
-              ? "Complimentary entry"
-              : `$${priceAud} to enter`}
-        </span>
+                ? "Round full"
+                : `${left} of ${spots} spot${spots === 1 ? "" : "s"} open`}
+          </span>
+          <span className="text-[11px] text-text-dim tabular-nums shrink-0">
+            {isUnlocked || isFull
+              ? `${project.documentCount} document${project.documentCount === 1 ? "" : "s"}`
+              : fbaActive
+                ? "Complimentary entry"
+                : `$${priceAud} to enter`}
+          </span>
+        </div>
+
+        {/* ── save ─────────────────────────────────────────────── */}
+        <div className="lg:border-l lg:border-border-subtle lg:flex lg:items-center lg:justify-center">
+          <button
+            type="button"
+            onClick={onToggleSave}
+            disabled={pending}
+            title={saved ? "Saved" : "Save"}
+            className={cn(
+              "absolute top-3.5 right-4 lg:static size-7 rounded-md border flex items-center justify-center transition-colors shrink-0",
+              saved
+                ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-accent-light"
+                : "border-border-subtle text-text-dim hover:text-text hover:border-border-strong",
+            )}
+          >
+            {pending ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : saved ? (
+              <BookmarkCheck className="size-3.5" />
+            ) : (
+              <Bookmark className="size-3.5" />
+            )}
+          </button>
+        </div>
       </div>
     </Link>
   );
@@ -240,18 +251,18 @@ function LedgerCell({
   value: string | null;
 }) {
   return (
-    <div className="bg-surface-1 px-2 py-2.5 text-center min-w-0">
+    <div className="flex flex-col items-center justify-center px-2 py-2.5 lg:py-0 lg:w-[88px] text-center min-w-0">
       <p
         className={cn(
-          "font-display leading-none tabular-nums truncate",
+          "font-display leading-none tabular-nums truncate max-w-full",
           // Range strings ("800-1000") step down so they fit the cell.
-          value && value.length > 4 ? "text-[12.5px] pt-[3px]" : "text-[16px]",
+          value && value.length > 4 ? "text-[12.5px] pt-[3px]" : "text-[17px]",
           value ? "text-text" : "text-text-dim/50",
         )}
       >
         {value ?? "—"}
       </p>
-      <p className="mt-1 text-[8.5px] tracking-[0.14em] uppercase text-text-dim truncate">
+      <p className="mt-1 text-[8.5px] tracking-[0.14em] uppercase text-text-dim truncate max-w-full">
         {label}
       </p>
     </div>

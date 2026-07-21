@@ -248,7 +248,7 @@ function NavLink({
       <Icon
         className={cn(
           "size-4 shrink-0 transition-colors",
-          active ? "text-accent" : "text-text-faint group-hover:text-text-muted",
+          active ? "text-accent-light" : "text-text-faint group-hover:text-text-muted",
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>

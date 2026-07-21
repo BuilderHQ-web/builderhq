@@ -461,7 +461,7 @@ function ProjectPulseHeader({
         <span className="size-7 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.06)] flex items-center justify-center text-accent-light shrink-0">
           <Activity className="size-3.5" />
         </span>
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
           Project pulse
         </span>
         <span className="text-[10.5px] text-text-dim ml-0 sm:ml-1 w-full sm:w-auto">
@@ -688,7 +688,7 @@ function FilterPills({
 }) {
   return (
     <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-      <div className="inline-flex sm:flex flex-nowrap sm:flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] w-max sm:w-fit">
+      <div className="inline-flex sm:flex flex-nowrap sm:flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-surface-1 shadow-[0_8px_24px_-18px_rgba(15,23,32,0.19)] w-max sm:w-fit">
         {(
           [
             ["all", "All", tenders.length],
@@ -713,7 +713,7 @@ function FilterPills({
             <span
               className={cn(
                 "tabular-nums text-[10.5px] font-mono",
-                filter === id ? "text-accent" : "text-text-dim",
+                filter === id ? "text-accent-light" : "text-text-dim",
               )}
             >
               {n}
@@ -739,10 +739,10 @@ function SortDropdown({
       <select
         value={sortKey}
         onChange={(e) => onChange(e.target.value as SortKey)}
-        className="h-9 px-3 pr-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] text-[12px] text-text hover:border-border-strong transition-colors focus:outline-none focus:border-border-accent appearance-none"
+        className="h-9 px-3 pr-7 rounded-full border border-border-subtle bg-surface-1 text-[12px] text-text hover:border-border-strong transition-colors focus:outline-none focus:border-border-accent appearance-none"
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%23a8c2d8' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>\")",
+            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' stroke='%2348535d' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>\")",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "right 10px center",
           backgroundSize: "12px",
@@ -1438,7 +1438,7 @@ function OverflowStrip({
   onAdd: (id: string) => void;
 }) {
   return (
-    <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.45)] p-4">
+    <div className="rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] p-4">
       <div className="text-[10px] tracking-[0.18em] uppercase text-text-dim mb-3">
         Other tenders · click to add to compare
       </div>
@@ -1810,7 +1810,7 @@ function CostBreakdownSection({ selected }: { selected: TenderForOwner[] }) {
             <button
               type="button"
               onClick={() => setShowAll((v) => !v)}
-              className="text-[10.5px] text-accent-light hover:text-accent transition-colors"
+              className="text-[10.5px] text-accent-light hover:text-accent-deep transition-colors"
             >
               {showAll ? "Show only filled" : "Show all 28 trades"}
             </button>
@@ -2117,7 +2117,7 @@ function PitchCol({ tender }: { tender: TenderForOwner }) {
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className="mt-1.5 text-[10.5px] text-accent-light hover:text-accent transition-colors inline-flex items-center gap-1"
+              className="mt-1.5 text-[10.5px] text-accent-light hover:text-accent-deep transition-colors inline-flex items-center gap-1"
             >
               {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
               {open ? "Less" : "More"}
@@ -2288,7 +2288,7 @@ function AwardConfirmDialog({
           onClick={(e) => e.stopPropagation()}
           className={cn(
             "relative w-full max-w-[480px] rounded-md border border-border-accent/45 overflow-hidden",
-            "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(24,34,44,0.5)_45%,rgba(250,248,243,0.9))]",
+            "bg-[linear-gradient(180deg,rgba(0,212,200,0.06),rgba(255,255,255,0.94)_45%,#ffffff)]",
             "shadow-[0_24px_60px_-22px_rgba(15,23,32,0.24),0_0_0_1px_rgba(0,212,200,0.15)]",
           )}
         >
@@ -2304,7 +2304,7 @@ function AwardConfirmDialog({
             <span className="size-11 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center mb-4">
               <Trophy className="size-5" />
             </span>
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
               Award tender
             </span>
             <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[26px] leading-[1.05] text-text">
