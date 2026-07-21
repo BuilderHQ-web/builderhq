@@ -1,11 +1,15 @@
 "use client";
 
 /**
- * The Submission Checklist — the client wizard for the structured
- * tender instrument (instrument.ts). One section on screen at a time,
- * a rail that shows exactly where you are, and autosave on every
- * answer, so a builder who knows their quote moves through it in
- * about ten minutes.
+ * The Submission Checklist — one question per slide.
+ *
+ * The structured instrument (instrument.ts) rendered as a focused
+ * deck: a single question fills the screen, a tap answers it and the
+ * deck advances with a slide animation, typed answers continue on
+ * Enter, and the scope matrix runs as rapid-fire rows with four big
+ * state buttons. Every answer autosaves (700ms debounce), so leaving
+ * and returning resumes at the first unanswered required question.
+ * A review slide closes the deck with per-section completeness.
  *
  * Rendering is driven entirely by the instrument data: each question
  * type has one renderer, showIf gates hide dependants until their
@@ -47,6 +51,8 @@ import {
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
 import { saveTenderResponsesAction } from "@/app/(app)/_actions/tenders";
+import { AnimatePresence, motion } from "motion/react";
+
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 
@@ -98,7 +104,6 @@ export function ChecklistWizard({
   const liveAnswers = useRef<Answers>(
     Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v])),
   );
-  const [sectionIdx, setSectionIdx] = useState(0);
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
   // ── autosave pipeline ────────────────────────────────────────────
@@ -206,62 +211,195 @@ export function ChecklistWizard({
     };
   }, [answers]);
 
-  const section = INSTRUMENT_SECTIONS[sectionIdx]!;
-  const isLast = sectionIdx === INSTRUMENT_SECTIONS.length - 1;
+  // ── the deck: one slide per visible question; the scope matrix
+  //    fans out to one slide per row; a review slide closes it ──────
+  type Slide =
+    | {
+        key: string;
+        kind: "q";
+        sIdx: number;
+        section: InstrumentSection;
+        q: InstrumentQuestion;
+      }
+    | {
+        key: string;
+        kind: "row";
+        sIdx: number;
+        section: InstrumentSection;
+        q: InstrumentQuestion;
+        row: { id: string; label: string };
+        rIdx: number;
+      }
+    | { key: string; kind: "review" };
 
-  const goSection = useCallback((idx: number) => {
-    setSectionIdx(Math.max(0, Math.min(INSTRUMENT_SECTIONS.length - 1, idx)));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  const deck = useMemo<Slide[]>(() => {
+    const out: Slide[] = [];
+    INSTRUMENT_SECTIONS.forEach((sec, sIdx) => {
+      for (const q of sec.questions) {
+        if (!gatePasses(q, answers)) continue;
+        if (q.type === "matrix") {
+          MATRIX_ROWS.forEach((row, rIdx) => {
+            out.push({
+              key: `${q.id}:${row.id}`,
+              kind: "row",
+              sIdx,
+              section: sec,
+              q,
+              row,
+              rIdx,
+            });
+          });
+        } else {
+          out.push({ key: q.id, kind: "q", sIdx, section: sec, q });
+        }
+      }
+    });
+    out.push({ key: "review", kind: "review" });
+    return out;
+  }, [answers]);
+
+  const slideDone = useCallback(
+    (sl: Slide): boolean => {
+      if (sl.kind === "review") return true;
+      if (sl.kind === "row") {
+        const v = answers[sl.q.id];
+        return (
+          !!v &&
+          typeof v === "object" &&
+          !!(v as Record<string, unknown>)[sl.row.id]
+        );
+      }
+      return isAnswerComplete(sl.q, answers[sl.q.id]);
+    },
+    [answers],
+  );
+
+  // Resume at the first unanswered slide (required or not — the deck
+  // is the path); all answered → the review slide.
+  const [cursor, setCursor] = useState(() => {
+    const init = Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v]));
+    let i = 0;
+    for (const sec of INSTRUMENT_SECTIONS) {
+      for (const q of sec.questions) {
+        if (q.showIf && init[q.showIf.qid] !== q.showIf.equals) continue;
+        if (q.type === "matrix") {
+          for (const row of MATRIX_ROWS) {
+            const v = init[q.id] as Record<string, unknown> | undefined;
+            if (!v || !v[row.id]) return i;
+            i++;
+          }
+        } else {
+          if (!isAnswerComplete(q, init[q.id])) return i;
+          i++;
+        }
+      }
+    }
+    return i; // review
+  });
+  const [dir, setDir] = useState(1);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const idx = Math.max(0, Math.min(cursor, deck.length - 1));
+  const slide = deck[idx]!;
+
+  const goto = useCallback(
+    (i: number, d: 1 | -1) => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      setDir(d);
+      setCursor(Math.max(0, Math.min(i, deck.length - 1)));
+    },
+    [deck.length],
+  );
+  const next = useCallback(() => goto(idx + 1, 1), [goto, idx]);
+  const back = useCallback(() => goto(idx - 1, -1), [goto, idx]);
+
+  // Tap-to-answer types advance on their own after a beat — long
+  // enough to see the selection land, short enough to feel instant.
+  const answerAndMaybeAdvance = useCallback(
+    (qid: string, patch: AnswerPatch, auto: boolean) => {
+      queue(qid, patch);
+      if (auto) {
+        if (advanceTimer.current) clearTimeout(advanceTimer.current);
+        advanceTimer.current = setTimeout(() => {
+          setDir(1);
+          setCursor((c) => Math.min(c + 1, deck.length - 1));
+        }, 260);
+      }
+    },
+    [queue, deck.length],
+  );
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    },
+    [],
+  );
+
+  // Enter continues whenever the current slide is answered.
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const t = e.target as HTMLElement;
+      if (t.tagName === "TEXTAREA" || t.tagName === "BUTTON") return;
+      if (slide.kind !== "review" && slideDone(slide)) {
+        e.preventDefault();
+        next();
+      }
+    },
+    [slide, slideDone, next],
+  );
+
+  const sectionOf = slide.kind === "review" ? null : slide.section;
+  const sectionNo = slide.kind === "review" ? null : slide.sIdx + 1;
+
+  // Jump helper for the review slide: first not-done slide of a section.
+  const firstGapInSection = useCallback(
+    (sIdx: number) => {
+      const i = deck.findIndex(
+        (sl) => sl.kind !== "review" && sl.sIdx === sIdx && !slideDone(sl),
+      );
+      return i === -1
+        ? deck.findIndex((sl) => sl.kind !== "review" && sl.sIdx === sIdx)
+        : i;
+    },
+    [deck, slideDone],
+  );
 
   return (
-    <div className="pb-24">
-      {/* ── header ──────────────────────────────────────────────── */}
-      <div className="border-b border-border-subtle bg-bg-deep/30">
-        <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 mx-auto max-w-[1200px]">
+    <div
+      // Fills the viewport under the 56px app topbar so the footer
+      // controls always sit on screen.
+      className="min-h-[calc(100dvh-3.5rem)] flex flex-col"
+      onKeyDown={onKeyDown}
+    >
+      {/* ── slim bar: exit · where you are · save state ──────────── */}
+      <div className="border-b border-border-subtle">
+        <div className="px-4 sm:px-6 lg:px-10 py-3 mx-auto max-w-[1100px] flex items-center justify-between gap-4">
           <Link
             href={`/builder/projects/${slug}/tender`}
-            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4"
+            className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors shrink-0"
           >
             <ArrowLeft className="size-3.5" />
-            Back to your tender
+            Save and exit
           </Link>
-
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="min-w-0">
-              <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                <ShieldCheck className="size-3.5" />
-                BuilderHQ Submission Standard
-              </span>
-              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[26px] sm:text-[36px] leading-[0.95] text-text">
-                Submission checklist
-              </h1>
-              <p className="mt-2 text-[13px] leading-[1.6] text-text-muted max-w-[560px]">
-                Every builder answers the same set, so your tender for{" "}
-                <span className="text-text">{projectTitle}</span> is compared
-                like for like on scope, not just the headline number. About ten
-                minutes. Saves as you go.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4 shrink-0">
-              <SaveWhisper state={saveState} />
-              <div className="text-right">
-                <p className="font-display text-[24px] leading-none text-text tabular-nums">
-                  {progress.answered}
-                  <span className="text-text-dim text-[15px]">
-                    /{progress.required}
-                  </span>
-                </p>
-                <p className="mt-1 text-[10px] tracking-[0.14em] uppercase text-text-dim">
-                  Required answered
-                </p>
-              </div>
-            </div>
+          <div className="min-w-0 text-center">
+            <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold truncate">
+              {slide.kind === "review"
+                ? "Review"
+                : `Section ${sectionNo} of ${INSTRUMENT_SECTIONS.length} · ${sectionOf!.title}`}
+            </p>
+            <p className="mt-0.5 text-[10.5px] text-text-dim truncate hidden sm:block">
+              {projectTitle}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <SaveWhisper state={saveState} />
+            <p className="text-[12px] text-text-dim tabular-nums">
+              <span className="text-text font-medium">{progress.answered}</span>
+              /{progress.required}
+            </p>
           </div>
         </div>
-
-        {/* overall progress bar */}
         <div className="h-[3px] bg-border-subtle/50">
           <div
             className="h-full bg-accent transition-[width] duration-300"
@@ -270,263 +408,302 @@ export function ChecklistWizard({
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6 lg:gap-10">
-        {/* ── section rail ─────────────────────────────────────────── */}
-        <nav className="lg:sticky lg:top-20 self-start">
-          {/* mobile: horizontal chips */}
-          <div className="flex lg:hidden gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-            {INSTRUMENT_SECTIONS.map((s, i) => {
-              const p = progress.perSection[i]!;
-              const active = i === sectionIdx;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => goSection(i)}
-                  className={cn(
-                    "shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-[12px] transition-colors",
-                    active
-                      ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-text"
-                      : "border-border-subtle text-text-muted",
-                  )}
-                >
-                  {p.complete ? (
-                    <Check className="size-3 text-accent-light" />
+      {/* ── the slide ────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-x-clip">
+        <AnimatePresence mode="wait" initial={false} custom={dir}>
+          <motion.div
+            key={slide.key}
+            custom={dir}
+            initial={{ opacity: 0, x: 44 * dir }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -44 * dir }}
+            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col"
+          >
+            <div className="flex-1 w-full mx-auto max-w-[780px] px-5 sm:px-8 pt-12 sm:pt-16 lg:pt-20 pb-10">
+              {slide.kind === "review" ? (
+                <ReviewSlide
+                  slug={slug}
+                  progress={progress}
+                  onJump={(sIdx) => goto(firstGapInSection(sIdx), -1)}
+                />
+              ) : slide.kind === "row" ? (
+                <MatrixRowSlide
+                  q={slide.q}
+                  row={slide.row}
+                  rIdx={slide.rIdx}
+                  total={MATRIX_ROWS.length}
+                  value={
+                    ((answers[slide.q.id] as Record<string, string>) ?? {})[
+                      slide.row.id
+                    ]
+                  }
+                  onMark={(state) =>
+                    answerAndMaybeAdvance(
+                      slide.q.id,
+                      (prev: unknown) => ({
+                        ...((prev as Record<string, string>) ?? {}),
+                        [slide.row.id]: state,
+                      }),
+                      true,
+                    )
+                  }
+                />
+              ) : (
+                <div>
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {slide.q.required ? "Required" : "Optional"}
+                  </p>
+                  <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text max-w-[26ch]">
+                    {slide.q.prompt}
+                  </h2>
+                  {slide.q.help ? (
+                    <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
+                      {slide.q.help}
+                    </p>
                   ) : null}
-                  {s.title}
-                </button>
-              );
-            })}
-          </div>
+                  <div className="mt-8">
+                    <AnswerControl
+                      question={slide.q}
+                      value={answers[slide.q.id]}
+                      onAnswer={(qid, patch) =>
+                        answerAndMaybeAdvance(
+                          qid,
+                          patch,
+                          slide.q.type === "bool" || slide.q.type === "select",
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
-          {/* desktop: vertical list */}
-          <ol className="hidden lg:block space-y-1">
-            {INSTRUMENT_SECTIONS.map((s, i) => {
-              const p = progress.perSection[i]!;
-              const active = i === sectionIdx;
-              return (
-                <li key={s.id}>
+            {/* footer controls */}
+            {slide.kind !== "review" ? (
+              <div className="border-t border-border-subtle/60">
+                <div className="w-full mx-auto max-w-[780px] px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
                   <button
                     type="button"
-                    onClick={() => goSection(i)}
+                    onClick={back}
+                    disabled={idx === 0}
                     className={cn(
-                      "w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors",
-                      active
-                        ? "bg-[rgba(0,212,200,0.06)] border border-border-accent/60"
-                        : "border border-transparent hover:bg-surface-1",
+                      "inline-flex items-center gap-1.5 text-[12.5px] transition-colors",
+                      idx === 0
+                        ? "text-text-faint cursor-default"
+                        : "text-text-muted hover:text-text",
                     )}
                   >
-                    <span
+                    <ArrowLeft className="size-3.5" />
+                    Back
+                  </button>
+                  <div className="flex items-center gap-4">
+                    {slide.kind === "q" &&
+                    !slide.q.required &&
+                    !slideDone(slide) ? (
+                      <button
+                        type="button"
+                        onClick={next}
+                        className="text-[12.5px] text-text-dim hover:text-text transition-colors"
+                      >
+                        Skip
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={next}
+                      disabled={!slideDone(slide)}
                       className={cn(
-                        "size-[22px] rounded-full border flex items-center justify-center text-[10.5px] font-ui font-semibold shrink-0 transition-colors",
-                        p.complete
-                          ? "bg-accent text-accent-contrast border-accent-light"
-                          : active
-                            ? "border-border-accent text-accent-light"
-                            : "border-border-subtle text-text-dim",
+                        "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.02em] transition-colors",
+                        slideDone(slide)
+                          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
+                          : "border border-border-subtle text-text-faint cursor-default",
                       )}
                     >
-                      {p.complete ? (
-                        <Check className="size-3" strokeWidth={3} />
-                      ) : (
-                        i + 1
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={cn(
-                          "block text-[12.5px] font-ui truncate",
-                          active
-                            ? "text-text font-semibold"
-                            : "text-text-muted",
-                        )}
-                      >
-                        {s.title}
-                      </span>
-                    </span>
-                    {!p.complete && p.required > 0 ? (
-                      <span className="text-[10.5px] text-text-dim tabular-nums shrink-0">
-                        {p.answered}/{p.required}
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-
-          <p className="hidden lg:flex items-center gap-1.5 mt-4 px-3 text-[10px] tracking-[0.14em] uppercase text-text-dim">
-            <ClipboardCheck className="size-3" />
-            Instrument v1
-          </p>
-        </nav>
-
-        {/* ── section panel ────────────────────────────────────────── */}
-        <div className="min-w-0">
-          {progress.complete ? (
-            <div className="mb-5 rounded-md border border-border-accent/60 bg-[rgba(0,212,200,0.05)] px-4 sm:px-5 py-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="size-9 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
-                  <Check className="size-4" strokeWidth={3} />
-                </span>
-                <div>
-                  <p className="font-ui font-semibold text-[13.5px] text-text">
-                    Checklist complete
-                  </p>
-                  <p className="text-[12px] text-text-muted">
-                    Every required answer is in. Review anything below, or head
-                    back and submit.
-                  </p>
+                      Continue
+                      <ArrowRight className="size-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => router.push(`/builder/projects/${slug}/tender`)}
-                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[12.5px] hover:bg-accent-hover transition-colors"
-              >
-                Back to your tender
-                <ArrowRight className="size-3.5" />
-              </button>
-            </div>
-          ) : null}
-
-          <SectionPanel
-            key={section.id}
-            section={section}
-            index={sectionIdx}
-            answers={answers}
-            onAnswer={queue}
-          />
-
-          {/* section nav */}
-          <div className="mt-8 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => goSection(sectionIdx - 1)}
-              disabled={sectionIdx === 0}
-              className={cn(
-                "inline-flex items-center gap-1.5 h-11 px-5 rounded-full border text-[12.5px] tracking-[0.02em] transition-colors",
-                sectionIdx === 0
-                  ? "opacity-40 cursor-not-allowed border-border-subtle text-text-dim"
-                  : "border-border-strong text-text hover:bg-surface-1",
-              )}
-            >
-              <ArrowLeft className="size-3.5" />
-              {sectionIdx === 0
-                ? "Back"
-                : INSTRUMENT_SECTIONS[sectionIdx - 1]!.title}
-            </button>
-
-            {isLast ? (
-              <button
-                type="button"
-                onClick={() => {
-                  flush();
-                  router.push(`/builder/projects/${slug}/tender`);
-                }}
-                className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"
-              >
-                Finish
-                <Check className="size-4" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => goSection(sectionIdx + 1)}
-                className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"
-              >
-                {INSTRUMENT_SECTIONS[sectionIdx + 1]!.title}
-                <ArrowRight className="size-4" />
-              </button>
-            )}
-          </div>
-        </div>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
 }
 
-/* ── section panel ──────────────────────────────────────────────────── */
+/* ── slides ─────────────────────────────────────────────────────────── */
 
-function SectionPanel({
-  section,
-  index,
-  answers,
-  onAnswer,
+const SCOPE_STATE_HELP: Record<string, string> = {
+  included: "Priced in the contract sum",
+  allowance: "A provisional sum or prime cost",
+  excluded: "Not in this price",
+  na: "Not part of this project",
+};
+
+function MatrixRowSlide({
+  q,
+  row,
+  rIdx,
+  total,
+  value,
+  onMark,
 }: {
-  section: InstrumentSection;
-  index: number;
-  answers: Answers;
-  onAnswer: (qid: string, value: AnswerPatch) => void;
+  q: InstrumentQuestion;
+  row: { id: string; label: string };
+  rIdx: number;
+  total: number;
+  value: string | undefined;
+  onMark: (state: string) => void;
 }) {
-  const visible = section.questions.filter((q) => gatePasses(q, answers));
-
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
-      <header className="px-4 sm:px-6 py-5 border-b border-border-subtle/60">
-        <span className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">
-          Section {index + 1} of {INSTRUMENT_SECTIONS.length}
-        </span>
-        <h2 className="mt-1 font-display uppercase tracking-[-0.014em] text-[20px] sm:text-[24px] leading-[1] text-text">
-          {section.title}
-        </h2>
-        <p className="mt-1.5 text-[12.5px] leading-[1.6] text-text-muted">
-          {section.intro}
-        </p>
-      </header>
-
-      <div className="divide-y divide-border-subtle/50">
-        {visible.map((q) => (
-          <QuestionRow
-            key={q.id}
-            question={q}
-            value={answers[q.id]}
-            onAnswer={onAnswer}
-          />
-        ))}
+    <div>
+      <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold tabular-nums">
+        Scope of works · {rIdx + 1} of {total}
+      </p>
+      <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text">
+        {row.label}
+      </h2>
+      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
+        How does your price treat this trade?
+      </p>
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {SCOPE_STATES.map((st) => {
+          const on = value === st.value;
+          return (
+            <button
+              key={st.value}
+              type="button"
+              onClick={() => onMark(st.value)}
+              aria-pressed={on}
+              className={cn(
+                "text-left rounded-lg border px-4.5 py-3.5 transition-colors",
+                on
+                  ? "border-border-accent bg-[rgba(0,212,200,0.07)]"
+                  : "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "size-4 rounded-full border flex items-center justify-center shrink-0",
+                    on
+                      ? "border-transparent bg-accent text-accent-contrast"
+                      : "border-border-strong",
+                  )}
+                >
+                  {on ? <Check className="size-2.5" strokeWidth={3.5} /> : null}
+                </span>
+                <span
+                  className={cn(
+                    "text-[14px] font-ui font-semibold",
+                    on ? "text-text" : "text-text",
+                  )}
+                >
+                  {st.label}
+                </span>
+              </span>
+              <span className="block mt-1 pl-6 text-[11.5px] leading-[1.5] text-text-muted">
+                {SCOPE_STATE_HELP[st.value] ?? ""}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
 
-/* ── one question ───────────────────────────────────────────────────── */
-
-function QuestionRow({
-  question: q,
-  value,
-  onAnswer,
+function ReviewSlide({
+  slug,
+  progress,
+  onJump,
 }: {
-  question: InstrumentQuestion;
-  value: unknown;
-  onAnswer: (qid: string, value: AnswerPatch) => void;
+  slug: string;
+  progress: {
+    perSection: Array<{
+      id: string;
+      required: number;
+      answered: number;
+      complete: boolean;
+    }>;
+    required: number;
+    answered: number;
+    complete: boolean;
+    pct: number;
+  };
+  onJump: (sIdx: number) => void;
 }) {
-  const done = isAnswerComplete(q, value);
-
   return (
-    <div className="px-4 sm:px-6 py-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[13.5px] leading-[1.5] font-ui font-medium text-text">
-            {q.prompt}
-            {!q.required ? (
-              <span className="ml-2 align-middle text-[9.5px] tracking-[0.12em] uppercase text-text-dim border border-border-subtle rounded-full px-1.5 py-0.5">
-                Optional
-              </span>
-            ) : null}
-          </p>
-          {q.help ? (
-            <p className="mt-1 text-[11.5px] leading-[1.55] text-text-dim">
-              {q.help}
-            </p>
-          ) : null}
-        </div>
-        {done && q.required ? (
-          <Check className="size-4 text-accent-light shrink-0 mt-0.5" />
-        ) : null}
-      </div>
+    <div>
+      <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+        Review
+      </p>
+      <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[28px] leading-[1.2] text-text">
+        {progress.complete
+          ? "Checklist complete."
+          : `${progress.required - progress.answered} required answer${progress.required - progress.answered === 1 ? "" : "s"} to go.`}
+      </h2>
+      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[56ch]">
+        {progress.complete
+          ? "Every required question is answered. Owners will read your tender like for like against the others on the round."
+          : "Jump back to any section below. Your answers are saved as you go."}
+      </p>
 
-      <div className="mt-3">
-        <AnswerControl question={q} value={value} onAnswer={onAnswer} />
+      <ul className="mt-8 flex flex-col divide-y divide-border-subtle/60 border-y border-border-subtle/60">
+        {INSTRUMENT_SECTIONS.map((sec, i) => {
+          const p = progress.perSection[i]!;
+          return (
+            <li key={sec.id}>
+              <button
+                type="button"
+                onClick={() => onJump(i)}
+                className="w-full flex items-center gap-3.5 py-3 text-left group"
+              >
+                <span
+                  className={cn(
+                    "size-5 rounded-full flex items-center justify-center shrink-0",
+                    p.complete
+                      ? "bg-accent text-accent-contrast"
+                      : "border border-[rgba(201,148,34,0.55)] text-[#8a6414]",
+                  )}
+                >
+                  {p.complete ? (
+                    <Check className="size-3" strokeWidth={3} />
+                  ) : (
+                    <span className="text-[9px] font-semibold tabular-nums">
+                      {p.required - p.answered}
+                    </span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1 text-[13.5px] font-ui font-medium text-text truncate group-hover:text-accent-light transition-colors">
+                  {sec.title}
+                </span>
+                <span className="text-[11.5px] text-text-dim tabular-nums shrink-0">
+                  {p.answered}/{p.required}
+                </span>
+                <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-9 flex flex-wrap items-center gap-3">
+        <Link
+          href={`/builder/projects/${slug}/tender`}
+          className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
+        >
+          Back to your tender
+          <ArrowRight className="size-4" />
+        </Link>
+        {!progress.complete ? (
+          <p className="text-[11.5px] text-text-dim">
+            You can finish the rest any time before you submit.
+          </p>
+        ) : null}
       </div>
     </div>
   );

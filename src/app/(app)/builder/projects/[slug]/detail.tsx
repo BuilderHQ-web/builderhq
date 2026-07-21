@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
+  ChevronDown,
   Home,
   Building,
   Wrench,
@@ -424,9 +425,9 @@ export function ProjectDetail({
       </div>
 
       <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1200px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-x-12 gap-y-10">
           {/* Left — public details (staggered entrance) */}
-          <div className="space-y-5">
+          <div className="space-y-10">
             <Reveal immediate delay={0.04}>
             <Card title="The build" icon={meta.icon}>
               <KvGrid>
@@ -629,33 +630,11 @@ export function ProjectDetail({
               on unlock) so the panel mounts populated. Anchor target
               for the in-card "Open conversation" link in OwnerContactBlock. */}
         {unlocked ? (
-          <section id="messaging" className="mx-auto max-w-[1200px] px-0 sm:px-6 lg:px-10 pb-8 lg:pb-10 scroll-mt-24 mt-6 sm:mt-8">
-            <Reveal immediate delay={0.06}>
-              <div className="flex items-baseline justify-between gap-3 mb-3">
-                <div>
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
-                    <MessageSquare className="size-3" />
-                    Project messaging
-                    {totalUnread(initialConversations) > 0 ? (
-                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-accent-contrast text-[10px] font-semibold tabular-nums">
-                        {totalUnread(initialConversations)}
-                      </span>
-                    ) : null}
-                  </span>
-                  <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
-                    Talk to the owner about this project
-                  </h2>
-                </div>
-              </div>
-              <ProjectMessagingPanel
-                projectId={preview.id}
-                scope="builder"
-                meId={myUserId}
-                initialConversations={initialConversations}
-                inboxHref="/builder/messages"
-              />
-            </Reveal>
-          </section>
+          <MessagingSection
+            projectId={preview.id}
+            meId={myUserId}
+            initialConversations={initialConversations}
+          />
         ) : null}
       </div>
 
@@ -1093,6 +1072,100 @@ function UnlockBenefitsCard({
 
 // ── pieces ───────────────────────────────────────────────────────────────
 
+/**
+ * MessagingSection — the owner conversation, collapsed by default so
+ * the project file stays the page's focus. Ruled off from the sections
+ * above and aligned to the same margins. Opens on click, or when the
+ * page is visited with the #messaging anchor (the owner-contact card
+ * links there).
+ */
+function MessagingSection({
+  projectId,
+  meId,
+  initialConversations,
+}: {
+  projectId: string;
+  meId: string;
+  initialConversations: ConversationListItem[];
+}) {
+  const [open, setOpen] = useState(false);
+  const unread = totalUnread(initialConversations);
+
+  useEffect(() => {
+    if (window.location.hash === "#messaging") setOpen(true);
+    const onHash = () => {
+      if (window.location.hash === "#messaging") setOpen(true);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  return (
+    <section
+      id="messaging"
+      className="scroll-mt-24 mt-12 border-t border-border-subtle pt-8"
+    >
+      {open ? (
+        <>
+          <div className="flex items-baseline justify-between gap-3 mb-4">
+            <div>
+              <span className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
+                <MessageSquare className="size-3.5" />
+                Project messaging
+              </span>
+              <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
+                Talk to the owner about this project
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-[11.5px] text-text-muted hover:text-text transition-colors shrink-0"
+            >
+              Collapse
+            </button>
+          </div>
+          <ProjectMessagingPanel
+            projectId={projectId}
+            scope="builder"
+            meId={meId}
+            initialConversations={initialConversations}
+            inboxHref="/builder/messages"
+          />
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group w-full flex items-center gap-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-4 text-left transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg"
+        >
+          <span className="size-9 rounded-lg border border-[rgba(0,212,200,0.3)] bg-[rgba(0,212,200,0.09)] text-[#0a7d73] flex items-center justify-center shrink-0">
+            <MessageSquare className="size-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="font-ui font-semibold text-[14px] text-text">
+                Project messaging
+              </span>
+              {unread > 0 ? (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-accent-contrast text-[10px] font-semibold tabular-nums">
+                  {unread}
+                </span>
+              ) : null}
+            </span>
+            <span className="block mt-0.5 text-[12px] text-text-muted">
+              {unread > 0
+                ? `${unread} unread message${unread === 1 ? "" : "s"} from the owner.`
+                : "Talk to the owner about this project."}
+            </span>
+          </span>
+          <ChevronDown className="size-4 text-text-dim group-hover:text-text transition-colors shrink-0" />
+        </button>
+      )}
+    </section>
+  );
+}
+
 /** Ruled section — eyebrow + hairline running right, content on the
  *  canvas. The letterhead convention; no white box. */
 function Card({
@@ -1122,7 +1195,7 @@ function Card({
 }
 
 function KvGrid({ children }: { children: React.ReactNode }) {
-  return <dl className="grid grid-cols-2 gap-x-5 gap-y-4">{children}</dl>;
+  return <dl className="grid grid-cols-2 gap-x-6 gap-y-5">{children}</dl>;
 }
 
 function Kv({
@@ -1135,12 +1208,12 @@ function Kv({
   const isEmpty = value === null || value === undefined || value === "";
   return (
     <div>
-      <dt className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim mb-1">
+      <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim mb-1">
         {label}
       </dt>
       <dd
         className={cn(
-          "text-[14.5px] font-ui font-medium tabular-nums",
+          "text-[15.5px] font-ui font-medium tabular-nums",
           isEmpty ? "text-text-dim/60" : "text-text",
         )}
       >

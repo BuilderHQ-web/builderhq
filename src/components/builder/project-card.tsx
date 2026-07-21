@@ -180,18 +180,6 @@ export function ProjectCard({
           meta.band,
         )}
       >
-        {/* elevation sketch — a drafting line drawing of the type */}
-        <span
-          aria-hidden
-          className="hidden lg:block absolute right-0 bottom-0 transition-transform duration-[400ms] group-hover:-translate-y-0.5"
-          style={{
-            maskImage: "linear-gradient(to right, transparent, black 34%)",
-            WebkitMaskImage: "linear-gradient(to right, transparent, black 34%)",
-          }}
-        >
-          <ElevationSketch type={project.type} />
-        </span>
-
         {/* type chip (+ hybrid note) */}
         <span className="relative inline-flex items-center gap-1.5 min-w-0">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
@@ -309,98 +297,6 @@ export function ProjectCard({
         )}
       </button>
     </Link>
-  );
-}
-
-/**
- * ElevationSketch — a small architectural elevation, drawn as drafting
- * line work, one per project type. Sits on the band's bottom-right
- * where the faded icon used to be: single dwelling is a gable home,
- * multi is a townhouse row, renovation carries scaffolding, extension
- * shows the new volume in dashed strokes — the drafting convention for
- * proposed work.
- */
-function ElevationSketch({ type }: { type: MarketplacePreview["type"] }) {
-  const stroke = "rgba(24,34,44,0.30)";
-  const common = {
-    width: 150,
-    height: 96,
-    viewBox: "0 0 150 96",
-    fill: "none",
-    stroke,
-    strokeWidth: 1.4,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-
-  if (type === "single_dwelling") {
-    return (
-      <svg {...common}>
-        {/* ground */}
-        <path d="M6 86 H150" />
-        {/* gable + walls */}
-        <path d="M22 50 L64 18 L106 50" />
-        <path d="M28 50 V86 M100 50 V86" />
-        {/* chimney */}
-        <path d="M82 32 V16 H92 V26" />
-        {/* door */}
-        <path d="M56 86 V62 H72 V86" />
-        {/* windows */}
-        <path d="M36 58 H50 V70 H36 Z M43 58 V70" />
-        <path d="M78 58 H92 V70 H78 Z M85 58 V70" />
-      </svg>
-    );
-  }
-
-  if (type === "multi_dwelling") {
-    return (
-      <svg {...common}>
-        <path d="M2 86 H150" />
-        {/* three attached gables */}
-        <path d="M10 86 V42 L31 24 L52 42 V86" />
-        <path d="M52 86 V48 L73 30 L94 48 V86" />
-        <path d="M94 86 V42 L115 24 L136 42 V86" />
-        {/* doors */}
-        <path d="M25 86 V70 H37 V86 M67 86 V74 H79 V86 M109 86 V70 H121 V86" />
-        {/* windows */}
-        <path d="M22 50 H40 V60 H22 Z M64 54 H82 V64 H64 Z M106 50 H124 V60 H106 Z" />
-      </svg>
-    );
-  }
-
-  if (type === "renovation") {
-    return (
-      <svg {...common}>
-        <path d="M6 86 H150" />
-        {/* house */}
-        <path d="M44 52 L86 22 L128 52" />
-        <path d="M50 52 V86 M122 52 V86" />
-        <path d="M78 86 V64 H94 V86" />
-        <path d="M58 60 H72 V72 H58 Z" />
-        {/* scaffold against the left wall */}
-        <path d="M16 24 V86 M34 24 V86" />
-        <path d="M16 24 H34 M16 44 H34 M16 65 H34" />
-        <path d="M16 44 L34 24 M16 65 L34 44" />
-      </svg>
-    );
-  }
-
-  // extension — existing solid, proposed volume dashed
-  return (
-    <svg {...common}>
-      <path d="M4 86 H150" />
-      {/* existing */}
-      <path d="M14 48 L52 20 L90 48" />
-      <path d="M20 48 V86 M84 48 V86" />
-      <path d="M44 86 V64 H60 V86" />
-      <path d="M28 56 H40 V68 H28 Z" />
-      {/* proposed volume, dashed */}
-      <g strokeDasharray="4 3.5">
-        <path d="M90 54 H134 V86" />
-        <path d="M90 54 V86" opacity={0.5} />
-        <path d="M100 64 H122 V76 H100 Z" />
-      </g>
-    </svg>
   );
 }
 
