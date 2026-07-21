@@ -121,7 +121,7 @@ export default async function BrowsePage({
             />
           </div>
         ) : (
-          <div className="mt-8 rounded-lg border border-border-subtle bg-border-subtle card-elev overflow-hidden flex flex-col gap-px">
+          <div className="mt-8 flex flex-col gap-2.5">
             {projects.map((p, i) => (
               <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.24)}>
                 <ProjectCard
