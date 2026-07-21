@@ -1,37 +1,50 @@
 "use client";
 
 /**
- * ProjectCard — one project per row, as a card in the register.
+ * ProjectCard — the docket: the live marketplace card's zoning, laid
+ * horizontally, one per row.
  *
- * Round 3 of the browse surface: the hairline table read as a
- * spreadsheet, so each entry is now its own card — breathing room
- * between rows, a type-tinted tile on the left as the visual anchor,
- * and the three facts a builder scans first (type, suburb, budget)
- * promoted to a full-size line under the title. The specification
- * keeps its ledger DNA (numbers over small-caps labels, fixed column
- * widths so values still align down the page) but drops the cell
- * borders. Round state returns to the scarcity dots: taken spots glow,
- * open spots sit faint, one-left turns amber, full locks.
+ * The hybrid the register asked for. The old card's strengths stay —
+ * a type-tinted band with the blueprint grid and the PROJECT BUDGET
+ * figure at display scale, bordered spec chips, the scarcity-dot
+ * footer — but the band rotates into a LEFT PANEL so each project
+ * reads as one wide docket in a vertical stack:
  *
- * Behaviour contract preserved: the whole card links to the project,
- * the bookmark toggles via save/unsave actions (optimistic-on-success),
+ *   ┌ band ─────────┬ body ──────────────────────┬ state ─────────┐
+ *   │ EXTENSION     │ Title                      │  ●●○ 2 of 3    │
+ *   │               │ ⌖ Flynn, ACT               │  $199 to enter │
+ *   │ PROJECT BUDGET│ [3 Bed][3 Bath][1 Storey]  │  View ↗        │
+ *   │ $500k to $1m  │                            │                │
+ *   └───────────────┴────────────────────────────┴────────────────┘
+ *
+ * Below lg the band folds back on top and the state row becomes the
+ * footer — the exact shape of the live card, so mobile keeps the
+ * layout owners already know.
+ *
+ * Behaviour contract preserved: whole card links to the project, the
+ * bookmark toggles via save/unsave actions (optimistic-on-success),
  * spots honour the round's own capacity (tenderSpots ?? UNLOCK_CAP),
  * and state precedence holds (entered > full > one-left > open).
- * Parents render cards in a `flex flex-col gap-2.5` stack.
+ * Parents render dockets in a `flex flex-col gap-3` stack.
  */
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
-  Home,
-  Building,
-  Wrench,
-  Layers,
+  ArrowUpRight,
+  Bath,
+  Bed,
   Bookmark,
   BookmarkCheck,
+  Building,
   Files,
+  Home,
+  Layers,
   Loader2,
   Lock,
+  MapPin,
+  Ruler,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,31 +59,31 @@ import { unlockPriceFor } from "@/modules/projects/pricing";
 // `unlocks/service.ts` — which is `server-only` — into the client bundle.
 import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 
-/** Per-type tint for the anchor tile — quiet fills from the app
- *  palette so rows key themselves apart without shouting. */
+/** Per-type band art — soft light-theme gradients with the type's
+ *  accent, carrying the blueprint grid and a large faded icon. */
 const TYPE_META: Record<
   MarketplacePreview["type"],
-  { label: string; Icon: LucideIcon; tile: string }
+  { label: string; Icon: LucideIcon; band: string }
 > = {
   single_dwelling: {
     label: "Single dwelling",
     Icon: Home,
-    tile: "border-[rgba(0,212,200,0.28)] bg-[rgba(0,212,200,0.09)] text-[#0a7d73]",
+    band: "from-[rgba(0,212,200,0.16)] to-[rgba(45,99,214,0.08)]",
   },
   multi_dwelling: {
     label: "Multi dwelling",
     Icon: Building,
-    tile: "border-[rgba(45,99,214,0.22)] bg-[rgba(45,99,214,0.07)] text-[#2d63d6]",
+    band: "from-[rgba(45,99,214,0.13)] to-[rgba(120,180,255,0.09)]",
   },
   renovation: {
     label: "Renovation",
     Icon: Wrench,
-    tile: "border-[rgba(201,148,34,0.28)] bg-[rgba(201,148,34,0.09)] text-[#8a6414]",
+    band: "from-[rgba(201,148,34,0.14)] to-[rgba(194,85,80,0.07)]",
   },
   extension: {
     label: "Extension",
     Icon: Layers,
-    tile: "border-[rgba(66,96,111,0.24)] bg-[rgba(66,96,111,0.08)] text-[#42606f]",
+    band: "from-[rgba(10,125,115,0.14)] to-[rgba(0,212,200,0.10)]",
   },
 };
 
@@ -84,7 +97,7 @@ const BUDGET_LABEL: Record<string, string> = {
   over_5m: "Over $5m",
 };
 
-// Compact tabular ranges — the stat label supplies the "Land m²" unit.
+// Compact tabular ranges — the chip label supplies the "Land m²" unit.
 const LAND_LABEL: Record<string, string> = {
   under_200: "<200",
   "200_400": "200-400",
@@ -131,216 +144,178 @@ export function ProjectCard({
     });
   };
 
-  const specs: Array<{ label: string; value: string | null; w: string }> = [
-    {
-      label: "Beds",
-      value: project.bedrooms != null ? String(project.bedrooms) : null,
-      w: "w-[48px]",
-    },
-    {
-      label: "Baths",
-      value: project.bathrooms != null ? String(project.bathrooms) : null,
-      w: "w-[48px]",
-    },
-    {
-      label: project.type === "multi_dwelling" ? "Dwellings" : "Storeys",
-      value:
-        project.type === "multi_dwelling"
-          ? project.dwellingCount != null
-            ? String(project.dwellingCount)
-            : null
-          : project.floors != null
-            ? String(project.floors)
-            : null,
-      w: "w-[76px]",
-    },
-    {
-      label:
-        project.type === "renovation" || project.type === "extension"
-          ? "Docs"
-          : "Land m²",
-      value:
-        project.type === "renovation" || project.type === "extension"
-          ? String(project.documentCount)
-          : project.landSizeBand
-            ? (LAND_LABEL[project.landSizeBand] ?? null)
-            : null,
-      w: "w-[78px]",
-    },
-  ];
+  // Spec chips — only the facts this project actually has.
+  const chips: Array<{ Icon: LucideIcon; value: string; label: string }> = [];
+  if (project.bedrooms != null)
+    chips.push({ Icon: Bed, value: String(project.bedrooms), label: project.bedrooms === 1 ? "Bed" : "Beds" });
+  if (project.bathrooms != null)
+    chips.push({ Icon: Bath, value: String(project.bathrooms), label: project.bathrooms === 1 ? "Bath" : "Baths" });
+  if (project.type === "multi_dwelling" && project.dwellingCount != null)
+    chips.push({ Icon: Building, value: String(project.dwellingCount), label: "Dwellings" });
+  else if (project.type !== "multi_dwelling" && project.floors != null)
+    chips.push({ Icon: Layers, value: String(project.floors), label: project.floors === 1 ? "Storey" : "Storeys" });
+  if (project.landSizeBand && LAND_LABEL[project.landSizeBand])
+    chips.push({ Icon: Ruler, value: LAND_LABEL[project.landSizeBand]!, label: "Land m²" });
 
   return (
     <Link
       href={`/builder/projects/${project.slug}`}
       className={cn(
-        "group relative block rounded-lg border overflow-hidden",
+        "group relative flex flex-col lg:flex-row rounded-xl border overflow-hidden",
         "border-border-subtle bg-surface-1 card-elev",
         "transition-[border-color,box-shadow,transform] duration-200",
         "hover:border-border-strong hover:card-elev-lg hover:-translate-y-px",
         "active:translate-y-0 active:duration-[90ms]",
       )}
     >
-      <div className="flex items-center gap-4 sm:gap-5 pl-4 sm:pl-5 pr-14 lg:pr-5 py-4">
-        {/* ── type tile — the row's visual anchor ─────────────────── */}
-        <span
-          className={cn(
-            "hidden sm:flex size-11 rounded-lg border items-center justify-center shrink-0",
-            meta.tile,
-          )}
-        >
-          <meta.Icon className="size-5" strokeWidth={1.7} />
+      {/* ── the band — type + budget on the blueprint art ─────────── */}
+      <div
+        className={cn(
+          "relative shrink-0 overflow-hidden bg-gradient-to-br",
+          "border-b lg:border-b-0 lg:border-r border-border-subtle/60",
+          "flex flex-row lg:flex-col items-center lg:items-start justify-between",
+          // pr clears the floating save button while the band is the
+          // top strip (below lg); on lg the button sits over the rail.
+          "gap-3 pl-4 pr-12 lg:pr-4 py-3 lg:py-4 lg:w-[232px] lg:min-h-[136px]",
+          meta.band,
+        )}
+      >
+        {/* blueprint grid */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(24,34,44,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.055) 1px, transparent 1px)",
+            backgroundSize: "26px 26px",
+            maskImage:
+              "radial-gradient(ellipse 85% 80% at 50% 50%, black, transparent 82%)",
+          }}
+        />
+        {/* large faded type icon */}
+        <meta.Icon
+          aria-hidden
+          className="absolute -right-3 -bottom-5 size-[96px] text-[rgba(24,34,44,0.08)] transition-transform duration-[400ms] group-hover:-translate-y-0.5 group-hover:scale-[1.03]"
+          strokeWidth={1}
+        />
+
+        {/* type chip (+ hybrid note) */}
+        <span className="relative inline-flex items-center gap-1.5 min-w-0">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+            <meta.Icon className="size-3 text-accent-light" />
+            {meta.label}
+          </span>
+          {project.tenderMode === "hybrid" ? (
+            <span className="hidden sm:inline-flex px-2 py-1 rounded-sm border border-border-subtle bg-white/55 text-[9px] tracking-[0.14em] uppercase text-text-muted">
+              Hybrid
+            </span>
+          ) : null}
         </span>
 
-        {/* ── identity — the facts a builder scans first ──────────── */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <h3 className="font-ui font-semibold text-[15.5px] leading-[1.3] text-text line-clamp-2 lg:line-clamp-none lg:truncate">
-              {project.title}
-            </h3>
-            {project.tenderMode === "hybrid" ? (
-              <span className="hidden sm:inline-flex text-[9px] tracking-[0.14em] uppercase text-text-dim border border-border-subtle rounded-full px-2 py-0.5 shrink-0">
-                Hybrid round
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 text-[13px] leading-[1.5] lg:truncate">
-            <span className="inline-flex items-center gap-1.5 font-medium text-text">
-              <meta.Icon className="size-3.5 sm:hidden" />
-              {meta.label}
-            </span>
-            <span className="text-text-dim"> · </span>
-            <span className="text-text-muted">
+        {/* the figure owners lead with */}
+        <div className="relative text-right lg:text-left shrink-0">
+          <p className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
+            Project budget
+          </p>
+          <p
+            className={cn(
+              "mt-0.5 font-display leading-none tracking-[-0.01em] tabular-nums",
+              project.budgetBand ? "text-[21px] text-text" : "text-[15px] text-text-dim",
+            )}
+          >
+            {project.budgetBand
+              ? (BUDGET_LABEL[project.budgetBand] ?? "—")
+              : "Not stated"}
+          </p>
+        </div>
+      </div>
+
+      {/* ── body — title, locality, the specification ─────────────── */}
+      <div className="min-w-0 flex-1 px-4 sm:px-5 py-4 pr-12 lg:pr-5 flex flex-col justify-center gap-2.5">
+        <div className="min-w-0">
+          <h3 className="font-ui font-semibold text-[15.5px] leading-[1.3] text-text line-clamp-2 lg:line-clamp-1">
+            {project.title}
+          </h3>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-text-muted min-w-0 max-w-full">
+            <MapPin className="size-3.5 text-text-dim shrink-0" />
+            <span className="truncate">
               {project.suburb
                 ? `${project.suburb}, ${project.state}`
-                : "Location on file"}
+                : "Location shared on unlock"}
             </span>
-            {project.budgetBand && BUDGET_LABEL[project.budgetBand] ? (
-              <>
-                <span className="text-text-dim"> · </span>
-                <span className="font-semibold text-text">
-                  {BUDGET_LABEL[project.budgetBand]}
-                </span>
-              </>
-            ) : null}
           </p>
         </div>
 
-        {/* ── specification — ledger numbers, no cell borders. Fixed
-              widths keep values aligned down the page. ─────────────── */}
-        <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
-          {specs.map((s) => (
-            <SpecStat key={s.label} {...s} />
-          ))}
-        </div>
-
-        {/* ── round state — the scarcity dots ─────────────────────── */}
-        <div className="hidden lg:flex flex-col items-end gap-1 w-[168px] shrink-0">
-          <SpotsDots
-            spots={spots}
-            taken={taken}
-            left={left}
-            isFull={isFull}
-            entered={isUnlocked}
-          />
-          <span className="text-[11px] text-text-dim tabular-nums">
-            {isUnlocked || isFull ? (
-              <span className="inline-flex items-center gap-1">
-                <Files className="size-3" />
-                {project.documentCount} document
-                {project.documentCount === 1 ? "" : "s"}
+        {chips.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {chips.map((c) => (
+              <span
+                key={c.label}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)]"
+              >
+                <c.Icon className="size-3.5 text-text-dim" strokeWidth={1.8} />
+                <span className="font-display text-[14.5px] leading-none text-text tabular-nums pt-px">
+                  {c.value}
+                </span>
+                <span className="text-[8.5px] tracking-[0.14em] uppercase text-text-dim pt-[3px]">
+                  {c.label}
+                </span>
               </span>
-            ) : fbaActive ? (
-              "Complimentary entry"
-            ) : (
-              `$${priceAud} to enter`
-            )}
-          </span>
-        </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-        {/* ── save ────────────────────────────────────────────────── */}
-        <button
-          type="button"
-          onClick={onToggleSave}
-          disabled={pending}
-          title={saved ? "Saved" : "Save"}
-          className={cn(
-            "absolute top-3.5 right-3.5 lg:static size-8 rounded-md border flex items-center justify-center transition-colors shrink-0",
-            saved
-              ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-accent-light"
-              : "border-border-subtle text-text-dim hover:text-text hover:border-border-strong",
-          )}
-        >
-          {pending ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : saved ? (
-            <BookmarkCheck className="size-4" />
+      {/* ── round state — dots, the fee, the way in ───────────────── */}
+      <div className="shrink-0 lg:w-[195px] border-t lg:border-t-0 lg:border-l border-border-subtle/60 px-4 sm:px-5 py-3 lg:py-4 lg:pt-8 flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-x-4 gap-y-1.5">
+        <SpotsDots
+          spots={spots}
+          taken={taken}
+          left={left}
+          isFull={isFull}
+          entered={isUnlocked}
+        />
+        <span className="inline-flex items-center gap-1 text-[11px] text-text-dim tabular-nums">
+          {isUnlocked || isFull ? (
+            <>
+              <Files className="size-3" />
+              {project.documentCount} document
+              {project.documentCount === 1 ? "" : "s"}
+            </>
+          ) : fbaActive ? (
+            "Complimentary entry"
           ) : (
-            <Bookmark className="size-4" />
+            `$${priceAud} to enter`
           )}
-        </button>
+        </span>
+        <span className="hidden lg:inline-flex items-center gap-1 text-[11.5px] text-accent-light opacity-60 group-hover:opacity-100 transition-opacity mt-1">
+          View
+          <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:translate-x-px group-hover:-translate-y-px" />
+        </span>
       </div>
 
-      {/* ── below lg: spec strip + round state fold under ─────────── */}
-      <div className="lg:hidden border-t border-border-subtle/60 px-4 sm:px-5 py-2.5 flex items-center justify-between gap-x-4 gap-y-2 flex-wrap">
-        <div className="flex items-center gap-4 sm:gap-5">
-          {specs.map((s) => (
-            <SpecStat key={s.label} {...s} compact />
-          ))}
-        </div>
-        <div className="flex items-center gap-2.5">
-          <SpotsDots
-            spots={spots}
-            taken={taken}
-            left={left}
-            isFull={isFull}
-            entered={isUnlocked}
-          />
-          <span className="text-[10.5px] text-text-dim tabular-nums">
-            {isUnlocked || isFull
-              ? `${project.documentCount} doc${project.documentCount === 1 ? "" : "s"}`
-              : fbaActive
-                ? "Complimentary"
-                : `$${priceAud} to enter`}
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/** One ledger figure — number over a small-caps label, no cell chrome. */
-function SpecStat({
-  label,
-  value,
-  w,
-  compact = false,
-}: {
-  label: string;
-  value: string | null;
-  w: string;
-  compact?: boolean;
-}) {
-  return (
-    <div className={cn("text-center min-w-0", !compact && w)}>
-      <p
+      {/* ── save — floats over the card's corner ──────────────────── */}
+      <button
+        type="button"
+        onClick={onToggleSave}
+        disabled={pending}
+        title={saved ? "Saved" : "Save"}
         className={cn(
-          "font-display leading-none tabular-nums truncate",
-          value && value.length > 4
-            ? compact
-              ? "text-[11.5px] pt-[2px]"
-              : "text-[12.5px] pt-[3px]"
-            : compact
-              ? "text-[14px]"
-              : "text-[16.5px]",
-          value ? "text-text" : "text-text-dim/50",
+          "absolute top-3 right-3 size-8 rounded-md border flex items-center justify-center transition-colors z-10",
+          saved
+            ? "border-border-accent bg-[rgba(0,212,200,0.08)] text-accent-light"
+            : "border-border-subtle bg-white/80 backdrop-blur-[2px] text-text-dim hover:text-text hover:border-border-strong",
         )}
       >
-        {value ?? "—"}
-      </p>
-      <p className="mt-0.5 text-[8.5px] tracking-[0.14em] uppercase text-text-dim truncate">
-        {label}
-      </p>
-    </div>
+        {pending ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : saved ? (
+          <BookmarkCheck className="size-4" />
+        ) : (
+          <Bookmark className="size-4" />
+        )}
+      </button>
+    </Link>
   );
 }
 

@@ -19,50 +19,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProjectRowSkeleton() {
   return (
-    <div className="relative rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <div className="flex items-center gap-4 sm:gap-5 pl-4 sm:pl-5 pr-14 lg:pr-5 py-4">
-        {/* type tile */}
-        <Skeleton className="hidden sm:block size-11 rounded-lg shrink-0" />
-        {/* identity */}
-        <div className="min-w-0 flex-1 flex flex-col gap-2">
-          <Skeleton className="h-4 w-[55%] rounded-sm" />
-          <Skeleton className="h-3.5 w-[70%] rounded-sm" />
+    <div className="relative flex flex-col lg:flex-row rounded-xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      {/* band */}
+      <div className="shrink-0 lg:w-[232px] lg:min-h-[136px] border-b lg:border-b-0 lg:border-r border-border-subtle/60 bg-[rgba(24,34,44,0.03)] px-4 py-3 lg:py-4 flex flex-row lg:flex-col items-center lg:items-start justify-between gap-3">
+        <Skeleton className="h-6 w-[110px] rounded-sm" />
+        <div className="flex flex-col items-end lg:items-start gap-1.5">
+          <Skeleton className="h-2 w-[76px] rounded-sm" />
+          <Skeleton className="h-5 w-[100px] rounded-sm" />
         </div>
-        {/* spec figures */}
-        <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex flex-col items-center gap-1.5",
-                i === 3 ? "w-[76px]" : "w-[52px]",
-              )}
-            >
-              <Skeleton className="h-4 w-6 rounded-sm" />
-              <Skeleton className="h-2 w-9 rounded-sm" />
-            </div>
+      </div>
+      {/* body */}
+      <div className="min-w-0 flex-1 px-4 sm:px-5 py-4 pr-12 lg:pr-5 flex flex-col justify-center gap-3">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-[55%] rounded-sm" />
+          <Skeleton className="h-3.5 w-[35%] rounded-sm" />
+        </div>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-[84px] rounded-md" />
           ))}
         </div>
-        {/* round state */}
-        <div className="hidden lg:flex flex-col items-end gap-1.5 w-[168px] shrink-0">
-          <Skeleton className="h-3.5 w-[110px] rounded-sm" />
-          <Skeleton className="h-3 w-[70px] rounded-sm" />
-        </div>
-        {/* save */}
-        <Skeleton className="absolute top-3.5 right-3.5 lg:static size-8 rounded-md shrink-0" />
       </div>
-      {/* below-lg footer strip */}
-      <div className="lg:hidden border-t border-border-subtle/60 px-4 sm:px-5 py-2.5 flex items-center justify-between gap-3">
-        <Skeleton className="h-3.5 w-[45%] rounded-sm" />
-        <Skeleton className="h-3.5 w-[90px] rounded-sm" />
+      {/* state rail */}
+      <div className="shrink-0 lg:w-[195px] border-t lg:border-t-0 lg:border-l border-border-subtle/60 px-4 sm:px-5 py-3 lg:py-4 flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-2">
+        <Skeleton className="h-3.5 w-[110px] rounded-sm" />
+        <Skeleton className="h-3 w-[80px] rounded-sm" />
       </div>
+      {/* save */}
+      <Skeleton className="absolute top-3 right-3 size-8 rounded-md" />
     </div>
   );
 }
 
 export function ProjectRegisterSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       {Array.from({ length: count }).map((_, i) => (
         <ProjectRowSkeleton key={i} />
       ))}
