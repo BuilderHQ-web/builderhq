@@ -621,6 +621,29 @@ export async function createDraft(
   return ok({ ...row, costLines: [] });
 }
 
+/**
+ * Legacy drafts predate the submission instrument. The moment a
+ * builder opens one to keep working, it adopts the current instrument
+ * so every submission from here on carries the checklist. Submitted
+ * and decided tenders are never retro-gated. Idempotent.
+ */
+export async function adoptInstrumentForDraft(
+  builderId: string,
+  tenderId: string,
+): Promise<void> {
+  await db
+    .update(tenders)
+    .set({ instrumentVersion: INSTRUMENT_VERSION })
+    .where(
+      and(
+        eq(tenders.id, tenderId),
+        eq(tenders.builderId, builderId),
+        eq(tenders.status, "draft"),
+        isNull(tenders.instrumentVersion),
+      ),
+    );
+}
+
 /** Patch a tender. Only allowed while draft. */
 export async function updateDraft(
   builderId: string,

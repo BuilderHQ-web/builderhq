@@ -49,6 +49,7 @@ export {
   computeReadiness,
   // builder writes
   createDraft,
+  adoptInstrumentForDraft,
   updateDraft,
   setCostLines,
   submit,

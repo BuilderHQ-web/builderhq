@@ -8,6 +8,8 @@ import {
 import { isUnlocked } from "@/modules/unlocks";
 import {
   getActiveTenderForBuilder,
+  adoptInstrumentForDraft,
+  INSTRUMENT_VERSION,
   getProjectOwnerForTender,
   listResponsesForTender,
   checklistProgress,
@@ -52,6 +54,12 @@ export default async function TenderRoute({
   }
 
   const existing = await getActiveTenderForBuilder(userId, preview.id);
+  // Drafts started before the instrument shipped adopt it on open, so
+  // the checklist is part of every draft a builder works on today.
+  if (existing && existing.status === "draft" && existing.instrumentVersion == null) {
+    await adoptInstrumentForDraft(userId, existing.id);
+    existing.instrumentVersion = INSTRUMENT_VERSION;
+  }
   const docs = existing
     ? await listForTenderUnchecked(existing.id)
     : [];

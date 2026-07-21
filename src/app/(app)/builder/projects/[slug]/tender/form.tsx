@@ -697,7 +697,9 @@ export function TenderForm({
               </div>
               <TocLink href="#section-tender-documents" label="Documents" />
               <TocLink href="#section-the-number" label="The number" />
-              <TocLink href="#section-checklist" label="Checklist" />
+              {!tender || tender.instrumentVersion != null ? (
+                <TocLink href="#section-checklist" label="Checklist" />
+              ) : null}
               <TocLink href="#section-cost-breakdown" label="Cost breakdown" />
               <TocLink href="#section-scope" label="Scope" />
               <TocLink href="#section-your-pitch" label="Your pitch" />
