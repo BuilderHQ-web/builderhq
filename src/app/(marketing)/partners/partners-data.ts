@@ -3844,8 +3844,8 @@ export const PARTNERS: Partner[] = [
     services: [
       "Construction loans and progress payments",
       "Development finance",
+      "Bridging loans",
       "Pre-approval before you go to tender",
-      "Self-managed super fund (SMSF) lending",
       "Trust and company structures",
       "Self-employed and complex applications",
     ],
