@@ -1,36 +1,22 @@
 /**
- * Builder dashboard — the desk.
+ * Builder dashboard — the desk, round 3: the hybrid.
  *
- * The P5 reference screen: the design language every interior surface
- * follows. A builder's morning page at a professional institution,
- * not a marketplace lobby. Three principles govern it:
+ * The greeting hero returns from the original dashboard — time-of-day
+ * greeting, one contextual sentence, and the big CTAs — with the
+ * ledger figures as a quiet hairline strip beneath. Below it, the
+ * white section boxes are gone: sections sit directly on the canvas,
+ * each announced by a TINTED ICON CHIP + kicker + display title +
+ * plain sentence with a hairline rule running right (the letterhead
+ * convention). Colour codes the sections: teal = your work, blue =
+ * the register, ink = the ledger, amber = anything needing action.
+ * Only two things keep a wash: the desk panel (teal, or amber when
+ * something urgent waits) and the standing card. Content rows are
+ * individual white cards — the browse docket language — so white
+ * marks OBJECTS, never sections.
  *
- *   ONE QUEUE. Everything that needs the builder today — awards to
- *   follow up, invitations to price, shortlists, expiring validity,
- *   unfinished drafts — lands in a single ranked list. The page's job
- *   is "what needs me", answered in five seconds.
- *
- *   A LEDGER, NOT A SCOREBOARD. Their numbers read like bookkeeping:
- *   the active book, the win rate, the value tendered. Quiet figures,
- *   tabular, no gamification.
- *
- *   THE REGISTER, NOT THE SHOP. Open rounds present as registry rows
- *   with spots remaining and the fee to enter, ranked below the
- *   builder's own work. Browsing is a destination (/builder/browse);
- *   the desk only surfaces what matched.
- *
- * Clarity system (round 2): every section announces itself with a
- * kicker + display-scale title + one plain-language subline, so a new
- * builder can tell what each block is without decoding the ledger
- * vocabulary. Desk rows carry NAMED chips (Awarded / Invitation /
- * Shortlisted / Expiring / Lapsed / Draft) instead of anonymous tone
- * dots, and the registration checklist is a full-width band under the
- * masthead — the one thing gating tendering is never below the fold.
- *
- * Reading order: masthead (identity + standing + ledger) →
- * [registration band if unverified] → on your desk → open rounds →
- * the tender book. Rail: standing, correspondence, the record,
- * grandfathered founding note.
+ * Everything data-side is unchanged: one ranked queue (awarded →
+ * invitations → shortlisted → expiring → drafts, invites never
+ * truncated), safe() around every query, and the same route surface.
  */
 
 import Link from "next/link";
@@ -38,6 +24,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
+  Bookmark,
   Check,
   ClipboardCheck,
   Compass,
@@ -65,6 +52,7 @@ import {
   type BuilderDashboardData,
   type BuilderActivityEvent,
 } from "@/modules/dashboards";
+import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
@@ -208,25 +196,15 @@ export default async function BuilderDashboard() {
     fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   // The registration checklist state: not approved, not declined, and
-  // at least one check still outstanding — the one state where
-  // something is asked of the builder before they can tender. Promoted
-  // to a full-width band. When both checks have passed (however they
-  // passed — web or mobile), the band never renders; the rail carries
-  // the "checks complete" note instead.
+  // at least one check still outstanding — promoted to a full-width
+  // band. When both checks pass, the rail carries "checks complete".
   const needsChecklist =
     !isApproved &&
     approvalStatus !== "rejected" &&
     approvalStatus !== "suspended" &&
     !fullyVerified;
 
-  const practiceName =
-    profile?.profile?.tradingName ?? profile?.profile?.companyName ?? firstName;
   const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
-
-  const dateline = new Intl.DateTimeFormat("en-AU", {
-    weekday: "long", day: "numeric", month: "long",
-    timeZone: "Australia/Melbourne",
-  }).format(new Date());
 
   // ── the desk queue: one ranked list, every entry NAMED ────────────
   type DeskTone = "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
@@ -321,6 +299,7 @@ export default async function BuilderDashboard() {
     ...otherRows.slice(0, Math.max(0, QUEUE_LIMIT - inviteRows.length)),
   ];
   const queueOverflow = queue.length - queueShown.length;
+  const deskUrgent = queue.some((q) => q.tone === "danger" || q.tone === "warn");
 
   const winRatePct =
     dash.performance.winRate !== null
@@ -329,63 +308,63 @@ export default async function BuilderDashboard() {
   const hasBook =
     dash.pipeline.active + dash.pipeline.decided + dash.pipeline.draft > 0;
 
+  const heroLine =
+    queue.length > 0
+      ? `${queue.length} item${queue.length === 1 ? "" : "s"} ${queue.length === 1 ? "is" : "are"} waiting on your desk.`
+      : dash.pipeline.active > 0
+        ? `${dash.pipeline.active} active tender${dash.pipeline.active === 1 ? "" : "s"} in the field. New rounds land here the moment they match your service area.`
+        : "Browse open tender rounds matched to your service area, take a spot, and tender with confidence.";
+
   return (
     <div>
-      {/* ── masthead ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border-subtle bg-bg-deep/30">
+      {/* ── hero — the greeting, the sentence, the way in ─────────── */}
+      <section className="relative overflow-hidden border-b border-border-subtle">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 30% 0%, rgba(0,212,200,0.06), transparent 65%)",
+              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
-        <div className="relative px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
-          <div className="mx-auto max-w-[1200px] flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-                Builder · {dateline}
-              </p>
-              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[42px] leading-[0.95] text-text break-words">
-                {practiceName}
-              </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {isApproved ? (
-                  <StandingChip tone="accent" icon={<ShieldCheck className="size-3" />}>
-                    Registered builder
-                  </StandingChip>
-                ) : approvalStatus === "rejected" ? (
-                  <StandingChip tone="warn">Registration declined</StandingChip>
-                ) : approvalStatus === "suspended" ? (
-                  <StandingChip tone="warn">Registration suspended</StandingChip>
-                ) : approvalStatus === "pending_review" ? (
-                  <StandingChip tone="warn">Registration under review</StandingChip>
-                ) : (
-                  <StandingChip tone="warn">Registration in progress</StandingChip>
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 pb-9 sm:pb-11">
+          <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
+            <BuilderHeroIntro firstName={firstName} />
+            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.7] text-text-subtle">
+              {heroLine}
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <Link
+                href="/builder/browse"
+                className={cn(
+                  "group inline-flex items-center justify-center gap-2.5 h-12 px-6 sm:px-7 rounded-full w-full sm:w-auto",
+                  "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
+                  "transition-colors duration-[160ms] hover:bg-accent-hover",
+                  "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
                 )}
-                {verification.abnVerified ? (
-                  <StandingChip>ABN verified</StandingChip>
-                ) : null}
-                {profile?.profile?.businessSuburb ? (
-                  <StandingChip>
-                    {profile.profile.businessSuburb}
-                    {profile.profile.businessState
-                      ? `, ${profile.profile.businessState}`
-                      : ""}
-                  </StandingChip>
-                ) : null}
-                {profile?.profile?.yearsInOperation ? (
-                  <StandingChip>
-                    {profile.profile.yearsInOperation} years in operation
-                  </StandingChip>
-                ) : null}
-              </div>
+              >
+                <Compass className="size-4" />
+                Browse projects
+                <ArrowUpRight className="size-4 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+              <Link
+                href="/builder/tenders"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+              >
+                My tenders
+              </Link>
+              <Link
+                href="/builder/saved"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+              >
+                <Bookmark className="size-3.5" />
+                Saved{savedCount > 0 ? ` · ${savedCount}` : ""}
+              </Link>
             </div>
 
-            {/* the ledger */}
-            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border-subtle bg-border-subtle w-full lg:w-auto lg:shrink-0">
-              <LedgerStat
+            {/* the ledger — hairline strip, no boxes */}
+            <div className="mt-9 flex items-stretch justify-center divide-x divide-border-subtle">
+              <HeroStat
                 label="Active tenders"
                 value={String(dash.pipeline.active)}
                 sub={
@@ -396,7 +375,7 @@ export default async function BuilderDashboard() {
                       : "None in the field"
                 }
               />
-              <LedgerStat
+              <HeroStat
                 label="Win rate"
                 value={winRatePct !== null ? `${winRatePct}%` : "—"}
                 sub={
@@ -405,7 +384,7 @@ export default async function BuilderDashboard() {
                     : "No decisions yet"
                 }
               />
-              <LedgerStat
+              <HeroStat
                 label="Value tendered"
                 value={
                   dash.performance.totalSubmittedValueAud > 0
@@ -459,106 +438,124 @@ export default async function BuilderDashboard() {
         </section>
       ) : null}
 
-      {/* ── working area ─────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
+      {/* ── working area — sections on the canvas ─────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
           {/* left column — the work */}
-          <div className="space-y-6 min-w-0">
-            {/* on your desk */}
-            <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
-              <SectionHead
-                icon={<ClipboardCheck className="size-3.5" />}
-                kicker="Priority queue"
-                title="On your desk"
-                sub={
-                  queue.length === 0
-                    ? "Nothing needs your action right now."
-                    : `${queue.length} item${queue.length === 1 ? "" : "s"} need${queue.length === 1 ? "s" : ""} your attention, most important first.`
-                }
-                right={
-                  <Link
-                    href="/builder/tenders"
-                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                  >
-                    My tenders
-                    <ArrowRight className="size-3" />
-                  </Link>
-                }
+          <div className="min-w-0 flex flex-col gap-10">
+            {/* on your desk — the one toned panel on the page */}
+            <section
+              className={cn(
+                "relative overflow-hidden rounded-xl border",
+                deskUrgent
+                  ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.07),rgba(250,248,243,0.5)_65%)]"
+                  : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_65%)]",
+              )}
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
+                style={{
+                  background: deskUrgent
+                    ? "radial-gradient(circle, rgba(217,164,65,0.18), transparent 70%)"
+                    : "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
+                }}
               />
+              <div className="relative px-4 sm:px-6 py-5 sm:py-6">
+                <SectionHead
+                  chip={
+                    <IconChip tone={deskUrgent ? "amber" : "teal"}>
+                      <ClipboardCheck className="size-4" />
+                    </IconChip>
+                  }
+                  kicker="On your desk"
+                  kickerTone={deskUrgent ? "amber" : "teal"}
+                  title={
+                    queue.length === 0
+                      ? "A clear desk"
+                      : `${queue.length} item${queue.length === 1 ? "" : "s"} need${queue.length === 1 ? "s" : ""} your attention`
+                  }
+                  sub={
+                    queue.length === 0
+                      ? "New invitations, shortlist decisions and expiring prices appear here first."
+                      : "Most important first. Invitations never wait."
+                  }
+                  right={
+                    <Link
+                      href="/builder/tenders"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                    >
+                      My tenders
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  }
+                />
 
-              {queueShown.length === 0 ? (
-                <div className="px-4 sm:px-6 py-10 text-center">
-                  <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent text-accent-contrast">
-                    <Check className="size-4" strokeWidth={3} />
-                  </span>
-                  <p className="font-ui font-semibold text-[13.5px] text-text">
-                    A clear desk
-                  </p>
-                  <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[42ch] mx-auto">
-                    Nothing needs you right now. New invitations, shortlist
-                    decisions and expiring prices will appear here first.
-                  </p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-border-subtle/50">
-                  {queueShown.map((row) => (
-                    <li key={row.key}>
-                      <Link
-                        href={row.href}
-                        className="relative flex items-center gap-3.5 pl-5 pr-4 sm:pl-7 sm:pr-6 py-3.5 hover:bg-bg-elev transition-colors group"
-                      >
-                        {/* tone bar — full height, scannable down the list */}
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "absolute left-0 top-0 bottom-0 w-[3px]",
-                            row.tone === "win" && "bg-[#0a9c91]",
-                            row.tone === "invite" &&
-                              "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
-                            row.tone === "warn" && "bg-[#c99422]",
-                            row.tone === "danger" && "bg-[#c25550]",
-                            row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
-                            row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
-                          )}
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2 min-w-0">
-                            <DeskChip tone={row.tone}>{row.chip}</DeskChip>
-                            <span className="font-ui font-medium text-[13.5px] text-text truncate">
-                              {row.title}
+                {queueShown.length > 0 ? (
+                  <ul className="mt-5 flex flex-col gap-2">
+                    {queueShown.map((row) => (
+                      <li key={row.key}>
+                        <Link
+                          href={row.href}
+                          className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+                        >
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "absolute left-0 top-0 bottom-0 w-[3px]",
+                              row.tone === "win" && "bg-[#0a9c91]",
+                              row.tone === "invite" &&
+                                "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
+                              row.tone === "warn" && "bg-[#c99422]",
+                              row.tone === "danger" && "bg-[#c25550]",
+                              row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                              row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
+                            )}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2 min-w-0">
+                              <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                              <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                                {row.title}
+                              </span>
+                            </span>
+                            <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
+                              {row.line}
                             </span>
                           </span>
-                          <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
-                            {row.line}
-                          </span>
-                        </span>
-                        {row.metric ? (
-                          <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
-                            {row.metric}
-                          </span>
-                        ) : null}
-                        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {queueOverflow > 0 ? (
-                <Link
-                  href="/builder/tenders"
-                  className="block px-4 sm:px-6 py-2.5 border-t border-border-subtle/50 text-[11.5px] text-text-muted hover:text-text transition-colors"
-                >
-                  {queueOverflow} more in My tenders
-                  <ArrowRight className="inline size-3 ml-1" />
-                </Link>
-              ) : null}
+                          {row.metric ? (
+                            <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                              {row.metric}
+                            </span>
+                          ) : null}
+                          <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {queueOverflow > 0 ? (
+                  <Link
+                    href="/builder/tenders"
+                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                  >
+                    {queueOverflow} more in My tenders
+                    <ArrowRight className="size-3" />
+                  </Link>
+                ) : null}
+              </div>
             </section>
 
-            {/* open rounds */}
-            <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+            {/* open rounds — the register, on the canvas */}
+            <section>
               <SectionHead
-                icon={<Compass className="size-3.5" />}
+                chip={
+                  <IconChip tone="blue">
+                    <Compass className="size-4" />
+                  </IconChip>
+                }
                 kicker="The register"
+                kickerTone="blue"
                 title="Open rounds in your area"
                 sub={
                   serviceAreaMatch.length > 0
@@ -567,29 +564,20 @@ export default async function BuilderDashboard() {
                       : "Live tender rounds matched to your service area."
                     : "Recent rounds from across the register."
                 }
+                rule
                 right={
-                  <>
-                    {savedCount > 0 ? (
-                      <Link
-                        href="/builder/saved"
-                        className="text-[11.5px] text-text-muted hover:text-text transition-colors"
-                      >
-                        Saved · {savedCount}
-                      </Link>
-                    ) : null}
-                    <Link
-                      href="/builder/browse"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                    >
-                      Browse all
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  </>
+                  <Link
+                    href="/builder/browse"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                  >
+                    Browse all
+                    <ArrowRight className="size-3" />
+                  </Link>
                 }
               />
 
               {openRounds.length === 0 ? (
-                <div className="px-4 sm:px-6 py-10 text-center">
+                <div className="mt-5 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center">
                   <p className="font-ui font-semibold text-[13.5px] text-text">
                     No open rounds match yet
                   </p>
@@ -600,14 +588,14 @@ export default async function BuilderDashboard() {
                   </p>
                   <Link
                     href="/builder/browse"
-                    className="mt-4 inline-flex items-center gap-1.5 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] hover:bg-surface-2 transition-colors"
+                    className="mt-4 inline-flex items-center gap-1.5 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] hover:bg-surface-1 transition-colors"
                   >
                     Browse the register
                     <ArrowRight className="size-3.5" />
                   </Link>
                 </div>
               ) : (
-                <ul className="divide-y divide-border-subtle/50">
+                <ul className="mt-5 flex flex-col gap-2">
                   {openRounds.map((p) => (
                     <OpenRoundRow
                       key={p.id}
@@ -620,25 +608,31 @@ export default async function BuilderDashboard() {
               )}
             </section>
 
-            {/* the tender book */}
+            {/* the tender book — a ruled ledger, no box */}
             {hasBook ? (
-              <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+              <section>
                 <SectionHead
-                  icon={<Landmark className="size-3.5" />}
+                  chip={
+                    <IconChip tone="ink">
+                      <Landmark className="size-4" />
+                    </IconChip>
+                  }
                   kicker="Your ledger"
+                  kickerTone="ink"
                   title="The tender book"
                   sub="Every tender you have lodged, by status."
+                  rule
                   right={
                     <Link
                       href="/builder/tenders"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
+                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
                     >
                       Every tender
                       <ArrowRight className="size-3" />
                     </Link>
                   }
                 />
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-px bg-border-subtle">
+                <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 divide-x divide-border-subtle border-y border-border-subtle">
                   {(
                     [
                       ["Draft", dash.pipeline.draft],
@@ -649,7 +643,7 @@ export default async function BuilderDashboard() {
                       ["Withdrawn", dash.pipeline.withdrawn],
                     ] as const
                   ).map(([label, n]) => (
-                    <div key={label} className="bg-surface-1 px-4 py-3.5">
+                    <div key={label} className="px-4 py-3.5">
                       <p className="font-display text-[22px] leading-none text-text tabular-nums">
                         {n}
                       </p>
@@ -660,7 +654,7 @@ export default async function BuilderDashboard() {
                   ))}
                 </div>
                 {dash.performance.avgDaysToOutcome !== null ? (
-                  <p className="px-4 sm:px-6 py-2.5 border-t border-border-subtle/50 text-[11.5px] text-text-dim">
+                  <p className="mt-2.5 text-[11.5px] text-text-dim">
                     Decisions on your tenders have taken{" "}
                     {dash.performance.avgDaysToOutcome} day
                     {dash.performance.avgDaysToOutcome === 1 ? "" : "s"} on
@@ -671,11 +665,11 @@ export default async function BuilderDashboard() {
             ) : null}
           </div>
 
-          {/* right rail — standing + correspondence */}
-          <div className="space-y-6 min-w-0">
-            {/* standing */}
+          {/* right rail — quiet, on the canvas */}
+          <div className="min-w-0 flex flex-col gap-9">
+            {/* standing — the one tinted rail card */}
             {isApproved ? (
-              <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
+              <section className="rounded-xl border border-border-accent/35 bg-[linear-gradient(150deg,rgba(0,212,200,0.06),rgba(250,248,243,0.45)_70%)] p-4">
                 <RailHead>Standing</RailHead>
                 <div className="mt-2.5 flex items-start gap-2.5">
                   <span className="size-8 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
@@ -726,7 +720,7 @@ export default async function BuilderDashboard() {
                 </a>
               </section>
             ) : fullyVerified ? (
-              <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
+              <section className="rounded-xl border border-border-accent/35 bg-[linear-gradient(150deg,rgba(0,212,200,0.05),rgba(250,248,243,0.45)_70%)] p-4">
                 <RailHead>Registration</RailHead>
                 <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
                   Checks complete. Your registration is with our team.
@@ -738,9 +732,9 @@ export default async function BuilderDashboard() {
               </section>
             ) : null}
 
-            {/* correspondence */}
-            <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
-              <header className="px-4 py-3.5 border-b border-border-subtle/60 flex items-center justify-between gap-3">
+            {/* correspondence — canvas group */}
+            <section>
+              <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border-subtle">
                 <RailHead icon={<Mail className="size-3.5" />}>
                   Correspondence
                 </RailHead>
@@ -750,20 +744,20 @@ export default async function BuilderDashboard() {
                 >
                   Messages
                 </Link>
-              </header>
+              </div>
               {unreadThreads.length === 0 ? (
-                <p className="px-4 py-5 text-[12px] text-text-dim">
+                <p className="pt-3 text-[12px] text-text-dim">
                   {unreadCount > 0
                     ? `${unreadCount} unread in Messages.`
                     : "Nothing unread."}
                 </p>
               ) : (
-                <ul className="divide-y divide-border-subtle/50">
+                <ul className="pt-3 flex flex-col gap-2">
                   {unreadThreads.map((c) => (
                     <li key={c.id}>
                       <Link
                         href="/builder/messages"
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-bg-elev transition-colors"
+                        className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-border-subtle bg-surface-1 card-elev hover:border-border-strong transition-colors"
                       >
                         <span className="size-8 rounded-full bg-surface-3 text-text-muted text-[10.5px] font-ui font-semibold flex items-center justify-center shrink-0">
                           {c.other.initials}
@@ -786,18 +780,18 @@ export default async function BuilderDashboard() {
               )}
             </section>
 
-            {/* decisions log */}
+            {/* decisions log — canvas group */}
             {dash.activity.length > 0 ? (
-              <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
-                <header className="px-4 py-3.5 border-b border-border-subtle/60">
+              <section>
+                <div className="pb-2.5 border-b border-border-subtle">
                   <RailHead icon={<FileText className="size-3.5" />}>
                     The record
                   </RailHead>
                   <p className="mt-0.5 text-[10.5px] text-text-dim">
                     Recent outcomes on your tenders.
                   </p>
-                </header>
-                <ul className="divide-y divide-border-subtle/40">
+                </div>
+                <ul className="divide-y divide-border-subtle/50">
                   {dash.activity.slice(0, 5).map((e, i) => (
                     <ActivityLine key={i} e={e} />
                   ))}
@@ -805,11 +799,13 @@ export default async function BuilderDashboard() {
               </section>
             ) : null}
 
-            {/* grandfathered founding note */}
+            {/* grandfathered founding note — canvas group */}
             {fbaStatus.active ? (
-              <section className="rounded-xl border border-border-subtle bg-bg-raised p-4">
-                <RailHead>Founding access</RailHead>
-                <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
+              <section>
+                <div className="pb-2.5 border-b border-border-subtle">
+                  <RailHead>Founding access</RailHead>
+                </div>
+                <p className="pt-3 text-[12px] leading-[1.6] text-text-muted">
                   {fbaStatus.remainingThisCycle} complimentary unlock
                   {fbaStatus.remainingThisCycle === 1 ? "" : "s"} left this
                   cycle. Refreshes in {fbaStatus.daysToRefresh} day
@@ -817,7 +813,7 @@ export default async function BuilderDashboard() {
                 </p>
                 <Link
                   href="/builder/access"
-                  className="mt-2 inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
+                  className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
                 >
                   Details
                   <ArrowUpRight className="size-3" />
@@ -831,47 +827,120 @@ export default async function BuilderDashboard() {
   );
 }
 
+/* ── hero pieces ────────────────────────────────────────────────────── */
+
+function HeroStat({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className="px-5 sm:px-8 text-center min-w-0">
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        {label}
+      </p>
+      <p className="mt-1.5 font-display text-[24px] leading-none text-text tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
+    </div>
+  );
+}
+
 /* ── section headers ────────────────────────────────────────────────── */
 
+const CHIP_TONES = {
+  teal: "border-[rgba(0,212,200,0.3)] bg-[rgba(0,212,200,0.09)] text-[#0a7d73]",
+  blue: "border-[rgba(45,99,214,0.24)] bg-[rgba(45,99,214,0.07)] text-[#2d63d6]",
+  amber:
+    "border-[rgba(201,148,34,0.3)] bg-[rgba(201,148,34,0.09)] text-[#8a6414]",
+  ink: "border-border-subtle bg-[rgba(24,34,44,0.04)] text-text-muted",
+} as const;
+
+const KICKER_TONES = {
+  teal: "text-accent-light",
+  blue: "text-[#2d63d6]",
+  amber: "text-[#8a6414]",
+  ink: "text-text-muted",
+} as const;
+
+function IconChip({
+  tone,
+  children,
+}: {
+  tone: keyof typeof CHIP_TONES;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "size-9 rounded-lg border flex items-center justify-center shrink-0",
+        CHIP_TONES[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 /**
- * Left-column section header: kicker + display title + one plain
- * sentence. The clarity system — every section names itself at a
- * scale the eye can land on, then explains itself in plain language.
+ * Section header on the canvas: tinted icon chip + toned kicker +
+ * display title + one plain sentence, with an optional hairline rule
+ * running right from the header (the letterhead convention). Colour
+ * does the wayfinding; no white box does the separating.
  */
 function SectionHead({
-  icon,
+  chip,
   kicker,
+  kickerTone,
   title,
   sub,
   right,
+  rule = false,
 }: {
-  icon: React.ReactNode;
+  chip: React.ReactNode;
   kicker: string;
+  kickerTone: keyof typeof KICKER_TONES;
   title: string;
   sub?: string;
   right?: React.ReactNode;
+  rule?: boolean;
 }) {
   return (
-    <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
-          {icon}
-          {kicker}
-        </span>
+    <header className="flex items-start gap-3.5">
+      {chip}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-4">
+          <span
+            className={cn(
+              "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold shrink-0",
+              KICKER_TONES[kickerTone],
+            )}
+          >
+            {kicker}
+          </span>
+          {rule ? (
+            <span
+              aria-hidden
+              className="hidden sm:block h-px flex-1 bg-[rgba(24,34,44,0.10)]"
+            />
+          ) : null}
+          {right ? <span className="ml-auto shrink-0">{right}</span> : null}
+        </div>
         <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
           {title}
         </h2>
         {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
       </div>
-      {right ? (
-        <div className="shrink-0 flex items-center gap-3 pt-0.5">{right}</div>
-      ) : null}
     </header>
   );
 }
 
-/** Rail section header — same kicker voice as the left column so the
- *  page speaks one language, at the rail's quieter scale. */
+/** Rail section header — the same kicker voice, at the rail's scale. */
 function RailHead({
   children,
   icon,
@@ -928,57 +997,7 @@ function DeskChip({
   );
 }
 
-/* ── masthead pieces ────────────────────────────────────────────────── */
-
-function StandingChip({
-  children,
-  tone = "neutral",
-  icon,
-}: {
-  children: React.ReactNode;
-  tone?: "neutral" | "accent" | "warn";
-  icon?: React.ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border text-[11px] font-ui",
-        tone === "accent" &&
-          "border-border-accent bg-[rgba(0,212,200,0.06)] text-[#0a7d73] font-semibold",
-        tone === "warn" &&
-          "border-[rgba(217,164,65,0.45)] bg-[rgba(217,164,65,0.08)] text-[#8a6414] font-semibold",
-        tone === "neutral" && "border-border-subtle text-text-muted",
-      )}
-    >
-      {icon}
-      {children}
-    </span>
-  );
-}
-
-function LedgerStat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="bg-bg-raised px-3 sm:px-5 py-3.5 min-w-0 lg:min-w-[118px]">
-      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-[24px] leading-none text-text tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
-    </div>
-  );
-}
-
-/* ── open rounds row ────────────────────────────────────────────────── */
+/* ── open rounds row — a slim docket on the canvas ──────────────────── */
 
 function OpenRoundRow({
   p,
@@ -997,7 +1016,7 @@ function OpenRoundRow({
     <li>
       <Link
         href={`/builder/projects/${p.slug}`}
-        className="flex items-center gap-4 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+        className="flex items-center gap-4 px-4 sm:px-5 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2 min-w-0">
@@ -1094,7 +1113,7 @@ function ActivityLine({ e }: { e: BuilderActivityEvent }) {
     <li>
       <Link
         href={`/builder/projects/${e.projectSlug}/tender`}
-        className="px-4 py-2.5 flex items-baseline gap-2.5 hover:bg-bg-elev transition-colors"
+        className="py-2.5 flex items-baseline gap-2.5 hover:bg-[rgba(24,34,44,0.025)] rounded-md transition-colors px-1 -mx-1"
       >
         <span
           className={cn(

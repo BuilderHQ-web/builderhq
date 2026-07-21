@@ -1,12 +1,20 @@
 /**
- * Owner dashboard — the desk, owner edition.
+ * Owner dashboard — the desk, round 3: the hybrid.
  *
- * Same design language as the builder reference screen: a letterhead
- * masthead with the owner's name and a three-figure ledger, one
- * ranked queue of what needs them, the project file as registry rows,
- * and a quiet rail. No greeting hero, no gamified tiles, no verdict
- * copy. The page answers "what needs me" in five seconds and gets out
- * of the way.
+ * Same system as the builder reference screen. The greeting hero sits
+ * centred on the canvas with the teal glow, one contextual sentence,
+ * the big CTAs, and the ledger as a quiet hairline strip. Below it the
+ * white section boxes are gone: sections sit directly on the canvas,
+ * each announced by a tinted icon chip + kicker + display title +
+ * plain sentence (the letterhead convention). Colour codes the
+ * sections: teal = your projects, blue = tenders received from the
+ * register, ink = the record and the book, amber = anything needing a
+ * decision. Only the desk panel keeps a wash — teal, or amber when a
+ * decision is running out of time. Content rows are individual white
+ * cards, so white marks OBJECTS, never sections.
+ *
+ * Everything data-side is unchanged: the same queue (decisions →
+ * drafts), safe() around every query, and the same route surface.
  */
 
 import Link from "next/link";
@@ -14,7 +22,6 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
-  Check,
   ClipboardCheck,
   FileText,
   Folder,
@@ -31,6 +38,7 @@ import {
   type OwnerDashboardData,
 } from "@/modules/dashboards";
 import { countUnreadForUser, listForUser } from "@/modules/messaging";
+import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
@@ -139,10 +147,12 @@ export default async function OwnerDashboard({
   }).format(new Date());
 
   // ── the desk queue ────────────────────────────────────────────────
+  type DeskTone = "warn" | "neutral" | "draft";
   type DeskRow = {
     key: string;
     href: string;
-    tone: "warn" | "neutral";
+    tone: DeskTone;
+    chip: string;
     title: string;
     line: string;
     metric: string | null;
@@ -154,6 +164,7 @@ export default async function OwnerDashboard({
       key: `decision-${d.tenderId}`,
       href: `/owner/projects/${d.projectSlug}/tenders`,
       tone: d.urgency === "danger" || d.urgency === "warn" ? "warn" : "neutral",
+      chip: d.status === "shortlisted" ? "Shortlisted" : "Decision",
       title: `${d.builderName} · ${d.projectTitle}`,
       line:
         exp !== null && exp < 0
@@ -173,7 +184,8 @@ export default async function OwnerDashboard({
       queue.push({
         key: `draft-${p.id}`,
         href: `/owner/projects/${p.slug}/edit`,
-        tone: "neutral",
+        tone: "draft",
+        chip: "Draft",
         title: p.title,
         line: "Draft project. Finish the details and publish to open the round.",
         metric: null,
@@ -183,7 +195,7 @@ export default async function OwnerDashboard({
   const QUEUE_LIMIT = 7;
   const queueShown = queue.slice(0, QUEUE_LIMIT);
   // decisionsWaiting is capped server-side; count the truncated ones
-  // so the badge and the masthead ledger can never disagree.
+  // so the badge and the hero ledger can never disagree.
   const hiddenDecisions = Math.max(
     0,
     data.tenders.awaitingDecision - data.decisionsWaiting.length,
@@ -191,6 +203,15 @@ export default async function OwnerDashboard({
   const queueOverflow =
     queue.length - queueShown.length + hiddenDecisions;
   const queueTotal = queue.length + hiddenDecisions;
+  const deskUrgent = queue.some((q) => q.tone === "warn");
+
+  const heroLine = isFirstTime
+    ? "Upload your plans, open a tender round, and compare verified builders like for like."
+    : queueTotal > 0
+      ? `${queueTotal} item${queueTotal === 1 ? "" : "s"} ${queueTotal === 1 ? "is" : "are"} waiting on your desk.`
+      : data.projects.active > 0
+        ? `${data.projects.active} project${data.projects.active === 1 ? "" : "s"} live on the register. New tenders and decisions land here the moment they arrive.`
+        : "Your projects, tenders and decisions live here. Upload a project to open a tender round.";
 
   return (
     <div>
@@ -198,53 +219,71 @@ export default async function OwnerDashboard({
         <WelcomeBanner mode={welcome} />
       ) : null}
 
-      {/* ── masthead ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border-subtle bg-bg-deep/30">
+      {/* ── hero — the greeting, the sentence, the way in ─────────── */}
+      <section className="relative overflow-hidden border-b border-border-subtle">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 30% 0%, rgba(0,212,200,0.06), transparent 65%)",
+              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
-        <div className="relative px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
-          <div className="mx-auto max-w-[1200px] flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-                Project owner · {dateline}
-              </p>
-              <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[42px] leading-[0.95] text-text break-words">
-                {fullName}
-              </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {data.projects.active > 0 ? (
-                  <OwnerChip tone="accent" icon={<ShieldCheck className="size-3" />}>
-                    {data.projects.active} project
-                    {data.projects.active === 1 ? "" : "s"} live
-                  </OwnerChip>
-                ) : null}
-                {data.projects.draft > 0 ? (
-                  <OwnerChip>
-                    {data.projects.draft} draft
-                    {data.projects.draft === 1 ? "" : "s"}
-                  </OwnerChip>
-                ) : null}
-                {isFirstTime ? <OwnerChip>New account</OwnerChip> : null}
-              </div>
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 pb-9 sm:pb-11">
+          <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
+            <BuilderHeroIntro firstName={firstName} />
+            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.7] text-text-subtle">
+              {heroLine}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {data.projects.active > 0 ? (
+                <OwnerChip tone="accent" icon={<ShieldCheck className="size-3" />}>
+                  {data.projects.active} project
+                  {data.projects.active === 1 ? "" : "s"} live
+                </OwnerChip>
+              ) : null}
+              {data.projects.draft > 0 ? (
+                <OwnerChip>
+                  {data.projects.draft} draft
+                  {data.projects.draft === 1 ? "" : "s"}
+                </OwnerChip>
+              ) : null}
+              {isFirstTime ? <OwnerChip>New account</OwnerChip> : null}
             </div>
 
-            {isFirstTime ? (
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link
                 href="/owner/projects/new"
-                className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shrink-0"
+                className={cn(
+                  "group inline-flex items-center justify-center gap-2.5 h-12 px-6 sm:px-7 rounded-full w-full sm:w-auto",
+                  "bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.04em]",
+                  "transition-colors duration-[160ms] hover:bg-accent-hover",
+                  "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]",
+                )}
               >
                 <Plus className="size-4" />
-                Upload your project
+                Upload a project
+                <ArrowUpRight className="size-4 transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
-            ) : (
-              <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border-subtle bg-border-subtle w-full lg:w-auto lg:shrink-0">
-                <LedgerStat
+              <Link
+                href="/owner/projects"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+              >
+                Your projects
+              </Link>
+              <Link
+                href="/owner/tenders"
+                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
+              >
+                All tenders
+              </Link>
+            </div>
+
+            {/* the ledger — hairline strip, no boxes */}
+            {!isFirstTime ? (
+              <div className="mt-9 flex items-stretch justify-center divide-x divide-border-subtle">
+                <HeroStat
                   label="Tenders received"
                   value={String(data.tenders.total)}
                   sub={
@@ -253,7 +292,7 @@ export default async function OwnerDashboard({
                       : "None yet"
                   }
                 />
-                <LedgerStat
+                <HeroStat
                   label="Awaiting you"
                   value={String(data.tenders.awaitingDecision)}
                   sub={
@@ -262,7 +301,7 @@ export default async function OwnerDashboard({
                       : "Nothing pending"
                   }
                 />
-                <LedgerStat
+                <HeroStat
                   label="Awarded"
                   value={String(data.tenders.byStatus.awarded)}
                   sub={
@@ -272,127 +311,156 @@ export default async function OwnerDashboard({
                   }
                 />
               </div>
-            )}
+            ) : null}
+
+            <p className="mt-8 text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-medium">
+              Project owner · {dateline}
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ── working area ─────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+      {/* ── working area — sections on the canvas ─────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         <div className="mx-auto max-w-[1200px]">
           {isFirstTime ? (
             <FirstProjectPrimer />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
-              {/* left — the work */}
-              <div className="space-y-6 min-w-0">
-                {/* on your desk */}
-                <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
-                  <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                        <ClipboardCheck className="size-3.5" />
-                        On your desk
-                      </span>
-                      {queueTotal > 0 ? (
-                        <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums">
-                          {queueTotal}
-                        </span>
-                      ) : null}
-                    </div>
-                    <Link
-                      href="/owner/tenders"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1"
-                    >
-                      All tenders
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  </header>
-
-                  {queueShown.length === 0 ? (
-                    <div className="px-4 sm:px-6 py-10 text-center">
-                      <span className="mx-auto mb-3 flex size-9 items-center justify-center rounded-full bg-accent text-accent-contrast">
-                        <Check className="size-4" strokeWidth={3} />
-                      </span>
-                      <p className="font-ui font-semibold text-[13.5px] text-text">
-                        A clear desk
-                      </p>
-                      <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[44ch] mx-auto">
-                        Nothing needs you right now. New tenders and decisions
-                        appear here the moment they arrive.
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-border-subtle/50">
-                      {queueShown.map((row) => (
-                        <li key={row.key}>
-                          <Link
-                            href={row.href}
-                            className="flex items-center gap-3.5 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
-                          >
-                            <span
-                              className={cn(
-                                "size-2 rounded-full shrink-0",
-                                row.tone === "warn"
-                                  ? "bg-[#c99422]"
-                                  : "bg-[rgba(24,34,44,0.22)]",
-                              )}
-                            />
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-ui font-medium text-[13.5px] text-text truncate">
-                                {row.title}
-                              </span>
-                              <span className="block text-[11.5px] leading-[1.5] text-text-muted truncate">
-                                {row.line}
-                              </span>
-                            </span>
-                            {row.metric ? (
-                              <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
-                                {row.metric}
-                              </span>
-                            ) : null}
-                            <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
+              {/* left column — the work */}
+              <div className="min-w-0 flex flex-col gap-10">
+                {/* on your desk — the one toned panel on the page */}
+                <section
+                  className={cn(
+                    "relative overflow-hidden rounded-xl border",
+                    deskUrgent
+                      ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.07),rgba(250,248,243,0.5)_65%)]"
+                      : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_65%)]",
                   )}
-                  {queueOverflow > 0 ? (
-                    <Link
-                      href={hiddenDecisions > 0 ? "/owner/tenders" : "/owner/projects"}
-                      className="block px-4 sm:px-6 py-2.5 border-t border-border-subtle/50 text-[11.5px] text-text-muted hover:text-text transition-colors"
-                    >
-                      {queueOverflow} more{" "}
-                      {hiddenDecisions > 0 ? "across your tenders" : "in your project file"}
-                      <ArrowRight className="inline size-3 ml-1" />
-                    </Link>
-                  ) : null}
+                >
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
+                    style={{
+                      background: deskUrgent
+                        ? "radial-gradient(circle, rgba(217,164,65,0.18), transparent 70%)"
+                        : "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
+                    }}
+                  />
+                  <div className="relative px-4 sm:px-6 py-5 sm:py-6">
+                    <SectionHead
+                      chip={
+                        <IconChip tone={deskUrgent ? "amber" : "teal"}>
+                          <ClipboardCheck className="size-4" />
+                        </IconChip>
+                      }
+                      kicker="On your desk"
+                      kickerTone={deskUrgent ? "amber" : "teal"}
+                      title={
+                        queueTotal === 0
+                          ? "A clear desk"
+                          : `${queueTotal} item${queueTotal === 1 ? "" : "s"} need${queueTotal === 1 ? "s" : ""} your attention`
+                      }
+                      sub={
+                        queueTotal === 0
+                          ? "Nothing needs you right now. New tenders and decisions appear here the moment they arrive."
+                          : "Decisions first, then drafts. A price only holds for its validity period."
+                      }
+                      right={
+                        <Link
+                          href="/owner/tenders"
+                          className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                        >
+                          All tenders
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      }
+                    />
+
+                    {queueShown.length > 0 ? (
+                      <ul className="mt-5 flex flex-col gap-2">
+                        {queueShown.map((row) => (
+                          <li key={row.key}>
+                            <Link
+                              href={row.href}
+                              className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+                            >
+                              <span
+                                aria-hidden
+                                className={cn(
+                                  "absolute left-0 top-0 bottom-0 w-[3px]",
+                                  row.tone === "warn" && "bg-[#c99422]",
+                                  row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                                  row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
+                                )}
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-2 min-w-0">
+                                  <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                                  <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                                    {row.title}
+                                  </span>
+                                </span>
+                                <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
+                                  {row.line}
+                                </span>
+                              </span>
+                              {row.metric ? (
+                                <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                                  {row.metric}
+                                </span>
+                              ) : null}
+                              <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {queueOverflow > 0 ? (
+                      <Link
+                        href={hiddenDecisions > 0 ? "/owner/tenders" : "/owner/projects"}
+                        className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                      >
+                        {queueOverflow} more{" "}
+                        {hiddenDecisions > 0 ? "across your tenders" : "in your project file"}
+                        <ArrowRight className="size-3" />
+                      </Link>
+                    ) : null}
+                  </div>
                 </section>
 
-                {/* the project file */}
-                <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-                  <header className="px-4 sm:px-6 py-4 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                    <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
-                      <Folder className="size-3.5" />
-                      The project file
-                    </span>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <Link
-                        href="/owner/projects"
-                        className="text-[11.5px] text-text-muted hover:text-text transition-colors"
-                      >
-                        All projects
-                      </Link>
-                      <Link
-                        href="/owner/projects/new"
-                        className="inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
-                      >
-                        <Plus className="size-3" />
-                        New project
-                      </Link>
-                    </div>
-                  </header>
-                  <ul className="divide-y divide-border-subtle/50">
+                {/* the project file — on the canvas */}
+                <section>
+                  <SectionHead
+                    chip={
+                      <IconChip tone="teal">
+                        <Folder className="size-4" />
+                      </IconChip>
+                    }
+                    kicker="Your projects"
+                    kickerTone="teal"
+                    title="The project file"
+                    sub="Every project on your account and where its round stands."
+                    rule
+                    right={
+                      <span className="flex items-center gap-3 shrink-0">
+                        <Link
+                          href="/owner/projects"
+                          className="text-[11.5px] text-text-muted hover:text-text transition-colors"
+                        >
+                          All projects
+                        </Link>
+                        <Link
+                          href="/owner/projects/new"
+                          className="inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
+                        >
+                          <Plus className="size-3" />
+                          New project
+                        </Link>
+                      </span>
+                    }
+                  />
+                  <ul className="mt-5 flex flex-col gap-2">
                     {data.pulses.map((pulse) => (
                       <ProjectFileRow key={pulse.project.id} pulse={pulse} />
                     ))}
@@ -410,35 +478,34 @@ export default async function OwnerDashboard({
                 </section>
               </div>
 
-              {/* rail */}
-              <div className="space-y-6 min-w-0">
-                {/* correspondence */}
-                <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
-                  <header className="px-4 py-3.5 border-b border-border-subtle/60 flex items-center justify-between gap-3">
-                    <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
-                      <Mail className="size-3.5" />
+              {/* right rail — quiet, on the canvas */}
+              <div className="min-w-0 flex flex-col gap-9">
+                {/* correspondence — canvas group */}
+                <section>
+                  <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border-subtle">
+                    <RailHead icon={<Mail className="size-3.5" />}>
                       Correspondence
-                    </span>
+                    </RailHead>
                     <Link
                       href="/owner/messages"
                       className="text-[11.5px] text-text-muted hover:text-text transition-colors"
                     >
                       Messages
                     </Link>
-                  </header>
+                  </div>
                   {unreadThreads.length === 0 ? (
-                    <p className="px-4 py-5 text-[12px] text-text-dim">
+                    <p className="pt-3 text-[12px] text-text-dim">
                       {unreadCount > 0
                         ? `${unreadCount} unread in Messages.`
                         : "Nothing unread."}
                     </p>
                   ) : (
-                    <ul className="divide-y divide-border-subtle/50">
+                    <ul className="pt-3 flex flex-col gap-2">
                       {unreadThreads.map((c) => (
                         <li key={c.id}>
                           <Link
                             href="/owner/messages"
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-bg-elev transition-colors"
+                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-border-subtle bg-surface-1 card-elev hover:border-border-strong transition-colors"
                           >
                             <span className="size-8 rounded-full bg-surface-3 text-text-muted text-[10.5px] font-ui font-semibold flex items-center justify-center shrink-0">
                               {c.other.initials}
@@ -461,25 +528,24 @@ export default async function OwnerDashboard({
                   )}
                 </section>
 
-                {/* the record */}
+                {/* the record — canvas group */}
                 {data.activity.length > 0 ? (
-                  <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
-                    <header className="px-4 py-3.5 border-b border-border-subtle/60">
-                      <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
-                        <FileText className="size-3.5" />
+                  <section>
+                    <div className="pb-2.5 border-b border-border-subtle">
+                      <RailHead icon={<FileText className="size-3.5" />}>
                         The record
-                      </span>
-                    </header>
-                    <ul className="divide-y divide-border-subtle/40">
+                      </RailHead>
+                    </div>
+                    <ul className="divide-y divide-border-subtle/50">
                       {data.activity.slice(0, 5).map((e, i) => (
-                        <li key={i} className="px-4 py-2.5 flex items-baseline gap-2.5">
+                        <li key={i} className="py-2.5 flex items-baseline gap-2.5">
                           <span
                             className={cn(
                               "size-1.5 rounded-full shrink-0 self-center",
                               e.kind === "tender_awarded"
                                 ? "bg-[#0a9c91]"
                                 : e.kind === "tender_submitted"
-                                  ? "bg-accent"
+                                  ? "bg-[#0a7d73]"
                                   : "bg-[rgba(24,34,44,0.22)]",
                             )}
                           />
@@ -499,16 +565,15 @@ export default async function OwnerDashboard({
                   </section>
                 ) : null}
 
-                {/* the book */}
+                {/* the book — a ruled ledger, no box */}
                 {data.tenders.total > 0 ? (
-                  <section className="rounded-xl border border-border-subtle bg-bg-raised overflow-hidden">
-                    <header className="px-4 py-3.5 border-b border-border-subtle/60">
-                      <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-2">
-                        <Landmark className="size-3.5" />
+                  <section>
+                    <div className="pb-2.5 border-b border-border-subtle">
+                      <RailHead icon={<Landmark className="size-3.5" />}>
                         The book
-                      </span>
-                    </header>
-                    <div className="grid grid-cols-2 gap-px bg-border-subtle">
+                      </RailHead>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 border-y border-border-subtle">
                       {(
                         [
                           ["Submitted", data.tenders.byStatus.submitted],
@@ -516,8 +581,15 @@ export default async function OwnerDashboard({
                           ["Awarded", data.tenders.byStatus.awarded],
                           ["Declined", data.tenders.byStatus.rejected],
                         ] as const
-                      ).map(([label, n]) => (
-                        <div key={label} className="bg-bg-raised px-4 py-3">
+                      ).map(([label, n], i) => (
+                        <div
+                          key={label}
+                          className={cn(
+                            "px-4 py-3",
+                            i % 2 === 1 && "border-l border-border-subtle",
+                            i >= 2 && "border-t border-border-subtle",
+                          )}
+                        >
                           <p className="font-display text-[20px] leading-none text-text tabular-nums">
                             {n}
                           </p>
@@ -538,7 +610,29 @@ export default async function OwnerDashboard({
   );
 }
 
-/* ── masthead pieces ────────────────────────────────────────────────── */
+/* ── hero pieces ────────────────────────────────────────────────────── */
+
+function HeroStat({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className="px-5 sm:px-8 text-center min-w-0">
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        {label}
+      </p>
+      <p className="mt-1.5 font-display text-[24px] leading-none text-text tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
+    </div>
+  );
+}
 
 function OwnerChip({
   children,
@@ -564,29 +658,153 @@ function OwnerChip({
   );
 }
 
-function LedgerStat({
-  label,
-  value,
-  sub,
+/* ── section headers ────────────────────────────────────────────────── */
+
+const CHIP_TONES = {
+  teal: "border-[rgba(0,212,200,0.3)] bg-[rgba(0,212,200,0.09)] text-[#0a7d73]",
+  blue: "border-[rgba(45,99,214,0.24)] bg-[rgba(45,99,214,0.07)] text-[#2d63d6]",
+  amber:
+    "border-[rgba(201,148,34,0.3)] bg-[rgba(201,148,34,0.09)] text-[#8a6414]",
+  ink: "border-border-subtle bg-[rgba(24,34,44,0.04)] text-text-muted",
+} as const;
+
+const KICKER_TONES = {
+  teal: "text-accent-light",
+  blue: "text-[#2d63d6]",
+  amber: "text-[#8a6414]",
+  ink: "text-text-muted",
+} as const;
+
+function IconChip({
+  tone,
+  children,
 }: {
-  label: string;
-  value: string;
-  sub: string;
+  tone: keyof typeof CHIP_TONES;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="bg-bg-raised px-3 sm:px-5 py-3.5 min-w-0 lg:min-w-[118px]">
-      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-[24px] leading-none text-text tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
-    </div>
+    <span
+      className={cn(
+        "size-9 rounded-lg border flex items-center justify-center shrink-0",
+        CHIP_TONES[tone],
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
-/* ── project file rows ──────────────────────────────────────────────── */
+/**
+ * Section header on the canvas: tinted icon chip + toned kicker +
+ * display title + one plain sentence, with an optional hairline rule
+ * running right from the header (the letterhead convention). Colour
+ * does the wayfinding; no white box does the separating.
+ */
+function SectionHead({
+  chip,
+  kicker,
+  kickerTone,
+  title,
+  sub,
+  right,
+  rule = false,
+}: {
+  chip: React.ReactNode;
+  kicker: string;
+  kickerTone: keyof typeof KICKER_TONES;
+  title: string;
+  sub?: string;
+  right?: React.ReactNode;
+  rule?: boolean;
+}) {
+  return (
+    <header className="flex items-start gap-3.5">
+      {chip}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-4">
+          <span
+            className={cn(
+              "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold shrink-0",
+              KICKER_TONES[kickerTone],
+            )}
+          >
+            {kicker}
+          </span>
+          {rule ? (
+            <span
+              aria-hidden
+              className="hidden sm:block h-px flex-1 bg-[rgba(24,34,44,0.10)]"
+            />
+          ) : null}
+          {right ? <span className="ml-auto shrink-0">{right}</span> : null}
+        </div>
+        <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+          {title}
+        </h2>
+        {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
+      </div>
+    </header>
+  );
+}
+
+/** Rail section header — the same kicker voice, at the rail's scale. */
+function RailHead({
+  children,
+  icon,
+  warn = false,
+}: {
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  warn?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold inline-flex items-center gap-2",
+        warn ? "text-[#8a6414]" : "text-accent-light",
+      )}
+    >
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+/** Named chip on every desk row — the event type in words, not a dot. */
+function DeskChip({
+  tone,
+  children,
+}: {
+  tone: "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.14em] uppercase font-ui font-semibold shrink-0",
+        tone === "win" &&
+          "border-border-accent bg-[rgba(0,212,200,0.07)] text-[#0a7d73]",
+        tone === "invite" && "border-border-accent text-[#0a7d73]",
+        tone === "neutral" && "border-border-subtle text-text-muted",
+        tone === "warn" &&
+          "border-[rgba(217,164,65,0.5)] bg-[rgba(217,164,65,0.08)] text-[#8a6414]",
+        tone === "danger" &&
+          "border-[rgba(194,85,80,0.45)] bg-[rgba(194,85,80,0.07)] text-[#a8433e]",
+        tone === "draft" && "border-border-subtle text-text-dim",
+      )}
+    >
+      {tone === "invite" ? (
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,200,0.6)]"
+        />
+      ) : null}
+      {children}
+    </span>
+  );
+}
+
+/* ── project file rows — dockets on the canvas ──────────────────────── */
 
 function ProjectFileRow({
   pulse,
@@ -603,7 +821,7 @@ function ProjectFileRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+        className="flex items-center gap-4 px-4 sm:px-5 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
         <span className="min-w-0 flex-1">
           <span className="block font-ui font-medium text-[13.5px] text-text truncate">
@@ -634,9 +852,9 @@ function ProjectFileRow({
           className={cn(
             "shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold",
             p.status === "published" || p.status === "tendering"
-              ? "bg-[rgba(0,212,200,0.1)] text-accent-light"
+              ? "bg-[rgba(0,212,200,0.1)] text-[#0a7d73]"
               : p.status === "awarded"
-                ? "bg-[rgba(224,178,92,0.12)] text-[#8a6a2f]"
+                ? "bg-[rgba(217,164,65,0.09)] text-[#8a6414]"
                 : "bg-[rgba(24,34,44,0.06)] text-text-muted",
           )}
         >
@@ -657,7 +875,7 @@ function PlainProjectRow({ p }: { p: Project }) {
             ? `/owner/projects/${p.slug}/edit`
             : `/owner/projects/${p.slug}`
         }
-        className="flex items-center gap-4 px-4 sm:px-6 py-3.5 hover:bg-bg-elev transition-colors group"
+        className="flex items-center gap-4 px-4 sm:px-5 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
         <span className="min-w-0 flex-1">
           <span className="block font-ui font-medium text-[13.5px] text-text truncate">
@@ -677,7 +895,7 @@ function PlainProjectRow({ p }: { p: Project }) {
   );
 }
 
-/* ── first-run primer ───────────────────────────────────────────────── */
+/* ── first-run primer — on the canvas, steps as cards ───────────────── */
 
 function FirstProjectPrimer() {
   const STEPS = [
@@ -698,19 +916,25 @@ function FirstProjectPrimer() {
     },
   ];
   return (
-    <div className="max-w-[760px]">
-      <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_18px_44px_-22px_rgba(15,23,32,0.19)]">
-        <header className="px-4 sm:px-6 py-5 border-b border-border-subtle/60">
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-            How your tender runs
-          </span>
-          <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
-            One upload, compared like for like
-          </h2>
-        </header>
-        <ul className="divide-y divide-border-subtle/50">
+    <div className="mx-auto max-w-[760px]">
+      <section>
+        <SectionHead
+          chip={
+            <IconChip tone="teal">
+              <FileText className="size-4" />
+            </IconChip>
+          }
+          kicker="How your tender runs"
+          kickerTone="teal"
+          title="One upload, compared like for like"
+          rule
+        />
+        <ul className="mt-5 flex flex-col gap-2">
           {STEPS.map((s) => (
-            <li key={s.n} className="flex items-start gap-4 px-4 sm:px-6 py-4">
+            <li
+              key={s.n}
+              className="flex items-start gap-4 px-4 sm:px-5 py-4 rounded-lg border border-border-subtle bg-surface-1 card-elev"
+            >
               <span className="font-mono text-[10px] tracking-[0.18em] text-accent-light mt-1 shrink-0">
                 {s.n}
               </span>
@@ -725,7 +949,7 @@ function FirstProjectPrimer() {
             </li>
           ))}
         </ul>
-        <div className="px-4 sm:px-6 py-4 border-t border-border-subtle/60">
+        <div className="mt-5">
           <Link
             href="/owner/projects/new"
             className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"

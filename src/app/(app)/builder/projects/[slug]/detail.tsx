@@ -344,8 +344,8 @@ export function ProjectDetail({
 
   return (
     <div className="pb-32">
-      {/* Header */}
-      <div className="border-b border-border-subtle bg-surface-1">
+      {/* Header — on the canvas, ruled off rather than boxed in white */}
+      <div className="border-b border-border-subtle">
         <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1200px]">
           <Link
             href="/builder/browse"
