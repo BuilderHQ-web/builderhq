@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 
 import { auth } from "@/modules/auth";
 import { getBuilderBySlug } from "@/modules/profiles";
-import { getStatus as getFbaStatus } from "@/modules/credits";
 import { presignDownload } from "@/modules/documents";
 import { getLockState } from "@/modules/verification";
 import { logger } from "@/lib/logger";
@@ -45,7 +44,7 @@ export async function generateMetadata({
   const title = profile.companyName;
   const desc =
     profile.bio?.slice(0, 160) ??
-    `${profile.companyName} — residential builder on BuilderHQ.`;
+    `${profile.companyName}, residential builder on BuilderHQ.`;
   return {
     title,
     description: desc,
@@ -63,19 +62,6 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
 
   const { profile } = bundle;
   const isOwnProfile = !!viewerId && profile.userId === viewerId;
-
-  // Founding-member status — public signal. Best-effort lookup.
-  let isFounding = false;
-  try {
-    const fba = await getFbaStatus(profile.userId);
-    isFounding = fba.active;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.warn(
-      { event: "public_profile.fba_lookup_failed", slug, msg },
-      "couldn't read FBA status for public profile",
-    );
-  }
 
   // Logo URL — presign on each render. Failure = no logo, page still
   // renders fine.
@@ -112,8 +98,9 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
     businessState: profile.businessState,
     approvalStatus: profile.approvalStatus,
     logoUrl,
-    isFounding,
-    memberSince: profile.createdAt,
+    // The register date is the approval date — profile creation is not
+    // "joining the register". Legacy approved rows may predate approvedAt.
+    memberSince: profile.approvedAt ?? profile.createdAt,
     abnVerified: lockState.abn,
   };
 

@@ -2,12 +2,13 @@ import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner } from "@/modules/projects";
+import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 import { projectsBase } from "@/lib/dashboard-route";
 
 import { PublishedCelebration } from "./published-celebration";
 
 export const metadata = {
-  title: "You're live — BuilderHQ",
+  title: "You're live · BuilderHQ",
   robots: { index: false, follow: false },
 };
 
@@ -49,6 +50,8 @@ export default async function PublishedPage({
       slug={project.slug}
       state={project.state}
       basePath={basePath}
+      cap={project.tenderSpots ?? UNLOCK_CAP}
+      tenderMode={project.tenderMode}
     />
   );
 }

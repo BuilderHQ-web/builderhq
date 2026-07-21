@@ -22,15 +22,21 @@ export function PublishedCelebration({
   slug,
   state,
   basePath,
+  cap,
+  tenderMode = "open",
 }: {
   title: string;
   slug: string;
   state: string | null;
   /** "/owner" or "/architect" — where this project's pages live. */
   basePath: string;
+  /** Round capacity — how many builders can take a spot. */
+  cap: number;
+  tenderMode?: "open" | "private" | "hybrid";
 }) {
   const reduce = !!useReducedMotion();
-  const where = state ? `across ${state}` : "in your area";
+  const isPrivate = tenderMode === "private";
+  const where = state ? `across ${state}` : "on the register";
 
   const container: Variants = {
     hidden: {},
@@ -77,20 +83,22 @@ export function PublishedCelebration({
             </motion.h1>
 
             <motion.p variants={item} className="mt-5 text-[14px] text-text-muted">
-              <span className="text-text">“{title}”</span> is now in front of
-              verified builders {where}.
+              <span className="text-text">“{title}”</span>{" "}
+              {isPrivate
+                ? "is now open to the builders you invite."
+                : `is now in front of verified builders ${where}.`}
             </motion.p>
 
             <motion.p
               variants={item}
               className="mt-2 max-w-[52ch] mx-auto text-[13.5px] leading-[1.65] text-text-muted"
             >
-              They&apos;ll review your plans, unlock your project, and send
-              priced tenders — here&apos;s exactly what happens from here.
+              They review your plans, take a spot on the round, and send priced
+              tenders. Here is what happens from here.
             </motion.p>
 
             <motion.div variants={item} className="mt-9 text-left">
-              <WhatsNextSteps current="notified" />
+              <WhatsNextSteps current="notified" cap={cap} mode={tenderMode} />
             </motion.div>
 
             <motion.div
@@ -120,8 +128,8 @@ export function PublishedCelebration({
             </motion.div>
 
             <motion.p variants={item} className="mt-6 text-[11.5px] text-text-dim">
-              We&apos;ve emailed you a confirmation too — and you&apos;ll get a
-              notification the moment a builder unlocks.
+              We have emailed you a confirmation, and you will be notified each
+              time a builder takes a spot.
             </motion.p>
           </motion.div>
         </div>

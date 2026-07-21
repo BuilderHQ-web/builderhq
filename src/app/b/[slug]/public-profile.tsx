@@ -1,25 +1,22 @@
 "use client";
 
 /**
- * PublicBuilderProfile — `/b/[slug]` cinematic public profile.
+ * PublicBuilderProfile — `/b/[slug]`, the builder's public register entry.
  *
  * Read-only consumer of everything the builder edits at /builder/profile.
- * Designed as a portfolio-grade landing for the company:
+ * Set as a letterhead document: the page an owner reads when deciding
+ * whether this builder belongs on their round. Facts in ledgers, claims
+ * only where earned (verification chips render only when verified).
  *
- *   ┌─ HERO ──────────────────────────────────────────────┐
- *   │  logo        BUILDER · APPROVED · FOUNDING MEMBER   │
- *   │  (200px)    COMPANY NAME (Bebas, hero scale)        │
- *   │              tagline · location · years             │
- *   │              [Website] [LinkedIn] [Instagram]       │
- *   └─────────────────────────────────────────────────────┘
- *
- *   ┌─ STATS STRIP ───────────────────────────────────────┐
- *
- *   ┌─ ABOUT ────────────────────────────┐
- *   ┌─ WHAT WE BUILD ─ categories grid ──┐
- *   ┌─ WHERE WE WORK ─ areas grouped ────┐
- *   ┌─ LICENCES ──────────────────────────┐
- *   ┌─ CTA ───────────────────────────────┐
+ *   ┌─ MASTHEAD ─────────────────────────────────────────────┐
+ *   │  BUILDERHQ · BUILDER REGISTER                          │
+ *   │  [logo plate]  APPROVED BUILDER · SUBURB, STATE        │
+ *   │                TRADING NAME (display scale)            │
+ *   │                Registered entity · ABN · verified chip │
+ *   │                [Website] [LinkedIn] [Instagram]        │
+ *   └────────────────────────────────────────────────────────┘
+ *   ledger strip → about → project types → service areas →
+ *   licences → owner CTA → footer
  *
  * No auth required to view (handled by the server entry — this
  * component just receives data + renders).
@@ -40,7 +37,6 @@ import {
   Layers,
   MapPin,
   ShieldCheck,
-  Sparkles,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -89,7 +85,6 @@ const Instagram: LucideIcon = (({ className, ...props }) => (
 
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/app/reveal";
-import { FoundingBadge } from "@/components/builder/fba-card";
 
 // ── types ───────────────────────────────────────────────────────────────
 
@@ -119,7 +114,6 @@ interface PublicProfile {
   businessState: AustralianState | null;
   approvalStatus: ApprovalStatus;
   logoUrl: string | null;
-  isFounding: boolean;
   memberSince: Date;
   /** True when ABN has been verified by ABR (and hasn't been changed since). */
   abnVerified: boolean;
@@ -140,7 +134,7 @@ interface Licence {
   issuedAt: Date | null;
   expiresAt: Date | null;
   /** True when this licence has been verified against the relevant
-   *  state register. Drives the green "Verified · VBA" chip. */
+   *  state register. Drives the "Verified" chip. */
   verified: boolean;
 }
 
@@ -163,17 +157,22 @@ export function PublicBuilderProfile({
   isOwnProfile,
   viewerSignedIn,
 }: Props) {
+  const displayName =
+    profile.tradingName && profile.tradingName.trim().length > 0
+      ? profile.tradingName
+      : profile.companyName;
+
   return (
     <div className="relative min-h-dvh bg-bg">
       {isOwnProfile && profile.approvalStatus !== "approved" ? (
         <PreviewBanner status={profile.approvalStatus} />
       ) : null}
 
-      <Hero profile={profile} />
+      <Masthead profile={profile} displayName={displayName} />
 
-      <main className="relative px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] flex flex-col gap-12 lg:gap-16 py-10 sm:py-12 lg:py-16">
+      <main className="relative px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] flex flex-col gap-10 lg:gap-14 py-8 sm:py-10 lg:py-14">
         <Reveal immediate delay={0.06}>
-          <StatsStrip
+          <LedgerStrip
             profile={profile}
             categories={categories}
             serviceAreas={serviceAreas}
@@ -207,7 +206,7 @@ export function PublicBuilderProfile({
 
         <Reveal>
           <CallToAction
-            companyName={profile.companyName}
+            companyName={displayName}
             viewerSignedIn={viewerSignedIn}
           />
         </Reveal>
@@ -227,18 +226,18 @@ function PreviewBanner({ status }: { status: ApprovalStatus }) {
       className={cn(
         "border-b text-[12px]",
         status === "rejected" || status === "suspended"
-          ? "border-danger/35 bg-[rgba(255,80,80,0.06)] text-danger"
-          : "border-warning/35 bg-[rgba(255,181,71,0.06)] text-warning",
+          ? "border-danger/35 bg-[rgba(194,85,80,0.06)] text-[#a8433e]"
+          : "border-warning/35 bg-[rgba(201,148,34,0.06)] text-[#8a6414]",
       )}
     >
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
           <span className="inline-flex items-center gap-2">
             <Eye className="size-3.5" />
-            <strong className="font-medium">Preview mode</strong>
+            <strong className="font-medium">Preview</strong>
           </span>
           <span className="opacity-80">
-            · This profile is {meta.label.toLowerCase()} — only visible to you.
+            · This profile is {meta.label.toLowerCase()}. Only you can see it.
           </span>
         </span>
         <Link
@@ -252,103 +251,75 @@ function PreviewBanner({ status }: { status: ApprovalStatus }) {
   );
 }
 
-// ── Hero ────────────────────────────────────────────────────────────────
+// ── Masthead ────────────────────────────────────────────────────────────
 
-function Hero({ profile }: { profile: PublicProfile }) {
-  const initials = initialsOf(profile.companyName);
+function Masthead({
+  profile,
+  displayName,
+}: {
+  profile: PublicProfile;
+  displayName: string;
+}) {
+  const initials = initialsOf(displayName);
   const tagline = composeTagline(profile);
+  const showLegalLine =
+    !!profile.tradingName &&
+    profile.tradingName.trim().length > 0 &&
+    profile.tradingName.trim().toLowerCase() !==
+      profile.companyName.trim().toLowerCase();
+
   return (
-    <section className="relative overflow-hidden border-b border-border-subtle">
-      {/* Ambient gradient + grid */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,200,0.14), transparent 60%), radial-gradient(ellipse 50% 40% at 80% 0%, rgba(26,95,212,0.10), transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-50 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(142,252,244,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.04) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 80%)",
-        }}
-      />
-      {/* Light sweep on mount */}
-      <motion.span
-        aria-hidden
-        initial={{ x: "-30%", opacity: 0 }}
-        animate={{ x: "120%", opacity: [0, 0.4, 0.4, 0] }}
-        transition={{
-          duration: 1.8,
-          ease: [0.22, 1, 0.36, 1],
-          delay: 0.25,
-          times: [0, 0.15, 0.85, 1],
-        }}
-        className="pointer-events-none absolute inset-y-0 w-[35%] rounded-full"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(10,125,115,0.18), transparent)",
-          filter: "blur(40px)",
-        }}
-      />
+    <section className="border-b border-border-subtle bg-surface-1">
+      {/* register rule */}
+      <div className="border-b border-border-subtle/60">
+        <div className="mx-auto max-w-[1100px] px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="text-[10px] tracking-[0.24em] uppercase text-text-dim font-ui font-semibold hover:text-text transition-colors"
+          >
+            BuilderHQ · Builder register
+          </Link>
+          {profile.approvalStatus === "approved" ? (
+            <span className="text-[10px] tracking-[0.16em] uppercase text-text-dim tabular-nums">
+              On the register since{" "}
+              {profile.memberSince.toLocaleDateString("en-AU", {
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+          ) : null}
+        </div>
+      </div>
 
-      <div className="relative px-4 sm:px-6 lg:px-10 pt-12 sm:pt-14 lg:pt-20 pb-10 sm:pb-12 lg:pb-16 mx-auto max-w-[1100px]">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium mb-7 hover:opacity-80 transition-opacity"
-        >
-          <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-          BuilderHQ
-        </Link>
-
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-6 lg:px-10 pt-10 sm:pt-12 lg:pt-14 pb-9 sm:pb-10 lg:pb-12">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.2, 0.65, 0.3, 0.9] }}
-          className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-7 sm:gap-10 items-start"
+          transition={{ duration: 0.45, ease: [0.2, 0.65, 0.3, 0.9] }}
+          className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-6 sm:gap-9 items-start"
         >
-          {/* Logo */}
-          <div className="relative">
-            <div
-              className={cn(
-                "relative size-[148px] sm:size-[200px] rounded-md overflow-hidden border border-border-accent/40",
-                "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(250,248,243,0.78))]",
-                "shadow-[0_24px_60px_-24px_rgba(0,212,200,0.40),0_0_0_1px_rgba(0,212,200,0.18)]",
-                "flex items-center justify-center",
-              )}
-            >
-              {profile.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.logoUrl}
-                  alt={`${profile.companyName} logo`}
-                  className="size-full object-contain p-3"
-                />
-              ) : (
-                <span className="font-display text-[54px] sm:text-[68px] tracking-[0.04em] text-accent-light/85 leading-none">
-                  {initials}
-                </span>
-              )}
-            </div>
-            {profile.isFounding ? (
-              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2">
-                <FoundingBadge size="sm" />
-              </div>
-            ) : null}
+          {/* Logo plate */}
+          <div className="size-[128px] sm:size-[168px] rounded-lg overflow-hidden border border-border-subtle bg-white card-elev flex items-center justify-center">
+            {profile.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.logoUrl}
+                alt={`${displayName} logo`}
+                className="size-full object-contain p-3"
+              />
+            ) : (
+              <span className="font-display text-[44px] sm:text-[56px] tracking-[0.02em] text-text-dim leading-none">
+                {initials}
+              </span>
+            )}
           </div>
 
           {/* Identity block */}
-          <div className="min-w-0 flex flex-col gap-4">
+          <div className="min-w-0 flex flex-col gap-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <ApprovalChip status={profile.approvalStatus} />
               {profile.businessState ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
+                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.03)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
                   <MapPin className="size-3" />
                   {profile.businessSuburb
                     ? `${profile.businessSuburb}, ${profile.businessState}`
@@ -356,59 +327,51 @@ function Hero({ profile }: { profile: PublicProfile }) {
                 </span>
               ) : null}
               {profile.yearsInOperation != null ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
+                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.03)] text-[10px] tracking-[0.16em] uppercase text-text-muted tabular-nums">
                   <Calendar className="size-3" />
                   {profile.yearsInOperation}{" "}
-                  {profile.yearsInOperation === 1 ? "year" : "years"}
+                  {profile.yearsInOperation === 1 ? "year" : "years"} in operation
                 </span>
               ) : null}
             </div>
 
-            <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.2rem,5.5vw+1rem,5.5rem)] leading-[0.92] text-text break-words">
-              {profile.tradingName && profile.tradingName.trim().length > 0
-                ? profile.tradingName
-                : profile.companyName}
+            <h1 className="font-display uppercase tracking-[-0.018em] text-[clamp(2rem,4.5vw+1rem,4.4rem)] leading-[0.95] text-text break-words">
+              {displayName}
             </h1>
 
-            {/* Legal name + verified-ABN chip — only render if there's
-                actually a separate legal name to show, OR if it's verified
-                (in which case the trust chip earns its keep). */}
-            {(profile.tradingName &&
-              profile.tradingName.trim().toLowerCase() !==
-                profile.companyName.trim().toLowerCase()) ||
-            profile.abnVerified ? (
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                {profile.tradingName &&
-                profile.tradingName.trim().toLowerCase() !==
-                  profile.companyName.trim().toLowerCase() ? (
-                  <span className="text-[12px] tracking-[0.04em] text-text-dim">
-                    Trading as{" "}
+            {/* Registered-entity line — legal name and ABN belong
+                together; the verified chip renders only when earned. */}
+            {showLegalLine || profile.abn || profile.abnVerified ? (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                {showLegalLine ? (
+                  <span className="text-[12px] tracking-[0.02em] text-text-dim">
+                    Registered entity{" "}
                     <span className="text-text-muted font-medium">
                       {profile.companyName}
                     </span>
                   </span>
                 ) : null}
-                {profile.abnVerified ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-[10px] tracking-[0.16em] uppercase text-accent font-medium">
-                    <ShieldCheck className="size-3" />
-                    ABN verified
+                {profile.abn ? (
+                  <span className="font-mono tabular-nums text-[10.5px] text-text-dim">
+                    ABN {formatAbn(profile.abn)}
                   </span>
                 ) : null}
-                {profile.abn ? (
-                  <span className="font-mono tabular-nums text-[10.5px] text-text-faint">
-                    ABN {formatAbn(profile.abn)}
+                {profile.abnVerified ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 h-6 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[9.5px] tracking-[0.16em] uppercase text-[#0a7d73] font-semibold">
+                    <ShieldCheck className="size-3" />
+                    ABN verified
                   </span>
                 ) : null}
               </div>
             ) : null}
 
             {tagline ? (
-              <p className="text-[14.5px] leading-[1.7] text-text-muted max-w-[58ch]">
+              <p className="text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
                 {tagline}
               </p>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-0.5">
               {profile.website ? (
                 <ExternalLinkButton
                   href={profile.website}
@@ -450,22 +413,22 @@ const APPROVAL_META: Record<
   },
   pending_review: {
     label: "Pending review",
-    cls: "border-warning/35 text-warning bg-[rgba(255,181,71,0.06)]",
+    cls: "border-warning/35 text-[#8a6414] bg-[rgba(201,148,34,0.06)]",
     icon: Eye,
   },
   approved: {
     label: "Approved builder",
-    cls: "border-border-accent/45 text-accent bg-[rgba(0,212,200,0.08)]",
+    cls: "border-border-accent/45 text-[#0a7d73] bg-[rgba(0,212,200,0.06)]",
     icon: CheckCircle2,
   },
   rejected: {
     label: "Rejected",
-    cls: "border-danger/35 text-danger bg-[rgba(255,80,80,0.06)]",
+    cls: "border-danger/35 text-[#a8433e] bg-[rgba(194,85,80,0.06)]",
     icon: Eye,
   },
   suspended: {
     label: "Suspended",
-    cls: "border-danger/35 text-danger bg-[rgba(255,80,80,0.06)]",
+    cls: "border-danger/35 text-[#a8433e] bg-[rgba(194,85,80,0.06)]",
     icon: Eye,
   },
 };
@@ -475,7 +438,7 @@ function ApprovalChip({ status }: { status: ApprovalStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border text-[10px] tracking-[0.16em] uppercase font-medium",
+        "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border text-[10px] tracking-[0.16em] uppercase font-semibold",
         meta.cls,
       )}
     >
@@ -506,8 +469,8 @@ function ExternalLinkButton({
         "text-[12px] font-medium tracking-[0.04em] transition-colors duration-[140ms]",
         "active:scale-[0.985] active:duration-[80ms]",
         primary
-          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_6px_18px_-8px_rgba(0,212,200,0.45)]"
-          : "border border-border-subtle text-text-muted hover:bg-surface-1 hover:text-text",
+          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_8px_18px_-12px_rgba(15,23,32,0.4)]"
+          : "border border-border-subtle text-text-muted hover:bg-surface-2 hover:text-text",
       )}
     >
       <Icon className="size-3.5" />
@@ -517,9 +480,9 @@ function ExternalLinkButton({
   );
 }
 
-// ── Stats strip ─────────────────────────────────────────────────────────
+// ── Ledger strip ────────────────────────────────────────────────────────
 
-function StatsStrip({
+function LedgerStrip({
   profile,
   categories,
   serviceAreas,
@@ -531,76 +494,57 @@ function StatsStrip({
   licences: Licence[];
 }) {
   const stateCount = new Set(serviceAreas.map((a) => a.state)).size;
-  const memberSince = profile.memberSince.toLocaleDateString("en-AU", {
-    month: "long",
-    year: "numeric",
-  });
+  const verifiedLicences = licences.filter((l) => l.verified).length;
 
-  const items: Array<{
-    label: string;
-    value: string;
-    sub?: string;
-    icon: LucideIcon;
-  }> = [
+  const items: Array<{ label: string; value: string; sub: string }> = [
     {
       label: "Years in operation",
       value:
         profile.yearsInOperation != null ? String(profile.yearsInOperation) : "—",
-      sub: "since founding",
-      icon: Calendar,
+      sub: "as stated by the builder",
     },
     {
       label: "Project types",
       value: String(categories.length),
       sub: categories.length === 1 ? "specialty" : "covered",
-      icon: Layers,
     },
     {
-      label: "States covered",
-      value: String(stateCount),
-      sub: serviceAreas.length === 1 ? "service area" : "service areas",
-      icon: MapPin,
+      label: "Service areas",
+      value: String(serviceAreas.length),
+      sub:
+        serviceAreas.length === 0
+          ? "none recorded"
+          : `across ${stateCount} ${stateCount === 1 ? "state" : "states"}`,
     },
     {
-      label: "Active licences",
+      label: "Licences on file",
       value: String(licences.length),
-      sub: profile.isFounding ? "+ founding member" : `member since ${memberSince}`,
-      icon: ShieldCheck,
+      sub:
+        licences.length === 0
+          ? "none recorded"
+          : verifiedLicences > 0
+            ? `${verifiedLicences} verified`
+            : "verification pending",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-      {items.map((it) => (
-        <StatCard key={it.label} {...it} />
-      ))}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  icon: LucideIcon;
-}) {
-  return (
-    <div className="rounded-md border border-border-subtle bg-surface-2 p-4 sm:p-5">
-      <div className="flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-text-dim">
-        <Icon className="size-3 text-accent-light shrink-0" />
-        <span className="truncate">{label}</span>
+    <div className="rounded-lg border border-border-subtle overflow-hidden card-elev">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border-subtle">
+        {items.map((it) => (
+          <div key={it.label} className="bg-surface-1 p-4 sm:p-5">
+            <div className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim">
+              {it.label}
+            </div>
+            <div className="mt-2.5 font-display tabular-nums leading-none text-text text-[30px] sm:text-[36px]">
+              {it.value}
+            </div>
+            <div className="mt-1.5 text-[11px] text-text-dim leading-[1.45]">
+              {it.sub}
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="mt-3 font-display tabular-nums leading-none text-text text-[32px] sm:text-[38px]">
-        {value}
-      </div>
-      {sub ? (
-        <div className="mt-2 text-[11px] text-text-dim leading-[1.45]">{sub}</div>
-      ) : null}
     </div>
   );
 }
@@ -610,13 +554,9 @@ function StatCard({
 function AboutSection({ bio }: { bio: string }) {
   return (
     <section>
-      <Header
-        kicker="About"
-        icon={Sparkles}
-        title="The story so far"
-      />
-      <div className="mt-6 max-w-[68ch]">
-        <p className="text-[16px] leading-[1.75] text-text-muted whitespace-pre-line">
+      <Header kicker="About" icon={Building2} title="The company" />
+      <div className="mt-5 max-w-[68ch]">
+        <p className="text-[15px] leading-[1.75] text-text-muted whitespace-pre-line">
           {bio}
         </p>
       </div>
@@ -632,22 +572,22 @@ const CATEGORY_META: Record<
 > = {
   single_dwelling: {
     label: "Single dwelling",
-    description: "New homes, knock-down rebuilds.",
+    description: "New homes and knock-down rebuilds.",
     icon: House,
   },
   multi_dwelling: {
-    label: "Multi-dwelling",
+    label: "Multi dwelling",
     description: "Townhouses, dual occupancy, multi-units.",
     icon: Building2,
   },
   renovation: {
     label: "Renovation",
-    description: "Internal + external scope.",
+    description: "Internal and external scope.",
     icon: Wrench,
   },
   extension: {
     label: "Extension",
-    description: "Ground or first-floor adds.",
+    description: "Ground and first floor additions.",
     icon: Layers,
   },
 };
@@ -655,22 +595,16 @@ const CATEGORY_META: Record<
 function CategoriesSection({ categories }: { categories: ProjectType[] }) {
   return (
     <section>
-      <Header kicker="What we build" icon={Hammer} title="Project types" />
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <Header kicker="What they build" icon={Hammer} title="Project types" />
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {categories.map((c) => {
           const meta = CATEGORY_META[c];
           return (
             <div
               key={c}
-              className={cn(
-                "group relative rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-surface-1 card-elev",
-                "transition-[border-color,box-shadow,transform] duration-[220ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
-                "hover:border-border-accent/55 hover:-translate-y-0.5",
-                "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30)]",
-              )}
+              className="rounded-lg border border-border-subtle p-4 sm:p-5 bg-surface-1 card-elev"
             >
-              <span className="inline-flex size-9 rounded-md items-center justify-center mb-3 border border-border-subtle bg-[rgba(0,212,200,0.06)] text-accent-light group-hover:border-accent/40 group-hover:text-accent transition-colors duration-[140ms]">
+              <span className="inline-flex size-8 rounded-md items-center justify-center mb-3 border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light">
                 <meta.icon className="size-4" />
               </span>
               <h3 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
@@ -704,59 +638,54 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
   return (
     <section>
       <Header
-        kicker="Where we work"
+        kicker="Where they work"
         icon={MapPin}
         title="Service areas"
-        sub={`${areas.length} ${areas.length === 1 ? "area" : "areas"} across ${ordered.length} ${ordered.length === 1 ? "state" : "states"}`}
+        sub={`${areas.length} ${areas.length === 1 ? "area" : "areas"} across ${ordered.length} ${ordered.length === 1 ? "state" : "states"}.`}
       />
-      <div className="mt-6 flex flex-col gap-3">
-        {ordered.map((state) => {
-          const inState = byState.get(state)!;
-          const stateOnly = inState.find((a) => !a.suburb);
-          const suburbs = inState.filter((a) => a.suburb);
-          return (
-            <div
-              key={state}
-              className={cn(
-                "rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-surface-2",
-              )}
-            >
-              <div className="flex items-baseline gap-3 mb-3">
-                <span className="font-display text-[24px] tracking-[0.04em] text-text leading-none">
-                  {state}
-                </span>
-                {stateOnly ? (
-                  <span className="text-[10.5px] tracking-[0.18em] uppercase text-accent">
-                    Statewide coverage
+      <div className="mt-5 rounded-lg border border-border-subtle overflow-hidden card-elev">
+        <div className="flex flex-col gap-px bg-border-subtle">
+          {ordered.map((state) => {
+            const inState = byState.get(state)!;
+            const stateOnly = inState.find((a) => !a.suburb);
+            const suburbs = inState.filter((a) => a.suburb);
+            return (
+              <div key={state} className="bg-surface-1 p-4 sm:p-5">
+                <div className="flex items-baseline gap-3 mb-2.5">
+                  <span className="font-display text-[22px] tracking-[0.02em] text-text leading-none">
+                    {state}
                   </span>
-                ) : (
-                  <span className="text-[11px] text-text-dim">
-                    {suburbs.length} {suburbs.length === 1 ? "suburb" : "suburbs"}
-                  </span>
-                )}
-              </div>
-              {suburbs.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {suburbs.map((a, i) => (
-                    <span
-                      key={`${a.suburb}-${a.postcode ?? "x"}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[12px] text-text-muted"
-                    >
-                      <MapPin className="size-3 text-text-faint" />
-                      {a.suburb}
-                      {a.postcode ? (
-                        <span className="font-mono tabular-nums text-text-dim ml-0.5">
-                          {a.postcode}
-                        </span>
-                      ) : null}
+                  {stateOnly ? (
+                    <span className="text-[10px] tracking-[0.18em] uppercase text-[#0a7d73] font-semibold">
+                      Statewide coverage
                     </span>
-                  ))}
+                  ) : (
+                    <span className="text-[11px] text-text-dim tabular-nums">
+                      {suburbs.length} {suburbs.length === 1 ? "suburb" : "suburbs"}
+                    </span>
+                  )}
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
+                {suburbs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {suburbs.map((a, i) => (
+                      <span
+                        key={`${a.suburb}-${a.postcode ?? "x"}-${i}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] text-[12px] text-text-muted"
+                      >
+                        {a.suburb}
+                        {a.postcode ? (
+                          <span className="font-mono tabular-nums text-[10.5px] text-text-dim">
+                            {a.postcode}
+                          </span>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -779,62 +708,58 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
         kicker="Licences"
         icon={Award}
         title="Credentials"
-        sub="Active builder licences across registered states."
+        sub="Licences on record, with verification status."
       />
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {licences.map((l) => (
-          <div
-            key={l.id}
-            className={cn(
-              "rounded-md border border-border-subtle p-4 sm:p-5",
-              "bg-surface-1 card-elev",
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <span className="size-9 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.08)] text-accent-light flex items-center justify-center shrink-0">
-                <ShieldCheck className="size-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-ui font-semibold text-[14px] text-text">
-                    {l.licenceType}
-                  </span>
-                  <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border border-border-subtle text-text-dim">
-                    {l.state}
-                  </span>
-                  {l.verified ? (
-                    <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center gap-1 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-accent font-medium">
-                      <CheckCircle2 className="size-2.5" />
-                      Verified · {l.state === "VIC" ? "VBA" : "register"}
+      <div className="mt-5 rounded-lg border border-border-subtle overflow-hidden card-elev">
+        <div className="flex flex-col gap-px bg-border-subtle">
+          {licences.map((l) => (
+            <div key={l.id} className="bg-surface-1 p-4 sm:p-5">
+              <div className="flex items-start gap-3.5">
+                <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-ui font-semibold text-[14px] text-text">
+                      {l.licenceType}
                     </span>
-                  ) : null}
-                </div>
-                <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums break-all">
-                  #{l.licenceNumber}
-                </div>
-                {l.licenceHolderName ? (
-                  <div className="mt-0.5 text-[12px] text-text-dim break-words">
-                    Held by {l.licenceHolderName}
+                    <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border border-border-subtle text-text-dim">
+                      {l.state}
+                    </span>
+                    {l.verified ? (
+                      <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center gap-1 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[#0a7d73] font-semibold">
+                        <CheckCircle2 className="size-2.5" />
+                        Verified · {l.state === "VIC" ? "VBA" : "BuilderHQ review"}
+                      </span>
+                    ) : null}
                   </div>
-                ) : null}
-                <div className="mt-3 flex items-center gap-3 text-[10.5px] tracking-[0.04em] text-text-dim">
-                  {fmt(l.issuedAt) ? (
-                    <span>
-                      <span className="text-text-faint mr-1">Issued</span>
-                      {fmt(l.issuedAt)}
-                    </span>
+                  <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums break-all">
+                    {l.licenceNumber}
+                  </div>
+                  {l.licenceHolderName ? (
+                    <div className="mt-0.5 text-[12px] text-text-dim break-words">
+                      Held by {l.licenceHolderName}
+                    </div>
                   ) : null}
-                  {fmt(l.expiresAt) ? (
-                    <span>
-                      <span className="text-text-faint mr-1">Expires</span>
-                      {fmt(l.expiresAt)}
-                    </span>
-                  ) : null}
+                  <div className="mt-2.5 flex items-center gap-3 text-[10.5px] tracking-[0.04em] text-text-dim">
+                    {fmt(l.issuedAt) ? (
+                      <span>
+                        <span className="text-text-faint mr-1">Issued</span>
+                        {fmt(l.issuedAt)}
+                      </span>
+                    ) : null}
+                    {fmt(l.expiresAt) ? (
+                      <span>
+                        <span className="text-text-faint mr-1">Expires</span>
+                        {fmt(l.expiresAt)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -850,33 +775,19 @@ function CallToAction({
   viewerSignedIn: boolean;
 }) {
   return (
-    <section
-      className={cn(
-        "relative overflow-hidden rounded-md border border-border-accent/35",
-        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_55%,rgba(250,248,243,0.6)_100%)]",
-      )}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(0,212,200,0.10), transparent 70%), radial-gradient(ellipse 60% 80% at 100% 50%, rgba(26,95,212,0.10), transparent 70%)",
-        }}
-      />
-      <div className="relative px-5 sm:px-7 lg:px-10 py-9 sm:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <div className="px-5 sm:px-7 lg:px-10 py-8 sm:py-9 lg:py-10 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
         <div>
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
-            <Sparkles className="size-3" />
+          <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold">
             Have a project?
           </span>
-          <h3 className="mt-2 font-display uppercase tracking-[-0.012em] text-[26px] sm:text-[28px] leading-[1.05] text-text break-words">
-            Tender it to {companyName}
+          <h3 className="mt-2 font-display uppercase tracking-[-0.012em] text-[24px] sm:text-[28px] leading-[1.05] text-text break-words">
+            Put your project to tender
           </h3>
           <p className="mt-2 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
-            Upload your project once on BuilderHQ — drawings, scope, timing.
-            Suitable builders unlock and tender. {companyName} sees it the
-            moment it lands in their feed.
+            Upload your drawings, scope, and timing once on BuilderHQ.
+            Verified builders take a spot on your round and tender, and{" "}
+            {companyName} can be one of them.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center gap-2 shrink-0">
@@ -887,16 +798,16 @@ function CallToAction({
               "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
               "hover:bg-accent-hover transition-colors duration-[140ms]",
               "active:scale-[0.985] active:duration-[80ms]",
-              "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_8px_24px_-8px_rgba(0,212,200,0.5)]",
+              "shadow-[0_10px_24px_-14px_rgba(15,23,32,0.4)]",
               "max-sm:w-full",
             )}
           >
-            {viewerSignedIn ? "Upload a project" : "Get started — free"}
+            {viewerSignedIn ? "Upload a project" : "Get started"}
             <ExternalLink className="size-3.5" />
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-1 transition-colors max-sm:w-full"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-2 transition-colors max-sm:w-full"
           >
             How BuilderHQ works
           </Link>
@@ -910,15 +821,12 @@ function CallToAction({
 
 function Footer() {
   return (
-    <footer className="border-t border-border-subtle bg-bg-deep/40 mt-8">
-      <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] py-8 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
-        <span className="inline-flex items-center gap-2">
-          <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-          BuilderHQ · Australia&apos;s residential tender platform
-        </span>
+    <footer className="border-t border-border-subtle bg-surface-1 mt-6">
+      <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] py-7 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
+        <span>BuilderHQ · Australia&apos;s residential tender platform</span>
         <Link
           href="/"
-          className="hover:text-accent-light transition-colors inline-flex items-center gap-1"
+          className="hover:text-text transition-colors inline-flex items-center gap-1"
         >
           builderhq.com.au
           <ExternalLink className="size-3" />
@@ -944,11 +852,11 @@ function Header({
   return (
     <header className="flex items-end justify-between gap-3">
       <div>
-        <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium text-accent">
-          <Icon className="size-3.5" />
+        <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-semibold text-accent-light">
+          <Icon className="size-3" />
           {kicker}
         </span>
-        <h2 className="mt-2 font-display uppercase tracking-[-0.012em] text-[clamp(1.6rem,2vw+0.8rem,2.2rem)] leading-[1.0] text-text">
+        <h2 className="mt-1.5 font-display uppercase tracking-[-0.012em] text-[clamp(1.5rem,1.8vw+0.8rem,2rem)] leading-[1.0] text-text">
           {title}
         </h2>
         {sub ? (
@@ -976,19 +884,13 @@ function initialsOf(name: string): string {
 }
 
 function composeTagline(p: PublicProfile): string | null {
-  const parts: string[] = [];
-  if (p.yearsInOperation && p.yearsInOperation > 0) {
-    parts.push(`${p.yearsInOperation}-year-old residential builder`);
-  } else {
-    parts.push("Residential builder");
-  }
+  const parts: string[] = ["Residential builder"];
   if (p.businessSuburb && p.businessState) {
     parts.push(`based in ${p.businessSuburb}, ${p.businessState}`);
   } else if (p.businessState) {
     parts.push(`based in ${p.businessState}`);
   }
-  if (p.isFounding) parts.push("Founding member of BuilderHQ");
-  return parts.length > 0 ? parts.join(" · ") : null;
+  return parts.join(", ") + ".";
 }
 
 /** Format ABN with the canonical AU spacing: 00 000 000 000. */

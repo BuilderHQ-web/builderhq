@@ -66,67 +66,77 @@ const TYPE_META: Record<MarketplacePreview["type"], { label: string; icon: React
 
 const BUDGET_LABEL: Record<NonNullable<MarketplacePreview["budgetBand"]>, string> = {
   under_500k: "Under $500k",
-  "500k_1m": "$500k – $1M",
-  "1m_1_5m": "$1M – $1.5M",
-  "1_5m_2m": "$1.5M – $2M",
-  "2m_3m": "$2M – $3M",
-  "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  "500k_1m": "$500k to $1m",
+  "1m_1_5m": "$1m to $1.5m",
+  "1_5m_2m": "$1.5m to $2m",
+  "2m_3m": "$2m to $3m",
+  "3m_5m": "$3m to $5m",
+  over_5m: "Over $5m",
 };
 
 const LAND_LBL: Record<NonNullable<MarketplacePreview["landSizeBand"]>, string> = {
   under_200: "Under 200 m²",
-  "200_400": "200 – 400 m²",
-  "400_600": "400 – 600 m²",
-  "600_800": "600 – 800 m²",
-  "800_1000": "800 – 1000 m²",
-  over_1000: "1000 m²+",
+  "200_400": "200 to 400 m²",
+  "400_600": "400 to 600 m²",
+  "600_800": "600 to 800 m²",
+  "800_1000": "800 to 1,000 m²",
+  over_1000: "Over 1,000 m²",
 };
 
 const BUILD_LBL: Record<NonNullable<MarketplacePreview["buildSizeBand"]>, string> = {
   under_100: "Under 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  "300_400": "300 – 400 m²",
-  over_400: "400 m²+",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  "300_400": "300 to 400 m²",
+  over_400: "Over 400 m²",
 };
 
 const RENO_LBL: Record<NonNullable<MarketplacePreview["renovationScope"]>, string> = {
   kitchen: "Kitchen",
   bathroom: "Bathroom",
-  kitchen_and_bathroom: "Kitchen + bathroom",
+  kitchen_and_bathroom: "Kitchen and bathroom",
   full_internal: "Full internal",
-  full_internal_and_external: "Internal + external",
+  full_internal_and_external: "Internal and external",
   structural: "Structural",
 };
 
 const EXT_TYPE_LBL: Record<NonNullable<MarketplacePreview["extensionType"]>, string> = {
   ground_floor: "Ground floor",
   first_floor: "First floor",
-  ground_and_first: "Ground + first",
+  ground_and_first: "Ground and first",
   rear: "Rear",
   side: "Side",
 };
 
 const EXT_SIZE_LBL: Record<NonNullable<MarketplacePreview["extensionSizeBand"]>, string> = {
   under_50: "Under 50 m²",
-  "50_100": "50 – 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  over_300: "300 m²+",
+  "50_100": "50 to 100 m²",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  over_300: "Over 300 m²",
 };
 
 const AGE_LBL: Record<NonNullable<MarketplacePreview["existingAgeBand"]>, string> = {
-  under_10: "Under 10 yrs",
-  "10_25": "10 – 25 yrs",
-  "25_50": "25 – 50 yrs",
-  "50_75": "50 – 75 yrs",
-  over_75: "Over 75 yrs",
+  under_10: "Under 10 years",
+  "10_25": "10 to 25 years",
+  "25_50": "25 to 50 years",
+  "50_75": "50 to 75 years",
+  over_75: "Over 75 years",
 };
+
+/** "2026-11" (the stored month format) → "November 2026". */
+function formatMonth(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const [y, m] = s.split("-");
+  if (!y || !m) return s;
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+}
 
 const DOC_CAT_LABEL: Record<DocumentCategory, string> = {
   architectural: "Architectural plans",
@@ -188,6 +198,9 @@ export function ProjectDetail({
   const [unlocking, startUnlock] = useTransition();
   const [savingPending, startSave] = useTransition();
   const meta = TYPE_META[preview.type];
+  // The round's own capacity — private/hybrid rounds set 2-5 spots;
+  // null falls back to the platform default.
+  const roundSpots = preview.tenderSpots ?? UNLOCK_CAP;
 
   // Returning from Stripe Checkout: ?unlock=success (poll until the
   // webhook has granted the unlock) or ?unlock=cancelled (no charge made).
@@ -199,7 +212,7 @@ export function ProjectDetail({
     window.history.replaceState({}, "", window.location.pathname);
 
     if (status === "cancelled") {
-      toast.error("Checkout cancelled", "No charge was made — you can unlock any time.");
+      toast.error("Checkout cancelled", "No charge was made. You can take a spot any time.");
       return;
     }
     if (status === "success" && !unlockedInitial) {
@@ -214,7 +227,7 @@ export function ProjectDetail({
           setConfirming(false);
           toast.success(
             "Project unlocked",
-            "Payment received — message the owner and submit your tender.",
+            "Payment received. Message the owner and submit your tender.",
           );
           router.refresh();
           return;
@@ -223,7 +236,7 @@ export function ProjectDetail({
           setConfirming(false);
           toast.success(
             "Payment received",
-            "We're finalising your unlock — refresh in a moment if it's not showing.",
+            "We are finalising your unlock. Refresh in a moment if it is not showing.",
           );
           return;
         }
@@ -258,15 +271,15 @@ export function ProjectDetail({
         if (reason === "viewer_mode") {
           toast.error(
             "Verify your business to unlock",
-            "We need to confirm your ABN + licence first. Opening your profile.",
+            "We need to confirm your ABN and licence first. Opening your profile.",
           );
           router.push("/builder/profile");
           return;
         }
         if (reason === "project_full") {
           toast.error(
-            "Project is full",
-            "Another builder unlocked the last spot — try a similar project.",
+            "Round is full",
+            "Another builder took the last spot. Browse other open projects.",
           );
           router.refresh();
           return;
@@ -291,15 +304,15 @@ export function ProjectDetail({
         if (reason === "viewer_mode") {
           toast.error(
             "Verify your business to unlock",
-            "We need to confirm your ABN + licence first. Opening your profile.",
+            "We need to confirm your ABN and licence first. Opening your profile.",
           );
           router.push("/builder/profile");
           return;
         }
         if (reason === "project_full") {
           toast.error(
-            "Project is full",
-            "Another builder unlocked the last spot — try a similar project.",
+            "Round is full",
+            "Another builder took the last spot. Browse other open projects.",
           );
           router.refresh();
           return;
@@ -332,7 +345,7 @@ export function ProjectDetail({
   return (
     <div className="pb-32">
       {/* Header */}
-      <div className="border-b border-border-subtle bg-bg-deep/30">
+      <div className="border-b border-border-subtle bg-surface-1">
         <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1200px]">
           <Link
             href="/builder/browse"
@@ -344,14 +357,20 @@ export function ProjectDetail({
 
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium flex-wrap">
+              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold flex-wrap">
                 {meta.icon}
                 {meta.label}
+                {preview.tenderMode === "hybrid" ? (
+                  <>
+                    <span className="text-text-dim/60 mx-1">·</span>
+                    <span className="text-text-dim">Hybrid round</span>
+                  </>
+                ) : null}
                 <span className="text-text-dim/60 mx-1">·</span>
                 {unlocked ? (
-                  <span className="inline-flex items-center gap-1 text-accent-light">
+                  <span className="inline-flex items-center gap-1">
                     <Unlock className="size-3" />
-                    Unlocked
+                    You hold a spot
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-text-dim">
@@ -472,14 +491,17 @@ export function ProjectDetail({
             </Reveal>
 
             <Reveal immediate delay={0.10}>
-            <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
+            <Card title="Budget and timeline" icon={<DollarSign className="size-4" />}>
               <KvGrid>
                 <Kv
                   label="Budget"
                   value={preview.budgetBand ? BUDGET_LABEL[preview.budgetBand] : null}
                 />
-                <Kv label="Target start" value={preview.targetStartMonth} />
-                <Kv label="Target completion" value={preview.targetCompletionMonth} />
+                <Kv label="Target start" value={formatMonth(preview.targetStartMonth)} />
+                <Kv
+                  label="Target completion"
+                  value={formatMonth(preview.targetCompletionMonth)}
+                />
               </KvGrid>
             </Card>
             </Reveal>
@@ -611,7 +633,7 @@ export function ProjectDetail({
             <Reveal immediate delay={0.06}>
               <div className="flex items-baseline justify-between gap-3 mb-3">
                 <div>
-                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+                  <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
                     <MessageSquare className="size-3" />
                     Project messaging
                     {totalUnread(initialConversations) > 0 ? (
@@ -650,8 +672,8 @@ export function ProjectDetail({
         />
       ) : confirming ? (
         <ConfirmingBar />
-      ) : preview.unlockedCount >= UNLOCK_CAP ? (
-        <ProjectFullBar />
+      ) : preview.unlockedCount >= roundSpots ? (
+        <ProjectFullBar spots={roundSpots} />
       ) : viewerMode ? (
         <ViewerModeBar
           abnVerified={viewerMode.abnVerified}
@@ -663,6 +685,7 @@ export function ProjectDetail({
           documents={documents.length}
           fbaStatus={fbaStatus}
           unlockedCount={preview.unlockedCount}
+          spots={roundSpots}
           unlocking={unlocking}
           onUnlock={onUnlock}
           onPaidUnlock={onPaidUnlock}
@@ -708,14 +731,14 @@ function TenderCtaBar({
 
   const sub =
     variant === "none"
-      ? "Submit your price + scope. Owner sees it side-by-side with other tenders."
+      ? "Submit your price and scope. The owner reads it side by side with the other tenders."
       : variant === "draft"
-      ? "Pick up where you left off — autosaves as you fill it in."
+      ? "Pick up where you left off. The form saves as you go."
       : variant === "submitted"
-      ? "Owner is reviewing. You can withdraw to start over."
+      ? "The owner is reviewing. You can withdraw to start over."
       : tenderStatus === "awarded"
-      ? "The owner picked your tender — celebrate. Open the conversation to confirm scope, timing, and contract."
-      : "Owner has decided on this tender.";
+      ? "The owner has accepted your tender. Open the conversation to confirm scope, timing, and contract."
+      : "The owner has decided on this tender.";
 
   const ctaLabel =
     variant === "none"
@@ -743,7 +766,7 @@ function TenderCtaBar({
           className={cn(
             "inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] shrink-0",
             "bg-accent text-accent-contrast hover:bg-accent-hover",
-            "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+            "shadow-[0_10px_24px_-14px_rgba(15,23,32,0.4)]",
           )}
         >
           {ctaLabel}
@@ -759,6 +782,7 @@ function UnlockBar({
   documents,
   fbaStatus,
   unlockedCount,
+  spots,
   unlocking,
   onUnlock,
   onPaidUnlock,
@@ -767,93 +791,81 @@ function UnlockBar({
   documents: number;
   fbaStatus: FbaStatus;
   unlockedCount: number;
+  spots: number;
   unlocking: boolean;
   onUnlock: () => void;
   onPaidUnlock: () => void;
 }) {
   const fbaActive = fbaStatus.active;
   const hasCredits = fbaActive && fbaStatus.remainingThisCycle > 0;
-  // Spots-left framing — reinforces scarcity right at the unlock CTA.
-  // When count is 0, no "spots" copy (avoids implying the project is
-  // unpopular). When ≥1, surface the urgency.
-  const spotsLeft = Math.max(0, UNLOCK_CAP - unlockedCount);
-  const showScarcity = unlockedCount > 0;
-  const scarcity = showScarcity ? (
-    <span className={cn("ml-1.5", spotsLeft === 1 ? "text-warning font-semibold" : "")}>
-      · {spotsLeft === 1 ? "1 spot left" : `${spotsLeft} of ${UNLOCK_CAP} spots open`}
-    </span>
-  ) : null;
+  // The round's actual state — stated plainly, only once another
+  // builder has taken a spot (an untouched round needs no count).
+  const spotsLeft = Math.max(0, spots - unlockedCount);
+  const spotsNote =
+    unlockedCount > 0 ? (
+      <span className={cn("ml-1.5", spotsLeft === 1 ? "text-warning font-semibold" : "")}>
+        · {spotsLeft === 1 ? "1 spot remaining" : `${spotsLeft} of ${spots} spots open`}
+      </span>
+    ) : null;
 
   // Shared CTA styling for both the FBA and paid buttons.
   const ctaClass = cn(
     "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
     "bg-accent text-accent-contrast hover:bg-accent-hover",
-    "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+    "shadow-[0_10px_24px_-14px_rgba(15,23,32,0.4)]",
     unlocking && "opacity-70 cursor-not-allowed",
   );
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-md pb-[env(safe-area-inset-bottom)]",
-        hasCredits
-          ? "border-border-accent/40 bg-[rgba(0,212,200,0.05)]"
-          : "border-border-subtle bg-bg-deep/98",
-      )}
-    >
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         {hasCredits ? (
           <>
-            {/* Left — FBA free unlock */}
+            {/* Left — complimentary unlock under Founding Access */}
             <div className="min-w-0 flex items-start gap-3">
-              <span className="size-10 rounded-md border bg-accent-muted/60 border-border-accent text-accent-light flex items-center justify-center shrink-0">
+              <span className="size-10 rounded-md border bg-[rgba(0,212,200,0.06)] border-border-accent text-accent-light flex items-center justify-center shrink-0">
                 <Sparkles className="size-4" />
               </span>
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-[13px] font-semibold text-accent-light">
-                    Unlock free with Founding Access
+                  <span className="text-[13px] font-semibold text-text">
+                    Take a spot on this round
                   </span>
-                  <span className="inline-flex items-baseline gap-1.5 text-[12px] text-text-muted">
-                    <span className="line-through decoration-[rgba(24,34,44,0.3)] decoration-1">
-                      ${priceAud}
-                    </span>
-                    <span className="text-accent-light font-display text-[16px] leading-none">
-                      $0
-                    </span>
+                  <span className="text-[10px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold">
+                    Included in Founding Access
                   </span>
                 </div>
                 <div className="text-[11.5px] text-text-dim mt-0.5">
-                  {fbaStatus.remainingThisCycle} of {fbaStatus.monthlyQuota} free
-                  unlocks left this cycle · address · owner contact ·{" "}
-                  {documents} document{documents === 1 ? "" : "s"}
-                  {scarcity}
+                  {fbaStatus.remainingThisCycle} of {fbaStatus.monthlyQuota}{" "}
+                  complimentary unlocks remaining this cycle · address · owner
+                  contact · {documents} document{documents === 1 ? "" : "s"}
+                  {spotsNote}
                 </div>
               </div>
             </div>
             {/* Right — FBA CTA */}
             <button type="button" onClick={onUnlock} disabled={unlocking} className={ctaClass}>
               {unlocking ? <Loader2 className="size-4 animate-spin" /> : <Unlock className="size-4" />}
-              {unlocking ? "Unlocking…" : "Unlock with Founding Access"}
+              {unlocking ? "Unlocking…" : "Take your spot"}
             </button>
           </>
         ) : (
           <>
             {/* Left — paid unlock */}
             <div className="min-w-0 flex items-start gap-3">
-              <span className="size-10 rounded-md border bg-accent-muted/50 border-border-accent text-accent-light flex items-center justify-center shrink-0">
+              <span className="size-10 rounded-md border bg-[rgba(0,212,200,0.05)] border-border-accent text-accent-light flex items-center justify-center shrink-0">
                 <Lock className="size-4" />
               </span>
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-[13px] font-semibold text-text">
-                    Unlock this project
+                    Take a spot on this round
                   </span>
-                  <span className="font-display text-accent-light text-[20px] leading-none">
+                  <span className="font-display text-[#0a7d73] text-[20px] leading-none tabular-nums">
                     ${priceAud}
                   </span>
                   <span className="text-[11px] text-text-dim">one-off</span>
-                  {scarcity}
+                  {spotsNote}
                 </div>
                 <div className="text-[11.5px] text-text-dim mt-0.5">
                   Exact address · owner contact · {documents} document
@@ -861,7 +873,7 @@ function UnlockBar({
                 </div>
                 <div className="mt-1 inline-flex items-center gap-1.5 text-[10.5px] text-text-dim">
                   <ShieldCheck className="size-3 text-accent-light/80" />
-                  Secure checkout by Stripe · card, Apple&nbsp;Pay &amp; Google&nbsp;Pay
+                  Secure checkout by Stripe · card, Apple&nbsp;Pay and Google&nbsp;Pay
                 </div>
               </div>
             </div>
@@ -892,7 +904,7 @@ function ConfirmingBar() {
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-text">Confirming your payment…</div>
           <div className="text-[11.5px] text-text-dim mt-0.5">
-            Unlocking your project — this only takes a moment.
+            Unlocking your project. This only takes a moment.
           </div>
         </div>
       </div>
@@ -910,9 +922,9 @@ function ConfirmingBar() {
  * else is around." Routes the builder back to browse so the moment
  * doesn't dead-end.
  */
-function ProjectFullBar() {
+function ProjectFullBar({ spots }: { spots: number }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-danger/[0.05] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-danger/40 bg-danger/10 flex items-center justify-center shrink-0 text-danger">
@@ -921,15 +933,15 @@ function ProjectFullBar() {
           <div className="min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-[13px] font-semibold text-text">
-                This project is full
+                This round is full
               </span>
-              <span className="text-[10px] tracking-[0.18em] uppercase text-danger font-ui font-medium">
-                {UNLOCK_CAP} / {UNLOCK_CAP} unlocked
+              <span className="text-[10px] tracking-[0.18em] uppercase text-[#a8433e] font-ui font-semibold tabular-nums">
+                {spots} of {spots} spots taken
               </span>
             </div>
             <div className="text-[11.5px] text-text-dim mt-0.5 truncate">
-              {UNLOCK_CAP} builders are already in the running. Try a similar
-              project in your service area before the next one fills up.
+              {spots} builders have taken the spots on this round. Browse other
+              open rounds in your service area.
             </div>
           </div>
         </div>
@@ -974,13 +986,13 @@ function ViewerModeBar({
       : "One more check to unlock";
   const sub =
     remaining === 2
-      ? "Confirm your ABN and a builder licence — both verify live, no waiting."
+      ? "Confirm your ABN and a builder licence to take a spot on any round."
       : !abnVerified
-      ? "Verify your ABN against the ABR — takes a few seconds."
-      : "Verify a builder licence — VIC verifies live; other states get a manual review.";
+      ? "Verify your ABN against the Australian Business Register. It takes a few seconds."
+      : "Verify a builder licence. Victorian licences check automatically; other states are reviewed by our team.";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-[rgba(255,181,71,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
@@ -1022,7 +1034,7 @@ function ViewerModeBar({
           className={cn(
             "shrink-0 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.04em] transition-colors duration-[160ms] w-full sm:w-auto",
             "bg-accent text-accent-contrast hover:bg-accent-hover",
-            "shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.55)]",
+            "shadow-[0_10px_24px_-14px_rgba(15,23,32,0.4)]",
           )}
         >
           {remaining === 2 ? "Open profile to verify" : "Finish verification"}
@@ -1050,7 +1062,7 @@ function UnlockBenefitsCard({
     ...(documents > 0
       ? [`${documents} project document${documents === 1 ? "" : "s"} to download`]
       : []),
-    "Owner's name & contact details",
+    "Owner's name and contact details",
     "Direct messaging with the owner",
     "Submit a tender on the project",
   ];
@@ -1091,12 +1103,12 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1 card-elev overflow-hidden shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]">
-      <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center">
-          {icon}
-        </span>
-        <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <header className="px-5 py-3 border-b border-border-subtle/60 flex items-center gap-2">
+        <span className="text-accent-light [&_svg]:size-3">{icon}</span>
+        <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+          {title}
+        </h3>
       </header>
       <div className="p-5">{children}</div>
     </section>
@@ -1104,7 +1116,7 @@ function Card({
 }
 
 function KvGrid({ children }: { children: React.ReactNode }) {
-  return <dl className="grid grid-cols-2 gap-x-5 gap-y-3">{children}</dl>;
+  return <dl className="grid grid-cols-2 gap-x-5 gap-y-4">{children}</dl>;
 }
 
 function Kv({
@@ -1117,12 +1129,12 @@ function Kv({
   const isEmpty = value === null || value === undefined || value === "";
   return (
     <div>
-      <dt className="text-[10px] tracking-[0.18em] uppercase text-accent/85 mb-1">
+      <dt className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim mb-1">
         {label}
       </dt>
       <dd
         className={cn(
-          "text-[14.5px] font-medium tabular-nums",
+          "text-[14.5px] font-ui font-medium tabular-nums",
           isEmpty ? "text-text-dim/60" : "text-text",
         )}
       >
@@ -1155,13 +1167,7 @@ function OwnerContactBlock({ contact }: { contact: OwnerContact }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <span
-          className="size-10 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-          }}
-        >
+        <span className="size-10 rounded-full flex items-center justify-center text-[12px] font-semibold border border-border-subtle bg-[rgba(24,34,44,0.04)] text-text shrink-0">
           {initials}
         </span>
         <div className="min-w-0">

@@ -43,66 +43,84 @@ const TYPE_META: Record<Project["type"], { label: string; icon: React.ReactNode 
   extension: { label: "Extension", icon: <Layers className="size-4" /> },
 };
 
+const STATUS_LABEL: Record<Project["status"], string> = {
+  draft: "Draft",
+  published: "Live",
+  tendering: "Tendering",
+  awarded: "Awarded",
+  archived: "Archived",
+};
+
 const BUDGET_LABEL: Record<NonNullable<Project["budgetBand"]>, string> = {
   under_500k: "Under $500k",
-  "500k_1m": "$500k – $1M",
-  "1m_1_5m": "$1M – $1.5M",
-  "1_5m_2m": "$1.5M – $2M",
-  "2m_3m": "$2M – $3M",
-  "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  "500k_1m": "$500k to $1m",
+  "1m_1_5m": "$1m to $1.5m",
+  "1_5m_2m": "$1.5m to $2m",
+  "2m_3m": "$2m to $3m",
+  "3m_5m": "$3m to $5m",
+  over_5m: "Over $5m",
 };
 
 const RENO_LABEL: Record<NonNullable<Project["renovationScope"]>, string> = {
   kitchen: "Kitchen",
   bathroom: "Bathroom",
-  kitchen_and_bathroom: "Kitchen + bathroom",
+  kitchen_and_bathroom: "Kitchen and bathroom",
   full_internal: "Full internal",
-  full_internal_and_external: "Internal + external",
+  full_internal_and_external: "Internal and external",
   structural: "Structural",
 };
 
 const EXT_LABEL: Record<NonNullable<Project["extensionType"]>, string> = {
   ground_floor: "Ground floor",
   first_floor: "First floor",
-  ground_and_first: "Ground + first",
+  ground_and_first: "Ground and first",
   rear: "Rear",
   side: "Side",
 };
 
 const LAND_LABEL: Record<NonNullable<Project["landSizeBand"]>, string> = {
   under_200: "Under 200 m²",
-  "200_400": "200 – 400 m²",
-  "400_600": "400 – 600 m²",
-  "600_800": "600 – 800 m²",
-  "800_1000": "800 – 1000 m²",
-  over_1000: "1000 m²+",
+  "200_400": "200 to 400 m²",
+  "400_600": "400 to 600 m²",
+  "600_800": "600 to 800 m²",
+  "800_1000": "800 to 1,000 m²",
+  over_1000: "Over 1,000 m²",
 };
 const BUILD_LBL: Record<NonNullable<Project["buildSizeBand"]>, string> = {
   under_100: "Under 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  "300_400": "300 – 400 m²",
-  over_400: "400 m²+",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  "300_400": "300 to 400 m²",
+  over_400: "Over 400 m²",
 };
 const EXT_SIZE_LBL: Record<NonNullable<Project["extensionSizeBand"]>, string> = {
   under_50: "Under 50 m²",
-  "50_100": "50 – 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  over_300: "300 m²+",
+  "50_100": "50 to 100 m²",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  over_300: "Over 300 m²",
 };
 const AGE_LBL: Record<NonNullable<Project["existingAgeBand"]>, string> = {
-  under_10: "Under 10 yrs",
-  "10_25": "10 – 25 yrs",
-  "25_50": "25 – 50 yrs",
-  "50_75": "50 – 75 yrs",
-  over_75: "Over 75 yrs",
+  under_10: "Under 10 years",
+  "10_25": "10 to 25 years",
+  "25_50": "25 to 50 years",
+  "50_75": "50 to 75 years",
+  over_75: "Over 75 years",
 };
+
+/** "2026-11" (the stored month format) → "November 2026". */
+function formatMonth(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const [y, m] = s.split("-");
+  if (!y || !m) return s;
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+}
 
 export default async function ProjectDetailPage({
   params,
@@ -150,12 +168,19 @@ export default async function ProjectDetailPage({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60">·</span>
-              <span className="px-1.5 py-0.5 border border-border-accent rounded-sm text-[8.5px] tracking-[0.16em] uppercase text-accent">
-                {project.status}
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.16em] uppercase font-semibold",
+                  project.status === "archived"
+                    ? "border-border-subtle text-text-dim"
+                    : "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[#0a7d73]",
+                )}
+              >
+                {STATUS_LABEL[project.status]}
               </span>
             </span>
             <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[52px] leading-[0.92] text-text break-words">
@@ -188,8 +213,9 @@ export default async function ProjectDetailPage({
             state={project.state}
             unlockCount={builders.length}
             tenderCount={tenderCount}
-            cap={UNLOCK_CAP}
+            cap={project.tenderSpots ?? UNLOCK_CAP}
             builders={builders}
+            tenderMode={project.tenderMode}
           />
         </Reveal>
 
@@ -252,14 +278,17 @@ export default async function ProjectDetailPage({
             </Reveal>
 
             <Reveal immediate delay={0.10}>
-              <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
+              <Card title="Budget and timeline" icon={<DollarSign className="size-4" />}>
                 <KvGrid>
                   <Kv
                     label="Budget"
                     value={project.budgetBand ? BUDGET_LABEL[project.budgetBand] : null}
                   />
-                  <Kv label="Target start" value={project.targetStartMonth} />
-                  <Kv label="Target completion" value={project.targetCompletionMonth} />
+                  <Kv label="Target start" value={formatMonth(project.targetStartMonth)} />
+                  <Kv
+                    label="Target completion"
+                    value={formatMonth(project.targetCompletionMonth)}
+                  />
                 </KvGrid>
               </Card>
             </Reveal>
@@ -294,14 +323,17 @@ export default async function ProjectDetailPage({
               ) : (
                 <ul className="flex flex-col gap-2">
                   {docs.slice(0, 8).map((d) => (
-                    <li key={d.id} className="text-[12.5px] text-text-muted truncate">
-                      <span className="text-text-dim mr-1">📄</span>
-                      {d.filename}
+                    <li
+                      key={d.id}
+                      className="flex items-center gap-2 text-[12.5px] text-text-muted min-w-0"
+                    >
+                      <FileText className="size-3.5 text-text-dim shrink-0" />
+                      <span className="truncate">{d.filename}</span>
                     </li>
                   ))}
                   {docs.length > 8 ? (
                     <li className="text-[11px] text-text-dim">
-                      …and {docs.length - 8} more
+                      and {docs.length - 8} more
                     </li>
                   ) : null}
                 </ul>
@@ -320,13 +352,13 @@ export default async function ProjectDetailPage({
             <Card title={`Tenders · ${tenderCount}`} icon={<FileText className="size-4" />}>
               {tenderCount === 0 ? (
                 <p className="text-[12.5px] text-text-dim">
-                  No tenders yet. Builders who unlock this project can submit
-                  tenders, which appear side-by-side here for comparison.
+                  No tenders yet. Builders who take a spot on your round submit
+                  tenders here, laid out side by side for comparison.
                 </p>
               ) : (
                 <p className="text-[12.5px] text-text-muted">
                   {tenderCount} tender{tenderCount === 1 ? "" : "s"} received.
-                  Compare side-by-side and decide.
+                  Compare them side by side and decide.
                 </p>
               )}
               <Link
@@ -376,7 +408,7 @@ export default async function ProjectDetailPage({
           <Reveal immediate delay={0.30}>
             <div className="flex items-baseline justify-between gap-3 mb-3">
               <div>
-                <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+                <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
                   <MessageSquare className="size-3" />
                   Project messaging
                   {messagingUnread > 0 ? (
@@ -387,7 +419,7 @@ export default async function ProjectDetailPage({
                 </span>
                 <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
                   {conversations.length === 0
-                    ? "Message builders the moment they unlock"
+                    ? "Message builders as they join your round"
                     : `Talk to ${conversations.length} builder${conversations.length === 1 ? "" : "s"}`}
                 </h2>
               </div>
@@ -416,12 +448,12 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-      <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center">
-          {icon}
-        </span>
-        <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <header className="px-5 py-3 border-b border-border-subtle/60 flex items-center gap-2">
+        <span className="text-accent-light [&_svg]:size-3">{icon}</span>
+        <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+          {title}
+        </h3>
       </header>
       <div className="p-5">{children}</div>
     </section>
