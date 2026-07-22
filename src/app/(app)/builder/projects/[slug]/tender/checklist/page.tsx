@@ -67,6 +67,7 @@ export default async function ChecklistRoute({
       slug={slug}
       projectTitle={preview.title}
       tenderId={tender.id}
+      instrumentVersion={tender.instrumentVersion}
       initialAnswers={initialAnswers}
       prefills={{
         "tender.totalPriceAud": tender.totalPriceAud,

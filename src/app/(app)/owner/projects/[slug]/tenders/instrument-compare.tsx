@@ -36,9 +36,10 @@ import {
 } from "lucide-react";
 
 import {
-  INSTRUMENT_SECTIONS,
+  sectionsFor,
   scopeMatrixRows,
   type InstrumentQuestion,
+  type InstrumentSection,
   type ScopeState,
 } from "@/modules/tenders/instrument";
 import {
@@ -568,9 +569,6 @@ function CoverageMatrix({
 
 /* ── 4 · answers, section by section ────────────────────────────────── */
 
-/** Sections rendered here — scope's matrix already has its own block. */
-const ANSWER_SECTIONS = INSTRUMENT_SECTIONS.filter((s) => s.id !== "scope");
-
 /** Headline numbers already own the top of the page — no repeats. */
 const SKIP_QIDS = new Set(["price.total"]);
 
@@ -582,6 +580,18 @@ function AnswerSections({
   summaries: Summaries;
 }) {
   const [diffOnly, setDiffOnly] = useState(tenders.length > 1);
+
+  // Sections follow the newest instrument version in the comparison —
+  // shared question ids line up across versions, so a mixed round
+  // still reads correctly and version-specific extras simply show for
+  // the tenders that answered them. Scope's matrix has its own block.
+  const answerSections = useMemo(() => {
+    const version = Math.max(
+      1,
+      ...tenders.map((t) => t.instrumentVersion ?? 1),
+    );
+    return sectionsFor(version).filter((s) => s.id !== "scope");
+  }, [tenders]);
 
   return (
     <div>
@@ -612,7 +622,7 @@ function AnswerSections({
         ) : null}
       </div>
 
-      {ANSWER_SECTIONS.map((section) => (
+      {answerSections.map((section) => (
         <AnswerSection
           key={section.id}
           section={section}
@@ -631,7 +641,7 @@ function AnswerSection({
   summaries,
   diffOnly,
 }: {
-  section: (typeof INSTRUMENT_SECTIONS)[number];
+  section: InstrumentSection;
   tenders: TenderForOwner[];
   summaries: Summaries;
   diffOnly: boolean;

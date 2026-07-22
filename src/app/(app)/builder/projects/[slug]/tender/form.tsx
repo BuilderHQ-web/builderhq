@@ -1320,7 +1320,7 @@ function ChecklistCard({
         {complete
           ? "Complete. Your tender will be compared like for like on scope, allowances and conditions."
           : hasDraft
-            ? "The structured set every builder answers, so prices are compared on the same scope. About ten minutes."
+            ? "The structured submission every builder completes, so prices are compared on the same scope. About thirty minutes the first time."
             : "Starts once your draft exists. Enter your price above and it saves automatically."}
       </p>
 

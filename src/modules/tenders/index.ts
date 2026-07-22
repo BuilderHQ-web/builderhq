@@ -87,13 +87,18 @@ export type { TenderBuilderInviteRow, TenderResponseRow } from "./schema";
 export {
   INSTRUMENT_VERSION,
   INSTRUMENT_SECTIONS,
+  INSTRUMENT_SECTIONS_V1,
+  INSTRUMENT_SECTIONS_V2,
+  sectionsFor,
   SCOPE_STATES,
   scopeMatrixRows,
   allQuestions,
+  allQuestionsFor,
   getQuestion,
   requiredQuestionIds,
   isValidAnswerShape,
   isAnswerComplete,
+  computeTenderMetrics,
 } from "./instrument";
 export type {
   InstrumentQuestion,
@@ -101,6 +106,7 @@ export type {
   InstrumentSection,
   InstrumentOption,
   ScopeState,
+  TenderMetrics,
 } from "./instrument";
 
 // Comparison derivation (pure — client-safe).

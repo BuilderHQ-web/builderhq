@@ -1069,7 +1069,7 @@ export function checklistProgress(
 ): ChecklistProgress | null {
   if (t.instrumentVersion == null) return null;
   const answers = new Map(responses.map((r) => [r.qid, r.value]));
-  const required = requiredQuestionIds(answers);
+  const required = requiredQuestionIds(answers, t.instrumentVersion);
   // An answer only counts when it FULLY answers the question (every
   // matrix row marked, every items row filled) — same definition the
   // checklist UI uses, so client "complete" and the submit gate agree.

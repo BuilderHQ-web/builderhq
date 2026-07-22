@@ -1,25 +1,36 @@
 "use client";
 
 /**
- * The Submission Checklist — one question per slide.
+ * The Tender Deck — the submission instrument rendered as a journey.
  *
- * The structured instrument (instrument.ts) rendered as a focused
- * deck: a single question fills the screen, a tap answers it and the
- * deck advances with a slide animation, typed answers continue on
- * Enter, and the scope matrix runs as rapid-fire rows with four big
- * state buttons. Every answer autosaves (700ms debounce), so leaving
- * and returning resumes at the first unanswered required question.
- * A review slide closes the deck with per-section completeness.
+ * Three stages:
  *
- * Rendering is driven entirely by the instrument data: each question
- * type has one renderer, showIf gates hide dependants until their
- * gate matches, and prefilled questions arrive already answered from
- * the tender's headline fields (confirm, not retype).
+ *   OPENING. A calm letterhead: what this is, how long it takes, that
+ *   everything saves as you go. Returning builders see their progress
+ *   and resume where they stopped.
  *
- * Progress here is stricter than the server gate on purpose: the
- * client counts a matrix answered only when every row is marked and a
- * text only when non-empty, so the UI never claims "complete" for a
- * submission the server would refuse.
+ *   THE DECK. One question per slide. A tap answers and advances,
+ *   typed answers continue on Enter, the scope grid runs as rapid-fire
+ *   rows. Crossing into a new module plays a short bridge: the module
+ *   number, its question in the builder's voice, a rule drawing
+ *   across. Every ceremony is skippable with a click or key press and
+ *   collapses entirely under prefers-reduced-motion.
+ *
+ *   REVIEW. Key tender metrics rolled up from the answers, then every
+ *   module as a numbered, expandable ledger with per-question jumps.
+ *
+ * A contents control in the top bar lists all modules and questions
+ * with their completion, so nothing is ever more than two taps away.
+ *
+ * Rendering is driven entirely by the instrument data for the
+ * tender's version (sectionsFor): each question type has one renderer,
+ * showIf gates hide dependants until their gate matches, and prefilled
+ * questions arrive already answered from the tender's headline fields.
+ *
+ * Every answer autosaves (700ms debounce). Progress here is stricter
+ * than the server gate on purpose: the client counts a matrix answered
+ * only when every row is marked, so the UI never claims "complete" for
+ * a submission the server would refuse.
  */
 
 import {
@@ -30,28 +41,30 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
-  ClipboardCheck,
+  ChevronDown,
+  ListOrdered,
   Loader2,
   Plus,
-  ShieldCheck,
   X,
 } from "lucide-react";
 
 import {
-  INSTRUMENT_SECTIONS,
+  sectionsFor,
   SCOPE_STATES,
   scopeMatrixRows,
   isAnswerComplete,
+  computeTenderMetrics,
+  getQuestion,
   type InstrumentQuestion,
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
+import { formatAnswer, formatAud } from "@/modules/tenders/comparison";
 import { saveTenderResponsesAction } from "@/app/(app)/_actions/tenders";
-import { AnimatePresence, motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
@@ -64,6 +77,9 @@ type AnswerPatch = unknown | ((prev: unknown) => unknown);
 
 const MATRIX_ROWS = scopeMatrixRows();
 
+/** The slide easing every movement in the deck shares. */
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 // Answer completeness is shared with the server (isAnswerComplete in
 // instrument.ts) so the progress ring here and the submit gate there
 // can never disagree.
@@ -73,18 +89,44 @@ function gatePasses(q: InstrumentQuestion, answers: Answers): boolean {
   return answers[q.showIf.qid] === q.showIf.equals;
 }
 
+/** "3 items", "24 included · 2 excluded", or the plain formatted value. */
+function summariseValue(q: InstrumentQuestion, v: unknown): string | null {
+  if (q.type === "items") {
+    return Array.isArray(v) && v.length > 0
+      ? `${v.length} listed`
+      : null;
+  }
+  if (q.type === "matrix") {
+    const m = (v ?? {}) as Record<string, string>;
+    const marked = MATRIX_ROWS.filter((r) => !!m[r.id]);
+    if (marked.length === 0) return null;
+    const count = (s: string) =>
+      marked.filter((r) => m[r.id] === s).length;
+    const parts = [
+      `${count("included")} included`,
+      count("allowance") ? `${count("allowance")} allowance` : null,
+      count("excluded") ? `${count("excluded")} excluded` : null,
+      count("not_applicable") ? `${count("not_applicable")} n/a` : null,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }
+  return formatAnswer(q, v);
+}
+
 /* ── component ──────────────────────────────────────────────────────── */
 
 export function ChecklistWizard({
   slug,
   projectTitle,
   tenderId,
+  instrumentVersion,
   initialAnswers,
   prefills,
 }: {
   slug: string;
   projectTitle: string;
   tenderId: string;
+  instrumentVersion: number;
   initialAnswers: Array<{ qid: string; v: unknown }>;
   prefills: {
     "tender.totalPriceAud": number | null;
@@ -93,7 +135,11 @@ export function ChecklistWizard({
     "tender.proposedStartMonth": string | null;
   };
 }) {
-  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const SECTIONS = useMemo(
+    () => sectionsFor(instrumentVersion),
+    [instrumentVersion],
+  );
 
   const [answers, setAnswers] = useState<Answers>(() =>
     Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v])),
@@ -175,7 +221,7 @@ export function ChecklistWizard({
   useEffect(() => {
     if (prefilledRef.current) return;
     prefilledRef.current = true;
-    for (const section of INSTRUMENT_SECTIONS) {
+    for (const section of SECTIONS) {
       for (const q of section.questions) {
         if (!q.prefill) continue;
         if (answers[q.id] !== undefined) continue;
@@ -189,7 +235,7 @@ export function ChecklistWizard({
 
   // ── progress ─────────────────────────────────────────────────────
   const progress = useMemo(() => {
-    const perSection = INSTRUMENT_SECTIONS.map((s) => {
+    const perSection = SECTIONS.map((s) => {
       const visible = s.questions.filter((q) => gatePasses(q, answers));
       const required = visible.filter((q) => q.required);
       const answered = required.filter((q) => isAnswerComplete(q, answers[q.id]));
@@ -209,7 +255,7 @@ export function ChecklistWizard({
       complete: answered >= required,
       pct: required === 0 ? 100 : Math.round((answered / required) * 100),
     };
-  }, [answers]);
+  }, [SECTIONS, answers]);
 
   // ── the deck: one slide per visible question; the scope matrix
   //    fans out to one slide per row; a review slide closes it ──────
@@ -234,7 +280,7 @@ export function ChecklistWizard({
 
   const deck = useMemo<Slide[]>(() => {
     const out: Slide[] = [];
-    INSTRUMENT_SECTIONS.forEach((sec, sIdx) => {
+    SECTIONS.forEach((sec, sIdx) => {
       for (const q of sec.questions) {
         if (!gatePasses(q, answers)) continue;
         if (q.type === "matrix") {
@@ -256,7 +302,7 @@ export function ChecklistWizard({
     });
     out.push({ key: "review", kind: "review" });
     return out;
-  }, [answers]);
+  }, [SECTIONS, answers]);
 
   const slideDone = useCallback(
     (sl: Slide): boolean => {
@@ -279,7 +325,7 @@ export function ChecklistWizard({
   const [cursor, setCursor] = useState(() => {
     const init = Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v]));
     let i = 0;
-    for (const sec of INSTRUMENT_SECTIONS) {
+    for (const sec of sectionsFor(instrumentVersion)) {
       for (const q of sec.questions) {
         if (q.showIf && init[q.showIf.qid] !== q.showIf.equals) continue;
         if (q.type === "matrix") {
@@ -301,17 +347,92 @@ export function ChecklistWizard({
 
   const idx = Math.max(0, Math.min(cursor, deck.length - 1));
   const slide = deck[idx]!;
+  const idxRef = useRef(idx);
+  idxRef.current = idx;
 
-  const goto = useCallback(
-    (i: number, d: 1 | -1) => {
+  // ── stages: opening → (bridge) → deck ────────────────────────────
+  const [stage, setStage] = useState<"opening" | "bridge" | "deck">("opening");
+  type Bridge = { moduleIdx: number; target: number };
+  const [bridge, setBridge] = useState<Bridge | null>(null);
+  const bridgeRef = useRef<Bridge | null>(null);
+  bridgeRef.current = bridge;
+  const bridgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const commitBridge = useCallback(() => {
+    if (bridgeTimer.current) {
+      clearTimeout(bridgeTimer.current);
+      bridgeTimer.current = null;
+    }
+    const b = bridgeRef.current;
+    if (b) {
+      setDir(1);
+      setCursor(Math.max(0, Math.min(b.target, deck.length - 1)));
+    }
+    setBridge(null);
+    setStage("deck");
+  }, [deck.length]);
+
+  const startBridge = useCallback(
+    (moduleIdx: number, target: number, ms: number) => {
+      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
+      setBridge({ moduleIdx, target });
+      setStage("bridge");
+      bridgeTimer.current = setTimeout(commitBridge, ms);
+    },
+    [commitBridge],
+  );
+
+  const begin = useCallback(() => {
+    const sl = deck[idxRef.current]!;
+    if (reduceMotion || sl.kind === "review") {
+      setStage("deck");
+      return;
+    }
+    // Hold on the module the builder is resuming into, then land.
+    startBridge(sl.sIdx, idxRef.current, 2050);
+  }, [deck, reduceMotion, startBridge]);
+
+  // Advance one slide; crossing into a new module plays its bridge.
+  const advance = useCallback(() => {
+    const i = idxRef.current;
+    const target = Math.min(i + 1, deck.length - 1);
+    if (target === i) return;
+    const cur = deck[i]!;
+    const nxt = deck[target]!;
+    if (
+      !reduceMotion &&
+      cur.kind !== "review" &&
+      nxt.kind !== "review" &&
+      nxt.sIdx !== cur.sIdx
+    ) {
+      startBridge(nxt.sIdx, target, 1600);
+    } else {
+      setDir(1);
+      setCursor(target);
+    }
+  }, [deck, reduceMotion, startBridge]);
+  const advanceRef = useRef(advance);
+  advanceRef.current = advance;
+
+  const jumpTo = useCallback(
+    (target: number) => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
-      setDir(d);
-      setCursor(Math.max(0, Math.min(i, deck.length - 1)));
+      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
+      const clamped = Math.max(0, Math.min(target, deck.length - 1));
+      setDir(clamped >= idxRef.current ? 1 : -1);
+      setCursor(clamped);
+      setBridge(null);
+      setStage("deck");
     },
     [deck.length],
   );
-  const next = useCallback(() => goto(idx + 1, 1), [goto, idx]);
-  const back = useCallback(() => goto(idx - 1, -1), [goto, idx]);
+
+  const next = advance;
+  const back = useCallback(() => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    setDir(-1);
+    setCursor((c) => Math.max(0, c - 1));
+  }, []);
 
   // Tap-to-answer types advance on their own after a beat — long
   // enough to see the selection land, short enough to feel instant.
@@ -320,17 +441,15 @@ export function ChecklistWizard({
       queue(qid, patch);
       if (auto) {
         if (advanceTimer.current) clearTimeout(advanceTimer.current);
-        advanceTimer.current = setTimeout(() => {
-          setDir(1);
-          setCursor((c) => Math.min(c + 1, deck.length - 1));
-        }, 260);
+        advanceTimer.current = setTimeout(() => advanceRef.current(), 260);
       }
     },
-    [queue, deck.length],
+    [queue],
   );
   useEffect(
     () => () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
     },
     [],
   );
@@ -338,6 +457,7 @@ export function ChecklistWizard({
   // Enter continues whenever the current slide is answered.
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (stage !== "deck") return;
       if (e.key !== "Enter") return;
       const t = e.target as HTMLElement;
       if (t.tagName === "TEXTAREA" || t.tagName === "BUTTON") return;
@@ -346,13 +466,54 @@ export function ChecklistWizard({
         next();
       }
     },
-    [slide, slideDone, next],
+    [stage, slide, slideDone, next],
   );
 
-  const sectionOf = slide.kind === "review" ? null : slide.section;
-  const sectionNo = slide.kind === "review" ? null : slide.sIdx + 1;
+  // The opening begins and a bridge skips on Enter, Space or Escape.
+  useEffect(() => {
+    if (stage === "deck") return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Escape") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "A" || t.tagName === "BUTTON")) return;
+      e.preventDefault();
+      if (stage === "opening") begin();
+      else commitBridge();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [stage, begin, commitBridge]);
 
-  // Jump helper for the review slide: first not-done slide of a section.
+  // ── lookups for contents + review jumps ──────────────────────────
+  const slideIndex = useMemo(() => {
+    const byQ = new Map<string, number>();
+    const byRow = new Map<string, number>();
+    deck.forEach((sl, i) => {
+      if (sl.kind === "review") return;
+      if (!byQ.has(sl.q.id)) byQ.set(sl.q.id, i);
+      if (sl.kind === "row") byRow.set(sl.key, i);
+    });
+    return { byQ, byRow };
+  }, [deck]);
+
+  const jumpToQuestion = useCallback(
+    (q: InstrumentQuestion) => {
+      if (q.type === "matrix") {
+        const m = (liveAnswers.current[q.id] ?? {}) as Record<string, string>;
+        const gap = MATRIX_ROWS.find((r) => !m[r.id]);
+        const i = gap
+          ? slideIndex.byRow.get(`${q.id}:${gap.id}`)
+          : slideIndex.byQ.get(q.id);
+        if (i !== undefined) jumpTo(i);
+        return;
+      }
+      const i = slideIndex.byQ.get(q.id);
+      if (i !== undefined) jumpTo(i);
+    },
+    [slideIndex, jumpTo],
+  );
+
+  // Jump helper: first not-done slide of a section, else its start.
   const firstGapInSection = useCallback(
     (sIdx: number) => {
       const i = deck.findIndex(
@@ -365,6 +526,26 @@ export function ChecklistWizard({
     [deck, slideDone],
   );
 
+  const jumpToReview = useCallback(() => {
+    jumpTo(deck.length - 1);
+  }, [deck.length, jumpTo]);
+
+  // Position within the current module, for the top bar.
+  const modPos = useMemo(() => {
+    if (slide.kind === "review") return null;
+    const mod = deck.filter(
+      (sl) => sl.kind !== "review" && sl.sIdx === slide.sIdx,
+    );
+    return {
+      no: slide.sIdx + 1,
+      pos: mod.findIndex((sl) => sl.key === slide.key) + 1,
+      count: mod.length,
+      title: slide.section.title,
+    };
+  }, [deck, slide]);
+
+  const [contentsOpen, setContentsOpen] = useState(false);
+
   return (
     <div
       // Fills the viewport under the 56px app topbar so the footer
@@ -372,8 +553,8 @@ export function ChecklistWizard({
       className="min-h-[calc(100dvh-3.5rem)] flex flex-col"
       onKeyDown={onKeyDown}
     >
-      {/* ── slim bar: exit · where you are · save state ──────────── */}
-      <div className="border-b border-border-subtle">
+      {/* ── slim bar: exit · where you are · contents · save ─────── */}
+      <div className="border-b border-border-subtle relative z-30">
         <div className="px-4 sm:px-6 lg:px-10 py-3 mx-auto max-w-[1100px] flex items-center justify-between gap-4">
           <Link
             href={`/builder/projects/${slug}/tender`}
@@ -382,22 +563,75 @@ export function ChecklistWizard({
             <ArrowLeft className="size-3.5" />
             Save and exit
           </Link>
+
           <div className="min-w-0 text-center">
-            <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold truncate">
-              {slide.kind === "review"
-                ? "Review"
-                : `Section ${sectionNo} of ${INSTRUMENT_SECTIONS.length} · ${sectionOf!.title}`}
-            </p>
-            <p className="mt-0.5 text-[10.5px] text-text-dim truncate hidden sm:block">
-              {projectTitle}
-            </p>
+            {stage === "opening" ? (
+              <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold truncate">
+                Tender submission
+              </p>
+            ) : stage === "bridge" && bridge ? (
+              <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold truncate">
+                Module {bridge.moduleIdx + 1} of {SECTIONS.length}
+              </p>
+            ) : slide.kind === "review" ? (
+              <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold truncate">
+                Review and metrics
+              </p>
+            ) : modPos ? (
+              <>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold truncate">
+                  Module {modPos.no} of {SECTIONS.length} · {modPos.title}
+                </p>
+                <p className="mt-0.5 text-[10.5px] text-text-dim truncate hidden sm:block tabular-nums">
+                  Question {modPos.pos} of {modPos.count} in this module
+                </p>
+              </>
+            ) : null}
           </div>
+
           <div className="flex items-center gap-3 shrink-0">
             <SaveWhisper state={saveState} />
-            <p className="text-[12px] text-text-dim tabular-nums">
+            <p className="text-[12px] text-text-dim tabular-nums hidden sm:block">
               <span className="text-text font-medium">{progress.answered}</span>
               /{progress.required}
             </p>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setContentsOpen((o) => !o)}
+                aria-expanded={contentsOpen}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[11.5px] transition-colors",
+                  contentsOpen
+                    ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-text"
+                    : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
+                )}
+              >
+                <ListOrdered className="size-3.5" />
+                <span className="hidden sm:inline">Contents</span>
+              </button>
+              {contentsOpen ? (
+                <ContentsPopover
+                  sections={SECTIONS}
+                  answers={answers}
+                  perSection={progress.perSection}
+                  currentModule={slide.kind === "review" ? null : slide.sIdx}
+                  onClose={() => setContentsOpen(false)}
+                  onJumpModule={(sIdx) => {
+                    setContentsOpen(false);
+                    jumpTo(firstGapInSection(sIdx));
+                  }}
+                  onJumpQuestion={(q) => {
+                    setContentsOpen(false);
+                    jumpToQuestion(q);
+                  }}
+                  onJumpReview={() => {
+                    setContentsOpen(false);
+                    jumpToReview();
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
         <div className="h-[3px] bg-border-subtle/50">
@@ -408,129 +642,493 @@ export function ChecklistWizard({
         </div>
       </div>
 
-      {/* ── the slide ────────────────────────────────────────────── */}
+      {/* ── the stage ────────────────────────────────────────────── */}
+      {/* Stages swap instantly and each ENTRANCE carries the ceremony
+          (the opening rises, the bridge staggers in, slides glide).
+          Exit animations are deliberately absent: a mode="wait" chain
+          here would hold the whole deck hostage to an exit callback. */}
       <div className="flex-1 flex flex-col overflow-x-clip">
-        <AnimatePresence mode="wait" initial={false} custom={dir}>
+        {stage === "opening" ? (
+          <div className="flex-1 flex flex-col">
+            <OpeningSlide
+              slug={slug}
+              projectTitle={projectTitle}
+              sections={SECTIONS}
+              perSection={progress.perSection}
+              progress={progress}
+              onBegin={begin}
+            />
+          </div>
+        ) : stage === "bridge" && bridge ? (
+          <div key={`bridge-${bridge.moduleIdx}`} className="flex-1 flex flex-col">
+            <ModuleBridge
+              no={bridge.moduleIdx + 1}
+              total={SECTIONS.length}
+              section={SECTIONS[bridge.moduleIdx]!}
+              onSkip={commitBridge}
+            />
+          </div>
+        ) : (
           <motion.div
-            key={slide.key}
-            custom={dir}
-            initial={{ opacity: 0, x: 44 * dir }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -44 * dir }}
-            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            key="deck"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE } }}
             className="flex-1 flex flex-col"
           >
-            <div className="flex-1 w-full mx-auto max-w-[780px] px-5 sm:px-8 pt-12 sm:pt-16 lg:pt-20 pb-10">
-              {slide.kind === "review" ? (
-                <ReviewSlide
-                  slug={slug}
-                  progress={progress}
-                  onJump={(sIdx) => goto(firstGapInSection(sIdx), -1)}
-                />
-              ) : slide.kind === "row" ? (
-                <MatrixRowSlide
-                  q={slide.q}
-                  row={slide.row}
-                  rIdx={slide.rIdx}
-                  total={MATRIX_ROWS.length}
-                  value={
-                    ((answers[slide.q.id] as Record<string, string>) ?? {})[
-                      slide.row.id
-                    ]
-                  }
-                  onMark={(state) =>
-                    answerAndMaybeAdvance(
-                      slide.q.id,
-                      (prev: unknown) => ({
-                        ...((prev as Record<string, string>) ?? {}),
-                        [slide.row.id]: state,
-                      }),
-                      true,
-                    )
-                  }
-                />
-              ) : (
-                <div>
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
-                    {slide.q.required ? "Required" : "Optional"}
-                  </p>
-                  <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text max-w-[26ch]">
-                    {slide.q.prompt}
-                  </h2>
-                  {slide.q.help ? (
-                    <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
-                      {slide.q.help}
-                    </p>
-                  ) : null}
-                  <div className="mt-8">
-                    <AnswerControl
-                      question={slide.q}
-                      value={answers[slide.q.id]}
-                      onAnswer={(qid, patch) =>
-                        answerAndMaybeAdvance(
-                          qid,
-                          patch,
-                          slide.q.type === "bool" || slide.q.type === "select",
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* footer controls */}
-            {slide.kind !== "review" ? (
-              <div className="border-t border-border-subtle/60">
-                <div className="w-full mx-auto max-w-[780px] px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
-                  <button
-                    type="button"
-                    onClick={back}
-                    disabled={idx === 0}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 text-[12.5px] transition-colors",
-                      idx === 0
-                        ? "text-text-faint cursor-default"
-                        : "text-text-muted hover:text-text",
+                {/* Keyed remount, entrance only: the next slide glides
+                    in and the old one simply goes. No exit animation —
+                    an exit-completion dependency can wedge the whole
+                    deck when frames starve (background tab, low power). */}
+                <motion.div
+                  key={slide.key}
+                  initial={{ opacity: 0, x: 44 * dir }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.26, ease: EASE }}
+                  className="flex-1 flex flex-col"
+                >
+                  <div className="flex-1 w-full mx-auto max-w-[780px] px-5 sm:px-8 pt-12 sm:pt-16 lg:pt-20 pb-10">
+                    {slide.kind === "review" ? (
+                      <ReviewSlide
+                        slug={slug}
+                        sections={SECTIONS}
+                        answers={answers}
+                        progress={progress}
+                        onJumpModule={(sIdx) => jumpTo(firstGapInSection(sIdx))}
+                        onJumpQuestion={jumpToQuestion}
+                      />
+                    ) : slide.kind === "row" ? (
+                      <MatrixRowSlide
+                        q={slide.q}
+                        row={slide.row}
+                        rIdx={slide.rIdx}
+                        total={MATRIX_ROWS.length}
+                        value={
+                          ((answers[slide.q.id] as Record<string, string>) ?? {})[
+                            slide.row.id
+                          ]
+                        }
+                        onMark={(state) =>
+                          answerAndMaybeAdvance(
+                            slide.q.id,
+                            (prev: unknown) => ({
+                              ...((prev as Record<string, string>) ?? {}),
+                              [slide.row.id]: state,
+                            }),
+                            true,
+                          )
+                        }
+                      />
+                    ) : (
+                      <div>
+                        <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                          {slide.q.ref ? (
+                            <span className="text-accent-light">{slide.q.ref}</span>
+                          ) : null}
+                          {slide.q.ref ? " · " : ""}
+                          {slide.q.required ? "Required" : "Optional"}
+                        </p>
+                        <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text max-w-[26ch]">
+                          {slide.q.prompt}
+                        </h2>
+                        {slide.q.help ? (
+                          <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
+                            {slide.q.help}
+                          </p>
+                        ) : null}
+                        {slide.q.id === "excl.derived_confirm" ? (
+                          <DerivedExclusions answers={answers} />
+                        ) : null}
+                        <div className="mt-8">
+                          <AnswerControl
+                            question={slide.q}
+                            value={answers[slide.q.id]}
+                            onAnswer={(qid, patch) =>
+                              answerAndMaybeAdvance(
+                                qid,
+                                patch,
+                                slide.q.type === "bool" ||
+                                  slide.q.type === "select" ||
+                                  ((slide.q.type === "declare" ||
+                                    slide.q.type === "confirm") &&
+                                    patch === true),
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
                     )}
-                  >
-                    <ArrowLeft className="size-3.5" />
-                    Back
-                  </button>
-                  <div className="flex items-center gap-4">
-                    {slide.kind === "q" &&
-                    !slide.q.required &&
-                    !slideDone(slide) ? (
-                      <button
-                        type="button"
-                        onClick={next}
-                        className="text-[12.5px] text-text-dim hover:text-text transition-colors"
-                      >
-                        Skip
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={next}
-                      disabled={!slideDone(slide)}
-                      className={cn(
-                        "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.02em] transition-colors",
-                        slideDone(slide)
-                          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
-                          : "border border-border-subtle text-text-faint cursor-default",
-                      )}
-                    >
-                      Continue
-                      <ArrowRight className="size-4" />
-                    </button>
                   </div>
-                </div>
-              </div>
-            ) : null}
+
+                  {/* footer controls */}
+                  {slide.kind !== "review" ? (
+                    <div className="border-t border-border-subtle/60">
+                      <div className="w-full mx-auto max-w-[780px] px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
+                        <button
+                          type="button"
+                          onClick={back}
+                          disabled={idx === 0}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 text-[12.5px] transition-colors",
+                            idx === 0
+                              ? "text-text-faint cursor-default"
+                              : "text-text-muted hover:text-text",
+                          )}
+                        >
+                          <ArrowLeft className="size-3.5" />
+                          Back
+                        </button>
+                        <div className="flex items-center gap-4">
+                          {slide.kind === "q" &&
+                          !slide.q.required &&
+                          !slideDone(slide) ? (
+                            <button
+                              type="button"
+                              onClick={next}
+                              className="text-[12.5px] text-text-dim hover:text-text transition-colors"
+                            >
+                              Skip
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={next}
+                            disabled={!slideDone(slide)}
+                            className={cn(
+                              "inline-flex items-center gap-2 h-11 px-6 rounded-full text-[13px] font-semibold tracking-[0.02em] transition-colors",
+                              slideDone(slide)
+                                ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
+                                : "border border-border-subtle text-text-faint cursor-default",
+                            )}
+                          >
+                            Continue
+                            <ArrowRight className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </motion.div>
           </motion.div>
-        </AnimatePresence>
+        )}
       </div>
     </div>
+  );
+}
+
+/* ── the opening ────────────────────────────────────────────────────── */
+
+function OpeningSlide({
+  slug,
+  projectTitle,
+  sections,
+  perSection,
+  progress,
+  onBegin,
+}: {
+  slug: string;
+  projectTitle: string;
+  sections: InstrumentSection[];
+  perSection: Array<{ id: string; required: number; answered: number; complete: boolean }>;
+  progress: { answered: number; required: number; pct: number; complete: boolean };
+  onBegin: () => void;
+}) {
+  const resuming = progress.answered > 0;
+  const rise = (delay: number) => ({
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.55, delay, ease: EASE },
+  });
+
+  return (
+    <div className="flex-1 w-full mx-auto max-w-[820px] px-5 sm:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 flex flex-col">
+      <motion.p
+        {...rise(0.05)}
+        className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold"
+      >
+        Tender submission
+      </motion.p>
+      <motion.h1
+        {...rise(0.12)}
+        className="mt-3 font-display tracking-[-0.01em] text-[30px] sm:text-[40px] leading-[1.08] text-text"
+      >
+        {projectTitle}
+      </motion.h1>
+      <motion.p
+        {...rise(0.2)}
+        className="mt-4 text-[14px] sm:text-[14.5px] leading-[1.7] text-text-muted max-w-[62ch]"
+      >
+        You are preparing a formal tender for this project. {sections.length}{" "}
+        modules cover your eligibility, the project, your credentials, the
+        offer itself, scope, allowances, programme and delivery. Most questions
+        are a single tap, and your answers save as they land, so you can leave
+        at any point and resume where you stopped.
+      </motion.p>
+
+      <motion.dl
+        {...rise(0.3)}
+        className="mt-8 grid grid-cols-3 border-y border-border-subtle divide-x divide-border-subtle"
+      >
+        {[
+          { k: "Modules", v: String(sections.length) },
+          resuming
+            ? { k: "Progress", v: `${progress.pct}%` }
+            : { k: "First time", v: "About 30 min" },
+          { k: "Autosave", v: "As you go" },
+        ].map((c) => (
+          <div key={c.k} className="py-4 px-4 first:pl-0">
+            <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              {c.k}
+            </dt>
+            <dd className="mt-1 font-display text-[16px] sm:text-[18px] text-text tabular-nums">
+              {c.v}
+            </dd>
+          </div>
+        ))}
+      </motion.dl>
+
+      <motion.ol
+        {...rise(0.4)}
+        className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-1.5"
+      >
+        {sections.map((sec, i) => {
+          const p = perSection[i];
+          const done = !!p && p.required > 0 && p.complete;
+          return (
+            <li key={sec.id} className="flex items-center gap-3 py-1">
+              <span className="w-6 text-[11px] font-mono text-text-dim tabular-nums shrink-0">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="flex-1 min-w-0 text-[13px] text-text-muted truncate">
+                {sec.title}
+              </span>
+              {done ? (
+                <Check className="size-3.5 text-accent-light shrink-0" strokeWidth={3} />
+              ) : null}
+            </li>
+          );
+        })}
+      </motion.ol>
+
+      <motion.div
+        {...rise(0.52)}
+        className="mt-9 flex flex-wrap items-center gap-4"
+      >
+        <button
+          type="button"
+          onClick={onBegin}
+          className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13.5px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
+        >
+          {resuming ? "Resume your tender" : "Begin your tender"}
+          <ArrowRight className="size-4" />
+        </button>
+        <Link
+          href={`/builder/projects/${slug}/tender`}
+          className="text-[12.5px] text-text-dim hover:text-text transition-colors"
+        >
+          Back to the tender page
+        </Link>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ── the bridge between modules ─────────────────────────────────────── */
+
+/**
+ * The moment between modules: number, the module's question in the
+ * builder's voice, a rule drawing across. Clicking anywhere lands the
+ * first question immediately.
+ */
+function ModuleBridge({
+  no,
+  total,
+  section,
+  onSkip,
+}: {
+  no: number;
+  total: number;
+  section: InstrumentSection;
+  onSkip: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSkip}
+      aria-label="Continue to the questions"
+      className="flex-1 flex items-center justify-center px-6 pb-16 text-center cursor-default select-none"
+    >
+      <div className="max-w-[680px]">
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.12, ease: EASE }}
+          className="text-[10.5px] tracking-[0.26em] uppercase text-text-dim font-ui font-semibold tabular-nums"
+        >
+          Module {no} of {total} · {section.title}
+        </motion.p>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.28, ease: EASE }}
+          className="mt-4 font-display tracking-[-0.01em] text-[28px] sm:text-[38px] leading-[1.12] text-text"
+        >
+          {section.ask ?? section.title}
+        </motion.h2>
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.62, delay: 0.52, ease: EASE }}
+          className="mx-auto mt-6 h-px w-44 bg-accent origin-left"
+        />
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.82, ease: EASE }}
+          className="mt-5 text-[12.5px] leading-[1.6] text-text-muted max-w-[52ch] mx-auto"
+        >
+          {section.intro}
+        </motion.p>
+      </div>
+    </button>
+  );
+}
+
+/* ── contents popover ───────────────────────────────────────────────── */
+
+function ContentsPopover({
+  sections,
+  answers,
+  perSection,
+  currentModule,
+  onClose,
+  onJumpModule,
+  onJumpQuestion,
+  onJumpReview,
+}: {
+  sections: InstrumentSection[];
+  answers: Answers;
+  perSection: Array<{ id: string; required: number; answered: number; complete: boolean }>;
+  currentModule: number | null;
+  onClose: () => void;
+  onJumpModule: (sIdx: number) => void;
+  onJumpQuestion: (q: InstrumentQuestion) => void;
+  onJumpReview: () => void;
+}) {
+  const [expanded, setExpanded] = useState<number | null>(currentModule);
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40"
+        aria-hidden
+        onClick={onClose}
+      />
+      <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(92vw,400px)] max-h-[min(70vh,560px)] overflow-y-auto rounded-lg border border-border-subtle bg-surface-1 card-elev shadow-[0_18px_50px_-18px_rgba(24,34,44,0.28)]">
+        <p className="px-4 pt-3.5 pb-2 text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+          Contents
+        </p>
+        <ul className="pb-1.5">
+          {sections.map((sec, sIdx) => {
+            const p = perSection[sIdx]!;
+            const open = expanded === sIdx;
+            const visible = sec.questions.filter((q) => gatePasses(q, answers));
+            return (
+              <li key={sec.id} className="border-t border-border-subtle/50">
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => onJumpModule(sIdx)}
+                    className="flex-1 min-w-0 flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[rgba(24,34,44,0.03)] transition-colors"
+                  >
+                    <span className="w-5 text-[10.5px] font-mono text-text-dim tabular-nums shrink-0">
+                      {String(sIdx + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex-1 min-w-0 text-[12.5px] font-ui truncate",
+                        currentModule === sIdx
+                          ? "text-accent-light font-semibold"
+                          : "text-text",
+                      )}
+                    >
+                      {sec.title}
+                    </span>
+                    <span className="text-[11px] text-text-dim tabular-nums shrink-0">
+                      {p.answered}/{p.required}
+                    </span>
+                    {p.required > 0 && p.complete ? (
+                      <Check className="size-3 text-accent-light shrink-0" strokeWidth={3} />
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(open ? null : sIdx)}
+                    aria-expanded={open}
+                    aria-label={`${open ? "Collapse" : "Expand"} ${sec.title}`}
+                    className="px-3 py-2.5 text-text-dim hover:text-text transition-colors shrink-0"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 transition-transform",
+                        open ? "rotate-180" : "",
+                      )}
+                    />
+                  </button>
+                </div>
+                {open ? (
+                  <ul className="pb-1.5">
+                    {visible.map((q) => {
+                      const done = isAnswerComplete(q, answers[q.id]);
+                      return (
+                        <li key={q.id}>
+                          <button
+                            type="button"
+                            onClick={() => onJumpQuestion(q)}
+                            className="w-full flex items-center gap-2.5 pl-12 pr-4 py-1.5 text-left hover:bg-[rgba(24,34,44,0.03)] transition-colors"
+                          >
+                            <span
+                              className={cn(
+                                "size-1.5 rounded-full shrink-0",
+                                done
+                                  ? "bg-accent"
+                                  : q.required
+                                    ? "bg-[#c99422]"
+                                    : "bg-[rgba(24,34,44,0.18)]",
+                              )}
+                            />
+                            {q.ref ? (
+                              <span className="text-[10px] font-mono text-text-dim tabular-nums shrink-0 w-8">
+                                {q.ref}
+                              </span>
+                            ) : null}
+                            <span className="flex-1 min-w-0 text-[11.5px] text-text-muted truncate">
+                              {q.type === "matrix" ? "Scope coverage grid" : q.prompt}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </li>
+            );
+          })}
+          <li className="border-t border-border-subtle/50">
+            <button
+              type="button"
+              onClick={onJumpReview}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[rgba(24,34,44,0.03)] transition-colors"
+            >
+              <span className="w-5 shrink-0" />
+              <span className="flex-1 text-[12.5px] font-ui text-text">
+                Review and metrics
+              </span>
+              <ArrowRight className="size-3 text-text-dim shrink-0" />
+            </button>
+          </li>
+        </ul>
+      </div>
+    </>
   );
 }
 
@@ -561,6 +1159,10 @@ function MatrixRowSlide({
   return (
     <div>
       <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold tabular-nums">
+        {q.ref ? (
+          <span className="text-accent-light">{q.ref}</span>
+        ) : null}
+        {q.ref ? " · " : ""}
         Scope of works · {rIdx + 1} of {total}
       </p>
       <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text">
@@ -596,12 +1198,7 @@ function MatrixRowSlide({
                 >
                   {on ? <Check className="size-2.5" strokeWidth={3.5} /> : null}
                 </span>
-                <span
-                  className={cn(
-                    "text-[14px] font-ui font-semibold",
-                    on ? "text-text" : "text-text",
-                  )}
-                >
+                <span className="text-[14px] font-ui font-semibold text-text">
                   {st.label}
                 </span>
               </span>
@@ -616,26 +1213,92 @@ function MatrixRowSlide({
   );
 }
 
-function ReviewSlide({
-  slug,
-  progress,
-  onJump,
-}: {
-  slug: string;
-  progress: {
-    perSection: Array<{
-      id: string;
-      required: number;
-      answered: number;
-      complete: boolean;
-    }>;
+/** The exclusion schedule the coverage grid already implies, shown on
+ *  the confirm slide so the builder signs what the owner will read. */
+function DerivedExclusions({ answers }: { answers: Answers }) {
+  const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
+  const excluded = MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
+  const allowance = MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
+
+  return (
+    <div className="mt-6 border-y border-border-subtle divide-y divide-border-subtle/60">
+      <div className="py-3.5">
+        <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+          Excluded from your price
+        </p>
+        {excluded.length > 0 ? (
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {excluded.map((r) => (
+              <li
+                key={r.id}
+                className="px-2.5 py-1 rounded-full border border-[rgba(194,85,80,0.4)] text-[11.5px] text-[#a8433e]"
+              >
+                {r.label}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1.5 text-[12.5px] text-text-muted">
+            Nothing in your coverage grid is marked excluded.
+          </p>
+        )}
+      </div>
+      {allowance.length > 0 ? (
+        <div className="py-3.5">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            Carried as allowances
+          </p>
+          <p className="mt-1.5 text-[12.5px] text-text-muted">
+            {allowance.map((r) => r.label).join(" · ")}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ── review ─────────────────────────────────────────────────────────── */
+
+type ProgressShape = {
+  perSection: Array<{
+    id: string;
     required: number;
     answered: number;
     complete: boolean;
-    pct: number;
-  };
-  onJump: (sIdx: number) => void;
+  }>;
+  required: number;
+  answered: number;
+  complete: boolean;
+  pct: number;
+};
+
+function ReviewSlide({
+  slug,
+  sections,
+  answers,
+  progress,
+  onJumpModule,
+  onJumpQuestion,
+}: {
+  slug: string;
+  sections: InstrumentSection[];
+  answers: Answers;
+  progress: ProgressShape;
+  onJumpModule: (sIdx: number) => void;
+  onJumpQuestion: (q: InstrumentQuestion) => void;
 }) {
+  const remaining = progress.required - progress.answered;
+  const [openModules, setOpenModules] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const toggle = (i: number) =>
+    setOpenModules((s) => {
+      const n = new Set(s);
+      if (n.has(i)) n.delete(i);
+      else n.add(i);
+      return n;
+    });
+
   return (
     <div>
       <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
@@ -643,49 +1306,115 @@ function ReviewSlide({
       </p>
       <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[28px] leading-[1.2] text-text">
         {progress.complete
-          ? "Checklist complete."
-          : `${progress.required - progress.answered} required answer${progress.required - progress.answered === 1 ? "" : "s"} to go.`}
+          ? "Your tender is ready to review."
+          : `${remaining} required answer${remaining === 1 ? "" : "s"} to go.`}
       </h2>
-      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[56ch]">
+      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
         {progress.complete
-          ? "Every required question is answered. Owners will read your tender like for like against the others on the round."
-          : "Jump back to any section below. Your answers are saved as you go."}
+          ? "This is what the owner will read. Check the key metrics, open any module to read your answers, and submit from the tender page when you are satisfied."
+          : "The key metrics so far, and every module below. Open one to see each answer, or jump straight to what is left."}
       </p>
 
-      <ul className="mt-8 flex flex-col divide-y divide-border-subtle/60 border-y border-border-subtle/60">
-        {INSTRUMENT_SECTIONS.map((sec, i) => {
-          const p = progress.perSection[i]!;
+      <MetricsPanel answers={answers} />
+
+      <ul className="mt-8 border-y border-border-subtle">
+        {sections.map((sec, sIdx) => {
+          const p = progress.perSection[sIdx]!;
+          const open = openModules.has(sIdx);
+          const visible = sec.questions.filter((q) => gatePasses(q, answers));
           return (
-            <li key={sec.id}>
-              <button
-                type="button"
-                onClick={() => onJump(i)}
-                className="w-full flex items-center gap-3.5 py-3 text-left group"
-              >
-                <span
-                  className={cn(
-                    "size-5 rounded-full flex items-center justify-center shrink-0",
-                    p.complete
-                      ? "bg-accent text-accent-contrast"
-                      : "border border-[rgba(201,148,34,0.55)] text-[#8a6414]",
-                  )}
+            <li
+              key={sec.id}
+              className={cn(sIdx > 0 && "border-t border-border-subtle/60")}
+            >
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(sIdx)}
+                  aria-expanded={open}
+                  className="flex-1 min-w-0 flex items-center gap-3.5 py-3 text-left group"
                 >
-                  {p.complete ? (
-                    <Check className="size-3" strokeWidth={3} />
-                  ) : (
-                    <span className="text-[9px] font-semibold tabular-nums">
+                  <span className="w-6 text-[11px] font-mono text-text-dim tabular-nums shrink-0">
+                    {String(sIdx + 1).padStart(2, "0")}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[13.5px] font-ui font-medium text-text truncate group-hover:text-accent-light transition-colors">
+                    {sec.title}
+                  </span>
+                  <span className="text-[11.5px] text-text-dim tabular-nums shrink-0">
+                    {p.answered}/{p.required}
+                  </span>
+                  {p.required > 0 && p.complete ? (
+                    <span className="size-5 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
+                      <Check className="size-3" strokeWidth={3} />
+                    </span>
+                  ) : p.required > 0 ? (
+                    <span className="size-5 rounded-full border border-[rgba(201,148,34,0.55)] text-[#8a6414] flex items-center justify-center shrink-0 text-[9px] font-semibold tabular-nums">
                       {p.required - p.answered}
                     </span>
+                  ) : (
+                    <span className="size-5 shrink-0" />
                   )}
-                </span>
-                <span className="min-w-0 flex-1 text-[13.5px] font-ui font-medium text-text truncate group-hover:text-accent-light transition-colors">
-                  {sec.title}
-                </span>
-                <span className="text-[11.5px] text-text-dim tabular-nums shrink-0">
-                  {p.answered}/{p.required}
-                </span>
-                <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-              </button>
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 text-text-dim shrink-0 transition-transform",
+                      open ? "rotate-180" : "",
+                    )}
+                  />
+                </button>
+                {!p.complete && p.required > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => onJumpModule(sIdx)}
+                    className="text-[11px] text-accent-light hover:text-accent-deep transition-colors shrink-0"
+                  >
+                    Finish
+                  </button>
+                ) : null}
+              </div>
+              {open ? (
+                <ul className="pb-3">
+                  {visible.map((q) => {
+                    const done = isAnswerComplete(q, answers[q.id]);
+                    const summary = summariseValue(q, answers[q.id]);
+                    return (
+                      <li key={q.id}>
+                        <button
+                          type="button"
+                          onClick={() => onJumpQuestion(q)}
+                          className="w-full flex items-start gap-3 pl-9 pr-1 py-1.5 text-left rounded-md hover:bg-[rgba(24,34,44,0.03)] transition-colors group/row"
+                        >
+                          <span className="w-8 pt-px text-[10px] font-mono text-text-dim tabular-nums shrink-0">
+                            {q.ref ?? ""}
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[12px] leading-[1.45] text-text-muted">
+                              {q.type === "matrix"
+                                ? "Scope coverage grid"
+                                : q.prompt}
+                            </span>
+                            <span
+                              className={cn(
+                                "block mt-0.5 text-[12px] leading-[1.45]",
+                                summary
+                                  ? "text-text font-medium"
+                                  : done
+                                    ? "text-text"
+                                    : q.required
+                                      ? "text-[#8a6414]"
+                                      : "text-text-dim",
+                              )}
+                            >
+                              {summary ??
+                                (q.required ? "Not answered" : "Not provided")}
+                            </span>
+                          </span>
+                          <ArrowRight className="size-3 mt-1 text-text-faint group-hover/row:text-text-dim transition-colors shrink-0" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
             </li>
           );
         })}
@@ -708,6 +1437,96 @@ function ReviewSlide({
     </div>
   );
 }
+
+/** Key tender metrics, rolled up live from the answers. */
+function MetricsPanel({ answers }: { answers: Answers }) {
+  const m = useMemo(() => computeTenderMetrics(answers), [answers]);
+
+  const fmtQ = (qid: string): string | null => {
+    const q = getQuestion(qid);
+    return q ? formatAnswer(q, answers[qid]) : null;
+  };
+
+  const cells: Array<{ k: string; v: string; sub?: string }> = [];
+  if (m.priceExGst !== null) {
+    cells.push({ k: "Contract price ex GST", v: formatAud(m.priceExGst) });
+  }
+  if (m.priceIncGst !== null && m.priceIncGst !== m.priceExGst) {
+    cells.push({ k: "Including GST", v: formatAud(m.priceIncGst) });
+  }
+  if (m.depositPct !== null) {
+    cells.push({ k: "Deposit", v: `${m.depositPct}%` });
+  }
+  if (m.validityDays !== null) {
+    cells.push({ k: "Price holds for", v: `${m.validityDays} days` });
+  }
+  const lead = fmtQ("prog.lead_time");
+  if (lead) cells.push({ k: "Lead time to site", v: lead });
+  const start = fmtQ("programme.start");
+  if (start) cells.push({ k: "Start on site", v: start });
+  if (m.durationWeeks !== null) {
+    cells.push({ k: "Build period", v: `${m.durationWeeks} weeks` });
+  }
+  if (m.psCount + m.pcCount > 0) {
+    cells.push({
+      k: "Allowances",
+      v: formatAud(m.allowanceExposure),
+      sub: `${m.psCount} provisional · ${m.pcCount} prime cost`,
+    });
+  }
+  const covered = MATRIX_ROWS.length - m.coverage.unmarked;
+  if (covered > 0) {
+    cells.push({
+      k: "Scope coverage",
+      v: `${m.coverage.included} of ${MATRIX_ROWS.length} included`,
+      sub: [
+        m.coverage.allowance ? `${m.coverage.allowance} allowance` : null,
+        m.coverage.excluded ? `${m.coverage.excluded} excluded` : null,
+        m.coverage.notApplicable ? `${m.coverage.notApplicable} n/a` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || undefined,
+    });
+  }
+  const dlp = fmtQ("contract.defects_liability");
+  if (dlp) cells.push({ k: "Defects liability", v: dlp });
+  if (m.ldPerWeek !== null) {
+    cells.push({ k: "Liquidated damages", v: `${formatAud(m.ldPerWeek)} / week` });
+  }
+  if (m.alternativesCount > 0) {
+    cells.push({
+      k: "Alternatives offered",
+      v: String(m.alternativesCount),
+    });
+  }
+
+  if (cells.length === 0) return null;
+
+  return (
+    <div className="mt-8">
+      <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+        Key tender metrics
+      </p>
+      <dl className="mt-3 flex flex-wrap gap-x-12 gap-y-5 border-y border-border-subtle py-5">
+        {cells.map((c) => (
+          <div key={c.k} className="min-w-[120px]">
+            <dt className="text-[10px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+              {c.k}
+            </dt>
+            <dd className="mt-1 font-display text-[16px] sm:text-[17px] text-text tabular-nums leading-tight">
+              {c.v}
+            </dd>
+            {c.sub ? (
+              <dd className="mt-0.5 text-[10.5px] text-text-dim">{c.sub}</dd>
+            ) : null}
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/* ── answer controls ────────────────────────────────────────────────── */
 
 function AnswerControl({
   question: q,
@@ -736,6 +1555,38 @@ function AnswerControl({
           ))}
         </div>
       );
+
+    case "declare":
+    case "confirm": {
+      const on = value === true;
+      return (
+        <button
+          type="button"
+          onClick={() => onAnswer(q.id, !on)}
+          aria-pressed={on}
+          className={cn(
+            "flex items-center gap-3.5 rounded-lg border px-5 py-4 text-left transition-colors w-full max-w-[420px]",
+            on
+              ? "border-border-accent bg-[rgba(0,212,200,0.07)]"
+              : "border-border-subtle bg-surface-1 card-elev hover:border-border-strong",
+          )}
+        >
+          <span
+            className={cn(
+              "size-5 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+              on
+                ? "border-transparent bg-accent text-accent-contrast"
+                : "border-border-strong",
+            )}
+          >
+            {on ? <Check className="size-3" strokeWidth={3.5} /> : null}
+          </span>
+          <span className="text-[14px] font-ui font-semibold text-text">
+            {q.type === "declare" ? "I agree and declare" : "Confirmed, this is correct"}
+          </span>
+        </button>
+      );
+    }
 
     case "select":
       return (
@@ -812,7 +1663,7 @@ function AnswerControl({
           onChange={(e) => onAnswer(q.id, e.target.value)}
           rows={2}
           maxLength={2000}
-          placeholder="Optional"
+          placeholder={q.required ? "Type your answer" : "Optional"}
           className="w-full px-3.5 py-2.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[13px] leading-[1.55] text-text placeholder:text-text-dim/60 focus:outline-none focus:border-border-accent transition-colors resize-y"
         />
       );
@@ -1065,7 +1916,7 @@ function ItemsEditor({
   );
 }
 
-/* ── scope matrix ───────────────────────────────────────────────────── */
+/* ── scope matrix (full grid, kept for completeness) ────────────────── */
 
 function ScopeMatrix({
   value,
@@ -1078,32 +1929,9 @@ function ScopeMatrix({
 
   return (
     <div>
-      {/* legend */}
-      <div className="rounded-md border border-border-subtle/70 bg-[rgba(24,34,44,0.025)] px-3.5 py-3 mb-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-          <p className="text-[11px] leading-[1.5] text-text-dim">
-            <span className="text-text-muted font-medium">Included</span>
-            {" · "}priced in the contract sum
-          </p>
-          <p className="text-[11px] leading-[1.5] text-text-dim">
-            <span className="text-text-muted font-medium">Allowance</span>
-            {" · "}a provisional sum or prime cost
-          </p>
-          <p className="text-[11px] leading-[1.5] text-text-dim">
-            <span className="text-text-muted font-medium">Excluded</span>
-            {" · "}not in this price
-          </p>
-          <p className="text-[11px] leading-[1.5] text-text-dim">
-            <span className="text-text-muted font-medium">N/A</span>
-            {" · "}not part of this project
-          </p>
-        </div>
-      </div>
-
       <p className="text-[11px] text-text-dim mb-2 tabular-nums">
         {marked} of {MATRIX_ROWS.length} marked
       </p>
-
       <ul className="space-y-1.5">
         {MATRIX_ROWS.map((row) => {
           const state = value[row.id];

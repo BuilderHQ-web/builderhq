@@ -249,7 +249,12 @@ export function deriveRiskFlags(
   }
 
   // ── protection ────────────────────────────────────────────────────
-  if (a["compliance.warranty_insurance"] === false) {
+  // v1 asked compliance.warranty_insurance; v2 asks elig.warranty_eligible.
+  // Same risk either way: no warranty cover behind the contract.
+  if (
+    a["compliance.warranty_insurance"] === false ||
+    a["elig.warranty_eligible"] === false
+  ) {
     flags.push({
       id: "warranty",
       severity: "high",
@@ -414,6 +419,10 @@ export function formatAnswer(q: InstrumentQuestion, v: unknown): string | null {
   switch (q.type) {
     case "bool":
       return v === true ? "Yes" : v === false ? "No" : null;
+    case "declare":
+      return v === true ? "Declared" : null;
+    case "confirm":
+      return v === true ? "Confirmed" : null;
     case "select": {
       const opt = (q.options ?? []).find((o) => o.value === v);
       return opt?.label ?? String(v);
