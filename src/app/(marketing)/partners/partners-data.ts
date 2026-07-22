@@ -3903,6 +3903,58 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "nathan-newlan",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Nathan Newlan",
+    monogram: "NN",
+    portrait: "/partners/nathan-newlan/portrait.jpg",
+    suburb: "Bendigo",
+    state: "VIC",
+    tagline:
+      "An award winning Bendigo broker who owns his Mortgage Choice business, as invested in the local community as he is in getting clients across the country the right result.",
+    disciplines: ["First home buyers", "Investment lending", "Refinancing"],
+    google: { rating: 5, reviews: 86 },
+    institution: {
+      name: "Mortgage Choice - Nathan Newlan",
+      role: "Owner and director",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/nathan-newlan/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "86 reviews" },
+      { label: "In finance and banking", value: "10+ yrs", sub: "began in Bendigo banking" },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    awards: [
+      { label: "Editor’s Choice Award, winner", sub: "The Adviser Better Business Awards · VIC/TAS 2026" },
+      { label: "Best New Broker, winner", sub: "The Adviser Better Business Awards · VIC/TAS 2024" },
+      { label: "Best Regional Broker, finalist", sub: "The Adviser · VIC/TAS 2025 and 2026" },
+    ],
+    why: "Nathan is Bendigo through and through, and the recognition has come quickly. Within a few years of going out on his own he was named Best New Broker for Victoria and Tasmania, and in 2026, not long after opening his own business, he took the Editor’s Choice award at the Better Business Awards, with regional broker finalist places at both The Adviser and the MFAA alongside. What sits beneath the trophies is a genuinely local practice: more than eighty five five star reviews from a community he is visibly part of, on the field with North Bendigo Football Club and at Barkers Creek Cricket Club as much as across the desk. For an owner financing a build, in the region or anywhere in the country, a broker this trusted, this close to his clients and this highly rated is one we are glad to stand behind.",
+    aboutLabel: "About Nathan",
+    about:
+      "Nathan Newlan is the owner and director of the Mortgage Choice franchise in Bendigo. He came to broking after around a decade in finance and banking, starting out at a major bank’s Bendigo branch before moving into broking in 2021 and opening his own Mortgage Choice business in 2025. He works with clients across Bendigo and Australia wide, drawing on a panel of more than thirty five lenders to compare options. For most residential home loans his service comes at no direct cost to the client, as the lender pays him a commission once the loan settles. First home buyers, investors and those refinancing all sit within his work, handled with the patient, straightforward support he has built his name on.",
+    facts: {
+      basedIn: "Bendigo, VIC",
+      serves: "Bendigo and Australia wide",
+      focus: "Home, investment and refinance lending",
+    },
+    website: "https://www.mortgagechoice.com.au/n.newlan/",
+    instagram: "https://www.instagram.com/nathan.newlan_mortgagechoice/",
+    linkedin: "https://au.linkedin.com/in/nathan-newlan-546340143",
+    servicesLabel: "Where Nathan helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment property finance",
+      "Refinancing to a better deal",
+      "Local knowledge, with lending Australia wide",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
