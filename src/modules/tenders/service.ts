@@ -1166,6 +1166,58 @@ export async function saveTenderResponses(
     .select()
     .from(tenderResponses)
     .where(eq(tenderResponses.tenderId, tenderId));
+
+  // The deck is the single source of truth for the headline figures,
+  // so mirror them onto the tender row whenever their answers move.
+  // Everything that reads tenders.total_price_aud (owner cards, the
+  // comparison baseline, my-tenders) keeps working without knowing
+  // the instrument exists. The headline stays GST-INCLUSIVE — the
+  // instrument asks ex GST (4.2) plus registration (4.3), and owners
+  // read the number they would actually pay.
+  const MIRROR_QIDS = new Set([
+    "price.total",
+    "commercial.gst_registered",
+    "programme.duration",
+    "price.validity",
+    "programme.start",
+  ]);
+  if (entries.some((e) => MIRROR_QIDS.has(e.qid))) {
+    const unwrap = (qid: string): unknown => {
+      const r = all.find((x) => x.qid === qid);
+      const v = r?.value;
+      return typeof v === "object" && v !== null && "v" in v
+        ? (v as { v: unknown }).v
+        : v;
+    };
+    const num = (x: unknown): number | null =>
+      typeof x === "number" && Number.isFinite(x) ? x : null;
+
+    const priceExGst = num(unwrap("price.total"));
+    const gstRegistered = unwrap("commercial.gst_registered");
+    const duration = num(unwrap("programme.duration"));
+    const validity = num(unwrap("price.validity"));
+    const start = unwrap("programme.start");
+
+    await db
+      .update(tenders)
+      .set({
+        totalPriceAud:
+          priceExGst === null
+            ? null
+            : gstRegistered === false
+              ? priceExGst
+              : Math.round(priceExGst * 1.1),
+        durationWeeks: duration,
+        validityDays: validity,
+        proposedStartMonth:
+          typeof start === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(start)
+            ? start
+            : null,
+        updatedAt: now,
+      })
+      .where(eq(tenders.id, tenderId));
+  }
+
   return ok({ saved: entries.length, checklist: checklistProgress(row, all) });
 }
 

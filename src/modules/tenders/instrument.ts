@@ -1206,28 +1206,28 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
     questions: [
       {
         id: "sign.true_complete",
-        ref: "11.1",
+        ref: "12.1",
         prompt: "The information in this tender is true and complete",
         type: "declare",
         required: true,
       },
       {
         id: "sign.capable",
-        ref: "11.2",
+        ref: "12.2",
         prompt: "This offer stands and is capable of acceptance for its validity period",
         type: "declare",
         required: true,
       },
       {
         id: "sign.no_collusion",
-        ref: "11.3",
+        ref: "12.3",
         prompt: "This tender was prepared without collusion with any other tenderer",
         type: "declare",
         required: true,
       },
       {
         id: "sign.signatory",
-        ref: "11.4",
+        ref: "12.4",
         prompt: "Signatory name and role",
         help: "Prints as the signature block on the tender document, with the date of submission.",
         type: "text",

@@ -710,9 +710,9 @@ function TenderCtaBar({
 
   const sub =
     variant === "none"
-      ? "Submit your price and scope. The owner reads it side by side with the other tenders."
+      ? "Twelve short modules, about thirty minutes. The owner reads it side by side with the other tenders."
       : variant === "draft"
-      ? "Pick up where you left off. The form saves as you go."
+      ? "Pick up where you left off. Your answers save as they land."
       : variant === "submitted"
       ? "The owner is reviewing. You can withdraw to start over."
       : tenderStatus === "awarded"
@@ -721,9 +721,9 @@ function TenderCtaBar({
 
   const ctaLabel =
     variant === "none"
-      ? "Submit a tender"
+      ? "Start your tender"
       : variant === "draft"
-      ? "Continue draft"
+      ? "Resume your tender"
       : "View tender";
 
   return (
