@@ -90,6 +90,9 @@ const MATRIX_ROWS = scopeMatrixRows();
 /** The slide easing every movement in the journey shares. */
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** Once a builder has met the three-beat intro, it stays met. */
+const INTRO_SEEN_KEY = "bhq.tender-intro-seen.v1";
+
 /** What prints beside the declarations — entity facts from the profile. */
 export interface TenderLetterhead {
   companyName: string | null;
@@ -418,12 +421,42 @@ export function TenderJourney({
   const idxRef = useRef(idx);
   idxRef.current = idx;
 
-  // ── stages: opening → (bridge) → deck → sealed ───────────────────
+  // ── stages: (intro) → opening → (bridge) → deck → sealed ─────────
   // A bridge HOLDS until the builder clicks or presses a key — module
   // openings are read at the reader's pace, never a timer's.
   const [stage, setStage] = useState<
-    "opening" | "bridge" | "deck" | "sealed"
+    "intro" | "opening" | "bridge" | "deck" | "sealed"
   >("opening");
+
+  // The three-beat introduction, for a builder's very first encounter:
+  // why this exists, what we build together, what it asks of them.
+  // Shown once (remembered on this device), always skippable, and
+  // re-viewable any time with ?intro=1. Decided after hydration so the
+  // server render never has to guess at localStorage.
+  useEffect(() => {
+    if (progress.answered > 0) return;
+    let show = false;
+    try {
+      const forced = new URLSearchParams(window.location.search).get("intro");
+      if (forced === "1") show = true;
+      else if (window.localStorage.getItem(INTRO_SEEN_KEY) !== "1") {
+        show = true;
+      }
+    } catch {
+      // Storage unavailable — never block the journey over a nicety.
+    }
+    if (show) setStage("intro");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const finishIntro = useCallback(() => {
+    try {
+      window.localStorage.setItem(INTRO_SEEN_KEY, "1");
+    } catch {
+      // Ignore — worst case the intro shows again next visit.
+    }
+    setStage("opening");
+  }, []);
   type Bridge = { moduleIdx: number; target: number; grand: boolean };
   const [bridge, setBridge] = useState<Bridge | null>(null);
   const bridgeRef = useRef<Bridge | null>(null);
@@ -552,8 +585,15 @@ export function TenderJourney({
   );
 
   // The opening starts and a bridge continues on Enter, Space or Escape.
+  // The intro runs its own keys, so it is left alone here.
   useEffect(() => {
-    if (stage === "deck" || stage === "sealed" || previewOpen) return;
+    if (
+      stage === "deck" ||
+      stage === "sealed" ||
+      stage === "intro" ||
+      previewOpen
+    )
+      return;
     const h = (e: KeyboardEvent) => {
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Escape") return;
       const t = e.target as HTMLElement | null;
@@ -714,7 +754,7 @@ export function TenderJourney({
           </Link>
 
           <div className="min-w-0 text-center">
-            {stage === "opening" ? (
+            {stage === "opening" || stage === "intro" ? (
               <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold truncate">
                 Tender submission
               </p>
@@ -814,7 +854,12 @@ export function TenderJourney({
           Exit animations are deliberately absent: a mode="wait" chain
           here would hold the whole deck hostage to an exit callback. */}
       <div className="flex-1 flex flex-col overflow-x-clip">
-        {stage === "opening" ? (
+        {stage === "intro" ? (
+          <IntroBeats
+            reduceMotion={!!reduceMotion}
+            onDone={finishIntro}
+          />
+        ) : stage === "opening" ? (
           <div className="flex-1 flex flex-col">
             <OpeningSlide
               slug={slug}
@@ -1135,6 +1180,271 @@ function DocumentPreviewOverlay({
           <TenderDocumentSheet model={model} />
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+/* ── the three-beat introduction ────────────────────────────────────── */
+
+const INTRO_BEATS = [
+  {
+    key: "why",
+    kicker: "Why this exists",
+    headline: "Good builders lose good jobs on paperwork.",
+    body: "When an owner holds five quotes in five formats, diligence is invisible. The clearest document wins the attention, and too often the vaguest cheap number wins the job. That is the part we are fixing, with you.",
+    cta: "Continue",
+  },
+  {
+    key: "what",
+    kicker: "What we build together",
+    headline: "You answer. We build the document.",
+    body: "Twelve short modules turn what you already know into a formal tender: your letterhead, your schedules, your terms, signed and sealed. The kind of document that usually takes an estimator a week.",
+    cta: "Continue",
+  },
+  {
+    key: "cost",
+    kicker: "What it asks of you",
+    headline: "About thirty minutes, once.",
+    body: "Most answers are a single tap. Everything saves as it lands, you can leave and resume any time, and your standing answers carry to every tender after this one. You can preview your document live as you go.",
+    cta: "Let's build it",
+  },
+] as const;
+
+/**
+ * The once-only welcome: three beats that make the case before the
+ * letterhead screen takes over. Whole-surface click, Enter or the
+ * button advances; Escape or the quiet link skips. Entrance-only
+ * choreography throughout, and each beat's composition is drawn in
+ * the document's own visual language.
+ */
+function IntroBeats({
+  reduceMotion,
+  onDone,
+}: {
+  reduceMotion: boolean;
+  onDone: () => void;
+}) {
+  const [beat, setBeat] = useState(0);
+  const b = INTRO_BEATS[beat]!;
+  const last = beat === INTRO_BEATS.length - 1;
+
+  const advance = useCallback(() => {
+    if (beat >= INTRO_BEATS.length - 1) onDone();
+    else setBeat((x) => x + 1);
+  }, [beat, onDone]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onDone();
+        return;
+      }
+      if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+        const t = e.target as HTMLElement | null;
+        if (t && (t.tagName === "A" || t.tagName === "BUTTON")) return;
+        e.preventDefault();
+        advance();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [advance, onDone]);
+
+  const d = (delay: number) => (reduceMotion ? 0 : delay);
+
+  return (
+    <div className="flex-1 flex flex-col relative">
+      <button
+        type="button"
+        onClick={onDone}
+        className="absolute top-5 right-5 sm:right-10 z-10 text-[11.5px] text-text-dim hover:text-text transition-colors"
+      >
+        Skip the intro
+      </button>
+
+      <button
+        type="button"
+        onClick={advance}
+        aria-label={last ? "Begin" : "Next"}
+        className="flex-1 flex items-center justify-center px-6 pb-10 text-center cursor-pointer select-none"
+      >
+        <motion.div
+          key={b.key}
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, ease: EASE }}
+          className="max-w-[600px] w-full"
+        >
+          <div className="h-[132px] flex items-end justify-center mb-9">
+            {b.key === "why" ? (
+              <IntroArtPile d={d} />
+            ) : b.key === "what" ? (
+              <IntroArtDocument d={d} />
+            ) : (
+              <IntroArtTimeline d={d} />
+            )}
+          </div>
+
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: d(0.5), ease: EASE }}
+            className="text-[10px] tracking-[0.3em] uppercase text-accent-deep font-ui font-semibold"
+          >
+            {b.kicker}
+          </motion.p>
+          <motion.h2
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: d(0.62), ease: EASE }}
+            className="mt-3.5 font-display tracking-[-0.01em] text-[28px] sm:text-[36px] leading-[1.12] text-text"
+          >
+            {b.headline}
+          </motion.h2>
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.55, delay: d(0.85), ease: EASE }}
+            className="mt-4 text-[13.5px] leading-[1.75] text-text-muted max-w-[52ch] mx-auto"
+          >
+            {b.body}
+          </motion.p>
+
+          <motion.span
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: d(1.1), ease: EASE }}
+            className="mt-8 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
+          >
+            {b.cta}
+            <ArrowRight className="size-4" />
+          </motion.span>
+        </motion.div>
+      </button>
+
+      {/* progress dots */}
+      <div className="pb-8 flex items-center justify-center gap-2">
+        {INTRO_BEATS.map((x, i) => (
+          <button
+            key={x.key}
+            type="button"
+            onClick={() => setBeat(i)}
+            aria-label={`Part ${i + 1}`}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              i === beat
+                ? "w-6 bg-accent"
+                : "w-1.5 bg-[rgba(24,34,44,0.18)] hover:bg-[rgba(24,34,44,0.3)]",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Beat one: the pile — five quotes in five formats, none aligned. */
+function IntroArtPile({ d }: { d: (n: number) => number }) {
+  const sheets = [
+    { rot: -7, x: -64, delay: 0.08 },
+    { rot: 5, x: 0, delay: 0.2 },
+    { rot: -2, x: 62, delay: 0.32 },
+  ];
+  return (
+    <div className="relative w-[240px] h-[120px]" aria-hidden>
+      {sheets.map((sh) => (
+        <motion.div
+          key={sh.rot}
+          initial={{ opacity: 0, y: 26, rotate: 0 }}
+          animate={{ opacity: 1, y: 0, rotate: sh.rot }}
+          transition={{ duration: 0.55, delay: d(sh.delay), ease: EASE }}
+          style={{ left: 90 + sh.x }}
+          className="absolute bottom-0 w-[76px] h-[100px] bg-white rounded-[2px] shadow-[0_1px_2px_rgba(24,34,44,0.12),_0_10px_24px_-12px_rgba(24,34,44,0.3)] border border-[#eee9dd] px-2.5 pt-2.5"
+        >
+          <div className="h-[3px] w-7 bg-[#c9c3b2]" />
+          {[16, 24, 32, 40, 48].map((top, i) => (
+            <div
+              key={top}
+              style={{ marginTop: i === 0 ? 9 : 5, width: `${88 - ((i * 29) % 42)}%` }}
+              className="h-[2.5px] bg-[#eee9dd]"
+            />
+          ))}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/** Beat two: one crisp document assembling — rule, lines, seal. */
+function IntroArtDocument({ d }: { d: (n: number) => number }) {
+  return (
+    <motion.div
+      aria-hidden
+      initial={{ opacity: 0, y: 18, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, delay: d(0.08), ease: EASE }}
+      className="relative w-[104px] h-[128px] bg-white rounded-[3px] shadow-[0_1px_2px_rgba(24,34,44,0.12),_0_16px_36px_-16px_rgba(24,34,44,0.35)] border border-[#eee9dd] px-3.5 pt-3.5 text-left"
+    >
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 0.45, delay: d(0.35), ease: EASE }}
+        className="h-[3px] bg-[#18222c] origin-left"
+      />
+      {[0, 1, 2, 3].map((i) => (
+        <motion.div
+          key={i}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.4, delay: d(0.5 + i * 0.09), ease: EASE }}
+          style={{ width: `${92 - i * 14}%` }}
+          className="h-[2.5px] bg-[#e3ded2] origin-left mt-[9px]"
+        />
+      ))}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, delay: d(0.95), ease: EASE }}
+        className="absolute bottom-3 right-3 size-5 rounded-[2px] bg-[rgba(0,212,200,0.16)] border border-[#0a7d73]/50 flex items-center justify-center"
+      >
+        <Check className="size-3 text-[#0a7d73]" strokeWidth={3} />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/** Beat three: the timeline — twelve ticks, one half hour. */
+function IntroArtTimeline({ d }: { d: (n: number) => number }) {
+  return (
+    <div className="relative w-[280px] h-[90px]" aria-hidden>
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 0.7, delay: d(0.1), ease: EASE }}
+        className="absolute bottom-[34px] left-0 right-0 h-px bg-[rgba(24,34,44,0.25)] origin-left"
+      />
+      {Array.from({ length: 12 }, (_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scaleY: 0 }}
+          animate={{ opacity: 1, scaleY: 1 }}
+          transition={{ duration: 0.3, delay: d(0.3 + i * 0.055), ease: EASE }}
+          style={{ left: `${(i / 11) * 100}%` }}
+          className={cn(
+            "absolute bottom-[30px] w-px h-[9px] origin-bottom -translate-x-1/2",
+            i === 11 ? "bg-accent-deep w-[2px] h-[13px]" : "bg-[rgba(24,34,44,0.3)]",
+          )}
+        />
+      ))}
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: d(1.0), ease: EASE }}
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[11px] text-text-dim tabular-nums"
+      >
+        12 modules · about 30 min
+      </motion.p>
     </div>
   );
 }
