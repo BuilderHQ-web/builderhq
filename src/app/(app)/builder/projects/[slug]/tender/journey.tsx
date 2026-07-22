@@ -55,6 +55,11 @@ import {
   type InstrumentQuestion,
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
+import {
+  buildTenderDocument,
+  type TenderDocumentModel,
+} from "@/modules/tenders/document";
+import { TenderDocumentSheet } from "@/components/tender-document/sheet";
 import { formatAnswer, formatAud } from "@/modules/tenders/comparison";
 import {
   saveTenderResponsesAction,
@@ -335,6 +340,8 @@ export function TenderJourney({
         return;
       }
       for (const q of m.section.questions) {
+        // Amounts are captured inline on the coverage rows.
+        if (q.type === "amounts") continue;
         if (!gatePasses(q, answers)) continue;
         if (q.type === "matrix") {
           MATRIX_ROWS.forEach((row, rIdx) => {
@@ -386,6 +393,7 @@ export function TenderJourney({
         continue;
       }
       for (const q of m.section.questions) {
+        if (q.type === "amounts") continue;
         if (q.showIf && init[q.showIf.qid] !== q.showIf.equals) continue;
         if (q.type === "matrix") {
           for (const row of MATRIX_ROWS) {
@@ -410,20 +418,17 @@ export function TenderJourney({
   idxRef.current = idx;
 
   // ── stages: opening → (bridge) → deck → sealed ───────────────────
+  // A bridge HOLDS until the builder clicks or presses a key — module
+  // openings are read at the reader's pace, never a timer's.
   const [stage, setStage] = useState<
     "opening" | "bridge" | "deck" | "sealed"
   >("opening");
-  type Bridge = { moduleIdx: number; target: number };
+  type Bridge = { moduleIdx: number; target: number; grand: boolean };
   const [bridge, setBridge] = useState<Bridge | null>(null);
   const bridgeRef = useRef<Bridge | null>(null);
   bridgeRef.current = bridge;
-  const bridgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const commitBridge = useCallback(() => {
-    if (bridgeTimer.current) {
-      clearTimeout(bridgeTimer.current);
-      bridgeTimer.current = null;
-    }
     const b = bridgeRef.current;
     if (b) {
       setDir(1);
@@ -434,17 +439,16 @@ export function TenderJourney({
   }, [deck.length]);
 
   const startBridge = useCallback(
-    (moduleIdx: number, target: number, ms: number) => {
-      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
-      setBridge({ moduleIdx, target });
+    (moduleIdx: number, target: number, grand: boolean) => {
+      setBridge({ moduleIdx, target, grand });
       setStage("bridge");
-      bridgeTimer.current = setTimeout(commitBridge, ms);
     },
-    [commitBridge],
+    [],
   );
 
-  // Start: create the draft if none exists yet, then enter the deck
-  // through the first bridge.
+  // Start: create the draft if none exists yet, then enter the deck.
+  // A first-ever start earns the grand opening; a resume gets the
+  // standard module bridge.
   const begin = useCallback(async () => {
     if (starting) return;
     if (!tenderIdRef.current) {
@@ -465,10 +469,10 @@ export function TenderJourney({
       setStage("deck");
       return;
     }
-    startBridge(sl.mIdx, idxRef.current, 2050);
-  }, [starting, projectId, deck, reduceMotion, startBridge]);
+    startBridge(sl.mIdx, idxRef.current, progress.answered === 0);
+  }, [starting, projectId, deck, reduceMotion, startBridge, progress.answered]);
 
-  // Advance one slide; crossing into a new module plays its bridge.
+  // Advance one slide; crossing into a new module opens its bridge.
   const advance = useCallback(() => {
     const i = idxRef.current;
     const target = Math.min(i + 1, deck.length - 1);
@@ -481,7 +485,7 @@ export function TenderJourney({
       nxt.kind !== "review" &&
       nxt.mIdx !== cur.mIdx
     ) {
-      startBridge(nxt.mIdx, target, 1600);
+      startBridge(nxt.mIdx, target, false);
     } else {
       setDir(1);
       setCursor(target);
@@ -493,7 +497,6 @@ export function TenderJourney({
   const jumpTo = useCallback(
     (target: number) => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
-      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
       const clamped = Math.max(0, Math.min(target, deck.length - 1));
       setDir(clamped >= idxRef.current ? 1 : -1);
       setCursor(clamped);
@@ -525,15 +528,17 @@ export function TenderJourney({
   useEffect(
     () => () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
-      if (bridgeTimer.current) clearTimeout(bridgeTimer.current);
     },
     [],
   );
 
+  const [contentsOpen, setContentsOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   // Enter continues whenever the current slide is answered.
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (stage !== "deck") return;
+      if (stage !== "deck" || previewOpen) return;
       if (e.key !== "Enter") return;
       const t = e.target as HTMLElement;
       if (t.tagName === "TEXTAREA" || t.tagName === "BUTTON") return;
@@ -542,12 +547,12 @@ export function TenderJourney({
         next();
       }
     },
-    [stage, slide, slideDone, next],
+    [stage, slide, slideDone, next, previewOpen],
   );
 
-  // The opening starts and a bridge skips on Enter, Space or Escape.
+  // The opening starts and a bridge continues on Enter, Space or Escape.
   useEffect(() => {
-    if (stage === "deck" || stage === "sealed") return;
+    if (stage === "deck" || stage === "sealed" || previewOpen) return;
     const h = (e: KeyboardEvent) => {
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Escape") return;
       const t = e.target as HTMLElement | null;
@@ -558,7 +563,7 @@ export function TenderJourney({
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [stage, begin, commitBridge]);
+  }, [stage, begin, commitBridge, previewOpen]);
 
   // ── lookups for contents + review jumps ──────────────────────────
   const slideIndex = useMemo(() => {
@@ -628,7 +633,30 @@ export function TenderJourney({
     };
   }, [MODULES, deck, slide]);
 
-  const [contentsOpen, setContentsOpen] = useState(false);
+  // The document, assembled live from the answers — what the preview
+  // shows mid-deck is exactly what the PDF becomes.
+  const docModel = useMemo(
+    () =>
+      buildTenderDocument({
+        tenderId: tenderIdRef.current ?? "00000000-pending",
+        status: "draft",
+        submittedAt: null,
+        instrumentVersion,
+        answers,
+        docs: docs.map((d) => ({
+          filename: d.filename,
+          sizeBytes: d.sizeBytes,
+        })),
+        project: { title: projectTitle, meta: projectMeta },
+        builder: {
+          entity: letterhead?.companyName ?? null,
+          abn: letterhead?.abn ?? null,
+          licence: letterhead?.licence ?? null,
+        },
+        now: new Date(),
+      }),
+    [answers, docs, instrumentVersion, projectTitle, projectMeta, letterhead],
+  );
 
   // ── submit ───────────────────────────────────────────────────────
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
@@ -718,6 +746,16 @@ export function TenderJourney({
               <span className="text-text font-medium">{progress.answered}</span>
               /{progress.required}
             </p>
+            {stage !== "opening" ? (
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-border-subtle text-[11.5px] text-text-muted hover:border-border-strong hover:text-text transition-colors"
+              >
+                <FileText className="size-3.5" />
+                <span className="hidden sm:inline">Preview</span>
+              </button>
+            ) : null}
             <div className="relative">
               <button
                 type="button"
@@ -790,14 +828,16 @@ export function TenderJourney({
           <SealedMoment />
         ) : stage === "bridge" && bridge ? (
           <div
-            key={`bridge-${bridge.moduleIdx}`}
+            key={`bridge-${bridge.moduleIdx}-${bridge.grand ? "g" : "s"}`}
             className="flex-1 flex flex-col"
           >
             <ModuleBridge
               no={bridge.moduleIdx + 1}
               total={MODULES.length}
               module={MODULES[bridge.moduleIdx]!}
-              onSkip={commitBridge}
+              grand={bridge.grand}
+              projectTitle={projectTitle}
+              onContinue={commitBridge}
             />
           </div>
         ) : (
@@ -830,6 +870,8 @@ export function TenderJourney({
                     answers={answers}
                     progress={progress}
                     docs={docs}
+                    model={docModel}
+                    onPreview={() => setPreviewOpen(true)}
                     confirming={confirmingSubmit}
                     submitting={submitting}
                     onConfirmChange={setConfirmingSubmit}
@@ -858,15 +900,45 @@ export function TenderJourney({
                         slide.row.id
                       ]
                     }
-                    onMark={(state) =>
+                    amount={(() => {
+                      const a = (
+                        (answers["scope.amounts"] as Record<string, unknown>) ??
+                        {}
+                      )[slide.row.id];
+                      return typeof a === "number" ? a : null;
+                    })()}
+                    onMark={(state) => {
+                      // Marking included opens the optional amount field,
+                      // so the deck stays put; every other state keeps
+                      // the rapid-fire auto-advance. Leaving "included"
+                      // clears any amount so a stale figure never prints.
+                      if (state !== "included") {
+                        queue("scope.amounts", (prev: unknown) => {
+                          const cur = {
+                            ...((prev as Record<string, unknown>) ?? {}),
+                          };
+                          delete cur[slide.row.id];
+                          return cur;
+                        });
+                      }
                       answerAndMaybeAdvance(
                         slide.q.id,
                         (prev: unknown) => ({
                           ...((prev as Record<string, string>) ?? {}),
                           [slide.row.id]: state,
                         }),
-                        true,
-                      )
+                        state !== "included",
+                      );
+                    }}
+                    onAmount={(v) =>
+                      queue("scope.amounts", (prev: unknown) => {
+                        const cur = {
+                          ...((prev as Record<string, unknown>) ?? {}),
+                        };
+                        if (v === null) delete cur[slide.row.id];
+                        else cur[slide.row.id] = v;
+                        return cur;
+                      })
                     }
                   />
                 ) : (
@@ -969,6 +1041,95 @@ export function TenderJourney({
           </motion.div>
         )}
       </div>
+
+      {/* ── live document preview ────────────────────────────────── */}
+      {previewOpen ? (
+        <DocumentPreviewOverlay
+          model={docModel}
+          downloadHref={
+            tenderIdRef.current
+              ? `/builder/projects/${slug}/tender/document`
+              : null
+          }
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/* ── live document preview overlay ──────────────────────────────────── */
+
+function DocumentPreviewOverlay({
+  model,
+  downloadHref,
+  onClose,
+}: {
+  model: TenderDocumentModel;
+  downloadHref: string | null;
+  onClose: () => void;
+}) {
+  // Escape closes; the deck's own key handlers sit behind the overlay.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", h, true);
+    return () => window.removeEventListener("keydown", h, true);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col">
+      <div
+        className="absolute inset-0 bg-[rgba(24,34,44,0.45)]"
+        aria-hidden
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: EASE }}
+        className="relative flex-1 flex flex-col min-h-0 mx-auto w-full max-w-[820px] px-4 sm:px-6 pt-6 sm:pt-10 pb-0"
+      >
+        <div className="flex items-center justify-between gap-3 pb-3">
+          <div>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[#9fd8d2] font-ui font-semibold">
+              Your tender document
+            </p>
+            <p className="mt-0.5 text-[11.5px] text-[rgba(255,255,255,0.75)]">
+              Assembled live from your answers.
+              {model.isDraft ? " The watermark lifts on submission." : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {downloadHref ? (
+              <a
+                href={downloadHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-accent text-accent-contrast text-[12px] font-semibold hover:bg-accent-hover transition-colors"
+              >
+                <FileText className="size-3.5" />
+                Download PDF
+              </a>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close preview"
+              className="size-9 rounded-full border border-[rgba(255,255,255,0.3)] text-white/85 hover:text-white hover:border-white/60 transition-colors flex items-center justify-center"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto pb-10 overscroll-contain">
+          <TenderDocumentSheet model={model} />
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -1131,40 +1292,161 @@ function OpeningSlide({
 
 /**
  * The moment between modules: number, the module's question in the
- * builder's voice, a rule drawing across. Clicking anywhere lands the
- * first question immediately.
+ * builder's voice, a rule drawing across. The bridge HOLDS until the
+ * builder continues — click anywhere, the pill, or Enter.
+ *
+ * The GRAND variant plays once, on the very first start: registration
+ * marks draw at the corners like a document being set on the press, a
+ * hairline sweeps the width, the twelve module numbers cascade past
+ * and dim to the one being opened, and the module's question settles
+ * in from a soft blur. Entrance keyframes only — nothing here can
+ * wedge on an exit callback.
  */
 function ModuleBridge({
   no,
   total,
   module: m,
-  onSkip,
+  grand,
+  projectTitle,
+  onContinue,
 }: {
   no: number;
   total: number;
   module: JourneyModule;
-  onSkip: () => void;
+  grand: boolean;
+  projectTitle: string;
+  onContinue: () => void;
 }) {
+  // The grand timeline breathes; the standard bridge gets to the
+  // point. Every delay below keys off this base.
+  const t = grand
+    ? { kicker: 1.45, ask: 1.65, rule: 2.1, intro: 2.35, pill: 2.8 }
+    : { kicker: 0.12, ask: 0.28, rule: 0.55, intro: 0.8, pill: 1.15 };
+
   return (
     <button
       type="button"
-      onClick={onSkip}
-      aria-label="Continue to the questions"
-      className="flex-1 flex items-center justify-center px-6 pb-16 text-center cursor-default select-none"
+      onClick={onContinue}
+      aria-label="Open this module"
+      className="relative flex-1 flex items-center justify-center px-6 pb-16 text-center cursor-pointer select-none"
     >
-      <div className="max-w-[680px]">
+      {grand ? (
+        <>
+          {/* registration marks — the document being set */}
+          {(
+            [
+              ["top-10 left-6 sm:left-12", "M22 1 H1 V22"],
+              ["top-10 right-6 sm:right-12", "M1 1 H22 V22"],
+              ["bottom-10 left-6 sm:left-12", "M22 22 H1 V1"],
+              ["bottom-10 right-6 sm:right-12", "M1 22 H22 V1"],
+            ] as const
+          ).map(([pos, d], i) => (
+            <svg
+              key={pos}
+              viewBox="0 0 23 23"
+              aria-hidden
+              className={cn("absolute size-5 text-accent-deep/60", pos)}
+            >
+              <motion.path
+                d={d}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.08 + i * 0.09,
+                  ease: EASE,
+                }}
+              />
+            </svg>
+          ))}
+
+          {/* the full-width hairline sweep */}
+          <motion.div
+            aria-hidden
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
+            className="absolute top-[26%] left-0 right-0 h-px bg-[rgba(24,34,44,0.14)] origin-left"
+          />
+        </>
+      ) : null}
+
+      <div className="max-w-[680px] w-full">
+        {grand ? (
+          <>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3, ease: EASE }}
+              className="text-[9.5px] tracking-[0.34em] uppercase text-text-dim font-ui font-semibold"
+            >
+              Preparing the tender of
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 14, scale: 1.03 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.42, ease: EASE }}
+              className="mt-2 font-display text-[20px] sm:text-[24px] leading-[1.1] text-text/85"
+            >
+              {projectTitle}
+            </motion.p>
+
+            {/* the twelve, cascading past — the opened one stays lit */}
+            <div
+              aria-hidden
+              className="mt-7 flex items-center justify-center gap-2.5 sm:gap-3.5 flex-wrap"
+            >
+              {Array.from({ length: total }, (_, i) => {
+                const active = i + 1 === no;
+                return (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{
+                      opacity: active ? 1 : [0, 0.85, 0.22],
+                      y: 0,
+                    }}
+                    transition={{
+                      duration: active ? 0.45 : 0.9,
+                      delay: 0.72 + i * 0.055,
+                      ease: EASE,
+                      ...(active
+                        ? {}
+                        : { opacity: { times: [0, 0.45, 1], duration: 0.9, delay: 0.72 + i * 0.055 } }),
+                    }}
+                    className={cn(
+                      "font-mono text-[11px] tabular-nums",
+                      active
+                        ? "text-accent-deep font-semibold"
+                        : "text-text-dim",
+                    )}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </motion.span>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
+
         <motion.p
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12, ease: EASE }}
-          className="text-[10.5px] tracking-[0.26em] uppercase text-text-dim font-ui font-semibold tabular-nums"
+          transition={{ duration: 0.5, delay: t.kicker, ease: EASE }}
+          className={cn(
+            "text-[10.5px] tracking-[0.26em] uppercase text-text-dim font-ui font-semibold tabular-nums",
+            grand && "mt-9",
+          )}
         >
           Module {no} of {total} · {m.title}
         </motion.p>
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.28, ease: EASE }}
+          initial={{ opacity: 0, y: 20, filter: "blur(5px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.65, delay: t.ask, ease: EASE }}
           className="mt-4 font-display tracking-[-0.01em] text-[28px] sm:text-[38px] leading-[1.12] text-text"
         >
           {m.ask ?? m.title}
@@ -1172,16 +1454,34 @@ function ModuleBridge({
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
-          transition={{ duration: 0.62, delay: 0.52, ease: EASE }}
+          transition={{ duration: 0.62, delay: t.rule, ease: EASE }}
           className="mx-auto mt-6 h-px w-44 bg-accent origin-left"
         />
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.82, ease: EASE }}
+          transition={{ duration: 0.5, delay: t.intro, ease: EASE }}
           className="mt-5 text-[12.5px] leading-[1.6] text-text-muted max-w-[52ch] mx-auto"
         >
           {m.intro}
+        </motion.p>
+
+        <motion.span
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: t.pill, ease: EASE }}
+          className="mt-8 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
+        >
+          {grand ? "Begin" : `Open module ${no}`}
+          <ArrowRight className="size-4" />
+        </motion.span>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: t.pill + 0.5, ease: EASE }}
+          className="mt-3.5 text-[10.5px] text-text-faint"
+        >
+          Click anywhere, or press Enter
         </motion.p>
       </div>
     </button>
@@ -1325,7 +1625,10 @@ function ContentsPopover({
                 {open && m.kind === "questions" ? (
                   <ul className="pb-1.5">
                     {m.section.questions
-                      .filter((q) => gatePasses(q, answers))
+                      .filter(
+                        (q) =>
+                          q.type !== "amounts" && gatePasses(q, answers),
+                      )
                       .map((q) => {
                         const done = isAnswerComplete(q, answers[q.id]);
                         return (
@@ -1398,14 +1701,18 @@ function MatrixRowSlide({
   rIdx,
   total,
   value,
+  amount,
   onMark,
+  onAmount,
 }: {
   q: InstrumentQuestion;
   row: { id: string; label: string };
   rIdx: number;
   total: number;
   value: string | undefined;
+  amount: number | null;
   onMark: (state: string) => void;
+  onAmount: (v: number | null) => void;
 }) {
   return (
     <div>
@@ -1460,6 +1767,26 @@ function MatrixRowSlide({
           );
         })}
       </div>
+
+      {value === "included" ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: EASE }}
+          className="mt-6 border-y border-border-subtle py-4"
+        >
+          <p className="text-[12.5px] text-text font-ui font-medium">
+            Amount in your price for this trade
+          </p>
+          <p className="mt-0.5 text-[11.5px] text-text-dim">
+            Optional. Itemised trades print as a column on your coverage
+            schedule and sharpen how your price reads.
+          </p>
+          <div className="mt-3">
+            <CurrencyBox value={amount} onChange={onAmount} />
+          </div>
+        </motion.div>
+      ) : null}
     </div>
   );
 }
@@ -1810,6 +2137,8 @@ function ReviewSlide({
   answers,
   progress,
   docs,
+  model,
+  onPreview,
   confirming,
   submitting,
   onConfirmChange,
@@ -1823,6 +2152,8 @@ function ReviewSlide({
   answers: Answers;
   progress: ProgressShape;
   docs: Document[];
+  model: TenderDocumentModel;
+  onPreview: () => void;
   confirming: boolean;
   submitting: boolean;
   onConfirmChange: (v: boolean) => void;
@@ -1845,11 +2176,11 @@ function ReviewSlide({
       </h2>
       <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
         {progress.complete
-          ? "This is exactly what the owner will read. Check the key metrics, open any module to read your answers, then submit when you are satisfied."
-          : "The key metrics so far, and every module below. Open one to read your answers, or jump straight to what is left."}
+          ? "This is your tender document, assembled from your answers. Read its cover below, open any module to check yourself, then submit when you are satisfied."
+          : "The cover of your document so far, and every module below. Open one to read your answers, or jump straight to what is left."}
       </p>
 
-      <MetricsPanel answers={answers} />
+      <CoverCard model={model} onPreview={onPreview} />
 
       <ModuleLedger
         modules={modules}
@@ -1927,6 +2258,91 @@ function ReviewSlide({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The document's cover, inline on the review — letterhead, the
+ * headline offer, the key terms — with the full live preview one tap
+ * away. White is the document object, not a section.
+ */
+function CoverCard({
+  model,
+  onPreview,
+}: {
+  model: TenderDocumentModel;
+  onPreview: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPreview}
+      className="mt-8 block w-full text-left rounded-[4px] bg-white shadow-[0_1px_2px_rgba(24,34,44,0.08),_0_18px_44px_-20px_rgba(24,34,44,0.3)] hover:shadow-[0_1px_2px_rgba(24,34,44,0.08),_0_22px_52px_-20px_rgba(24,34,44,0.4)] transition-shadow group"
+    >
+      <div className="px-6 sm:px-8 py-6 sm:py-7">
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="font-display text-[13px] text-[#18222c]">
+            Builder<span className="text-[#0a7d73]">HQ</span>
+          </span>
+          <span className="text-[8.5px] tracking-[0.28em] uppercase text-[#8a8577] font-semibold">
+            Tender submission
+          </span>
+        </div>
+        <div className="mt-2.5 h-[2px] bg-[#18222c]" />
+
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+          <div className="min-w-0">
+            <p className="font-display text-[20px] sm:text-[23px] leading-[1.1] text-[#18222c] truncate">
+              {model.project.title}
+            </p>
+            <p className="mt-1 text-[11px] text-[#6b6555]">
+              {model.builder.entity}
+              {model.builder.abn ? ` · ABN ${model.builder.abn}` : ""}
+            </p>
+          </div>
+          {model.cover.priceExGst ? (
+            <div className="shrink-0">
+              <p className="text-[8.5px] tracking-[0.18em] uppercase text-[#8a8577] font-semibold">
+                Price ex GST
+              </p>
+              <p className="font-display text-[26px] leading-none text-[#18222c] tabular-nums">
+                {model.cover.priceExGst}
+              </p>
+              {model.cover.priceIncGst ? (
+                <p className="mt-1 text-[10.5px] text-[#6b6555] tabular-nums">
+                  {model.cover.priceIncGst} inc GST
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {model.cover.cells.length > 0 ? (
+          <dl className="mt-5 pt-4 border-t border-[#eee9dd] grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3.5">
+            {model.cover.cells.slice(0, 8).map((c) => (
+              <div key={c.k}>
+                <dt className="text-[8px] tracking-[0.16em] uppercase text-[#8a8577] font-semibold">
+                  {c.k}
+                </dt>
+                <dd className="mt-0.5 text-[12px] font-semibold text-[#18222c] tabular-nums">
+                  {c.v}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        <div className="mt-5 pt-3.5 border-t border-[#eee9dd] flex items-center justify-between gap-4">
+          <span className="font-mono text-[10px] text-[#8a8577] tracking-[0.05em]">
+            {model.ref}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#0a7d73] group-hover:gap-2.5 transition-all">
+            Read the full document
+            <ArrowRight className="size-3.5" />
+          </span>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -2072,14 +2488,18 @@ export function ModuleLedger({
                 type="button"
                 onClick={() => toggle(mIdx)}
                 aria-expanded={open}
-                className="flex-1 min-w-0 flex items-center gap-3.5 py-3 text-left group"
+                className="flex-1 min-w-0 flex items-center gap-3 py-3 text-left group"
               >
                 <span className="w-6 text-[11px] font-mono text-text-dim tabular-nums shrink-0">
                   {String(mIdx + 1).padStart(2, "0")}
                 </span>
-                <span className="min-w-0 flex-1 text-[13.5px] font-ui font-medium text-text truncate group-hover:text-accent-light transition-colors">
+                <span className="min-w-0 shrink truncate text-[13.5px] font-ui font-medium text-text group-hover:text-accent-light transition-colors">
                   {m.title}
                 </span>
+                <span
+                  aria-hidden
+                  className="flex-1 min-w-[16px] border-b border-dotted border-border-subtle translate-y-[4px]"
+                />
                 {m.kind === "docs" ? (
                   <span className="text-[11.5px] text-text-dim tabular-nums shrink-0">
                     {docs.length} attached
@@ -2123,7 +2543,7 @@ export function ModuleLedger({
             </div>
             {open ? (
               m.kind === "docs" ? (
-                <ul className="pb-3 pl-9">
+                <ul className="pb-3 mb-1 ml-[11px] border-l border-border-subtle/40 pl-6">
                   {docs.length === 0 ? (
                     <li className="text-[12px] text-text-dim py-1.5">
                       Nothing attached.
@@ -2155,9 +2575,11 @@ export function ModuleLedger({
                   )}
                 </ul>
               ) : (
-                <ul className="pb-3">
+                <ul className="pb-3 mb-1 ml-[11px] border-l border-border-subtle/40">
                   {m.section.questions
-                    .filter((q) => gatePasses(q, answers))
+                    .filter(
+                      (q) => q.type !== "amounts" && gatePasses(q, answers),
+                    )
                     .map((q) => {
                       const done = isAnswerComplete(q, answers[q.id]);
                       const summary = summariseValue(q, answers[q.id]);
@@ -2195,14 +2617,14 @@ export function ModuleLedger({
                       return (
                         <li key={q.id}>
                           {readOnly ? (
-                            <div className="flex items-start gap-3 pl-9 pr-1 py-1.5">
+                            <div className="flex items-start gap-3 pl-5 pr-1 py-1.5">
                               {inner}
                             </div>
                           ) : (
                             <button
                               type="button"
                               onClick={() => onJumpQuestion?.(q)}
-                              className="w-full flex items-start gap-3 pl-9 pr-1 py-1.5 text-left rounded-md hover:bg-[rgba(24,34,44,0.03)] transition-colors group/row"
+                              className="w-full flex items-start gap-3 pl-5 pr-1 py-1.5 text-left rounded-md hover:bg-[rgba(24,34,44,0.03)] transition-colors group/row"
                             >
                               {inner}
                               <ArrowRight className="size-3 mt-1 text-text-faint group-hover/row:text-text-dim transition-colors shrink-0" />

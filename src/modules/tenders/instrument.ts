@@ -62,6 +62,7 @@ export type InstrumentQuestionType =
   | "month" // "YYYY-MM"
   | "items" // repeating rows, shaped by itemFields
   | "matrix" // scope coverage grid, rows from the trade list
+  | "amounts" // optional per-trade dollars, captured on the grid rows
   | "declare" // a declaration — complete only when affirmed
   | "confirm"; // confirm facts shown on the slide — complete only when affirmed
 
@@ -751,6 +752,15 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         prompt: "For each part of the build, is it included in the price?",
         type: "matrix",
         required: true,
+      },
+      {
+        // Captured inline on the coverage rows (an included trade offers
+        // an optional amount field), never a slide of its own. The
+        // amounts print as the itemised column of the coverage schedule.
+        id: "scope.amounts",
+        prompt: "Amount in your price, by trade",
+        type: "amounts",
+        required: false,
       },
       {
         id: "site.soil_report",
@@ -1543,6 +1553,15 @@ export function isValidAnswerShape(
           SCOPE_STATE_VALUES.has(state),
       );
     }
+    case "amounts": {
+      if (typeof v !== "object" || Array.isArray(v)) return false;
+      return Object.entries(v as Record<string, unknown>).every(
+        ([rowId, amt]) =>
+          MATRIX_ROW_IDS.has(rowId as TradeId) &&
+          (amt === null ||
+            (typeof amt === "number" && Number.isFinite(amt) && amt >= 0)),
+      );
+    }
   }
 }
 
@@ -1601,6 +1620,9 @@ export function isAnswerComplete(q: InstrumentQuestion, v: unknown): boolean {
           SCOPE_STATE_VALUES.has(m[r.id] as string),
       );
     }
+    case "amounts":
+      // Optional colour by definition — any well-formed value counts.
+      return true;
   }
 }
 
@@ -1632,6 +1654,9 @@ export interface TenderMetrics {
     notApplicable: number;
     unmarked: number;
   };
+  /** Per-trade amounts volunteered on the coverage grid. */
+  itemisedCount: number;
+  itemisedTotal: number;
   ldPerWeek: number | null;
   defectsLiabilityMonths: string | null;
   alternativesCount: number;
@@ -1696,6 +1721,25 @@ export function computeTenderMetrics(
     else coverage.unmarked++;
   }
 
+  // Amounts only count for trades the price actually includes — a
+  // figure left behind on a row later marked excluded must not inflate
+  // the itemised total.
+  const amounts = (answers["scope.amounts"] ?? {}) as Record<string, unknown>;
+  let itemisedCount = 0;
+  let itemisedTotal = 0;
+  for (const r of scopeMatrixRows()) {
+    const a = amounts[r.id];
+    if (
+      matrix[r.id] === "included" &&
+      typeof a === "number" &&
+      Number.isFinite(a) &&
+      a > 0
+    ) {
+      itemisedCount++;
+      itemisedTotal += a;
+    }
+  }
+
   return {
     priceExGst,
     priceIncGst,
@@ -1711,6 +1755,8 @@ export function computeTenderMetrics(
     pcTotal,
     allowanceExposure: psTotal + pcTotal,
     coverage,
+    itemisedCount,
+    itemisedTotal,
     ldPerWeek: num("programme.ld_amount"),
     defectsLiabilityMonths: str("contract.defects_liability"),
     alternativesCount: itemsOf("commercial.alternative_items").length,

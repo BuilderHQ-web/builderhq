@@ -45,6 +45,8 @@ export {
   getTenderForOwner,
   listTendersForOwner,
   getProjectOwnerForTender,
+  // public verification (the document seal)
+  getTenderVerification,
   // readiness
   computeReadiness,
   // builder writes

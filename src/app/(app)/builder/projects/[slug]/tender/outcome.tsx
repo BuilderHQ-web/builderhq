@@ -154,6 +154,20 @@ export function TenderOutcome({
                 )}.`
               : ""}
           </p>
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <a
+              href={`/builder/projects/${slug}/tender/document`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.35)]"
+            >
+              <Download className="size-4" />
+              Tender document (PDF)
+            </a>
+            <p className="text-[11.5px] text-text-dim">
+              Sealed and verifiable. Send it anywhere.
+            </p>
+          </div>
         </div>
       </div>
 

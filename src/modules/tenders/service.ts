@@ -553,6 +553,48 @@ export async function getProjectOwnerForTender(
   return row?.ownerId ?? null;
 }
 
+/**
+ * Public verification read behind the document seal. Deliberately
+ * minimal: enough to confirm a Tender Document is genuine — who
+ * prepared it, for which project, when, and its current standing —
+ * and nothing of the tender's content. Drafts verify as nothing:
+ * the seal only activates on submission.
+ */
+export async function getTenderVerification(tenderId: string): Promise<{
+  ref: string;
+  builderEntity: string | null;
+  projectTitle: string;
+  status: "submitted" | "shortlisted" | "awarded" | "rejected" | "withdrawn";
+  submittedAt: Date | null;
+} | null> {
+  const [row] = await db
+    .select({
+      id: tenders.id,
+      status: tenders.status,
+      submittedAt: tenders.submittedAt,
+      projectTitle: projects.title,
+      builderEntity: builderProfiles.companyName,
+    })
+    .from(tenders)
+    .innerJoin(projects, eq(projects.id, tenders.projectId))
+    .leftJoin(builderProfiles, eq(builderProfiles.userId, tenders.builderId))
+    .where(and(eq(tenders.id, tenderId), isNull(tenders.deletedAt)))
+    .limit(1);
+  if (!row || row.status === "draft") return null;
+  return {
+    ref: `BHQ-${row.id.slice(0, 8).toUpperCase()}`,
+    builderEntity: row.builderEntity,
+    projectTitle: row.projectTitle,
+    status: row.status as
+      | "submitted"
+      | "shortlisted"
+      | "awarded"
+      | "rejected"
+      | "withdrawn",
+    submittedAt: row.submittedAt,
+  };
+}
+
 // ── readiness / aggregation ──────────────────────────────────────────────
 
 export function computeReadiness(

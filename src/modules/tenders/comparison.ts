@@ -460,6 +460,7 @@ export function formatAnswer(q: InstrumentQuestion, v: unknown): string | null {
     }
     case "items":
     case "matrix":
+    case "amounts":
       return null;
   }
 }
