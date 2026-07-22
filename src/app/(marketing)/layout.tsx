@@ -1,14 +1,24 @@
 import * as React from "react";
 
+import { JsonLd } from "@/components/seo/json-ld";
+import { siteGraph } from "@/lib/seo";
+
 /**
  * Marketing route group layout.
  *
- * Currently a pass-through. The placeholder home page in this group
- * carries its own nav + footer because there's only one marketing page
- * for now. When Phase 5 builds out the rest of the marketing site
- * (/how-it-works, /for-owners, /for-builders, /pricing, /blog, …),
- * extract the shared <MarketingNav /> and <MarketingFooter /> here.
+ * Carries the site-wide structured data (Organization + WebSite) so
+ * every public page states the BuilderHQ entity for search, answer and
+ * generative engines. Individual pages add their own page-specific
+ * schema (partner, collection, FAQ, article) on top.
+ *
+ * Otherwise a pass-through: marketing pages compose their own nav +
+ * footer via MarketingPageShell / the landing composition.
  */
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd data={siteGraph()} />
+      {children}
+    </>
+  );
 }

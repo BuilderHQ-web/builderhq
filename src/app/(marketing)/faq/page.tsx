@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { Plus, Mail } from "lucide-react";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
+import { JsonLd } from "@/components/seo/json-ld";
+import { faqPageGraph } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+
+import { FAQ_SCHEMA_ITEMS } from "./faq-schema";
 
 /**
  * Comprehensive FAQ page. Categorised, accordion-driven, calm.
@@ -415,6 +419,7 @@ export default function FAQPage() {
       title="The honest answers."
       sub="Everything project owners and builders ask before signing up. If your question isn't here, get in touch, we'll add it."
     >
+      <JsonLd data={faqPageGraph(FAQ_SCHEMA_ITEMS)} />
       <FAQContent />
     </MarketingPageShell>
   );
