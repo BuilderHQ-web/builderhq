@@ -15,6 +15,7 @@ import path from "node:path";
 import {
   Document,
   Font,
+  Image,
   Page,
   StyleSheet,
   Text,
@@ -31,6 +32,7 @@ import type {
 /* ── fonts ──────────────────────────────────────────────────────────── */
 
 const FONT_DIR = path.join(process.cwd(), "src", "assets", "fonts");
+const LOGO_PATH = path.join(process.cwd(), "src", "assets", "logo.png");
 
 Font.register({
   family: "Bebas",
@@ -81,8 +83,6 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
   },
-  wordmark: { fontFamily: "Bebas", fontSize: 15, color: INK },
-  wordmarkAccent: { color: TEAL },
   kicker: {
     fontSize: 7,
     letterSpacing: 2.6,
@@ -303,7 +303,7 @@ const s = StyleSheet.create({
   declTick: { color: "#ffffff", fontSize: 7, fontWeight: 700, marginTop: -1 },
   declText: { flex: 1, fontSize: 8.5, lineHeight: 1.5, color: BODY },
   sigGrid: { flexDirection: "row", marginTop: 20 },
-  sigCol: { width: 190, marginRight: 40 },
+  sigCol: { width: 150, marginRight: 24 },
   sigLine: {
     borderBottomWidth: 1,
     borderColor: INK,
@@ -474,10 +474,9 @@ function Letterhead() {
   return (
     <>
       <View style={s.letterheadRow}>
-        <Text style={s.wordmark}>
-          BUILDER
-          <Text style={s.wordmarkAccent}>HQ</Text>
-        </Text>
+        {/* 339x93 lockup — height 17pt keeps the x-height near the
+            kicker's cap height. */}
+        <Image src={LOGO_PATH} style={{ height: 17, width: 62 }} />
         <Text style={s.kicker}>Tender submission</Text>
       </View>
       <View style={s.thickRule} />
@@ -645,6 +644,10 @@ export function TenderPdf({ model }: { model: TenderDocumentModel }) {
               <View style={s.sigCol}>
                 <Text style={s.sigLine}>{model.signoff.signatory ?? " "}</Text>
                 <Text style={s.sigLabel}>Signatory</Text>
+              </View>
+              <View style={s.sigCol}>
+                <Text style={s.sigLine}>{model.signoff.role ?? " "}</Text>
+                <Text style={s.sigLabel}>Role</Text>
               </View>
               <View style={s.sigCol}>
                 <Text style={s.sigLine}>{model.signoff.dateLine}</Text>

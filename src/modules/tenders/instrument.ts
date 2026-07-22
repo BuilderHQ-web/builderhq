@@ -95,9 +95,18 @@ export interface InstrumentQuestion {
   unit?: string;
   /**
    * Show only when another answer matches. Single-level on purpose —
-   * deep branching makes forms feel endless.
+   * deep branching makes forms feel endless. `equals` accepts one
+   * value or a set of values (any match shows the question).
    */
-  showIf?: { qid: string; equals: boolean | string };
+  showIf?: {
+    qid: string;
+    equals: boolean | string | Array<boolean | string>;
+  };
+  /**
+   * Multi questions only: the builder may add their own entries
+   * beside the listed options. Custom values are free strings.
+   */
+  allowCustom?: boolean;
   /**
    * Prefill from data we already hold. The form seeds the answer and
    * the builder confirms rather than retypes.
@@ -159,13 +168,13 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
     title: "Eligibility",
     ask: "Can I actually tender this project?",
     intro:
-      "Confirm who you are, what you hold, and that you have seen what you are pricing.",
+      "Quick confirmations before the real work. They protect you as much as the owner, and most are one tap.",
     questions: [
       {
         id: "elig.authority",
         ref: "1.1",
         prompt: "I am authorised to submit this tender for my company",
-        help: "Your registered entity and ABN print on the tender document exactly as they appear on your BuilderHQ profile.",
+        help: "Your registered entity and ABN print on your tender document exactly as they appear on your BuilderHQ profile, so the owner sees a proper letterhead from the first page.",
         type: "declare",
         required: true,
       },
@@ -251,7 +260,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "elig.conflicts",
         ref: "1.8",
         prompt: "Do you have an existing relationship with the owner or architect to declare?",
-        help: "Prior work together, family, or a financial interest. Declaring keeps the round clean; most builders answer no.",
+        help: "Prior work together, family, or a financial interest. Declaring it up front protects your tender from being questioned later; most builders answer no.",
         type: "bool",
         required: true,
       },
@@ -267,7 +276,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "elig.conditions",
         ref: "1.9",
         prompt: "I accept the conditions of this tender round",
-        help: "The close date, the minimum validity period, confidentiality of the project documents, and the BuilderHQ Submission Standard.",
+        help: "The close date, the minimum validity period, confidentiality of the project documents, and the BuilderHQ Submission Standard. The same conditions bind every builder on the round, so you compete on a level field.",
         type: "declare",
         required: true,
       },
@@ -277,9 +286,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "understanding",
     title: "Project understanding",
-    ask: "Do I understand what I am pricing?",
+    ask: "Show them you know this job.",
     intro:
-      "Where a diligent builder quietly outclasses a careless one.",
+      "This is where careful builders pull ahead. Flagging a gap or a risk here reads as diligence, never as weakness, and it protects your price.",
     questions: [
       {
         id: "understand.scope_confirm",
@@ -377,31 +386,40 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "credentials",
     title: "Company credentials",
-    ask: "Why should this client trust us?",
+    ask: "Why you, before your number.",
     intro:
-      "Your track record and your bench, before the number. Most of this module is saved once and confirmed on later tenders.",
+      "Your track record and your team. This is what lets an owner choose you with confidence, even when you are not the cheapest. Saved once, it carries to your next tender.",
     questions: [
       {
-        id: "creds.snapshot",
+        id: "creds.supervisor_role",
         ref: "3.1",
-        prompt: "My company details are correct as shown",
-        help: "Entity name, ABN and base location print from your profile.",
-        type: "confirm",
-        standing: true,
+        prompt: "Who runs this project on site, day to day?",
+        help: "Owners read hands-on supervision as a strength, whichever way you run it.",
+        type: "select",
+        options: [
+          { value: "myself_director", label: "Myself, the director" },
+          { value: "dedicated_supervisor", label: "A dedicated site supervisor" },
+          { value: "project_manager", label: "A project manager" },
+        ],
         required: true,
       },
       {
         id: "creds.supervisor",
-        ref: "3.2",
-        prompt: "Who will supervise this project on site?",
-        help: "Name, plus registration number where your state registers supervisors.",
+        ref: "3.1a",
+        prompt: "Their name and registration number",
+        help: "Prints beside your programme so the owner knows exactly who runs their job. Include the registration number where your state registers supervisors.",
         type: "text",
+        showIf: {
+          qid: "creds.supervisor_role",
+          equals: ["dedicated_supervisor", "project_manager"],
+        },
         required: true,
       },
       {
         id: "team.supervisor_load",
-        ref: "3.2a",
-        prompt: "How many concurrent jobs does that supervisor carry?",
+        ref: "3.2",
+        prompt: "How many jobs does that person carry at once?",
+        help: "A low number here is a genuine selling point; answer honestly either way.",
         type: "select",
         options: SUPERVISOR_LOAD_OPTIONS,
         required: true,
@@ -423,6 +441,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "creds.experience_type",
         ref: "3.4",
         prompt: "Projects of this type you have completed",
+        help: "Ranges are enough; nobody expects an exact count.",
         type: "select",
         options: [
           { value: "1_5", label: "1 to 5" },
@@ -452,22 +471,28 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "creds.references",
         ref: "3.5",
         prompt: "References the owner may contact",
-        help: "Two are expected. Listing a referee confirms they have agreed to be contacted.",
+        help: "Optional, but two referees regularly tip close decisions your way. Listing someone confirms they are happy to be contacted, and a link to the finished project helps the owner picture your work.",
         type: "items",
         itemFields: [
           { key: "name", label: "Name", type: "text" },
           { key: "project", label: "Project", type: "text" },
           { key: "year", label: "Year", type: "text" },
           { key: "contact", label: "Phone or email", type: "text" },
+          {
+            key: "link",
+            label: "Link to the project (optional)",
+            type: "text",
+            optional: true,
+          },
         ],
         standing: true,
-        required: true,
+        required: false,
       },
       {
         id: "creds.on_site_now",
         ref: "3.6",
         prompt: "Projects currently on site",
-        help: "Capacity moves week to week, so this is asked fresh on every tender.",
+        help: "Capacity moves week to week, so this one is asked fresh each tender. It shows the owner you have room for their job.",
         type: "number",
         required: true,
       },
@@ -487,7 +512,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "team.in_house",
         ref: "3.7",
         prompt: "Which trades are your own people, rather than subcontractors?",
+        help: "In-house trades signal control over quality and programme. Add any of yours that are not listed.",
         type: "multi",
+        allowCustom: true,
         options: [
           { value: "carpentry", label: "Carpentry" },
           { value: "concreting", label: "Concreting" },
@@ -503,6 +530,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "team.crew_tenure",
         ref: "3.7a",
         prompt: "How long have your core subcontract crews worked with you?",
+        help: "Long-standing crews are one of the strongest quality signals an owner can read.",
         type: "select",
         options: [
           { value: "under_1", label: "Under a year" },
@@ -516,6 +544,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "creds.whs",
         ref: "3.8",
         prompt: "Your safety system",
+        help: "Work health and safety. A certified system is externally audited, such as ISO 45001. A documented system is your own written procedures. SWMS are the safe work method statements every builder prepares for high-risk work, so that option is the compliant baseline, not a mark against you.",
         type: "select",
         options: [
           { value: "certified", label: "Certified WHS management system" },
@@ -529,6 +558,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "creds.qa",
         ref: "3.8a",
         prompt: "Your quality control",
+        help: "How finished work gets checked before the owner sees it.",
         type: "select",
         options: [
           { value: "independent", label: "Independent stage inspections" },
@@ -557,8 +587,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "commercial",
     title: "Commercial submission",
-    ask: "Here is our offer.",
-    intro: "The number, and every term that shapes it.",
+    ask: "Your offer, put properly.",
+    intro:
+      "The number, and every term that shapes it. Each answer here is a question the owner would otherwise ring you about, so settling them now keeps your price credible.",
     questions: [
       {
         id: "contract.form",
@@ -578,7 +609,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "commercial.cost_plus_margin",
         ref: "4.1a",
         prompt: "Your cost-plus margin",
-        help: "Cost-plus contracting for domestic work is restricted in most states; the margin prints prominently on the document.",
+        help: "Cost-plus contracting for domestic work is restricted in most states; stating the margin plainly here is what makes a cost-plus offer readable.",
         type: "percent",
         showIf: { qid: "contract.form", equals: "cost_plus" },
         required: true,
@@ -595,7 +626,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "commercial.gst_registered",
         ref: "4.3",
         prompt: "Are you registered for GST?",
-        help: "The GST-inclusive figure is calculated and shown beside your price.",
+        help: "The GST-inclusive figure is calculated and shown beside your price, so the owner never mistakes which number is which.",
         type: "bool",
         standing: true,
         required: true,
@@ -603,9 +634,10 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
       {
         id: "price.fixed",
         ref: "4.4",
-        prompt: "Is this a fixed price, not an estimate?",
-        help: "Fixed means the contract sum only moves through variations, provisional sums and prime costs.",
+        prompt: "Is your price fixed, rather than an estimate?",
+        help: "Fixed means the contract sum only moves through variations and the allowances you declare in module 7. Owners and their lenders strongly prefer fixed prices, so if yours is fixed, say so proudly. This question is not asked for cost-plus offers.",
         type: "bool",
+        showIf: { qid: "contract.form", equals: ["hia", "mba", "custom"] },
         required: true,
       },
       {
@@ -686,7 +718,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "price.escalation_scope",
         ref: "4.10a",
         prompt: "What can escalate?",
+        help: "Add your own category if the listed ones do not fit.",
         type: "multi",
+        allowCustom: true,
         options: [
           { value: "materials", label: "Materials" },
           { value: "labour", label: "Labour" },
@@ -742,9 +776,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "scope",
     title: "What's included",
-    ask: "The schedule that makes your price comparable.",
+    ask: "Make your price readable.",
     intro:
-      "What the price covers, then the site and approvals items where budgets most often sink.",
+      "Tap through what your price covers. A clear schedule is what stops a cheaper, vaguer quote from beating a properly priced one, and an honest exclusion never reads as a black mark.",
     questions: [
       {
         id: "scope.matrix",
@@ -839,6 +873,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
           { value: "stormwater", label: "Stormwater" },
           { value: "gas", label: "Gas" },
           { value: "nbn", label: "NBN / data" },
+          { value: "none", label: "None included" },
         ],
         required: true,
       },
@@ -883,27 +918,30 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
     title: "What's not included",
     ask: "Exclusions, stated plainly.",
     intro:
-      "Your coverage grid already yields the exclusion schedule. Confirm it, then catch what the grid cannot see.",
+      "Your coverage grid already wrote most of your exclusion schedule. Confirm it, add anything the grid could not capture, and no owner can ever say they were not told.",
     questions: [
       {
         id: "excl.derived_confirm",
         ref: "6.1",
         prompt: "The items I marked excluded will print as my exclusion schedule",
-        help: "The excluded rows from your coverage grid are shown here for a final read before they go on the document.",
+        help: "The excluded rows from your coverage grid are shown here for a final read. A written exclusion schedule is your best protection against scope disputes later.",
         type: "confirm",
         required: true,
       },
       {
-        id: "scope.exclusions_other",
+        id: "scope.exclusions_list",
         ref: "6.2",
-        prompt: "Anything else excluded that an owner might assume is in?",
-        type: "text",
+        prompt: "Anything else excluded that the grid could not capture?",
+        help: "One line each. These print on your exclusion schedule beside the grid's, so the record is complete.",
+        type: "items",
+        itemFields: [{ key: "exclusion", label: "Exclusion", type: "text" }],
         required: false,
       },
       {
         id: "excl.owner_supplied",
         ref: "6.3",
         prompt: "Is the owner supplying anything you will install or work around?",
+        help: "Recording it here keeps the responsibility split clean from day one.",
         type: "bool",
         required: true,
       },
@@ -924,7 +962,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
     title: "Allowances",
     ask: "Provisional sums, prime costs, assumptions.",
     intro:
-      "The allowances inside the price, where two quotes most often part ways.",
+      "Declaring your allowances precisely is what makes your price trustworthy. Vague allowances are where other builders' quotes fall apart under an owner's questions; yours will not.",
     questions: [
       {
         id: "pcps.has_ps",
@@ -1001,9 +1039,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "programme",
     title: "Programme",
-    ask: "When you can start, how long you need, what you commit to.",
+    ask: "When you can start, how long you need.",
     intro:
-      "Lead time first: owners confuse can start in March with on site in March.",
+      "Lead time first, so the owner never confuses can start in March with on site in March. A realistic programme you can hold beats an optimistic one you cannot.",
     questions: [
       {
         id: "prog.lead_time",
@@ -1074,9 +1112,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "delivery",
     title: "Delivery",
-    ask: "How you run the job, and what happens after the keys.",
+    ask: "How you run a job, in writing.",
     intro:
-      "Communication, variations, quality, defects and aftercare. Saved once, confirmed on later tenders.",
+      "Communication, variations, defects and aftercare. Owners choose builders they can picture working with; this module is where they picture you. Saved once, it carries to your next tender.",
     questions: [
       {
         id: "team.updates",
@@ -1157,15 +1195,15 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
   {
     id: "commentary",
     title: "Builder commentary",
-    ask: "Optional, and often decisive.",
+    ask: "This is where you stand out.",
     intro:
-      "Value engineering, recommendations and straight advice. Everything here prints under your name.",
+      "This module is yours. Every question so far made you comparable; this one makes you memorable. Most tenders never say why the builder is the right choice, and a few specific lines here regularly decide close rounds. All optional, all printed under your name.",
     questions: [
       {
         id: "comment.approach",
         ref: "10.1",
         prompt: "Your approach to this project",
-        help: "Two or three sentences. Specific beats long.",
+        help: "Two or three sentences on how you would run this job well and what the owner can expect working with you. This is often the first thing an owner reads twice, so make it yours; specific beats long.",
         type: "text",
         required: false,
       },
@@ -1173,7 +1211,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "comment.value_engineering",
         ref: "10.2",
         prompt: "Value engineering suggestions",
-        help: "Ways to save money or build smarter, with an indicative saving where you can put one.",
+        help: "Ways to save money or build smarter, with an indicative saving where you can put one. Nothing signals experience like a builder who finds the owner money.",
         type: "items",
         itemFields: [
           { key: "suggestion", label: "Suggestion", type: "text" },
@@ -1185,7 +1223,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "comment.recommendations",
         ref: "10.3",
         prompt: "Design recommendations",
-        help: "Improvements you would raise before contract.",
+        help: "Improvements you would raise before contract. Owners remember the builder who caught what others missed.",
         type: "items",
         itemFields: [
           { key: "area", label: "Area", type: "text" },
@@ -1197,7 +1235,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "comment.risk_advice",
         ref: "10.4",
         prompt: "Risk advice for the owner",
-        help: "Risks they should plan for, and how you would handle them.",
+        help: "Risks they should plan for, and how you would handle them. Straight talk here builds more trust than any brochure.",
         type: "items",
         itemFields: [
           { key: "risk", label: "Risk", type: "text" },
@@ -1212,7 +1250,8 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
     id: "signoff",
     title: "Sign-off",
     ask: "The declaration that makes it a tender.",
-    intro: "Read once, sign once. Your tender seals on submission.",
+    intro:
+      "Read once, sign once. These declarations are what give your document its weight; your tender seals on submission and prints with a proper signature block.",
     questions: [
       {
         id: "sign.true_complete",
@@ -1238,8 +1277,16 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
       {
         id: "sign.signatory",
         ref: "12.4",
-        prompt: "Signatory name and role",
-        help: "Prints as the signature block on the tender document, with the date of submission.",
+        prompt: "Signatory full name",
+        help: "Prints on the signature block of your tender document.",
+        type: "text",
+        required: true,
+      },
+      {
+        id: "sign.role",
+        ref: "12.5",
+        prompt: "Signatory role",
+        help: "Director, general manager, estimator — however you sign.",
         type: "text",
         required: true,
       },
@@ -1450,6 +1497,20 @@ export function getQuestion(qid: string): InstrumentQuestion | undefined {
 }
 
 /**
+ * Does a gate value satisfy a showIf condition? The single definition
+ * every surface uses (deck, submit gate, document, comparison), so a
+ * question can never be "asked" in one place and skipped in another.
+ */
+export function gateAllows(
+  showIf: NonNullable<InstrumentQuestion["showIf"]>,
+  gateValue: unknown,
+): boolean {
+  return Array.isArray(showIf.equals)
+    ? showIf.equals.some((e) => e === gateValue)
+    : gateValue === showIf.equals;
+}
+
+/**
  * Ids required for a complete submission against a version, honouring
  * showIf against a given answer set (an unanswered gate keeps its
  * dependants optional until the gate is answered).
@@ -1467,7 +1528,7 @@ export function requiredQuestionIds(
         typeof gate === "object" && gate !== null && "v" in gate
           ? (gate as { v: unknown }).v
           : gate;
-      if (gateValue !== q.showIf.equals) continue;
+      if (!gateAllows(q.showIf, gateValue)) continue;
     }
     ids.push(q.id);
   }
@@ -1506,7 +1567,8 @@ export function isValidAnswerShape(
         v.every(
           (x) =>
             typeof x === "string" &&
-            (q.options ?? []).some((o) => o.value === x),
+            ((q.options ?? []).some((o) => o.value === x) ||
+              (q.allowCustom === true && x.trim().length > 0 && x.length <= 60)),
         )
       );
     case "number":

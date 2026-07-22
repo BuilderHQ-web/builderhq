@@ -40,10 +40,13 @@ export function TenderDocumentSheet({
 
       <div className="relative px-8 sm:px-12 py-10 sm:py-12">
         {/* ── letterhead ─────────────────────────────────────────── */}
-        <div className="flex items-baseline justify-between gap-4">
-          <span className="font-display text-[15px] tracking-[0.02em] text-[#18222c]">
-            Builder<span className="text-[#0a7d73]">HQ</span>
-          </span>
+        <div className="flex items-center justify-between gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/BuilderHQ_Email_Images/logo.png"
+            alt="BuilderHQ"
+            className="h-[22px] w-auto"
+          />
           <span className="text-[9px] tracking-[0.3em] uppercase text-[#8a8577] font-semibold">
             Tender submission
           </span>
@@ -181,13 +184,21 @@ export function TenderDocumentSheet({
                 </li>
               ))}
             </ul>
-            <div className="mt-6 grid grid-cols-2 gap-8 max-w-[420px]">
+            <div className="mt-6 grid grid-cols-3 gap-6 max-w-[560px]">
               <div>
                 <p className="border-b border-[#18222c] pb-1 text-[12.5px] font-semibold text-[#18222c] min-h-[22px]">
                   {model.signoff.signatory ?? ""}
                 </p>
                 <p className="mt-1 text-[8.5px] tracking-[0.16em] uppercase text-[#8a8577] font-semibold">
                   Signatory
+                </p>
+              </div>
+              <div>
+                <p className="border-b border-[#18222c] pb-1 text-[12.5px] font-semibold text-[#18222c] min-h-[22px]">
+                  {model.signoff.role ?? ""}
+                </p>
+                <p className="mt-1 text-[8.5px] tracking-[0.16em] uppercase text-[#8a8577] font-semibold">
+                  Role
                 </p>
               </div>
               <div>

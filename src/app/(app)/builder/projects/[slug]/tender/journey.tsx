@@ -51,6 +51,7 @@ import {
   scopeMatrixRows,
   isAnswerComplete,
   computeTenderMetrics,
+  gateAllows,
   getQuestion,
   type InstrumentQuestion,
   type InstrumentSection,
@@ -143,7 +144,7 @@ export function buildModules(
 
 function gatePasses(q: InstrumentQuestion, answers: Answers): boolean {
   if (!q.showIf) return true;
-  return answers[q.showIf.qid] === q.showIf.equals;
+  return gateAllows(q.showIf, answers[q.showIf.qid]);
 }
 
 /** "3 listed", "24 included · 2 excluded", or the plain formatted value. */
@@ -394,7 +395,7 @@ export function TenderJourney({
       }
       for (const q of m.section.questions) {
         if (q.type === "amounts") continue;
-        if (q.showIf && init[q.showIf.qid] !== q.showIf.equals) continue;
+        if (q.showIf && !gateAllows(q.showIf, init[q.showIf.qid])) continue;
         if (q.type === "matrix") {
           for (const row of MATRIX_ROWS) {
             const v = init[q.id] as Record<string, unknown> | undefined;
@@ -698,8 +699,11 @@ export function TenderJourney({
       className="min-h-[calc(100dvh-3.5rem)] flex flex-col"
       onKeyDown={onKeyDown}
     >
-      {/* ── slim bar: exit · where you are · contents · save ─────── */}
-      <div className="border-b border-border-subtle relative z-30">
+      {/* ── slim bar: exit · where you are · contents · save ───────
+          Sticky just below the app topbar (h-14, z-30) so it reads as
+          the journey's sub-header; the solid canvas background makes
+          slides disappear beneath it instead of ghosting through. */}
+      <div className="sticky top-14 z-20 bg-bg border-b border-border-subtle">
         <div className="px-4 sm:px-6 lg:px-10 py-3 mx-auto max-w-[1100px] flex items-center justify-between gap-4">
           <Link
             href={`/builder/projects/${slug}`}
@@ -960,9 +964,7 @@ export function TenderJourney({
                         {slide.q.help}
                       </p>
                     ) : null}
-                    {(slide.q.id === "elig.authority" ||
-                      slide.q.id === "creds.snapshot") &&
-                    letterhead ? (
+                    {slide.q.id === "elig.authority" && letterhead ? (
                       <LetterheadCard letterhead={letterhead} />
                     ) : null}
                     {slide.q.id === "excl.derived_confirm" ? (
@@ -984,6 +986,9 @@ export function TenderJourney({
                           )
                         }
                       />
+                      {slide.q.id === "creds.references" ? (
+                        <ReferencesDupHint value={answers["creds.references"]} />
+                      ) : null}
                     </div>
                   </div>
                 )}
@@ -1195,13 +1200,13 @@ function OpeningSlide({
         {...rise(0.24)}
         className="mt-4 text-[14px] sm:text-[14.5px] leading-[1.7] text-text-muted max-w-[62ch]"
       >
-        This is your tender, prepared as {modules.length} short modules:
-        eligibility, the project, your credentials, the offer itself, scope,
-        allowances, programme, delivery and sign-off. Most questions are a
-        single tap. Answers save the moment they land, so you can leave at
-        any point and resume where you stopped. When every module is
-        complete, you review the whole tender and submit it from the final
-        page.
+        We are about to build your tender together: {modules.length} short
+        modules that turn what you already know into a document that
+        competes properly, presented the way owners and architects expect
+        to read one. Most questions are a single tap, everything saves the
+        moment it lands, and you can leave and pick it up whenever suits.
+        When the modules are done, you review the finished document and
+        submit it from the final page.
       </motion.p>
 
       <motion.dl
@@ -1517,8 +1522,8 @@ function SealedMoment() {
           className="mt-3 text-[13.5px] leading-[1.65] text-text-muted max-w-[46ch] mx-auto"
         >
           Your tender is sealed for this round and the owner has been
-          notified. It now reads like for like beside every other
-          submission.
+          notified. You put a proper document in front of them; it will
+          hold its own beside every other submission.
         </motion.p>
       </div>
     </div>
@@ -1817,6 +1822,13 @@ function DerivedExclusions({ answers }: { answers: Answers }) {
   const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
   const excluded = MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
   const allowance = MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
+  const extra = Array.isArray(answers["scope.exclusions_list"])
+    ? (answers["scope.exclusions_list"] as Array<Record<string, unknown>>)
+        .map((row) =>
+          typeof row?.exclusion === "string" ? row.exclusion.trim() : "",
+        )
+        .filter((s) => s.length > 0)
+    : [];
 
   return (
     <div className="mt-6 border-y border-border-subtle divide-y divide-border-subtle/60">
@@ -1824,7 +1836,7 @@ function DerivedExclusions({ answers }: { answers: Answers }) {
         <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
           Excluded from your price
         </p>
-        {excluded.length > 0 ? (
+        {excluded.length > 0 || extra.length > 0 ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {excluded.map((r) => (
               <li
@@ -1834,12 +1846,24 @@ function DerivedExclusions({ answers }: { answers: Answers }) {
                 {r.label}
               </li>
             ))}
+            {extra.map((label) => (
+              <li
+                key={label}
+                className="px-2.5 py-1 rounded-full border border-[rgba(194,85,80,0.4)] text-[11.5px] text-[#a8433e]"
+              >
+                {label}
+              </li>
+            ))}
           </ul>
         ) : (
           <p className="mt-1.5 text-[12.5px] text-text-muted">
             Nothing in your coverage grid is marked excluded.
           </p>
         )}
+        <p className="mt-2.5 text-[11.5px] text-text-dim">
+          Anything the grid could not capture goes on the next screen and
+          prints beside these.
+        </p>
       </div>
       {allowance.length > 0 ? (
         <div className="py-3.5">
@@ -1852,6 +1876,26 @@ function DerivedExclusions({ answers }: { answers: Answers }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Gentle nudge when two referee rows look like the same person. */
+function ReferencesDupHint({ value }: { value: unknown }) {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const keys = (value as Array<Record<string, unknown>>).map((row) =>
+    [row?.name, row?.contact]
+      .map((x) => (typeof x === "string" ? x.trim().toLowerCase() : ""))
+      .join("|"),
+  );
+  const hasDup = keys.some(
+    (k, i) => k !== "|" && keys.indexOf(k) !== i,
+  );
+  if (!hasDup) return null;
+  return (
+    <p className="mt-3 text-[12px] text-[#8a6414]">
+      Two of these referees look identical. Two different projects or
+      people carry far more weight with an owner.
+    </p>
   );
 }
 
@@ -1924,8 +1968,9 @@ function DocsSlide({
       </h2>
       <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
         Insurance certificates, an indicative programme, past project
-        sheets. Owners read these beside your answers, never instead of
-        them. Skip this if there is nothing to add.
+        sheets. Anything that backs your answers strengthens your tender,
+        and owners read these beside it, never instead of it. Nothing to
+        add? Skip straight through; your answers already carry the weight.
       </p>
 
       <div
@@ -2171,13 +2216,13 @@ function ReviewSlide({
       </p>
       <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[28px] leading-[1.2] text-text">
         {progress.complete
-          ? "Your tender is ready to submit."
-          : `${remaining} required answer${remaining === 1 ? "" : "s"} to go.`}
+          ? "Your tender is ready. It reads well."
+          : `${remaining} answer${remaining === 1 ? "" : "s"} to go. Nearly there.`}
       </h2>
       <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
         {progress.complete
-          ? "This is your tender document, assembled from your answers. Read its cover below, open any module to check yourself, then submit when you are satisfied."
-          : "The cover of your document so far, and every module below. Open one to read your answers, or jump straight to what is left."}
+          ? "This is the document the owner receives, assembled from your answers and carrying your name. Read its cover below, open any module to check yourself, then submit when you are happy with it."
+          : "The cover of your document so far, and every module below. Open one to read your answers back, or jump straight to what is left; your progress is safe either way."}
       </p>
 
       <CoverCard model={model} onPreview={onPreview} />
@@ -2251,8 +2296,8 @@ function ReviewSlide({
         ) : (
           <div className="flex flex-wrap items-center gap-4">
             <p className="text-[12.5px] text-text-dim">
-              Submission opens once every required answer is in. Your
-              progress is saved.
+              Submission opens once every required answer is in. Everything
+              so far is saved, so finish whenever suits.
             </p>
           </div>
         )}
@@ -2280,10 +2325,13 @@ function CoverCard({
       className="mt-8 block w-full text-left rounded-[4px] bg-white shadow-[0_1px_2px_rgba(24,34,44,0.08),_0_18px_44px_-20px_rgba(24,34,44,0.3)] hover:shadow-[0_1px_2px_rgba(24,34,44,0.08),_0_22px_52px_-20px_rgba(24,34,44,0.4)] transition-shadow group"
     >
       <div className="px-6 sm:px-8 py-6 sm:py-7">
-        <div className="flex items-baseline justify-between gap-4">
-          <span className="font-display text-[13px] text-[#18222c]">
-            Builder<span className="text-[#0a7d73]">HQ</span>
-          </span>
+        <div className="flex items-center justify-between gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/BuilderHQ_Email_Images/logo.png"
+            alt="BuilderHQ"
+            className="h-[18px] w-auto"
+          />
           <span className="text-[8.5px] tracking-[0.28em] uppercase text-[#8a8577] font-semibold">
             Tender submission
           </span>
@@ -2724,24 +2772,35 @@ function AnswerControl({
 
     case "multi": {
       const arr = Array.isArray(value) ? (value as string[]) : [];
+      const optionValues = new Set((q.options ?? []).map((o) => o.value));
+      const customs = arr.filter((v) => !optionValues.has(v));
+      const toggle = (v: string) =>
+        onAnswer(q.id, (prev: unknown) => {
+          const cur = Array.isArray(prev) ? (prev as string[]) : [];
+          if (cur.includes(v)) return cur.filter((x) => x !== v);
+          // "None" stands alone: choosing it clears the rest, and
+          // choosing anything real clears "none".
+          if (v === "none") return ["none"];
+          return [...cur.filter((x) => x !== "none"), v];
+        });
       return (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {(q.options ?? []).map((o) => (
             <Pill
               key={o.value}
               active={arr.includes(o.value)}
-              onClick={() =>
-                onAnswer(q.id, (prev: unknown) => {
-                  const cur = Array.isArray(prev) ? (prev as string[]) : [];
-                  return cur.includes(o.value)
-                    ? cur.filter((v) => v !== o.value)
-                    : [...cur, o.value];
-                })
-              }
+              onClick={() => toggle(o.value)}
             >
               {o.label}
             </Pill>
           ))}
+          {customs.map((v) => (
+            <Pill key={v} active onClick={() => toggle(v)}>
+              {v}
+              <X className="size-3 ml-1.5 -mr-0.5 inline" />
+            </Pill>
+          ))}
+          {q.allowCustom ? <AddCustomPill onAdd={toggle} /> : null}
         </div>
       );
     }
@@ -2822,6 +2881,66 @@ function AnswerControl({
 }
 
 /* ── controls ───────────────────────────────────────────────────────── */
+
+/** Inline "add your own" entry for multi questions with allowCustom. */
+function AddCustomPill({ onAdd }: { onAdd: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState("");
+
+  const commit = () => {
+    const v = text.trim();
+    if (v.length > 0) onAdd(v.slice(0, 60));
+    setText("");
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-dashed border-border-strong text-[12.5px] text-text-muted hover:text-text hover:border-border-accent transition-colors"
+      >
+        <Plus className="size-3.5" />
+        Add your own
+      </button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center h-10 rounded-full border border-border-accent bg-[rgba(0,212,200,0.04)] pl-4 pr-1.5">
+      <input
+        autoFocus
+        type="text"
+        value={text}
+        maxLength={60}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            commit();
+          }
+          if (e.key === "Escape") {
+            setText("");
+            setEditing(false);
+          }
+        }}
+        onBlur={commit}
+        placeholder="Type and press Enter"
+        className="bg-transparent border-0 outline-none focus-visible:shadow-none text-[12.5px] text-text w-[160px] placeholder:text-text-dim/60"
+      />
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={commit}
+        className="size-7 rounded-full bg-accent text-accent-contrast flex items-center justify-center ml-1"
+        aria-label="Add"
+      >
+        <Check className="size-3.5" strokeWidth={3} />
+      </button>
+    </span>
+  );
+}
 
 function Pill({
   active,
@@ -2946,7 +3065,7 @@ function ItemsEditor({
       {value.map((row, i) => (
         <div
           key={i}
-          className="flex flex-wrap sm:flex-nowrap items-center gap-2 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)] p-2.5"
+          className="relative flex flex-wrap items-center gap-2 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)] p-2.5 pr-12"
         >
           {fields.map((f) => {
             if (f.type === "text") {
@@ -3022,7 +3141,7 @@ function ItemsEditor({
             type="button"
             onClick={() => onChange((rows) => rows.filter((_, j) => j !== i))}
             title="Remove row"
-            className="size-9 rounded-md border border-border-subtle text-text-dim hover:text-danger hover:border-[rgba(255,80,80,0.45)] transition-colors flex items-center justify-center shrink-0 ml-auto"
+            className="absolute top-2.5 right-2.5 size-8 rounded-md text-text-dim hover:text-danger hover:bg-[rgba(194,85,80,0.08)] transition-colors flex items-center justify-center"
           >
             <X className="size-3.5" />
           </button>

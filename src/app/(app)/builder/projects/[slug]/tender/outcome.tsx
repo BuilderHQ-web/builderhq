@@ -48,11 +48,11 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_LINE: Record<string, string> = {
   submitted:
-    "Your tender is sealed for this round and sits with the owner. You will hear the moment a decision lands.",
+    "Your tender is in, sealed, and reading exactly as you built it. It sits with the owner now, and you will hear the moment a decision lands.",
   shortlisted:
-    "The owner has shortlisted your tender. Keep an eye on Messages — questions often come next.",
+    "The owner has shortlisted you. That means your tender did its job; keep an eye on Messages, questions usually come next.",
   awarded:
-    "The owner went with you. Reach out, agree the contract, and take it from here.",
+    "The owner went with you. Well earned. Reach out, agree the contract, and take it from here.",
 };
 
 export function TenderOutcome({

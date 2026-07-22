@@ -38,6 +38,7 @@ import {
 import {
   sectionsFor,
   scopeMatrixRows,
+  gateAllows,
   type InstrumentQuestion,
   type InstrumentSection,
   type ScopeState,
@@ -656,7 +657,7 @@ function AnswerSection({
         // and answered bookkeeping match what the owner actually sees.
         const notAsked = tenders.map((t) =>
           q.showIf
-            ? summaries[t.id]!.answers[q.showIf.qid] !== q.showIf.equals
+            ? !gateAllows(q.showIf, summaries[t.id]!.answers[q.showIf.qid])
             : false,
         );
         const values = tenders.map((t, i) =>
