@@ -3955,6 +3955,55 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "bianca-dacic",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Finance broker",
+    name: "Bianca Dacic",
+    monogram: "BD",
+    portrait: "/partners/bianca-dacic/portrait.jpg",
+    suburb: "Niddrie",
+    state: "VIC",
+    tagline:
+      "A Niddrie broker known for getting clients into homes with little or no deposit, with a seat on the FBAA state council and years spent training the industry before she joined it.",
+    disciplines: ["Low deposit home loans", "First home buyers", "Commercial and asset finance"],
+    google: { rating: 5, reviews: 93 },
+    institution: {
+      name: "Loan Savvy",
+      role: "Founder and director",
+      note: "FBAA member",
+      logo: "/partners/bianca-dacic/loan-savvy.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "93 reviews" },
+      { label: "Loan Savvy", value: "Since 2018", sub: "her own brokerage" },
+      { label: "FBAA Victoria", value: "Councillor", sub: "state council, 2022 to 2024" },
+    ],
+    why: "Bianca is one of the more respected figures in Victorian broking: she was elected to the state council of the FBAA, the profession’s peak body, a role few brokers take on. What her clients return to again and again, across more than ninety reviews, all of them five star, is that she gets them in. She is a genuine specialist in buying with little or no deposit, guiding first home buyers in particular through the part of lending most find daunting. For an owner financing a build, especially one working hard to pull a deposit together, that combination of standing in the profession, real technical depth and genuine warmth is exactly the broker we want beside them.",
+    aboutLabel: "About Bianca",
+    about:
+      "Bianca Dacic is the founder and director of Loan Savvy, a Niddrie based brokerage she started in 2018. She came to broking from the industry’s other side, having spent years in mortgage software and broker training with firms such as Rubik and Temenos before advising clients directly. Loan Savvy works across home, commercial, and car and asset lending, and adds the practical coaching many brokers leave out, from reading bank statements and credit reports to helping clients set and reach a savings goal on the way to a purchase. Bianca is a credit representative (510930) of Mortgage Specialists Pty Ltd under Australian Credit Licence 387025, and she frames the work the way her clients do: a long term partnership rather than a single transaction.",
+    facts: {
+      basedIn: "Niddrie, VIC",
+      serves: "Melbourne",
+      focus: "Home, commercial and asset lending",
+    },
+    website: "https://www.loan-savvy.com.au/",
+    instagram: "https://www.instagram.com/loan_savvy/",
+    facebook: "https://www.facebook.com/loansavvyy/",
+    linkedin: "https://au.linkedin.com/in/bianca-dacic-802ab279",
+    servicesLabel: "Where Bianca helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Buying with little or no deposit",
+      "First home buyers",
+      "Commercial, car and asset finance",
+      "Refinancing, plus credit and savings coaching",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
