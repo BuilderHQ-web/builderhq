@@ -150,6 +150,12 @@ function gatePasses(q: InstrumentQuestion, answers: Answers): boolean {
   return gateAllows(q.showIf, answers[q.showIf.qid]);
 }
 
+/** Questions captured inside another slide, never a slide of their own
+ *  (the per-trade amounts, the inline extra-exclusions). */
+function isInlineQuestion(q: InstrumentQuestion): boolean {
+  return q.type === "amounts" || q.inline === true;
+}
+
 /** "3 listed", "24 included · 2 excluded", or the plain formatted value. */
 export function summariseValue(
   q: InstrumentQuestion,
@@ -344,8 +350,8 @@ export function TenderJourney({
         return;
       }
       for (const q of m.section.questions) {
-        // Amounts are captured inline on the coverage rows.
-        if (q.type === "amounts") continue;
+        // Inline questions live inside another slide, not their own.
+        if (isInlineQuestion(q)) continue;
         if (!gatePasses(q, answers)) continue;
         if (q.type === "matrix") {
           MATRIX_ROWS.forEach((row, rIdx) => {
@@ -397,7 +403,7 @@ export function TenderJourney({
         continue;
       }
       for (const q of m.section.questions) {
-        if (q.type === "amounts") continue;
+        if (isInlineQuestion(q)) continue;
         if (q.showIf && !gateAllows(q.showIf, init[q.showIf.qid])) continue;
         if (q.type === "matrix") {
           for (const row of MATRIX_ROWS) {
@@ -1013,7 +1019,18 @@ export function TenderJourney({
                       <LetterheadCard letterhead={letterhead} />
                     ) : null}
                     {slide.q.id === "excl.derived_confirm" ? (
-                      <DerivedExclusions answers={answers} />
+                      <DerivedExclusions
+                        answers={answers}
+                        onExtraChange={(update) =>
+                          queue("scope.exclusions_list", (prev: unknown) =>
+                            update(
+                              Array.isArray(prev)
+                                ? (prev as Record<string, unknown>[])
+                                : [],
+                            ),
+                          )
+                        }
+                      />
                     ) : null}
                     <div className="mt-8">
                       <AnswerControl
@@ -1190,23 +1207,23 @@ const INTRO_BEATS = [
   {
     key: "why",
     kicker: "Why this exists",
-    headline: "Good builders lose good jobs on paperwork.",
-    body: "When an owner holds five quotes in five formats, diligence is invisible. The clearest document wins the attention, and too often the vaguest cheap number wins the job. That is the part we are fixing, with you.",
+    headline: "The care you take should be easy to see.",
+    body: "Owners often weigh quotes that look nothing alike, where a considered price reads much the same as a rushed one. This presents your tender clearly and consistently, so your work is judged on its merits rather than its formatting.",
     cta: "Continue",
   },
   {
     key: "what",
-    kicker: "What we build together",
-    headline: "You answer. We build the document.",
-    body: "Twelve short modules turn what you already know into a formal tender: your letterhead, your schedules, your terms, signed and sealed. The kind of document that usually takes an estimator a week.",
+    kicker: "How it works",
+    headline: "You answer the questions. We prepare the tender.",
+    body: "Twelve short sections cover your eligibility, the project, your credentials, your price and your terms. Your answers become a formal document on your letterhead, with schedules and a signature, ready to submit.",
     cta: "Continue",
   },
   {
     key: "cost",
-    kicker: "What it asks of you",
-    headline: "About thirty minutes, once.",
-    body: "Most answers are a single tap. Everything saves as it lands, you can leave and resume any time, and your standing answers carry to every tender after this one. You can preview your document live as you go.",
-    cta: "Let's build it",
+    kicker: "What to expect",
+    headline: "About thirty minutes, and less each time after.",
+    body: "Most questions are a single tap, and everything saves as you go, so you can step away and return whenever suits. The details that describe your business carry across to your future tenders, and you can preview the finished document at any point.",
+    cta: "Begin",
   },
 ] as const;
 
@@ -1941,8 +1958,7 @@ function ContentsPopover({
                   <ul className="pb-1.5">
                     {m.section.questions
                       .filter(
-                        (q) =>
-                          q.type !== "amounts" && gatePasses(q, answers),
+                        (q) => !isInlineQuestion(q) && gatePasses(q, answers),
                       )
                       .map((q) => {
                         const done = isAnswerComplete(q, answers[q.id]);
@@ -2126,19 +2142,39 @@ function LetterheadCard({ letterhead }: { letterhead: TenderLetterhead }) {
   );
 }
 
-/** The exclusion schedule the coverage grid already implies, shown on
- *  the confirm slide so the builder signs what the owner will read. */
-function DerivedExclusions({ answers }: { answers: Answers }) {
+/**
+ * The exclusion schedule the coverage grid implies, shown on the
+ * confirm slide so the builder signs what the owner will read — plus
+ * an inline editor to add exclusions the grid could not capture. The
+ * derived rows read as fixed boxes; the added ones carry a remove
+ * control. Both print together on the tender.
+ */
+function DerivedExclusions({
+  answers,
+  onExtraChange,
+}: {
+  answers: Answers;
+  onExtraChange: (
+    update: (rows: Record<string, unknown>[]) => Record<string, unknown>[],
+  ) => void;
+}) {
   const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
   const excluded = MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
   const allowance = MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
-  const extra = Array.isArray(answers["scope.exclusions_list"])
-    ? (answers["scope.exclusions_list"] as Array<Record<string, unknown>>)
-        .map((row) =>
-          typeof row?.exclusion === "string" ? row.exclusion.trim() : "",
-        )
-        .filter((s) => s.length > 0)
+  const extraRows = Array.isArray(answers["scope.exclusions_list"])
+    ? (answers["scope.exclusions_list"] as Record<string, unknown>[])
     : [];
+
+  const [adding, setAdding] = useState(false);
+  const [text, setText] = useState("");
+  const commit = () => {
+    const v = text.trim();
+    if (v.length > 0) {
+      onExtraChange((rows) => [...rows, { exclusion: v.slice(0, 200) }]);
+    }
+    setText("");
+    setAdding(false);
+  };
 
   return (
     <div className="mt-6 border-y border-border-subtle divide-y divide-border-subtle/60">
@@ -2146,34 +2182,91 @@ function DerivedExclusions({ answers }: { answers: Answers }) {
         <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
           Excluded from your price
         </p>
-        {excluded.length > 0 || extra.length > 0 ? (
-          <ul className="mt-2 flex flex-wrap gap-1.5">
-            {excluded.map((r) => (
+        <ul className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {excluded.map((r) => (
+            <li
+              key={r.id}
+              className="px-2.5 py-1.5 rounded-full border border-[rgba(194,85,80,0.4)] text-[11.5px] text-[#a8433e]"
+            >
+              {r.label}
+            </li>
+          ))}
+          {extraRows.map((row, i) => {
+            const label =
+              typeof row?.exclusion === "string" ? row.exclusion : "";
+            if (!label.trim()) return null;
+            return (
               <li
-                key={r.id}
-                className="px-2.5 py-1 rounded-full border border-[rgba(194,85,80,0.4)] text-[11.5px] text-[#a8433e]"
-              >
-                {r.label}
-              </li>
-            ))}
-            {extra.map((label) => (
-              <li
-                key={label}
-                className="px-2.5 py-1 rounded-full border border-[rgba(194,85,80,0.4)] text-[11.5px] text-[#a8433e]"
+                key={`x-${i}`}
+                className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1.5 rounded-full border border-[rgba(194,85,80,0.4)] bg-[rgba(194,85,80,0.05)] text-[11.5px] text-[#a8433e]"
               >
                 {label}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onExtraChange((rows) => rows.filter((_, j) => j !== i))
+                  }
+                  aria-label={`Remove ${label}`}
+                  className="size-4 rounded-full hover:bg-[rgba(194,85,80,0.18)] flex items-center justify-center"
+                >
+                  <X className="size-2.5" strokeWidth={3} />
+                </button>
               </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1.5 text-[12.5px] text-text-muted">
-            Nothing in your coverage grid is marked excluded.
+            );
+          })}
+
+          {adding ? (
+            <li className="inline-flex items-center h-8 rounded-full border border-[rgba(194,85,80,0.5)] bg-[rgba(194,85,80,0.05)] pl-3 pr-1">
+              <input
+                autoFocus
+                type="text"
+                value={text}
+                maxLength={200}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    commit();
+                  }
+                  if (e.key === "Escape") {
+                    setText("");
+                    setAdding(false);
+                  }
+                }}
+                onBlur={commit}
+                placeholder="Type an exclusion, press Enter"
+                className="bg-transparent border-0 outline-none focus-visible:shadow-none text-[11.5px] text-[#a8433e] w-[180px] placeholder:text-[#a8433e]/50"
+              />
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={commit}
+                aria-label="Add exclusion"
+                className="size-6 rounded-full bg-[#a8433e] text-white flex items-center justify-center"
+              >
+                <Check className="size-3" strokeWidth={3} />
+              </button>
+            </li>
+          ) : (
+            <li>
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-dashed border-[rgba(194,85,80,0.5)] text-[11.5px] text-[#a8433e] hover:bg-[rgba(194,85,80,0.05)] transition-colors"
+              >
+                <Plus className="size-3" />
+                Add an exclusion
+              </button>
+            </li>
+          )}
+        </ul>
+        {excluded.length === 0 && extraRows.length === 0 && !adding ? (
+          <p className="mt-2.5 text-[12px] text-text-dim">
+            Nothing is marked excluded. Add anything the owner should know is
+            out, or confirm the price covers it all.
           </p>
-        )}
-        <p className="mt-2.5 text-[11.5px] text-text-dim">
-          Anything the grid could not capture goes on the next screen and
-          prints beside these.
-        </p>
+        ) : null}
       </div>
       {allowance.length > 0 ? (
         <div className="py-3.5">
@@ -2936,7 +3029,7 @@ export function ModuleLedger({
                 <ul className="pb-3 mb-1 ml-[11px] border-l border-border-subtle/40">
                   {m.section.questions
                     .filter(
-                      (q) => q.type !== "amounts" && gatePasses(q, answers),
+                      (q) => !isInlineQuestion(q) && gatePasses(q, answers),
                     )
                     .map((q) => {
                       const done = isAnswerComplete(q, answers[q.id]);

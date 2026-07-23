@@ -108,6 +108,12 @@ export interface InstrumentQuestion {
    */
   allowCustom?: boolean;
   /**
+   * Not a slide of its own — captured inline within another question's
+   * slide (e.g. extra exclusions edited on the confirm slide). Skipped
+   * by the deck, resume, contents and review, like `amounts`.
+   */
+  inline?: boolean;
+  /**
    * Prefill from data we already hold. The form seeds the answer and
    * the builder confirms rather than retypes.
    */
@@ -257,24 +263,8 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         required: true,
       },
       {
-        id: "elig.conflicts",
-        ref: "1.8",
-        prompt: "Do you have an existing relationship with the owner or architect to declare?",
-        help: "Prior work together, family, or a financial interest. Declaring it up front protects your tender from being questioned later; most builders answer no.",
-        type: "bool",
-        required: true,
-      },
-      {
-        id: "elig.conflicts_detail",
-        ref: "1.8a",
-        prompt: "Describe the relationship",
-        type: "text",
-        showIf: { qid: "elig.conflicts", equals: true },
-        required: true,
-      },
-      {
         id: "elig.conditions",
-        ref: "1.9",
+        ref: "1.8",
         prompt: "I accept the conditions of this tender round",
         help: "The close date, the minimum validity period, confidentiality of the project documents, and the BuilderHQ Submission Standard. The same conditions bind every builder on the round, so you compete on a level field.",
         type: "declare",
@@ -376,8 +366,18 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
           { value: "lead_times", label: "Material lead times" },
           { value: "labour", label: "Labour availability" },
           { value: "weather", label: "Weather window" },
+          { value: "other", label: "Other" },
           { value: "none", label: "None significant" },
         ],
+        required: true,
+      },
+      {
+        id: "understand.risks_other",
+        ref: "2.5a",
+        prompt: "What other risk stands out?",
+        help: "A line or two is plenty. Naming it shows the owner you have thought it through.",
+        type: "text",
+        showIf: { qid: "understand.risks", equals: "other" },
         required: true,
       },
     ],
@@ -489,17 +489,10 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         required: false,
       },
       {
-        id: "creds.on_site_now",
-        ref: "3.6",
-        prompt: "Projects currently on site",
-        help: "Capacity moves week to week, so this one is asked fresh each tender. It shows the owner you have room for their job.",
-        type: "number",
-        required: true,
-      },
-      {
         id: "programme.concurrent",
-        ref: "3.6a",
+        ref: "3.6",
         prompt: "Projects you expect to be running alongside this one",
+        help: "Capacity is asked fresh each tender. It shows the owner you have room for their job.",
         type: "select",
         options: [
           { value: "0_2", label: "Up to 2" },
@@ -558,8 +551,8 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "creds.qa",
         ref: "3.8a",
         prompt: "Your quality control",
-        help: "How finished work gets checked before the owner sees it.",
-        type: "select",
+        help: "How finished work gets checked before the owner sees it. Choose every method you use.",
+        type: "multi",
         options: [
           { value: "independent", label: "Independent stage inspections" },
           { value: "itp", label: "Documented inspection and test plans" },
@@ -625,9 +618,9 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
       {
         id: "commercial.gst_registered",
         ref: "4.3",
-        prompt: "Are you registered for GST?",
+        prompt: "I am registered for GST, and it applies to this price under the contract",
         help: "The GST-inclusive figure is calculated and shown beside your price, so the owner never mistakes which number is which.",
-        type: "bool",
+        type: "declare",
         standing: true,
         required: true,
       },
@@ -923,23 +916,25 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
       {
         id: "excl.derived_confirm",
         ref: "6.1",
-        prompt: "The items I marked excluded will print as my exclusion schedule",
-        help: "The excluded rows from your coverage grid are shown here for a final read. A written exclusion schedule is your best protection against scope disputes later.",
+        prompt: "This is my exclusion schedule",
+        help: "The trades you marked excluded are listed below. Add anything the grid could not capture on the same screen, then confirm. A written exclusion schedule is your best protection against scope disputes later.",
         type: "confirm",
         required: true,
       },
       {
+        // Extra exclusions the grid can't express, added inline on the
+        // 6.1 confirm slide (in front of the derived rows), never its
+        // own screen. Prints on the exclusion schedule beside the grid's.
         id: "scope.exclusions_list",
-        ref: "6.2",
-        prompt: "Anything else excluded that the grid could not capture?",
-        help: "One line each. These print on your exclusion schedule beside the grid's, so the record is complete.",
+        prompt: "Other exclusions",
         type: "items",
         itemFields: [{ key: "exclusion", label: "Exclusion", type: "text" }],
+        inline: true,
         required: false,
       },
       {
         id: "excl.owner_supplied",
-        ref: "6.3",
+        ref: "6.2",
         prompt: "Is the owner supplying anything you will install or work around?",
         help: "Recording it here keeps the responsibility split clean from day one.",
         type: "bool",
@@ -947,7 +942,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
       },
       {
         id: "excl.owner_supplied_items",
-        ref: "6.3a",
+        ref: "6.2a",
         prompt: "List each owner-supplied item",
         type: "items",
         itemFields: [{ key: "item", label: "Item", type: "text" }],
@@ -1085,9 +1080,20 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "programme.weather_days",
         ref: "8.4a",
         prompt: "Weather days allowed",
+        help: "How many bad-weather days the build period already absorbs.",
         type: "number",
         unit: "days",
         showIf: { qid: "programme.weather", equals: true },
+        required: true,
+      },
+      {
+        id: "programme.weather_addon_days",
+        ref: "8.4b",
+        prompt: "Weather days assumed on top of the build period",
+        help: "Days the programme may extend by for weather, so the owner reads a realistic finish rather than an optimistic one.",
+        type: "number",
+        unit: "days",
+        showIf: { qid: "programme.weather", equals: false },
         required: true,
       },
       {
@@ -1505,9 +1511,16 @@ export function gateAllows(
   showIf: NonNullable<InstrumentQuestion["showIf"]>,
   gateValue: unknown,
 ): boolean {
-  return Array.isArray(showIf.equals)
-    ? showIf.equals.some((e) => e === gateValue)
-    : gateValue === showIf.equals;
+  const wanted = Array.isArray(showIf.equals)
+    ? showIf.equals
+    : [showIf.equals];
+  // A multi answer is an array — the gate passes when the chosen set
+  // includes any wanted value. Scalar gates (bool/select) match
+  // directly. One rule covers eligibility, select, and multi gates.
+  if (Array.isArray(gateValue)) {
+    return gateValue.some((v) => wanted.includes(v as boolean | string));
+  }
+  return wanted.includes(gateValue as boolean | string);
 }
 
 /**
