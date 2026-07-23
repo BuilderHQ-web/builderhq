@@ -4003,6 +4003,54 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "matthew-hayes",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Matthew Hayes",
+    monogram: "MH",
+    portrait: "/partners/matthew-hayes/portrait.jpg",
+    suburb: "Manuka",
+    state: "ACT",
+    tagline:
+      "A born and raised Canberra broker with a thousand loans behind him, who structures finance around long term wealth rather than just the day’s interest rate.",
+    disciplines: ["First home buyers", "Investment and wealth creation", "Refinancing"],
+    google: { rating: 5, reviews: 125 },
+    institution: {
+      name: "Mortgage Choice - Matthew Hayes",
+      role: "Owner and director",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/matthew-hayes/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "125 reviews" },
+      { label: "Loans signed", value: "1,000+", sub: "and counting" },
+      { label: "In the industry", value: "10+ yrs", sub: "a lifelong Canberran" },
+    ],
+    why: "Matthew has been a Canberran his whole life, and he has built one of the busier broking practices in the city on it: more than a thousand loans signed, over a hundred and twenty five five star reviews, and the kind of local knowledge you only get from someone who has known the streets and the suburbs first hand. What sets him apart is how he thinks. He looks past the day’s interest rate to structure finance around where a client is trying to get to, whether that is a first home or a third investment property, so the loan supports a long term plan rather than just a single purchase. For an owner financing a build, in Canberra or well beyond it, a broker with that much local depth and that strategic a turn of mind is exactly who we want alongside them.",
+    aboutLabel: "About Matthew",
+    about:
+      "Matthew Hayes owns and operates Mortgage Choice Manuka, the Canberra practice he runs under his own Hayes Financial Group. Over more than ten years in finance, he and his team have worked with Canberra families and investors across first home buyers, refinancing, guarantor and low deposit lending, and investment finance. His approach starts with listening: understanding a client’s life and goals, not just their numbers, then drawing on a panel of more than sixty lenders to match the right solution. Based in Manuka, he serves clients across Canberra with a particular focus on his local community, and is equipped to help anywhere in Australia. Matthew is a credit representative (481447) of Mortgage Choice under Australian Credit Licence 382869.",
+    facts: {
+      basedIn: "Manuka, ACT",
+      serves: "Canberra and Australia wide",
+      focus: "Home, investment and wealth creation lending",
+    },
+    website: "https://hayesfinancialgroup.com.au/",
+    instagram: "https://www.instagram.com/mhayes.mh/",
+    facebook: "https://www.facebook.com/MatthewHayesFinance/",
+    linkedin: "https://www.linkedin.com/in/matthew-hayes-a927808b/",
+    servicesLabel: "Where Matthew helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Guarantor and low deposit loans",
+      "Investment and portfolio finance",
+      "Refinancing and loan structuring",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
