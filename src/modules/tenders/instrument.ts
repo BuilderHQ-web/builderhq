@@ -804,6 +804,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "site.soil_class",
         ref: "5.2a",
         prompt: "Soil classification the price assumes",
+        help: "The class you have priced against, since there is no site report to confirm it.",
         type: "select",
         options: [
           { value: "a", label: "A · mostly sand or rock" },
@@ -813,6 +814,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
           { value: "e", label: "E · extremely reactive" },
           { value: "p", label: "P · problem site" },
         ],
+        showIf: { qid: "site.soil_report", equals: "assumed" },
         required: true,
       },
       {
