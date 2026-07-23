@@ -12,10 +12,14 @@ import {
   summariseInstrument,
   type TenderInstrumentSummary,
 } from "@/modules/tenders";
+import {
+  evaluateRound,
+  type EvaluationInput,
+} from "@/modules/tenders/evaluation";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { TendersComparison } from "./comparison";
+import { TenderEvaluationSurface } from "./evaluation-surface";
 
 export const metadata = { title: "Tenders" };
 export const dynamic = "force-dynamic";
@@ -61,6 +65,29 @@ export default async function ProjectTendersPage({
         : null;
   }
 
+  // The evaluation — computed here so the page paints with the full
+  // analysis ready, and the engine never ships in the client bundle.
+  const evaluationInputs: EvaluationInput[] = tenders
+    .filter((t) => summaries[t.id])
+    .map((t) => ({
+      tenderId: t.id,
+      builderName:
+        t.builder.companyName ?? t.builder.name ?? "Builder",
+      builderSlug: t.builder.slug,
+      yearsInOperation: t.builder.yearsInOperation,
+      status: t.status,
+      submittedAt: t.submittedAt,
+      totalPriceAud: t.totalPriceAud,
+      documentCount: t.documentCount,
+      verification: {
+        abnVerified: t.builder.abnVerified,
+        anyLicenceVerified: t.builder.anyLicenceVerified,
+      },
+      answers: summaries[t.id]!.answers,
+      projectState: project.state,
+    }));
+  const round = evaluateRound(evaluationInputs);
+
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1400px]">
@@ -76,15 +103,15 @@ export default async function ProjectTendersPage({
           <div className="min-w-0">
             <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <Files className="size-3.5" />
-              Tenders · compare &amp; decide
+              The tender evaluation
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text break-words">
               {project.title}
             </h1>
             <p className="mt-2 text-[13px] text-text-muted max-w-[58ch]">
-              Real builders, verified ABNs &amp; licences — every tender below
-              is from someone we&apos;ve confirmed exists and is licensed to
-              build. Pick the one that fits.
+              Every builder tendering here answered the same structured
+              submission, under declaration. The analysis below is read
+              entirely from what they disclosed. Nothing is estimated.
             </p>
           </div>
         </div>
@@ -136,10 +163,10 @@ export default async function ProjectTendersPage({
             </div>
           </div>
         ) : (
-          <TendersComparison
+          <TenderEvaluationSurface
             tenders={tenders}
+            round={round}
             analytics={analytics}
-            projectTitle={project.title}
             summaries={summaries}
           />
         )}

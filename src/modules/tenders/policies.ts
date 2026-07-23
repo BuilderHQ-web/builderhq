@@ -16,6 +16,13 @@ export type ActorContext = {
   role: "project_owner" | "builder" | "admin" | "architect";
 };
 
+/** Roles that run tender rounds. Architects own their clients'
+ *  project rows outright, so every owner-side gate treats the two
+ *  identically; the ownership match does the real work. */
+function isRunner(role: ActorContext["role"]): boolean {
+  return role === "project_owner" || role === "architect";
+}
+
 /** Builders can create tenders on projects they've unlocked.
  *  The unlock check is enforced inside the service (the policy
  *  layer just confirms the role). */
@@ -46,22 +53,26 @@ export function canWithdrawTender(
   return tender.status === "submitted" || tender.status === "shortlisted";
 }
 
-/** Owner can move tenders on their projects through the decision
- *  states. Cross-project changes are forbidden. */
+/** The project runner can move tenders on their projects through the
+ *  decision states. Cross-project changes are forbidden. Withdrawn is
+ *  terminal (the builder's own act); which transitions are legal from
+ *  any other status is the service's decisionTransition table — e.g.
+ *  rejected can only move back to submitted, never straight to
+ *  awarded. */
 export function canDecideOnTender(
   actor: ActorContext,
   tender: TenderRow,
   projectOwnerId: string,
 ): boolean {
   if (actor.role === "admin") return true;
-  if (actor.role !== "project_owner") return false;
+  if (!isRunner(actor.role)) return false;
   if (projectOwnerId !== actor.id) return false;
-  // Withdrawn / rejected are terminal — no further owner actions.
-  return tender.status !== "withdrawn" && tender.status !== "rejected";
+  return tender.status !== "withdrawn";
 }
 
-/** Read access — builder reads their own; owner reads tenders on
- *  their projects (regardless of status, even withdrawn for audit). */
+/** Read access — builder reads their own; the project runner reads
+ *  tenders on their projects (regardless of status, even withdrawn
+ *  for audit). */
 export function canReadTender(
   actor: ActorContext,
   tender: TenderRow,
@@ -69,6 +80,6 @@ export function canReadTender(
 ): boolean {
   if (actor.role === "admin") return true;
   if (actor.role === "builder") return tender.builderId === actor.id;
-  if (actor.role === "project_owner") return projectOwnerId === actor.id;
+  if (isRunner(actor.role)) return projectOwnerId === actor.id;
   return false;
 }

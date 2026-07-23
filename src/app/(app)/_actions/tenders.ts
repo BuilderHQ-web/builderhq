@@ -300,7 +300,14 @@ export async function listActiveTenderDocsForOwnerAction(
 ): Promise<Result<Document[]>> {
   const a = await requireActor();
   if (!a.ok) return a;
-  if (a.value.role !== "project_owner" && a.value.role !== "admin") {
+  // Architects run tenders on their clients' behalf and own those
+  // project rows outright — the ownership check below is the real
+  // gate; the role check just keeps builders out early.
+  if (
+    a.value.role !== "project_owner" &&
+    a.value.role !== "architect" &&
+    a.value.role !== "admin"
+  ) {
     return fail("forbidden", "Not allowed.");
   }
   const projectOwner = await getProjectOwnerForTender(tenderId);
