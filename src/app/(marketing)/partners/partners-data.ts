@@ -4003,6 +4003,60 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "deanna-ezzy",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Mortgage broker",
+    name: "Deanna Ezzy",
+    monogram: "DE",
+    portrait: "/partners/deanna-ezzy/portrait.jpg",
+    suburb: "Deakin",
+    state: "ACT",
+    tagline:
+      "Canberra’s most awarded mortgage broker, six years running as the ACT’s number one female broker, driven to make home ownership genuinely reachable.",
+    disciplines: ["First home buyers", "Investment and SMSF", "Self-employed and complex"],
+    google: { rating: 5, reviews: 231 },
+    institution: {
+      name: "More Than Mortgages",
+      role: "Director and principal broker",
+      note: "MFAA member",
+      logo: "/partners/deanna-ezzy/more-than-mortgages.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "231 reviews" },
+      { label: "Home loans settled", value: "$1B+", sub: "and counting" },
+      { label: "In the industry", value: "15 yrs" },
+    ],
+    awards: [
+      { label: "ACT Mortgage Broker of the Year", sub: "Specialist Finance Group, 2023" },
+      { label: "The ACT’s number one female broker", sub: "six years running" },
+      { label: "Top 100 brokers nationally", sub: "eight years running, MPA" },
+    ],
+    why: "Deanna is, on the record, the most awarded mortgage broker in Canberra. She has been the ACT’s number one female broker for six years running, has held a place in the national top one hundred for eight, and has been named ACT Mortgage Broker of the Year, with more than a billion dollars in home loans arranged along the way. What that standing rests on is a genuinely held mission: she wants ownership to be reachable, and she is at her most engaged with the clients other brokers find hard. She has also built More Than Mortgages into a team strong enough that her own brokers now win awards beside her, and she puts that success to work beyond the office, funding the education of young girls in Nepal and leading charity treks in the Himalayas. For an owner financing a build, a broker of this calibre, and this evident generosity, is a rare thing to have in their corner.",
+    aboutLabel: "About Deanna",
+    about:
+      "Deanna Ezzy is the director and principal broker of More Than Mortgages, a Canberra brokerage she has led since 2017. She came into broking around fifteen years ago and has since become a fixture at the top of the industry’s rankings, a member of the Mortgage and Finance Association of Australia who holds a Certificate IV and a Diploma in Financial Services. More Than Mortgages works across the full range of lending, first home buyers, investors, refinancing, construction, self employed clients and self managed super funds, and Deanna has built it deliberately as a team rather than a solo practice, so clients have real depth of support behind them. Clients tend to describe the same combination: deep expertise, straight talk, and a genuine determination to get them into a home.",
+    facts: {
+      basedIn: "Deakin, ACT",
+      serves: "Canberra and beyond",
+      focus: "Home, investment and construction lending",
+    },
+    website: "https://www.morethanmortgages.com.au/",
+    instagram: "https://www.instagram.com/morethanmortgages/",
+    facebook: "https://www.facebook.com/morethanmortgagesaustralia",
+    linkedin: "https://www.linkedin.com/in/deannaezzy/",
+    servicesLabel: "Where Deanna helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment and portfolio finance",
+      "Self-employed and complex income",
+      "Refinancing and SMSF lending",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
