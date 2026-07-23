@@ -4051,6 +4051,56 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "william-kiln",
+    kind: "finance",
+    roleLabel: "Finance broker",
+    name: "William Kiln",
+    monogram: "WK",
+    portrait: "/partners/william-kiln/portrait.jpg",
+    suburb: "Lower North Shore",
+    state: "NSW",
+    tagline:
+      "A broker who spent fifteen years building and pricing the major banks’ own mortgage products, now using that inside knowledge to structure lending on the client’s side.",
+    disciplines: ["Loan structuring", "Investment lending", "Commercial and development"],
+    google: { rating: 5.0, reviews: 10 },
+    institution: {
+      name: "Cumulus Capital",
+      role: "Managing director",
+      note: "MFAA and AFCA member",
+      logo: "/partners/william-kiln/cumulus-capital.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
+      {
+        label: "In banking and finance",
+        value: "15+ yrs",
+        sub: "product and pricing side",
+      },
+      { label: "Lenders on the panel", value: "40+" },
+    ],
+    why: "Will spent more than fifteen years on the inside of Australian lending, in product and pricing roles at Commonwealth Bank, Westpac and Macquarie, and as Head of Mortgages at ING, where the job was to build the lending products and set the pricing that brokers and borrowers later work with. He went on to co-found a lending fintech before opening his own brokerage. Few brokers understand as precisely how a lender weighs risk, structures credit and arrives at a yes, because he helped design those systems from the inside, and on a development or construction facility, where far more sits at the credit officer’s discretion, that reading is worth more still. Whether it is an owner financing a build or a developer funding a site and the debt behind it, how the deal is structured often decides what gets approved. Having someone who has sat on the bank’s side of the table is a genuine advantage, and it is why we wanted him in the network.",
+    aboutLabel: "About Will",
+    about:
+      "William Kiln is the managing director of Cumulus Capital, a finance brokerage on Sydney’s Lower North Shore that he built around a straightforward idea: that lending should be clear, well structured and made to hold up over time, rather than rushed toward whatever product is quickest to place. The practice runs on two sides. Its mortgage broking works with homeowners, property investors and business owners, from a first purchase through to refinancing and portfolio lending, across a bank-agnostic panel of more than forty lenders; Will weighs the trade-offs as carefully as arranging the loan, reviews each client’s position every six months so the structure still fits as circumstances change, and, as an MFAA approved broker paid by the lender on settlement, offers that advice at no cost to the client. Its other side is debt structuring for builders and developers, on the two facilities that shape a project, the land and the build: funding pre-DA and DA-approved sites and testing their feasibility, then arranging construction debt across senior, stretch-senior and mezzanine positions, with presale cover and QS-certified drawdowns set up to carry a project through to completion rather than refinance it mid-build. Having set credit policy and pricing on the lender’s side, Will knows where a deal will be tested before it gets there. Commercial and development finance may involve a fee, agreed upfront; Cumulus holds credit authorisation under Australian Credit Licence 389328.",
+    facts: {
+      basedIn: "Lower North Shore, Sydney",
+      serves: "Sydney and nationwide",
+      focus: "Home, investment and commercial lending",
+    },
+    website: "https://www.cumuluscapital.com.au/",
+    linkedin: "https://www.linkedin.com/in/willkiln/",
+    servicesLabel: "Where Will helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Home loans, first purchase to refinance",
+      "Investment and portfolio lending",
+      "Development site and construction debt",
+      "Senior, stretch-senior and mezzanine facilities",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
