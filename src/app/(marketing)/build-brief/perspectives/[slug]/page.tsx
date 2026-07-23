@@ -39,7 +39,7 @@ export async function generateMetadata({
   return {
     title,
     description: p.lede,
-    keywords: [
+    keywords: p.keywords ?? [
       "choosing a builder",
       "how to choose a builder australia",
       "builder selection",
@@ -48,7 +48,6 @@ export async function generateMetadata({
       "compare builders australia",
       "residential construction australia",
       "builderhq",
-      "moe akbulut",
     ],
     authors: [{ name: p.author.name }],
     alternates: { canonical: `/build-brief/perspectives/${p.slug}` },
@@ -95,12 +94,20 @@ function perspectiveSchema(p: BriefPerspective) {
         dateModified: p.dateISO,
         image: `${SITE}/build-brief/og-perspective-${p.slug}.jpg`,
         articleSection: "Perspectives",
-        author: {
-          "@type": "Person",
-          name: p.author.name,
-          jobTitle: "Founder",
-          worksFor: { "@id": `${SITE}/#organization` },
-        },
+        author:
+          p.author.schemaType === "Organization"
+            ? {
+                "@type": "Organization",
+                name: p.author.name,
+                url: SITE,
+                "@id": `${SITE}/#organization`,
+              }
+            : {
+                "@type": "Person",
+                name: p.author.name,
+                ...(p.author.jobTitle ? { jobTitle: p.author.jobTitle } : {}),
+                worksFor: { "@id": `${SITE}/#organization` },
+              },
         publisher: { "@id": `${SITE}/#organization` },
         isPartOf: { "@id": `${SITE}/build-brief#periodical` },
       },
@@ -231,7 +238,7 @@ export default async function PerspectivePage({
         {/* Masthead — the journal's navy, the essay's own voice. */}
         <MastheadPanel className="px-6 py-11 sm:px-12 sm:py-14">
           <p className="text-[10.5px] tracking-[0.3em] uppercase font-ui font-semibold text-white/45">
-            A Founder Perspective
+            {p.kicker ?? "A Founder Perspective"}
             <span aria-hidden className="mx-2.5 text-white/25">·</span>
             <span style={{ color: "rgba(86,196,187,0.95)" }}>{p.tag}</span>
           </p>
@@ -293,7 +300,7 @@ export default async function PerspectivePage({
         {/* About the author. */}
         <aside className="mt-14 rounded-xl border-l-[3px] border-accent-light bg-white ring-1 ring-[#101820]/[0.06] card-elev px-6 py-6 sm:px-8 sm:py-7">
           <p className="text-[10.5px] tracking-[0.24em] uppercase font-ui font-semibold text-accent-light">
-            About the author
+            {p.aboutLabel ?? "About the author"}
           </p>
           <div className="mt-4 flex items-start gap-4">
             {p.author.portrait ? (

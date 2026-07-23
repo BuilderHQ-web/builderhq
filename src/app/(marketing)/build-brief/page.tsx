@@ -243,7 +243,7 @@ export default function BuildBriefHub() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
                     <p className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold">
-                      A Founder Perspective · Opinion
+                      {p.kicker ?? "A Founder Perspective"}
                     </p>
                     <p className="text-[11.5px] tracking-[0.08em] text-text-dim">
                       {p.displayDate}

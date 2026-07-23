@@ -861,6 +861,9 @@ export type BriefPerspective = {
   slug: string;
   /** Small caps tag row, e.g. "Opinion · Residential construction". */
   tag: string;
+  /** The eyebrow above the masthead and on the hub card. Defaults to
+   *  "A Founder Perspective"; editorial pieces set their own. */
+  kicker?: string;
   /** Headline, minus the accent tail. */
   title: string;
   /** Trailing words of the headline, rendered in the accent colour. */
@@ -869,15 +872,166 @@ export type BriefPerspective = {
   standfirst: string;
   /** The bold lede paragraph. */
   lede: string;
-  author: { name: string; role: string; portrait?: string };
+  author: {
+    name: string;
+    role: string;
+    portrait?: string;
+    /** schema.org author type — a named person, or the masthead itself
+     *  for editorial pieces. Defaults to Person. */
+    schemaType?: "Person" | "Organization";
+    /** jobTitle for a Person author (e.g. "Founder"). */
+    jobTitle?: string;
+  };
   dateISO: string;
   displayDate: string;
   readingMins: number;
   blocks: PerspectiveBlock[];
+  /** Label on the closing aside; defaults to "About the author". */
+  aboutLabel?: string;
   aboutAuthor: string;
+  /** Per-piece search keywords (SEO/AEO/GEO). Falls back to a general
+   *  set when omitted. */
+  keywords?: string[];
 };
 
 export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
+  {
+    slug: "construction-procurement-standard",
+    tag: "Opinion · Construction procurement",
+    kicker: "A BuilderHQ Perspective",
+    title: "Australian construction doesn't have a building problem.",
+    titleAccent: "It has a procurement problem.",
+    standfirst:
+      "Design, engineering and delivery have all been modernised. The way Australians choose, compare and appoint a builder has not.",
+    lede: "Australia's residential construction industry has spent decades improving how homes are designed and built. Architectural standards have risen, construction methods have advanced, and digital tools now touch almost every stage of a project. Yet the moment that decides who builds your home, and on what terms, has barely changed.",
+    author: {
+      name: "The BuilderHQ Editorial Team",
+      role: "Opinion, BuilderHQ",
+      schemaType: "Organization",
+    },
+    dateISO: "2026-07-23",
+    displayDate: "23 July 2026",
+    readingMins: 5,
+    blocks: [
+      {
+        kind: "p",
+        text: "Every year, Australians commit billions of dollars to building and renovating homes. For most people it is the single largest financial decision they will ever make. And still, there is no common framework for how a residential building tender is prepared, disclosed and compared.",
+      },
+      {
+        kind: "p",
+        text: "Builders present proposals in different formats. They make different assumptions, carry different allowances, and disclose their commercial terms in different ways. Owners and their architects are then left to compare documents that were never designed to line up, rather than to compare the builders behind them.",
+      },
+      { kind: "h2", text: "Procurement is more than getting a price" },
+      {
+        kind: "p",
+        text: "It is easy to treat procurement as a quote-collection exercise. It is not. Procurement is how you identify risk, test assumptions and assess capability before signing a contract that is difficult and expensive to unwind.",
+      },
+      {
+        kind: "p",
+        text: "Programme commitments, exclusions, provisional sums, prime cost items and commercial qualifications all shape what a build actually costs and how it actually runs. These are the details that decide whether a project finishes on budget. Yet they are the details most often buried, inconsistent or missing at the very moment quotes are compared side by side.",
+      },
+      {
+        kind: "quote",
+        text: "Two builders can quote the same project and mean entirely different things. The price looks comparable. The offer behind it rarely is.",
+      },
+      { kind: "h2", text: "Australia has standardised everything except procurement" },
+      {
+        kind: "p",
+        text: "We have well-established standards for design, engineering, compliance, safety and construction. A builder cannot pour a slab, frame a wall or connect a service without meeting a defined benchmark. Procurement, the stage that governs the largest commitment an owner makes, has no equivalent.",
+      },
+      {
+        kind: "p",
+        text: "The absence of a common procurement language is not a small inconvenience. It is why objective comparison is harder than it should be, why the lowest headline number so often wins attention it has not earned, and why disputes so frequently begin with the same four words: I thought that was included.",
+      },
+      {
+        kind: "h2",
+        text: "A standard for how tenders are presented, not how builders price",
+      },
+      {
+        kind: "p",
+        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is an open framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
+      },
+      {
+        kind: "p",
+        text: "Under BPS, a builder completes a structured submission that covers the same ground, in the same order, every time:",
+      },
+      {
+        kind: "table",
+        head: ["The submission covers", "Why it matters"],
+        rows: [
+          {
+            term: "Eligibility and capability",
+            body: "Licensing, insurance and the capacity to take the project on, established before price enters the conversation.",
+          },
+          {
+            term: "Commercial disclosures",
+            body: "The price, its basis, how long it holds and the terms that shape it, stated plainly rather than left to interpretation.",
+          },
+          {
+            term: "Inclusions and exclusions",
+            body: "A clear schedule of what the price covers and what it does not, so scope gaps surface before contract rather than during construction.",
+          },
+          {
+            term: "Allowances",
+            body: "Provisional sums and prime cost items itemised, so an owner can see how much of a price is firm and how much can still move.",
+          },
+          {
+            term: "Programme",
+            body: "Start date, build duration and the commitments behind them, so 'ready in March' is never confused with 'on site in March'.",
+          },
+          {
+            term: "Documentation and commentary",
+            body: "The builder's own context, recommendations and evidence, presented alongside the numbers rather than lost around them.",
+          },
+        ],
+      },
+      {
+        kind: "p",
+        text: "The result is a set of tenders an owner, architect or lender can read on a genuine like-for-like basis, and a builder whose diligence is finally visible instead of buried in a PDF.",
+      },
+      { kind: "h2", text: "Not another contract, and not another regulator" },
+      {
+        kind: "p",
+        text: "BPS is not a replacement for HIA or Master Builders contracts, and it is not a new layer of regulation. It sits before contract execution, complementing the standards the industry already relies on by improving the quality and transparency of what is disclosed during procurement.",
+      },
+      {
+        kind: "p",
+        text: "A better-presented tender does not remove the need for professional judgement. It gives that judgement something consistent to work with.",
+      },
+      {
+        kind: "quote",
+        text: "Better information at the start of a project is the cheapest risk reduction available to anyone building a home.",
+      },
+      { kind: "h2", text: "An invitation, not a finished answer" },
+      {
+        kind: "p",
+        text: "Meaningful reform is collaborative. BuilderHQ welcomes input from builders, architects, designers, lenders, insurers and consumer advocates, and from industry bodies including the Housing Industry Association, Master Builders Australia, the Australian Institute of Architects and state building authorities.",
+      },
+      {
+        kind: "p",
+        text: "Residential construction has continually evolved to raise quality, safety and professionalism. Procurement should evolve with it. The BuilderHQ Procurement Standard is offered not as a finished standard, but as the start of an industry conversation about how better procurement leads to better outcomes, for owners and builders alike.",
+      },
+    ],
+    aboutLabel: "Editorial note",
+    aboutAuthor:
+      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as an open framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
+    keywords: [
+      "construction procurement",
+      "residential construction procurement",
+      "construction procurement Australia",
+      "how to compare builder quotes",
+      "comparing builder quotes",
+      "building tender process",
+      "builder tender comparison",
+      "provisional sums and prime cost items",
+      "fixed price building contract",
+      "HIA and MBA contracts",
+      "BuilderHQ Procurement Standard",
+      "building procurement standard",
+      "how to choose a builder australia",
+      "builderhq",
+    ],
+  },
   {
     slug: "choosing-a-builder-word-of-mouth",
     tag: "Opinion · Residential construction",
@@ -889,6 +1043,8 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
     author: {
       name: "Moe Akbulut",
       role: "Founder, BuilderHQ",
+      schemaType: "Person",
+      jobTitle: "Founder",
     },
     dateISO: "2026-07-14",
     displayDate: "14 July 2026",
