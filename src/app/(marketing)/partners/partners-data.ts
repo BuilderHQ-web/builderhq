@@ -3968,6 +3968,7 @@ export const PARTNERS: Partner[] = [
     tagline:
       "One of the country’s most awarded brokers, on a genuine mission to lift her clients’ financial literacy, and the founder of the education-led practice Everlend.",
     disciplines: ["First home buyers", "Investment and SMSF", "Commercial and refinance"],
+    google: { rating: 5, reviews: 219 },
     institution: {
       name: "Everlend",
       role: "Founder and director",
@@ -3975,9 +3976,9 @@ export const PARTNERS: Partner[] = [
       logo: "/partners/evelyn-clark/everlend.png",
     },
     stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "219 reviews" },
       { label: "Industry awards", value: "20+", sub: "winner and finalist" },
       { label: "Raised for charity", value: "$100k+", sub: "for women and children" },
-      { label: "Financial literacy", value: "Podcast", sub: "‘You Have My Interest’" },
     ],
     awards: [
       { label: "Mortgage & Finance Broker of the Year", sub: "Women in Finance Awards, winner" },
