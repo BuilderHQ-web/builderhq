@@ -3955,6 +3955,60 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "evelyn-clark",
+    kind: "finance",
+    draft: true,
+    roleLabel: "Finance broker",
+    name: "Evelyn Clark",
+    monogram: "EC",
+    portrait: "/partners/evelyn-clark/portrait.jpg",
+    suburb: "St Kilda",
+    state: "VIC",
+    tagline:
+      "One of the country’s most awarded brokers, on a genuine mission to lift her clients’ financial literacy, and the founder of the education-led practice Everlend.",
+    disciplines: ["First home buyers", "Investment and SMSF", "Commercial and refinance"],
+    google: { rating: 5, reviews: 219 },
+    institution: {
+      name: "Everlend",
+      role: "Founder and director",
+      note: "MFAA member",
+      logo: "/partners/evelyn-clark/everlend.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "219 reviews" },
+      { label: "Industry awards", value: "20+", sub: "winner and finalist" },
+      { label: "Raised for charity", value: "$100k+", sub: "for women and children" },
+    ],
+    awards: [
+      { label: "Mortgage & Finance Broker of the Year", sub: "Women in Finance Awards, winner" },
+      { label: "Young Leader of the Year", sub: "Women in Finance Awards, winner" },
+      { label: "Community Champion", sub: "MFAA Excellence Awards, state winner" },
+    ],
+    why: "Evelyn is, by any measure, one of the most decorated brokers in the country, with a shelf of national awards across her broking, her leadership and her community work, and a place on the MPA global top one hundred in 2023. What we find more telling is how she has used that standing. She is on a genuine mission to lift her clients’ financial literacy, and she backs it with real substance: a podcast, webinars and in person workshops, and an annual charity event that has raised more than a hundred thousand dollars for women and children worldwide. For an owner financing a build, a broker this accomplished, and this determined to leave her clients understanding their own finances rather than just holding a loan, is a rare thing to have beside them.",
+    aboutLabel: "About Evelyn",
+    about:
+      "Evelyn Clark is the founder and director of Everlend, a Melbourne brokerage built on three stated principles: that lending is about people as much as numbers, that clients want thoughtful guidance, and that better client education leads to better outcomes. Its service is deliberately broad, from first home buyers and property investment to construction loans, refinancing and debt consolidation, self managed super fund and commercial lending, matched to each client rather than to whatever product is easiest to place. Everlend draws on a wide panel of lenders through the LMG network, and Evelyn is an authorised credit representative (502891) under Australian Credit Licence 517192. Whatever the loan, the promise is the one her clients describe: thorough, transparent advice, explained in language they can actually use.",
+    facts: {
+      basedIn: "St Kilda, VIC",
+      serves: "Melbourne",
+      focus: "Residential, investment and commercial lending",
+    },
+    website: "https://www.everlend.com.au",
+    instagram: "https://www.instagram.com/everlend_finance/",
+    facebook: "https://www.facebook.com/EverlendMortgageBrokers",
+    linkedin: "https://www.linkedin.com/in/evelyn-clark-finance-broker/",
+    servicesLabel: "Where Evelyn helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment and SMSF lending",
+      "Commercial and business finance",
+      "Refinancing and debt consolidation",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
