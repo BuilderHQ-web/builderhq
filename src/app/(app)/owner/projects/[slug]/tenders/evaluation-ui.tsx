@@ -11,7 +11,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
   Award,
@@ -23,6 +24,7 @@ import {
   ClipboardList,
   Download,
   FileText,
+  Info,
   Landmark,
   Layers,
   Lightbulb,
@@ -71,6 +73,20 @@ export const fmtMonth = (ym: string | null): string => {
   ];
   return `${MONTHS[(m ?? 1) - 1]} ${y}`;
 };
+
+/** "12345678901" → "12 345 678 901" (ABR display convention). */
+export const fmtAbn = (abn: string | null): string | null => {
+  if (!abn) return null;
+  const d = abn.replace(/\D/g, "");
+  if (d.length !== 11) return abn;
+  return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8)}`;
+};
+
+/** The link base for the current mount (/owner vs /architect). */
+export function useRunnerBase(): string {
+  const pathname = usePathname();
+  return pathname?.startsWith("/architect") ? "/architect" : "/owner";
+}
 
 /* ── palette (light theme, verified against existing surfaces) ──────── */
 
@@ -176,6 +192,146 @@ export function SectionKicker({
       <Icon className="size-3.5" />
       {children}
     </span>
+  );
+}
+
+/* ── portal popover + tooltip ───────────────────────────────────────── */
+
+/**
+ * A small "what does this mean" popover. Portal + fixed positioning
+ * so it survives overflow-x containers (the decision grid scrolls).
+ */
+export function InfoDot({
+  title,
+  text,
+}: {
+  title: string;
+  text: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        aria-label={`What does ${title} mean?`}
+        aria-expanded={open}
+        onClick={() => {
+          const r = btnRef.current?.getBoundingClientRect();
+          if (!r) return;
+          setPos({
+            x: Math.min(r.left, window.innerWidth - 300),
+            y: r.bottom + 8,
+          });
+          setOpen((v) => !v);
+        }}
+        className={cn(
+          "inline-flex size-[15px] shrink-0 items-center justify-center rounded-full align-middle transition-colors",
+          open
+            ? "text-[#0a7d73]"
+            : "text-[rgba(24,34,44,0.32)] hover:text-[rgba(24,34,44,0.6)]",
+        )}
+      >
+        <Info className="size-[13px]" />
+      </button>
+      {open && pos && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              role="note"
+              className="fixed z-[95] w-[280px] rounded-md border border-border-subtle bg-bg p-3.5 shadow-[0_20px_50px_-18px_rgba(15,23,32,0.4)]"
+              style={{ left: pos.x, top: pos.y }}
+            >
+              <p className="text-[11px] font-ui font-semibold text-text tracking-[0.02em]">
+                {title}
+              </p>
+              <p className="mt-1 text-[11.5px] leading-[1.55] text-text-muted">
+                {text}
+              </p>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+/**
+ * Hover tooltip (portal + fixed). Wrap a block; the card floats above
+ * it while hovered. Also toggles on tap for touch devices.
+ */
+export function HoverCard({
+  content,
+  children,
+  className,
+}: {
+  content: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  const show = () => {
+    const r = hostRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setPos({
+      x: Math.max(12, Math.min(r.left + r.width / 2 - 140, window.innerWidth - 292)),
+      y: r.top - 10,
+    });
+  };
+  const hide = () => setPos(null);
+
+  useEffect(() => {
+    if (!pos) return;
+    const onScroll = () => setPos(null);
+    window.addEventListener("scroll", onScroll, true);
+    return () => window.removeEventListener("scroll", onScroll, true);
+  }, [pos]);
+
+  return (
+    <div
+      ref={hostRef}
+      className={className}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onClick={() => (pos ? hide() : show())}
+    >
+      {children}
+      {pos && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="pointer-events-none fixed z-[95] w-[280px] -translate-y-full rounded-md border border-border-subtle bg-bg p-3.5 shadow-[0_20px_50px_-18px_rgba(15,23,32,0.4)]"
+              style={{ left: pos.x, top: pos.y }}
+            >
+              {content}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
   );
 }
 
@@ -1088,7 +1244,14 @@ function CommentarySection({ ev }: { ev: TenderEvaluation }) {
   );
 }
 
-function DocumentsSection({ ev }: { ev: TenderEvaluation }) {
+function RecordSection({
+  ev,
+  projectSlug,
+}: {
+  ev: TenderEvaluation;
+  projectSlug: string;
+}) {
+  const base = useRunnerBase();
   const [docs, setDocs] = useState<Document[] | null>(null);
   const [loading, setLoading] = useState(false);
   const requested = useRef(false);
@@ -1103,55 +1266,105 @@ function DocumentsSection({ ev }: { ev: TenderEvaluation }) {
   }, [ev.tenderId, ev.documentCount]);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  if (ev.documentCount === 0) return null;
   return (
     <DossierSection
       icon={FileText}
-      title="Supporting documents"
-      lede={`${ev.documentCount} document${ev.documentCount === 1 ? "" : "s"} attached to this tender.`}
+      title="The record"
+      lede="The signed submission itself, and everything attached to it."
     >
-      {loading ? (
-        <p className="inline-flex items-center gap-2 text-[12px] text-text-dim">
-          <Loader2 className="size-3.5 animate-spin" />
-          Fetching the list
-        </p>
-      ) : docs && docs.length > 0 ? (
-        <ul className="divide-y divide-border-subtle/60 rounded-sm border border-border-subtle bg-surface-1 overflow-hidden">
-          {docs.map((d) => (
-            <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-              <span className="flex items-center gap-2 min-w-0">
-                <FileText className="size-3.5 shrink-0 text-text-dim" />
-                <span className="truncate text-[12.5px] text-text">
-                  {d.filename}
-                </span>
-              </span>
-              <button
-                type="button"
-                disabled={busyId === d.id}
-                onClick={async () => {
-                  setBusyId(d.id);
-                  const r = await getBuilderDownloadUrlAction(d.id);
-                  setBusyId(null);
-                  if (!r.ok) {
-                    toast.error("Download failed", r.error.message);
-                    return;
-                  }
-                  window.open(r.value.url, "_blank", "noopener");
-                }}
-                className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-2.5 py-1.5 text-[11px] font-ui text-text-muted hover:text-text transition-colors disabled:opacity-60"
-              >
-                {busyId === d.id ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  <Download className="size-3" />
-                )}
-                Download
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* The Tender Document — the primary source */}
+      <a
+        href={`${base}/projects/${projectSlug}/tenders/${ev.tenderId}/document`}
+        target="_blank"
+        rel="noopener"
+        className="group flex items-center justify-between gap-4 rounded-sm border px-4 py-3.5 transition-colors"
+        style={{ borderColor: TONE.good.border, background: TONE.good.bg }}
+      >
+        <span className="flex items-center gap-3 min-w-0">
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-sm text-white"
+            style={{ background: "#0a7d73" }}
+          >
+            <ScrollText className="size-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold text-text">
+              The Tender Document
+            </span>
+            <span className="block text-[11.5px] text-text-muted mt-0.5">
+              {ev.builderName}&apos;s full submission as a sealed,
+              signed PDF. The evaluation above quotes it.
+            </span>
+          </span>
+        </span>
+        <span
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-2 text-[11.5px] font-ui font-semibold text-white transition-opacity group-hover:opacity-90"
+          style={{ background: "#0a7d73" }}
+        >
+          <Download className="size-3.5" />
+          PDF
+        </span>
+      </a>
+
+      {/* Attachments */}
+      {ev.documentCount > 0 ? (
+        <div className="mt-3">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui mb-1.5">
+            Attached by the builder
+          </p>
+          {loading ? (
+            <p className="inline-flex items-center gap-2 text-[12px] text-text-dim">
+              <Loader2 className="size-3.5 animate-spin" />
+              Fetching the list
+            </p>
+          ) : docs && docs.length > 0 ? (
+            <ul className="divide-y divide-border-subtle/60 rounded-sm border border-border-subtle bg-surface-1 overflow-hidden">
+              {docs.map((d) => (
+                <li
+                  key={d.id}
+                  className="flex items-center justify-between gap-3 px-4 py-2.5"
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <FileText className="size-3.5 shrink-0 text-text-dim" />
+                    <span className="truncate text-[12.5px] text-text">
+                      {d.filename}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busyId === d.id}
+                    onClick={async () => {
+                      setBusyId(d.id);
+                      const r = await getBuilderDownloadUrlAction(d.id);
+                      setBusyId(null);
+                      if (!r.ok) {
+                        toast.error("Download failed", r.error.message);
+                        return;
+                      }
+                      window.open(r.value.url, "_blank", "noopener");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-2.5 py-1.5 text-[11px] font-ui text-text-muted hover:text-text transition-colors disabled:opacity-60"
+                  >
+                    {busyId === d.id ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <Download className="size-3" />
+                    )}
+                    Download
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[12px] text-text-dim">
+              Could not load the document list.
+            </p>
+          )}
+        </div>
       ) : (
-        <p className="text-[12px] text-text-dim">Could not load the document list.</p>
+        <p className="mt-3 text-[12px] text-text-dim">
+          No further files were attached to this tender.
+        </p>
       )}
     </DossierSection>
   );
@@ -1163,10 +1376,12 @@ export function DossierBody({
   ev,
   tender,
   leaders,
+  projectSlug,
 }: {
   ev: TenderEvaluation;
   tender: TenderForOwner;
   leaders?: Partial<Record<string, string>>;
+  projectSlug: string;
 }) {
   const high = ev.flags.filter((f) => f.severity === "high");
   const rest = ev.flags.filter((f) => f.severity !== "high");
@@ -1258,7 +1473,7 @@ export function DossierBody({
       </DossierSection>
 
       <CommentarySection ev={ev} />
-      <DocumentsSection ev={ev} />
+      <RecordSection ev={ev} projectSlug={projectSlug} />
 
       {/* Questions before deciding */}
       {ev.questions.length > 0 ? (
@@ -1315,6 +1530,7 @@ export function DossierOverlay({
   ev,
   tender,
   leaders,
+  projectSlug,
   decisions,
   onAward,
   onClose,
@@ -1322,6 +1538,7 @@ export function DossierOverlay({
   ev: TenderEvaluation;
   tender: TenderForOwner;
   leaders?: Partial<Record<string, string>>;
+  projectSlug: string;
   decisions: Decisions;
   onAward: () => void;
   onClose: () => void;
@@ -1407,7 +1624,12 @@ export function DossierOverlay({
           ) : null}
         </header>
 
-        <DossierBody ev={ev} tender={tender} leaders={leaders} />
+        <DossierBody
+          ev={ev}
+          tender={tender}
+          leaders={leaders}
+          projectSlug={projectSlug}
+        />
 
         <div className="sm:hidden border-t border-border-subtle px-5 py-4">
           <DecisionRow ev={ev} onAward={onAward} decisions={decisions} />

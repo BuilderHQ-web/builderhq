@@ -16,10 +16,14 @@ import {
   evaluateRound,
   type EvaluationInput,
 } from "@/modules/tenders/evaluation";
+import { getBuilderProfile } from "@/modules/profiles";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { TenderEvaluationSurface } from "./evaluation-surface";
+import {
+  TenderEvaluationSurface,
+  type BuilderFacts,
+} from "./evaluation-surface";
 
 export const metadata = { title: "Tenders" };
 export const dynamic = "force-dynamic";
@@ -87,6 +91,34 @@ export default async function ProjectTendersPage({
       projectState: project.state,
     }));
   const round = evaluateRound(evaluationInputs);
+
+  // Identity + compliance facts for "About the builders" — ABN,
+  // licences, web presence, straight from the verified profiles.
+  const uniqueBuilderIds = [...new Set(tenders.map((t) => t.builderId))];
+  const bundles = await Promise.all(
+    uniqueBuilderIds.map(async (id) => [id, await getBuilderProfile(id)] as const),
+  );
+  const bundleByBuilder = new Map(bundles);
+  const builderFacts: Record<string, BuilderFacts | null> = {};
+  for (const t of tenders) {
+    const b = bundleByBuilder.get(t.builderId);
+    builderFacts[t.id] = b
+      ? {
+          abn: b.profile.abn,
+          suburb: b.profile.businessSuburb,
+          state: b.profile.businessState,
+          website: b.profile.website,
+          linkedin: b.profile.linkedinUrl,
+          instagram: b.profile.instagramUrl,
+          licences: b.licences.map((l) => ({
+            state: l.state,
+            number: l.licenceNumber,
+            type: l.licenceType,
+            verified: l.verificationStatus === "verified",
+          })),
+        }
+      : null;
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
@@ -168,6 +200,8 @@ export default async function ProjectTendersPage({
             round={round}
             analytics={analytics}
             summaries={summaries}
+            builderFacts={builderFacts}
+            projectSlug={project.slug}
           />
         )}
       </div>

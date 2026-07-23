@@ -1,34 +1,42 @@
 "use client";
 
 /**
- * The Tender Evaluation surface — the flagship read of a tender round,
- * shared by owners and architects (the /architect route re-exports the
- * same page).
+ * The Tender Evaluation surface — the flagship read of a tender
+ * round, shared by owners and architects (the /architect route
+ * re-exports the same page).
  *
- * Composition:
- *   round strip → the reading (price story + firm/allowance chart)
- *   → tender cards → the decision grid → where they disagree
- *   → before you decide (the agenda) → the full record → closed strip.
- * One tender in: the dossier renders inline, no overlay.
+ * The journey, in order:
+ *   the round strip (with the quick read) → about the builders
+ *   → the overview (free-standing, centred) → where the money stands
+ *   → the tenders → the decision grid → where they disagree
+ *   → what the builders brought → before you decide → the full record.
+ * One tender in: identity, then the dossier inline. No overlay.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import {
+  ArrowUpRight,
   Award,
-  BookOpenCheck,
   ChevronDown,
   ClipboardCopy,
   Files,
   GitCompareArrows,
   Landmark,
+  Lightbulb,
   ListChecks,
+  Play,
   Scale,
   ScrollText,
   Sparkles,
 } from "lucide-react";
 
-import type { TenderAnalytics, TenderForOwner, TenderInstrumentSummary } from "@/modules/tenders";
+import type {
+  TenderAnalytics,
+  TenderForOwner,
+  TenderInstrumentSummary,
+} from "@/modules/tenders";
 import type {
   RoundEvaluation,
   TenderEvaluation,
@@ -41,16 +49,21 @@ import {
   DossierBody,
   DossierOverlay,
   FirmSplitBar,
+  HoverCard,
+  InfoDot,
   Monogram,
   PositionChip,
   SectionKicker,
   STATUS_META,
   TONE,
   TrustChips,
+  fmtAbn,
   fmtAud,
   fmtMonth,
   useDecisions,
+  useRunnerBase,
 } from "./evaluation-ui";
+import { QuickReadStory } from "./evaluation-story";
 import {
   InstrumentCompare,
   InstrumentComparePlaceholder,
@@ -58,20 +71,40 @@ import {
 
 /* ── props ──────────────────────────────────────────────────────────── */
 
+export type BuilderFacts = {
+  abn: string | null;
+  suburb: string | null;
+  state: string | null;
+  website: string | null;
+  linkedin: string | null;
+  instagram: string | null;
+  licences: Array<{
+    state: string;
+    number: string;
+    type: string;
+    verified: boolean;
+  }>;
+};
+
 export function TenderEvaluationSurface({
   tenders,
   round,
   analytics,
   summaries,
+  builderFacts,
+  projectSlug,
 }: {
   tenders: TenderForOwner[];
   round: RoundEvaluation;
   analytics: TenderAnalytics;
   summaries: Record<string, TenderInstrumentSummary | null>;
+  builderFacts: Record<string, BuilderFacts | null>;
+  projectSlug: string;
 }) {
   const decisions = useDecisions();
   const [openId, setOpenId] = useState<string | null>(null);
   const [awardId, setAwardId] = useState<string | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
 
   const byId = useMemo(() => {
     const m = new Map<string, TenderForOwner>();
@@ -88,45 +121,81 @@ export function TenderEvaluationSurface({
     (t) => !evaluatedIds.has(t.id) && t.status !== "rejected",
   );
 
-  const active = evaluated.filter((e) => e.status !== "rejected");
+  // One canonical order everywhere: cheapest first.
+  const active = useMemo(
+    () =>
+      evaluated
+        .filter((e) => e.status !== "rejected")
+        .sort(
+          (a, b) => (a.money.incGst ?? Infinity) - (b.money.incGst ?? Infinity),
+        ),
+    [evaluated],
+  );
   const closed = evaluated.filter((e) => e.status === "rejected");
   const awarded = evaluated.find((e) => e.status === "awarded") ?? null;
-  const single = active.length === 1 && closed.length === 0 && legacy.length === 0;
+  const single =
+    active.length === 1 && closed.length === 0 && legacy.length === 0;
 
   const openEv = openId ? evaluated.find((e) => e.tenderId === openId) : null;
-  const awardEv = awardId ? evaluated.find((e) => e.tenderId === awardId) : null;
+  const awardEv = awardId
+    ? evaluated.find((e) => e.tenderId === awardId)
+    : null;
 
   const livePeers = (id: string) =>
     evaluated.filter(
       (e) =>
         e.tenderId !== id &&
         (e.status === "submitted" || e.status === "shortlisted"),
-    ).length + legacy.filter((t) => t.status === "submitted" || t.status === "shortlisted").length;
+    ).length +
+    legacy.filter(
+      (t) => t.status === "submitted" || t.status === "shortlisted",
+    ).length;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-7 sm:space-y-9">
       {awarded ? <AwardedBanner ev={awarded} /> : null}
 
       <RoundStrip
         evaluated={evaluated}
         analytics={analytics}
         single={single}
+        onOpenStory={single ? null : () => setStoryOpen(true)}
       />
 
       {single ? (
-        <SingleTender
-          ev={active[0]!}
-          tender={byId.get(active[0]!.tenderId)!}
-          decisions={decisions}
-          onAward={() => setAwardId(active[0]!.tenderId)}
-        />
+        <>
+          <AboutBuilders
+            evaluations={active}
+            byId={byId}
+            builderFacts={builderFacts}
+          />
+          <SingleTender
+            ev={active[0]!}
+            tender={byId.get(active[0]!.tenderId)!}
+            projectSlug={projectSlug}
+            decisions={decisions}
+            onAward={() => setAwardId(active[0]!.tenderId)}
+          />
+        </>
       ) : (
         <>
+          <SectionNav onOpenStory={() => setStoryOpen(true)} />
+
+          <div id="builders" className="scroll-mt-28">
+            <AboutBuilders
+              evaluations={active}
+              byId={byId}
+              builderFacts={builderFacts}
+            />
+          </div>
+
           {round.priceStory ? (
-            <TheReading round={round} />
+            <Overview round={round} active={active} />
           ) : null}
 
-          <section>
+          <PricePanel round={round} active={active} />
+
+          <section id="tenders" className="scroll-mt-28">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {active.map((ev, i) => (
                 <TenderCard
@@ -149,23 +218,35 @@ export function TenderEvaluationSurface({
           </section>
 
           {active.length >= 2 ? (
-            <DecisionGrid
+            <div id="compare" className="scroll-mt-28 space-y-7 sm:space-y-9">
+              <DecisionGrid
+                evaluations={active}
+                round={round}
+                onOpen={(id) => setOpenId(id)}
+              />
+              {round.scopeDisagreements.length > 0 ? (
+                <Disagreements round={round} evaluations={active} />
+              ) : null}
+            </div>
+          ) : null}
+
+          <div id="ideas" className="scroll-mt-28">
+            <WhatTheyBrought
               evaluations={active}
-              round={round}
+              projectSlug={projectSlug}
               onOpen={(id) => setOpenId(id)}
             />
-          ) : null}
+          </div>
 
-          {round.scopeDisagreements.length > 0 && active.length >= 2 ? (
-            <Disagreements round={round} evaluations={active} />
-          ) : null}
-
-          <Agenda round={round} evaluations={active} />
+          <div id="questions" className="scroll-mt-28">
+            <Agenda round={round} evaluations={active} />
+          </div>
         </>
       )}
 
-      {/* The full record */}
-      <FullRecord tenders={tenders} summaries={summaries} />
+      <div id="record" className="scroll-mt-28">
+        <FullRecord tenders={tenders} summaries={summaries} />
+      </div>
 
       {closed.length > 0 ? (
         <ClosedStrip
@@ -180,6 +261,7 @@ export function TenderEvaluationSurface({
           ev={openEv}
           tender={byId.get(openEv.tenderId)!}
           leaders={round.leaders}
+          projectSlug={projectSlug}
           decisions={decisions}
           onAward={() => setAwardId(openEv.tenderId)}
           onClose={() => setOpenId(null)}
@@ -194,8 +276,24 @@ export function TenderEvaluationSurface({
           onClose={() => setAwardId(null)}
         />
       ) : null}
+
+      {storyOpen ? (
+        <QuickReadStory
+          round={round}
+          active={active}
+          projectTitle={projectSlug ? projectTitleFromDom() : ""}
+          onClose={() => setStoryOpen(false)}
+        />
+      ) : null}
     </div>
   );
+}
+
+/** The h1 already renders the title above this component; read it
+ *  rather than threading another prop for one string. */
+function projectTitleFromDom(): string {
+  if (typeof document === "undefined") return "";
+  return document.querySelector("h1")?.textContent?.trim() ?? "The round";
 }
 
 /* ── awarded banner ─────────────────────────────────────────────────── */
@@ -224,16 +322,94 @@ function AwardedBanner({ ev }: { ev: TenderEvaluation }) {
   );
 }
 
+/* ── section nav ────────────────────────────────────────────────────── */
+
+const NAV_ITEMS = [
+  { id: "builders", label: "The builders" },
+  { id: "overview", label: "Overview" },
+  { id: "tenders", label: "The tenders" },
+  { id: "compare", label: "Side by side" },
+  { id: "ideas", label: "Ideas" },
+  { id: "questions", label: "Questions" },
+  { id: "record", label: "The record" },
+];
+
+function SectionNav({ onOpenStory }: { onOpenStory: () => void }) {
+  const [activeId, setActiveId] = useState<string>("builders");
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActiveId(e.target.id);
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    for (const item of NAV_ITEMS) {
+      const el = document.getElementById(item.id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <nav
+      aria-label="Evaluation sections"
+      className="sticky top-14 z-30 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 bg-bg/92 backdrop-blur border-b border-border-subtle/70"
+    >
+      <div className="mx-auto max-w-[1400px] flex items-center gap-1 overflow-x-auto py-2">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() =>
+              document
+                .getElementById(item.id)
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className={cn(
+              "shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-ui transition-colors",
+              activeId === item.id
+                ? "font-semibold"
+                : "text-text-muted hover:text-text",
+            )}
+            style={
+              activeId === item.id
+                ? { color: TONE.good.text, background: TONE.good.bg }
+                : undefined
+            }
+          >
+            {item.label}
+          </button>
+        ))}
+        <span className="flex-1" />
+        <button
+          type="button"
+          onClick={onOpenStory}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11.5px] font-ui font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "#14343c" }}
+        >
+          <Play className="size-3 fill-current" />
+          The quick read
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 /* ── round strip ────────────────────────────────────────────────────── */
 
 function RoundStrip({
   evaluated,
   analytics,
   single,
+  onOpenStory,
 }: {
   evaluated: TenderEvaluation[];
   analytics: TenderAnalytics;
   single: boolean;
+  onOpenStory: (() => void) | null;
 }) {
   const priced = evaluated.filter((e) => e.money.incGst !== null);
   const stats: Array<{ label: string; value: string; sub?: string }> = [];
@@ -286,7 +462,12 @@ function RoundStrip({
 
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border-subtle/60">
+      <div
+        className={cn(
+          "grid grid-cols-2 divide-x divide-y divide-border-subtle/60",
+          onOpenStory ? "lg:grid-cols-5 lg:divide-y-0" : "lg:grid-cols-4 lg:divide-y-0",
+        )}
+      >
         {stats.map((s) => (
           <div key={s.label} className="px-5 py-4">
             <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">
@@ -296,43 +477,362 @@ function RoundStrip({
               {s.value}
             </p>
             {s.sub ? (
-              <p className="mt-1 text-[11px] font-ui text-text-muted">{s.sub}</p>
+              <p className="mt-1 text-[11px] font-ui text-text-muted">
+                {s.sub}
+              </p>
             ) : null}
           </div>
         ))}
+        {onOpenStory ? (
+          <button
+            type="button"
+            onClick={onOpenStory}
+            className="group relative px-5 py-4 text-left col-span-2 lg:col-span-1 transition-opacity hover:opacity-95"
+            style={{ background: "#14343c" }}
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -top-10 right-0 size-32 rounded-full blur-2xl opacity-40"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(47,212,200,0.5), transparent 70%)",
+              }}
+            />
+            <span className="relative block text-[10px] tracking-[0.18em] uppercase font-ui" style={{ color: "rgba(243,237,226,0.6)" }}>
+              Ninety seconds
+            </span>
+            <span className="relative mt-1 flex items-center gap-2 font-display text-[24px] sm:text-[28px] leading-none" style={{ color: "#f3ede2" }}>
+              The quick read
+              <span
+                className="flex size-6 items-center justify-center rounded-full transition-transform group-hover:translate-x-0.5"
+                style={{ background: "rgba(47,212,200,0.2)", color: "#2fd4c8" }}
+              >
+                <Play className="size-3 fill-current" />
+              </span>
+            </span>
+            <span className="relative mt-1 block text-[11px] font-ui" style={{ color: "rgba(243,237,226,0.55)" }}>
+              the whole round, card by card
+            </span>
+          </button>
+        ) : null}
       </div>
     </section>
   );
 }
 
-/* ── the reading ────────────────────────────────────────────────────── */
+/* ── about the builders ─────────────────────────────────────────────── */
 
-function TheReading({ round }: { round: RoundEvaluation }) {
-  const priced = round.tenders.filter(
-    (e) => e.money.exGst !== null && e.status !== "rejected",
+function ComplianceChip({
+  ok,
+  label,
+  detail,
+}: {
+  ok: boolean;
+  label: string;
+  detail?: string;
+}) {
+  const tone = ok ? TONE.good : TONE.warn;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[4px] text-[11px] font-ui"
+      style={{
+        color: tone.text,
+        background: tone.bg,
+        borderColor: tone.border,
+      }}
+      title={detail}
+    >
+      <span
+        className="flex size-3.5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+        style={{ background: ok ? "#0a7d73" : "#b08a2e" }}
+      >
+        {ok ? "✓" : "·"}
+      </span>
+      {label}
+    </span>
   );
-  const maxEx = Math.max(...priced.map((e) => e.money.exGst!), 1);
+}
+
+function AboutBuilders({
+  evaluations,
+  byId,
+  builderFacts,
+}: {
+  evaluations: TenderEvaluation[];
+  byId: Map<string, TenderForOwner>;
+  builderFacts: Record<string, BuilderFacts | null>;
+}) {
+  return (
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <header className="px-5 sm:px-7 py-5 border-b border-border-subtle/60">
+        <SectionKicker icon={Landmark}>Checked before you compare</SectionKicker>
+        <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
+          About the builders
+        </h2>
+        <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
+          Who is behind each tender: registration, licensing and where
+          to see their work. Verification marks are checked against the
+          Australian Business Register and the state licence registers.
+        </p>
+      </header>
+      <ul className="divide-y divide-border-subtle/60">
+        {evaluations.map((ev) => {
+          const t = byId.get(ev.tenderId)!;
+          const facts = builderFacts[ev.tenderId];
+          const licence = facts?.licences[0] ?? null;
+          const links: Array<{ label: string; href: string }> = [];
+          if (t.builder.slug) {
+            links.push({
+              label: "BuilderHQ profile",
+              href: `/builders/${t.builder.slug}`,
+            });
+          }
+          if (facts?.website) {
+            links.push({
+              label: "Website",
+              href: facts.website.startsWith("http")
+                ? facts.website
+                : `https://${facts.website}`,
+            });
+          }
+          if (facts?.linkedin) {
+            links.push({ label: "LinkedIn", href: facts.linkedin });
+          }
+          if (facts?.instagram) {
+            links.push({ label: "Instagram", href: facts.instagram });
+          }
+          return (
+            <li
+              key={ev.tenderId}
+              className="px-5 sm:px-7 py-4.5 py-5 grid gap-3 lg:grid-cols-[minmax(230px,1.2fr)_2fr_minmax(180px,1fr)] lg:items-center"
+            >
+              {/* identity */}
+              <div className="flex items-center gap-3 min-w-0">
+                <Monogram text={ev.monogram} />
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold text-text truncate">
+                    {ev.builderName}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] font-ui text-text-muted truncate">
+                    {[
+                      t.builder.yearsInOperation
+                        ? `${t.builder.yearsInOperation} years in operation`
+                        : null,
+                      facts?.suburb
+                        ? `${facts.suburb}, ${facts.state ?? ""}`.replace(/, $/, "")
+                        : (facts?.state ?? t.builder.state),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+              </div>
+
+              {/* compliance */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <ComplianceChip
+                  ok={t.builder.abnVerified}
+                  label={
+                    facts?.abn
+                      ? `ABN ${fmtAbn(facts.abn)}`
+                      : "ABN on file"
+                  }
+                  detail={
+                    t.builder.abnVerified
+                      ? "Active on the Australian Business Register"
+                      : "Verification in progress"
+                  }
+                />
+                <ComplianceChip
+                  ok={licence ? licence.verified : t.builder.anyLicenceVerified}
+                  label={
+                    licence
+                      ? `Licence ${licence.number} · ${licence.state}`
+                      : "Licence on file"
+                  }
+                  detail={
+                    licence?.verified
+                      ? "Checked against the state register"
+                      : "Verification in progress"
+                  }
+                />
+                {t.builder.awardedCount > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg px-2.5 py-[4px] text-[11px] font-ui text-text-muted">
+                    <Award className="size-3 text-[#0a7d73]" />
+                    Won {t.builder.awardedCount} on BuilderHQ
+                  </span>
+                ) : null}
+              </div>
+
+              {/* where to see them */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:justify-end">
+                {links.length > 0 ? (
+                  links.map((l) => (
+                    <Link
+                      key={l.label}
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1 text-[11.5px] font-ui text-text-muted hover:text-[#0a7d73] transition-colors"
+                    >
+                      {l.label}
+                      <ArrowUpRight className="size-3" />
+                    </Link>
+                  ))
+                ) : (
+                  <span className="text-[11.5px] font-ui text-text-dim">
+                    No public links provided
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/* ── the overview (free-standing, centred) ──────────────────────────── */
+
+function Overview({
+  round,
+  active,
+}: {
+  round: RoundEvaluation;
+  active: TenderEvaluation[];
+}) {
+  // Second computed line: the non-price read.
+  const secondLine = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const id of Object.values(round.leaders)) {
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    const parts: string[] = [];
+    let top: { id: string; n: number } | null = null;
+    for (const [id, n] of counts) {
+      if (!top || n > top.n) top = { id, n };
+    }
+    if (top && top.n >= 3) {
+      const name = active.find((e) => e.tenderId === top!.id)?.builderName;
+      if (name) {
+        parts.push(
+          `Beyond the price, ${name} holds the strongest position on ${top.n} of the six dimensions we read.`,
+        );
+      }
+    }
+    const high = active.reduce(
+      (n, e) => n + e.flags.filter((f) => f.severity === "high").length,
+      0,
+    );
+    if (high > 0) {
+      parts.push(
+        `${high} significant flag${high === 1 ? " needs" : "s need"} an answer before this round is decided.`,
+      );
+    } else {
+      parts.push("No tender in this round raised a significant flag.");
+    }
+    return parts.join(" ");
+  }, [round.leaders, active]);
 
   return (
     <motion.section
+      id="overview"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden"
+      className="scroll-mt-28 text-center px-2 py-4 sm:py-6"
     >
-      <div className="px-5 sm:px-7 py-6 sm:py-7">
-        <SectionKicker icon={BookOpenCheck}>The reading</SectionKicker>
-        <p className="mt-3 max-w-[72ch] text-[15px] sm:text-[17px] leading-[1.65] text-text">
-          {round.priceStory}
-        </p>
+      <p className="text-[10px] tracking-[0.26em] uppercase text-accent-light font-ui font-medium">
+        What this round comes down to
+      </p>
+      <h2 className="mt-2 font-display uppercase tracking-[-0.016em] text-[34px] sm:text-[46px] leading-[0.95] text-text">
+        The overview
+      </h2>
+      <p className="mx-auto mt-5 max-w-[66ch] text-[16px] sm:text-[17.5px] leading-[1.7] text-text">
+        {round.priceStory}
+      </p>
+      <p className="mx-auto mt-3.5 max-w-[62ch] text-[13px] sm:text-[13.5px] leading-[1.65] text-text-muted">
+        {secondLine}
+      </p>
+    </motion.section>
+  );
+}
 
-        {/* Firm vs allowance, to a shared scale */}
-        <div className="mt-6 space-y-4">
+/* ── where the money stands (bars) ──────────────────────────────────── */
+
+function PricePanel({
+  round,
+  active,
+}: {
+  round: RoundEvaluation;
+  active: TenderEvaluation[];
+}) {
+  const priced = active.filter((e) => e.money.exGst !== null);
+  if (priced.length < 2) return null;
+  const maxEx = Math.max(...priced.map((e) => e.money.exGst!), 1);
+
+  return (
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <div className="px-5 sm:px-7 py-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <SectionKicker icon={Scale}>Where the money stands</SectionKicker>
+            <p className="mt-2 text-[12.5px] text-text-muted max-w-[58ch]">
+              Each bar is a tender price. The solid part is committed;
+              the lighter tail can still move. Rest on any bar for the
+              exact split.
+            </p>
+          </div>
+          <InfoDot
+            title="Firm money and allowances"
+            text="An allowance (a provisional sum for work, a prime cost for items) is the builder's set-aside for something that cannot be priced exactly yet. It can come in under or over the figure allowed. Everything outside the allowances is committed in the contract sum."
+          />
+        </div>
+
+        <div className="mt-6 space-y-5">
           {priced.map((e) => {
             const width = (e.money.exGst! / maxEx) * 100;
             const cheapest = round.spread?.cheapestHeadlineId === e.tenderId;
             return (
-              <div key={e.tenderId}>
+              <HoverCard
+                key={e.tenderId}
+                className="cursor-default"
+                content={
+                  <div>
+                    <p className="text-[11.5px] font-ui font-semibold text-text">
+                      {e.builderName}
+                    </p>
+                    <dl className="mt-2 space-y-1 text-[11.5px] font-ui">
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-text-muted">Price inc GST</dt>
+                        <dd className="text-text font-semibold">
+                          {fmtAud(e.money.incGst)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-text-muted">Price ex GST</dt>
+                        <dd className="text-text">{fmtAud(e.money.exGst)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt style={{ color: TONE.good.text }}>Firm</dt>
+                        <dd className="text-text">
+                          {fmtAud(e.money.firmExGst)} (
+                          {Math.round(e.money.firmPct)}%)
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt style={{ color: TONE.warn.text }}>Allowances</dt>
+                        <dd className="text-text">
+                          {e.money.exposure > 0
+                            ? `${fmtAud(e.money.exposure)} (${e.money.psCount} PS, ${e.money.pcCount} PC)`
+                            : "None"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                }
+              >
                 <div className="flex items-baseline justify-between gap-3 mb-1.5">
                   <p className="flex items-center gap-2 min-w-0">
                     <span className="truncate text-[12.5px] font-ui font-semibold text-text">
@@ -357,43 +857,45 @@ function TheReading({ round }: { round: RoundEvaluation }) {
                   </p>
                   <p className="font-display text-[16px] leading-none text-text shrink-0">
                     {fmtAud(e.money.incGst)}
-                    <span className="ml-1 text-[10px] font-ui text-text-dim tracking-normal">
+                    <span className="ml-1.5 text-[10px] font-ui text-text-dim tracking-normal">
                       inc GST
                     </span>
                   </p>
                 </div>
-                <div style={{ width: `${width}%`, minWidth: "40%" }}>
+                <div style={{ width: `${width}%`, minWidth: "42%" }}>
                   <FirmSplitBar firmPct={e.money.firmPct} height={12} />
                 </div>
-                <p className="mt-1 text-[11px] font-ui text-text-muted">
+                <p className="mt-1.5 text-[11px] font-ui text-text-muted">
                   {e.money.exposure > 0
-                    ? `${fmtAud(e.money.firmExGst)} firm, ${fmtAud(e.money.exposure)} in allowances that can move`
+                    ? `${fmtAud(e.money.firmExGst)} committed · ${fmtAud(e.money.exposure)} in allowances that can move either way`
                     : "Every dollar committed"}
                 </p>
-              </div>
+              </HoverCard>
             );
           })}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11px] font-ui text-text-muted">
-          <span>
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-sm border border-border-subtle/70 bg-bg px-4 py-2.5 text-[11px] font-ui text-text-muted">
+          <span className="inline-flex items-center gap-1.5">
             <span
-              className="inline-block h-2 w-4 rounded-full mr-1.5 align-middle"
+              className="inline-block h-2.5 w-5 rounded-full"
               style={{ background: "linear-gradient(90deg, #14343c, #0a7d73)" }}
             />
-            Firm, committed in the contract sum
+            Firm: committed in the contract sum
           </span>
-          <span>
+          <span className="inline-flex items-center gap-1.5">
             <span
-              className="inline-block h-2 w-4 rounded-full mr-1.5 align-middle"
+              className="inline-block h-2.5 w-5 rounded-full"
               style={{ background: "rgba(217,164,65,0.55)" }}
             />
-            Allowances, can move up or down from the stated figure
+            Allowances: can move up or down
           </span>
-          <span className="text-text-dim">Bar lengths compare ex-GST prices.</span>
+          <span className="text-text-dim">
+            Bar lengths compare prices ex GST.
+          </span>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -419,9 +921,6 @@ function TenderCard({
   const status = STATUS_META[ev.status];
   const high = ev.flags.filter((f) => f.severity === "high").length;
   const attention = ev.flags.filter((f) => f.severity === "attention").length;
-  const leadCount = Object.values(leaders).filter(
-    (id) => id === ev.tenderId,
-  ).length;
 
   return (
     <motion.article
@@ -433,114 +932,111 @@ function TenderCard({
         ease: [0.22, 1, 0.36, 1],
       }}
       className={cn(
-        "rounded-lg border bg-surface-1 card-elev overflow-hidden flex flex-col",
+        "rounded-lg border bg-surface-1 card-elev overflow-hidden flex flex-col transition-shadow hover:shadow-[0_24px_56px_-24px_rgba(15,23,32,0.28)]",
         ev.status === "awarded"
           ? "border-[rgba(0,166,155,0.45)]"
           : "border-border-subtle",
       )}
     >
-      <div className="px-5 pt-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Monogram text={ev.monogram} />
-            <div className="min-w-0">
-              <p className="truncate text-[14px] font-semibold text-text leading-tight">
-                {ev.builderName}
-              </p>
-              <p className="mt-0.5 text-[11px] font-ui text-text-muted">
-                {tender.builder.yearsInOperation
-                  ? `${tender.builder.yearsInOperation} years in operation`
-                  : "Verified builder"}
-              </p>
-            </div>
-          </div>
-          {status && ev.status !== "submitted" ? (
-            <span
-              className="rounded-full px-2 py-[3px] text-[10px] font-ui font-semibold shrink-0"
-              style={{ color: status.text, background: status.bg }}
-            >
-              {status.label}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="mt-2.5">
-          <TrustChips tender={tender} compact />
-        </div>
-
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui">
-              Tender price
+      {/* identity */}
+      <div className="px-5 pt-5 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Monogram text={ev.monogram} />
+          <div className="min-w-0">
+            <p className="truncate text-[14.5px] font-semibold text-text leading-tight">
+              {ev.builderName}
             </p>
-            <p className="font-display text-[30px] leading-none text-text mt-1">
-              {fmtAud(ev.money.incGst)}
+            <p className="mt-0.5 text-[11px] font-ui text-text-muted">
+              {tender.builder.yearsInOperation
+                ? `${tender.builder.yearsInOperation} years in operation`
+                : "Verified builder"}
             </p>
-            <p className="mt-1 text-[10.5px] font-ui text-text-dim">inc GST</p>
-          </div>
-          <div className="text-right pb-0.5">
-            {ev.programme.weeks ? (
-              <p className="text-[11.5px] font-ui text-text-muted">
-                {ev.programme.weeks} weeks
-              </p>
-            ) : null}
-            {ev.programme.handoverLabel ? (
-              <p className="text-[11.5px] font-ui text-text-muted">
-                handover {ev.programme.handoverLabel}
-              </p>
-            ) : null}
           </div>
         </div>
-
-        <div className="mt-3">
-          <FirmSplitBar firmPct={ev.money.firmPct} height={7} />
-          <p className="mt-1.5 text-[10.5px] font-ui text-text-muted">
-            {ev.money.exposure > 0
-              ? `Firm to ${Math.round(ev.money.firmPct)}% · ${fmtAud(ev.money.exposure)} in allowances`
-              : "Fully priced, no allowances"}
-          </p>
-        </div>
-
-        {ev.positions.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {ev.positions.map((p) => (
-              <PositionChip key={p} label={p} />
-            ))}
-          </div>
+        {status && ev.status !== "submitted" ? (
+          <span
+            className="rounded-full px-2 py-[3px] text-[10px] font-ui font-semibold shrink-0"
+            style={{ color: status.text, background: status.bg }}
+          >
+            {status.label}
+          </span>
         ) : null}
+      </div>
 
-        {/* Six-dimension fingerprint */}
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
-          {ev.dimensions.map((d) => {
-            const leads = leaders[d.key] === ev.tenderId;
-            return (
-              <div key={d.key}>
-                <p className="flex items-center justify-between text-[10px] font-ui text-text-muted">
-                  <span className="truncate">{d.label}</span>
-                  <span className={cn("tabular-nums", leads && "font-semibold")} style={leads ? { color: TONE.good.text } : undefined}>
-                    {d.score}
-                  </span>
-                </p>
-                <span
-                  className="mt-1 block h-[4px] w-full overflow-hidden rounded-full"
-                  style={{ background: "rgba(24,34,44,0.07)" }}
-                >
-                  <span
-                    className="block h-full rounded-full"
-                    style={{
-                      width: `${d.score}%`,
-                      background: leads
-                        ? "linear-gradient(90deg, #14343c, #0a7d73)"
-                        : "rgba(24,34,44,0.38)",
-                    }}
-                  />
-                </span>
-              </div>
-            );
-          })}
+      {/* the number */}
+      <div className="px-5 mt-5">
+        <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui">
+          Tender price inc GST
+        </p>
+        <p className="font-display text-[32px] leading-none text-text mt-1.5">
+          {fmtAud(ev.money.incGst)}
+        </p>
+        <p className="mt-1.5 text-[11.5px] font-ui text-text-muted">
+          {[
+            ev.programme.weeks ? `${ev.programme.weeks} weeks` : null,
+            ev.programme.handoverLabel
+              ? `keys ${ev.programme.handoverLabel}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Programme not stated"}
+        </p>
+      </div>
+
+      <div className="px-5 mt-3.5">
+        <FirmSplitBar firmPct={ev.money.firmPct} height={7} />
+        <p className="mt-1.5 text-[10.5px] font-ui text-text-muted">
+          {ev.money.exposure > 0
+            ? `Firm to ${Math.round(ev.money.firmPct)}% · ${fmtAud(ev.money.exposure)} in allowances`
+            : "Fully priced, no allowances"}
+        </p>
+      </div>
+
+      {ev.positions.length > 0 ? (
+        <div className="px-5 mt-3.5 flex flex-wrap gap-1.5">
+          {ev.positions.map((p) => (
+            <PositionChip key={p} label={p} />
+          ))}
         </div>
+      ) : null}
 
-        <p className="mt-3.5 text-[11px] font-ui text-text-muted">
+      {/* the read — single calm column */}
+      <div className="mx-5 mt-4 border-t border-border-subtle/70 pt-3.5 space-y-2">
+        {ev.dimensions.map((d) => {
+          const leads = leaders[d.key] === ev.tenderId;
+          return (
+            <div key={d.key} className="flex items-center gap-3">
+              <span className="w-[136px] shrink-0 text-[11px] font-ui text-text-muted truncate">
+                {d.label}
+              </span>
+              <span className="flex-1 block h-[4px] overflow-hidden rounded-full" style={{ background: "rgba(24,34,44,0.07)" }}>
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    width: `${d.score}%`,
+                    background: leads
+                      ? "linear-gradient(90deg, #14343c, #0a7d73)"
+                      : "rgba(24,34,44,0.35)",
+                  }}
+                />
+              </span>
+              <span
+                className={cn(
+                  "w-8 shrink-0 text-right font-display text-[14px] tabular-nums",
+                  leads ? "" : "text-text",
+                )}
+                style={leads ? { color: TONE.good.text } : undefined}
+              >
+                {d.score}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* signals */}
+      <div className="px-5 mt-3.5 pb-1 space-y-1">
+        <p className="text-[11px] font-ui">
           {high > 0 ? (
             <span style={{ color: TONE.risk.text }} className="font-semibold">
               {high} significant flag{high === 1 ? "" : "s"}
@@ -551,15 +1047,29 @@ function TenderCard({
             </span>
           )}
           {attention > 0 ? (
-            <span> · {attention} worth attention</span>
-          ) : null}
-          {leadCount > 0 ? (
-            <span> · leads on {leadCount} of 6 dimensions</span>
+            <span className="text-text-muted"> · {attention} worth attention</span>
           ) : null}
         </p>
+        {ev.commentary.present || ev.documentCount > 0 ? (
+          <p className="text-[11px] font-ui text-text-muted inline-flex items-center gap-1.5">
+            <Lightbulb className="size-3 text-[#0a7d73]" />
+            {[
+              ev.commentary.veSavingsTotal > 0
+                ? `${fmtAud(ev.commentary.veSavingsTotal)} in ideas offered`
+                : ev.commentary.present
+                  ? "Commentary offered"
+                  : null,
+              ev.documentCount > 0
+                ? `${ev.documentCount} document${ev.documentCount === 1 ? "" : "s"}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        ) : null}
       </div>
 
-      <div className="mt-4 border-t border-border-subtle/70 px-5 py-3.5 flex items-center justify-between gap-3">
+      <div className="mt-auto border-t border-border-subtle/70 px-5 py-3.5 flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={onOpen}
@@ -578,8 +1088,9 @@ function TenderCard({
 
 type GridRow = {
   label: string;
+  info?: { title: string; text: string };
   value: (e: TenderEvaluation) => string;
-  /** Index set of the winning columns; empty = no leader for this row. */
+  /** Ids of the winning columns; empty = no leader for this row. */
   best?: (all: TenderEvaluation[]) => Set<string>;
 };
 
@@ -618,6 +1129,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Firm portion",
+        info: {
+          title: "Firm portion",
+          text: "The part of the price that cannot move: the tender price minus every allowance. The higher this share, the more certain the final number.",
+        },
         value: (e) =>
           e.money.exGst === null
             ? "Not stated"
@@ -626,6 +1141,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Allowances",
+        info: {
+          title: "Allowances (PS and PC)",
+          text: "Money set aside for work that cannot be priced exactly yet. A provisional sum (PS) covers work, a prime cost (PC) covers items such as tapware or appliances. Each can end up costing more or less than the figure allowed.",
+        },
         value: (e) =>
           e.money.exposure > 0
             ? `${fmtAud(e.money.exposure)} (${e.money.psCount} PS, ${e.money.pcCount} PC)`
@@ -634,6 +1153,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Price basis",
+        info: {
+          title: "Price basis",
+          text: "Fixed means the builder commits to the number under the contract. An estimate can change as the job firms up.",
+        },
         value: (e) =>
           e.money.fixed === true
             ? "Fixed"
@@ -643,6 +1166,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Escalation",
+        info: {
+          title: "Escalation (rise and fall)",
+          text: "A rise-and-fall clause lets the contract sum move with material and labour costs. No clause means the price stays put regardless of cost movements. A cap limits how far it can rise.",
+        },
         value: (e) =>
           ({
             none: "None",
@@ -653,6 +1180,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Deposit",
+        info: {
+          title: "Deposit",
+          text: "Paid before work starts. State law caps it on jobs this size: 5% in Victoria and Queensland, 10% in New South Wales.",
+        },
         value: (e) =>
           e.money.depositPct === null
             ? "Not stated"
@@ -660,6 +1191,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Price holds",
+        info: {
+          title: "Price validity",
+          text: "How long the tender stays open for acceptance. After this window the builder may re-price. Longer gives you more room to decide carefully.",
+        },
         value: (e) =>
           e.money.validityDays === null
             ? "Not stated"
@@ -687,10 +1222,18 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Handover window",
+        info: {
+          title: "Handover window",
+          text: "The finish month computed from the builder's own start month, build period and declared weather allowance. Not a promise, but a number you can hold them to a conversation about.",
+        },
         value: (e) => e.programme.handoverLabel ?? "Not derivable",
       },
       {
         label: "Weather cover",
+        info: {
+          title: "Weather allowance",
+          text: "Days set aside for rain and weather delays. Inside the period means the handover date already allows for them. On top means you add them to the finish date. No allowance means weather delays arrive as extensions.",
+        },
         value: (e) =>
           e.programme.weatherDaysIncluded !== null
             ? `${e.programme.weatherDaysIncluded} days inside the period`
@@ -700,6 +1243,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Liquidated damages",
+        info: {
+          title: "Liquidated damages",
+          text: "A weekly amount the builder pays you if the build runs past the agreed date. It turns the programme from a hope into a commitment.",
+        },
         value: (e) =>
           e.programme.ldPerWeek !== null
             ? `${fmtAud(e.programme.ldPerWeek)}/week`
@@ -713,6 +1260,10 @@ const GRID: GridGroup[] = [
     rows: [
       {
         label: "Trades in the price",
+        info: {
+          title: "Trades in the price",
+          text: "How many of the trades this project needs are included in the tender price, out of all the trades that apply.",
+        },
         value: (e) => `${e.scope.included} of ${e.scope.applicable}`,
         best: highestBy((e) =>
           e.scope.applicable > 0 ? e.scope.included / e.scope.applicable : null,
@@ -720,15 +1271,27 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Excluded trades",
+        info: {
+          title: "Excluded trades",
+          text: "Work this tender does not price at all. You would arrange and pay for it separately, so add it mentally to the headline number.",
+        },
         value: (e) => String(e.scope.excluded),
         best: lowestBy((e) => e.scope.excluded),
       },
       {
         label: "Written exclusions",
+        info: {
+          title: "Written exclusions",
+          text: "Items the builder has listed as not included, in their own words. An honest, specific list here is a good sign, not a bad one.",
+        },
         value: (e) => String(e.scope.extraExclusions.length),
       },
       {
         label: "Trades itemised by amount",
+        info: {
+          title: "Itemised trades",
+          text: "Trades where the builder volunteered a dollar figure inside their price. More itemisation makes a price easier to check and compare.",
+        },
         value: (e) =>
           e.scope.itemisedCount > 0
             ? `${e.scope.itemisedCount} (${fmtAud(e.scope.itemisedTotal)})`
@@ -742,6 +1305,10 @@ const GRID: GridGroup[] = [
     rows: [
       {
         label: "Defects period",
+        info: {
+          title: "Defects liability period",
+          text: "After handover, the builder must come back and fix defects reported in this window. Statutory warranties still apply beyond it; a longer period shows confidence in the work.",
+        },
         value: (e) =>
           e.metrics.defectsLiabilityMonths
             ? `${e.metrics.defectsLiabilityMonths} months`
@@ -760,6 +1327,10 @@ const GRID: GridGroup[] = [
       },
       {
         label: "Variations",
+        info: {
+          title: "Variations",
+          text: "How changes to the scope get priced and approved during the build. Priced in writing before work proceeds is the standard that protects you.",
+        },
         value: (e) =>
           e.deliveryRows.find((r) => r.label === "Variations")?.value ??
           "Not stated",
@@ -777,6 +1348,10 @@ const GRID: GridGroup[] = [
     rows: [
       {
         label: "Site leadership",
+        info: {
+          title: "Site leadership",
+          text: "Who actually runs your site day to day, and how many other jobs that person carries at the same time. Fewer concurrent jobs means more attention on yours.",
+        },
         value: (e) =>
           e.credentialRows.find((r) => r.label === "Site leadership")?.value ??
           "Not stated",
@@ -813,27 +1388,33 @@ function DecisionGrid({
 }) {
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <header className="px-5 sm:px-7 py-5 border-b border-border-subtle/60">
-        <SectionKicker icon={Scale}>Side by side</SectionKicker>
-        <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
-          The decision grid
-        </h2>
-        <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
-          Every row is the builders&apos; own answers, lined up. A teal
-          cell holds the strongest position on that line.
-        </p>
+      <header className="px-5 sm:px-7 py-5 border-b border-border-subtle/60 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <SectionKicker icon={Scale}>Side by side</SectionKicker>
+          <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
+            The decision grid
+          </h2>
+          <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
+            Every row is the builders&apos; own answers, lined up. A teal
+            cell holds the strongest position on that line. The small
+            marks explain any term of the trade.
+          </p>
+        </div>
       </header>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse">
+        <table className="w-full min-w-[760px] border-collapse">
           <thead>
-            <tr>
-              <th className="sticky left-0 bg-surface-1 z-10 w-[190px] min-w-[190px] px-5 py-3 text-left" />
+            <tr className="border-b border-border-subtle/60">
+              <th className="sticky left-0 bg-surface-1 z-10 w-[200px] min-w-[200px] px-5 py-4 text-left" />
               {evaluations.map((e) => (
-                <th key={e.tenderId} className="px-4 py-3 text-left min-w-[190px]">
+                <th
+                  key={e.tenderId}
+                  className="px-4 py-4 text-left min-w-[190px]"
+                >
                   <button
                     type="button"
                     onClick={() => onOpen(e.tenderId)}
-                    className="flex items-center gap-2 group"
+                    className="flex items-center gap-2.5 group"
                   >
                     <Monogram text={e.monogram} />
                     <span className="text-left">
@@ -841,7 +1422,7 @@ function DecisionGrid({
                         {e.builderName}
                       </span>
                       <span className="block text-[10.5px] font-ui text-text-muted mt-0.5">
-                        {fmtAud(e.money.incGst)}
+                        {fmtAud(e.money.incGst)} inc GST
                       </span>
                     </span>
                   </button>
@@ -861,7 +1442,7 @@ function DecisionGrid({
             <tr>
               <td
                 colSpan={evaluations.length + 1}
-                className="px-5 pt-5 pb-2 sticky left-0"
+                className="px-5 pt-6 pb-2 sticky left-0"
               >
                 <span className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui">
                   The six dimensions
@@ -870,7 +1451,7 @@ function DecisionGrid({
             </tr>
             {evaluations[0]!.dimensions.map((d) => (
               <tr key={d.key} className="border-t border-border-subtle/40">
-                <td className="sticky left-0 bg-surface-1 z-10 px-5 py-2.5 text-[11.5px] font-ui text-text-dim">
+                <td className="sticky left-0 bg-surface-1 z-10 px-5 py-3 text-[11.5px] font-ui text-text-dim">
                   {d.label}
                 </td>
                 {evaluations.map((e) => {
@@ -880,12 +1461,12 @@ function DecisionGrid({
                   return (
                     <td
                       key={e.tenderId}
-                      className="px-4 py-2.5"
+                      className="px-4 py-3"
                       style={leads ? { background: TONE.good.bg } : undefined}
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2.5">
                         <span
-                          className="font-display text-[15px] tabular-nums"
+                          className="font-display text-[15px] tabular-nums w-7"
                           style={{ color: leads ? TONE.good.text : undefined }}
                         >
                           {score}
@@ -898,7 +1479,9 @@ function DecisionGrid({
                             className="block h-full rounded-full"
                             style={{
                               width: `${score}%`,
-                              background: leads ? "#0a7d73" : "rgba(24,34,44,0.4)",
+                              background: leads
+                                ? "#0a7d73"
+                                : "rgba(24,34,44,0.4)",
                             }}
                           />
                         </span>
@@ -911,6 +1494,10 @@ function DecisionGrid({
           </tbody>
         </table>
       </div>
+      <p className="px-5 sm:px-7 py-3.5 border-t border-border-subtle/60 text-[11px] font-ui text-text-dim">
+        Open any builder&apos;s full evaluation to see the working behind
+        their dimension scores.
+      </p>
     </section>
   );
 }
@@ -927,7 +1514,7 @@ function GridGroupRows({
       <tr>
         <td
           colSpan={evaluations.length + 1}
-          className="px-5 pt-5 pb-2 sticky left-0"
+          className="px-5 pt-6 pb-2 sticky left-0"
         >
           <span className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui">
             {group.title}
@@ -940,15 +1527,20 @@ function GridGroupRows({
         const meaningful = best.size > 0 && best.size < evaluations.length;
         return (
           <tr key={row.label} className="border-t border-border-subtle/40">
-            <td className="sticky left-0 bg-surface-1 z-10 px-5 py-2.5 text-[11.5px] font-ui text-text-dim align-top">
-              {row.label}
+            <td className="sticky left-0 bg-surface-1 z-10 px-5 py-3 align-top">
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-ui text-text-dim">
+                {row.label}
+                {row.info ? (
+                  <InfoDot title={row.info.title} text={row.info.text} />
+                ) : null}
+              </span>
             </td>
             {evaluations.map((e) => {
               const win = meaningful && best.has(e.tenderId);
               return (
                 <td
                   key={e.tenderId}
-                  className="px-4 py-2.5 text-[12px] leading-[1.5] text-text align-top"
+                  className="px-4 py-3 text-[12px] leading-[1.5] text-text align-top"
                   style={win ? { background: TONE.good.bg } : undefined}
                 >
                   <span
@@ -1056,13 +1648,153 @@ function Disagreements({
           className="w-full border-t border-border-subtle/60 px-5 py-3 text-[11.5px] font-ui text-text-muted hover:text-text transition-colors inline-flex items-center justify-center gap-1.5"
         >
           <ChevronDown
-            className={cn("size-3.5 transition-transform", expanded && "rotate-180")}
+            className={cn(
+              "size-3.5 transition-transform",
+              expanded && "rotate-180",
+            )}
           />
           {expanded
             ? "Show fewer"
             : `Show all ${round.scopeDisagreements.length} trades`}
         </button>
       ) : null}
+    </section>
+  );
+}
+
+/* ── what the builders brought ──────────────────────────────────────── */
+
+function WhatTheyBrought({
+  evaluations,
+  projectSlug,
+  onOpen,
+}: {
+  evaluations: TenderEvaluation[];
+  projectSlug: string;
+  onOpen: (id: string) => void;
+}) {
+  const base = useRunnerBase();
+  return (
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <header className="px-5 sm:px-7 py-5 border-b border-border-subtle/60">
+        <SectionKicker icon={Lightbulb}>Beyond the price</SectionKicker>
+        <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
+          What the builders brought
+        </h2>
+        <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
+          The commentary module is optional. A builder who fills it in is
+          showing you how they would think about your project, before you
+          have paid them anything.
+        </p>
+      </header>
+      <div
+        className={cn(
+          "grid divide-y sm:divide-y-0 sm:divide-x divide-border-subtle/60",
+          evaluations.length >= 3
+            ? "sm:grid-cols-3"
+            : evaluations.length === 2
+              ? "sm:grid-cols-2"
+              : "",
+        )}
+      >
+        {evaluations.map((ev) => {
+          const c = ev.commentary;
+          return (
+            <div key={ev.tenderId} className="px-5 sm:px-6 py-5 flex flex-col">
+              <div className="flex items-center gap-2.5">
+                <Monogram text={ev.monogram} />
+                <p className="text-[13px] font-semibold text-text truncate">
+                  {ev.builderName}
+                </p>
+              </div>
+
+              {c.present ? (
+                <>
+                  {c.approach ? (
+                    <blockquote
+                      className="mt-3.5 border-l-2 pl-3 text-[12px] leading-[1.6] text-text-muted italic line-clamp-3"
+                      style={{ borderColor: "#0a7d73" }}
+                    >
+                      {c.approach}
+                    </blockquote>
+                  ) : null}
+                  <ul className="mt-3.5 space-y-1.5 text-[12px] leading-[1.5]">
+                    {c.veSavingsTotal > 0 || c.valueEngineering.length > 0 ? (
+                      <li className="flex items-start gap-2">
+                        <span className="mt-[6px] size-1.5 rounded-full shrink-0" style={{ background: "#0a7d73" }} />
+                        <span className="text-text">
+                          {c.veSavingsTotal > 0 ? (
+                            <>
+                              <span className="font-semibold" style={{ color: TONE.good.text }}>
+                                {fmtAud(c.veSavingsTotal)}
+                              </span>{" "}
+                              in savings identified, {c.valueEngineering.length}{" "}
+                              idea{c.valueEngineering.length === 1 ? "" : "s"}
+                            </>
+                          ) : (
+                            `${c.valueEngineering.length} savings idea${c.valueEngineering.length === 1 ? "" : "s"} offered`
+                          )}
+                        </span>
+                      </li>
+                    ) : null}
+                    {c.recommendations.length > 0 ? (
+                      <li className="flex items-start gap-2">
+                        <span className="mt-[6px] size-1.5 rounded-full shrink-0" style={{ background: "#0a7d73" }} />
+                        <span className="text-text">
+                          {c.recommendations.length} recommendation
+                          {c.recommendations.length === 1 ? "" : "s"} on the
+                          design
+                        </span>
+                      </li>
+                    ) : null}
+                    {c.riskAdvice.length > 0 ? (
+                      <li className="flex items-start gap-2">
+                        <span className="mt-[6px] size-1.5 rounded-full shrink-0" style={{ background: "#0a7d73" }} />
+                        <span className="text-text">
+                          Advice on {c.riskAdvice.length} project risk
+                          {c.riskAdvice.length === 1 ? "" : "s"}
+                        </span>
+                      </li>
+                    ) : null}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-3.5 text-[12px] leading-[1.6] text-text-dim">
+                  Chose not to add commentary. The tender stands on its
+                  numbers, which is a legitimate way to tender.
+                </p>
+              )}
+
+              <div className="mt-4 pt-3.5 border-t border-border-subtle/60 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <a
+                  href={`${base}/projects/${projectSlug}/tenders/${ev.tenderId}/document`}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-1 text-[11.5px] font-ui font-semibold text-[#0a7d73] hover:opacity-80 transition-opacity"
+                >
+                  Tender Document PDF
+                  <ArrowUpRight className="size-3" />
+                </a>
+                {ev.documentCount > 0 ? (
+                  <span className="text-[11.5px] font-ui text-text-muted">
+                    {ev.documentCount} file{ev.documentCount === 1 ? "" : "s"}{" "}
+                    attached
+                  </span>
+                ) : null}
+                {c.present ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpen(ev.tenderId)}
+                    className="text-[11.5px] font-ui text-text-muted hover:text-text transition-colors"
+                  >
+                    Read in full
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -1076,22 +1808,37 @@ function Agenda({
   round: RoundEvaluation;
   evaluations: TenderEvaluation[];
 }) {
-  const perBuilder = evaluations
-    .map((e) => ({ ev: e, asks: e.questions.slice(0, 3) }))
-    .filter((x) => x.asks.length > 0);
-  if (round.roundQuestions.length === 0 && perBuilder.length === 0) {
-    return null;
-  }
+  const { perBuilder, roundItems, total } = useMemo(() => {
+    const pb = evaluations
+      .map((e) => ({ ev: e, asks: e.questions.slice(0, 3) }))
+      .filter((x) => x.asks.length > 0);
+    const ri = round.roundQuestions.map((q, i) => ({ q, n: i + 1 }));
+    const lens = pb.map((x) => x.asks.length);
+    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+    const numbered = pb.map(({ ev, asks }, bi) => {
+      const start = ri.length + sum(lens.slice(0, bi));
+      return {
+        ev,
+        items: asks.map((q, i) => ({ q, n: start + i + 1 })),
+      };
+    });
+    return {
+      perBuilder: numbered,
+      roundItems: ri,
+      total: ri.length + sum(lens),
+    };
+  }, [evaluations, round.roundQuestions]);
+  if (total === 0) return null;
 
   const copyAll = async () => {
     const lines: string[] = ["Before we decide"];
-    if (round.roundQuestions.length > 0) {
+    if (roundItems.length > 0) {
       lines.push("", "For the round:");
-      for (const q of round.roundQuestions) lines.push(`- ${q}`);
+      for (const item of roundItems) lines.push(`- ${item.q}`);
     }
-    for (const { ev, asks } of perBuilder) {
+    for (const { ev, items } of perBuilder) {
       lines.push("", `For ${ev.builderName}:`);
-      for (const q of asks) lines.push(`- ${q}`);
+      for (const item of items) lines.push(`- ${item.q}`);
     }
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
@@ -1112,74 +1859,77 @@ function Agenda({
             Before you decide
           </h2>
           <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
-            The open questions this round leaves. Settle these with the
-            builders and the decision usually makes itself.
+            {total} question{total === 1 ? "" : "s"} this round leaves
+            open. Put them to the builders, and the decision usually
+            makes itself.
           </p>
         </div>
         <button
           type="button"
           onClick={copyAll}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-border-subtle px-3.5 py-2 text-[12px] font-ui text-text-muted hover:text-text transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-sm px-3.5 py-2 text-[12px] font-ui font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "#14343c" }}
         >
           <ClipboardCopy className="size-3.5" />
           Copy the agenda
         </button>
       </header>
-      <div className="px-5 sm:px-7 py-5 grid gap-6 lg:grid-cols-2">
-        {round.roundQuestions.length > 0 ? (
-          <div>
-            <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui mb-2.5">
-              For the round
+
+      <div className="px-5 sm:px-7 py-2">
+        {roundItems.length > 0 ? (
+          <div className="py-4 border-b border-border-subtle/50 last:border-0">
+            <p className="flex items-center gap-2 mb-3">
+              <Sparkles className="size-3.5" style={{ color: TONE.good.text }} />
+              <span className="text-[11px] tracking-[0.16em] uppercase text-text-dim font-ui">
+                For the round
+              </span>
             </p>
-            <ul className="space-y-2">
-              {round.roundQuestions.map((q) => (
-                <li
-                  key={q}
-                  className="flex items-start gap-2.5 text-[12.5px] leading-[1.6] text-text"
-                >
-                  <Sparkles
-                    className="size-3.5 shrink-0 mt-[3px]"
-                    style={{ color: TONE.good.text }}
-                  />
-                  {q}
+            <ol className="space-y-2.5">
+              {roundItems.map(({ q, n }) => (
+                <li key={q} className="flex items-start gap-3">
+                  <span
+                    className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-ui font-semibold"
+                    style={{ background: TONE.good.bg, color: TONE.good.text }}
+                  >
+                    {n}
+                  </span>
+                  <span className="text-[13px] leading-[1.6] text-text pt-px">
+                    {q}
+                  </span>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
         ) : null}
-        <div className={cn(round.roundQuestions.length === 0 && "lg:col-span-2")}>
-          <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui mb-2.5">
-            Builder by builder
-          </p>
-          <div className="space-y-4">
-            {perBuilder.map(({ ev, asks }) => (
-              <div key={ev.tenderId}>
-                <p className="text-[12px] font-semibold text-text mb-1.5">
-                  {ev.builderName}
-                </p>
-                <ul className="space-y-1.5">
-                  {asks.map((q) => (
-                    <li
-                      key={q}
-                      className="flex items-start gap-2 text-[12px] leading-[1.55] text-text-muted"
-                    >
-                      <span
-                        className="mt-[7px] size-1 rounded-full shrink-0"
-                        style={{ background: "rgba(24,34,44,0.4)" }}
-                      />
-                      {q}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            {perBuilder.length === 0 ? (
-              <p className="text-[12px] text-text-dim">
-                No open questions. This round is unusually clean.
-              </p>
-            ) : null}
+
+        {perBuilder.map(({ ev, items }) => (
+          <div
+            key={ev.tenderId}
+            className="py-4 border-b border-border-subtle/50 last:border-0"
+          >
+            <p className="flex items-center gap-2.5 mb-3">
+              <Monogram text={ev.monogram} />
+              <span className="text-[12.5px] font-semibold text-text">
+                For {ev.builderName}
+              </span>
+            </p>
+            <ol className="space-y-2.5">
+              {items.map(({ q, n }) => (
+                <li key={q} className="flex items-start gap-3">
+                  <span
+                    className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-ui font-semibold"
+                    style={{ background: TONE.ink.bg, color: TONE.ink.text }}
+                  >
+                    {n}
+                  </span>
+                  <span className="text-[13px] leading-[1.6] text-text pt-px">
+                    {q}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
+        ))}
       </div>
     </section>
   );
@@ -1190,11 +1940,13 @@ function Agenda({
 function SingleTender({
   ev,
   tender,
+  projectSlug,
   decisions,
   onAward,
 }: {
   ev: TenderEvaluation;
   tender: TenderForOwner;
+  projectSlug: string;
   decisions: ReturnType<typeof useDecisions>;
   onAward: () => void;
 }) {
@@ -1248,7 +2000,7 @@ function SingleTender({
           decide.
         </p>
       </header>
-      <DossierBody ev={ev} tender={tender} />
+      <DossierBody ev={ev} tender={tender} projectSlug={projectSlug} />
     </motion.section>
   );
 }
@@ -1272,7 +2024,7 @@ function FullRecord({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 sm:px-7 py-4.5 flex items-center justify-between gap-3 text-left hover:bg-[rgba(24,34,44,0.015)] transition-colors py-5"
+        className="w-full rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 sm:px-7 flex items-center justify-between gap-3 text-left hover:bg-[rgba(24,34,44,0.015)] transition-colors py-5"
         aria-expanded={open}
       >
         <span>
