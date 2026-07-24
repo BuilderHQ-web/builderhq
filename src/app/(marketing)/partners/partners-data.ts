@@ -3011,6 +3011,84 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "leneeva-homes",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom and project home builder",
+    name: "Leneeva Homes",
+    monogram: "LH",
+    logo: "/partners/leneeva-homes/logo.png",
+    principal: "Joe Dimech and Jason Blackmore",
+    suburb: "Hampton",
+    state: "VIC",
+    tagline:
+      "An award-winning, design-led home builder in bayside Hampton, delivering custom and project homes across Melbourne’s south-east with the same core team of tradespeople on every build.",
+    disciplines: ["Custom homes", "Knockdown rebuilds", "Dual occupancy developments"],
+    google: { rating: 5.0, reviews: 56 },
+    awards: [
+      {
+        label: "HIA Victorian Project Home of the Year",
+        sub: "2018 winner",
+      },
+      {
+        label: "HIA Victorian Display Home winner",
+        sub: "2017",
+      },
+      {
+        label: "HIA Custom Built Home finalist",
+        sub: "2023 to 2025",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "56 reviews" },
+      {
+        label: "HIA awards",
+        value: "13+",
+        sub: "wins and finals since 2013",
+      },
+      {
+        label: "Built by",
+        value: "1",
+        sub: "core team, every home",
+      },
+    ],
+    why: "Few Melbourne builders have an awards record like this one. Since 2013, Leneeva has been named an HIA finalist or winner more than a dozen times, from the 2018 Victorian Project Home of the Year through to their million-dollar custom builds, a run of peer recognition most volume builders never come close to. What sits behind it is a deliberate decision not to be a volume builder at all: Leneeva sets aside the sales-target model in favour of treating each home as one family’s project, and backs that with a rare kind of continuity, since every home is built by the same core group of tradespeople rather than whoever happens to be free that month. It is the sort of consistency that award juries and fifty-six five-star reviewers both keep noticing. For a family who wants a genuinely bespoke home in Melbourne’s south-east, built to a standard the industry itself keeps shortlisting, this is a builder worth meeting.",
+    about:
+      "Leneeva Homes is a Hampton-based design-and-build company led by managing director Joe Dimech and director Jason Blackmore. It works across Melbourne’s south-east and bayside, building one-off custom homes, knockdown rebuilds and dual-occupancy developments alongside a designed range of project homes, and keeps house design, interior selection and landscaping in-house so design intent carries cleanly from first concept into the finished build. On site, each project is run by construction manager Todd Farrelly and supervisor Dean Britten. The work spans Hamptons-style residences and crisp Australian-modern homes, in suburbs from Berwick and Officer through Wheelers Hill and the bayside streets close to home.",
+    facts: {
+      experience: "10+ yrs",
+      basedIn: "Hampton, VIC",
+      serves: "South-east Melbourne",
+      focus: "Custom, project and dual-occupancy homes",
+    },
+    website: "https://www.leneeva.com.au",
+    instagram: "https://www.instagram.com/leneevahomes",
+    facebook: "https://www.facebook.com/LeneevaHomes",
+    linkedin: "https://www.linkedin.com/in/joe-dimech-57747489/",
+    galleryUrl: "https://www.leneeva.com.au/home-designs/",
+    work: [
+      {
+        title: "French Provincial estate",
+        suburb: "Berwick",
+        type: "Custom home",
+        image: "/partners/leneeva-homes/berwick.jpg",
+      },
+      {
+        title: "Double-height living",
+        suburb: "Officer",
+        type: "Interior",
+        image: "/partners/leneeva-homes/officer.jpg",
+      },
+      {
+        title: "Modern gable facade",
+        suburb: "Wheelers Hill",
+        type: "New build",
+        image: "/partners/leneeva-homes/wheelers-hill.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
