@@ -279,19 +279,20 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
 /* ── process strip ───────────────────────────────────────────────────── */
 
 function BriefStrip({ spec }: { spec: BriefStripSpec }) {
-  const n = spec.stages.length;
   const callout = spec.callout;
+  const inBand = (i: number) =>
+    !!callout && i >= callout.from && i <= callout.to;
   return (
-    <figure
-      aria-label={`${spec.title}. ${spec.desc}`}
-      className="mt-7 rounded-xl border border-[#101820]/[0.08] bg-[#fbfaf7] px-5 py-5 sm:px-6"
-    >
-      <figcaption className="flex items-baseline justify-between gap-4">
+    <figure aria-label={`${spec.title}. ${spec.desc}`}>
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
         <span className="text-[12.5px] font-ui font-semibold text-text">
           {spec.title}
         </span>
         {spec.legend ? (
-          <span className="hidden sm:flex items-center gap-4 text-[10.5px] tracking-[0.06em] text-text-dim" style={MONO}>
+          <span
+            className="flex items-center gap-4 text-[10.5px] tracking-[0.06em] text-text-dim"
+            style={MONO}
+          >
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
@@ -304,7 +305,7 @@ function BriefStrip({ spec }: { spec: BriefStripSpec }) {
               <span
                 aria-hidden
                 className="inline-block size-2 rounded-full"
-                style={{ background: CONTEXT_FILL }}
+                style={{ background: CONTEXT_FILL, opacity: 0.55 }}
               />
               {spec.legend.context}
             </span>
@@ -312,28 +313,32 @@ function BriefStrip({ spec }: { spec: BriefStripSpec }) {
         ) : null}
       </figcaption>
 
-      <ol
-        className={`mt-5 grid grid-cols-2 gap-y-5 gap-x-3 ${
-          n >= 6
-            ? "sm:grid-cols-3 lg:grid-cols-6"
-            : n === 5
-              ? "sm:grid-cols-5"
-              : "sm:grid-cols-4"
-        }`}
-      >
+      {/* One stage per row — the strip is a sequence, and the chart
+          slot is a narrow rail, so it reads top to bottom. The
+          callout range carries a soft band so the on-site portion is
+          visible at a glance. */}
+      <ol className="mt-4">
         {spec.stages.map((s, i) => (
-          <li key={s.label} className="flex items-start gap-2.5 min-w-0">
+          <li
+            key={s.label}
+            className={`flex items-center gap-3 px-3 py-[8px] ${
+              inBand(i) ? "bg-[#101820]/[0.035]" : ""
+            } ${callout && i === callout.from ? "rounded-t-lg" : ""} ${
+              callout && i === callout.to ? "rounded-b-lg" : ""
+            }`}
+          >
             <span
               aria-hidden
               className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold text-white"
               style={{
                 ...MONO,
                 background: s.accent ? ACCENT_FILL : CONTEXT_FILL,
+                opacity: s.accent ? 1 : 0.75,
               }}
             >
               {i + 1}
             </span>
-            <span className="pt-[2px] text-[12px] leading-[1.4] text-text-muted">
+            <span className="min-w-0 text-[12.5px] leading-[1.4] text-text-muted">
               {s.label}
             </span>
           </li>
@@ -341,20 +346,11 @@ function BriefStrip({ spec }: { spec: BriefStripSpec }) {
       </ol>
 
       {callout ? (
-        <div className="mt-5 border-t border-[#101820]/[0.08] pt-4">
-          <p className="text-[12.5px] leading-[1.5] text-text-muted">
-            <span className="font-semibold text-accent-light" style={MONO}>
-              {callout.label}
-            </span>{" "}
-            · {callout.sub ? `${callout.sub}, ` : ""}stages {callout.from + 1}{" "}
-            to {callout.to + 1}
-          </p>
-        </div>
-      ) : null}
-      {spec.legend ? (
-        <p className="mt-3 sm:hidden text-[10.5px] tracking-[0.06em] text-text-dim" style={MONO}>
-          Teal, {spec.legend.accent.toLowerCase()} · grey,{" "}
-          {spec.legend.context.toLowerCase()}
+        <p className="mt-3.5 border-t border-[#101820]/[0.08] pt-3 text-[12px] leading-[1.5] text-text-muted">
+          <span className="font-semibold text-accent-light" style={MONO}>
+            {callout.label}
+          </span>
+          {callout.sub ? <> · {callout.sub}</> : null}
         </p>
       ) : null}
     </figure>
