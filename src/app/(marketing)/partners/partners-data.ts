@@ -3011,6 +3011,80 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "rycon-building-group",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Luxury custom home builder",
+    name: "Rycon Building Group",
+    monogram: "RB",
+    logo: "/partners/rycon-building-group/logo.png",
+    principal: "Ryan McKenzie",
+    suburb: "Blackburn",
+    state: "VIC",
+    tagline:
+      "A Master Builders Victoria award-winning luxury custom home builder based in Melbourne’s east, known for turnkey homes on the sloping and difficult sites that other builders turn down.",
+    disciplines: ["Luxury custom homes", "Knockdown rebuilds", "Sloping-site builds"],
+    google: { rating: 4.9, reviews: 30 },
+    awards: [
+      {
+        label: "Young Builder of the Year",
+        sub: "Master Builders Victoria, to founder Ryan McKenzie",
+      },
+      {
+        label: "Best Custom Home, winner",
+        sub: "Master Builders Victoria",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "30 reviews" },
+      {
+        label: "Custom homes built",
+        value: "200+",
+        sub: "across Melbourne since 2007",
+      },
+      {
+        label: "Inspected by",
+        value: "Founder",
+        sub: "Ryan McKenzie, every home",
+      },
+    ],
+    why: "Some builders take any block; Rycon built its name on the ones others turn away. Sloping sites, tight or awkward blocks, the difficult jobs that scare off a volume operator: this is where the practice is most at home, and where its founder’s standards show. Ryan McKenzie was named Young Builder of the Year by Master Builders Victoria, and he still personally inspects every home the company delivers, holding each to the level of detail that recognition implies. It runs right down to the fittings, since Rycon writes its standard inclusions to best practice rather than the industry minimum, so even the base specification starts high. Just as telling is who they build for: Rycon takes on only a limited number of clients at a time, which is how a builder holds a 4.9 rating across thirty reviews and stays close enough to every project to get the detail right. For an owner with a demanding site or an uncompromising brief, this is a builder who treats both as the whole point.",
+    about:
+      "Rycon Building Group was founded in 2007 by managing director Ryan McKenzie and works from Blackburn, in Melbourne’s east. It builds luxury custom homes and knockdown rebuilds across the city, over two hundred of them to date, on a turnkey model that keeps design and construction under one roof. Clients can walk their floor plan at full one-to-one scale through Rycon’s 3D projection technology before a slab is poured, resolving the feel of a space while it is still easy to change. The company is a member of Master Builders Victoria and a registered Domestic Builder Unlimited, with recent work running from Surrey Hills and the established eastern suburbs down to the Mornington Peninsula at Sorrento.",
+    facts: {
+      established: "2007",
+      basedIn: "Blackburn, VIC",
+      serves: "Melbourne-wide",
+      focus: "Luxury custom homes and rebuilds",
+    },
+    website: "https://ryconbg.com.au",
+    instagram: "https://www.instagram.com/ryconbuildinggroup/",
+    facebook: "https://www.facebook.com/ryconbg/",
+    linkedin: "https://www.linkedin.com/in/ryan-mckenzie-90b5421b8/",
+    galleryUrl: "https://ryconbg.com.au",
+    work: [
+      {
+        title: "Stone and timber home",
+        suburb: "Sorrento",
+        type: "Custom home",
+        image: "/partners/rycon-building-group/sorrento.jpg",
+      },
+      {
+        title: "Modern farmhouse",
+        suburb: "Surrey Hills",
+        type: "Custom home",
+        image: "/partners/rycon-building-group/surrey-hills.jpg",
+      },
+      {
+        title: "Pool and alfresco",
+        suburb: "Melbourne",
+        type: "New build",
+        image: "/partners/rycon-building-group/poolside.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
