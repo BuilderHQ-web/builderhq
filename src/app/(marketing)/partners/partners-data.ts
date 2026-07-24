@@ -3011,6 +3011,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "capital-building-contractors",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Extension and renovation specialist",
+    name: "Capital Building Contractors",
+    monogram: "CB",
+    logo: "/partners/capital-building-contractors/logo.png",
+    principal: "Travis",
+    suburb: "Mont Albert North",
+    state: "VIC",
+    tagline:
+      "A Mont Albert North design-and-build team specialising in home extensions and renovations across Melbourne, delivered on a fixed price and a fixed timeline with no hidden fees.",
+    disciplines: ["Home extensions", "Home renovations", "Period homes"],
+    google: { rating: 4.8, reviews: 48 },
+    institution: {
+      name: "Master Builders Victoria",
+      role: "Member and Green Living accredited",
+      note: "Registered Building Practitioner (plus CPD) · VBA registered",
+    },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "48 reviews" },
+      {
+        label: "Building since",
+        value: "2004",
+        sub: "two decades of extensions",
+      },
+      {
+        label: "Every quote",
+        value: "Fixed",
+        sub: "price and timeline, no hidden fees",
+      },
+    ],
+    why: "Extensions and renovations are the hardest work in residential building, and the least forgiving. You are operating on a house someone still lives in, matching new work to old, often on a tight period block where every join has to line up and nothing can simply be knocked down and started again. It is precisely the work Capital has chosen to specialise in. Its director, Travis, came up the trade the long way, from apprentice carpenter to qualified carpenter to site supervisor before earning his builder’s licence, and that hands-on grounding shows in the standard he holds each site to. What tends to win clients over, though, is the certainty: Capital quotes a fixed price and a fixed timeline with no hidden fees, which lifts the single biggest worry out of a renovation before it begins. Add a 4.8 rating across forty-eight reviews and a full shelf of building credentials, and this is a safe, skilled pair of hands for the kind of project that punishes the wrong choice.",
+    about:
+      "Capital Building Contractors has been building across Melbourne since 2004, and works from Mont Albert North in the city’s east under director Travis. The team designs and builds home extensions of every kind, ground-floor and double-storey, weatherboard and period, alongside full home renovations and energy-efficient upgrades. Most projects begin with a complimentary consultation, after which Capital prepares a drawn concept and budget and then a fixed-price quote, or moves straight to a quote where drawings already exist. Recent extensions and renovations span Kew East, Camberwell and Preston, part of a service area that reaches across Melbourne’s eastern, inner, bayside and northern suburbs.",
+    facts: {
+      established: "2004",
+      basedIn: "Mont Albert North, VIC",
+      serves: "Across Melbourne",
+      focus: "Home extensions and renovations",
+    },
+    website: "https://capitalbuilding.com.au",
+    instagram: "https://www.instagram.com/capitalbuildingcontractors/",
+    facebook: "https://www.facebook.com/CapitalBuildingContractorsMelbourne/",
+    linkedin: "https://www.linkedin.com/company/capital-building-contractors/",
+    galleryUrl: "https://capitalbuilding.com.au",
+    work: [
+      {
+        title: "Open-plan renovation",
+        suburb: "Kew East",
+        type: "Renovation",
+        image: "/partners/capital-building-contractors/kew-east.jpg",
+      },
+      {
+        title: "Double-storey extension",
+        suburb: "Preston",
+        type: "Extension",
+        image: "/partners/capital-building-contractors/preston.jpg",
+      },
+      {
+        title: "Weatherboard extension",
+        suburb: "Camberwell",
+        type: "Extension",
+        image: "/partners/capital-building-contractors/camberwell.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
