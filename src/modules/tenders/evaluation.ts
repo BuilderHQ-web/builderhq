@@ -64,13 +64,27 @@ export interface EvalFlag {
   ask?: string;
 }
 
+/**
+ * One line of a dimension's working. The lines are a ledger: the
+ * optional base opens it, deltas adjust it, an explicit clamp line
+ * reconciles any floor or ceiling, and notes carry context without
+ * points. base + Σdeltas + Σclamps ALWAYS equals the score — the
+ * arithmetic is checkable by the reader, and asserted in dev.
+ */
+export interface ReceiptLine {
+  kind: "base" | "delta" | "note" | "clamp";
+  /** Signed points; null for notes. */
+  value: number | null;
+  label: string;
+}
+
 export interface DimensionScore {
   key: DimensionKey;
   label: string;
-  /** 0–100. A read of the DISCLOSED position, not of the builder. */
+  /** 0–100 under a fixed rubric (each dimension totals exactly 100). */
   score: number;
-  /** The facts the score was computed from, signed: "+15 site inspected". */
-  receipts: string[];
+  /** The ledger the score was computed from. */
+  receipts: ReceiptLine[];
 }
 
 export type DimensionKey =
@@ -174,6 +188,15 @@ export interface TenderEvaluation {
   credentialRows: FactRow[];
   deliveryRows: FactRow[];
   dimensions: DimensionScore[];
+  /**
+   * Module 1 insurance declarations, made under signature. Declared,
+   * not register-verified — the UI labels them accordingly.
+   */
+  insurance: {
+    publicLiability: boolean;
+    warrantyEligible: boolean | null;
+    workersComp: "current" | "not_required" | null;
+  };
   flags: EvalFlag[];
   highlights: string[];
   /** The pre-decision agenda: every flag's ask, deduped and ordered. */
@@ -217,6 +240,19 @@ export interface RoundEvaluation {
   } | null;
   /** One computed sentence: the thing this round most needs read. */
   priceStory: string | null;
+  /**
+   * The ladder: for tenders ordered by price, what each step up
+   * actually buys, computed only from facts where the dearer tender
+   * is strictly better. The homeowner's real question, answered.
+   */
+  ladder: Array<{
+    fromId: string;
+    toId: string;
+    fromName: string;
+    toName: string;
+    extraInc: number;
+    gains: string[];
+  }>;
   /** Dimension key → tenderId of the leader (ties → first). */
   leaders: Partial<Record<DimensionKey, string>>;
   /** Trades where the builders genuinely disagree on coverage. */
@@ -237,6 +273,57 @@ const clamp = (n: number, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Math.round(n)));
 
 const aud = (n: number) => `$${Math.round(n).toLocaleString("en-AU")}`;
+
+/**
+ * Ledger builder for dimension scores. Guarantees the published
+ * invariant: base + Σdeltas + Σclamps === score, exactly, in every
+ * case. All points are integers.
+ */
+function ledger(base: number, baseLabel: string | null) {
+  const lines: ReceiptLine[] = [];
+  if (baseLabel !== null) {
+    lines.push({ kind: "base", value: base, label: baseLabel });
+  }
+  let sum = base;
+  return {
+    add(points: number, label: string) {
+      if (points === 0) {
+        lines.push({ kind: "note", value: null, label });
+        return;
+      }
+      sum += Math.round(points);
+      lines.push({ kind: "delta", value: Math.round(points), label });
+    },
+    note(label: string) {
+      lines.push({ kind: "note", value: null, label });
+    },
+    settle(key: DimensionKey): DimensionScore {
+      const raw = Math.round(sum);
+      const score = clamp(raw);
+      if (score !== raw) {
+        lines.push({
+          kind: "clamp",
+          value: score - raw,
+          label: score === 0 ? "held at the floor of 0" : "capped at 100",
+        });
+      }
+      if (process.env.NODE_ENV !== "production") {
+        const check = lines.reduce((n, l) => n + (l.value ?? 0), 0);
+        if (check !== score) {
+          throw new Error(
+            `evaluation ledger mismatch for ${key}: lines sum to ${check}, score is ${score}`,
+          );
+        }
+      }
+      return {
+        key,
+        label: DIMENSION_LABELS[key],
+        score,
+        receipts: lines,
+      };
+    },
+  };
+}
 
 function monogramOf(name: string): string {
   return name
@@ -505,6 +592,7 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
       strong: str(a["team.supervisor_load"]) === "1_2",
     });
   }
+  const contractForm = str(a["contract.form"]);
   const exp = str(a["creds.experience_type"]);
   if (exp) {
     credentialRows.push({
@@ -646,171 +734,160 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
     });
   }
 
-  /* ── dimensions, with receipts ──────────────────────────────────── */
+  /* ── dimensions, with ledger receipts ───────────────────────────────
+     THE RUBRIC (fixed, published, applied identically to every tender):
+     every dimension is scored out of exactly 100. Deduction dimensions
+     (firmness, scope) open at a stated base and subtract; disclosure
+     dimensions (preparation, credentials, delivery, programme) build
+     from 0 with weights that total exactly 100, so a perfect
+     disclosure scores 100 without clamping. Verification by BuilderHQ
+     (ABN, licence) is deliberately NOT scored — it is a separate
+     trust layer shown in About the builders; scores read only what
+     the builder disclosed under signature. ─────────────────────────── */
   const dims: DimensionScore[] = [];
 
   {
     // Price firmness — how much of the number is actually the number.
-    const r: string[] = [];
-    let s = 100;
-    if (money.fixed === false) {
-      s -= 40;
-      r.push("−40 price is an estimate, not fixed");
+    // Base 100; deductions for everything that lets it move.
+    const L = ledger(100, "every tender starts fully firm");
+    if (contractForm === "cost_plus") {
+      L.add(-45, "cost plus contract: the price follows cost, not the tender");
+    } else if (money.fixed === false) {
+      L.add(-40, "price is an estimate, not fixed");
     }
     const expPenalty = Math.min(60, Math.round(exposurePct * 2));
     if (expPenalty > 0) {
-      s -= expPenalty;
-      r.push(
-        `−${expPenalty} ${Math.round(exposurePct)}% of the price sits in allowances (${aud(exposure)})`,
+      L.add(
+        -expPenalty,
+        `${Math.round(exposurePct)}% of the price sits in allowances (${aud(exposure)}), 2 points per percent`,
       );
     } else if (exGst) {
-      r.push("+0 no provisional sums or prime costs, fully priced");
+      L.note("no provisional sums or prime costs, fully priced");
     }
     if (escalation === "uncapped") {
-      s -= 25;
-      r.push("−25 rise-and-fall clause with no cap");
+      L.add(-25, "rise-and-fall clause with no cap");
     } else if (escalation === "capped") {
-      s -= 10;
-      r.push("−10 capped rise-and-fall clause");
+      L.add(-10, "capped rise-and-fall clause");
     }
     const basis = str(a["pcps.basis"]);
     if (basis === "generic") {
-      s -= 15;
-      r.push("−15 allowances are generic figures, not priced from the documents");
+      L.add(-15, "allowances are generic figures, not priced from the documents");
     } else if (basis === "partly") {
-      s -= 7;
-      r.push("−7 allowances only partly priced from the documents");
+      L.add(-7, "allowances only partly priced from the documents");
     }
     if (money.permitFeesIncluded === false) {
-      s -= 5;
-      r.push("−5 permit and authority fees on top of the price");
+      L.add(-5, "permit and authority fees on top of the price");
     }
     if (str(a["site.rock"]) === "variation") {
-      s -= 5;
-      r.push("−5 rock removal charged as a variation");
+      L.add(-5, "rock removal charged as a variation");
     }
-    dims.push({
-      key: "firmness",
-      label: DIMENSION_LABELS.firmness,
-      score: clamp(s),
-      receipts: r,
-    });
+    dims.push(L.settle("firmness"));
   }
 
   {
-    // Scope coverage — how much of the build the price actually carries.
-    const r: string[] = [];
+    // Scope coverage — how much of the build the price actually
+    // carries. Base = the coverage grid itself; written exclusions
+    // narrow it further (capped, so honest listing is never ruinous).
     const app = Math.max(applicable, 1);
-    let s =
+    const base = Math.round(
       ((metrics.coverage.included + metrics.coverage.allowance * 0.5) / app) *
-      100;
-    r.push(
-      `${metrics.coverage.included} of ${app} applicable trades included in the price`,
+        100,
     );
-    if (metrics.coverage.allowance > 0) {
-      r.push(
-        `${metrics.coverage.allowance} carried as allowances (counted half)`,
-      );
-    }
+    const L = ledger(
+      base,
+      `${metrics.coverage.included} of ${app} applicable trades in the price${
+        metrics.coverage.allowance > 0
+          ? `, plus ${metrics.coverage.allowance} as allowance${metrics.coverage.allowance === 1 ? "" : "s"} counted half`
+          : ""
+      }`,
+    );
     if (metrics.coverage.excluded > 0) {
-      r.push(`${metrics.coverage.excluded} trades excluded`);
+      L.note(
+        `${metrics.coverage.excluded} trade${metrics.coverage.excluded === 1 ? "" : "s"} excluded, already outside the base`,
+      );
     }
     if (extraExclusions.length > 0) {
-      s -= extraExclusions.length * 2;
-      r.push(`−${extraExclusions.length * 2} ${extraExclusions.length} further written exclusions`);
+      L.add(
+        -Math.min(10, extraExclusions.length * 2),
+        `${extraExclusions.length} further written exclusion${extraExclusions.length === 1 ? "" : "s"}, 2 points each`,
+      );
     }
-    dims.push({
-      key: "scope",
-      label: DIMENSION_LABELS.scope,
-      score: clamp(s),
-      receipts: r,
-    });
+    dims.push(L.settle("scope"));
   }
 
   {
-    // Preparation — the diligence visible in how the tender was priced.
-    const r: string[] = [];
-    let s = 20;
+    // Preparation — the diligence visible in how this tender was
+    // priced. Weights total exactly 100:
+    //   inspection 22 · documents 16 · soil 14 · clarifications 10
+    //   gaps 6 · concerns 6 · itemisation 10 · attachments 6
+    //   commentary 10
+    const L = ledger(0, null);
     const insp = str(a["elig.site_inspection"]);
-    if (insp === "inspected") {
-      s += 20;
-      r.push("+20 inspected the site");
-    } else if (insp === "external_only") {
-      s += 8;
-      r.push("+8 viewed the site externally");
-    } else if (insp === "not_inspected") {
-      r.push("+0 priced without a site inspection (acknowledged)");
-    }
-    if (str(a["elig.docs_reviewed"]) === "full_set") {
-      s += 15;
-      r.push("+15 reviewed the full document set");
-    } else if (str(a["elig.docs_reviewed"]) === "partial") {
-      s += 4;
-      r.push("+4 documents only partially reviewed");
-    }
-    if (str(a["site.soil_report"]) === "site_report") {
-      s += 12;
-      r.push("+12 priced from this site's soil report");
-    } else if (str(a["site.soil_report"]) === "assumed") {
-      r.push("+0 soil classification assumed, not tested");
-    }
+    if (insp === "inspected") L.add(22, "inspected the site");
+    else if (insp === "external_only") L.add(8, "viewed the site externally");
+    else if (insp === "not_inspected")
+      L.note("priced without a site inspection, acknowledged");
+    const docs = str(a["elig.docs_reviewed"]);
+    if (docs === "full_set") L.add(16, "reviewed the full document set");
+    else if (docs === "partial") L.add(5, "documents only partially reviewed");
+    const soil = str(a["site.soil_report"]);
+    if (soil === "site_report") L.add(14, "priced from this site's soil report");
+    else if (soil === "assumed")
+      L.note("soil classification assumed, not tested");
     const rfis = str(a["understand.rfis"]);
-    if (rfis === "answered") {
-      s += 8;
-      r.push("+8 raised and resolved clarifications while pricing");
-    } else if (rfis === "none_needed") {
-      s += 5;
-      r.push("+5 no clarifications needed");
-    } else if (rfis === "awaiting") {
-      r.push("+0 still awaiting answers to clarifications");
-    }
-    const gapsFlagged =
+    if (rfis === "answered")
+      L.add(10, "raised and resolved clarifications while pricing");
+    else if (rfis === "none_needed") L.add(6, "no clarifications needed");
+    else if (rfis === "awaiting")
+      L.note("still awaiting answers to clarifications");
+    if (
       a["understand.gaps"] === true &&
-      arr(a["understand.gap_items"]).length > 0;
-    const concernsFlagged =
-      a["understand.concerns"] === true &&
-      arr(a["understand.concern_items"]).length > 0;
-    if (gapsFlagged) {
-      s += 6;
-      r.push("+6 documented the gaps they priced around");
+      arr(a["understand.gap_items"]).length > 0
+    ) {
+      L.add(6, "documented the gaps they priced around");
     }
-    if (concernsFlagged) {
-      s += 6;
-      r.push("+6 flagged design or constructability concerns");
+    if (
+      a["understand.concerns"] === true &&
+      arr(a["understand.concern_items"]).length > 0
+    ) {
+      L.add(6, "flagged design or constructability concerns");
     }
     if (metrics.itemisedCount > 0) {
-      const pts = Math.min(10, metrics.itemisedCount);
-      s += pts;
-      r.push(`+${pts} itemised ${metrics.itemisedCount} trades by amount`);
+      L.add(
+        Math.min(10, metrics.itemisedCount),
+        `itemised ${metrics.itemisedCount} trade${metrics.itemisedCount === 1 ? "" : "s"} by amount, to 10`,
+      );
     }
     if (input.documentCount > 0) {
-      const pts = Math.min(6, input.documentCount * 2);
-      s += pts;
-      r.push(`+${pts} attached ${input.documentCount} supporting document${input.documentCount === 1 ? "" : "s"}`);
+      L.add(
+        Math.min(6, input.documentCount * 2),
+        `attached ${input.documentCount} supporting document${input.documentCount === 1 ? "" : "s"}, 2 each to 6`,
+      );
     }
     if (commentary.present) {
-      const pts = Math.min(
-        10,
-        (commentary.approach ? 4 : 0) +
-          ve.length * 2 +
-          recommendations.length * 2 +
-          riskAdvice.length * 2,
+      L.add(
+        Math.min(
+          10,
+          (commentary.approach ? 4 : 0) +
+            ve.length * 2 +
+            recommendations.length * 2 +
+            riskAdvice.length * 2,
+        ),
+        "completed the optional commentary module",
       );
-      s += pts;
-      r.push(`+${pts} completed the optional commentary module`);
     }
-    dims.push({
-      key: "preparation",
-      label: DIMENSION_LABELS.preparation,
-      score: clamp(s),
-      receipts: r,
-    });
+    dims.push(L.settle("preparation"));
   }
 
   {
-    // Credentials & capacity.
-    const r: string[] = [];
-    let s = 0;
+    // Credentials & capacity — who they are and how much attention
+    // your project gets. Weights total exactly 100:
+    //   experience 20 · largest contract 15 · site-lead load 12
+    //   concurrent projects 8 · crew tenure 8 · WHS 10 · QA 10
+    //   references 10 · in-house trades 4 · memberships 3
+    // Platform verification (ABN, licence) is shown in About the
+    // builders and deliberately not scored here.
+    const L = ledger(0, null);
     const expPts: Record<string, number> = {
       "1_5": 5,
       "6_20": 12,
@@ -818,8 +895,7 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
       "50_plus": 20,
     };
     if (exp) {
-      s += expPts[exp] ?? 0;
-      r.push(`+${expPts[exp] ?? 0} ${EXPERIENCE[exp]?.toLowerCase()}`);
+      L.add(expPts[exp] ?? 0, `${EXPERIENCE[exp]?.toLowerCase()}`);
     }
     const largePts: Record<string, number> = {
       under_500k: 3,
@@ -830,41 +906,27 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
     };
     const largest = str(a["creds.largest_value"]);
     if (largest) {
-      s += largePts[largest] ?? 0;
-      r.push(`+${largePts[largest] ?? 0} ${LARGEST[largest]?.toLowerCase()}`);
+      L.add(largePts[largest] ?? 0, `${LARGEST[largest]?.toLowerCase()}`);
     }
     const loadPts: Record<string, number> = { "1_2": 12, "3_5": 6, "6_plus": 0 };
     const load = str(a["team.supervisor_load"]);
     if (load) {
-      s += loadPts[load] ?? 0;
-      r.push(
-        `${loadPts[load] ? "+" + loadPts[load] : "+0"} site lead ${LOAD[load]}`,
-      );
+      L.add(loadPts[load] ?? 0, `site lead ${LOAD[load]}`);
     }
     const concPts: Record<string, number> = { "0_2": 8, "3_5": 4, "6_plus": 0 };
     if (concurrent) {
-      s += concPts[concurrent] ?? 0;
-      r.push(
-        `${concPts[concurrent] ? "+" + concPts[concurrent] : "+0"} ${CONCURRENT[concurrent]?.toLowerCase()}`,
-      );
+      L.add(concPts[concurrent] ?? 0, `${CONCURRENT[concurrent]?.toLowerCase()}`);
     }
-    if (tenure === "3_plus") {
-      s += 8;
-      r.push("+8 core crews together 3+ years");
-    } else if (tenure === "1_3") {
-      s += 4;
-      r.push("+4 core crews together 1–3 years");
-    } else if (tenure === "under_1") {
-      r.push("+0 crews together under a year");
-    }
+    if (tenure === "3_plus") L.add(8, "core crews together 3+ years");
+    else if (tenure === "1_3") L.add(4, "core crews together 1–3 years");
+    else if (tenure === "under_1") L.note("crews together under a year");
     const whsPts: Record<string, number> = {
       certified: 10,
       documented: 6,
       swms: 3,
     };
     if (whs) {
-      s += whsPts[whs] ?? 0;
-      r.push(`+${whsPts[whs] ?? 0} ${(WHS[whs] ?? whs).toLowerCase()}`);
+      L.add(whsPts[whs] ?? 0, `${(WHS[whs] ?? whs).toLowerCase()}`);
     }
     const qaPts = Math.min(
       10,
@@ -872,131 +934,104 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
         (qa.includes("itp") ? 4 : 0) +
         (qa.includes("supervisor") ? 2 : 0),
     );
-    if (qaPts > 0) {
-      s += qaPts;
-      r.push(`+${qaPts} quality control in place`);
-    }
+    if (qaPts > 0) L.add(qaPts, "quality control in place");
     const refPts = Math.min(10, references.length * 4 + refLinks);
     if (refPts > 0) {
-      s += refPts;
-      r.push(
-        `+${refPts} ${references.length} referee${references.length === 1 ? "" : "s"}${refLinks ? " with project links" : ""}`,
+      L.add(
+        refPts,
+        `${references.length} referee${references.length === 1 ? "" : "s"}${refLinks ? " with project links" : ""}, 4 each to 10`,
       );
     } else {
-      r.push("+0 no references offered");
+      L.note("no references offered");
     }
     if (inHouse.length > 0) {
-      const pts = Math.min(6, inHouse.length * 2);
-      s += pts;
-      r.push(`+${pts} ${inHouse.length} trade${inHouse.length === 1 ? "" : "s"} in-house`);
+      L.add(
+        Math.min(4, inHouse.length * 2),
+        `${inHouse.length} trade${inHouse.length === 1 ? "" : "s"} in-house`,
+      );
     }
     if (memberships.length > 0) {
-      s += 4;
-      r.push(`+4 ${memberships.map((m) => m.toUpperCase()).join(" and ")} member`);
+      L.add(3, `${memberships.map((m) => m.toUpperCase()).join(" and ")} member`);
     }
-    if (input.verification?.anyLicenceVerified) {
-      s += 5;
-      r.push("+5 licence verified by BuilderHQ");
-    }
-    dims.push({
-      key: "credentials",
-      label: DIMENSION_LABELS.credentials,
-      score: clamp(s),
-      receipts: r,
-    });
+    dims.push(L.settle("credentials"));
   }
 
   {
-    // Delivery & aftercare.
-    const r: string[] = [];
-    let s = 0;
+    // Delivery & aftercare — how the build is run and what happens
+    // after the keys. Weights total exactly 100 (no rescaling; the
+    // ledger IS the score):
+    //   updates 16 · variations in writing 18 · no variation fee 6
+    //   defects period 22 · walkthrough 10 · response 16 · pack 12
+    const L = ledger(0, null);
     const updPts: Record<string, number> = {
-      weekly: 15,
-      fortnightly: 9,
+      weekly: 16,
+      fortnightly: 10,
       milestones: 5,
     };
     if (upd) {
-      s += updPts[upd] ?? 0;
-      r.push(`+${updPts[upd] ?? 0} ${(UPDATES[upd] ?? upd).toLowerCase()}`);
+      L.add(updPts[upd] ?? 0, `${(UPDATES[upd] ?? upd).toLowerCase()}`);
     }
     if (a["contract.variations_written"] === true) {
-      s += 18;
-      r.push("+18 variations always priced in writing first");
+      L.add(18, "variations always priced in writing first");
     } else if (a["contract.variations_written"] === false) {
-      r.push("+0 variations not always in writing");
+      L.note("variations not always in writing");
     }
     if (a["contract.variation_fee"] === false) {
-      s += 5;
-      r.push("+5 no variation admin fee");
+      L.add(6, "no variation admin fee");
     }
     const dlpPts: Record<string, number> = { "3": 3, "6": 8, "12": 16, "24": 22 };
     const dlp = metrics.defectsLiabilityMonths;
     if (dlp) {
-      s += dlpPts[dlp] ?? 0;
-      r.push(`+${dlpPts[dlp] ?? 0} ${dlp}-month defects period`);
+      L.add(dlpPts[dlp] ?? 0, `${dlp}-month defects period`);
     }
     if (a["aftercare.walkthrough"] === true) {
-      s += 10;
-      r.push("+10 pre-handover walkthrough");
+      L.add(10, "pre-handover walkthrough");
     }
-    const respPts: Record<string, number> = { "48h": 15, "1w": 8, best_effort: 2 };
+    const respPts: Record<string, number> = { "48h": 16, "1w": 8, best_effort: 2 };
     if (resp) {
-      s += respPts[resp] ?? 0;
-      r.push(`+${respPts[resp] ?? 0} ${(RESPONSE[resp] ?? resp).toLowerCase()}`);
+      L.add(respPts[resp] ?? 0, `${(RESPONSE[resp] ?? resp).toLowerCase()}`);
     }
     if (a["aftercare.manual"] === true) {
-      s += 10;
-      r.push("+10 handover pack provided");
+      L.add(12, "handover pack provided");
     }
-    dims.push({
-      key: "delivery",
-      label: DIMENSION_LABELS.delivery,
-      score: clamp((s / 95) * 100),
-      receipts: r,
-    });
+    dims.push(L.settle("delivery"));
   }
 
   {
     // Programme confidence — cushions and commitments, not speed.
-    const r: string[] = [];
-    let s = 0;
+    // Weights total exactly 100:
+    //   weather realism 30 · liquidated damages 30 · validity 20
+    //   lead time 10 · checkable handover 10
+    const L = ledger(0, null);
     if (weatherIncluded !== null && weatherIncluded > 0) {
-      const pts = Math.min(30, 15 + weatherIncluded);
-      s += pts;
-      r.push(`+${pts} ${weatherIncluded} weather days inside the build period`);
+      L.add(
+        Math.min(30, 15 + weatherIncluded),
+        `${weatherIncluded} weather days inside the build period`,
+      );
     } else if (weatherAddon !== null) {
-      const pts = 12;
-      s += pts;
-      r.push(`+${pts} ${weatherAddon} weather days declared on top (disclosed honestly)`);
+      L.add(12, `${weatherAddon} weather days declared on top, disclosed honestly`);
     } else {
-      r.push("+0 no weather allowance disclosed");
+      L.note("no weather allowance disclosed");
     }
     if (metrics.ldPerWeek !== null) {
-      s += 30;
-      r.push(`+30 liquidated damages offered at ${aud(metrics.ldPerWeek)}/week`);
+      L.add(30, `liquidated damages offered at ${aud(metrics.ldPerWeek)}/week`);
     } else {
-      r.push("+0 no liquidated damages offered");
+      L.note("no liquidated damages offered");
     }
     const vd = metrics.validityDays;
     if (vd !== null) {
-      const pts = vd >= 45 ? 20 : vd >= 30 ? 15 : vd >= 21 ? 8 : 3;
-      s += pts;
-      r.push(`+${pts} price holds ${vd} days`);
+      L.add(
+        vd >= 45 ? 20 : vd >= 30 ? 15 : vd >= 21 ? 8 : 3,
+        `price holds ${vd} days`,
+      );
     }
     if (programme.leadTime) {
-      s += 10;
-      r.push(`+10 lead time stated (${programme.leadTime})`);
+      L.add(10, `lead time stated, ${programme.leadTime}`);
     }
     if (programme.handoverLabel) {
-      s += 10;
-      r.push(`+10 start and duration produce a checkable handover window`);
+      L.add(10, "start and duration produce a checkable handover window");
     }
-    dims.push({
-      key: "programme",
-      label: DIMENSION_LABELS.programme,
-      score: clamp(s),
-      receipts: r,
-    });
+    dims.push(L.settle("programme"));
   }
 
   /* ── flags ──────────────────────────────────────────────────────── */
@@ -1271,6 +1306,19 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
     credentialRows,
     deliveryRows,
     dimensions: dims,
+    insurance: {
+      publicLiability: a["elig.insurance_pl"] === true,
+      warrantyEligible:
+        typeof a["elig.warranty_eligible"] === "boolean"
+          ? a["elig.warranty_eligible"]
+          : null,
+      workersComp:
+        str(a["elig.workers_comp"]) === "current"
+          ? "current"
+          : str(a["elig.workers_comp"]) === "not_required"
+            ? "not_required"
+            : null,
+    },
     flags,
     highlights,
     questions,
@@ -1460,10 +1508,73 @@ export function evaluateRound(inputs: EvaluationInput[]): RoundEvaluation {
     );
   }
 
+  /* the ladder — what each step up the price order actually buys.
+     Only facts where the dearer tender is STRICTLY better ever
+     appear; if a step buys nothing measurable, it says so. */
+  const ladder: RoundEvaluation["ladder"] = [];
+  {
+    const live = priced
+      .filter((t) => t.status !== "rejected")
+      .sort((x, y) => x.money.incGst! - y.money.incGst!);
+    for (let i = 0; i + 1 < live.length; i++) {
+      const lo = live[i]!;
+      const hi = live[i + 1]!;
+      const gains: string[] = [];
+      if (hi.money.exposure < lo.money.exposure) {
+        gains.push(
+          hi.money.exposure === 0
+            ? `fully priced, removing ${aud(lo.money.exposure)} of allowance movement`
+            : `${aud(lo.money.exposure - hi.money.exposure)} less held in allowances`,
+        );
+      }
+      if (
+        lo.money.escalation === "uncapped" &&
+        (hi.money.escalation === "none" || hi.money.escalation === "capped")
+      ) {
+        gains.push(
+          hi.money.escalation === "none"
+            ? "no rise-and-fall clause"
+            : "a capped rise-and-fall clause",
+        );
+      }
+      if (
+        hi.programme.weeks !== null &&
+        lo.programme.weeks !== null &&
+        hi.programme.weeks < lo.programme.weeks
+      ) {
+        gains.push(`keys ${lo.programme.weeks - hi.programme.weeks} weeks sooner`);
+      }
+      const dlpLo = Number(lo.metrics.defectsLiabilityMonths ?? 0);
+      const dlpHi = Number(hi.metrics.defectsLiabilityMonths ?? 0);
+      if (dlpHi > dlpLo) {
+        gains.push(`${dlpHi - dlpLo} more months of defects cover`);
+      }
+      if (hi.programme.ldPerWeek !== null && lo.programme.ldPerWeek === null) {
+        gains.push("a programme backed by liquidated damages");
+      }
+      const respLo = lo.deliveryRows.find((r) => r.label === "Aftercare");
+      const respHi = hi.deliveryRows.find((r) => r.label === "Aftercare");
+      const rr = (v?: string) =>
+        v?.includes("48 hours") ? 2 : v?.includes("week") ? 1 : 0;
+      if (respHi && respLo && rr(respHi.value) > rr(respLo.value)) {
+        gains.push("faster defect response after handover");
+      }
+      ladder.push({
+        fromId: lo.tenderId,
+        toId: hi.tenderId,
+        fromName: lo.builderName,
+        toName: hi.builderName,
+        extraInc: hi.money.incGst! - lo.money.incGst!,
+        gains: gains.slice(0, 3),
+      });
+    }
+  }
+
   return {
     tenders,
     spread,
     breakeven,
+    ladder,
     priceStory,
     leaders,
     scopeDisagreements: disagreements,

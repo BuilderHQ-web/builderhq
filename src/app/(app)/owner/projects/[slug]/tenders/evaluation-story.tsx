@@ -39,7 +39,12 @@ const INK = {
 
 interface Slide {
   key: string;
+  /** Small caps line above the heading. */
   kicker: string;
+  /** The big centred heading — every card names itself plainly. */
+  title: string;
+  /** One quiet line under the heading, when the title needs help. */
+  sub?: string;
   body: React.ReactNode;
 }
 
@@ -60,19 +65,9 @@ function buildSlides(
   slides.push({
     key: "cover",
     kicker: "The quick read",
-    body: (
-      <div>
-        <p className="font-display uppercase tracking-[-0.015em] text-[44px] sm:text-[64px] leading-[0.95]" style={{ color: INK.cream }}>
-          {projectTitle}
-        </p>
-        <p className="mt-5 text-[15px] sm:text-[17px]" style={{ color: INK.dim }}>
-          {active.length} tenders, read side by side.
-          <br />
-          The shape of the round, in {""}
-          ninety seconds.
-        </p>
-      </div>
-    ),
+    title: projectTitle,
+    sub: `${active.length} tenders, read side by side. The shape of the round, in ninety seconds.`,
+    body: null,
   });
 
   /* 2 · the prices */
@@ -81,7 +76,9 @@ function buildSlides(
     const lowest = priced[0]!.money.incGst!;
     slides.push({
       key: "prices",
-      kicker: "The prices",
+      kicker: "The quick read",
+      title: "The prices",
+      sub: "inc GST, lowest first",
       body: (
         <div className="space-y-5">
           {priced.map((e) => (
@@ -111,7 +108,9 @@ function buildSlides(
     const b = round.breakeven;
     slides.push({
       key: "catch",
-      kicker: "Read the fine print",
+      kicker: "The quick read",
+      title: "The fine print",
+      sub: "what the lowest price carries",
       body: (
         <div>
           <p className="font-display text-[56px] sm:text-[84px] leading-none" style={{ color: INK.cream }}>
@@ -141,16 +140,13 @@ function buildSlides(
   } else if (round.spread && round.spread.range > 0) {
     slides.push({
       key: "gap",
-      kicker: "The gap",
+      kicker: "The quick read",
+      title: "The gap",
+      sub: "between the lowest and highest tender",
       body: (
-        <div>
-          <p className="font-display text-[64px] sm:text-[96px] leading-none" style={{ color: INK.cream }}>
-            {fmtAud(round.spread.range)}
-          </p>
-          <p className="mt-3 text-[15px]" style={{ color: INK.dim }}>
-            between the lowest and highest tender.
-          </p>
-        </div>
+        <p className="text-center font-display text-[64px] sm:text-[96px] leading-none" style={{ color: INK.cream }}>
+          {fmtAud(round.spread.range)}
+        </p>
       ),
     });
   }
@@ -159,7 +155,9 @@ function buildSlides(
   if (priced.length >= 2) {
     slides.push({
       key: "certainty",
-      kicker: "How much is actually fixed",
+      kicker: "The quick read",
+      title: "How firm is each price",
+      sub: "the share committed in the contract sum",
       body: (
         <div className="space-y-6">
           {priced.map((e) => (
@@ -198,35 +196,61 @@ function buildSlides(
   if (timed.length >= 2) {
     slides.push({
       key: "clock",
-      kicker: "The clock",
-      body: (
-        <div className="space-y-5">
-          {timed.map((e) => (
-            <div key={e.tenderId} className="flex items-baseline justify-between gap-6 border-b pb-4 last:border-0" style={{ borderColor: INK.hairline }}>
-              <span className="text-[14px] min-w-0 truncate" style={{ color: INK.dim }}>
-                {e.builderName}
-              </span>
-              <span className="text-right shrink-0">
-                <span className="font-display text-[28px] sm:text-[34px] leading-none" style={{ color: INK.cream }}>
-                  {e.programme.weeks} weeks
-                </span>
-                {e.programme.handoverLabel ? (
-                  <span className="block text-[11.5px] mt-1" style={{ color: INK.faint }}>
-                    keys {e.programme.handoverLabel}
-                  </span>
-                ) : null}
-              </span>
-            </div>
-          ))}
-        </div>
-      ),
+      kicker: "The quick read",
+      title: "The clock",
+      sub: "build period and keys, to one scale",
+      body: (() => {
+        const maxWeeks = Math.max(...timed.map((e) => e.programme.weeks!));
+        const fastest = Math.min(...timed.map((e) => e.programme.weeks!));
+        return (
+          <div className="space-y-6">
+            {timed.map((e) => {
+              const lead = e.programme.weeks === fastest;
+              return (
+                <div key={e.tenderId}>
+                  <div className="flex items-baseline justify-between gap-4 mb-2">
+                    <span className="text-[13.5px] min-w-0 truncate" style={{ color: INK.dim }}>
+                      {e.builderName}
+                    </span>
+                    <span className="text-[12px] shrink-0" style={{ color: INK.faint }}>
+                      {e.programme.handoverLabel
+                        ? `keys ${e.programme.handoverLabel}`
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-[9px] flex-1 rounded-full overflow-hidden" style={{ background: "rgba(243,237,226,0.10)" }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(e.programme.weeks! / maxWeeks) * 100}%`,
+                          background: lead ? INK.teal : INK.cream,
+                          opacity: lead ? 1 : 0.75,
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="w-20 shrink-0 text-right font-display text-[20px] leading-none"
+                      style={{ color: lead ? INK.teal : INK.cream }}
+                    >
+                      {e.programme.weeks} wks
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })(),
     });
   }
 
   /* 6 · the scope */
   slides.push({
     key: "scope",
-    kicker: "What each price carries",
+    kicker: "The quick read",
+    title: "What each price covers",
+    sub: "applicable trades in the price",
     body: (
       <div>
         <div className="space-y-5">
@@ -267,7 +291,9 @@ function buildSlides(
   );
   slides.push({
     key: "flags",
-    kicker: "The flags",
+    kicker: "The quick read",
+    title: "The flags",
+    sub: "what needs an answer before you decide",
     body:
       allHigh.length === 0 ? (
         <div>
@@ -307,7 +333,9 @@ function buildSlides(
   if (contributors.length > 0) {
     slides.push({
       key: "ideas",
-      kicker: "Beyond the price",
+      kicker: "The quick read",
+      title: "Beyond the price",
+      sub: "what the builders brought, unasked",
       body: (
         <div className="space-y-5">
           {contributors.map((e) => (
@@ -356,7 +384,9 @@ function buildSlides(
   if (asks.length > 0) {
     slides.push({
       key: "asks",
-      kicker: "Before you decide",
+      kicker: "The quick read",
+      title: "Ask before you decide",
+      sub: "the round's open questions",
       body: (
         <ol className="space-y-5">
           {asks.map((q, i) => (
@@ -377,7 +407,8 @@ function buildSlides(
   /* 10 · close */
   slides.push({
     key: "close",
-    kicker: "That is the shape of the round",
+    kicker: "The quick read",
+    title: "That is the round",
     body: (
       <div>
         <p className="text-[16px] sm:text-[18px] leading-[1.65] max-w-[42ch]" style={{ color: INK.cream }}>
@@ -509,28 +540,42 @@ export function QuickReadStory({
         </button>
       </div>
 
-      {/* header line */}
-      <div className="relative z-10 px-5 sm:px-8 pt-6">
-        <p
-          className="text-[10.5px] tracking-[0.26em] uppercase font-ui font-medium"
-          style={{ color: INK.teal }}
-        >
-          {slide.kicker}
-        </p>
-      </div>
+      {/* the card — heading top centre, content centred beneath.
+          Keyed remount, entrance only. */}
+      <motion.div
+        key={slide.key}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 flex-1 flex flex-col min-h-0"
+      >
+        <div className="px-5 sm:px-8 pt-8 sm:pt-10 text-center">
+          <p
+            className="text-[10.5px] tracking-[0.3em] uppercase font-ui font-medium"
+            style={{ color: INK.teal }}
+          >
+            {slide.kicker}
+          </p>
+          <h2
+            className="mx-auto mt-3 max-w-[24ch] font-display uppercase tracking-[-0.01em] text-[34px] sm:text-[52px] leading-[0.98]"
+            style={{ color: INK.cream }}
+          >
+            {slide.title}
+          </h2>
+          {slide.sub ? (
+            <p
+              className="mx-auto mt-3 max-w-[52ch] text-[13.5px] sm:text-[15px] leading-[1.6]"
+              style={{ color: INK.dim }}
+            >
+              {slide.sub}
+            </p>
+          ) : null}
+        </div>
 
-      {/* slide body — keyed remount, entrance only */}
-      <div className="relative z-10 flex-1 flex items-center px-5 sm:px-8 pb-10 overflow-y-auto">
-        <motion.div
-          key={slide.key}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[560px] mx-auto"
-        >
-          {slide.body}
-        </motion.div>
-      </div>
+        <div className="flex-1 flex items-center px-5 sm:px-8 pb-10 overflow-y-auto min-h-0">
+          <div className="w-full max-w-[560px] mx-auto">{slide.body}</div>
+        </div>
+      </motion.div>
 
       {/* click zones */}
       {!last ? (

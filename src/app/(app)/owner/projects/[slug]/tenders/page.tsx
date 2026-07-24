@@ -4,22 +4,11 @@ import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { projectsBase } from "@/lib/dashboard-route";
-import { getBySlugForOwner } from "@/modules/projects";
-import {
-  listTendersForOwner,
-  listResponsesForProjectTenders,
-  computeTenderAnalytics,
-  summariseInstrument,
-  type TenderInstrumentSummary,
-} from "@/modules/tenders";
-import {
-  evaluateRound,
-  type EvaluationInput,
-} from "@/modules/tenders/evaluation";
 import { getBuilderProfile } from "@/modules/profiles";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { loadRound } from "./_lib/load-round";
 import {
   TenderEvaluationSurface,
   type BuilderFacts,
@@ -39,58 +28,13 @@ export default async function ProjectTendersPage({
   const base = projectsBase(session.user.role);
   const userId = session.user.id!;
 
-  const r = await getBySlugForOwner(userId, slug);
+  const r = await loadRound(userId, slug);
   if (!r.ok) {
-    if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
-    throw new Error(r.error.message);
+    if (r.code === "not_found" || r.code === "forbidden") notFound();
+    throw new Error(r.message);
   }
-  const project = r.value;
-
-  const [tenders, unlockCount, responsesByTender] = await Promise.all([
-    listTendersForOwner(project.id),
-    countUnlocksForProject(project.id),
-    listResponsesForProjectTenders(project.id),
-  ]);
-  // Roll-up analytics computed server-side so the page paints with
-  // numbers ready (no client-side calc flicker on first frame).
-  const analytics = computeTenderAnalytics(tenders, project.publishedAt);
-
-  // Instrument summaries — the like-for-like layer. Null for tenders
-  // submitted before the standard (no instrument version).
-  const summaries: Record<string, TenderInstrumentSummary | null> = {};
-  for (const t of tenders) {
-    const responses = responsesByTender.get(t.id);
-    summaries[t.id] =
-      t.instrumentVersion != null && responses && responses.length > 0
-        ? summariseInstrument(responses, {
-            totalPriceAud: t.totalPriceAud,
-            projectState: project.state,
-          })
-        : null;
-  }
-
-  // The evaluation — computed here so the page paints with the full
-  // analysis ready, and the engine never ships in the client bundle.
-  const evaluationInputs: EvaluationInput[] = tenders
-    .filter((t) => summaries[t.id])
-    .map((t) => ({
-      tenderId: t.id,
-      builderName:
-        t.builder.companyName ?? t.builder.name ?? "Builder",
-      builderSlug: t.builder.slug,
-      yearsInOperation: t.builder.yearsInOperation,
-      status: t.status,
-      submittedAt: t.submittedAt,
-      totalPriceAud: t.totalPriceAud,
-      documentCount: t.documentCount,
-      verification: {
-        abnVerified: t.builder.abnVerified,
-        anyLicenceVerified: t.builder.anyLicenceVerified,
-      },
-      answers: summaries[t.id]!.answers,
-      projectState: project.state,
-    }));
-  const round = evaluateRound(evaluationInputs);
+  const { project, tenders, analytics, summaries, round } = r.value;
+  const unlockCount = await countUnlocksForProject(project.id);
 
   // Identity + compliance facts for "About the builders" — ABN,
   // licences, web presence, straight from the verified profiles.

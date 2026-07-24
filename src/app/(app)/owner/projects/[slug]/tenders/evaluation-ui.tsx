@@ -392,12 +392,17 @@ export function DimensionRows({
             <button
               type="button"
               onClick={() => setOpen(isOpen ? null : d.key)}
-              className="w-full text-left group"
+              className="w-full text-left group rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-[rgba(0,166,155,0.4)]"
               aria-expanded={isOpen}
             >
               <span className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 min-w-0">
-                  <span className="text-[12px] font-ui text-text truncate">
+                  <span
+                    className={cn(
+                      "text-[12px] font-ui truncate",
+                      isOpen ? "font-semibold text-text" : "text-text",
+                    )}
+                  >
                     {d.label}
                   </span>
                   {leads ? (
@@ -437,20 +442,60 @@ export function DimensionRows({
               </span>
             </button>
             {isOpen ? (
-              <div className="mt-2 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.02)] px-3 py-2.5">
-                <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui mb-1.5">
-                  The working
+              <div className="mt-2 rounded-sm border border-border-subtle/70 bg-[rgba(24,34,44,0.02)] px-3.5 py-3">
+                <p className="flex items-baseline justify-between text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui mb-2">
+                  <span>The working</span>
+                  <span className="tracking-normal normal-case">out of 100</span>
                 </p>
-                <ul className="space-y-1">
+                <dl>
                   {d.receipts.map((r, i) => (
-                    <li
+                    <div
                       key={i}
-                      className="text-[11.5px] leading-[1.5] text-text-muted"
+                      className={cn(
+                        "flex items-baseline gap-3 py-[3px]",
+                        r.kind === "base" &&
+                          "border-b border-border-subtle/60 pb-1.5 mb-1",
+                      )}
                     >
-                      {r}
-                    </li>
+                      <dt
+                        className={cn(
+                          "w-8 shrink-0 text-right font-mono text-[11px] tabular-nums",
+                          r.kind === "note" && "text-text-dim",
+                          r.kind === "base" && "font-semibold text-text",
+                          r.kind === "delta" &&
+                            ((r.value ?? 0) > 0
+                              ? "font-medium text-[#0a7d73]"
+                              : "font-medium text-text"),
+                          r.kind === "clamp" && "text-text-dim",
+                        )}
+                      >
+                        {r.value === null
+                          ? "·"
+                          : r.kind === "base"
+                            ? r.value
+                            : r.value > 0
+                              ? `+${r.value}`
+                              : `−${Math.abs(r.value)}`}
+                      </dt>
+                      <dd
+                        className={cn(
+                          "text-[11.5px] leading-[1.45]",
+                          r.kind === "note" ? "text-text-dim" : "text-text-muted",
+                        )}
+                      >
+                        {r.label}
+                      </dd>
+                    </div>
                   ))}
-                </ul>
+                  <div className="mt-1.5 flex items-baseline gap-3 border-t border-border-subtle/60 pt-1.5">
+                    <dt className="w-8 shrink-0 text-right font-mono text-[11.5px] font-semibold text-text tabular-nums">
+                      {d.score}
+                    </dt>
+                    <dd className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui">
+                      Score
+                    </dd>
+                  </div>
+                </dl>
               </div>
             ) : null}
           </div>
@@ -1395,8 +1440,9 @@ export function DossierBody({
               The read, in six dimensions
             </SectionKicker>
             <p className="mt-2 max-w-[58ch] text-[12.5px] leading-[1.6] text-text-muted">
-              Each score reads the disclosed position, not the builder.
-              Open any line to see exactly which answers produced it.
+              Each dimension is scored out of 100 under a fixed rubric,
+              applied identically to every tender. Open any line: the
+              working shows every point, and it always adds up.
             </p>
             <div className="mt-4 rounded-sm border border-border-subtle bg-surface-1 px-4 py-3">
               <DimensionRows

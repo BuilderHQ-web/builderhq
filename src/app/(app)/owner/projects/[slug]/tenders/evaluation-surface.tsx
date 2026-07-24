@@ -26,6 +26,7 @@ import {
   Landmark,
   Lightbulb,
   ListChecks,
+  FileDown,
   Play,
   Scale,
   ScrollText,
@@ -179,7 +180,10 @@ export function TenderEvaluationSurface({
         </>
       ) : (
         <>
-          <SectionNav onOpenStory={() => setStoryOpen(true)} />
+          <SectionNav
+            onOpenStory={() => setStoryOpen(true)}
+            projectSlug={projectSlug}
+          />
 
           <div id="builders" className="scroll-mt-28">
             <AboutBuilders
@@ -190,10 +194,10 @@ export function TenderEvaluationSurface({
           </div>
 
           {round.priceStory ? (
-            <Overview round={round} active={active} />
+            <Overview round={round} />
           ) : null}
 
-          <PricePanel round={round} active={active} />
+          <PricePanel active={active} />
 
           <section id="tenders" className="scroll-mt-28">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -334,7 +338,14 @@ const NAV_ITEMS = [
   { id: "record", label: "The record" },
 ];
 
-function SectionNav({ onOpenStory }: { onOpenStory: () => void }) {
+function SectionNav({
+  onOpenStory,
+  projectSlug,
+}: {
+  onOpenStory: () => void;
+  projectSlug: string;
+}) {
+  const base = useRunnerBase();
   const [activeId, setActiveId] = useState<string>("builders");
 
   useEffect(() => {
@@ -384,6 +395,15 @@ function SectionNav({ onOpenStory }: { onOpenStory: () => void }) {
           </button>
         ))}
         <span className="flex-1" />
+        <a
+          href={`${base}/projects/${projectSlug}/tenders/report`}
+          target="_blank"
+          rel="noopener"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border-subtle px-3.5 py-1.5 text-[11.5px] font-ui font-semibold text-text-muted hover:text-text transition-colors"
+        >
+          <FileDown className="size-3" />
+          The report
+        </a>
         <button
           type="button"
           onClick={onOpenStory}
@@ -425,12 +445,13 @@ function RoundStrip({
   if (priced.length >= 2) {
     const incs = priced.map((e) => e.money.incGst!);
     stats.push({
-      label: "Price span inc GST",
-      value: `${fmtAud(Math.min(...incs))} to ${fmtAud(Math.max(...incs))}`,
-      sub:
+      label: "Lowest tender inc GST",
+      value: fmtAud(Math.min(...incs)),
+      sub: `highest ${fmtAud(Math.max(...incs))}${
         analytics.price.spread !== null
-          ? `${Math.round(analytics.price.spread * 100)}% spread`
-          : undefined,
+          ? ` · ${Math.round(analytics.price.spread * 100)}% spread`
+          : ""
+      }`,
     });
   } else if (priced.length === 1) {
     stats.push({
@@ -447,7 +468,7 @@ function RoundStrip({
     const max = Math.max(...durations);
     stats.push({
       label: "Build period",
-      value: min === max ? `${min} weeks` : `${min} to ${max} weeks`,
+      value: min === max ? `${min} weeks` : `${min}–${max} weeks`,
     });
   }
   const flagged = evaluated.reduce(
@@ -470,14 +491,14 @@ function RoundStrip({
       >
         {stats.map((s) => (
           <div key={s.label} className="px-5 py-4">
-            <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui whitespace-nowrap">
               {s.label}
             </p>
-            <p className="mt-1 font-display text-[24px] sm:text-[28px] leading-none text-text">
+            <p className="mt-1.5 font-display text-[26px] sm:text-[30px] leading-none text-text whitespace-nowrap">
               {s.value}
             </p>
             {s.sub ? (
-              <p className="mt-1 text-[11px] font-ui text-text-muted">
+              <p className="mt-1.5 text-[11px] font-ui text-text-muted whitespace-nowrap">
                 {s.sub}
               </p>
             ) : null}
@@ -570,9 +591,10 @@ function AboutBuilders({
           About the builders
         </h2>
         <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
-          Who is behind each tender: registration, licensing and where
-          to see their work. Verification marks are checked against the
-          Australian Business Register and the state licence registers.
+          Who is behind each tender: registration, licensing, insurance
+          and where to see their work. Teal marks are checked against
+          the ABN and state licence registers; grey marks are declared
+          in the tender, under signature.
         </p>
       </header>
       <ul className="divide-y divide-border-subtle/60">
@@ -662,6 +684,39 @@ function AboutBuilders({
                     Won {t.builder.awardedCount} on BuilderHQ
                   </span>
                 ) : null}
+                {/* Insurance, declared in the tender under signature —
+                    a different trust layer to the register checks, so
+                    a different (quieter) chip. */}
+                {[
+                  ev.insurance.publicLiability
+                    ? "Public liability current"
+                    : null,
+                  ev.insurance.warrantyEligible === true
+                    ? "Home warranty eligible"
+                    : null,
+                  ev.insurance.workersComp === "current"
+                    ? "Workers comp current"
+                    : ev.insurance.workersComp === "not_required"
+                      ? "Workers comp not required"
+                      : null,
+                ]
+                  .filter((s): s is string => s !== null)
+                  .map((label) => (
+                    <span
+                      key={label}
+                      title="Declared in the tender, under signature"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg px-2.5 py-[4px] text-[11px] font-ui text-text-muted"
+                    >
+                      <span
+                        aria-hidden
+                        className="flex size-3.5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                        style={{ background: "rgba(24,34,44,0.45)" }}
+                      >
+                        ✓
+                      </span>
+                      {label}
+                    </span>
+                  ))}
               </div>
 
               {/* where to see them */}
@@ -695,46 +750,7 @@ function AboutBuilders({
 
 /* ── the overview (free-standing, centred) ──────────────────────────── */
 
-function Overview({
-  round,
-  active,
-}: {
-  round: RoundEvaluation;
-  active: TenderEvaluation[];
-}) {
-  // Second computed line: the non-price read.
-  const secondLine = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const id of Object.values(round.leaders)) {
-      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-    const parts: string[] = [];
-    let top: { id: string; n: number } | null = null;
-    for (const [id, n] of counts) {
-      if (!top || n > top.n) top = { id, n };
-    }
-    if (top && top.n >= 3) {
-      const name = active.find((e) => e.tenderId === top!.id)?.builderName;
-      if (name) {
-        parts.push(
-          `Beyond the price, ${name} holds the strongest position on ${top.n} of the six dimensions we read.`,
-        );
-      }
-    }
-    const high = active.reduce(
-      (n, e) => n + e.flags.filter((f) => f.severity === "high").length,
-      0,
-    );
-    if (high > 0) {
-      parts.push(
-        `${high} significant flag${high === 1 ? " needs" : "s need"} an answer before this round is decided.`,
-      );
-    } else {
-      parts.push("No tender in this round raised a significant flag.");
-    }
-    return parts.join(" ");
-  }, [round.leaders, active]);
-
+function Overview({ round }: { round: RoundEvaluation }) {
   return (
     <motion.section
       id="overview"
@@ -752,22 +768,48 @@ function Overview({
       <p className="mx-auto mt-5 max-w-[66ch] text-[16px] sm:text-[17.5px] leading-[1.7] text-text">
         {round.priceStory}
       </p>
-      <p className="mx-auto mt-3.5 max-w-[62ch] text-[13px] sm:text-[13.5px] leading-[1.65] text-text-muted">
-        {secondLine}
-      </p>
+
+      {/* The ladder — what each step up the price order actually buys.
+          The homeowner's real question, answered in their words. */}
+      {round.ladder.length > 0 &&
+      round.ladder.some((s) => s.gains.length > 0) ? (
+        <div className="mx-auto mt-7 max-w-[560px] text-left">
+          <p className="text-center text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui mb-3">
+            What the extra money buys
+          </p>
+          <div className="divide-y divide-border-subtle/60 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+            {round.ladder.map((step) => (
+              <div key={step.toId} className="px-5 py-3.5 flex items-start gap-4">
+                <span className="shrink-0 pt-px text-right">
+                  <span className="block font-display text-[20px] leading-none" style={{ color: TONE.good.text }}>
+                    +{fmtAud(step.extraInc)}
+                  </span>
+                  <span className="mt-1 block text-[10px] font-ui text-text-dim whitespace-nowrap">
+                    {step.fromName.split(" ")[0]} → {step.toName.split(" ")[0]}
+                  </span>
+                </span>
+                <span className="min-w-0 text-[12.5px] leading-[1.6] text-text pt-[3px]">
+                  {step.gains.length > 0 ? (
+                    <>buys {step.gains.join(", ")}.</>
+                  ) : (
+                    <span className="text-text-muted">
+                      buys nothing measurable in the disclosures. Ask what
+                      it pays for.
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </motion.section>
   );
 }
 
 /* ── where the money stands (bars) ──────────────────────────────────── */
 
-function PricePanel({
-  round,
-  active,
-}: {
-  round: RoundEvaluation;
-  active: TenderEvaluation[];
-}) {
+function PricePanel({ active }: { active: TenderEvaluation[] }) {
   const priced = active.filter((e) => e.money.exGst !== null);
   if (priced.length < 2) return null;
   const maxEx = Math.max(...priced.map((e) => e.money.exGst!), 1);
@@ -793,7 +835,6 @@ function PricePanel({
         <div className="mt-6 space-y-5">
           {priced.map((e) => {
             const width = (e.money.exGst! / maxEx) * 100;
-            const cheapest = round.spread?.cheapestHeadlineId === e.tenderId;
             return (
               <HoverCard
                 key={e.tenderId}
@@ -834,26 +875,8 @@ function PricePanel({
                 }
               >
                 <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                  <p className="flex items-center gap-2 min-w-0">
-                    <span className="truncate text-[12.5px] font-ui font-semibold text-text">
-                      {e.builderName}
-                    </span>
-                    {cheapest ? (
-                      <span
-                        className="rounded-full px-2 py-px text-[9.5px] font-ui font-semibold shrink-0"
-                        style={{ color: TONE.ink.text, background: TONE.ink.bg }}
-                      >
-                        Lowest headline
-                      </span>
-                    ) : null}
-                    {e.money.firmPct >= 99 ? (
-                      <span
-                        className="rounded-full px-2 py-px text-[9.5px] font-ui font-semibold shrink-0"
-                        style={{ color: TONE.good.text, background: TONE.good.bg }}
-                      >
-                        Fully priced
-                      </span>
-                    ) : null}
+                  <p className="truncate text-[12.5px] font-ui font-semibold text-text min-w-0">
+                    {e.builderName}
                   </p>
                   <p className="font-display text-[16px] leading-none text-text shrink-0">
                     {fmtAud(e.money.incGst)}
@@ -1542,6 +1565,12 @@ function GridGroupRows({
                   key={e.tenderId}
                   className="px-4 py-3 text-[12px] leading-[1.5] text-text align-top"
                   style={win ? { background: TONE.good.bg } : undefined}
+                  title={win ? "Strongest position on this line" : undefined}
+                  aria-label={
+                    win
+                      ? `${row.value(e)}, strongest position on this line`
+                      : undefined
+                  }
                 >
                   <span
                     className={cn(win && "font-semibold")}
