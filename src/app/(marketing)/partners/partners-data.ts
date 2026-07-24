@@ -3011,6 +3011,70 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "hale",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Architectural and heritage builder",
+    name: "Hale Built",
+    monogram: "HB",
+    logo: "/partners/hale/logo.png",
+    principal: "Matthew Collins",
+    suburb: "Port Melbourne",
+    state: "VIC",
+    tagline:
+      "An inner-Melbourne builder of architectural homes, heritage restorations and major renovations, where clients deal directly with the core team from first drawings through to handover.",
+    disciplines: ["Architectural homes", "Heritage restorations", "Major renovations"],
+    google: { rating: 4.6, reviews: 9 },
+    stats: [
+      { label: "Google rating", value: "4.6", star: true, sub: "9 reviews" },
+      {
+        label: "Building since",
+        value: "2006",
+        sub: "second-generation practice",
+      },
+      {
+        label: "Finishes centre",
+        value: "600+",
+        sub: "materials to select from",
+      },
+    ],
+    why: "Some of the most demanding building in Melbourne sits in its oldest streets: heritage restorations, architectural homes on tight established blocks, and major renovations where an existing house has to stay standing throughout. It is the category most builders quietly avoid, and it is the one Hale has chosen. A second-generation practice with two decades behind it, Hale brings the kind of judgment that only years on inner-city sites can teach, and it brings it early, settling the hard questions of cost and buildability while a design is still on paper, so that an architect’s intent survives contact with a real site and a real budget. The practice even runs its own finishes display centre in Port Melbourne, some six hundred materials deep, so the selections that quietly make or break a home are made with guidance rather than guesswork. For an owner with an architect and an ambitious inner-suburb build or heritage restoration, this is the builder who guards the design and the budget in equal measure.",
+    about:
+      "Hale Built, also trading as Hale Corp, was founded in 2006 by Matthew Collins and works out of Port Melbourne. The team builds architectural homes, restores heritage properties and takes on major renovations across the city’s established inner suburbs, moving comfortably between styles that run from contemporary to French Provincial and Edwardian. It is kept deliberately small: clients, architects and consultants are brought around one table rather than handed down a chain of site managers, so the people who price a project are the people who deliver it. That breadth shows across the inner east and bayside, in new architectural residences through Port Melbourne, Canterbury and Hawthorn East and careful restorations and renovations across Balwyn, Brighton East and Bentleigh.",
+    facts: {
+      established: "2006",
+      basedIn: "Port Melbourne, VIC",
+      serves: "Melbourne’s inner suburbs",
+      focus: "Architectural homes, heritage and renovations",
+    },
+    website: "https://www.halecorp.com.au",
+    instagram: "https://www.instagram.com/_halebuilt/",
+    facebook: "https://www.facebook.com/halebuilt.melbourne",
+    linkedin: "https://www.linkedin.com/company/halebuilt/",
+    galleryUrl: "https://www.halecorp.com.au/projects/",
+    work: [
+      {
+        title: "Brick and timber facade",
+        suburb: "Melbourne’s inner south-east",
+        type: "Architectural home",
+        image: "/partners/hale/facade.jpg",
+      },
+      {
+        title: "Stone and oak kitchen",
+        suburb: "Melbourne’s inner south-east",
+        type: "Interior",
+        image: "/partners/hale/kitchen.jpg",
+      },
+      {
+        title: "Glass pool pavilion",
+        suburb: "Melbourne’s inner south-east",
+        type: "Exterior",
+        image: "/partners/hale/pavilion.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
