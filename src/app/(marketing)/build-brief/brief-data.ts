@@ -1027,7 +1027,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         {
           heading: "The proposal",
           paragraphs: [
-            "The BuilderHQ Procurement Standard, or BPS, is an open framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build. Under BPS, a builder completes a structured submission covering the same ground, in the same order, every time.",
+            "The BuilderHQ Procurement Standard, or BPS, is a structured framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build. Under BPS, a builder completes a structured submission covering the same ground, in the same order, every time.",
             "Eligibility and capability. Licensing, insurance and the capacity to take the project on, established before price enters the conversation.",
             "Commercial disclosures. The price, its basis, how long it holds and the terms that shape it, stated plainly rather than left to interpretation.",
             "Inclusions and exclusions. A clear schedule of what the price covers and what it does not, so scope gaps surface before contract rather than during construction.",
@@ -1063,7 +1063,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         rows: [
           { k: "Six", v: "disclosures, eligibility to commentary" },
           { k: "Before contract", v: "complements HIA and Master Builders forms" },
-          { k: "Open", v: "free for any builder or platform to adopt" },
+          { k: "In practice", v: "built into BuilderHQ’s tender process" },
           {
             k: "With MBA",
             v: "submitted to Master Builders Australia for consideration",
@@ -1131,7 +1131,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "What is the BuilderHQ Procurement Standard (BPS)?",
-        a: "BPS is a proposed open framework that standardises how builders present tenders: eligibility, commercial disclosures, inclusions and exclusions, allowances, programme and commentary, in the same order every time. It sits before contract, complements HIA and Master Builders contracts, and has been submitted to Master Builders Australia for consideration.",
+        a: "BPS is a proposed framework that standardises how builders present tenders: eligibility, commercial disclosures, inclusions and exclusions, allowances, programme and commentary, in the same order every time. It sits before contract, complements HIA and Master Builders contracts, and has been submitted to Master Builders Australia for consideration.",
       },
     ],
     overToYou: {
