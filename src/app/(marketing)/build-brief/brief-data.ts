@@ -1052,7 +1052,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         {
           heading: "Where it goes next",
           paragraphs: [
-            "The proposed framework has been submitted to Master Builders Australia for consideration, and BuilderHQ is seeking input from the Housing Industry Association, the Australian Institute of Architects, state building authorities, lenders, insurers and consumer advocates.",
+            "The proposed framework has been submitted to Master Builders Australia for consideration, and BuilderHQ is seeking input from the Housing Industry Association, state building authorities, lenders, insurers and consumer advocates.",
             "It is offered as the start of an industry conversation rather than a finished standard. Builders, architects, designers, lenders and insurers interested in shaping future versions are invited to [register their interest](mailto:info@builderhq.com.au?subject=BPS%20%C2%B7%20Register%20interest).",
             "Better information at the start of a project is the cheapest risk reduction available to anyone building a home.",
           ],
@@ -1100,11 +1100,11 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     },
     partnerCorner: {
       partnerSlug: "bianca-dacic",
-      headline: "Meet Loan Savvy.",
+      headline: "Meet Bianca Dacic.",
       principal: "Bianca Dacic",
       principalRole: "Founder and director, Loan Savvy",
       portrait: "/partners/bianca-dacic/portrait.jpg",
-      deck: "The broker who gets first home buyers in, even without the deposit.",
+      deck: "The Loan Savvy broker who gets first home buyers in, even without the deposit.",
       stats: [
         { value: "5.0", label: "93 Google reviews", star: true },
         { value: "2018", label: "Loan Savvy, her own brokerage" },
@@ -1438,7 +1438,7 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
       { kind: "h2", text: "An invitation, not a finished answer" },
       {
         kind: "p",
-        text: "Meaningful reform is collaborative. BuilderHQ welcomes input from builders, architects, designers, lenders, insurers and consumer advocates, and from industry bodies including the Housing Industry Association, Master Builders Australia, the Australian Institute of Architects and state building authorities.",
+        text: "Meaningful reform is collaborative. BuilderHQ welcomes input from builders, architects, designers, lenders, insurers and consumer advocates, and from industry bodies including the Housing Industry Association, Master Builders Australia and state building authorities.",
       },
       {
         kind: "p",
