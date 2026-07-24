@@ -52,7 +52,26 @@ export interface BriefSlopeSpec {
   domain: [number, number];
 }
 
-export type BriefChartSpec = BriefBarsSpec | BriefSlopeSpec;
+export interface BriefStripStage {
+  label: string;
+  /** Accent stages carry the teal treatment (e.g. off-site work). */
+  accent?: boolean;
+}
+
+/** Process strip — an ordered sequence of stages, not a data chart.
+ *  Issue 003 onward (prefabrication build sequence). */
+export interface BriefStripSpec {
+  kind: "strip";
+  title: string;
+  desc: string;
+  stages: BriefStripStage[];
+  /** Bracket under a contiguous run of stages, 0-based inclusive. */
+  callout?: { from: number; to: number; label: string; sub?: string };
+  /** What the two colours mean, e.g. off-site vs on site. */
+  legend?: { accent: string; context: string };
+}
+
+export type BriefChartSpec = BriefBarsSpec | BriefSlopeSpec | BriefStripSpec;
 
 const MONO: CSSProperties = { fontFamily: "var(--font-jetbrains-mono)" };
 
@@ -257,10 +276,93 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
   );
 }
 
-export function BriefChart({ spec }: { spec: BriefChartSpec }) {
-  return spec.kind === "bars" ? (
-    <BriefBars spec={spec} />
-  ) : (
-    <BriefSlope spec={spec} />
+/* ── process strip ───────────────────────────────────────────────────── */
+
+function BriefStrip({ spec }: { spec: BriefStripSpec }) {
+  const n = spec.stages.length;
+  const callout = spec.callout;
+  return (
+    <figure
+      aria-label={`${spec.title}. ${spec.desc}`}
+      className="mt-7 rounded-xl border border-[#101820]/[0.08] bg-[#fbfaf7] px-5 py-5 sm:px-6"
+    >
+      <figcaption className="flex items-baseline justify-between gap-4">
+        <span className="text-[12.5px] font-ui font-semibold text-text">
+          {spec.title}
+        </span>
+        {spec.legend ? (
+          <span className="hidden sm:flex items-center gap-4 text-[10.5px] tracking-[0.06em] text-text-dim" style={MONO}>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block size-2 rounded-full"
+                style={{ background: ACCENT_FILL }}
+              />
+              {spec.legend.accent}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block size-2 rounded-full"
+                style={{ background: CONTEXT_FILL }}
+              />
+              {spec.legend.context}
+            </span>
+          </span>
+        ) : null}
+      </figcaption>
+
+      <ol
+        className={`mt-5 grid grid-cols-2 gap-y-5 gap-x-3 ${
+          n >= 6
+            ? "sm:grid-cols-3 lg:grid-cols-6"
+            : n === 5
+              ? "sm:grid-cols-5"
+              : "sm:grid-cols-4"
+        }`}
+      >
+        {spec.stages.map((s, i) => (
+          <li key={s.label} className="flex items-start gap-2.5 min-w-0">
+            <span
+              aria-hidden
+              className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold text-white"
+              style={{
+                ...MONO,
+                background: s.accent ? ACCENT_FILL : CONTEXT_FILL,
+              }}
+            >
+              {i + 1}
+            </span>
+            <span className="pt-[2px] text-[12px] leading-[1.4] text-text-muted">
+              {s.label}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {callout ? (
+        <div className="mt-5 border-t border-[#101820]/[0.08] pt-4">
+          <p className="text-[12.5px] leading-[1.5] text-text-muted">
+            <span className="font-semibold text-accent-light" style={MONO}>
+              {callout.label}
+            </span>{" "}
+            · {callout.sub ? `${callout.sub}, ` : ""}stages {callout.from + 1}{" "}
+            to {callout.to + 1}
+          </p>
+        </div>
+      ) : null}
+      {spec.legend ? (
+        <p className="mt-3 sm:hidden text-[10.5px] tracking-[0.06em] text-text-dim" style={MONO}>
+          Teal, {spec.legend.accent.toLowerCase()} · grey,{" "}
+          {spec.legend.context.toLowerCase()}
+        </p>
+      ) : null}
+    </figure>
   );
+}
+
+export function BriefChart({ spec }: { spec: BriefChartSpec }) {
+  if (spec.kind === "bars") return <BriefBars spec={spec} />;
+  if (spec.kind === "slope") return <BriefSlope spec={spec} />;
+  return <BriefStrip spec={spec} />;
 }

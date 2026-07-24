@@ -106,11 +106,28 @@ function issueSchema(issue: BriefIssue) {
         isPartOf: { "@id": `${SITE}/build-brief/${issue.slug}#issue` },
         mainEntityOfPage: `${SITE}/build-brief/${issue.slug}`,
         keywords: issue.keywords.join(", "),
+        speakable: {
+          "@type": "SpeakableSpecification",
+          cssSelector: ["h1", "#the-note h2"],
+        },
         about: [
           { "@type": "Thing", name: "Residential construction in Australia" },
           { "@type": "Thing", name: "Australian housing market" },
         ],
       },
+      ...(issue.faq?.length
+        ? [
+            {
+              "@type": "FAQPage",
+              "@id": `${SITE}/build-brief/${issue.slug}#faq`,
+              mainEntity: issue.faq.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            },
+          ]
+        : []),
       {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -424,6 +441,9 @@ export default async function BriefIssuePage({
                 : []),
               { label: "Voices", href: "#voices" },
               ...(pc ? [{ label: "Partner Corner", href: "#partner-corner" }] : []),
+              ...(issue.faq?.length
+                ? [{ label: "In brief", href: "#questions" }]
+                : []),
               ...(issue.sourceGroups?.length
                 ? [{ label: "Sources", href: "#sources" }]
                 : []),
@@ -903,6 +923,29 @@ export default async function BriefIssuePage({
                   </div>
                 </div>
               </div>
+            </BriefCard>
+          ) : null}
+
+          {/* Questions this edition answers — the skimmer's version of
+              the whole issue; mirrored as FAQPage structured data. */}
+          {issue.faq?.length ? (
+            <BriefCard id="questions">
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                In brief
+              </BriefKicker>
+              <h2 className={SECTION_H2}>Questions this edition answers</h2>
+              <dl className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
+                {issue.faq.map((f) => (
+                  <div key={f.q}>
+                    <dt className="text-[14.5px] font-ui font-semibold text-text leading-[1.4]">
+                      {f.q}
+                    </dt>
+                    <dd className="mt-2 text-[13.5px] leading-[1.7] text-text-muted">
+                      {f.a}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </BriefCard>
           ) : null}
 
