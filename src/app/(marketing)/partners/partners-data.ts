@@ -1004,6 +1004,84 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "bcg-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Luxury coastal home designer",
+    name: "BCG Building Design",
+    monogram: "BC",
+    logo: "/partners/bcg-building-design/logo.png",
+    principal: "Bianca Gemmill",
+    suburb: "Burleigh Waters",
+    state: "QLD",
+    tagline:
+      "A boutique Gold Coast studio designing bespoke luxury coastal homes, led by a designer whose awards run from custom houses and renovations to commercial interiors and unbuilt work.",
+    disciplines: ["Custom luxury homes", "Renovations and remodels", "Commercial interiors"],
+    awards: [
+      {
+        label: "Residential Alterations and Additions winner",
+        sub: "Building Designers Association of Australia, 2023",
+      },
+      {
+        label: "Three BDAA wins in one year",
+        sub: "alterations, commercial interiors and unbuilt works, 2024",
+      },
+      {
+        label: "Master Builders People’s Choice, as designer",
+        sub: "the Breeze House, Gold Coast region, 2023",
+      },
+    ],
+    stats: [
+      { label: "Client rating", value: "5.0", star: true },
+      {
+        label: "In the industry",
+        value: "18+ yrs",
+        sub: "commercial, retail and residential",
+      },
+      {
+        label: "Awarded across",
+        value: "5",
+        sub: "different design categories",
+      },
+    ],
+    why: "Most residential designers win awards in one category. Bianca Gemmill has won them across five. Her work has taken honours for residential alterations, a new custom home, commercial interiors, medium density housing and even unbuilt conceptual work, which is the signature of a designer trained far more broadly than a house practice usually demands. That is precisely the case: before opening her own studio she spent years on shopping centres, schools and hospitality fit-outs, and she carries that discipline into a family home, where the reputation she has built is for spaces that are genuinely functional and buildable rather than merely photogenic. The other half of it is more personal. She is a mother of three, and designs for families accordingly, treating warmth, comfort and a sense of belonging as problems to be solved rather than decoration to be added at the end. For an owner on the Gold Coast who wants a luxury home that still works on an ordinary Tuesday morning, this is an uncommon pairing of range and empathy.",
+    about:
+      "BCG Building Design is the Gold Coast studio Bianca Gemmill founded in 2015, working from Burleigh Waters. It is deliberately boutique, offering one-on-one service across custom luxury homes, renovations and remodels, multi-residential and commercial work, and it carries a client from the first design brief through consultant coordination and certification to building approval and beyond. The values were set at the outset and still hold: clarity, collaboration, integrity and quality craftsmanship, with honest communication throughout. Her projects are named with as much care as they are drawn, among them Kembali, Aruma, La Scala, the Keppel remodel, Guyra Residences, and Bajo el Sol, a Gold Coast regional winner in 2020. The Ohana Beach House was a national finalist in 2021 and went on to feature in Home Beautiful.",
+    facts: {
+      established: "2015",
+      experience: "18+ yrs",
+      basedIn: "Burleigh Waters, QLD",
+      serves: "Gold Coast and surrounds",
+      focus: "Custom luxury homes and renovations",
+    },
+    website: "https://bcgbuildingdesign.com.au",
+    instagram: "https://www.instagram.com/bcgbuildingdesign",
+    facebook: "https://www.facebook.com/BCGBuildingDesign",
+    linkedin: "https://www.linkedin.com/in/bianca-gemmill-a8aa90253/",
+    galleryUrl: "https://bcgbuildingdesign.com.au/new-builds/",
+    work: [
+      {
+        title: "Gabled coastal facade",
+        suburb: "Gold Coast",
+        type: "New home",
+        image: "/partners/bcg-building-design/facade.jpg",
+      },
+      {
+        title: "Poolside pavilion",
+        suburb: "Gold Coast",
+        type: "New home",
+        image: "/partners/bcg-building-design/poolside.jpg",
+      },
+      {
+        title: "Pergolas and arches",
+        suburb: "Gold Coast",
+        type: "New home",
+        image: "/partners/bcg-building-design/pergola.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "praeditos-designs",
     kind: "architect",
     roleLabel: "Building design and drafting",
