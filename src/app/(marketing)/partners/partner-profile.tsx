@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Award, CalendarDays, Check, Globe, Landmark, Star } from "lucide-react";
 
-import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { cn } from "@/lib/utils";
 
 import { PARTNERS, partnerStates, type Partner } from "./partners-data";
@@ -555,7 +554,6 @@ export function PartnerProfileSections({
         </section>
       ) : null}
 
-      <PartnerForm />
     </>
   );
 }

@@ -400,53 +400,52 @@ function PartnersDropdown({ types }: { types: PartnerNavType[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[440px] rounded-2xl border border-border-subtle bg-white shadow-[0_24px_64px_-16px_rgba(24,34,44,0.30)] p-2.5 z-50"
+            className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[352px] rounded-2xl border border-border-subtle bg-white shadow-[0_24px_64px_-16px_rgba(24,34,44,0.30)] p-2 z-50"
           >
-            <p className="px-3 pt-2 pb-2.5 text-[10px] font-medium tracking-[0.2em] uppercase text-text-dim">
+            <p className="px-3 pt-2.5 pb-1.5 text-[9.5px] font-medium tracking-[0.22em] uppercase text-text-dim">
               The Preferred Partner register
             </p>
 
-            {/* One tile per discipline. Wraps to a second row as the
-                register widens; the panel never grows a scrollbar. */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {types.map((t) => (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  onClick={() => setOpen(false)}
-                  className="group rounded-xl border border-border-subtle/70 px-3.5 py-3 transition-[background,border-color] duration-[140ms] hover:border-border-subtle hover:bg-[rgba(24,34,44,0.03)]"
-                >
-                  <span className="flex items-baseline gap-1.5">
-                    <span className="text-[19px] font-semibold leading-none tracking-[-0.02em] text-accent-light tabular-nums">
-                      {t.count}
-                    </span>
-                    <span className="text-[13.5px] font-medium leading-none text-text">
-                      {t.label}
-                    </span>
+            {/* One row per discipline — the name leads, the count is a
+                quiet detail. A list rather than tiles: it stays even as
+                the register widens, and never grows a scrollbar. */}
+            {types.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                onClick={() => setOpen(false)}
+                className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-[140ms] hover:bg-[rgba(24,34,44,0.04)]"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-medium leading-none text-text">
+                    {t.label}
                   </span>
-                  <span className="mt-1.5 block text-[11.5px] leading-[1.45] text-text-muted">
+                  <span className="mt-1.5 block text-[11.5px] leading-[1.4] text-text-muted">
                     {t.sub}
                   </span>
-                </Link>
-              ))}
-            </div>
+                </span>
+                <span className="mt-px shrink-0 text-[11.5px] tabular-nums text-text-dim transition-colors duration-[140ms] group-hover:text-text-muted">
+                  {t.count}
+                </span>
+              </Link>
+            ))}
 
-            <div className="mt-2 pt-2 border-t border-border-subtle/70">
+            <div className="mt-1.5 pt-1.5 border-t border-border-subtle/70">
               <Link
                 href="/partners"
                 onClick={() => setOpen(false)}
-                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
+                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.04)] transition-colors duration-[140ms]"
               >
-                <span className="text-[13px] font-medium text-text">
+                <span className="text-[12.5px] font-medium text-text">
                   Explore the register
                 </span>
                 <ArrowUpRight className="size-3.5 text-text-dim transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
               <a
                 href="#join-network"
-                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
+                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.04)] transition-colors duration-[140ms]"
               >
-                <span className="text-[13px] text-text-muted group-hover:text-text transition-colors">
+                <span className="text-[12.5px] text-text-muted group-hover:text-text transition-colors">
                   Join the network
                 </span>
                 <ArrowUpRight className="size-3.5 text-text-dim transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

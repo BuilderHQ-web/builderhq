@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 import {
   ARCHITECT_PARTNERS,
@@ -158,7 +157,6 @@ export function PartnersRegister({ active }: { active: Active }) {
       </section>
 
       {/* Sentinel-driven modal (joins + introduction requests). */}
-      <PartnerForm />
     </StateFilterProvider>
   );
 }
