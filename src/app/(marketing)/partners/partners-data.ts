@@ -1237,6 +1237,80 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "jmh-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "JMH Design",
+    monogram: "JM",
+    logo: "/partners/jmh-design/logo.png",
+    principal: "Jacob Hipwood",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A Brisbane design studio led by a director who is both a registered builder and a building designer, drawing homes across South East Queensland that are made to actually be built.",
+    disciplines: ["New homes", "Renovations and extensions", "House raises"],
+    google: { rating: 4.8, reviews: 64 },
+    awards: [
+      {
+        label: "Building Design Queensland regional winner",
+        sub: "the Royal, 2025",
+      },
+      {
+        label: "HIA award winner",
+        sub: "the Brisbane",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "64 reviews" },
+      {
+        label: "Designing since",
+        value: "2012",
+        sub: "founder-led studio",
+      },
+      {
+        label: "Dual qualified",
+        value: "Builder",
+        sub: "and building designer",
+      },
+    ],
+    why: "The costliest thing that can happen to a set of house plans is that they turn out to be unbuildable at the price the owner was given. Jacob Hipwood is unusually well placed to stop that. He is a registered builder as well as a building designer, so the person drawing the house has also priced, ordered and supervised one, and knows before the pen moves what a detail will cost to stand up on site. Owners appear to notice the difference. Sixty four Google reviews at 4.8 is comfortably the deepest record on our design register, the kind of volume a studio only accumulates by satisfying a lot of families in a row. The design itself keeps drawing attention too, most recently a Building Design Queensland regional win in 2025. For anyone who wants a home that is genuinely original and still lands on budget, a designer who has held a builder’s licence is a rare and practical advantage.",
+    about:
+      "JMH Design was founded in Brisbane in 2012 by director Jacob Hipwood and is a fully licensed low-rise building design company under QBCC registration 1257212. The practice draws new homes, renovations and extensions, and house raises for clients across Brisbane, the Sunshine Coast, the Gold Coast and the surrounding regions. Around Jacob sits a senior bench that is deep for a studio this size: Shane Rogerson, whose work has appeared in Home Beautiful and on Channel Nine’s Australia’s Best House, Ashlea Carvel with sixteen years behind her, Ben Bailey, and John Tsikouris, who trained as an architect. In 2022 the business added Rediplans, a separate arm offering architectural standard plans for new homes. Collaboration, innovation and leadership are the stated values, and the work ranges from suburban rebuilds to rural homesteads on acreage at Kilcoy.",
+    facts: {
+      established: "2012",
+      basedIn: "Brisbane, QLD",
+      serves: "Brisbane, Sunshine Coast and Gold Coast",
+      focus: "New homes, renovations and house raises",
+    },
+    website: "https://jmhdesigns.au",
+    instagram: "https://www.instagram.com/_jmhdesigns/",
+    facebook: "https://www.facebook.com/jmhdesignsbrisbane",
+    linkedin: "https://www.linkedin.com/in/jacob-hipwood-0b617b73/",
+    galleryUrl: "https://jmhdesigns.au",
+    work: [
+      {
+        title: "Hinterland homestead",
+        suburb: "Kilcoy",
+        type: "New home",
+        image: "/partners/jmh-design/kilcoy.jpg",
+      },
+      {
+        title: "Floating stair and stone",
+        suburb: "South East Queensland",
+        type: "Interior",
+        image: "/partners/jmh-design/stair.jpg",
+      },
+      {
+        title: "Weatherboard and pool",
+        suburb: "South East Queensland",
+        type: "New home",
+        image: "/partners/jmh-design/poolside.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "csd-studio",
     kind: "architect",
     draft: true,
