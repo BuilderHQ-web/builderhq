@@ -863,6 +863,84 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "base-architecture",
+    kind: "architect",
+    draft: true,
+    name: "Base Architecture",
+    monogram: "BA",
+    logo: "/partners/base-architecture/logo.png",
+    principal: "Shawn Godwin",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A registered Brisbane architecture practice two decades deep in Institute awards, working from private houses to multi-residential, with interior architecture done under the same roof.",
+    disciplines: ["Residential architecture", "Multi-residential", "Interior architecture"],
+    google: { rating: 4.9, reviews: 22 },
+    awards: [
+      {
+        label: "Queensland Housing Award, winner",
+        sub: "Australian Institute of Architects, Stonehawke, 2010",
+      },
+      {
+        label: "Queensland Interior Architecture Award, winner",
+        sub: "Australian Institute of Architects, Wickham, 2009",
+      },
+      {
+        label: "Shortlisted, national Houses Awards",
+        sub: "New House over 200 square metres, Rocky, 2017",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "22 reviews" },
+      {
+        label: "Practising since",
+        value: "2004",
+        sub: "founder-led studio",
+      },
+      {
+        label: "Awards and commendations",
+        value: "16",
+        sub: "state, regional and national",
+      },
+    ],
+    why: "Shawn Godwin did not arrive at architecture the usual way. An associate diploma in civil and structural engineering came first, then years of building and labouring, and only after that the architecture degrees, which is why the ambition in this practice’s work is matched by an unusually firm grasp of how a thing actually stands up. He is a Fellow of the Australian Institute of Architects and a registered architect in Queensland, and he has chaired the Institute’s practice committee and sat as a chapter councillor, so he helps set the standards his profession works to rather than simply meeting them. The record runs two decades deep and, tellingly, across disciplines: the state housing award for Stonehawke, a state interior architecture award for the Wickham apartment, and a national Houses Awards shortlisting for Rocky. For an owner whose project genuinely warrants an architect, and who wants ideas that survive contact with structure and budget, this is as serious a practice as we can introduce.",
+    about:
+      "Base Architecture is a Brisbane practice founded in 2004 by director Shawn Godwin, working across residential, commercial, retail, hospitality and medical projects, with interior architecture delivered in house alongside the buildings themselves. Shawn holds a Bachelor of Architecture together with a degree in architectural studies, and residential work remains the part of it he cares most about. Beside him is fellow director Chris Kolka, also a registered architect in Queensland, who holds a Bachelor of Environmental Design and a Master of Architecture, and whose experience runs from master planning through luxury houses and renovations to complex multi-residential buildings. The studio is kept deliberately tight knit, on a culture that puts client relationships and problem solving first, and its portfolio carries names such as Warran, Flinders, Sheoak, Castlereagh, Jilba and View Enclave.",
+    facts: {
+      established: "2004",
+      experience: "25+ yrs",
+      basedIn: "Brisbane, QLD",
+      serves: "Brisbane and Queensland",
+      focus: "Homes, multi-residential and interiors",
+    },
+    website: "https://www.basearchitecture.com.au",
+    instagram: "https://www.instagram.com/basearchitecture/",
+    facebook: "https://www.facebook.com/basearchitecture",
+    linkedin: "https://www.linkedin.com/company/basearchitecture/",
+    galleryUrl: "https://www.basearchitecture.com.au/projects/",
+    work: [
+      {
+        title: "Castlereagh",
+        suburb: "Queensland",
+        type: "Clifftop house",
+        image: "/partners/base-architecture/castlereagh.jpg",
+      },
+      {
+        title: "Jilba",
+        suburb: "Queensland",
+        type: "Courtyard house",
+        image: "/partners/base-architecture/jilba.jpg",
+      },
+      {
+        title: "View Enclave",
+        suburb: "Queensland",
+        type: "Multi-residential",
+        image: "/partners/base-architecture/view-enclave.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "wowowa",
     kind: "architect",
     draft: true,
