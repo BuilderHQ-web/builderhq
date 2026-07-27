@@ -1923,6 +1923,87 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "synergy-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and interiors studio",
+    name: "Synergy Building Design",
+    monogram: "SB",
+    logo: "/partners/synergy-building-design/logo.png",
+    principal: "Anthony Trevor",
+    suburb: "Alderley",
+    state: "QLD",
+    states: ["QLD", "NSW"],
+    tagline:
+      "A multi-award-winning Brisbane studio with a proven speciality in small lot homes, designing bespoke new builds and renovations across South East Queensland, northern New South Wales and New Zealand.",
+    disciplines: ["New homes and renovations", "Small lot and compact homes", "Interiors and project management"],
+    awards: [
+      {
+        label: "Queensland state winner",
+        sub: "Building Design Queensland, Best Small Lot Home, 2019",
+      },
+      {
+        label: "National Design Awards finalist",
+        sub: "NABD, Best New Home, 2014",
+      },
+      {
+        label: "20+ design awards",
+        sub: "Building Design Queensland, 2014 to 2024",
+      },
+    ],
+    stats: [
+      {
+        label: "Homes designed",
+        value: "1,200+",
+        sub: "new builds and renovations",
+      },
+      {
+        label: "Designing since",
+        value: "2009",
+        sub: "founder-led studio",
+      },
+      {
+        label: "Small lot home wins",
+        value: "4 years",
+        sub: "2019, 2020, 2022 and 2024",
+      },
+    ],
+    why: "Look closely at a decade of this studio’s awards and a pattern emerges. Building Design Queensland has named Synergy’s work the best small lot home under 350 square metres in four separate years, and in 2019 gave the Hillside house the state title in that category outright. That is not luck. It is the mark of a practice that has genuinely solved the hardest brief in a subdividing city: making a narrow, steep or awkward block feel generous, private and full of light. As blocks keep shrinking, that skill is worth a great deal more than floor area. Behind it is Anthony Trevor, who built the studio on the conviction that inspiring design should not have to be expensive, and who is candid that he is not a yes man, telling clients what they need to hear rather than what they would like to. Twenty two years in, that combination of hard-won spatial skill and straight talk is exactly what we want beside an owner making expensive and irreversible decisions.",
+    about:
+      "Synergy Building Design was founded in 2009 by director Anthony Trevor and works from Alderley, in Brisbane’s inner north, under QBCC licence 1168554. The studio offers residential design, interiors and project management as one joined-up service rather than leaving a client to stitch separate consultants together, and it has drawn more than twelve hundred homes along the way. Its reach runs well past the city, across South East Queensland to the Sunshine and Gold Coasts, into northern New South Wales and over to New Zealand. The work moves comfortably between ground-up builds and the reworking of older houses, and recent projects include a brick and timber home at Chelmer, a verandah-fronted house at Paddington and a marble and oak kitchen at Wilston.",
+    facts: {
+      established: "2009",
+      basedIn: "Alderley, QLD",
+      serves: "SE Queensland, northern NSW and NZ",
+      focus: "Bespoke homes, renovations and interiors",
+    },
+    website: "https://www.synergybd.com.au",
+    instagram: "https://www.instagram.com/synergy_building_design/",
+    linkedin: "https://www.linkedin.com/company/synergy-building-design/",
+    galleryUrl: "https://www.synergybd.com.au",
+    work: [
+      {
+        title: "Brick and timber entry",
+        suburb: "Chelmer",
+        type: "New home",
+        image: "/partners/synergy-building-design/chelmer.jpg",
+      },
+      {
+        title: "Verandah and picket fence",
+        suburb: "Paddington",
+        type: "New home",
+        image: "/partners/synergy-building-design/paddington.jpg",
+      },
+      {
+        title: "Marble and oak kitchen",
+        suburb: "Wilston",
+        type: "Interior",
+        image: "/partners/synergy-building-design/wilston.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "hyperspace",
     kind: "architect",
     draft: true,
