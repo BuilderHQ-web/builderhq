@@ -1,0 +1,24 @@
+-- 0034 — add `partner_network_interest` to the lead_kind enum.
+--
+-- The Preferred Partner register is opening beyond design practices and
+-- finance brokers: builders first, then engineers, lawyers, consultants
+-- and whatever the network needs next. The landing's two "Join the
+-- network" forms collapse into one form with a role selector.
+--
+-- Rather than mint a new enum value per discipline (a migration every
+-- time the register widens), new registrations land under ONE kind and
+-- carry the discipline in the existing `meta` jsonb as `role`. Adding a
+-- future role becomes a one-line change in application code with no
+-- schema work.
+--
+-- The historic `partner_architect_interest` / `partner_finance_interest`
+-- values are retained: existing rows keep their kind, and Postgres
+-- cannot drop an enum value anyway. Only new submissions use the
+-- generic kind.
+--
+-- Postgres requires ALTER TYPE ... ADD VALUE to run outside a
+-- transaction. The `IF NOT EXISTS` guard makes this safe to run more
+-- than once. If you migrate by piping this file through psql, run it
+-- standalone (not inside a --single-transaction batch).
+
+ALTER TYPE "lead_kind" ADD VALUE IF NOT EXISTS 'partner_network_interest';

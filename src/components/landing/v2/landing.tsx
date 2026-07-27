@@ -13,7 +13,7 @@
 
 import {
   livePartnerLogos,
-  partnerNavGroups,
+  partnerNavTypes,
 } from "@/app/(marketing)/partners/partners-data";
 
 import { Canvas, RoleWash } from "./canvas";
@@ -54,7 +54,7 @@ export function Landing({
       <div className="lp-light">
       <Canvas />
 
-      <LandingNav authedHref={authedHref} partnerNav={partnerNavGroups()} />
+      <LandingNav authedHref={authedHref} partnerNav={partnerNavTypes()} />
 
       <main className="relative z-10">
         <Hero authedHref={authedHref} />

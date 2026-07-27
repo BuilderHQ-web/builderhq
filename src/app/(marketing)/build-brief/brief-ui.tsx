@@ -11,7 +11,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { partnerNavGroups } from "@/app/(marketing)/partners/partners-data";
+import { partnerNavTypes } from "@/app/(marketing)/partners/partners-data";
+import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { RoleProvider } from "@/components/landing/v2/role";
 import { LandingNav } from "@/components/landing/v2/nav";
 import { Footer } from "@/components/landing/v2/footer";
@@ -102,11 +103,14 @@ export function BriefShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <RoleProvider>
-        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavGroups()} />
+        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavTypes()} />
         <main className="relative z-10 pt-28 lg:pt-36 pb-20 lg:pb-28 px-5 md:px-10">
           {children}
         </main>
         <Footer homeAnchors />
+        {/* Capture modal for the nav's "Join the network" sentinel.
+            Renders nothing until a sentinel CTA is clicked. */}
+        <PartnerForm />
       </RoleProvider>
     </div>
   );

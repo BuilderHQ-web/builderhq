@@ -4120,27 +4120,46 @@ export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);
 }
 
-/** Items for the header "Our Partners" dropdown. Computed on the server
- *  (pages pass the result down as a prop) so the client bundle never
- *  carries the full register content — the nav imports only this type. */
-export type PartnerNavGroup = {
+/**
+ * Types for the header "Our Partners" dropdown.
+ *
+ * The menu lists DISCIPLINES, never individual partners: a nav is
+ * wayfinding, and the register (with its state map and filters) is the
+ * place to find a person. That also keeps the panel a fixed size as the
+ * network grows, and keeps inclusion out of the menu as a status
+ * signal. Counts are the proof; names are one click away.
+ *
+ * Computed on the server (pages pass the result down as a prop) so the
+ * client bundle never carries the register content.
+ */
+export type PartnerNavType = {
+  /** Plural discipline name, e.g. "Design partners". */
   label: string;
-  items: Array<{ label: string; sub: string; href: string }>;
+  /** One line on who they are. */
+  sub: string;
+  /** Live partners in this discipline. */
+  count: number;
+  href: string;
 };
 
-export function partnerNavGroups(): PartnerNavGroup[] {
-  const item = (p: Partner) => ({
-    label: p.name,
-    sub:
-      p.kind === "finance" && p.institution
-        ? p.institution.name
-        : `${p.suburb}, ${p.state}`,
-    href: `/partners/${p.slug}`,
-  });
+export function partnerNavTypes(): PartnerNavType[] {
   return [
-    { label: "Design partners", items: ARCHITECT_PARTNERS.map(item) },
-    { label: "Finance partners", items: FINANCE_PARTNERS.map(item) },
-  ].filter((g) => g.items.length > 0);
+    {
+      label: "Design partners",
+      sub: "Architects and building designers",
+      count: ARCHITECT_PARTNERS.length,
+      href: "/partners/architects",
+    },
+    {
+      label: "Finance partners",
+      sub: "Brokers who know construction lending",
+      count: FINANCE_PARTNERS.length,
+      href: "/partners/finance-brokers",
+    },
+    // Builders, engineers, lawyers and consultants join here as the
+    // register widens. Empty disciplines are filtered out below, so a
+    // type can be added before its first partner goes live.
+  ].filter((t) => t.count > 0);
 }
 
 export type PartnerLogo = {

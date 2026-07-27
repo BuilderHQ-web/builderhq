@@ -13,10 +13,11 @@
  *   </MarketingPageShell>
  */
 
-import { partnerNavGroups } from "@/app/(marketing)/partners/partners-data";
+import { partnerNavTypes } from "@/app/(marketing)/partners/partners-data";
 import { RoleProvider } from "@/components/landing/v2/role";
 import { LandingNav } from "@/components/landing/v2/nav";
 import { Footer } from "@/components/landing/v2/footer";
+import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 interface Props {
   kicker: string;
@@ -60,7 +61,7 @@ export function MarketingPageShell({
       </div>
 
       <RoleProvider>
-        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavGroups()} />
+        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavTypes()} />
 
         <main className="relative z-10 pt-32 lg:pt-40 pb-20 lg:pb-28 px-5 md:px-10">
           <div className="mx-auto max-w-[860px]">
@@ -91,6 +92,9 @@ export function MarketingPageShell({
         </main>
 
         <Footer homeAnchors />
+        {/* Capture modal for the nav's "Join the network" sentinel.
+            Renders nothing until a sentinel CTA is clicked. */}
+        <PartnerForm />
       </RoleProvider>
     </div>
   );

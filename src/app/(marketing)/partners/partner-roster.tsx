@@ -120,12 +120,16 @@ export function PartnersRegister({ active }: { active: Active }) {
               Doing work like this?
             </h3>
             <p className="mt-2.5 text-[14px] leading-[1.65] text-text-muted max-w-[42ch]">
-              Introduce yourself and we will take a proper look at your work.
-              No fees, no contracts, and leaving takes one email.
+              Building designers, builders and finance brokers. Introduce
+              yourself and we will take a proper look at your work. No fees,
+              no contracts, and leaving takes one email.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              <JoinButton href="#join-architect" kind="architect" label="Join as a building designer" />
-              <JoinButton href="#join-finance" kind="finance" label="Join as a finance broker" />
+            <div className="mt-6">
+              <JoinButton
+                href="#join-network"
+                kind="architect"
+                label="Join the network"
+              />
             </div>
           </div>
 

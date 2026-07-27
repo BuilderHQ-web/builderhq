@@ -5,23 +5,19 @@
  * expectation, stop. The actual introduction is made by the team.
  */
 
-import { BodyText, EmailShell, InlineLink, Strong } from "./_shell";
-import type { IntroNeed } from "./PartnerIntroOpsEmail";
+import { introNeedsSentence } from "@/modules/leads/partner-roles";
 
-const NEED_LABEL: Record<IntroNeed, string> = {
-  architect: "an architect",
-  finance: "a finance broker",
-  both: "an architect and a finance broker",
-};
+import { BodyText, EmailShell, InlineLink, Strong } from "./_shell";
+import type { IntroNeeds } from "./PartnerIntroOpsEmail";
 
 interface PartnerIntroConfirmationEmailProps {
   firstName: string;
-  need: IntroNeed;
+  needs: IntroNeeds;
 }
 
 export function PartnerIntroConfirmationEmail({
   firstName,
-  need,
+  needs,
 }: PartnerIntroConfirmationEmailProps) {
   const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
 
@@ -36,7 +32,7 @@ export function PartnerIntroConfirmationEmail({
 
       <BodyText>
         Thanks for asking us to connect you with{" "}
-        <Strong>{NEED_LABEL[need]}</Strong>. We only introduce partners we know
+        <Strong>{introNeedsSentence(needs)}</Strong>. We only introduce partners we know
         and trust, so a member of our team will review your request and come
         back to you shortly with the right fit for your build and area.
       </BodyText>

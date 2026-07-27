@@ -18,13 +18,14 @@ import {
   Strong,
 } from "./_shell";
 
-export type IntroNeed = "architect" | "finance" | "both";
+import {
+  introNeedsLabel,
+  introNeedsSentence,
+} from "@/modules/leads/partner-roles";
 
-const NEED_LABEL: Record<IntroNeed, string> = {
-  architect: "An architect",
-  finance: "A finance broker",
-  both: "An architect and a finance broker",
-};
+/** What the homeowner asked to be introduced to. A list: wanting a
+ *  designer AND a broker is the common case. */
+export type IntroNeeds = readonly string[];
 
 interface PartnerIntroOpsEmailProps {
   leadId: string;
@@ -32,7 +33,7 @@ interface PartnerIntroOpsEmailProps {
   lastName: string | null;
   email: string;
   phone: string | null;
-  need: IntroNeed;
+  needs: IntroNeeds;
   state: string;
   source: string | null;
   createdAt: Date;
@@ -44,7 +45,7 @@ export function PartnerIntroOpsEmail({
   lastName,
   email,
   phone,
-  need,
+  needs,
   state,
   source,
   createdAt,
@@ -59,20 +60,20 @@ export function PartnerIntroOpsEmail({
 
   return (
     <EmailShell
-      preview={`Introduction request: ${fullName} · ${NEED_LABEL[need]} · ${state}`}
+      preview={`Introduction request: ${fullName} · ${introNeedsLabel(needs)} · ${state}`}
       kicker="HOMEOWNER · Introduction request"
       heading="A homeowner wants an introduction"
       whyReceiving="You're receiving this because you're the ops contact for BuilderHQ. Sent automatically whenever a homeowner requests a Preferred Partner introduction via the landing page."
     >
       <BodyText>
         <Strong>{fullName}</Strong> asked us to introduce{" "}
-        <Strong>{NEED_LABEL[need].toLowerCase()}</Strong> in{" "}
+        <Strong>{introNeedsSentence(needs)}</Strong> in{" "}
         <Strong>{state}</Strong>.
       </BodyText>
 
       <MetaCard>
         <MetaRow label="Name" value={fullName} />
-        <MetaRow label="Looking for" value={NEED_LABEL[need]} />
+        <MetaRow label="Looking for" value={introNeedsLabel(needs)} />
         <MetaRow label="State" value={state} />
         <MetaRow
           label="Email"

@@ -37,10 +37,8 @@ import {
   type PartnerNetwork,
 } from "@/emails/PartnerInterestConfirmationEmail";
 import { PartnerInterestOpsEmail } from "@/emails/PartnerInterestOpsEmail";
-import {
-  PartnerIntroOpsEmail,
-  type IntroNeed,
-} from "@/emails/PartnerIntroOpsEmail";
+import { introNeedsLabel } from "@/modules/leads/partner-roles";
+import { PartnerIntroOpsEmail } from "@/emails/PartnerIntroOpsEmail";
 import { PartnerIntroConfirmationEmail } from "@/emails/PartnerIntroConfirmationEmail";
 import { OwnerAdvisoryOpsEmail } from "@/emails/OwnerAdvisoryOpsEmail";
 import { OwnerAdvisoryConfirmationEmail } from "@/emails/OwnerAdvisoryConfirmationEmail";
@@ -1102,7 +1100,7 @@ interface SendPartnerIntroOpsEmailInput {
   lastName: string | null;
   email: string;
   phone: string | null;
-  need: IntroNeed;
+  needs: readonly string[];
   state: string;
   source: string | null;
   createdAt: Date;
@@ -1116,13 +1114,7 @@ export async function sendPartnerIntroOpsEmail(
     .filter(Boolean)
     .join(" ")
     .trim();
-  const needLabel =
-    input.need === "both"
-      ? "Architect + broker"
-      : input.need === "architect"
-        ? "Architect"
-        : "Finance broker";
-  const subject = `INTRO (${needLabel}): ${fullName || input.email} — ${input.state}`;
+  const subject = `INTRO (${introNeedsLabel(input.needs)}): ${fullName || input.email} — ${input.state}`;
   const props = { ...input };
 
   const [html, text] = await Promise.all([
@@ -1170,7 +1162,7 @@ export async function sendPartnerIntroOpsEmail(
 interface SendPartnerIntroConfirmationEmailInput {
   to: string;
   firstName: string;
-  need: IntroNeed;
+  needs: readonly string[];
 }
 
 /** Confirmation to the homeowner — restrained holding email. */
@@ -1178,7 +1170,7 @@ export async function sendPartnerIntroConfirmationEmail(
   input: SendPartnerIntroConfirmationEmailInput,
 ): Promise<Result<{ id: string }>> {
   const subject = "Received — we're lining up your introduction";
-  const props = { firstName: input.firstName, need: input.need };
+  const props = { firstName: input.firstName, needs: input.needs };
 
   const [html, text] = await Promise.all([
     render(PartnerIntroConfirmationEmail(props)),
