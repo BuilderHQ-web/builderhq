@@ -367,6 +367,84 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "invilla-architecture",
+    kind: "architect",
+    draft: true,
+    name: "Invilla Architecture",
+    monogram: "IN",
+    logo: "/partners/invilla-architecture/logo.png",
+    principal: "Joseph Verrills and Michael Johnston",
+    suburb: "Morningside",
+    state: "QLD",
+    states: ["QLD", "NSW", "VIC", "TAS"],
+    tagline:
+      "A Brisbane practice that has taken Queensland’s House of the Year and a European design award inside three years, designing custom homes on a fixed fee across four states.",
+    disciplines: ["Custom homes", "Renovations", "Interior design"],
+    google: { rating: 5.0, reviews: 35 },
+    awards: [
+      {
+        label: "Master Builders Queensland President’s Award",
+        sub: "Illalangi, 2025",
+      },
+      {
+        label: "Master Builders House of the Year, Queensland",
+        sub: "Jacaranda House, 2023",
+      },
+      {
+        label: "BIGSEE Architecture Award, international",
+        sub: "Clare House, 2024",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "35 reviews" },
+      {
+        label: "Studios",
+        value: "3",
+        sub: "Brisbane, Sunshine Coast, Hobart",
+      },
+      {
+        label: "Fee model",
+        value: "Fixed",
+        sub: "held as the design develops",
+      },
+    ],
+    why: "Very few young practices climb this quickly. Invilla was not yet six years old when Jacaranda House was named Queensland’s Master Builders House of the Year in 2023, and in 2025 Illalangi took the President’s Award, the top honour in that same programme. In between, Clare House won a BIGSEE architecture award in Europe and was shortlisted for ArchDaily’s House of the Year. The same studio has been judged the best in its state and taken seriously on the other side of the world, inside three years.\n\nWhat holds it together is unusually disciplined for a practice carrying that much design ambition. Invilla quotes a fixed fee before the design begins and holds it as the drawings develop, which removes the open-ended cost that makes owners wary of architects in the first place. Michael Johnston, the principal architect, is registered in Queensland, New South Wales and New Zealand, so the practice can follow a client across borders rather than hand them on. Thirty five clients have rated the studio and not one has given it less than five stars. For an owner who wants genuine architecture without an open cheque book, this is a compelling place to begin.",
+    about:
+      "Invilla Architecture was founded in 2017 by Joseph Verrills, its managing director, and Michael Johnston, its director and principal architect. The practice runs from Morningside in Brisbane, with further studios at Currimundi on the Sunshine Coast and, since 2025, at Molesworth in Tasmania, and it takes work across South East Queensland, New South Wales, Victoria and Tasmania. Around a dozen people sit behind the two directors, among them two interior designers and a deep bench of senior draftspeople, so design, documentation and interiors are carried in house rather than parcelled out. The work has been widely published, from a Home Beautiful cover to three national television features, and recent houses include new builds at Bulimba, Camp Hill and Hamilton.",
+    facts: {
+      established: "2017",
+      basedIn: "Morningside, QLD",
+      serves: "SE Queensland, NSW, VIC and TAS",
+      focus: "Custom homes and renovations",
+    },
+    website: "https://invilla.com.au",
+    instagram: "https://www.instagram.com/invilladesigns",
+    facebook: "https://www.facebook.com/InvillaDesigns/",
+    linkedin: "https://www.linkedin.com/in/joseph-verrills-02865020/",
+    galleryUrl: "https://invilla.com.au",
+    work: [
+      {
+        title: "Bulimba",
+        suburb: "Bulimba",
+        type: "Interior",
+        image: "/partners/invilla-architecture/bulimba.jpg",
+      },
+      {
+        title: "Camp Hill",
+        suburb: "Camp Hill",
+        type: "New home",
+        image: "/partners/invilla-architecture/camp-hill.jpg",
+      },
+      {
+        title: "Hamilton",
+        suburb: "Hamilton",
+        type: "New home",
+        image: "/partners/invilla-architecture/hamilton.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "silverpoint-design-and-planning",
     kind: "architect",
     roleLabel: "Building design and planning practice",
