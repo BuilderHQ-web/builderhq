@@ -406,9 +406,10 @@ function PartnersDropdown({ types }: { types: PartnerNavType[] }) {
               The Preferred Partner register
             </p>
 
-            {/* One row per discipline — the name leads, the count is a
-                quiet detail. A list rather than tiles: it stays even as
-                the register widens, and never grows a scrollbar. */}
+            {/* One row per discipline, the name leading. No tally: the
+                register is a matter of who is on it, not how many. A list
+                rather than tiles: it stays even as the register widens,
+                and never grows a scrollbar. */}
             {types.map((t) => (
               <Link
                 key={t.href}
@@ -423,9 +424,6 @@ function PartnersDropdown({ types }: { types: PartnerNavType[] }) {
                   <span className="mt-1.5 block text-[11.5px] leading-[1.4] text-text-muted">
                     {t.sub}
                   </span>
-                </span>
-                <span className="mt-px shrink-0 text-[11.5px] tabular-nums text-text-dim transition-colors duration-[140ms] group-hover:text-text-muted">
-                  {t.count}
                 </span>
               </Link>
             ))}
