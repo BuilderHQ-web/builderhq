@@ -32,6 +32,7 @@ import { auth } from "@/modules/auth";
 import {
   getParticipantInviteByToken,
   claimParticipantInvite,
+  dispatchParticipantJoined,
   PARTICIPANT_ROLE_LABEL,
 } from "@/modules/projects";
 import { logger } from "@/lib/logger";
@@ -231,6 +232,7 @@ export default async function ParticipantInvitePage({
     },
     "participant invite redeemed",
   );
+  await dispatchParticipantJoined(participant.id);
 
   redirect(sharedProjectPath(role, claim.value.projectSlug));
 }

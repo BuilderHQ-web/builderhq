@@ -13,6 +13,7 @@
 // Schema (DB consumers only).
 export {
   projects,
+  projectParticipants,
   projectTypeEnum,
   projectStatusEnum,
   australianStateEnum,
@@ -96,4 +97,10 @@ export type {
   InviteParticipantInput,
 } from "./participants";
 export type { ProjectParticipantRow } from "./schema";
-export { dispatchParticipantInvite } from "./dispatch";
+export { dispatchParticipantInvite, dispatchParticipantJoined } from "./dispatch";
+
+// The audit log — who did what on a round, recorded at the service
+// layer. Writes never throw; reads feed the record surfaces.
+export { recordProjectEvent, listProjectEvents } from "./audit";
+export type { RecordProjectEventInput } from "./audit";
+export type { ProjectAuditEventRow } from "./schema";

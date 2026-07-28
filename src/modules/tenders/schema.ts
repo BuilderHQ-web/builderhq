@@ -254,6 +254,9 @@ export const tenderBuilderInvites = pgTable(
       .notNull()
       .defaultNow(),
     respondedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** When the one nudge for a pending invitation went out — the
+     *  daily cron sends exactly one per invitation. */
+    remindedAt: timestamp({ mode: "date", withTimezone: true }),
 
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()

@@ -12,6 +12,7 @@
 // Schema (DB consumers).
 export {
   tenders,
+  tenderBuilderInvites,
   tenderCostLines,
   tenderStatusEnum,
   tradeEnum,
@@ -82,6 +83,7 @@ export {
   getBuilderInviteByToken,
   markBuilderInviteJoined,
 } from "./service";
+export { dispatchBuilderInvite } from "./dispatch";
 export type { CreateBuilderInviteInput } from "./service";
 export type { ChecklistProgress } from "./types";
 export type { TenderBuilderInviteRow, TenderResponseRow } from "./schema";

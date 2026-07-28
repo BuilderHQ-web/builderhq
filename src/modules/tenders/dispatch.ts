@@ -28,7 +28,7 @@
  */
 
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
@@ -36,7 +36,8 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 import { tenders, tenderBuilderInvites } from "./schema";
-import { projects } from "@/modules/projects/schema";
+import { projects, projectParticipants } from "@/modules/projects/schema";
+import { recordProjectEvent } from "@/modules/projects";
 import { users } from "@/modules/users/schema";
 import {
   builderProfiles,
@@ -55,6 +56,7 @@ import {
   sendTenderAwardedEmail,
   sendTenderRejectedEmail,
   sendTenderWithdrawnEmail,
+  sendRoundAwardedNoticeEmail,
 } from "@/modules/email";
 
 export type TenderDispatchKind =
@@ -85,6 +87,72 @@ interface DispatchContext {
     firstName: string | null;
     company: string;
   };
+}
+
+/** A person on the owner side of a round: the runner or a joined
+ *  seat. Tender events fan out to all of them — never the actor. */
+interface OwnerSideRecipient {
+  id: string;
+  email: string;
+  firstName: string | null;
+  isRunner: boolean;
+}
+
+/**
+ * The owner side of a round: the runner plus every joined seat.
+ * `excludeUserId` drops the actor — nobody is told about their own
+ * click.
+ */
+async function resolveOwnerSide(
+  ctx: DispatchContext,
+  excludeUserId?: string,
+): Promise<OwnerSideRecipient[]> {
+  const seats = await db
+    .select({
+      userId: projectParticipants.userId,
+      email: users.email,
+      firstName: users.firstName,
+    })
+    .from(projectParticipants)
+    .innerJoin(users, eq(users.id, projectParticipants.userId))
+    .where(
+      and(
+        eq(projectParticipants.projectId, ctx.project.id),
+        eq(projectParticipants.status, "joined"),
+      ),
+    );
+  const all: OwnerSideRecipient[] = [
+    {
+      id: ctx.owner.id,
+      email: ctx.owner.email,
+      firstName: ctx.owner.firstName,
+      isRunner: true,
+    },
+    ...seats
+      .filter((s): s is typeof s & { userId: string } => s.userId != null)
+      .map((s) => ({
+        id: s.userId,
+        email: s.email,
+        firstName: s.firstName,
+        isRunner: false,
+      })),
+  ];
+  return all.filter((r) => r.id !== excludeUserId);
+}
+
+/** Display name for the person who made a decision — practice name
+ *  for architect runners, otherwise their own name. */
+async function resolveActorName(
+  actorId: string | undefined,
+): Promise<string> {
+  if (!actorId) return "The project runner";
+  const [row] = await db
+    .select({ name: users.name, practice: architectProfiles.practiceName })
+    .from(users)
+    .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
+    .where(eq(users.id, actorId))
+    .limit(1);
+  return row?.practice ?? row?.name ?? "The project runner";
 }
 
 /**
@@ -187,6 +255,12 @@ const formatAud = (n: number) =>
 export async function dispatchTenderEvent(
   kind: TenderDispatchKind,
   tenderId: string,
+  opts: {
+    /** Who performed the transition (decisions only). Rides into the
+     *  owner-side fan-out ("by Studio North") and keeps the actor out
+     *  of their own notifications. */
+    actorId?: string;
+  } = {},
 ): Promise<void> {
   try {
     const ctx = await gatherContext(tenderId);
@@ -263,6 +337,43 @@ export async function dispatchTenderEvent(
             validityDays: ctx.tender.validityDays,
             submittedAt: new Date(),
           }),
+          // Seats — every joined participant hears what the runner
+          // hears (the runner was notified above; actor is the
+          // builder, never on the owner side).
+          resolveOwnerSide(ctx).then((ownerSide) =>
+            Promise.allSettled(
+              ownerSide
+                .filter((r) => !r.isRunner)
+                .flatMap((r) => [
+                  createNotification({
+                    userId: r.id,
+                    kind: "tender_submitted",
+                    title: `${ctx.builder.company} sent a tender`,
+                    body: `${ctx.project.title} · ${priceLabel}`,
+                    actionUrl: reviewUrl,
+                    projectId: ctx.project.id,
+                    tenderId: ctx.tender.id,
+                  }),
+                  sendTenderSubmittedEmail({
+                    to: r.email,
+                    ownerFirstName: r.firstName,
+                    builderCompany: ctx.builder.company,
+                    projectTitle: ctx.project.title,
+                    totalPriceAud: ctx.tender.totalPriceAud ?? 0,
+                    durationWeeks: ctx.tender.durationWeeks ?? 0,
+                    validityDays: ctx.tender.validityDays ?? 0,
+                    reviewUrl,
+                  }),
+                ]),
+            ),
+          ),
+          recordProjectEvent({
+            projectId: ctx.project.id,
+            actorId: ctx.builder.id,
+            kind: "tender.submitted",
+            subjectId: ctx.tender.id,
+            summary: `${ctx.builder.company} submitted a tender (${priceLabel}).`,
+          }),
         ]);
         break;
       }
@@ -293,6 +404,37 @@ export async function dispatchTenderEvent(
             builderCompany: ctx.builder.company,
             projectTitle: ctx.project.title,
             reviewUrl,
+          }),
+          resolveOwnerSide(ctx).then((ownerSide) =>
+            Promise.allSettled(
+              ownerSide
+                .filter((r) => !r.isRunner)
+                .flatMap((r) => [
+                  createNotification({
+                    userId: r.id,
+                    kind: "tender_withdrawn",
+                    title: `${ctx.builder.company} withdrew their tender`,
+                    body: ctx.project.title,
+                    actionUrl: reviewUrl,
+                    projectId: ctx.project.id,
+                    tenderId: ctx.tender.id,
+                  }),
+                  sendTenderWithdrawnEmail({
+                    to: r.email,
+                    ownerFirstName: r.firstName,
+                    builderCompany: ctx.builder.company,
+                    projectTitle: ctx.project.title,
+                    reviewUrl,
+                  }),
+                ]),
+            ),
+          ),
+          recordProjectEvent({
+            projectId: ctx.project.id,
+            actorId: ctx.builder.id,
+            kind: "tender.withdrawn",
+            subjectId: ctx.tender.id,
+            summary: `${ctx.builder.company} withdrew their tender.`,
           }),
         ]);
         break;
@@ -325,6 +467,35 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             tenderUrl,
           }),
+          // Owner side minus the actor — a decider's shortlist tells
+          // the runner and the other seats. Bell only: decisions move
+          // often, the inbox is reserved for submit + award.
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.map((r) =>
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_shortlisted",
+                  title: `${ctx.builder.company} was shortlisted`,
+                  body: `By ${actorName} · ${ctx.project.title}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+              ),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.shortlisted",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} shortlisted the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }
@@ -358,6 +529,42 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             tenderUrl,
           }),
+          // The award is the round's verdict — everyone on the owner
+          // side hears it, bell AND letter, except whoever clicked it.
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.flatMap((r) => [
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_awarded",
+                  title: `${ctx.project.title} has been awarded`,
+                  body: `${ctx.builder.company} · by ${actorName}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+                sendRoundAwardedNoticeEmail({
+                  to: r.email,
+                  recipientFirstName: r.firstName,
+                  actorName,
+                  builderCompany: ctx.builder.company,
+                  projectTitle: ctx.project.title,
+                  reviewUrl,
+                }),
+              ]),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.awarded",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} awarded the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }
@@ -388,6 +595,32 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             browseUrl,
           }),
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.map((r) =>
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_rejected",
+                  title: `${ctx.builder.company}'s tender was declined`,
+                  body: `By ${actorName} · ${ctx.project.title}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+              ),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.declined",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} declined the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }

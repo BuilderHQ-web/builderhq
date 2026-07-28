@@ -30,6 +30,7 @@ import {
 } from "./schema";
 import { users } from "@/modules/users";
 import { architectProfiles } from "@/modules/profiles";
+import { recordProjectEvent } from "./audit";
 
 /** Days an invitation link stays live after (re)sending. */
 export const PARTICIPANT_INVITE_VALIDITY_DAYS = 14;
@@ -145,6 +146,13 @@ export async function inviteParticipant(
     })
     .returning();
   if (!row) return fail("internal", "Could not create the invitation.");
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "seat.invited",
+    subjectId: row.id,
+    summary: `Shared the project with ${row.name ?? row.email} (${PARTICIPANT_ROLE_LABEL[role]}).`,
+  });
   return ok(row);
 }
 
@@ -204,6 +212,8 @@ export async function revokeParticipant(
       id: projectParticipants.id,
       projectId: projectParticipants.projectId,
       status: projectParticipants.status,
+      email: projectParticipants.email,
+      name: projectParticipants.name,
     })
     .from(projectParticipants)
     .where(eq(projectParticipants.id, participantId))
@@ -218,6 +228,13 @@ export async function revokeParticipant(
     .update(projectParticipants)
     .set({ status: "revoked", revokedAt: new Date(), updatedAt: new Date() })
     .where(eq(projectParticipants.id, participantId));
+  await recordProjectEvent({
+    projectId: row.projectId,
+    actorId: runnerId,
+    kind: "seat.revoked",
+    subjectId: participantId,
+    summary: `Removed ${row.name ?? row.email}'s seat.`,
+  });
   return ok({ ok: true });
 }
 
@@ -235,6 +252,8 @@ export async function setParticipantRole(
       id: projectParticipants.id,
       projectId: projectParticipants.projectId,
       status: projectParticipants.status,
+      email: projectParticipants.email,
+      name: projectParticipants.name,
     })
     .from(projectParticipants)
     .where(eq(projectParticipants.id, participantId))
@@ -251,6 +270,13 @@ export async function setParticipantRole(
     .update(projectParticipants)
     .set({ role, updatedAt: new Date() })
     .where(eq(projectParticipants.id, participantId));
+  await recordProjectEvent({
+    projectId: row.projectId,
+    actorId: runnerId,
+    kind: "seat.role_changed",
+    subjectId: participantId,
+    summary: `Changed ${row.name ?? row.email}'s access to ${PARTICIPANT_ROLE_LABEL[role]}.`,
+  });
   return ok({ ok: true });
 }
 
@@ -287,11 +313,20 @@ export async function resendParticipantInvite(
     .set({
       inviteToken: randomBytes(32).toString("hex"),
       invitedAt: new Date(),
+      // A fresh link earns a fresh nudge window.
+      remindedAt: null,
       updatedAt: new Date(),
     })
     .where(eq(projectParticipants.id, participantId))
     .returning();
   if (!updated) return fail("internal", "Could not refresh the invitation.");
+  await recordProjectEvent({
+    projectId: updated.projectId,
+    actorId: runnerId,
+    kind: "seat.invite_resent",
+    subjectId: participantId,
+    summary: `Re-sent the invitation to ${updated.name ?? updated.email}.`,
+  });
   return ok(updated);
 }
 

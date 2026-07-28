@@ -49,6 +49,9 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   // Project events
   "project_published", // → builders (bulk fan-out, gated by marketing flag)
   "project_unlocked", // → owner (a builder unlocked their project)
+  // The seat + the clock
+  "participant_joined", // → runner (an invited seat was claimed)
+  "tender_validity_expiring", // → owner side (a priced tender's validity is closing)
 ]);
 
 export const notifications = pgTable(

@@ -33,6 +33,7 @@ import {
   text,
   boolean,
   integer,
+  jsonb,
   timestamp,
   uniqueIndex,
   index,
@@ -371,6 +372,10 @@ export const projectParticipants = pgTable(
       .defaultNow(),
     joinedAt: timestamp({ mode: "date", withTimezone: true }),
     revokedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** When the one nudge for a pending invitation went out — the
+     *  daily cron sends exactly one per invitation. Reset on resend
+     *  (a fresh link earns a fresh nudge window). */
+    remindedAt: timestamp({ mode: "date", withTimezone: true }),
 
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()
@@ -387,3 +392,38 @@ export const projectParticipants = pgTable(
 );
 
 export type ProjectParticipantRow = typeof projectParticipants.$inferSelect;
+
+// ── project_audit_events ─────────────────────────────────────────────────
+
+/**
+ * The round's durable record: who did what, written at the service
+ * layer the moment it happens. Exists because seats act — when a
+ * decider awards a tender, "who awarded this?" must have an answer
+ * that outlives sessions and notifications.
+ *
+ * `kind` is a dotted verb ('tender.awarded', 'seat.invited',
+ * 'invite.joined') kept as TEXT — audit vocabularies grow too fast to
+ * migrate an enum for every new verb. `summary` is the human line,
+ * composed at write time so the feed never needs joins to read.
+ * `actorId` NULL means the platform itself (cron, system transition).
+ */
+export const projectAuditEvents = pgTable(
+  "project_audit_events",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    actorId: uuid().references(() => users.id, { onDelete: "set null" }),
+    kind: text().notNull(),
+    subjectId: uuid(),
+    summary: text().notNull(),
+    meta: jsonb().notNull().default({}),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("project_audit_events_project_idx").on(t.projectId, t.createdAt)],
+);
+
+export type ProjectAuditEventRow = typeof projectAuditEvents.$inferSelect;

@@ -19,6 +19,8 @@ import {
   resendParticipantInvite,
   claimParticipantInvite,
   dispatchParticipantInvite,
+  dispatchParticipantJoined,
+  getParticipantInviteByToken,
   type InviteParticipantInput,
   type ParticipantRole,
   type ProjectParticipantRow,
@@ -111,8 +113,17 @@ export async function claimParticipantInviteAction(
   if (actor.value.mode !== "session" || !actor.value.email) {
     return fail("forbidden", "Sign in to accept this invitation.");
   }
-  return claimParticipantInvite(token, {
+  const claimed = await claimParticipantInvite(token, {
     userId: actor.value.id,
     userEmail: actor.value.email,
   });
+  if (claimed.ok) {
+    // The runner hears the door — resolve the seat id off the token
+    // (the claim result carries only the redirect slug).
+    const resolved = await getParticipantInviteByToken(token);
+    if (resolved.ok) {
+      await dispatchParticipantJoined(resolved.value.participant.id);
+    }
+  }
+  return claimed;
 }

@@ -43,6 +43,7 @@ import type {
 import type { ChecklistProgress } from "./types";
 
 import { unlocks } from "@/modules/unlocks/schema";
+import { recordProjectEvent } from "@/modules/projects";
 import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users";
 import { builderProfiles, architectProfiles } from "@/modules/profiles/schema";
@@ -1063,9 +1064,19 @@ async function decisionTransition(
 
   // Only the forward-going transitions notify. Roll-backs to "submitted"
   // are silent — the original "submitted" notification was already sent
-  // and a second one would just be confusing.
+  // and a second one would just be confusing. The actor rides along so
+  // the owner-side fan-out can say who decided and skip notifying them.
   if (to === "shortlisted" || to === "awarded" || to === "rejected") {
-    await dispatchTenderEvent(to, tenderId);
+    await dispatchTenderEvent(to, tenderId, { actorId: ownerId });
+  } else if (to === "submitted") {
+    // Silent for inboxes, never for the record.
+    await recordProjectEvent({
+      projectId: row.tender.projectId,
+      actorId: ownerId,
+      kind: "tender.reopened",
+      subjectId: tenderId,
+      summary: `A ${row.tender.status} tender was moved back to submitted.`,
+    });
   }
 
   return ok(updated!);
@@ -1578,6 +1589,14 @@ export async function createBuilderInvite(
     .returning();
   if (!row) return fail("internal", "Could not create the invitation.");
 
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "invite.sent",
+    subjectId: row.id,
+    summary: `Invited ${row.company ?? row.contactName ?? row.email ?? "a builder"} to tender.`,
+  });
+
   // Invitation email (+ bell notification for on-platform builders).
   // Internally try/catch'd: a flaky send never fails the invite. On a
   // DRAFT project the email is deferred until publish — an invitation
@@ -1654,6 +1673,9 @@ export async function revokeBuilderInvite(
       id: tenderBuilderInvites.id,
       projectId: tenderBuilderInvites.projectId,
       status: tenderBuilderInvites.status,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
     })
     .from(tenderBuilderInvites)
     .where(eq(tenderBuilderInvites.id, inviteId))
@@ -1676,6 +1698,13 @@ export async function revokeBuilderInvite(
     .update(tenderBuilderInvites)
     .set({ status: "revoked", updatedAt: new Date() })
     .where(eq(tenderBuilderInvites.id, inviteId));
+  await recordProjectEvent({
+    projectId: row.projectId,
+    actorId: runnerId,
+    kind: "invite.revoked",
+    subjectId: inviteId,
+    summary: `Withdrew the invitation to ${row.company ?? row.contactName ?? row.email ?? "a builder"}.`,
+  });
   return ok({ ok: true });
 }
 
@@ -1753,7 +1782,7 @@ export async function markBuilderInviteJoined(
   inviteId: string,
   builderUserId: string,
 ): Promise<void> {
-  await db
+  const [row] = await db
     .update(tenderBuilderInvites)
     .set({
       status: "joined",
@@ -1761,5 +1790,25 @@ export async function markBuilderInviteJoined(
       respondedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(tenderBuilderInvites.id, inviteId));
+    .where(eq(tenderBuilderInvites.id, inviteId))
+    .returning({
+      projectId: tenderBuilderInvites.projectId,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+    });
+  if (row) {
+    const [profile] = await db
+      .select({ companyName: builderProfiles.companyName })
+      .from(builderProfiles)
+      .where(eq(builderProfiles.userId, builderUserId))
+      .limit(1);
+    await recordProjectEvent({
+      projectId: row.projectId,
+      actorId: builderUserId,
+      kind: "invite.joined",
+      subjectId: inviteId,
+      summary: `${profile?.companyName ?? row.company ?? row.contactName ?? row.email ?? "An invited builder"} accepted the invitation and took a spot.`,
+    });
+  }
 }

@@ -57,7 +57,10 @@ import {
   sendProjectPublishedOwnerEmail,
   sendProjectPublishedOpsEmail,
   sendParticipantInviteEmail,
+  sendParticipantJoinedEmail,
 } from "@/modules/email";
+import { recordProjectEvent } from "./audit";
+import { PARTICIPANT_ROLE_LABEL as ROLE_LABEL_FOR_JOIN } from "./participants";
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -501,5 +504,86 @@ export async function dispatchParticipantInvite(
       "participant invite dispatch failed — continuing",
     );
     return { emailed: false };
+  }
+}
+
+
+/**
+ * The runner hears the door: bell + a quiet letter when an invited
+ * seat is claimed, plus the audit line. Fired after
+ * `claimParticipantInvite` succeeds. Internally try/catch'd — a flaky
+ * send never fails the claim.
+ */
+export async function dispatchParticipantJoined(
+  participantId: string,
+): Promise<void> {
+  try {
+    const runnerUsers = alias(users, "runner_users");
+    const joinedUsers = alias(users, "joined_users");
+    const [row] = await db
+      .select({
+        projectId: projects.id,
+        projectSlug: projects.slug,
+        projectTitle: projects.title,
+        runnerId: projects.ownerId,
+        runnerEmail: runnerUsers.email,
+        runnerFirstName: runnerUsers.firstName,
+        runnerRole: runnerUsers.role,
+        seatEmail: projectParticipants.email,
+        seatName: projectParticipants.name,
+        seatRole: projectParticipants.role,
+        seatUserId: projectParticipants.userId,
+        joinedName: joinedUsers.name,
+      })
+      .from(projectParticipants)
+      .innerJoin(projects, eq(projects.id, projectParticipants.projectId))
+      .innerJoin(runnerUsers, eq(runnerUsers.id, projects.ownerId))
+      .leftJoin(joinedUsers, eq(joinedUsers.id, projectParticipants.userId))
+      .where(eq(projectParticipants.id, participantId))
+      .limit(1);
+    if (!row) return;
+
+    const participantName =
+      row.joinedName ?? row.seatName ?? row.seatEmail;
+    const roleLabel = ROLE_LABEL_FOR_JOIN[row.seatRole];
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const projectPath =
+      row.runnerRole === "architect"
+        ? `/architect/projects/${row.projectSlug}`
+        : `/owner/projects/${row.projectSlug}`;
+
+    await Promise.allSettled([
+      createNotificationsMany([
+        {
+          userId: row.runnerId,
+          kind: "participant_joined",
+          title: `${participantName} joined ${row.projectTitle}`,
+          body: `They hold a ${roleLabel.toLowerCase()} seat on the round.`,
+          actionUrl: `${base}${projectPath}`,
+          projectId: row.projectId,
+        },
+      ]),
+      sendParticipantJoinedEmail({
+        to: row.runnerEmail,
+        runnerFirstName: row.runnerFirstName,
+        participantName,
+        roleLabel,
+        projectTitle: row.projectTitle,
+        projectUrl: `${base}${projectPath}`,
+      }),
+      recordProjectEvent({
+        projectId: row.projectId,
+        actorId: row.seatUserId,
+        kind: "seat.joined",
+        subjectId: participantId,
+        summary: `${participantName} accepted their invitation (${roleLabel}).`,
+      }),
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "participant_joined.dispatch.failed", participantId, msg },
+      "participant joined dispatch failed — continuing",
+    );
   }
 }
