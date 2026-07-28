@@ -153,6 +153,84 @@ export interface Partner {
 export const PARTNERS: Partner[] = [
   /* ── Architecture practices ─────────────────────────────────────── */
   {
+    slug: "michael-and-ruysch",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and architecture practice",
+    name: "Michael + Ruysch Building Design",
+    monogram: "MR",
+    logo: "/partners/michael-and-ruysch/logo.png",
+    principal: "Michael Ross, Haydn Ruysch and Cailin Mackey",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A Brisbane practice with twenty one design awards behind it, pairing building designers with a registered architect across new homes, Queenslander renovations and heritage work.",
+    disciplines: ["New homes and renovations", "Queenslander and heritage", "Townhouses and multi-residential"],
+    google: { rating: 4.9, reviews: 23 },
+    awards: [
+      {
+        label: "National winner, Alteration and Addition",
+        sub: "Bijou, 2019",
+      },
+      {
+        label: "Four Queensland state titles in one year",
+        sub: "conceptual, two renovations and a new home, 2023",
+      },
+      {
+        label: "State winner, Best Heritage Design",
+        sub: "Vulture, 2021",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "23 reviews" },
+      {
+        label: "Design awards",
+        value: "21",
+        sub: "national, state and regional",
+      },
+      {
+        label: "Directors",
+        value: "3",
+        sub: "one a registered architect",
+      },
+    ],
+    why: "Very few practices win at this rate. Twenty one design awards have gone to this studio since 2019, and 2023 alone brought four Queensland state titles in a single year, taken across four quite different categories: an unbuilt concept, two renovation brackets and a new home. Bijou had already carried a national title in 2019. What the list really shows is a practice fluent in the specifically Queensland problems, the heritage alteration that won outright in 2021 and the Sandgate raise and build the year before, work that asks a designer to respect an old house and still make it live like a new one.\n\nThe structure behind it is unusual and worth understanding. Three directors run the studio, and one of them, Cailin Mackey, is a registered architect whose career runs from high-end restaurants to fifty storey towers before he settled into houses. So an owner engaging a building design practice here also gets architect-trained judgement on the drawing board, without the engagement becoming an architectural commission. Alongside him sit two designers who came to it differently, Michael Ross raised on his parents’ owner-build sites, Haydn Ruysch out of award-winning Brisbane firms with a particular feel for balancing the traditional Queensland house against modern living. For an owner with a character home or a demanding site, that is a deep bench.",
+    about:
+      "Michael + Ruysch Building Design, also known as MR Designs, works from Brisbane under directors Michael Ross, Haydn Ruysch and Cailin Mackey, who between them hold more than forty years of industry experience. The practice covers design, drafting and visualisation for new homes, townhouses, renovations and extensions, and carries commercial and educational work alongside the residential book. Its people are registered building practitioners through the Queensland Building and Construction Commission under licence 15153261, and the business is fully insured for both public liability and professional indemnity. Projects are run in close coordination with builders, structural engineers, town planners and certifiers, so a client deals with one team rather than assembling the consultants themselves. Recent work includes homes at Coorparoo, Newport and Nundah.",
+    facts: {
+      experience: "40+ yrs",
+      basedIn: "Brisbane, QLD",
+      serves: "Brisbane and South East Queensland",
+      focus: "New homes, renovations and heritage",
+    },
+    website: "https://www.michaelandruysch.com.au",
+    instagram: "https://www.instagram.com/michael.and.ruysch/",
+    facebook: "https://www.facebook.com/MRBuildingDesign/",
+    linkedin: "https://www.linkedin.com/company/mr-building-design/",
+    galleryUrl: "https://www.michaelandruysch.com.au",
+    work: [
+      {
+        title: "Coorparoo",
+        suburb: "Coorparoo",
+        type: "New home",
+        image: "/partners/michael-and-ruysch/coorparoo.jpg",
+      },
+      {
+        title: "Newport",
+        suburb: "Newport",
+        type: "Waterfront home",
+        image: "/partners/michael-and-ruysch/newport.jpg",
+      },
+      {
+        title: "Nundah",
+        suburb: "Nundah",
+        type: "Renovation",
+        image: "/partners/michael-and-ruysch/nundah.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "house-design-solutions",
     kind: "architect",
     roleLabel: "Building design practice",
