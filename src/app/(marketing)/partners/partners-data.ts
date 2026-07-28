@@ -1763,6 +1763,83 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "adam-hobill-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Residential building design practice",
+    name: "Adam Hobill Design",
+    monogram: "AH",
+    logo: "/partners/adam-hobill-design/logo.png",
+    principal: "Adam Hobill",
+    suburb: "Narrabundah",
+    state: "ACT",
+    tagline:
+      "A Narrabundah practice named the region’s Residential Building Designer of the Year six times over, designing custom homes, extensions and renovations across Canberra and southern New South Wales.",
+    disciplines: ["Custom homes", "Extensions and renovations", "Spec and display homes"],
+    google: { rating: 5.0, reviews: 10 },
+    awards: [
+      {
+        label: "National Design Excellence, winner",
+        sub: "Building Designers Association of Australia, 2021",
+      },
+      {
+        label: "Residential Building Designer of the Year, six times",
+        sub: "HIA ACT and southern NSW, 2003 to 2020",
+      },
+      {
+        label: "National winner, New Residential Building",
+        sub: "Building Designers Association of Australia, the Treehouse, 2021",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
+      {
+        label: "Designer of the Year",
+        value: "6",
+        sub: "times, HIA ACT and southern NSW",
+      },
+      {
+        label: "Projects completed",
+        value: "500+",
+        sub: "in twenty five years",
+      },
+    ],
+    why: "Being named your region’s best designer is one thing. Being named it six times is another. The Housing Industry Association has made Adam Hobill its Residential Building Designer of the Year for the ACT and southern New South Wales on six occasions between 2003 and 2020, and in 2021 the Building Designers Association of Australia handed the practice its national Design Excellence award. Beneath those sit close to sixty awards and nominations across the HIA, Master Builders and the BDAA, stretching back two decades.\n\nWhat lies behind the trophies is a designer who has been on building sites since childhood, on his family’s own jobs, and who has since carried more than five hundred projects through to completion, including two homes for his own family. That last detail counts for more than it sounds, because he has stood where his clients stand, signing for a house he then has to live in. Adam still works personally on every project, at a pace set by the decisions rather than the calendar. For a Canberra family who want a home shaped around the way they actually live, that is a rare depth of experience.",
+    about:
+      "Adam Hobill Design is a boutique residential building design practice in Narrabundah, Canberra, working across the ACT and southern New South Wales. Adam Hobill is its director and principal designer, alongside senior project designer Daniel Boucher, who holds a Bachelor of Architecture and an advanced diploma in building design, and Christina, a registered architect practising as a building designer with a particular interest in passive design and how a house meets its garden. The practice takes on custom homes, extensions and renovations, and is unusually direct about its range, working from around five hundred thousand dollars on a renovation and nine hundred thousand on a new home. Its houses have appeared in House and Garden, Home Beautiful and Inside Out.",
+    facts: {
+      experience: "25+ yrs",
+      basedIn: "Narrabundah, ACT",
+      serves: "Canberra and southern NSW",
+      focus: "Custom homes, extensions and renovations",
+    },
+    website: "https://adamhobilldesign.com.au",
+    instagram: "https://www.instagram.com/adamhobilldesign/",
+    linkedin: "https://www.linkedin.com/in/adam-hobill-a8191b3/",
+    galleryUrl: "https://adamhobilldesign.com.au",
+    work: [
+      {
+        title: "Griffith",
+        suburb: "Griffith",
+        type: "New home and pool",
+        image: "/partners/adam-hobill-design/griffith.jpg",
+      },
+      {
+        title: "Turner",
+        suburb: "Turner",
+        type: "New home",
+        image: "/partners/adam-hobill-design/turner.jpg",
+      },
+      {
+        title: "Red Hill",
+        suburb: "Red Hill",
+        type: "New home",
+        image: "/partners/adam-hobill-design/red-hill.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "atria-designs",
     kind: "architect",
     draft: true,
