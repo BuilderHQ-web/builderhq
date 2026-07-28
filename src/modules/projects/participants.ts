@@ -560,6 +560,63 @@ export async function getBySlugForViewer(
   return ok({ project, access, sharedBy });
 }
 
+/**
+ * Every seat across a runner's projects in ONE query — the practice
+ * dashboard's client column. Active seats only (invited + joined);
+ * `expired` derived the same way listParticipants does it.
+ */
+export async function listParticipantsForRunner(runnerId: string): Promise<
+  Array<{
+    participantId: string;
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    email: string;
+    name: string | null;
+    joinedUserName: string | null;
+    role: ParticipantRole;
+    status: "invited" | "joined";
+    invitedAt: Date;
+    joinedAt: Date | null;
+    expired: boolean;
+  }>
+> {
+  const rows = await db
+    .select({
+      participant: projectParticipants,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      joinedUserName: users.name,
+    })
+    .from(projectParticipants)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, projectParticipants.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .leftJoin(users, eq(users.id, projectParticipants.userId))
+    .where(inArray(projectParticipants.status, ["invited", "joined"]))
+    .orderBy(desc(projectParticipants.invitedAt));
+
+  return rows.map((r) => ({
+    participantId: r.participant.id,
+    projectId: r.participant.projectId,
+    projectSlug: r.projectSlug,
+    projectTitle: r.projectTitle,
+    email: r.participant.email,
+    name: r.participant.name,
+    joinedUserName: r.joinedUserName,
+    role: r.participant.role,
+    status: r.participant.status as "invited" | "joined",
+    invitedAt: r.participant.invitedAt,
+    joinedAt: r.participant.joinedAt,
+    expired: isInviteExpired(r.participant),
+  }));
+}
+
 /** Projects shared WITH a user (their joined seats), for the dashboard
  *  "Shared with you" shelf. Carries who shared it for the badge. */
 export async function listProjectsSharedWithMe(userId: string): Promise<

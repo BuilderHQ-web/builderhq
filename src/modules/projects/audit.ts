@@ -12,12 +12,13 @@
  */
 
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
 import {
+  projects,
   projectAuditEvents,
   type ProjectAuditEventRow,
 } from "./schema";
@@ -68,4 +69,41 @@ export async function listProjectEvents(
     .where(eq(projectAuditEvents.projectId, projectId))
     .orderBy(desc(projectAuditEvents.createdAt))
     .limit(limit);
+}
+
+/**
+ * The practice-wide record: newest events across EVERY project the
+ * runner owns, with project context for the feed rows. Powers the
+ * dashboard's "The record" section.
+ */
+export async function listEventsForRunner(
+  runnerId: string,
+  limit = 12,
+): Promise<
+  Array<
+    ProjectAuditEventRow & { projectSlug: string; projectTitle: string }
+  >
+> {
+  const rows = await db
+    .select({
+      event: projectAuditEvents,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+    })
+    .from(projectAuditEvents)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, projectAuditEvents.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .orderBy(desc(projectAuditEvents.createdAt))
+    .limit(limit);
+  return rows.map((r) => ({
+    ...r.event,
+    projectSlug: r.projectSlug,
+    projectTitle: r.projectTitle,
+  }));
 }

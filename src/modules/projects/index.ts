@@ -87,6 +87,7 @@ export {
   getProjectAccess,
   getBySlugForViewer,
   listProjectsSharedWithMe,
+  listParticipantsForRunner,
   PARTICIPANT_ROLE_LABEL,
   PARTICIPANT_INVITE_VALIDITY_DAYS,
 } from "./participants";
@@ -101,6 +102,10 @@ export { dispatchParticipantInvite, dispatchParticipantJoined } from "./dispatch
 
 // The audit log — who did what on a round, recorded at the service
 // layer. Writes never throw; reads feed the record surfaces.
-export { recordProjectEvent, listProjectEvents } from "./audit";
+export {
+  recordProjectEvent,
+  listProjectEvents,
+  listEventsForRunner,
+} from "./audit";
 export type { RecordProjectEventInput } from "./audit";
 export type { ProjectAuditEventRow } from "./schema";

@@ -1709,6 +1709,63 @@ export async function revokeBuilderInvite(
 }
 
 /**
+ * Every PENDING builder invitation across a runner's projects in one
+ * query — the practice dashboard's "not answered yet" queue rows.
+ * Live rounds only; an invitation on a closed round asks for nothing.
+ */
+export async function listBuilderInvitesForRunner(runnerId: string): Promise<
+  Array<{
+    inviteId: string;
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    label: string;
+    invitedAt: Date;
+    remindedAt: Date | null;
+  }>
+> {
+  const rows = await db
+    .select({
+      inviteId: tenderBuilderInvites.id,
+      projectId: projects.id,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+      builderCompany: builderProfiles.companyName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+      remindedAt: tenderBuilderInvites.remindedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, tenderBuilderInvites.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .leftJoin(
+      builderProfiles,
+      eq(builderProfiles.userId, tenderBuilderInvites.builderUserId),
+    )
+    .where(eq(tenderBuilderInvites.status, "invited"))
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  return rows.map((r) => ({
+    inviteId: r.inviteId,
+    projectId: r.projectId,
+    projectSlug: r.projectSlug,
+    projectTitle: r.projectTitle,
+    label:
+      r.builderCompany ?? r.company ?? r.contactName ?? r.email ?? "A builder",
+    invitedAt: r.invitedAt,
+    remindedAt: r.remindedAt,
+  }));
+}
+
+/**
  * Resolve an invite token to its invite + project (for the redemption
  * page). Pure read — the redemption route composes this with the
  * unlock grant, keeping the unlocks module out of this one.

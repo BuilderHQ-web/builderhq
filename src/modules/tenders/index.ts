@@ -76,6 +76,7 @@ export {
   // Builder invites (every round)
   createBuilderInvite,
   listBuilderInvites,
+  listBuilderInvitesForRunner,
   listInvitesForBuilder,
   countInvitesForBuilderNav,
   listDraftTendersForBuilder,
