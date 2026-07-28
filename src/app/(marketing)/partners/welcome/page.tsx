@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowUpRight, BadgeCheck, HandCoins, Handshake } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 
+import { getPartner } from "../partners-data";
 import { WelcomeVideo } from "./welcome-video";
 
 /**
- * /partners/welcome — the welcome film sent to a partner as they join
- * the Preferred Partner register.
+ * /partners/welcome — the welcome film, sent to a partner once their
+ * profile has been approved and published.
  *
- * Deliberately not a YouTube embed. The film is 9:16 and a third-party
- * player would pillarbox it in black, stamp its own mark on the corner
- * and offer somebody else's video at the end. Self-hosted, the page is
- * ours end to end and the partner never leaves builderhq.com.au.
+ * Self-hosted rather than embedded. The film is 9:16, and a third-party
+ * player would pillarbox it in black, stamp its own mark in the corner
+ * and offer somebody else's video at the end.
  *
- * `?name=` personalises the greeting, so the link in each onboarding
- * email can address the partner directly. Absent or unreadable, the
- * page falls back to a clean unnamed welcome.
+ * One page serves every partner. `?p=<slug>` resolves the partner from
+ * the register, which sets the name above the greeting and points the
+ * button at their own profile, so an onboarding email only ever needs
+ * to change one query string. `?name=` optionally overrides the
+ * greeting where a first name reads warmer than a practice name.
  *
- * noindex: this is sent, not found.
+ * noindex: this page is sent, not found.
  */
 
 export const metadata: Metadata = {
@@ -36,153 +40,150 @@ function cleanName(raw: string | undefined): string | null {
   return safe.charAt(0).toUpperCase() + safe.slice(1);
 }
 
-const STEPS = [
+const NEXT = [
   {
-    n: "01",
-    title: "Your profile",
-    body: "We write it, you review it. Nothing goes live until you have read every line and told us it is right.",
+    Icon: BadgeCheck,
+    title: "Your profile is live",
+    body: "Approved by you, published by us.",
   },
   {
-    n: "02",
-    title: "Your introductions",
-    body: "When an owner's project suits your work, we make the introduction personally, with the context attached.",
+    Icon: Handshake,
+    title: "Introductions",
+    body: "Made personally, with your project context attached.",
   },
   {
-    n: "03",
-    title: "The relationship is yours",
-    body: "No commission, no referral fee, no cut of anything you win. We step back once you have been introduced.",
+    Icon: HandCoins,
+    title: "No commission",
+    body: "No referral fee, no cut. The relationship is yours.",
   },
 ];
 
 export default async function PartnerWelcomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ name?: string }>;
+  searchParams: Promise<{ p?: string; name?: string }>;
 }) {
-  const { name } = await searchParams;
+  const { p, name } = await searchParams;
+  const partner = p ? getPartner(p) : undefined;
   const first = cleanName(name);
+
+  // Draft profiles are not on the public route yet, so point at the
+  // private preview instead of a 404.
+  const profileHref = partner
+    ? partner.draft
+      ? `/partners/preview/${partner.slug}`
+      : `/partners/${partner.slug}`
+    : "/partners";
+
+  const kicker = partner?.name ?? "Preferred Partner Network";
 
   return (
     <div className="lp-light">
-      {/* Canvas — the calm cream the rest of the site sits on. */}
+      {/* Canvas — the calm cream the rest of the site sits on, warmed
+          a little at the crown so the page feels lit from above. */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={{ background: "#f4f1ea" }}>
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(0,170,158,0.10), transparent 62%)",
+              "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(224,186,132,0.30), transparent 60%)",
           }}
         />
         <div
-          className="absolute inset-0 opacity-50"
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 45% at 50% 8%, rgba(0,170,158,0.09), transparent 65%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-40"
           style={{
             backgroundImage:
               "linear-gradient(rgba(20,40,60,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(20,40,60,0.05) 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-            maskImage: "radial-gradient(ellipse 90% 70% at 50% 20%, black, transparent 85%)",
-            WebkitMaskImage: "radial-gradient(ellipse 90% 70% at 50% 20%, black, transparent 85%)",
+            backgroundSize: "72px 72px",
+            maskImage: "radial-gradient(ellipse 90% 65% at 50% 15%, black, transparent 82%)",
+            WebkitMaskImage: "radial-gradient(ellipse 90% 65% at 50% 15%, black, transparent 82%)",
           }}
         />
       </div>
 
-      {/* Brand only. No navigation: this page has one job. */}
-      <header className="relative z-10 flex items-center justify-between px-5 md:px-10 pt-8">
-        <Logo height={24} tone="dark" />
-        <span className="hidden sm:inline-flex items-center h-8 rounded-full border border-border-subtle bg-white/70 px-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-dim backdrop-blur">
-          Preferred Partner Network
-        </span>
+      <header className="relative z-10 flex items-center justify-center px-5 pt-9 md:pt-11">
+        <Logo height={26} tone="dark" />
       </header>
 
-      <main className="relative z-10 px-5 md:px-10 pb-24 pt-12 lg:pb-32 lg:pt-20">
-        <div className="mx-auto max-w-[1120px]">
-          {/* The film leads on a phone, the words lead on a desktop. */}
-          <div className="grid items-center gap-14 lg:grid-cols-[1fr_minmax(0,420px)] lg:gap-20">
-            <div className="order-2 lg:order-1">
-              <p
-                className="font-ui text-[11px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: "#0f8f88" }}
-              >
-                A short welcome
-              </p>
+      <main className="relative z-10 px-5 pb-24 pt-12 md:px-10 md:pt-16">
+        <div className="mx-auto max-w-[720px] text-center">
+          <p
+            className="font-ui text-[11px] font-semibold uppercase tracking-[0.24em]"
+            style={{ color: "#0f8f88" }}
+          >
+            {kicker}
+          </p>
 
-              <h1 className="mt-5 font-display text-[clamp(2.6rem,5.2vw,4.1rem)] leading-[0.98] tracking-[-0.02em] text-text">
-                {first ? (
-                  <>
-                    Welcome,
-                    <br />
-                    {first}.
-                  </>
-                ) : (
-                  <>
-                    Welcome to
-                    <br />
-                    the network.
-                  </>
-                )}
-              </h1>
+          <h1 className="mt-6 font-display text-[clamp(3.6rem,12vw,7rem)] leading-[0.92] tracking-[-0.035em] text-text">
+            {first ? `Welcome, ${first}.` : "Welcome."}
+          </h1>
 
-              <p className="mt-6 max-w-[46ch] font-ui text-[17px] leading-[1.7] text-text-subtle">
-                You are joining a small register of design and finance partners
-                that BuilderHQ puts in front of the owners and developers
-                building with us. Every partner on it was approached by us, and
-                placement cannot be bought. That is the whole point of it.
-              </p>
+          <p className="mx-auto mt-7 max-w-[48ch] font-ui text-[16.5px] leading-[1.72] text-text-subtle md:text-[17.5px]">
+            BuilderHQ is Australia’s fastest growing construction and
+            procurement platform. You are joining a small register of partners
+            we introduce owners to, and placement on it cannot be bought.
+          </p>
+        </div>
 
-              <p className="mt-4 max-w-[46ch] font-ui text-[17px] leading-[1.7] text-text-subtle">
-                Press play for the short version, then here is what happens next.
-              </p>
+        {/* The film. */}
+        <div className="mt-14 md:mt-16">
+          <WelcomeVideo />
+        </div>
 
-              <ol className="mt-10 space-y-6 border-t border-border-subtle pt-8">
-                {STEPS.map((s) => (
-                  <li key={s.n} className="flex gap-5">
-                    <span
-                      className="mt-0.5 shrink-0 font-ui text-[12px] font-semibold tabular-nums tracking-[0.08em]"
-                      style={{ color: "#0f8f88" }}
-                    >
-                      {s.n}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block font-ui text-[15px] font-semibold text-text">
-                        {s.title}
-                      </span>
-                      <span className="mt-1.5 block max-w-[44ch] text-[14.5px] leading-[1.65] text-text-muted">
-                        {s.body}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <a
-                  href="mailto:info@builderhq.com.au?subject=Preferred%20Partner%20Network"
-                  className="inline-flex h-11 items-center rounded-full px-6 font-ui text-[14px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
-                  style={{ background: "#0f8f88" }}
+        {/* What happens next, as three quiet marks rather than a list. */}
+        <div className="mx-auto mt-16 max-w-[900px] md:mt-20">
+          <div className="grid gap-10 sm:grid-cols-3 sm:gap-8">
+            {NEXT.map(({ Icon, title, body }) => (
+              <div key={title} className="flex flex-col items-center text-center">
+                <span
+                  className="flex size-[52px] items-center justify-center rounded-2xl border"
+                  style={{
+                    borderColor: "rgba(15,143,136,0.22)",
+                    background:
+                      "linear-gradient(160deg, rgba(255,255,255,0.9), rgba(0,170,158,0.07))",
+                    boxShadow: "0 10px 26px -14px rgba(24,34,44,0.35)",
+                  }}
                 >
-                  Ask us anything
-                </a>
-                <a
-                  href="https://builderhq.com.au/partners"
-                  className="font-ui text-[14px] font-medium text-text-muted underline-offset-4 transition-colors hover:text-text hover:underline"
-                >
-                  See the register
-                </a>
+                  <Icon className="size-[22px]" strokeWidth={1.5} style={{ color: "#0f8f88" }} />
+                </span>
+                <p className="mt-5 font-ui text-[15px] font-semibold tracking-[-0.01em] text-text">
+                  {title}
+                </p>
+                <p className="mt-2 max-w-[26ch] text-[13.5px] leading-[1.6] text-text-muted">
+                  {body}
+                </p>
               </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <WelcomeVideo />
-            </div>
+            ))}
           </div>
+        </div>
+
+        {/* One action. */}
+        <div className="mt-16 flex justify-center md:mt-20">
+          <Link
+            href={profileHref}
+            className="group inline-flex h-12 items-center gap-2 rounded-full px-7 font-ui text-[14.5px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
+            style={{
+              background: "#0f8f88",
+              boxShadow: "0 16px 34px -14px rgba(15,143,136,0.75)",
+            }}
+          >
+            View your profile
+            <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
         </div>
       </main>
 
-      <footer className="relative z-10 px-5 md:px-10 pb-12">
-        <div className="mx-auto max-w-[1120px] border-t border-border-subtle pt-6">
-          <p className="text-[12px] text-text-dim">
-            BuilderHQ · ABN 70 697 584 722 · info@builderhq.com.au
-          </p>
-        </div>
+      <footer className="relative z-10 px-5 pb-12 text-center">
+        <p className="text-[12px] text-text-dim">
+          BuilderHQ · info@builderhq.com.au
+        </p>
       </footer>
     </div>
   );

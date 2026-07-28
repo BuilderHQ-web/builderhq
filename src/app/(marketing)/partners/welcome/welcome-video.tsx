@@ -23,7 +23,7 @@ export function WelcomeVideo() {
   }
 
   return (
-    <figure className="relative mx-auto w-full max-w-[340px] sm:max-w-[380px]">
+    <figure className="relative mx-auto w-full max-w-[320px] sm:max-w-[350px]">
       {/* Soft ground shadow so the card sits on the cream rather than floating. */}
       <div
         aria-hidden
