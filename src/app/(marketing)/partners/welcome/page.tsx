@@ -144,10 +144,10 @@ export default async function PartnerWelcomePage({
               </h1>
 
               <p className="mt-6 max-w-[50ch] font-ui text-[16px] leading-[1.72] text-text-subtle md:text-[16.5px]">
-                BuilderHQ is Australia’s fastest growing construction and
-                procurement platform. You have been invited onto a selected
-                register of partners we introduce owners to, and placement on
-                it cannot be bought.
+                BuilderHQ is building Australia’s next generation procurement
+                network, connecting homeowners with trusted architects, builders
+                and industry professionals through a more transparent way to
+                build.
               </p>
 
               {/* Three marks, icon above the words. */}
