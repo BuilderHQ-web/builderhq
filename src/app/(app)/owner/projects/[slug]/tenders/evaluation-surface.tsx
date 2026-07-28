@@ -94,6 +94,7 @@ export function TenderEvaluationSurface({
   summaries,
   builderFacts,
   projectSlug,
+  canDecide = true,
 }: {
   tenders: TenderForOwner[];
   round: RoundEvaluation;
@@ -101,8 +102,10 @@ export function TenderEvaluationSurface({
   summaries: Record<string, TenderInstrumentSummary | null>;
   builderFacts: Record<string, BuilderFacts | null>;
   projectSlug: string;
+  /** False on a Following seat: decision controls hide entirely. */
+  canDecide?: boolean;
 }) {
-  const decisions = useDecisions();
+  const decisions = useDecisions(canDecide);
   const [openId, setOpenId] = useState<string | null>(null);
   const [awardId, setAwardId] = useState<string | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);

@@ -552,7 +552,7 @@ export function FlagCard({ flag }: { flag: EvalFlag }) {
 
 /* ── decisions ──────────────────────────────────────────────────────── */
 
-export function useDecisions() {
+export function useDecisions(enabled: boolean = true) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
 
@@ -583,6 +583,9 @@ export function useDecisions() {
   );
 
   return {
+    /** False on a Following seat — decision controls hide entirely
+     *  (hide, never disable) and the status chips stay. */
+    enabled,
     pending,
     shortlist: (id: string) =>
       run(`${id}:shortlist`, () => shortlistTenderAction(id), "Shortlisted."),
@@ -749,6 +752,8 @@ export function DecisionRow({
       </span>
     );
   }
+  // A seat without the decision sees the state, never the levers.
+  if (!decisions.enabled) return null;
   if (ev.status === "rejected") {
     return (
       <button

@@ -1035,7 +1035,14 @@ async function decisionTransition(
     .where(eq(tenders.id, tenderId));
   if (!row) return fail("not_found", "Tender not found.");
   if (row.projectOwnerId !== ownerId) {
-    return fail("forbidden", "Not your project.");
+    // Not the runner — a joined DECIDER seat carries the decision too
+    // (the architect's client shortlisting and awarding on their own
+    // build). Viewers and everyone else stay out.
+    const { getProjectAccess } = await import("@/modules/projects");
+    const access = await getProjectAccess(row.tender.projectId, ownerId);
+    if (!(access?.kind === "participant" && access.role === "decider")) {
+      return fail("forbidden", "Not your project.");
+    }
   }
   if (!allowedFrom.includes(row.tender.status)) {
     return fail(

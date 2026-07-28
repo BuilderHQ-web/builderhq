@@ -238,6 +238,7 @@ export default async function ProjectDetailPage({
             cap={project.tenderSpots ?? UNLOCK_CAP}
             builders={builders}
             tenderMode={project.tenderMode}
+            canMessage={isRunner}
           />
         </Reveal>
 

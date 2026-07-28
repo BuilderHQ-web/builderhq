@@ -157,6 +157,9 @@ export default async function ProjectTendersPage({
             summaries={summaries}
             builderFacts={builderFacts}
             projectSlug={project.slug}
+            canDecide={
+              access.kind === "runner" || access.role === "decider"
+            }
           />
         )}
       </div>

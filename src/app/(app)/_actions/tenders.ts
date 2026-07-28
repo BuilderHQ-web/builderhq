@@ -45,6 +45,7 @@ import {
   listForTenderUnchecked,
   type Document,
 } from "@/modules/documents";
+import { getProjectAccess } from "@/modules/projects";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireActor(): Promise<Result<ActorContext>> {
@@ -249,7 +250,16 @@ async function ownerDecision(
   const t = await getTenderRowForActor(a.value, tenderId, projectOwner);
   if (!t.ok) return t;
   if (!canDecideOnTender(a.value, t.value, projectOwner)) {
-    return fail("forbidden", "Not allowed.");
+    // A joined DECIDER seat decides too — the service re-verifies the
+    // seat before writing, this gate just fails fast for everyone
+    // else. Builders never hold seats (the claim refuses them).
+    const seat =
+      a.value.role !== "builder" && t.value.status !== "withdrawn"
+        ? await getProjectAccess(t.value.projectId, a.value.id)
+        : null;
+    if (!(seat?.kind === "participant" && seat.role === "decider")) {
+      return fail("forbidden", "Not allowed.");
+    }
   }
   return fn(a.value.id, tenderId);
 }
@@ -313,7 +323,14 @@ export async function listActiveTenderDocsForOwnerAction(
   const projectOwner = await getProjectOwnerForTender(tenderId);
   if (!projectOwner) return fail("not_found", "Tender not found.");
   if (a.value.role !== "admin" && projectOwner !== a.value.id) {
-    return fail("forbidden", "Not your project.");
+    // A joined seat (either role) reads tender documents — the
+    // evaluation's "what they brought" is part of what was shared.
+    const t = await getTenderRowForActor(a.value, tenderId, projectOwner);
+    if (!t.ok) return t;
+    const seat = await getProjectAccess(t.value.projectId, a.value.id);
+    if (seat?.kind !== "participant") {
+      return fail("forbidden", "Not your project.");
+    }
   }
   const docs = await listForTenderUnchecked(tenderId, { activeOnly: true });
   return ok(docs);

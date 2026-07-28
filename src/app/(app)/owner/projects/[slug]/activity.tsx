@@ -41,7 +41,11 @@ export function ProjectActivity({
   cap,
   builders,
   tenderMode = "open",
+  canMessage = true,
 }: {
+  /** False on a participant seat — the messaging panel is the
+   *  runner's, so the Message CTAs hide with it. */
+  canMessage?: boolean;
   slug: string;
   /** "/owner" or "/architect" — where this project's pages live. */
   basePath: string;
@@ -58,6 +62,7 @@ export function ProjectActivity({
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
       <StatusBanner
+        canMessage={canMessage}
         stage={stage}
         unlockCount={unlockCount}
         tenderCount={tenderCount}
@@ -80,7 +85,7 @@ export function ProjectActivity({
           </div>
           <ul className="flex flex-col gap-2.5">
             {builders.map((b) => (
-              <BuilderRow key={b.builderId} b={b} />
+              <BuilderRow key={b.builderId} b={b} canMessage={canMessage} />
             ))}
           </ul>
         </div>
@@ -115,6 +120,7 @@ function StatusBanner({
   slug,
   basePath,
   tenderMode,
+  canMessage,
 }: {
   stage: Stage;
   unlockCount: number;
@@ -123,6 +129,7 @@ function StatusBanner({
   slug: string;
   basePath: string;
   tenderMode: "open" | "private" | "hybrid";
+  canMessage: boolean;
 }) {
   const whereLabel = state ? `across ${state}` : "on the register";
   // A private round never announces itself to the network — the dispatch
@@ -142,7 +149,9 @@ function StatusBanner({
       kicker: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} on your round`,
       title: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} joined your round`,
       body: "They have your plans and contact details and can message you. Answer their questions to help them price it. Tenders usually follow within days.",
-      cta: { label: "Message builders", href: "#messaging" },
+      cta: canMessage
+        ? { label: "Message builders", href: "#messaging" }
+        : null,
     },
     tendering: {
       kicker: `${tenderCount} tender${tenderCount === 1 ? "" : "s"} in`,
@@ -188,7 +197,13 @@ function StatusBanner({
   );
 }
 
-function BuilderRow({ b }: { b: ProjectUnlockBuilder }) {
+function BuilderRow({
+  b,
+  canMessage,
+}: {
+  b: ProjectUnlockBuilder;
+  canMessage: boolean;
+}) {
   const displayName = b.companyName ?? b.name ?? "Verified builder";
   return (
     <li className="flex items-center gap-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3 sm:p-3.5">
@@ -238,13 +253,15 @@ function BuilderRow({ b }: { b: ProjectUnlockBuilder }) {
             Profile
           </Link>
         ) : null}
-        <Link
-          href="#messaging"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
-        >
-          <MessageSquare className="size-3" />
-          Message
-        </Link>
+        {canMessage ? (
+          <Link
+            href="#messaging"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+          >
+            <MessageSquare className="size-3" />
+            Message
+          </Link>
+        ) : null}
       </div>
     </li>
   );
