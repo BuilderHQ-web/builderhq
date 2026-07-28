@@ -22,6 +22,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { withInvitationsTab } from "./sidebar";
 import {
   LayoutDashboard,
   Folders,
@@ -29,6 +31,7 @@ import {
   MessageSquare,
   Settings,
   Compass,
+  Mail,
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
@@ -53,7 +56,7 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   soon?: string;
-  badgeKey?: "messages";
+  badgeKey?: "messages" | "invitations";
 }
 interface NavSection {
   title?: string;
@@ -138,6 +141,8 @@ const navByRole: Record<Role, NavSection[]> = {
 };
 
 interface MobileNavProps {
+  /** Builder invitation tallies — same contract as the sidebar's. */
+  invitations?: { total: number; pending: number };
   role: Role;
   initialUnreadMessages?: number;
 }
@@ -152,9 +157,13 @@ export function openMobileNav() {
 
 const POLL_MS = 30_000;
 
-export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
+export function MobileNav({
+  role,
+  initialUnreadMessages = 0,
+  invitations = { total: 0, pending: 0 },
+}: MobileNavProps) {
   const pathname = usePathname();
-  const sections = navByRole[role];
+  const sections = withInvitationsTab(navByRole[role], role, invitations.total);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(initialUnreadMessages);
 
@@ -205,7 +214,7 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const badges = { messages: unread };
+  const badges = { messages: unread, invitations: invitations.pending };
 
   return (
     <>

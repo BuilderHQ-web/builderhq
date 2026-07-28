@@ -62,7 +62,34 @@ export default async function BuilderInvitePage({
       />
     );
   }
-  const { invite, project } = r.value;
+  const { invite, project, inviterName } = r.value;
+
+  const TYPE_LABEL: Record<string, string> = {
+    single_dwelling: "Single dwelling",
+    multi_dwelling: "Multi dwelling",
+    renovation: "Renovation",
+    extension: "Extension",
+  };
+  const BUDGET_LABEL: Record<string, string> = {
+    under_500k: "Under $500k",
+    "500k_1m": "$500k to $1m",
+    "1m_1_5m": "$1m to $1.5m",
+    "1_5m_2m": "$1.5m to $2m",
+    "2m_3m": "$2m to $3m",
+    "3m_5m": "$3m to $5m",
+    over_5m: "Over $5m",
+  };
+  // Preview-tier facts — what an open marketplace card would show.
+  const facts = [
+    TYPE_LABEL[project.type] ?? null,
+    project.suburb
+      ? `${project.suburb}${project.state ? `, ${project.state}` : ""}`
+      : (project.state ?? null),
+    project.budgetBand ? (BUDGET_LABEL[project.budgetBand] ?? null) : null,
+    inviterName ? `Invited by ${inviterName}` : null,
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
 
   if (invite.status === "revoked" || invite.status === "declined") {
     return (
@@ -86,6 +113,7 @@ export default async function BuilderInvitePage({
         icon={<Mail className="size-5" />}
         eyebrow="Tender invitation"
         title={project.title}
+        meta={facts}
         body={
           invite.contactName
             ? `${invite.contactName}, you have been invited to price this project on BuilderHQ. Invited builders take part at no cost. Sign in, or create a builder account with this email to get started.`
@@ -182,6 +210,7 @@ export default async function BuilderInvitePage({
         icon={<Mail className="size-5" />}
         eyebrow="Tender invitation"
         title={project.title}
+        meta={facts}
         body="You have been invited to price this project. Accepting takes one of the round's tender spots and opens the full project to you, at no cost. The drawings, specifications and requirements are ready once you are in."
         actions={
           <Link
@@ -232,12 +261,15 @@ function InviteCard({
   icon,
   eyebrow,
   title,
+  meta,
   body,
   actions,
 }: {
   icon: React.ReactNode;
   eyebrow: string;
   title: string;
+  /** Quiet facts line under the title (type, locality, budget). */
+  meta?: string;
   body: string;
   actions?: React.ReactNode;
 }) {
@@ -256,6 +288,12 @@ function InviteCard({
           <h1 className="mt-1 font-display uppercase tracking-[-0.012em] text-[28px] leading-[1.05] text-text">
             {title}
           </h1>
+
+          {meta ? (
+            <p className="mt-2.5 text-[11px] tracking-[0.06em] uppercase text-text-dim font-ui font-medium">
+              {meta}
+            </p>
+          ) : null}
 
           <p className="mt-3 text-[13.5px] leading-[1.65] text-text-muted">
             {body}

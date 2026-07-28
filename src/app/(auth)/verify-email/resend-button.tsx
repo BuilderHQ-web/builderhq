@@ -13,7 +13,14 @@ const initialState: ResendActionState = {};
  * Click to re-send the verification email. Throttled server-side to
  * one send per 60s — UI reflects with a "Just sent" message after.
  */
-export function ResendButton({ email }: { email: string }) {
+export function ResendButton({
+  email,
+  next = "",
+}: {
+  email: string;
+  /** Continuation path re-threaded into the fresh verification link. */
+  next?: string;
+}) {
   const [state, formAction] = useActionState(resendVerificationAction, initialState);
   const [isPending, startTransition] = useTransition();
 
@@ -23,6 +30,7 @@ export function ResendButton({ email }: { email: string }) {
       className="w-full flex flex-col gap-2"
     >
       <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="next" value={next} />
       <button
         type="submit"
         disabled={isPending}

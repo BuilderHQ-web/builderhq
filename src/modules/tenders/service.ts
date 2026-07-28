@@ -12,7 +12,8 @@
 
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -1313,7 +1314,19 @@ export async function listResponsesForProjectTenders(
  * Unredeemed only: once joined, the project lives in their unlocked
  * list and the invite has done its job.
  */
-export async function listInvitesForBuilder(builderUserId: string): Promise<
+export async function listInvitesForBuilder(
+  builderUserId: string,
+  opts: {
+    /**
+     * The builder's account email. Off-platform invitations are
+     * addressed to a mailbox and carry no builderUserId until they are
+     * redeemed — matching by email means a freshly signed-up invited
+     * builder sees their invitation without having clicked the link's
+     * accept step yet.
+     */
+    email?: string | null;
+  } = {},
+): Promise<
   Array<{
     inviteId: string;
     inviteToken: string;
@@ -1355,7 +1368,12 @@ export async function listInvitesForBuilder(builderUserId: string): Promise<
     )
     .where(
       and(
-        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        opts.email
+          ? or(
+              eq(tenderBuilderInvites.builderUserId, builderUserId),
+              sql`lower(${tenderBuilderInvites.email}) = ${opts.email.toLowerCase()}`,
+            )!
+          : eq(tenderBuilderInvites.builderUserId, builderUserId),
         eq(tenderBuilderInvites.status, "invited"),
         isNull(unlocks.id),
         isNull(projects.deletedAt),
@@ -1372,6 +1390,34 @@ export async function listInvitesForBuilder(builderUserId: string): Promise<
     inviterName: r.practiceName ?? r.inviterName ?? "A project runner",
     invitedAt: r.invitedAt,
   }));
+}
+
+/**
+ * Nav-level invitation tallies for a builder. `total` counts every
+ * invitation ever addressed to this account (any status, matched by
+ * userId or email) — the Invitations tab exists once a builder has
+ * ever been invited. `pending` mirrors listInvitesForBuilder's
+ * actionable set and drives the badge.
+ */
+export async function countInvitesForBuilderNav(
+  builderUserId: string,
+  email?: string | null,
+): Promise<{ total: number; pending: number }> {
+  const addressedToMe = email
+    ? or(
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        sql`lower(${tenderBuilderInvites.email}) = ${email.toLowerCase()}`,
+      )!
+    : eq(tenderBuilderInvites.builderUserId, builderUserId);
+
+  const [[totalRow], pendingRows] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(tenderBuilderInvites)
+      .where(addressedToMe),
+    listInvitesForBuilder(builderUserId, { email }),
+  ]);
+  return { total: totalRow?.n ?? 0, pending: pendingRows.length };
 }
 
 /**
@@ -1545,7 +1591,22 @@ export async function createBuilderInvite(
 export async function listBuilderInvites(
   runnerId: string,
   projectId: string,
-): Promise<Result<Array<TenderBuilderInviteRow & { builderName: string | null }>>> {
+): Promise<
+  Result<
+    Array<
+      TenderBuilderInviteRow & {
+        builderName: string | null;
+        /**
+         * True when a JOINED builder's business verification is still
+         * in progress (profile not yet approved). Invited builders get
+         * provisional access on the runner's vouching — the runner
+         * sees an amber mark, not a blocked builder.
+         */
+        verificationPending: boolean;
+      }
+    >
+  >
+> {
   const [project] = await db
     .select({ ownerId: projects.ownerId })
     .from(projects)
@@ -1559,6 +1620,7 @@ export async function listBuilderInvites(
       invite: tenderBuilderInvites,
       builderCompany: builderProfiles.companyName,
       builderTrading: builderProfiles.tradingName,
+      builderApproval: builderProfiles.approvalStatus,
     })
     .from(tenderBuilderInvites)
     .leftJoin(
@@ -1577,6 +1639,8 @@ export async function listBuilderInvites(
     rows.map((r) => ({
       ...r.invite,
       builderName: r.builderTrading ?? r.builderCompany ?? null,
+      verificationPending:
+        r.invite.status === "joined" && r.builderApproval !== "approved",
     })),
   );
 }
@@ -1623,9 +1687,24 @@ export async function revokeBuilderInvite(
 export async function getBuilderInviteByToken(token: string): Promise<
   Result<{
     invite: TenderBuilderInviteRow;
-    project: { id: string; slug: string; title: string; status: string };
+    project: {
+      id: string;
+      slug: string;
+      title: string;
+      status: string;
+      /** Preview-tier facts for the landing card — the same fields an
+       *  open marketplace card shows, so the invitation reads as a
+       *  real project, not a mystery link. Never the address. */
+      type: string;
+      suburb: string | null;
+      state: string | null;
+      budgetBand: string | null;
+    };
+    /** Who extended it — practice name preferred. */
+    inviterName: string | null;
   }>
 > {
+  const inviterUsers = alias(users, "inviter_users");
   const [row] = await db
     .select({
       invite: tenderBuilderInvites,
@@ -1633,9 +1712,23 @@ export async function getBuilderInviteByToken(token: string): Promise<
       projectSlug: projects.slug,
       projectTitle: projects.title,
       projectStatus: projects.status,
+      projectType: projects.type,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      projectBudgetBand: projects.budgetBand,
+      inviterName: inviterUsers.name,
+      inviterPractice: architectProfiles.practiceName,
     })
     .from(tenderBuilderInvites)
     .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    .innerJoin(
+      inviterUsers,
+      eq(inviterUsers.id, tenderBuilderInvites.invitedBy),
+    )
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
     .where(eq(tenderBuilderInvites.inviteToken, token))
     .limit(1);
   if (!row) return fail("not_found", "This invitation link is not valid.");
@@ -1646,7 +1739,12 @@ export async function getBuilderInviteByToken(token: string): Promise<
       slug: row.projectSlug,
       title: row.projectTitle,
       status: row.projectStatus,
+      type: row.projectType,
+      suburb: row.projectSuburb,
+      state: row.projectState,
+      budgetBand: row.projectBudgetBand,
     },
+    inviterName: row.inviterPractice ?? row.inviterName ?? null,
   });
 }
 

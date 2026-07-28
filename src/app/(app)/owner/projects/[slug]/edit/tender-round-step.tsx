@@ -44,7 +44,12 @@ import type { Project, UpdateProjectInput } from "@/modules/projects";
 import type { TenderBuilderInviteRow } from "@/modules/tenders";
 import type { DirectoryBuilder } from "@/modules/profiles";
 
-type InviteRow = TenderBuilderInviteRow & { builderName: string | null };
+type InviteRow = TenderBuilderInviteRow & {
+  builderName: string | null;
+  /** Joined builder whose business verification is still in progress —
+   *  provisional access on the runner's vouching, marked amber. */
+  verificationPending: boolean;
+};
 type TenderMode = NonNullable<Project["tenderMode"]>;
 
 /** The two modes offered. "hybrid" survives only as a legacy enum
@@ -427,6 +432,14 @@ function InviteRowItem({
           <p className="text-[11px] text-text-dim truncate">{detail}</p>
         ) : null}
       </div>
+      {invite.verificationPending ? (
+        <span
+          title="This builder joined on your invitation while BuilderHQ verifies their business details (ABN, licence). Their tender carries the same declarations as everyone else's."
+          className="text-[10.5px] font-ui font-semibold uppercase tracking-[0.08em] px-2 py-1 rounded-full border shrink-0 border-[rgba(201,148,34,0.45)] text-[#8a6414] bg-[rgba(201,148,34,0.08)]"
+        >
+          Verification in progress
+        </span>
+      ) : null}
       <span
         className={cn(
           "text-[10.5px] font-ui font-semibold uppercase tracking-[0.08em] px-2 py-1 rounded-full border shrink-0",

@@ -51,7 +51,16 @@ export async function createBuilderInviteAction(
 
 export async function listBuilderInvitesAction(
   projectId: string,
-): Promise<Result<Array<TenderBuilderInviteRow & { builderName: string | null }>>> {
+): Promise<
+  Result<
+    Array<
+      TenderBuilderInviteRow & {
+        builderName: string | null;
+        verificationPending: boolean;
+      }
+    >
+  >
+> {
   const actor = await requireRunner();
   if (!actor.ok) return actor;
   return listBuilderInvites(actor.value.id, projectId);

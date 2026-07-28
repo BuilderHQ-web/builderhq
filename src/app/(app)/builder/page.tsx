@@ -152,7 +152,13 @@ export default async function BuilderDashboard() {
         }),
         [],
       ),
-      userId ? safe("builder_invites", listInvitesForBuilder(userId), []) : [],
+      userId
+        ? safe(
+            "builder_invites",
+            listInvitesForBuilder(userId, { email: session?.user?.email }),
+            [],
+          )
+        : [],
       userId ? safe("draft_tenders", listDraftTendersForBuilder(userId), []) : [],
       userId ? safe("unread_count", countUnreadForUser(userId), 0) : 0,
       userId ? safe("conversations", listForUser(userId), []) : [],
