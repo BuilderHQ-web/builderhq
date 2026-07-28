@@ -123,8 +123,8 @@ export function ProjectCard({
   const [pending, startTransition] = useTransition();
   const priceAud = unlockPriceFor(project.type);
 
-  // The round's own capacity — private/hybrid rounds set 2-5 spots;
-  // null means the platform default.
+  // The round's own capacity — open rounds set 2-5 spots; null means
+  // the platform default.
   const spots = project.tenderSpots ?? UNLOCK_CAP;
   const taken = Math.min(project.unlockedCount, spots);
   const left = Math.max(0, spots - taken);
@@ -180,17 +180,12 @@ export function ProjectCard({
           meta.band,
         )}
       >
-        {/* type chip (+ hybrid note) */}
+        {/* type chip */}
         <span className="relative inline-flex items-center gap-1.5 min-w-0">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
             <meta.Icon className="size-3 text-accent-light" />
             {meta.label}
           </span>
-          {project.tenderMode === "hybrid" ? (
-            <span className="hidden sm:inline-flex px-2 py-1 rounded-sm border border-border-subtle bg-white/55 text-[9px] tracking-[0.14em] uppercase text-text-muted">
-              Hybrid
-            </span>
-          ) : null}
         </span>
 
         {/* the figure owners lead with */}
@@ -363,5 +358,75 @@ function SpotsDots({
             : `${left} of ${spots} spot${spots === 1 ? "" : "s"} open`}
       </span>
     </span>
+  );
+}
+
+/**
+ * PrivateRoundStubCard — evidence, not an invitation.
+ *
+ * Private rounds appear on browse as a quiet docket: project type +
+ * locality + the fact that a round is running. Nothing else — no
+ * title, no link, no budget, no documents. The card exists so the
+ * marketplace shows its real depth without breaching the round.
+ */
+export function PrivateRoundStubCard({
+  stub,
+}: {
+  stub: { id: string; type: MarketplacePreview["type"]; suburb: string | null; state: string | null };
+}) {
+  const meta = TYPE_META[stub.type];
+  return (
+    <div
+      aria-label="Private tender round"
+      className={cn(
+        "relative flex flex-col lg:flex-row rounded-xl border overflow-hidden",
+        "border-border-subtle/70 border-dashed bg-surface-1/60",
+      )}
+    >
+      {/* band — same rail geometry as the live docket, muted */}
+      <div
+        className={cn(
+          "relative shrink-0 overflow-hidden bg-gradient-to-br opacity-[0.55] saturate-[0.35]",
+          "border-b lg:border-b-0 lg:border-r border-border-subtle/60",
+          "flex flex-row lg:flex-col items-center lg:items-start justify-between",
+          "gap-3 px-4 py-3 lg:py-4 lg:w-[232px] lg:min-h-[104px]",
+          meta.band,
+        )}
+      >
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+          <meta.Icon className="size-3 text-text-dim" />
+          {meta.label}
+        </span>
+        <span className="hidden lg:inline-flex items-center gap-1.5 text-[9px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
+          <Lock className="size-3" />
+          Private round
+        </span>
+      </div>
+
+      {/* body */}
+      <div className="min-w-0 flex-1 px-4 sm:px-5 py-3.5 flex flex-col justify-center gap-1">
+        <p className="inline-flex items-center gap-1.5 text-[13.5px] text-text font-ui font-medium">
+          <span className="lg:hidden inline-flex items-center gap-1"><Lock className="size-3 text-text-dim" /></span>
+          Private tender round
+          {stub.suburb ? (
+            <span className="text-text-muted font-normal">
+              · {stub.suburb}{stub.state ? `, ${stub.state}` : ""}
+            </span>
+          ) : stub.state ? (
+            <span className="text-text-muted font-normal">· {stub.state}</span>
+          ) : null}
+        </p>
+        <p className="text-[12px] text-text-muted leading-relaxed">
+          Running by invitation. The brief, documents and address are not published.
+        </p>
+      </div>
+
+      {/* state rail */}
+      <div className="hidden lg:flex items-center px-5 border-l border-border-subtle/60">
+        <span className="text-[11px] tracking-[0.08em] uppercase text-text-dim font-ui whitespace-nowrap">
+          By invitation
+        </span>
+      </div>
+    </div>
   );
 }

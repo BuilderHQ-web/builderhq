@@ -150,12 +150,15 @@ export const existingAgeBandEnum = pgEnum("existing_age_band", [
 ]);
 
 /**
- * How the tender round is run.
- *   open    — discoverable in the marketplace; network builders unlock.
- *   private — invisible to the marketplace; only builders the runner
- *             invited (on- or off-platform) can access and quote.
- *   hybrid  — the runner's invited builders take spots AND the project
- *             is discoverable so the network can fill the rest.
+ * How the tender round is run. Invitations exist on EVERY round — the
+ * mode only decides marketplace visibility.
+ *   open    — discoverable in the marketplace (2-5 network spots), and
+ *             the runner can still invite builders they trust.
+ *   private — the marketplace shows only an anonymous stub (type +
+ *             locality); the invite list IS the round, and one invited
+ *             builder is a valid round.
+ *   hybrid  — RETIRED (2026-07). Kept in the enum for legacy rows,
+ *             which read and behave as open everywhere.
  */
 export const tenderModeEnum = pgEnum("tender_mode", [
   "open",

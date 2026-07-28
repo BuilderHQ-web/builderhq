@@ -1,6 +1,6 @@
 /**
  * BuilderTenderInvitationEmail — to a builder hand-picked by a
- * project runner (architect or owner) for a private or hybrid tender
+ * project runner (architect or owner) for a tender
  * round. Two audiences share the template:
  *
  *   on-platform  — an approved BuilderHQ builder; the link signs them

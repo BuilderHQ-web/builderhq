@@ -5,6 +5,7 @@ import { Compass, Filter, X } from "lucide-react";
 import { auth } from "@/modules/auth";
 import {
   listForMarketplace,
+  listPrivateRoundStubs,
   type MarketplacePreview,
 } from "@/modules/projects";
 import {
@@ -14,7 +15,7 @@ import {
   countMySaved,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
-import { ProjectCard } from "@/components/builder/project-card";
+import { ProjectCard, PrivateRoundStubCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { EmptyState } from "@/components/app/empty-state";
 import { Reveal } from "@/components/app/reveal";
@@ -60,7 +61,10 @@ export default async function BrowsePage({
   if (!session?.user) redirect("/login?next=/builder/browse");
 
   const filters = parseFilters(params);
-  const projects = await listForMarketplace(filters);
+  const [projects, privateStubs] = await Promise.all([
+    listForMarketplace(filters),
+    listPrivateRoundStubs(filters),
+  ]);
 
   const userId = session.user.id!;
   const [unlockedIds, savedIds, unlockedCount, savedCount, fbaStatus] =
@@ -74,6 +78,10 @@ export default async function BrowsePage({
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
+
+  // A builder who already holds a spot on a private round sees it in
+  // full under Unlocked — the anonymous stub would be a duplicate.
+  const stubs = privateStubs.filter((s) => !unlockedSet.has(s.id));
 
   const activeFilterCount =
     [filters.q, filters.type, filters.state, filters.postcode, filters.budgets?.[0]].filter(
@@ -95,6 +103,9 @@ export default async function BrowsePage({
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
               {projects.length} project{projects.length === 1 ? "" : "s"} live across Australia.
+              {stubs.length > 0
+                ? ` ${stubs.length} more running privately.`
+                : ""}
               {activeFilterCount > 0 ? ` ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} applied.` : ""}
             </p>
           </div>
@@ -134,6 +145,30 @@ export default async function BrowsePage({
             ))}
           </div>
         )}
+
+        {/* Private rounds — visible as market depth, nothing more.
+            Stub cards carry type + locality only and never link. */}
+        {stubs.length > 0 ? (
+          <div className="mt-10">
+            <div className="flex items-baseline justify-between gap-4 border-t border-border-subtle/70 pt-6">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-text-muted font-ui font-semibold">
+                Also on BuilderHQ, by invitation
+              </h2>
+              <p className="text-[12px] text-text-dim">
+                {stubs.length} private round{stubs.length === 1 ? "" : "s"} in progress
+              </p>
+            </div>
+            <div className="mt-4 flex flex-col gap-2.5">
+              {stubs.map((s) => (
+                <PrivateRoundStubCard key={s.id} stub={s} />
+              ))}
+            </div>
+            <p className="mt-3 text-[12px] text-text-dim">
+              Owners and architects can run rounds visible only to the builders they invite.
+              If you have been invited to one, the invitation email is your way in.
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -1301,7 +1301,7 @@ export async function listResponsesForProjectTenders(
 }
 
 /**
- * Pending private/hybrid-round invitations addressed to an on-platform
+ * Pending round invitations addressed to an on-platform
  * builder — the dashboard's "you have been asked to price this" rows.
  * Unredeemed only: once joined, the project lives in their unlocked
  * list and the invite has done its job.
@@ -1405,7 +1405,7 @@ export async function listDraftTendersForBuilder(builderId: string): Promise<
   return rows;
 }
 
-// ── builder invites (private / hybrid rounds) ────────────────────────────
+// ── builder invites (every round) ────────────────────────────
 
 export interface CreateBuilderInviteInput {
   /** On-platform pick from the directory. */
@@ -1417,7 +1417,10 @@ export interface CreateBuilderInviteInput {
 }
 
 /**
- * Hand-pick a builder for a private or hybrid round. The runner (the
+ * Hand-pick a builder for a round. Invitations exist on EVERY round:
+ * on a private round the invite list IS the round; on an open round
+ * invited builders join free alongside the network spots (which is
+ * all "hybrid" ever was — the mode is retired). The runner (the
  * project's ownerId — owner or architect) is the only one who can
  * invite. On-platform picks reference a user; off-platform invites
  * carry the details the runner typed. Every invite mints a single-use
@@ -1449,12 +1452,6 @@ export async function createBuilderInvite(
     .limit(1);
   if (!project) return fail("not_found", "Project not found.");
   if (project.ownerId !== runnerId) return fail("forbidden", "Not your project.");
-  if (project.tenderMode === "open") {
-    return fail(
-      "validation",
-      "Builder invitations apply to private and hybrid rounds.",
-    );
-  }
 
   const onPlatform = !!input.builderUserId;
   if (onPlatform) {

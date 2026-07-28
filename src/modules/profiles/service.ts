@@ -368,7 +368,7 @@ export interface DirectoryBuilder {
 
 /**
  * Approved builders, public identity only — powers the "invite from
- * the directory" picker on private/hybrid rounds. No contact details.
+ * the directory" picker on any round. No contact details.
  */
 export async function listApprovedBuildersPublic(): Promise<DirectoryBuilder[]> {
   const rows = await db

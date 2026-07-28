@@ -87,7 +87,8 @@ const STATUS_LABEL: Record<Project["status"], string> = {
 const MODE_LABEL: Record<Project["tenderMode"], string> = {
   open: "Open",
   private: "Private",
-  hybrid: "Hybrid",
+  // Legacy rows only — hybrid is retired and behaves as open.
+  hybrid: "Open",
 };
 
 function Row({ project: p, quotes }: { project: Project; quotes: number }) {

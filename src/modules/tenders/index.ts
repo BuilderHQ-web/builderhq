@@ -72,7 +72,7 @@ export {
   listResponsesForTender,
   listResponsesForProjectTenders,
   saveTenderResponses,
-  // Builder invites (private/hybrid rounds)
+  // Builder invites (every round)
   createBuilderInvite,
   listBuilderInvites,
   listInvitesForBuilder,

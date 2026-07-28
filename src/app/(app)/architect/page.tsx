@@ -68,7 +68,7 @@ const STEPS = [
   {
     icon: Users,
     title: "Choose how it tenders",
-    line: "Open, private or hybrid, 2 to 5 builders. Invite your client whenever you like.",
+    line: "Open to the network or private to your builders, with invitations on every round. Invite your client whenever you like.",
   },
   {
     icon: ClipboardCheck,
@@ -408,7 +408,8 @@ const STATUS_LABEL: Record<Project["status"], string> = {
 const MODE_LABEL: Record<Project["tenderMode"], string> = {
   open: "Open",
   private: "Private",
-  hybrid: "Hybrid",
+  // Legacy rows only — hybrid is retired and behaves as open.
+  hybrid: "Open",
 };
 
 /** The tender file — the architect's desk, the one toned panel. */

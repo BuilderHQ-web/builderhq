@@ -34,6 +34,7 @@ export type {
   PublishabilityReport,
   MarketplacePreview,
   MarketplaceFilters,
+  PrivateRoundStub,
 } from "./types";
 
 // Pricing — single source of truth for per-type unlock cost (AUD).
@@ -56,6 +57,7 @@ export {
   softDelete,
   // Marketplace
   listForMarketplace,
+  listPrivateRoundStubs,
   getMarketplacePreview,
   getFullForUnlockedBuilder,
   listByIds,

@@ -32,6 +32,7 @@ import type {
   CreateProjectInput,
   MarketplaceFilters,
   MarketplacePreview,
+  PrivateRoundStub,
   Project,
   PublishabilityReport,
   UpdateProjectInput,
@@ -476,6 +477,44 @@ export async function listForMarketplace(
     .offset(filters.offset ?? 0);
 
   return attachMarketplaceCounts(rows);
+}
+
+/**
+ * Private rounds as marketplace stubs — see `PrivateRoundStub`.
+ *
+ * Filter behaviour is deliberately narrower than the open listing:
+ * stubs match only on fields the stub itself reveals (type, state).
+ * Any finer-grained filter (title search, postcode, budget) returns
+ * no stubs at all — otherwise the filter bar becomes a probe for
+ * details the round chose not to publish.
+ */
+export async function listPrivateRoundStubs(
+  filters: Pick<MarketplaceFilters, "q" | "type" | "state" | "postcode" | "budgets"> = {},
+): Promise<PrivateRoundStub[]> {
+  if (filters.q?.trim()) return [];
+  if (filters.postcode) return [];
+  if (filters.budgets && filters.budgets.length > 0) return [];
+
+  const conds = [
+    inArray(projects.status, ["published", "tendering"]),
+    isNull(projects.deletedAt),
+    eq(projects.tenderMode, "private"),
+  ];
+  if (filters.type) conds.push(eq(projects.type, filters.type));
+  if (filters.state) conds.push(eq(projects.state, filters.state));
+
+  return db
+    .select({
+      id: projects.id,
+      type: projects.type,
+      suburb: projects.suburb,
+      state: projects.state,
+      publishedAt: projects.publishedAt,
+    })
+    .from(projects)
+    .where(and(...conds))
+    .orderBy(desc(projects.publishedAt))
+    .limit(12);
 }
 
 /** Fetch a single preview by slug (used by the builder detail page). */

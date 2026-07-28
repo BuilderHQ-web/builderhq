@@ -3,24 +3,25 @@
 /**
  * Wizard step 4 — the tender round.
  *
- * Who gets to price this project, and how many spots exist. Three
- * modes (open / private / hybrid), a 2-5 spot selector, and — for
- * private and hybrid rounds — the invitation manager: pick approved
- * builders from the BuilderHQ directory or invite a builder the
- * runner already works with by email. Invited builders join free via
- * a single-use link; open spots stay paid unlocks.
+ * One question: who can see this round. Open (visible to the
+ * network, 2–5 spots) or Private (only builders the runner invites;
+ * a single invite is a perfectly valid round). Invitations are
+ * available on EVERY round — inviting a builder you trust and
+ * leaving the remaining spots open to the network is just an open
+ * round with invites, which is why "hybrid" no longer exists as a
+ * concept.
  *
- * Mode and spots ride the wizard's autosave pipeline (setField) and
- * lock once the project is live (service enforces). Invitations are
- * independent of publish state: runners can add builders to a live
- * round, which is exactly when they need to.
+ * Spots apply to open rounds only; a private round's capacity is its
+ * invite list. Mode and spots ride the wizard's autosave pipeline
+ * (setField) and lock once the project is live (service enforces).
+ * Invitations are independent of publish state: runners can add
+ * builders to a live round, which is exactly when they need to.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe2,
   Lock,
-  Combine,
   Check,
   Link2,
   Loader2,
@@ -46,8 +47,11 @@ import type { DirectoryBuilder } from "@/modules/profiles";
 type InviteRow = TenderBuilderInviteRow & { builderName: string | null };
 type TenderMode = NonNullable<Project["tenderMode"]>;
 
+/** The two modes offered. "hybrid" survives only as a legacy enum
+ *  value (Postgres cannot drop it); it is never offered and reads as
+ *  open everywhere. */
 const MODES: Array<{
-  id: TenderMode;
+  id: Extract<TenderMode, "open" | "private">;
   title: string;
   sub: string;
   icon: React.ReactNode;
@@ -55,38 +59,27 @@ const MODES: Array<{
   {
     id: "open",
     title: "Open",
-    sub: "Approved builders across the BuilderHQ network can take a spot.",
+    sub: "Visible on BuilderHQ. Verified builders can take a spot, and you can still invite builders you already trust.",
     icon: <Globe2 className="size-4" />,
   },
   {
     id: "private",
     title: "Private",
-    sub: "Only builders you invite can price it. It never appears in the marketplace.",
+    sub: "By invitation only. The round never appears in the marketplace, and one invited builder is a perfectly valid round.",
     icon: <Lock className="size-4" />,
-  },
-  {
-    id: "hybrid",
-    title: "Hybrid",
-    sub: "Your invited builders, plus open spots for the network to fill.",
-    icon: <Combine className="size-4" />,
   },
 ];
 
 /** Step-by-step expectation setting per mode — what happens next. */
-const MODE_FLOW: Record<TenderMode, string[]> = {
+const MODE_FLOW: Record<"open" | "private", string[]> = {
   open: [
-    "Your project goes live to approved builders in the network.",
+    "Your project goes live to verified builders on BuilderHQ, and any builders you invite join free.",
     "Builders take a spot and price from your documents.",
     "You compare every submission side by side.",
   ],
   private: [
     "You invite the builders you want pricing this project.",
     "Each builder joins through their own link, at no cost to them.",
-    "You compare every submission side by side.",
-  ],
-  hybrid: [
-    "You invite your builders. They join free through their own link.",
-    "Remaining spots open to approved builders in the network.",
     "You compare every submission side by side.",
   ],
 };
@@ -103,7 +96,10 @@ export function TenderRoundStep({
   ) => void;
   disabled: boolean;
 }) {
-  const mode: TenderMode = project.tenderMode ?? "open";
+  // Legacy "hybrid" rows read as open — invitations exist on every
+  // round, which is all hybrid ever was.
+  const raw: TenderMode = project.tenderMode ?? "open";
+  const mode: "open" | "private" = raw === "private" ? "private" : "open";
   const spots = project.tenderSpots ?? 3;
 
   return (
@@ -128,7 +124,7 @@ export function TenderRoundStep({
             : "Pick how builders come to this round."
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {MODES.map((m) => {
             const active = mode === m.id;
             return (
@@ -199,46 +195,49 @@ export function TenderRoundStep({
         </div>
       </StepCard>
 
-      {/* Spots */}
-      <StepCard
-        icon={<UserRound className="size-4" />}
-        title="Tender spots"
-        sub="How many builders can price this project."
-      >
-        <div className="flex items-center gap-2">
-          {[2, 3, 4, 5].map((n) => {
-            const active = spots === n;
-            return (
-              <button
-                key={n}
-                type="button"
-                disabled={disabled}
-                onClick={() => setField("tenderSpots", n)}
-                aria-pressed={active}
-                className={cn(
-                  "h-11 w-14 rounded-md border font-ui font-semibold text-[14px] transition-colors",
-                  active
-                    ? "border-border-accent bg-[rgba(0,212,200,0.07)] text-text"
-                    : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted hover:border-border-strong",
-                  disabled && "opacity-60 cursor-not-allowed",
-                )}
-              >
-                {n}
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-[11.5px] leading-[1.55] text-text-dim">
-          Three is the sweet spot for most projects: real competition without
-          wasting builders&rsquo; time. Invited builders count towards these
-          spots.
-        </p>
-      </StepCard>
-
-      {/* Invitations — private + hybrid only */}
-      {mode !== "open" ? (
-        <InvitesManager projectId={project.id} spots={spots} mode={mode} />
+      {/* Spots — open rounds only. A private round's capacity is its
+          invite list, so a spot count would be a second, conflicting
+          answer to the same question. */}
+      {mode === "open" ? (
+        <StepCard
+          icon={<UserRound className="size-4" />}
+          title="Tender spots"
+          sub="How many builders can price this project."
+        >
+          <div className="flex items-center gap-2">
+            {[2, 3, 4, 5].map((n) => {
+              const active = spots === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setField("tenderSpots", n)}
+                  aria-pressed={active}
+                  className={cn(
+                    "h-11 w-14 rounded-md border font-ui font-semibold text-[14px] transition-colors",
+                    active
+                      ? "border-border-accent bg-[rgba(0,212,200,0.07)] text-text"
+                      : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted hover:border-border-strong",
+                    disabled && "opacity-60 cursor-not-allowed",
+                  )}
+                >
+                  {n}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11.5px] leading-[1.55] text-text-dim">
+            Three is the sweet spot for most projects: real competition
+            without wasting builders&rsquo; time. Builders you invite count
+            towards these spots.
+          </p>
+        </StepCard>
       ) : null}
+
+      {/* Invitations — every round. On an open round they sit alongside
+          the network spots; on a private round they ARE the round. */}
+      <InvitesManager projectId={project.id} spots={spots} mode={mode} />
     </div>
   );
 }
@@ -252,7 +251,7 @@ function InvitesManager({
 }: {
   projectId: string;
   spots: number;
-  mode: TenderMode;
+  mode: "open" | "private";
 }) {
   const [invites, setInvites] = useState<InviteRow[] | null>(null);
   const [panel, setPanel] = useState<"none" | "directory" | "email">("none");
@@ -278,13 +277,18 @@ function InvitesManager({
           : "These builders join free. Remaining spots open to the network."
       }
     >
-      {/* Count vs spots */}
+      {/* Count line. Private rounds have no spot count — the invite
+          list IS the round, and one builder is a valid round. */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <p className="text-[12px] text-text-muted">
           <span className="font-ui font-semibold text-text">{live.length}</span>{" "}
-          invited · {spots} spots in the round
+          {mode === "private"
+            ? live.length === 1
+              ? "builder invited · they are the round"
+              : "builders invited · they are the round"
+            : `invited · ${spots} spots in the round`}
         </p>
-        {live.length > spots ? (
+        {mode === "open" && live.length > spots ? (
           <p className="text-[11px] text-text-dim">
             Spots fill first come, first served.
           </p>

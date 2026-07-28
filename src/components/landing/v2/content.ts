@@ -401,7 +401,7 @@ export const LENS: Record<Role, LensCopy> = {
       sub: "Run structured tenders for your clients, with your builders or ours, and keep your name on the work.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["Free for practices", "Open, private or hybrid tenders", "Your name on your work"],
+      facts: ["Free for practices", "Open or private tender rounds", "Your name on your work"],
     },
     problem: {
       kicker: "The idea",

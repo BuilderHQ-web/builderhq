@@ -2,7 +2,7 @@
  * /invite/b/[token] — builder invitation redemption.
  *
  * The single-use link a project runner sends to a hand-picked builder
- * for a private or hybrid tender round. Resolves the token, walks the
+ * for a tender round. Resolves the token, walks the
  * builder through whatever stands between them and the project:
  *
  *   no session      → landing card with sign-in / create-account CTAs

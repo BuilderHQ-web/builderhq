@@ -199,8 +199,9 @@ export function ProjectDetail({
   const [unlocking, startUnlock] = useTransition();
   const [savingPending, startSave] = useTransition();
   const meta = TYPE_META[preview.type];
-  // The round's own capacity — private/hybrid rounds set 2-5 spots;
-  // null falls back to the platform default.
+  // The round's own capacity — open rounds set 2-5 spots; null falls
+  // back to the platform default. (A private round's real capacity is
+  // its invite list; spots are only a display fallback there.)
   const roundSpots = preview.tenderSpots ?? UNLOCK_CAP;
 
   // Returning from Stripe Checkout: ?unlock=success (poll until the
@@ -361,10 +362,10 @@ export function ProjectDetail({
               <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold flex-wrap">
                 {meta.icon}
                 {meta.label}
-                {preview.tenderMode === "hybrid" ? (
+                {preview.tenderMode === "private" ? (
                   <>
                     <span className="text-text-dim/60 mx-1">·</span>
-                    <span className="text-text-dim">Hybrid round</span>
+                    <span className="text-text-dim">Private round</span>
                   </>
                 ) : null}
                 <span className="text-text-dim/60 mx-1">·</span>

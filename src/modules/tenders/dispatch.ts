@@ -407,7 +407,7 @@ export async function dispatchTenderEvent(
 }
 
 /**
- * Invitation fan-out for private / hybrid rounds. Fired by
+ * Invitation fan-out for builder invites (any round mode). Fired by
  * createBuilderInvite after the row lands. Same contract as
  * dispatchTenderEvent: internally try/catch'd, never blocks or rolls
  * back the invite the runner just created.

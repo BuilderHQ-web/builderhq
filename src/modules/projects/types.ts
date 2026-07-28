@@ -42,6 +42,22 @@ export type CreateProjectInput = {
 };
 
 /**
+ * A private round, reduced to the only thing the marketplace is allowed
+ * to say about it: that it exists. Type + locality, nothing else — no
+ * title, no slug, no brief, no budget, no documents, nothing that could
+ * identify the client or the site. Rendered on browse as non-clickable
+ * evidence of market depth; the round itself is reachable only through
+ * its invitations.
+ */
+export type PrivateRoundStub = {
+  id: string;
+  type: ProjectRow["type"];
+  suburb: string | null;
+  state: ProjectRow["state"];
+  publishedAt: Date | null;
+};
+
+/**
  * What the marketplace shows BEFORE a builder unlocks. Strips the
  * private bits (exact street address, owner contact, document
  * downloads). Suburb + state + postcode are visible in preview so

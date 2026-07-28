@@ -123,9 +123,10 @@ export async function dispatchProjectPublishedEvent(
       }),
     ]);
 
-    // 2. Network fan-out (enqueues to the outbox) — open and hybrid
-    // rounds only. A PRIVATE round never announces itself to the
-    // network; its builders are invited by hand.
+    // 2. Network fan-out (enqueues to the outbox) — open rounds only
+    // (legacy hybrid rows behave as open). A PRIVATE round never
+    // announces itself to the network; its builders are invited by
+    // hand.
     if (ctx.project.tenderMode !== "private") {
       await fanOutToBuilders(ctx, builderUrl);
     }

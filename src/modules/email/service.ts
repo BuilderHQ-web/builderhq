@@ -2086,7 +2086,7 @@ export async function sendAuthSigninLinkEmail(
   return ok({ id: data.id });
 }
 
-// ── builder tender invitation (private / hybrid rounds) ─────────────────
+// ── builder tender invitation (any round) ─────────────────
 
 interface SendBuilderTenderInvitationEmailInput {
   to: string;
@@ -2100,7 +2100,7 @@ interface SendBuilderTenderInvitationEmailInput {
 
 /**
  * The formal letter of invitation a hand-picked builder receives for
- * a private or hybrid tender round. Fired by the tenders dispatch
+ * a tender round. Fired by the tenders dispatch
  * when a runner creates the invite; the same personal link the
  * runner can copy from the round step.
  */

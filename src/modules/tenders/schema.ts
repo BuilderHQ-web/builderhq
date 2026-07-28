@@ -204,7 +204,9 @@ export const builderInviteStatusEnum = pgEnum("builder_invite_status", [
 ]);
 
 /**
- * A builder hand-picked for a private or hybrid tender round. Two
+ * A builder hand-picked for a tender round — any mode. On a private
+ * round the invite list IS the round; on an open round invited
+ * builders join free alongside the network spots. Two
  * shapes share the table:
  *
  *   on-platform  — builderUserId set (picked from the directory)
