@@ -24,6 +24,12 @@ export default function robots(): MetadataRoute.Robots {
           "/onboarding",
           "/unsubscribe",
           "/partners/preview/",
+          // The partner welcome film and its assets. Sent by email, not
+          // found: no trailing slash so this covers the page itself as
+          // well as the mp4 and poster beneath it. Safe as a prefix —
+          // no partner slug begins with "welcome", so /partners and the
+          // individual profiles under it stay fully crawlable.
+          "/partners/welcome",
           "/dev/",
         ],
       },
