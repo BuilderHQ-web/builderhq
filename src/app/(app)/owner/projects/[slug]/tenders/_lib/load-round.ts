@@ -11,11 +11,16 @@ import "server-only";
  * along so surfaces can hide the controls a seat doesn't carry.
  */
 
+import { eq } from "drizzle-orm";
+
+import { db } from "@/lib/db";
 import {
   getBySlugForViewer,
   type Project,
   type ProjectAccess,
 } from "@/modules/projects";
+import { users } from "@/modules/users";
+import { architectProfiles } from "@/modules/profiles";
 import {
   listTendersForOwner,
   listResponsesForProjectTenders,
@@ -36,6 +41,13 @@ export interface LoadedRound {
   access: Exclude<ProjectAccess, null>;
   /** Set when a participant loads someone else's round — the badge. */
   sharedBy: { name: string | null; practiceName: string | null } | null;
+  /**
+   * Who ran the round — the authorship line. An architect's practice
+   * name goes on the evaluation and the report ("Prepared by Studio
+   * North Architecture with BuilderHQ"); a homeowner-run round carries
+   * the platform line alone.
+   */
+  preparedBy: { practiceName: string | null; runnerName: string | null };
   tenders: TenderForOwner[];
   analytics: TenderAnalytics;
   summaries: Record<string, TenderInstrumentSummary | null>;
@@ -62,9 +74,18 @@ export async function loadRound(
   }
   const { project, access, sharedBy } = r.value;
 
-  const [tenders, responsesByTender] = await Promise.all([
+  const [tenders, responsesByTender, [runner]] = await Promise.all([
     listTendersForOwner(project.id),
     listResponsesForProjectTenders(project.id),
+    db
+      .select({
+        runnerName: users.name,
+        practiceName: architectProfiles.practiceName,
+      })
+      .from(users)
+      .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
+      .where(eq(users.id, project.ownerId))
+      .limit(1),
   ]);
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
 
@@ -105,6 +126,10 @@ export async function loadRound(
       project,
       access,
       sharedBy,
+      preparedBy: {
+        practiceName: runner?.practiceName ?? null,
+        runnerName: runner?.runnerName ?? null,
+      },
       tenders,
       analytics,
       summaries,

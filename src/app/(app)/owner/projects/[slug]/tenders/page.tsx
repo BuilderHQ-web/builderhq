@@ -33,8 +33,16 @@ export default async function ProjectTendersPage({
     if (r.code === "not_found" || r.code === "forbidden") notFound();
     throw new Error(r.message);
   }
-  const { project, access, sharedBy, tenders, analytics, summaries, round } =
-    r.value;
+  const {
+    project,
+    access,
+    sharedBy,
+    preparedBy,
+    tenders,
+    analytics,
+    summaries,
+    round,
+  } = r.value;
   const unlockCount = await countUnlocksForProject(project.id);
   const seatLine =
     access.kind === "participant"
@@ -94,6 +102,15 @@ export default async function ProjectTendersPage({
               submission, under declaration. The analysis below is read
               entirely from what they disclosed. Nothing is estimated.
             </p>
+            {preparedBy.practiceName ? (
+              <p className="mt-2 text-[12px] tracking-[0.04em] text-text-dim">
+                Prepared by{" "}
+                <span className="text-text-muted font-medium">
+                  {preparedBy.practiceName}
+                </span>{" "}
+                with BuilderHQ
+              </p>
+            ) : null}
             {seatLine ? (
               <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-text-dim">
                 <Eye className="size-3.5 text-accent-light" />

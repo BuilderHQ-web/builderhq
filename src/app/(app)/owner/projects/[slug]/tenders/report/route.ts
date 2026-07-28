@@ -33,13 +33,16 @@ export async function GET(
 
   const r = await loadRound(session.user.id, slug);
   if (!r.ok) return new NextResponse("Not found.", { status: 404 });
-  const { project, round } = r.value;
+  const { project, round, preparedBy } = r.value;
 
   if (round.tenders.length === 0) {
     return new NextResponse("No evaluable tenders yet.", { status: 404 });
   }
 
   const pdf = await renderEvaluationReportPdf({
+    preparedByLine: preparedBy.practiceName
+      ? `Prepared by ${preparedBy.practiceName} with BuilderHQ`
+      : "Prepared with BuilderHQ",
     projectTitle: project.title,
     projectMeta: [
       TYPE_LABEL[project.type] ?? null,

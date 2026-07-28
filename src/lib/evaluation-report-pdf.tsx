@@ -84,6 +84,7 @@ const s = StyleSheet.create({
   },
   logo: { width: 92, height: 24, objectFit: "contain" },
   letterMeta: { fontSize: 7.5, color: MUTED, textAlign: "right" },
+  letterPrepared: { marginTop: 2, fontSize: 7.2, color: MUTED },
   thickRule: { marginTop: 8, height: 2, backgroundColor: INK },
   hairRule: { marginTop: 2, height: 0.75, backgroundColor: HAIR },
 
@@ -274,7 +275,17 @@ const s = StyleSheet.create({
 
 /* ── shared furniture ───────────────────────────────────────────────── */
 
-function Letterhead({ dateLine }: { dateLine: string }) {
+function Letterhead({
+  dateLine,
+  preparedByLine,
+}: {
+  dateLine: string;
+  /** Authorship: "Prepared by Studio North Architecture with
+   *  BuilderHQ" on architect-run rounds; the platform line alone
+   *  otherwise. Carried on every page — the report is the practice's
+   *  work product. */
+  preparedByLine?: string | null;
+}) {
   return (
     <View>
       <View style={s.letterRow}>
@@ -283,6 +294,9 @@ function Letterhead({ dateLine }: { dateLine: string }) {
         <View>
           <Text style={s.letterMeta}>Tender Evaluation Report</Text>
           <Text style={s.letterMeta}>{dateLine}</Text>
+          {preparedByLine ? (
+            <Text style={s.letterPrepared}>{preparedByLine}</Text>
+          ) : null}
         </View>
       </View>
       <View style={s.thickRule} />
@@ -314,6 +328,8 @@ export interface EvaluationReportArgs {
   projectTitle: string;
   projectMeta: string;
   dateLine: string;
+  /** "Prepared by [Practice] with BuilderHQ" — null hides the line. */
+  preparedByLine?: string | null;
   round: RoundEvaluation;
 }
 
@@ -435,7 +451,7 @@ const highest = (all: TenderEvaluation[], f: (e: TenderEvaluation) => number | n
   return winners.size === all.length ? new Set<string>() : winners;
 };
 
-function ReportDoc({ projectTitle, projectMeta, dateLine, round }: EvaluationReportArgs) {
+function ReportDoc({ projectTitle, projectMeta, dateLine, preparedByLine, round }: EvaluationReportArgs) {
   const active = round.tenders
     .filter((e) => e.status !== "rejected")
     .sort((a, b) => (a.money.incGst ?? Infinity) - (b.money.incGst ?? Infinity));
@@ -460,7 +476,7 @@ function ReportDoc({ projectTitle, projectMeta, dateLine, round }: EvaluationRep
     >
       {/* ── Page 1 · the overview ─────────────────────────────────── */}
       <Page size="A4" style={s.page}>
-        <Letterhead dateLine={dateLine} />
+        <Letterhead dateLine={dateLine} preparedByLine={preparedByLine} />
         <Text style={s.kicker}>The Tender Evaluation</Text>
         <Text style={s.h1}>{projectTitle}</Text>
         <Text style={s.projectLine}>{projectMeta}</Text>
@@ -561,7 +577,7 @@ function ReportDoc({ projectTitle, projectMeta, dateLine, round }: EvaluationRep
 
       {/* ── Page 2 · side by side ─────────────────────────────────── */}
       <Page size="A4" style={s.page}>
-        <Letterhead dateLine={dateLine} />
+        <Letterhead dateLine={dateLine} preparedByLine={preparedByLine} />
         <Text style={s.kicker}>Side by side</Text>
         <Text style={[s.h1, { fontSize: 24 }]}>The decision grid</Text>
 
@@ -630,7 +646,7 @@ function ReportDoc({ projectTitle, projectMeta, dateLine, round }: EvaluationRep
 
       {/* ── Page 3 · the tenders + the agenda ─────────────────────── */}
       <Page size="A4" style={s.page}>
-        <Letterhead dateLine={dateLine} />
+        <Letterhead dateLine={dateLine} preparedByLine={preparedByLine} />
         <Text style={s.kicker}>The tenders, read closely</Text>
         {active.map((e) => {
           const high = e.flags.filter((f) => f.severity === "high");
