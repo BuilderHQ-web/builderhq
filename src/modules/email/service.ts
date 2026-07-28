@@ -52,6 +52,7 @@ import { TenderAwardedEmail } from "@/emails/TenderAwardedEmail";
 import { TenderRejectedEmail } from "@/emails/TenderRejectedEmail";
 import { TenderWithdrawnEmail } from "@/emails/TenderWithdrawnEmail";
 import { BuilderTenderInvitationEmail } from "@/emails/BuilderTenderInvitationEmail";
+import { ParticipantInviteEmail } from "@/emails/ParticipantInviteEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -2139,6 +2140,70 @@ export async function sendBuilderTenderInvitationEmail(
   logger.info(
     { event: "email.builder_tender_invitation.sent", to: input.to, resendId: data.id },
     "builder_tender_invitation email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── participant (project sharing) invitation ─────────────────────────────
+
+interface SendParticipantInviteEmailInput {
+  to: string;
+  recipientFirstName: string | null;
+  inviterName: string;
+  projectTitle: string;
+  projectLocation: string | null;
+  /** Warm label: "Following" | "Deciding". */
+  roleLabel: string;
+  /** One sentence describing the seat's powers, already composed. */
+  roleLine: string;
+  claimUrl: string;
+  /** "12 August 2026". */
+  expiresOn: string;
+}
+
+/**
+ * The letter a runner's invitee receives when a project is shared with
+ * them — flagship case: an architect bringing their client into the
+ * tender file. Fired by the projects dispatch when a seat is created
+ * or an invitation is re-sent.
+ */
+export async function sendParticipantInviteEmail(
+  input: SendParticipantInviteEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.inviterName} has shared ${input.projectTitle} with you`;
+  const props = {
+    recipientFirstName: input.recipientFirstName,
+    inviterName: input.inviterName,
+    projectTitle: input.projectTitle,
+    projectLocation: input.projectLocation,
+    roleLabel: input.roleLabel,
+    roleLine: input.roleLine,
+    claimUrl: input.claimUrl,
+    expiresOn: input.expiresOn,
+  };
+  const [html, text] = await Promise.all([
+    render(ParticipantInviteEmail(props)),
+    render(ParticipantInviteEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "participant-invitation" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.participant_invite.failed", to: input.to, code: error.name, message: error.message },
+      "participant_invite email send failed",
+    );
+    return fail("external_error", "Couldn't send the invitation email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.participant_invite.sent", to: input.to, resendId: data.id },
+    "participant_invite email sent",
   );
   return ok({ id: data.id });
 }

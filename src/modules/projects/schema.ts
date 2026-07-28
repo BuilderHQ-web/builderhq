@@ -178,6 +178,20 @@ export const participantStatusEnum = pgEnum("participant_status", [
   "revoked",
 ]);
 
+/**
+ * What a participant's seat lets them do. Two roles, deliberately few:
+ *   viewer  — sees the project and the evaluation (worn as "Following")
+ *   decider — a viewer who can also shortlist, decline and award
+ *             (worn as "Deciding")
+ * Neither role edits the project or manages the round — that stays
+ * with the runner (ownerId). Code keeps the cold names; the UI wears
+ * the warm labels.
+ */
+export const participantRoleEnum = pgEnum("participant_role", [
+  "viewer",
+  "decider",
+]);
+
 // ── table ────────────────────────────────────────────────────────────────
 
 export const projects = pgTable(
@@ -345,6 +359,9 @@ export const projectParticipants = pgTable(
     userId: uuid().references(() => users.id, { onDelete: "set null" }),
 
     status: participantStatusEnum().notNull().default("invited"),
+
+    /** What the seat lets them do — see `participantRoleEnum`. */
+    role: participantRoleEnum().notNull().default("viewer"),
 
     /** Single-use redemption token carried by the invite link. */
     inviteToken: text("invite_token").notNull(),

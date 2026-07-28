@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { projectsBase } from "@/lib/dashboard-route";
@@ -33,8 +33,13 @@ export default async function ProjectTendersPage({
     if (r.code === "not_found" || r.code === "forbidden") notFound();
     throw new Error(r.message);
   }
-  const { project, tenders, analytics, summaries, round } = r.value;
+  const { project, access, sharedBy, tenders, analytics, summaries, round } =
+    r.value;
   const unlockCount = await countUnlocksForProject(project.id);
+  const seatLine =
+    access.kind === "participant"
+      ? `Shared with you by ${sharedBy?.practiceName ?? sharedBy?.name ?? "the project runner"}. You hold a ${access.role === "decider" ? "Deciding" : "Following"} seat on this round.`
+      : null;
 
   // Identity + compliance facts for "About the builders" — ABN,
   // licences, web presence, straight from the verified profiles.
@@ -89,6 +94,12 @@ export default async function ProjectTendersPage({
               submission, under declaration. The analysis below is read
               entirely from what they disclosed. Nothing is estimated.
             </p>
+            {seatLine ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-text-dim">
+                <Eye className="size-3.5 text-accent-light" />
+                {seatLine}
+              </p>
+            ) : null}
           </div>
         </div>
 

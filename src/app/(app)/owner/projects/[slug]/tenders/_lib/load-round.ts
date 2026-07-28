@@ -4,11 +4,18 @@ import "server-only";
  * Shared loader for the evaluation surface and the Evaluation Report
  * PDF route: one place that turns (userId, slug) into the project,
  * the tenders, the instrument summaries and the computed round.
- * Ownership is enforced by the slug lookup; role gating stays with
- * the callers.
+ *
+ * Access follows the seat, not just ownership: the runner loads their
+ * round, and a joined participant (the architect's client, a family
+ * member with a seat) loads the same round read-only. `access` rides
+ * along so surfaces can hide the controls a seat doesn't carry.
  */
 
-import { getBySlugForOwner, type Project } from "@/modules/projects";
+import {
+  getBySlugForViewer,
+  type Project,
+  type ProjectAccess,
+} from "@/modules/projects";
 import {
   listTendersForOwner,
   listResponsesForProjectTenders,
@@ -26,6 +33,9 @@ import {
 
 export interface LoadedRound {
   project: Project;
+  access: Exclude<ProjectAccess, null>;
+  /** Set when a participant loads someone else's round — the badge. */
+  sharedBy: { name: string | null; practiceName: string | null } | null;
   tenders: TenderForOwner[];
   analytics: TenderAnalytics;
   summaries: Record<string, TenderInstrumentSummary | null>;
@@ -39,7 +49,7 @@ export async function loadRound(
   | { ok: true; value: LoadedRound }
   | { ok: false; code: "not_found" | "forbidden" | "internal"; message: string }
 > {
-  const r = await getBySlugForOwner(userId, slug);
+  const r = await getBySlugForViewer(userId, slug);
   if (!r.ok) {
     return {
       ok: false,
@@ -50,7 +60,7 @@ export async function loadRound(
       message: r.error.message,
     };
   }
-  const project = r.value;
+  const { project, access, sharedBy } = r.value;
 
   const [tenders, responsesByTender] = await Promise.all([
     listTendersForOwner(project.id),
@@ -93,6 +103,8 @@ export async function loadRound(
     ok: true,
     value: {
       project,
+      access,
+      sharedBy,
       tenders,
       analytics,
       summaries,

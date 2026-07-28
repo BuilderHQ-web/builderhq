@@ -5,6 +5,7 @@ import {
   MapPin,
   DollarSign,
   Calendar,
+  Eye,
   FileText,
   ArrowUpRight,
   Home,
@@ -15,8 +16,12 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
-import { getBySlugForOwner, type Project } from "@/modules/projects";
-import { listForProject } from "@/modules/documents";
+import {
+  getBySlugForViewer,
+  PARTICIPANT_ROLE_LABEL,
+  type Project,
+} from "@/modules/projects";
+import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
 import { listForUserOnProject } from "@/modules/messaging";
 import { listUnlocksForProject, UNLOCK_CAP } from "@/modules/unlocks";
@@ -25,6 +30,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
 import { ProjectMessagingPanel } from "@/components/app/messaging/project-thread";
 import { ProjectActivity } from "./activity";
+import { ParticipantsPanel } from "./participants-panel";
 import { projectsBase } from "@/lib/dashboard-route";
 
 export async function generateMetadata({
@@ -133,25 +139,31 @@ export default async function ProjectDetailPage({
 
   const base = projectsBase(session.user.role);
 
-  const r = await getBySlugForOwner(session.user.id!, slug);
+  const r = await getBySlugForViewer(session.user.id!, slug);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
     throw new Error(r.error.message);
   }
-  const project = r.value;
+  const { project, access, sharedBy } = r.value;
+  const isRunner = access.kind === "runner";
+  const sharedByName = sharedBy
+    ? (sharedBy.practiceName ?? sharedBy.name ?? "the project runner")
+    : null;
 
-  // Drafts always go to the wizard.
-  if (project.status === "draft") {
+  // Drafts always go to the wizard — for the runner. A participant's
+  // seat shows whatever exists, wizard included is not theirs.
+  if (project.status === "draft" && isRunner) {
     redirect(`${base}/projects/${slug}/edit`);
   }
 
   // Independent reads — fan out in parallel. `builders` is the unlock
   // list (≤ UNLOCK_CAP), which drives the "who's interested" panel; one
-  // conversation per unlocked builder powers the inline messaging panel.
+  // conversation per unlocked builder powers the inline messaging panel
+  // (runner only — a seat does not carry the runner's conversations).
   const [docs, tenderCount, conversations, builders] = await Promise.all([
-    listForProject(session.user.id!, project.id),
+    listActiveForProjectUnchecked(project.id),
     countTendersForProject(project.id),
-    listForUserOnProject(session.user.id!, project.id),
+    isRunner ? listForUserOnProject(session.user.id!, project.id) : Promise.resolve([]),
     listUnlocksForProject(project.id),
   ]);
   // Inline the unread tally here — totalUnread() lives in a "use client"
@@ -192,13 +204,23 @@ export default async function ProjectDetailPage({
               </p>
             ) : null}
           </div>
-          <Link
-            href={`${base}/projects/${project.slug}/edit`}
-            className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
-          >
-            <Pencil className="size-3.5" />
-            <span className="hidden sm:inline">Edit</span>
-          </Link>
+          {isRunner ? (
+            <Link
+              href={`${base}/projects/${project.slug}/edit`}
+              className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
+            >
+              <Pencil className="size-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </Link>
+          ) : (
+            <span className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-border-subtle bg-surface-1 text-[11px] text-text-muted">
+              <Eye className="size-3.5 text-accent-light" />
+              <span>
+                Shared by <span className="text-text font-medium">{sharedByName}</span>
+                <span className="text-text-dim"> · {PARTICIPANT_ROLE_LABEL[access.role]}</span>
+              </span>
+            </span>
+          )}
         </div>
 
         {/* Activity — the owner's "what's happening / who's interested /
@@ -338,13 +360,15 @@ export default async function ProjectDetailPage({
                   ) : null}
                 </ul>
               )}
-              <Link
-                href={`${base}/projects/${project.slug}/edit`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
-              >
-                Manage documents
-                <ArrowUpRight className="size-3" />
-              </Link>
+              {isRunner ? (
+                <Link
+                  href={`${base}/projects/${project.slug}/edit`}
+                  className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
+                >
+                  Manage documents
+                  <ArrowUpRight className="size-3" />
+                </Link>
+              ) : null}
             </Card>
             </Reveal>
 
@@ -370,6 +394,15 @@ export default async function ProjectDetailPage({
               </Link>
             </Card>
             </Reveal>
+
+            {/* Sharing — the runner hands seats to the people who
+                should watch (or help decide) without running the
+                round. Flagship case: the architect's client. */}
+            {isRunner ? (
+              <Reveal immediate delay={0.21}>
+                <ParticipantsPanel projectId={project.id} />
+              </Reveal>
+            ) : null}
 
             <Reveal immediate delay={0.24}>
             <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
@@ -401,9 +434,10 @@ export default async function ProjectDetailPage({
         </div>
 
         {/* Inline messaging — one conversation per builder who's
-              unlocked this project. The panel surfaces an empty state
-              until the first unlock; afterwards each unlocked builder
-              appears in the picker. */}
+              unlocked this project. Runner only: a viewer's seat keeps
+              them out of the threads by decree, and a decider's
+              messaging arrives with the decision powers wiring. */}
+        {isRunner ? (
         <section id="messaging" className="mt-8 scroll-mt-24">
           <Reveal immediate delay={0.30}>
             <div className="flex items-baseline justify-between gap-3 mb-3">
@@ -433,6 +467,7 @@ export default async function ProjectDetailPage({
             />
           </Reveal>
         </section>
+        ) : null}
       </div>
     </div>
   );

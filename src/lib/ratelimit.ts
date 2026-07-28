@@ -101,6 +101,9 @@ export const limiters = {
    *  fires a platform-branded email to an address the runner typed,
    *  so this stays tight. */
   builderInvite: make("builder_invite", 10, 600),
+  /** Participant seats (project sharing) — per runner. Same email
+   *  exposure as builder invites, same posture. */
+  participantInvite: make("participant_invite", 10, 600),
   /** Plan AI auto-fill (Claude PDF extraction) — per user. Each call is
    *  a costly model invocation, so this is kept deliberately tight. */
   extractPlans: make("extract_plans", 8, 300),

@@ -72,3 +72,28 @@ export {
   canRead,
 } from "./policies";
 export type { ActorContext } from "./policies";
+
+// Participants — the seat a runner hands to someone who should see
+// the round without running it (flagship case: architect → client).
+export {
+  inviteParticipant,
+  listParticipants,
+  revokeParticipant,
+  setParticipantRole,
+  resendParticipantInvite,
+  getParticipantInviteByToken,
+  claimParticipantInvite,
+  getProjectAccess,
+  getBySlugForViewer,
+  listProjectsSharedWithMe,
+  PARTICIPANT_ROLE_LABEL,
+  PARTICIPANT_INVITE_VALIDITY_DAYS,
+} from "./participants";
+export type {
+  ParticipantRole,
+  ProjectAccess,
+  ParticipantInviteResolution,
+  InviteParticipantInput,
+} from "./participants";
+export type { ProjectParticipantRow } from "./schema";
+export { dispatchParticipantInvite } from "./dispatch";

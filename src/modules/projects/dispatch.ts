@@ -28,16 +28,22 @@
 
 import "server-only";
 import { and, eq, ne, isNull, count, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-import { projects } from "./schema";
+import { projects, projectParticipants } from "./schema";
+import {
+  PARTICIPANT_ROLE_LABEL,
+  PARTICIPANT_INVITE_VALIDITY_DAYS,
+} from "./participants";
 import { tenderBuilderInvites } from "@/modules/tenders/schema";
 import { documents } from "@/modules/documents/schema";
 import { users } from "@/modules/users/schema";
 import {
+  architectProfiles,
   builderProfiles,
   builderServiceAreas,
   projectOwnerProfiles,
@@ -50,6 +56,7 @@ import {
 import {
   sendProjectPublishedOwnerEmail,
   sendProjectPublishedOpsEmail,
+  sendParticipantInviteEmail,
 } from "@/modules/email";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -394,3 +401,105 @@ async function fanOutToBuilders(
   );
 }
 
+
+// ── participant invitation dispatch ──────────────────────────────────────
+
+/**
+ * Send (or re-send) a participant seat's invitation email. Fired by
+ * the participants actions after `inviteParticipant` /
+ * `resendParticipantInvite`. Internally try/catch'd — a flaky send
+ * never fails the seat creation; the runner can re-send from the
+ * panel.
+ */
+export async function dispatchParticipantInvite(
+  participantId: string,
+): Promise<{ emailed: boolean }> {
+  try {
+    const inviterUsers = alias(users, "inviter_users");
+    const [row] = await db
+      .select({
+        email: projectParticipants.email,
+        name: projectParticipants.name,
+        role: projectParticipants.role,
+        status: projectParticipants.status,
+        inviteToken: projectParticipants.inviteToken,
+        invitedAt: projectParticipants.invitedAt,
+        projectTitle: projects.title,
+        projectSuburb: projects.suburb,
+        projectState: projects.state,
+        inviterName: inviterUsers.name,
+        inviterPractice: architectProfiles.practiceName,
+      })
+      .from(projectParticipants)
+      .innerJoin(projects, eq(projects.id, projectParticipants.projectId))
+      .innerJoin(
+        inviterUsers,
+        eq(inviterUsers.id, projectParticipants.invitedBy),
+      )
+      .leftJoin(
+        architectProfiles,
+        eq(architectProfiles.userId, projectParticipants.invitedBy),
+      )
+      .where(eq(projectParticipants.id, participantId))
+      .limit(1);
+    if (!row || row.status !== "invited") {
+      logger.warn(
+        { event: "participant_invite.dispatch.no_context", participantId },
+        "participant invite dispatch — no sendable context",
+      );
+      return { emailed: false };
+    }
+
+    const inviterName =
+      (row.inviterPractice ?? row.inviterName ?? "The project team").slice(0, 80);
+    const roleLabel = PARTICIPANT_ROLE_LABEL[row.role];
+    const roleLine =
+      row.role === "decider"
+        ? "Your access includes the decision: you can review every tender alongside the evaluation and take part in shortlisting and awarding."
+        : "You can follow the round as it unfolds: the project file, the tenders as they arrive, and the full evaluation.";
+    const expiresOn = new Date(
+      row.invitedAt.getTime() +
+        PARTICIPANT_INVITE_VALIDITY_DAYS * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Australia/Sydney",
+    });
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+
+    const result = await sendParticipantInviteEmail({
+      to: row.email,
+      recipientFirstName: row.name ? (row.name.split(" ")[0] ?? null) : null,
+      inviterName,
+      projectTitle: row.projectTitle.slice(0, 120),
+      projectLocation: row.projectSuburb
+        ? `${row.projectSuburb}, ${row.projectState ?? ""}`.replace(/, $/, "")
+        : null,
+      roleLabel,
+      roleLine,
+      claimUrl: `${base}/invite/p/${row.inviteToken}`,
+      expiresOn,
+    });
+
+    if (result.ok) {
+      logger.info(
+        { event: "participant_invite.dispatch.ok", participantId },
+        "participant invite dispatch completed",
+      );
+    } else {
+      logger.warn(
+        { event: "participant_invite.dispatch.email_failed", participantId },
+        "participant seat created but the email did not send",
+      );
+    }
+    return { emailed: result.ok };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "participant_invite.dispatch.failed", participantId, msg },
+      "participant invite dispatch failed — continuing",
+    );
+    return { emailed: false };
+  }
+}

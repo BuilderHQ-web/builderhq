@@ -18,6 +18,7 @@ export {
   sendTenderRejectedEmail,
   sendTenderWithdrawnEmail,
   sendBuilderTenderInvitationEmail,
+  sendParticipantInviteEmail,
   sendOwnerSignupOpsEmail,
   sendBuilderSignupOpsEmail,
   sendProjectPublishedOwnerEmail,

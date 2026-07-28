@@ -242,8 +242,8 @@ function InviteCard({
   actions?: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-bg-deep flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
-      <section className="w-full max-w-[520px] rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(10,28,44,0.55),rgba(6,18,30,0.78))] shadow-[0_18px_44px_-22px_rgba(0,212,200,0.20)] overflow-hidden">
+    <main className="min-h-screen bg-bg flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
+      <section className="w-full max-w-[520px] rounded-lg border border-border-subtle bg-surface-1 card-elev shadow-[0_18px_44px_-22px_rgba(0,166,155,0.25)] overflow-hidden">
         <div className="px-5 sm:px-7 py-7 sm:py-8">
           <span className="size-11 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light flex items-center justify-center mb-5">
             {icon}

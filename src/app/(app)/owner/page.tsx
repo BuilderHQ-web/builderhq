@@ -23,6 +23,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ClipboardCheck,
+  Eye,
   FileText,
   Folder,
   Landmark,
@@ -42,6 +43,10 @@ import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
+import {
+  listProjectsSharedWithMe,
+  PARTICIPANT_ROLE_LABEL,
+} from "@/modules/projects";
 import { UNLOCK_CAP } from "@/modules/unlocks";
 
 export const metadata = { title: "Dashboard" };
@@ -129,12 +134,13 @@ export default async function OwnerDashboard({
   const fullName = session?.user?.name ?? "Project owner";
   const firstName = fullName.split(" ")[0] || "Project owner";
 
-  const [data, unreadCount, conversations] = await Promise.all([
+  const [data, unreadCount, conversations, sharedWithMe] = await Promise.all([
     userId
       ? safe("dashboard", getOwnerDashboardData(userId, firstName), EMPTY_DATA(firstName))
       : Promise.resolve(EMPTY_DATA(firstName)),
     userId ? safe("unread", countUnreadForUser(userId), 0) : 0,
     userId ? safe("conversations", listForUser(userId), []) : [],
+    userId ? safe("shared", listProjectsSharedWithMe(userId), []) : [],
   ]);
 
   const isFirstTime = data.projects.total === 0;
@@ -324,7 +330,15 @@ export default async function OwnerDashboard({
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         <div className="mx-auto max-w-[1320px]">
           {isFirstTime ? (
-            <FirstProjectPrimer />
+            <div className="flex flex-col gap-10">
+              {/* A pure participant (the architect's client) may hold a
+                  seat before ever creating a project of their own — the
+                  seat is why they are here, so it leads. */}
+              {sharedWithMe.length > 0 ? (
+                <SharedWithYou items={sharedWithMe} />
+              ) : null}
+              <FirstProjectPrimer />
+            </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
               {/* left column — the work */}
@@ -476,6 +490,13 @@ export default async function OwnerDashboard({
                       : null}
                   </ul>
                 </section>
+
+                {/* Shared with you — seats other runners handed this
+                    account (an architect sharing the client's file).
+                    Renders only when a seat exists. */}
+                {sharedWithMe.length > 0 ? (
+                  <SharedWithYou items={sharedWithMe} />
+                ) : null}
               </div>
 
               {/* right rail — quiet, on the canvas */}
@@ -700,6 +721,57 @@ function IconChip({
  * running right from the header (the letterhead convention). Colour
  * does the wayfinding; no white box does the separating.
  */
+/** Seats other runners handed this account — the architect's client
+ *  finds their round here. Rendered in both dashboard layouts. */
+function SharedWithYou({
+  items,
+}: {
+  items: Awaited<ReturnType<typeof listProjectsSharedWithMe>>;
+}) {
+  return (
+    <section>
+      <SectionHead
+        chip={
+          <IconChip tone="teal">
+            <Eye className="size-4" />
+          </IconChip>
+        }
+        kicker="Shared with you"
+        kickerTone="teal"
+        title="Rounds you have a seat at"
+        sub="Projects run by someone else and shared with this account."
+        rule
+      />
+      <ul className="mt-5 flex flex-col gap-2">
+        {items.map((s) => (
+          <li key={s.projectId}>
+            <Link
+              href={`/owner/projects/${s.slug}`}
+              className="flex items-center gap-3.5 px-4 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev hover:border-border-strong transition-colors"
+            >
+              <span className="size-9 rounded-md border border-border-subtle bg-bg-elev text-accent-light flex items-center justify-center shrink-0">
+                <Eye className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13.5px] font-ui font-medium text-text truncate">
+                  {s.title}
+                </span>
+                <span className="block text-[11.5px] text-text-dim truncate">
+                  Shared by{" "}
+                  {s.sharedByPractice ?? s.sharedByName ?? "the project runner"}
+                  {" · "}
+                  {PARTICIPANT_ROLE_LABEL[s.role]}
+                </span>
+              </span>
+              <ArrowUpRight className="size-3.5 text-text-dim shrink-0" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function SectionHead({
   chip,
   kicker,
