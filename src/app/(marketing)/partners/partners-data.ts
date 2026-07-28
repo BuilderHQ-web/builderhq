@@ -1610,7 +1610,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "neighbourhood-architecture",
     kind: "architect",
-    draft: true,
     name: "Neighbourhood Architecture",
     monogram: "NA",
     logo: "/partners/neighbourhood-architecture/logo.png",
