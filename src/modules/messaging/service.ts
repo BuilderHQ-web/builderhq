@@ -33,7 +33,7 @@ import type {
   PostSystemMessageInput,
 } from "./types";
 
-import { projects } from "@/modules/projects/schema";
+import { projects, projectParticipants } from "@/modules/projects/schema";
 import { users } from "@/modules/users/schema";
 import { builderProfiles } from "@/modules/profiles/schema";
 
@@ -64,29 +64,21 @@ function initialsOf(displayName: string): string {
 // ── conversation creation ───────────────────────────────────────────────
 
 /**
- * Idempotent. If a conversation already exists for (projectId, builderId),
- * returns it. Otherwise creates one (sniffs ownerId off the project row).
+ * Idempotent. Conversations are keyed (projectId, builderId, owner-side
+ * person). By default the owner side is the project's runner — the
+ * round's official thread, auto-created on unlock. Pass
+ * `opts.ownerSideId` to key a PARALLEL thread instead (a Deciding seat
+ * talking to the same builder in their own two-party thread).
  *
  * Caller is responsible for permission checks; we just operate on
- * whatever ids we're handed. The unique index on (projectId, builderId)
- * + onConflictDoNothing makes this safe under concurrent unlock requests.
+ * whatever ids we're handed. The unique index + onConflictDoNothing
+ * makes this safe under concurrent requests.
  */
 export async function getOrCreateConversation(
   projectId: string,
   builderId: string,
+  opts: { ownerSideId?: string } = {},
 ): Promise<Result<ConversationRow>> {
-  const [existing] = await db
-    .select()
-    .from(conversations)
-    .where(
-      and(
-        eq(conversations.projectId, projectId),
-        eq(conversations.builderId, builderId),
-      ),
-    )
-    .limit(1);
-  if (existing) return ok(existing);
-
   const [proj] = await db
     .select({ ownerId: projects.ownerId })
     .from(projects)
@@ -94,23 +86,42 @@ export async function getOrCreateConversation(
     .limit(1);
   if (!proj) return fail("not_found", "Project not found.");
 
-  // Belt + braces — owner can't be the builder on their own project.
-  if (proj.ownerId === builderId) {
+  const ownerSideId = opts.ownerSideId ?? proj.ownerId;
+
+  // Belt + braces — nobody converses with themselves.
+  if (ownerSideId === builderId) {
     return fail(
       "conflict",
       "You can't start a conversation with yourself on your own project.",
     );
   }
 
+  const [existing] = await db
+    .select()
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.projectId, projectId),
+        eq(conversations.builderId, builderId),
+        eq(conversations.ownerId, ownerSideId),
+      ),
+    )
+    .limit(1);
+  if (existing) return ok(existing);
+
   const [row] = await db
     .insert(conversations)
     .values({
       projectId,
       builderId,
-      ownerId: proj.ownerId,
+      ownerId: ownerSideId,
     })
     .onConflictDoNothing({
-      target: [conversations.projectId, conversations.builderId],
+      target: [
+        conversations.projectId,
+        conversations.builderId,
+        conversations.ownerId,
+      ],
     })
     .returning();
   if (row) return ok(row);
@@ -123,6 +134,7 @@ export async function getOrCreateConversation(
       and(
         eq(conversations.projectId, projectId),
         eq(conversations.builderId, builderId),
+        eq(conversations.ownerId, ownerSideId),
       ),
     )
     .limit(1);
@@ -270,6 +282,7 @@ export async function listForUser(
       ownerName: ownerUsers.name,
       builderName: builderUsers.name,
       builderCompany: builderProfiles.companyName,
+      projectOwnerId: projects.ownerId,
     })
     .from(conversations)
     .innerJoin(projects, eq(projects.id, conversations.projectId))
@@ -281,8 +294,24 @@ export async function listForUser(
     )
     .where(
       or(
-        eq(conversations.ownerId, userId),
         eq(conversations.builderId, userId),
+        // Owner-side rows follow the seat: the runner always, a
+        // parallel thread only while its holder still carries a LIVE
+        // Deciding seat. A demoted or revoked seat loses the thread —
+        // the correspondence stays on record for the builder.
+        and(
+          eq(conversations.ownerId, userId),
+          or(
+            eq(projects.ownerId, userId),
+            sql`exists (
+              select 1 from ${projectParticipants} pp
+              where pp."project_id" = ${conversations.projectId}
+                and pp."user_id" = ${conversations.ownerId}
+                and pp."status" = 'joined'
+                and pp."role" = 'decider'
+            )`,
+          ),
+        ),
       ),
     )
     .orderBy(
@@ -347,6 +376,14 @@ export async function listForUser(
     const otherLastReadAt = isOwnerSide
       ? r.builderLastReadAt
       : r.ownerLastReadAt;
+    // A builder's counterpart is either the round's runner or a
+    // Deciding seat with their own thread — the label matters to the
+    // builder, who should know exactly who they are addressing.
+    const otherRole = isOwnerSide
+      ? ("builder" as const)
+      : r.ownerId === r.projectOwnerId
+        ? ("project_owner" as const)
+        : ("decider" as const);
     return {
       id: r.id,
       projectId: r.projectId,
@@ -357,7 +394,7 @@ export async function listForUser(
         name: isOwnerSide ? r.builderName : r.ownerName,
         displayName: otherDisplay,
         initials: initialsOf(otherDisplay),
-        role: isOwnerSide ? "builder" : "project_owner",
+        role: otherRole,
         lastReadAt: otherLastReadAt,
       },
       lastMessageAt: r.lastMessageAt,
@@ -495,6 +532,22 @@ export async function countUnreadForUser(userId: string): Promise<number> {
               sql`${conversations.ownerLastReadAt} is null`,
               gt(messages.createdAt, conversations.ownerLastReadAt),
             ),
+            // Same seat rule as listForUser — a lost seat must not
+            // leave a phantom unread badge the inbox can't show.
+            sql`(
+              exists (
+                select 1 from ${projects} p
+                where p."id" = ${conversations.projectId}
+                  and p."owner_id" = ${conversations.ownerId}
+              )
+              or exists (
+                select 1 from ${projectParticipants} pp
+                where pp."project_id" = ${conversations.projectId}
+                  and pp."user_id" = ${conversations.ownerId}
+                  and pp."status" = 'joined'
+                  and pp."role" = 'decider'
+              )
+            )`,
           ),
         ),
       ),

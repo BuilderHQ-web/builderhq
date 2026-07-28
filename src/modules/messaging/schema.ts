@@ -82,10 +82,14 @@ export const conversations = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // Idempotent upsert key — at most one conversation per (project, builder).
-    uniqueIndex("conversations_project_builder_unique").on(
+    // Idempotent upsert key — at most one conversation per
+    // (project, builder, owner-side person). The runner's thread is the
+    // round's official record; a Deciding seat gets their own parallel
+    // thread with each builder (migration 0038).
+    uniqueIndex("conversations_project_builder_owner_unique").on(
       t.projectId,
       t.builderId,
+      t.ownerId,
     ),
     // Builder inbox: list builder's conversations, newest activity first.
     index("conversations_builder_last_idx").on(t.builderId, t.lastMessageAt),

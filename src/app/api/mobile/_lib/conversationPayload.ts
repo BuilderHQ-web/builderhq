@@ -29,7 +29,7 @@ export interface MobileConversationListItem {
     id: string;
     displayName: string;
     initials: string;
-    role: "project_owner" | "builder";
+    role: "project_owner" | "builder" | "decider";
     lastReadAtIso: string | null;
   };
   lastMessageAtIso: string | null;

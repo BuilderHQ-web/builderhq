@@ -43,6 +43,7 @@ import {
   CheckCheck,
   ExternalLink,
   Hammer,
+  UserRound,
   Inbox,
   Loader2,
   MessageSquare,
@@ -628,6 +629,11 @@ function ThreadHeader({
       <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
         <Hammer className="size-3" />
         Builder
+      </span>
+    ) : conv.other.role === "decider" ? (
+      <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
+        <UserRound className="size-3" />
+        Client on the round
       </span>
     ) : (
       <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">

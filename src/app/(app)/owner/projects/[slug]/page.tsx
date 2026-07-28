@@ -146,6 +146,11 @@ export default async function ProjectDetailPage({
   }
   const { project, access, sharedBy } = r.value;
   const isRunner = access.kind === "runner";
+  // Messaging follows the decision: the runner and Deciding seats hold
+  // their own threads with the round's builders; Following seats stay
+  // out of the threads by decree.
+  const canMessage =
+    isRunner || (access.kind === "participant" && access.role === "decider");
   const sharedByName = sharedBy
     ? (sharedBy.practiceName ?? sharedBy.name ?? "the project runner")
     : null;
@@ -157,15 +162,31 @@ export default async function ProjectDetailPage({
   }
 
   // Independent reads — fan out in parallel. `builders` is the unlock
-  // list (≤ UNLOCK_CAP), which drives the "who's interested" panel; one
-  // conversation per unlocked builder powers the inline messaging panel
-  // (runner only — a seat does not carry the runner's conversations).
+  // list (≤ UNLOCK_CAP), which drives the "who's interested" panel and
+  // the messaging panel's builder chips. Conversations are the
+  // VIEWER'S own threads — the runner's pre-exist from unlocks, a
+  // Deciding seat's are opened from the panel.
   const [docs, tenderCount, conversations, builders] = await Promise.all([
     listActiveForProjectUnchecked(project.id),
     countTendersForProject(project.id),
-    isRunner ? listForUserOnProject(session.user.id!, project.id) : Promise.resolve([]),
+    canMessage
+      ? listForUserOnProject(session.user.id!, project.id)
+      : Promise.resolve([]),
     listUnlocksForProject(project.id),
   ]);
+
+  // Builders the viewer has no thread with yet — the panel's start
+  // affordance. Empty for runners in practice (unlock auto-creates
+  // their threads); the working set for Deciding seats.
+  const startableBuilders = canMessage
+    ? builders
+        .filter((b) => !conversations.some((c) => c.other.id === b.builderId))
+        .map((b) => ({
+          builderId: b.builderId,
+          label: b.companyName ?? b.name ?? "Builder",
+          initials: b.initials,
+        }))
+    : [];
   // Inline the unread tally here — totalUnread() lives in a "use client"
   // module, so calling it from this server component throws an RSC
   // boundary error. The math is a trivial reduce.
@@ -238,7 +259,7 @@ export default async function ProjectDetailPage({
             cap={project.tenderSpots ?? UNLOCK_CAP}
             builders={builders}
             tenderMode={project.tenderMode}
-            canMessage={isRunner}
+            canMessage={canMessage}
           />
         </Reveal>
 
@@ -434,11 +455,10 @@ export default async function ProjectDetailPage({
           </div>
         </div>
 
-        {/* Inline messaging — one conversation per builder who's
-              unlocked this project. Runner only: a viewer's seat keeps
-              them out of the threads by decree, and a decider's
-              messaging arrives with the decision powers wiring. */}
-        {isRunner ? (
+        {/* Inline messaging — the viewer's own threads with the
+              round's builders. Runner + Deciding seats; a Following
+              seat stays out of the threads by decree. */}
+        {canMessage ? (
         <section id="messaging" className="mt-8 scroll-mt-24">
           <Reveal immediate delay={0.30}>
             <div className="flex items-baseline justify-between gap-3 mb-3">
@@ -465,6 +485,7 @@ export default async function ProjectDetailPage({
               meId={session.user.id!}
               initialConversations={conversations}
               inboxHref={`${base}/messages`}
+              startable={startableBuilders}
             />
           </Reveal>
         </section>
