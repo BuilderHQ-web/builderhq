@@ -22,8 +22,18 @@ import { fail, ok, type Result } from "@/lib/result";
 import { logger } from "@/lib/logger";
 import { projects } from "@/modules/projects";
 import { documents, getObjectBytes } from "@/modules/documents";
-import { getScopeItem, SCOPE_STANDARD_VERSION } from "@/modules/scope";
+import {
+  getScopeItem,
+  SCOPE_ITEMS,
+  SCOPE_STANDARD_VERSION,
+} from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
+import {
+  toScheduleItem,
+  type ScheduleItemKind,
+  type TenderSchedule,
+  type TenderScheduleItem,
+} from "@/modules/tenders/schedule";
 
 import {
   scopeRuns,
@@ -1014,4 +1024,111 @@ export async function completeOwnerReview(
     "owner review completed and project published",
   );
   return ok({ published: true });
+}
+
+// ── the tender schedule ─────────────────────────────────────────────────
+
+/**
+ * Resolve the project's TENDER SCHEDULE — the approved pack shaped for
+ * tendering. Null when the project has no approved run (the round runs
+ * the legacy instrument). Lines:
+ *   evidenced items (ops kept)      → "evidenced", with citations
+ *   gaps the client set a figure on → "owner_allowance"
+ *   gaps the client excluded        → "owner_excluded" (context, never priced)
+ * Ordered by the Scope Standard's build order.
+ */
+export async function getProjectSchedule(
+  projectId: string,
+): Promise<TenderSchedule | null> {
+  const [run] = await db
+    .select({ id: scopeRuns.id, scopeVersion: scopeRuns.scopeVersion })
+    .from(scopeRuns)
+    .where(
+      and(eq(scopeRuns.projectId, projectId), eq(scopeRuns.status, "approved")),
+    )
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(1);
+  if (!run) return null;
+
+  const [items, resolutions, docRows] = await Promise.all([
+    db
+      .select()
+      .from(scopeRunItems)
+      .where(
+        and(
+          eq(scopeRunItems.runId, run.id),
+          ne(scopeRunItems.status, "not_expected"),
+          ne(scopeRunItems.opsStatus, "removed"),
+        ),
+      ),
+    db
+      .select()
+      .from(scopeGapResolutions)
+      .where(eq(scopeGapResolutions.runId, run.id)),
+    db
+      .select({
+        documentId: scopeRunDocuments.documentId,
+        docTitle: scopeRunDocuments.docTitle,
+        filename: documents.filename,
+      })
+      .from(scopeRunDocuments)
+      .leftJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+      .where(eq(scopeRunDocuments.runId, run.id)),
+  ]);
+
+  const nameByDoc = new Map(
+    docRows.map((d) => [d.documentId, d.docTitle ?? d.filename ?? null]),
+  );
+  const resolutionByItem = new Map(resolutions.map((r) => [r.itemId, r]));
+
+  const out: TenderScheduleItem[] = [];
+  for (const row of items) {
+    const citations = (Array.isArray(row.citations) ? row.citations : [])
+      .filter(
+        (c): c is { documentId: string; page: number; revision: string | null } =>
+          !!c &&
+          typeof c === "object" &&
+          typeof (c as { page?: unknown }).page === "number",
+      )
+      .map((c) => ({
+        documentName: nameByDoc.get(c.documentId) ?? null,
+        page: c.page,
+        revision: c.revision ?? null,
+      }));
+
+    let kind: ScheduleItemKind;
+    let ownerAmountAud: number | null = null;
+    if (row.status === "evidenced") {
+      kind = "evidenced";
+    } else {
+      // A gap on an approved, published pack always carries the
+      // client's answer; an unresolved or documents-to-come line can
+      // never survive completeOwnerReview. Skip defensively if one
+      // somehow does — a schedule must not invent a scope line.
+      const r = resolutionByItem.get(row.itemId);
+      if (!r || r.resolution === "upload_later") continue;
+      if (r.resolution === "allowance") {
+        kind = "owner_allowance";
+        ownerAmountAud = r.amountAud ?? null;
+      } else {
+        kind = "owner_excluded";
+      }
+    }
+
+    const item = toScheduleItem({
+      itemId: row.itemId,
+      kind,
+      ownerAmountAud,
+      citations,
+      note: row.note ?? null,
+    });
+    if (item) out.push(item);
+  }
+
+  const rank = new Map(SCOPE_ITEMS.map((i, n) => [i.id, n]));
+  out.sort(
+    (a, b) => (rank.get(a.itemId) ?? 9999) - (rank.get(b.itemId) ?? 9999),
+  );
+
+  return { runId: run.id, standardVersion: run.scopeVersion, items: out };
 }

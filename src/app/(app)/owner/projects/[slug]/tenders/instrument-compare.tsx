@@ -48,6 +48,12 @@ import {
   formatAnswer,
   formatAud,
 } from "@/modules/tenders/comparison";
+import {
+  tenderableItems,
+  readScheduleAnswer,
+  type TenderSchedule,
+  type ScheduleState,
+} from "@/modules/tenders/schedule";
 import type {
   TenderForOwner,
   TenderInstrumentSummary,
@@ -101,9 +107,12 @@ const SCOPE_META: Record<
 export function InstrumentCompare({
   selected,
   summaries,
+  schedule = null,
 }: {
   selected: TenderForOwner[];
   summaries: Summaries;
+  /** The client's approved pack on gate rounds — flips the scope block. */
+  schedule?: TenderSchedule | null;
 }) {
   const withData = selected.filter((t) => summaries[t.id]);
   const legacy = selected.filter((t) => !summaries[t.id]);
@@ -154,7 +163,15 @@ export function InstrumentCompare({
             lowestSelected={lowestSelected}
           />
           <RiskFlagsRow tenders={withData} summaries={summaries} />
-          <CoverageMatrix tenders={withData} summaries={summaries} />
+          {schedule ? (
+            <ScheduleAlignment
+              tenders={withData}
+              summaries={summaries}
+              schedule={schedule}
+            />
+          ) : (
+            <CoverageMatrix tenders={withData} summaries={summaries} />
+          )}
           <AnswerSections tenders={withData} summaries={summaries} />
         </div>
       </div>
@@ -555,6 +572,247 @@ function CoverageMatrix({
           <ChevronDown className="inline size-3 ml-1" />
         </button>
       ) : showAll && rows.length > 8 ? (
+        <button
+          type="button"
+          onClick={() => setShowAll(false)}
+          className="w-full py-2.5 text-[11.5px] text-text-muted hover:text-text border-t border-border-subtle/40 transition-colors"
+        >
+          Collapse to the lines that differ
+          <ChevronUp className="inline size-3 ml-1" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/* ── 3b · the schedule alignment (gate rounds) ──────────────────────── */
+
+const SCHED_META: Record<
+  ScheduleState,
+  { label: string; dot: string; cls: string }
+> = {
+  documented: {
+    label: "As documented",
+    dot: "bg-[#0a9c91]",
+    cls: "text-[#0a7d73]",
+  },
+  allowance: {
+    label: "Allowance",
+    dot: "bg-[#c99422]",
+    cls: "text-[#8a6414]",
+  },
+  excluded: {
+    label: "Excluded",
+    dot: "bg-[#c25550]",
+    cls: "text-[#a8433e]",
+  },
+};
+
+/**
+ * The item-level read only a gate round can produce: every line of the
+ * client's pack against every builder's mark, allowance figures in the
+ * cells, disagreements sorted to the top. This is the surface two
+ * builder PDFs can never give an owner.
+ */
+function ScheduleAlignment({
+  tenders,
+  summaries,
+  schedule,
+}: {
+  tenders: TenderForOwner[];
+  summaries: Summaries;
+  schedule: TenderSchedule;
+}) {
+  const [diffFirst, setDiffFirst] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+
+  const rows = useMemo(() => {
+    const marks = new Map(
+      tenders.map((t) => [
+        t.id,
+        readScheduleAnswer(summaries[t.id]!.answers["scope.schedule"]),
+      ]),
+    );
+    const all = tenderableItems(schedule).map((item) => {
+      const cells = tenders.map((t) => marks.get(t.id)![item.itemId] ?? null);
+      const differs =
+        tenders.length > 1 &&
+        new Set(cells.map((e) => e?.s ?? "∅")).size > 1;
+      return { item, cells, differs };
+    });
+    if (!diffFirst) return all;
+    return [...all.filter((r) => r.differs), ...all.filter((r) => !r.differs)];
+  }, [tenders, summaries, schedule, diffFirst]);
+
+  const differCount = rows.filter((r) => r.differs).length;
+  const visible =
+    showAll || !diffFirst ? rows : rows.slice(0, Math.max(differCount, 10));
+  const hiddenCount = rows.length - visible.length;
+
+  return (
+    <div className="border-b border-border-subtle/60">
+      <div className="px-4 sm:px-6 pt-5 pb-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            The schedule alignment
+          </p>
+          <p className="mt-1 text-[12.5px] text-text-muted max-w-[62ch]">
+            {tenders.length > 1 ? (
+              differCount > 0 ? (
+                <>
+                  Every builder answered the same {rows.length}-line tender
+                  schedule. They part ways on{" "}
+                  <span className="font-ui font-semibold text-text">
+                    {differCount} line{differCount === 1 ? "" : "s"}
+                  </span>
+                  . That is where the price difference lives.
+                </>
+              ) : (
+                "Every builder priced the same schedule the same way. The comparison is price and conditions."
+              )
+            ) : (
+              "What this price does with every line of your tender schedule."
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
+            {(Object.keys(SCHED_META) as ScheduleState[]).map((k) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-1.5 text-[10px] text-text-dim"
+              >
+                <span
+                  className={cn("size-2 rounded-full", SCHED_META[k].dot)}
+                />
+                {SCHED_META[k].label}
+              </span>
+            ))}
+          </div>
+          {tenders.length > 1 && differCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setDiffFirst((d) => !d)}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[11px] transition-colors",
+                diffFirst
+                  ? "border-border-accent bg-[rgba(0,212,200,0.06)] text-text"
+                  : "border-border-subtle text-text-muted hover:border-border-strong",
+              )}
+            >
+              <SlidersHorizontal className="size-3" />
+              Differences first
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div
+        style={colStyle(tenders.length)}
+        className="border-t border-border-subtle/40"
+      >
+        <div className="px-4 sm:px-6 py-2" />
+        {tenders.map((t) => (
+          <div
+            key={t.id}
+            className="px-4 py-2 border-l border-border-subtle/50 min-w-0"
+          >
+            <p className="text-[10.5px] font-ui font-semibold text-text-muted truncate">
+              {builderName(t)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <ul>
+        {visible.map((row, i) => (
+          <li
+            key={row.item.itemId}
+            style={colStyle(tenders.length)}
+            className={cn(
+              "border-t border-border-subtle/30",
+              row.differs
+                ? "bg-[rgba(0,212,200,0.03)]"
+                : i % 2 === 1
+                  ? "bg-[rgba(24,34,44,0.012)]"
+                  : undefined,
+            )}
+          >
+            <div className="px-4 sm:px-6 py-2 flex items-center gap-2 min-w-0">
+              {row.differs ? (
+                <span
+                  className="size-1.5 rounded-full bg-accent shrink-0"
+                  title="Builders differ on this line"
+                />
+              ) : (
+                <span className="size-1.5 shrink-0" />
+              )}
+              <span className="min-w-0">
+                <span
+                  className={cn(
+                    "block text-[12px] truncate",
+                    row.differs
+                      ? "text-text font-ui font-medium"
+                      : "text-text-muted",
+                  )}
+                >
+                  {row.item.label}
+                </span>
+                <span className="block text-[10px] text-text-dim truncate">
+                  {row.item.divisionLabel}
+                  {row.item.kind === "owner_allowance" &&
+                  row.item.ownerAmountAud !== null
+                    ? ` · your allowance ${formatAud(row.item.ownerAmountAud)}`
+                    : ""}
+                </span>
+              </span>
+            </div>
+            {row.cells.map((e, j) => (
+              <div
+                key={j}
+                className="px-4 py-2 border-l border-border-subtle/40 flex items-center min-w-0"
+              >
+                {e ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-[11px] font-ui",
+                      SCHED_META[e.s].cls,
+                      row.differs && "font-semibold",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "size-2 rounded-full",
+                        SCHED_META[e.s].dot,
+                      )}
+                    />
+                    {e.s === "allowance" && typeof e.a === "number"
+                      ? formatAud(e.a)
+                      : SCHED_META[e.s].label}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-text-dim/60">
+                    Not marked
+                  </span>
+                )}
+              </div>
+            ))}
+          </li>
+        ))}
+      </ul>
+
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="w-full py-2.5 text-[11.5px] text-text-muted hover:text-text border-t border-border-subtle/40 transition-colors"
+        >
+          {tenders.length > 1
+            ? `Show the ${hiddenCount} lines the builders agree on`
+            : `Show the remaining ${hiddenCount} lines`}
+          <ChevronDown className="inline size-3 ml-1" />
+        </button>
+      ) : showAll && rows.length > 10 ? (
         <button
           type="button"
           onClick={() => setShowAll(false)}

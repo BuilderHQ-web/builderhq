@@ -12,6 +12,7 @@ import {
 } from "@/modules/tenders";
 import { getBuilderProfile, getOwnerContactPublic } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
+import { getProjectSchedule } from "@/modules/scope-engine";
 import type { MarketplacePreview } from "@/modules/projects";
 import { TenderJourney, type TenderLetterhead } from "./journey";
 import { TenderOutcome } from "./outcome";
@@ -94,6 +95,10 @@ export default async function TenderRoute({
 
   const docs = existing ? await listForTenderUnchecked(existing.id) : [];
 
+  // The client's approved tender schedule, when the round was
+  // published through the scope gate. Null keeps the legacy deck.
+  const schedule = await getProjectSchedule(preview.id);
+
   // ── sealed: the read-only outcome ─────────────────────────────────
   if (existing && existing.status !== "draft") {
     const ownerContact =
@@ -113,6 +118,7 @@ export default async function TenderRoute({
         answers={Object.fromEntries(answers.map((a) => [a.qid, a.v]))}
         docs={docs}
         ownerContact={ownerContact}
+        schedule={schedule}
       />
     );
   }
@@ -142,6 +148,7 @@ export default async function TenderRoute({
       initialAnswers={answers}
       initialDocs={docs}
       letterhead={letterhead}
+      schedule={schedule}
     />
   );
 }

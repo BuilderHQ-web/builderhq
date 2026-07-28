@@ -407,13 +407,13 @@ const GRID_ROWS: Array<{
   },
   {
     group: "Scope and delivery",
-    label: "Trades in the price",
+    label: "Scope lines in the price",
     value: (e) => `${e.scope.included} of ${e.scope.applicable}`,
     best: (all) =>
       highest(all, (e) => (e.scope.applicable > 0 ? e.scope.included / e.scope.applicable : null)),
   },
   {
-    label: "Excluded trades",
+    label: "Excluded scope lines",
     value: (e) => String(e.scope.excluded),
     best: (all) => lowest(all, (e) => e.scope.excluded),
   },

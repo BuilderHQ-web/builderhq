@@ -69,6 +69,7 @@ import {
   InstrumentCompare,
   InstrumentComparePlaceholder,
 } from "./instrument-compare";
+import type { TenderSchedule } from "@/modules/tenders/schedule";
 
 /* ── props ──────────────────────────────────────────────────────────── */
 
@@ -95,6 +96,7 @@ export function TenderEvaluationSurface({
   builderFacts,
   projectSlug,
   canDecide = true,
+  schedule = null,
 }: {
   tenders: TenderForOwner[];
   round: RoundEvaluation;
@@ -104,6 +106,8 @@ export function TenderEvaluationSurface({
   projectSlug: string;
   /** False on a Following seat: decision controls hide entirely. */
   canDecide?: boolean;
+  /** The client's approved pack on gate rounds. */
+  schedule?: TenderSchedule | null;
 }) {
   const decisions = useDecisions(canDecide);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -252,7 +256,7 @@ export function TenderEvaluationSurface({
       )}
 
       <div id="record" className="scroll-mt-28">
-        <FullRecord tenders={tenders} summaries={summaries} />
+        <FullRecord tenders={tenders} summaries={summaries} schedule={schedule} />
       </div>
 
       {closed.length > 0 ? (
@@ -1288,7 +1292,7 @@ const GRID: GridGroup[] = [
         label: "Trades in the price",
         info: {
           title: "Trades in the price",
-          text: "How many of the trades this project needs are included in the tender price, out of all the trades that apply.",
+          text: "How many of the scope lines this project needs are included in the tender price, out of all the lines that apply.",
         },
         value: (e) => `${e.scope.included} of ${e.scope.applicable}`,
         best: highestBy((e) =>
@@ -1296,9 +1300,9 @@ const GRID: GridGroup[] = [
         ),
       },
       {
-        label: "Excluded trades",
+        label: "Excluded scope lines",
         info: {
-          title: "Excluded trades",
+          title: "Excluded scope lines",
           text: "Work this tender does not price at all. You would arrange and pay for it separately, so add it mentally to the headline number.",
         },
         value: (e) => String(e.scope.excluded),
@@ -1315,7 +1319,7 @@ const GRID: GridGroup[] = [
       {
         label: "Trades itemised by amount",
         info: {
-          title: "Itemised trades",
+          title: "Itemised lines",
           text: "Trades where the builder volunteered a dollar figure inside their price. More itemisation makes a price easier to check and compare.",
         },
         value: (e) =>
@@ -1595,6 +1599,7 @@ function GridGroupRows({
 
 const STATE_TONE: Record<string, { text: string; bg: string }> = {
   Included: { text: TONE.good.text, bg: TONE.good.bg },
+  "As documented": { text: TONE.good.text, bg: TONE.good.bg },
   Allowance: { text: TONE.warn.text, bg: TONE.warn.bg },
   Excluded: { text: TONE.risk.text, bg: TONE.risk.bg },
   "N/A": { text: "rgba(24,34,44,0.45)", bg: "rgba(24,34,44,0.04)" },
@@ -1621,7 +1626,7 @@ function Disagreements({
           Where they disagree
         </h2>
         <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
-          {round.scopeDisagreements.length} trade
+          {round.scopeDisagreements.length} scope line
           {round.scopeDisagreements.length === 1 ? " is" : "s are"} treated
           differently across these tenders. Until each builder prices the
           same scope, their totals are not the same number.
@@ -1632,7 +1637,7 @@ function Disagreements({
           <thead>
             <tr className="border-b border-border-subtle/40">
               <th className="px-5 py-2.5 text-left text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui w-[220px]">
-                Trade
+                Scope line
               </th>
               {evaluations.map((e) => (
                 <th
@@ -1687,7 +1692,7 @@ function Disagreements({
           />
           {expanded
             ? "Show fewer"
-            : `Show all ${round.scopeDisagreements.length} trades`}
+            : `Show all ${round.scopeDisagreements.length} lines`}
         </button>
       ) : null}
     </section>
@@ -2042,9 +2047,11 @@ function SingleTender({
 function FullRecord({
   tenders,
   summaries,
+  schedule = null,
 }: {
   tenders: TenderForOwner[];
   summaries: Record<string, TenderInstrumentSummary | null>;
+  schedule?: TenderSchedule | null;
 }) {
   const [open, setOpen] = useState(false);
   const comparable = tenders.filter(
@@ -2078,7 +2085,11 @@ function FullRecord({
       </button>
       {open ? (
         <div className="mt-4">
-          <InstrumentCompare selected={comparable} summaries={summaries} />
+          <InstrumentCompare
+            selected={comparable}
+            summaries={summaries}
+            schedule={schedule}
+          />
         </div>
       ) : null}
     </section>

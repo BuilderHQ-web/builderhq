@@ -35,6 +35,8 @@ import {
   type EvaluationInput,
   type RoundEvaluation,
 } from "@/modules/tenders/evaluation";
+import type { TenderSchedule } from "@/modules/tenders/schedule";
+import { getProjectSchedule } from "@/modules/scope-engine";
 
 export interface LoadedRound {
   project: Project;
@@ -52,6 +54,12 @@ export interface LoadedRound {
   analytics: TenderAnalytics;
   summaries: Record<string, TenderInstrumentSummary | null>;
   round: RoundEvaluation;
+  /**
+   * The client's approved tender schedule, when the round was
+   * published through the scope gate — the pack every tender on the
+   * round answered line by line. Null on legacy rounds.
+   */
+  schedule: TenderSchedule | null;
 }
 
 export async function loadRound(
@@ -74,7 +82,7 @@ export async function loadRound(
   }
   const { project, access, sharedBy } = r.value;
 
-  const [tenders, responsesByTender, [runner]] = await Promise.all([
+  const [tenders, responsesByTender, [runner], schedule] = await Promise.all([
     listTendersForOwner(project.id),
     listResponsesForProjectTenders(project.id),
     db
@@ -86,6 +94,7 @@ export async function loadRound(
       .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
       .where(eq(users.id, project.ownerId))
       .limit(1),
+    getProjectSchedule(project.id),
   ]);
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
 
@@ -97,6 +106,7 @@ export async function loadRound(
         ? summariseInstrument(responses, {
             totalPriceAud: t.totalPriceAud,
             projectState: project.state,
+            schedule,
           })
         : null;
   }
@@ -133,7 +143,8 @@ export async function loadRound(
       tenders,
       analytics,
       summaries,
-      round: evaluateRound(inputs),
+      round: evaluateRound(inputs, schedule),
+      schedule,
     },
   };
 }

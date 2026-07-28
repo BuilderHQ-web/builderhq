@@ -57,6 +57,8 @@ import {
   isValidAnswerShape,
   isAnswerComplete,
 } from "./instrument";
+import { tenderableItems, type TenderSchedule } from "./schedule";
+import { getProjectSchedule } from "@/modules/scope-engine";
 import {
   getOrCreateConversation,
   postTenderSubmittedSystemMessage,
@@ -841,9 +843,38 @@ export async function submit(
             .from(tenderResponses)
             .where(eq(tenderResponses.tenderId, tenderId))
         : [];
+    // Schedule rounds gate against the client's pack: completeness is
+    // judged line by line, and marks against ids the pack does not
+    // carry refuse the submit rather than printing a phantom line.
+    const schedule =
+      row.instrumentVersion != null
+        ? await getProjectSchedule(row.projectId)
+        : null;
+    if (schedule) {
+      const known = new Set(tenderableItems(schedule).map((i) => i.itemId));
+      const rawSched = checklistRows.find((r) => r.qid === "scope.schedule");
+      const v =
+        rawSched &&
+        typeof rawSched.value === "object" &&
+        rawSched.value !== null &&
+        "v" in rawSched.value
+          ? (rawSched.value as { v: unknown }).v
+          : undefined;
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        const unknown = Object.keys(v as Record<string, unknown>).filter(
+          (id) => !known.has(id),
+        );
+        if (unknown.length > 0) {
+          return fail(
+            "validation",
+            "The tender schedule has changed since some lines were marked. Reopen module 5 and review your marks.",
+          );
+        }
+      }
+    }
     const checklist =
       row.instrumentVersion != null
-        ? checklistProgress(row, checklistRows)
+        ? checklistProgress(row, checklistRows, schedule)
         : null;
 
     const readiness = computeReadiness(row, lines, checklist);
@@ -1127,13 +1158,21 @@ export async function countTendersForProject(
 export function checklistProgress(
   t: Pick<TenderRow, "instrumentVersion">,
   responses: Array<Pick<TenderResponseRow, "qid" | "value">>,
+  schedule: TenderSchedule | null = null,
 ): ChecklistProgress | null {
   if (t.instrumentVersion == null) return null;
   const answers = new Map(responses.map((r) => [r.qid, r.value]));
-  const required = requiredQuestionIds(answers, t.instrumentVersion);
+  const required = requiredQuestionIds(
+    answers,
+    t.instrumentVersion,
+    schedule !== null,
+  );
   // An answer only counts when it FULLY answers the question (every
-  // matrix row marked, every items row filled) — same definition the
-  // checklist UI uses, so client "complete" and the submit gate agree.
+  // matrix row marked, every items row filled, every schedule line of
+  // the pack answered) — same definition the deck uses, so client
+  // "complete" and the submit gate agree. Callers on the submit path
+  // MUST pass the round's schedule; informational callers may omit it
+  // and accept a lenient read on schedule rounds.
   const answered = required.filter((qid) => {
     const q = getQuestion(qid);
     if (!q) return false;
@@ -1142,7 +1181,7 @@ export function checklistProgress(
       typeof raw === "object" && raw !== null && "v" in raw
         ? (raw as { v: unknown }).v
         : raw;
-    return isAnswerComplete(q, v);
+    return isAnswerComplete(q, v, { schedule });
   }).length;
   return {
     version: t.instrumentVersion,

@@ -46,6 +46,13 @@
  */
 
 import { TRADES, type TradeId } from "./trades";
+import {
+  isScheduleAnswerShape,
+  isScheduleComplete,
+  scheduleTallies,
+  type ScheduleTallies,
+  type TenderSchedule,
+} from "./schedule";
 
 export const INSTRUMENT_VERSION = 2;
 
@@ -63,6 +70,7 @@ export type InstrumentQuestionType =
   | "items" // repeating rows, shaped by itemFields
   | "matrix" // scope coverage grid, rows from the trade list
   | "amounts" // optional per-trade dollars, captured on the grid rows
+  | "schedule" // per-item confirmation of the client's tender schedule
   | "declare" // a declaration — complete only when affirmed
   | "confirm"; // confirm facts shown on the slide — complete only when affirmed
 
@@ -129,6 +137,14 @@ export interface InstrumentQuestion {
    * now so the deck can badge them.
    */
   standing?: boolean;
+  /**
+   * Which rounds ask this question. "legacy" questions are asked only
+   * when the project has no approved tender schedule; "schedule"
+   * questions only when it does. Unset asks always. Every surface
+   * resolves presence through questionInPlay so the deck, the submit
+   * gate, the document and the comparison can never disagree.
+   */
+  audience?: "legacy" | "schedule";
   /** Required for submission. Optional questions are colour, not gaps. */
   required: boolean;
 }
@@ -778,6 +794,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         ref: "5.1",
         prompt: "For each part of the build, is it included in the price?",
         type: "matrix",
+        audience: "legacy",
         required: true,
       },
       {
@@ -787,6 +804,33 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "scope.amounts",
         prompt: "Amount in your price, by trade",
         type: "amounts",
+        audience: "legacy",
+        required: false,
+      },
+      {
+        // The schedule flip. On a round published through the scope
+        // gate, the client's approved pack replaces the generic trade
+        // grid: the builder walks the schedule division by division and
+        // states what the price does with every line. One slide per
+        // division; answers land as Record<itemId, {s, a?}>.
+        id: "scope.schedule",
+        ref: "5.1",
+        prompt: "For each line of the tender schedule, what does your price do with it?",
+        help: "Every line comes from the client's documents, read and checked before the round opened. Included as documented means priced exactly as drawn and specified.",
+        type: "schedule",
+        audience: "schedule",
+        required: true,
+      },
+      {
+        // The approved scope run the builder answered against, written
+        // by the deck beside the first mark. Pins the tender to the
+        // pack version it confirmed, so a later re-read can never
+        // silently change what a submitted price meant.
+        id: "scope.schedule_run",
+        prompt: "Schedule reference",
+        type: "text",
+        audience: "schedule",
+        inline: true,
         required: false,
       },
       {
@@ -919,7 +963,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         id: "excl.derived_confirm",
         ref: "6.1",
         prompt: "This is my exclusion schedule",
-        help: "The trades you marked excluded are listed below. Add anything the grid could not capture on the same screen, then confirm. A written exclusion schedule is your best protection against scope disputes later.",
+        help: "The lines you marked excluded are listed below. Add anything the marks could not capture on the same screen, then confirm. A written exclusion schedule is your best protection against scope disputes later.",
         type: "confirm",
         required: true,
       },
@@ -967,6 +1011,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         prompt: "Does the price contain provisional sums?",
         help: "An allowance for work that can't be priced exactly yet, e.g. site works or a retaining wall.",
         type: "bool",
+        audience: "legacy",
         required: true,
       },
       {
@@ -979,6 +1024,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
           { key: "allowance", label: "Allowance (ex GST)", type: "currency" },
         ],
         showIf: { qid: "pcps.has_ps", equals: true },
+        audience: "legacy",
         required: true,
       },
       {
@@ -987,6 +1033,7 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         prompt: "Does the price contain prime cost items?",
         help: "An allowance for a product not selected yet, e.g. appliances, tapware, tiles.",
         type: "bool",
+        audience: "legacy",
         required: true,
       },
       {
@@ -999,6 +1046,21 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
           { key: "allowance", label: "Allowance (ex GST)", type: "currency" },
         ],
         showIf: { qid: "pcps.has_pc", equals: true },
+        audience: "legacy",
+        required: true,
+      },
+      {
+        // The schedule flip. The allowance schedule is DERIVED from the
+        // builder's line-by-line marks in module 5 — client allowances
+        // carried or repriced, plus any line the builder flipped to an
+        // allowance of their own. Nothing free-form to invent; the
+        // builder reads the derived schedule and puts their name to it.
+        id: "pcps.schedule_confirm",
+        ref: "7.1",
+        prompt: "This is my allowance schedule",
+        help: "Built from your schedule answers: the client's allowances as you carried them, and every line you marked as an allowance with your figure. Change any line by returning to module 5.",
+        type: "confirm",
+        audience: "schedule",
         required: true,
       },
       {
@@ -1505,6 +1567,21 @@ export function getQuestion(qid: string): InstrumentQuestion | undefined {
 }
 
 /**
+ * Is this question asked on this round? Audience-flagged questions
+ * exist for exactly one round shape — the generic trade grid when no
+ * approved schedule exists, the schedule confirmation when one does.
+ * The single definition every surface uses.
+ */
+export function questionInPlay(
+  q: InstrumentQuestion,
+  hasSchedule: boolean,
+): boolean {
+  if (q.audience === "legacy") return !hasSchedule;
+  if (q.audience === "schedule") return hasSchedule;
+  return true;
+}
+
+/**
  * Does a gate value satisfy a showIf condition? The single definition
  * every surface uses (deck, submit gate, document, comparison), so a
  * question can never be "asked" in one place and skipped in another.
@@ -1533,10 +1610,12 @@ export function gateAllows(
 export function requiredQuestionIds(
   answers: ReadonlyMap<string, unknown>,
   version: number | null | undefined = INSTRUMENT_VERSION,
+  hasSchedule = false,
 ): string[] {
   const ids: string[] = [];
   for (const q of allQuestionsFor(version)) {
     if (!q.required) continue;
+    if (!questionInPlay(q, hasSchedule)) continue;
     if (q.showIf) {
       const gate = answers.get(q.showIf.qid);
       const gateValue =
@@ -1639,6 +1718,11 @@ export function isValidAnswerShape(
             (typeof amt === "number" && Number.isFinite(amt) && amt >= 0)),
       );
     }
+    case "schedule":
+      // Item ids can only be judged against the round's pack, which
+      // save time does not load — shape here, membership at the
+      // submit gate.
+      return isScheduleAnswerShape(v);
   }
 }
 
@@ -1648,7 +1732,11 @@ export function isValidAnswerShape(
  * "complete" banner) and the server submit gate, so the client can
  * never claim complete for a submission the server would refuse.
  */
-export function isAnswerComplete(q: InstrumentQuestion, v: unknown): boolean {
+export function isAnswerComplete(
+  q: InstrumentQuestion,
+  v: unknown,
+  ctx?: { schedule?: TenderSchedule | null },
+): boolean {
   if (v === undefined || v === null) return false;
   // Completeness implies savability: a value the save path would refuse
   // (out-of-range percent, oversized text) must never show as "done".
@@ -1700,6 +1788,14 @@ export function isAnswerComplete(q: InstrumentQuestion, v: unknown): boolean {
     case "amounts":
       // Optional colour by definition — any well-formed value counts.
       return true;
+    case "schedule":
+      // Complete only when every tenderable line of the pack is
+      // marked and every allowance carries a figure. Without the pack
+      // in hand (callers that only summarise), a well-formed value
+      // passes — the deck and the submit gate always supply it.
+      return ctx?.schedule
+        ? isScheduleComplete(ctx.schedule, v)
+        : true;
   }
 }
 
@@ -1737,11 +1833,19 @@ export interface TenderMetrics {
   ldPerWeek: number | null;
   defectsLiabilityMonths: string | null;
   alternativesCount: number;
+  /**
+   * Present on schedule rounds only: the line-by-line tallies against
+   * the client's pack. When set, `coverage` mirrors it (documented →
+   * included) so legacy readers stay truthful, and allowanceExposure
+   * is the schedule's allowance total.
+   */
+  schedule: ScheduleTallies | null;
 }
 
 /** Pure roll-up over the raw answers record (unwrapped values). */
 export function computeTenderMetrics(
   answers: Record<string, unknown>,
+  schedule?: TenderSchedule | null,
 ): TenderMetrics {
   const num = (id: string): number | null => {
     const v = answers[id];
@@ -1817,6 +1921,20 @@ export function computeTenderMetrics(
     }
   }
 
+  // Schedule rounds: coverage and exposure read from the pack marks.
+  // The tallies fold into `coverage` so every legacy reader (cover
+  // cells, risk flags, comparison chips) keeps telling the truth.
+  const tallies = schedule
+    ? scheduleTallies(schedule, answers["scope.schedule"])
+    : null;
+  if (tallies) {
+    coverage.included = tallies.documented;
+    coverage.allowance = tallies.allowance;
+    coverage.excluded = tallies.excluded;
+    coverage.notApplicable = 0;
+    coverage.unmarked = tallies.unmarked;
+  }
+
   return {
     priceExGst,
     priceIncGst,
@@ -1830,12 +1948,13 @@ export function computeTenderMetrics(
     psTotal,
     pcCount: pc.length,
     pcTotal,
-    allowanceExposure: psTotal + pcTotal,
+    allowanceExposure: tallies ? tallies.allowanceTotal : psTotal + pcTotal,
     coverage,
     itemisedCount,
     itemisedTotal,
     ldPerWeek: num("programme.ld_amount"),
     defectsLiabilityMonths: str("contract.defects_liability"),
     alternativesCount: itemsOf("commercial.alternative_items").length,
+    schedule: tallies,
   };
 }

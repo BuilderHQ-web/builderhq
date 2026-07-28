@@ -250,7 +250,7 @@ function buildSlides(
     key: "scope",
     kicker: "The quick read",
     title: "What each price covers",
-    sub: "applicable trades in the price",
+    sub: "applicable scope lines in the price",
     body: (
       <div>
         <div className="space-y-5">
@@ -264,7 +264,7 @@ function buildSlides(
                   {e.scope.included} of {e.scope.applicable}
                 </span>
                 <span className="block text-[11.5px] mt-1" style={{ color: INK.faint }}>
-                  trades in the price
+                  scope lines in the price
                   {e.scope.excluded > 0 ? ` · ${e.scope.excluded} excluded` : ""}
                 </span>
               </span>

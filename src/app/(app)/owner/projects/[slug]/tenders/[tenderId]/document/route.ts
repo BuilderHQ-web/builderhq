@@ -5,6 +5,7 @@ import { getBySlugForOwner } from "@/modules/projects";
 import { listTendersForOwner } from "@/modules/tenders";
 import { listResponsesForProjectTenders } from "@/modules/tenders";
 import { buildTenderDocument } from "@/modules/tenders/document";
+import { getProjectSchedule } from "@/modules/scope-engine";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import { renderTenderPdf } from "@/lib/tender-pdf";
@@ -52,9 +53,10 @@ export async function GET(
     answers[r.qid] = (r.value as { v: unknown }).v;
   }
 
-  const [docs, bundle] = await Promise.all([
+  const [docs, bundle, schedule] = await Promise.all([
     listForTenderUnchecked(tender.id, { activeOnly: true }),
     getBuilderProfile(tender.builderId),
+    getProjectSchedule(project.id),
   ]);
   const licence = bundle?.licences[0] ?? null;
 
@@ -82,6 +84,7 @@ export async function GET(
         ? `${licence.licenceNumber} (${licence.state})`
         : null,
     },
+    schedule,
     now: new Date(),
   });
 

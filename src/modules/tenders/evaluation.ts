@@ -29,6 +29,13 @@ import {
   type TenderMetrics,
 } from "./instrument";
 import { tradeLabel, type TradeId } from "./trades";
+import {
+  tenderableItems,
+  readScheduleAnswer,
+  deriveAllowanceRows,
+  deriveScheduleExclusions,
+  type TenderSchedule,
+} from "./schedule";
 
 type Answers = Record<string, unknown>;
 
@@ -376,9 +383,12 @@ const DEPOSIT_CAP: Record<string, number> = { VIC: 5, NSW: 10, QLD: 5 };
 
 /* ── per-tender evaluation ──────────────────────────────────────────── */
 
-export function evaluateTender(input: EvaluationInput): TenderEvaluation {
+export function evaluateTender(
+  input: EvaluationInput,
+  schedule: TenderSchedule | null = null,
+): TenderEvaluation {
   const a = input.answers;
-  const metrics = computeTenderMetrics(a);
+  const metrics = computeTenderMetrics(a, schedule);
   const rows = scopeMatrixRows();
   const matrix = (a["scope.matrix"] ?? {}) as Record<string, string>;
 
@@ -427,13 +437,19 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
       depositPct !== null && cap !== undefined && depositPct > cap,
   };
 
-  /* scope */
-  const excludedTrades = rows
-    .filter((r) => matrix[r.id] === "excluded")
-    .map((r) => tradeLabel(r.id as TradeId));
-  const allowanceTrades = rows
-    .filter((r) => matrix[r.id] === "allowance")
-    .map((r) => tradeLabel(r.id as TradeId));
+  /* scope — schedule rounds read the pack marks; legacy the trade grid */
+  const excludedTrades = schedule
+    ? deriveScheduleExclusions(schedule, a["scope.schedule"]).map(
+        (r) => r.label,
+      )
+    : rows
+        .filter((r) => matrix[r.id] === "excluded")
+        .map((r) => tradeLabel(r.id as TradeId));
+  const allowanceTrades = schedule
+    ? deriveAllowanceRows(schedule, a["scope.schedule"]).map((r) => r.label)
+    : rows
+        .filter((r) => matrix[r.id] === "allowance")
+        .map((r) => tradeLabel(r.id as TradeId));
   const extraExclusions = arr(a["scope.exclusions_list"])
     .map((row) =>
       row && typeof row === "object"
@@ -448,7 +464,9 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
         : null,
     )
     .filter((s): s is string => !!s);
-  const applicable = rows.length - metrics.coverage.notApplicable;
+  const applicable = metrics.schedule
+    ? metrics.schedule.total
+    : rows.length - metrics.coverage.notApplicable;
   const scope: ScopeRead = {
     ...metrics.coverage,
     applicable,
@@ -786,16 +804,21 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
 
   {
     // Scope coverage — how much of the build the price actually
-    // carries. Base = the coverage grid itself; written exclusions
-    // narrow it further (capped, so honest listing is never ruinous).
+    // carries. Base = the coverage marks themselves; written
+    // exclusions narrow it further (capped, so honest listing is
+    // never ruinous). Schedule rounds score line by line against the
+    // client's pack; legacy rounds against the trade grid.
     const app = Math.max(applicable, 1);
     const base = Math.round(
       ((metrics.coverage.included + metrics.coverage.allowance * 0.5) / app) *
         100,
     );
+    const unit = metrics.schedule ? "schedule line" : "applicable trade";
     const L = ledger(
       base,
-      `${metrics.coverage.included} of ${app} applicable trades in the price${
+      `${metrics.coverage.included} of ${app} ${unit}s ${
+        metrics.schedule ? "priced as documented" : "in the price"
+      }${
         metrics.coverage.allowance > 0
           ? `, plus ${metrics.coverage.allowance} as allowance${metrics.coverage.allowance === 1 ? "" : "s"} counted half`
           : ""
@@ -803,7 +826,7 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
     );
     if (metrics.coverage.excluded > 0) {
       L.note(
-        `${metrics.coverage.excluded} trade${metrics.coverage.excluded === 1 ? "" : "s"} excluded, already outside the base`,
+        `${metrics.coverage.excluded} ${unit}${metrics.coverage.excluded === 1 ? "" : "s"} excluded, already outside the base`,
       );
     }
     if (extraExclusions.length > 0) {
@@ -1333,8 +1356,11 @@ export function evaluateTender(input: EvaluationInput): TenderEvaluation {
 
 /* ── round evaluation ───────────────────────────────────────────────── */
 
-export function evaluateRound(inputs: EvaluationInput[]): RoundEvaluation {
-  const tenders = inputs.map(evaluateTender);
+export function evaluateRound(
+  inputs: EvaluationInput[],
+  schedule: TenderSchedule | null = null,
+): RoundEvaluation {
+  const tenders = inputs.map((i) => evaluateTender(i, schedule));
 
   /* spread, breakeven, price story */
   const priced = tenders.filter(
@@ -1459,22 +1485,49 @@ export function evaluateRound(inputs: EvaluationInput[]): RoundEvaluation {
     excluded: "Excluded",
     not_applicable: "N/A",
   };
-  for (const row of rows) {
-    const states = new Map<string, string>();
-    for (const t of inputs) {
-      const m = (t.answers["scope.matrix"] ?? {}) as Record<string, string>;
-      states.set(t.tenderId, m[row.id] ?? "");
+  if (schedule) {
+    // Schedule rounds disagree line by line: every builder answered
+    // the same pack, so a split state on any line is a real, precise
+    // question for the round — not a category-level shrug.
+    const SCHED_LABEL: Record<string, string> = {
+      documented: "As documented",
+      allowance: "Allowance",
+      excluded: "Excluded",
+    };
+    for (const item of tenderableItems(schedule)) {
+      const states = new Map<string, string>();
+      for (const t of inputs) {
+        const marks = readScheduleAnswer(t.answers["scope.schedule"]);
+        states.set(t.tenderId, marks[item.itemId]?.s ?? "");
+      }
+      const distinct = new Set([...states.values()].filter((s) => s));
+      if (distinct.size > 1) {
+        const rec: Record<string, string> = {};
+        for (const [id, s] of states) rec[id] = SCHED_LABEL[s] ?? "—";
+        disagreements.push({
+          trade: `${item.label} (${item.divisionLabel})`,
+          states: rec,
+        });
+      }
     }
-    const distinct = new Set(
-      [...states.values()].filter((s) => s && s !== "not_applicable"),
-    );
-    if (distinct.size > 1) {
-      const rec: Record<string, string> = {};
-      for (const [id, s] of states) rec[id] = STATE_LABEL[s] ?? "—";
-      disagreements.push({
-        trade: tradeLabel(row.id as TradeId),
-        states: rec,
-      });
+  } else {
+    for (const row of rows) {
+      const states = new Map<string, string>();
+      for (const t of inputs) {
+        const m = (t.answers["scope.matrix"] ?? {}) as Record<string, string>;
+        states.set(t.tenderId, m[row.id] ?? "");
+      }
+      const distinct = new Set(
+        [...states.values()].filter((s) => s && s !== "not_applicable"),
+      );
+      if (distinct.size > 1) {
+        const rec: Record<string, string> = {};
+        for (const [id, s] of states) rec[id] = STATE_LABEL[s] ?? "—";
+        disagreements.push({
+          trade: tradeLabel(row.id as TradeId),
+          states: rec,
+        });
+      }
     }
   }
   // Most consequential first: rows where someone excluded outright.
@@ -1495,8 +1548,9 @@ export function evaluateRound(inputs: EvaluationInput[]): RoundEvaluation {
     );
   }
   if (disagreements.length > 0) {
+    const unit = schedule ? "schedule line" : "trade";
     roundQuestions.push(
-      `${disagreements.length} trade${disagreements.length === 1 ? "" : "s"} are treated differently across the round. Confirm each builder priced the same scope before comparing numbers.`,
+      `${disagreements.length} ${unit}${disagreements.length === 1 ? " is" : "s are"} treated differently across the round. Confirm each builder priced the same scope before comparing numbers.`,
     );
   }
   const noWeather = tenders.filter((t) =>

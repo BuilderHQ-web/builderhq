@@ -13,6 +13,7 @@ export {
   resolveGap,
   requestReread,
   completeOwnerReview,
+  getProjectSchedule,
   type GapResolutionKind,
   type OwnerScopeReview,
 } from "./service";

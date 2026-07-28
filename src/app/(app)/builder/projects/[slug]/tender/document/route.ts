@@ -8,6 +8,7 @@ import {
   listResponsesForTender,
 } from "@/modules/tenders";
 import { buildTenderDocument } from "@/modules/tenders/document";
+import { getProjectSchedule } from "@/modules/scope-engine";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import type { MarketplacePreview } from "@/modules/projects";
@@ -59,9 +60,10 @@ export async function GET(
     }
   }
 
-  const [docs, bundle] = await Promise.all([
+  const [docs, bundle, schedule] = await Promise.all([
     listForTenderUnchecked(tender.id),
     getBuilderProfile(userId),
+    getProjectSchedule(preview.id),
   ]);
   const licence = bundle?.licences[0] ?? null;
 
@@ -86,6 +88,7 @@ export async function GET(
       abn: bundle?.profile.abn ?? null,
       licence: licence ? `${licence.licenceNumber} (${licence.state})` : null,
     },
+    schedule,
     now: new Date(),
   });
 

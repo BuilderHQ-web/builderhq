@@ -27,6 +27,7 @@ import {
 
 import { formatAud } from "@/modules/tenders/comparison";
 import type { Tender } from "@/modules/tenders";
+import type { TenderSchedule } from "@/modules/tenders/schedule";
 import type { Document } from "@/modules/documents";
 import type { OwnerContact } from "@/modules/profiles";
 import { withdrawTenderAction } from "@/app/(app)/_actions/tenders";
@@ -63,6 +64,7 @@ export function TenderOutcome({
   answers,
   docs,
   ownerContact,
+  schedule = null,
 }: {
   slug: string;
   projectTitle: string;
@@ -71,6 +73,7 @@ export function TenderOutcome({
   answers: Record<string, unknown>;
   docs: Document[];
   ownerContact: OwnerContact | null;
+  schedule?: TenderSchedule | null;
 }) {
   const router = useRouter();
   const [withdrawing, setWithdrawing] = useState(false);
@@ -78,7 +81,10 @@ export function TenderOutcome({
 
   const hasInstrument =
     tender.instrumentVersion != null && Object.keys(answers).length > 0;
-  const modules = buildModules(tender.instrumentVersion);
+  const modules = buildModules(
+    tender.instrumentVersion,
+    schedule !== null && schedule.items.length > 0,
+  );
   const canWithdraw =
     tender.status === "submitted" || tender.status === "shortlisted";
 
@@ -218,8 +224,13 @@ export function TenderOutcome({
         {/* ── the tender, read back ────────────────────────────────── */}
         {hasInstrument ? (
           <>
-            <MetricsPanel answers={answers} />
-            <ModuleLedger modules={modules} answers={answers} docs={docs} />
+            <MetricsPanel answers={answers} schedule={schedule} />
+            <ModuleLedger
+              modules={modules}
+              answers={answers}
+              schedule={schedule}
+              docs={docs}
+            />
           </>
         ) : (
           <LegacyFacts tender={tender} />

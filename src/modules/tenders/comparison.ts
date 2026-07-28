@@ -26,6 +26,11 @@ import {
   type ScopeState,
 } from "./instrument";
 import type { TradeId } from "./trades";
+import {
+  scheduleTallies,
+  type ScheduleTallies,
+  type TenderSchedule,
+} from "./schedule";
 
 /* ── types ──────────────────────────────────────────────────────────── */
 
@@ -68,6 +73,8 @@ export interface TenderInstrumentSummary {
   answers: Record<string, unknown>;
   exposure: AllowanceExposure;
   coverage: CoverageSummary;
+  /** Line-by-line tallies against the client's pack; schedule rounds only. */
+  schedule: ScheduleTallies | null;
   flags: RiskFlag[];
 }
 
@@ -98,7 +105,23 @@ function itemsTotal(v: unknown, key: string): { total: number; count: number } {
 export function deriveExposure(
   answers: Record<string, unknown>,
   totalPriceAud: number | null,
+  schedule?: TenderSchedule | null,
 ): AllowanceExposure {
+  // Schedule rounds: the exposure IS the allowance lines the builder
+  // marked on the client's pack. The PS/PC split does not exist there.
+  if (schedule) {
+    const t = scheduleTallies(schedule, answers["scope.schedule"]);
+    return {
+      psTotal: 0,
+      pcTotal: 0,
+      total: t.allowanceTotal,
+      itemCount: t.allowance,
+      shareOfPrice:
+        totalPriceAud && totalPriceAud > 0
+          ? Math.round((t.allowanceTotal / totalPriceAud) * 1000) / 10
+          : null,
+    };
+  }
   // Gate answers rule: a PS/PC list only counts when the builder's
   // has_ps / has_pc answer is Yes. Stale dependant rows (listed, then
   // the gate flipped to No) must not poison the firm/soft split.
@@ -375,7 +398,11 @@ export function deriveRiskFlags(
 /** Full per-tender summary from raw responses. */
 export function summariseInstrument(
   responses: Array<{ qid: string; value: unknown }>,
-  opts: { totalPriceAud: number | null; projectState: string | null },
+  opts: {
+    totalPriceAud: number | null;
+    projectState: string | null;
+    schedule?: TenderSchedule | null;
+  },
 ): TenderInstrumentSummary {
   const answers: Record<string, unknown> = {};
   for (const r of responses) {
@@ -385,14 +412,23 @@ export function summariseInstrument(
         : r.value;
     answers[r.qid] = v;
   }
-  const exposure = deriveExposure(answers, opts.totalPriceAud);
+  const schedule = opts.schedule ?? null;
+  const exposure = deriveExposure(answers, opts.totalPriceAud, schedule);
   const coverage = deriveCoverage(answers);
   const flags = deriveRiskFlags(answers, {
     totalPriceAud: opts.totalPriceAud,
     projectState: opts.projectState,
     exposure,
   });
-  return { answers, exposure, coverage, flags };
+  return {
+    answers,
+    exposure,
+    coverage,
+    schedule: schedule
+      ? scheduleTallies(schedule, answers["scope.schedule"])
+      : null,
+    flags,
+  };
 }
 
 /* ── display formatting ─────────────────────────────────────────────── */
@@ -461,6 +497,7 @@ export function formatAnswer(q: InstrumentQuestion, v: unknown): string | null {
     case "items":
     case "matrix":
     case "amounts":
+    case "schedule":
       return null;
   }
 }
@@ -476,7 +513,7 @@ export function answersDiffer(q: InstrumentQuestion, values: unknown[]): boolean
     if (q.type === "multi" && Array.isArray(v)) {
       return [...v].sort().join("|");
     }
-    if (q.type === "items" || q.type === "matrix") {
+    if (q.type === "items" || q.type === "matrix" || q.type === "schedule") {
       return JSON.stringify(v);
     }
     return String(v);

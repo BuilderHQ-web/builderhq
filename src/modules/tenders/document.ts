@@ -18,9 +18,20 @@ import {
   SCOPE_STATES,
   computeTenderMetrics,
   gateAllows,
+  questionInPlay,
   type InstrumentQuestion,
 } from "./instrument";
 import { formatAnswer, formatAud } from "./comparison";
+import {
+  scheduleDivisions,
+  scheduleTallies,
+  deriveAllowanceRows,
+  deriveScheduleExclusions,
+  ownerExcludedItems,
+  readScheduleAnswer,
+  SCHEDULE_STATE_LABEL,
+  type TenderSchedule,
+} from "./schedule";
 
 type Answers = Record<string, unknown>;
 
@@ -155,6 +166,12 @@ export function buildTenderDocument(args: {
     abn: string | null;
     licence: string | null;
   };
+  /**
+   * The client's approved tender schedule, when the round was
+   * published through the scope gate. Flips modules 5, 6 and 7 from
+   * the generic trade grid to the line-by-line confirmation.
+   */
+  schedule?: TenderSchedule | null;
   /** Render moment, supplied by the caller (drafts date-stamp to it). */
   now: Date;
 }): TenderDocumentModel {
@@ -170,8 +187,10 @@ export function buildTenderDocument(args: {
     now,
   } = args;
 
+  const schedule = args.schedule ?? null;
+  const hasSchedule = schedule !== null && schedule.items.length > 0;
   const isDraft = status === "draft";
-  const m = computeTenderMetrics(answers);
+  const m = computeTenderMetrics(answers, hasSchedule ? schedule : null);
   const sections = sectionsFor(instrumentVersion);
   const rows = scopeMatrixRows();
   const matrix = (answers["scope.matrix"] ?? {}) as Record<string, string>;
@@ -214,10 +233,17 @@ export function buildTenderDocument(args: {
   if (m.durationWeeks !== null) {
     cells.push({ k: "Build period", v: `${m.durationWeeks} weeks` });
   }
-  cells.push({
-    k: "Scope coverage",
-    v: `${m.coverage.included} of ${rows.length} trades included`,
-  });
+  if (m.schedule) {
+    cells.push({
+      k: "Scope coverage",
+      v: `${m.schedule.documented} of ${m.schedule.total} schedule lines as documented`,
+    });
+  } else {
+    cells.push({
+      k: "Scope coverage",
+      v: `${m.coverage.included} of ${rows.length} trades included`,
+    });
+  }
   const dlp = fmtQ("contract.defects_liability");
   if (dlp) cells.push({ k: "Defects liability", v: dlp });
   if (m.ldPerWeek !== null) {
@@ -274,7 +300,24 @@ export function buildTenderDocument(args: {
 
     for (const q of section.questions) {
       if (q.type === "amounts") continue;
+      if (q.id === "scope.schedule_run") continue;
+      if (!questionInPlay(q, hasSchedule)) continue;
       if (!asked(q, answers)) continue;
+
+      if (q.type === "schedule" && schedule) {
+        blocks.push(...scheduleBlocks(q, schedule, answers));
+        continue;
+      }
+
+      if (q.id === "pcps.schedule_confirm" && schedule) {
+        blocks.push(allowanceScheduleBlock(q, schedule, answers));
+        continue;
+      }
+
+      if (q.id === "excl.derived_confirm" && schedule) {
+        blocks.push(...scheduleExclusionBlocks(q, schedule, answers));
+        continue;
+      }
 
       if (q.type === "matrix") {
         const tableRows = rows.map((r) => {
@@ -422,6 +465,168 @@ export function buildTenderDocument(args: {
     modules,
     signoff,
   };
+}
+
+/* ── schedule rendering (the flip) ──────────────────────────────────── */
+
+/**
+ * Module 5 on a schedule round: one table per division, every line of
+ * the client's pack against the builder's mark, then the totals. Reads
+ * like a bill of quantities because it is one — the same lines every
+ * other tender on the round answered.
+ */
+function scheduleBlocks(
+  q: InstrumentQuestion,
+  schedule: TenderSchedule,
+  answers: Answers,
+): DocBlock[] {
+  const answer = readScheduleAnswer(answers["scope.schedule"]);
+  const divisions = scheduleDivisions(schedule).filter(
+    (d) => d.items.length > 0,
+  );
+  const blocks: DocBlock[] = [];
+
+  blocks.push({
+    kind: "note",
+    text: `Priced against the client's tender schedule: ${
+      schedule.items.length
+    } lines read from the project documents under the BuilderHQ Scope Standard v${
+      schedule.standardVersion
+    }. Every tender on this round answers the same lines.`,
+  });
+
+  let first = true;
+  for (const d of divisions) {
+    const rows = d.items.map((item) => {
+      const e = answer[item.itemId];
+      let state = "Not marked";
+      let amount = "—";
+      if (e) {
+        state = SCHEDULE_STATE_LABEL.get(e.s) ?? e.s;
+        if (e.s === "allowance") {
+          amount = typeof e.a === "number" ? formatAud(e.a) : "—";
+          if (item.kind === "owner_allowance") {
+            state =
+              item.ownerAmountAud !== null && e.a === item.ownerAmountAud
+                ? "Allowance, client's figure"
+                : "Allowance, builder's figure";
+          }
+        }
+      }
+      return [item.label, state, amount];
+    });
+    blocks.push({
+      kind: "table",
+      ref: first ? q.ref : undefined,
+      title: d.label,
+      columns: ["Line", "In this price", "Amount ex GST"],
+      align: ["l", "l", "r"],
+      rows,
+    });
+    first = false;
+  }
+
+  const t = scheduleTallies(schedule, answers["scope.schedule"]);
+  blocks.push({
+    kind: "table",
+    title: "Schedule totals",
+    columns: ["", ""],
+    align: ["l", "r"],
+    rows: [
+      ["Included as documented", String(t.documented)],
+      [
+        "Carried as allowances",
+        t.allowance > 0
+          ? `${t.allowance} (${formatAud(t.allowanceTotal)})`
+          : "0",
+      ],
+      ["Excluded from this price", String(t.excluded)],
+    ],
+  });
+
+  return blocks;
+}
+
+/** Module 7 on a schedule round: the derived allowance schedule. */
+function allowanceScheduleBlock(
+  q: InstrumentQuestion,
+  schedule: TenderSchedule,
+  answers: Answers,
+): DocBlock {
+  const rows = deriveAllowanceRows(schedule, answers["scope.schedule"]);
+  if (rows.length === 0) {
+    return {
+      kind: "chips",
+      ref: q.ref ?? "",
+      title: "Allowance schedule",
+      items: ["No allowances. Every schedule line in the price is priced as documented."],
+      tone: "plain",
+    };
+  }
+  const total = rows.reduce((n, r) => n + r.amountAud, 0);
+  return {
+    kind: "table",
+    ref: q.ref,
+    title: "Allowance schedule",
+    columns: ["Allowance", "Source", "Amount ex GST"],
+    align: ["l", "l", "r"],
+    rows: rows.map((r) => [
+      `${r.label} (${r.divisionLabel})`,
+      r.source === "client_schedule"
+        ? r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud
+          ? "Client schedule, carried"
+          : "Client schedule, repriced"
+        : "Builder",
+      formatAud(r.amountAud),
+    ]),
+    footer: [`${rows.length} allowance${rows.length === 1 ? "" : "s"}`, "", formatAud(total)],
+  };
+}
+
+/**
+ * Module 6 on a schedule round: the builder's exclusions (their marks
+ * plus free lines), and the client's own exclusions printed separately
+ * so the record shows both sides of the line.
+ */
+function scheduleExclusionBlocks(
+  q: InstrumentQuestion,
+  schedule: TenderSchedule,
+  answers: Answers,
+): DocBlock[] {
+  const marked = deriveScheduleExclusions(
+    schedule,
+    answers["scope.schedule"],
+  ).map((r) => `${r.label} (${r.divisionLabel})`);
+  const extra = Array.isArray(answers["scope.exclusions_list"])
+    ? (answers["scope.exclusions_list"] as Array<Record<string, unknown>>)
+        .map((row) =>
+          typeof row?.exclusion === "string" ? row.exclusion.trim() : "",
+        )
+        .filter((s) => s.length > 0)
+    : [];
+  const all = [...marked, ...extra];
+  const blocks: DocBlock[] = [
+    {
+      kind: "chips",
+      ref: q.ref ?? "",
+      title: "Exclusion schedule",
+      items: all.length > 0 ? all : ["Nothing is excluded from this price."],
+      tone: all.length > 0 ? "danger" : "plain",
+    },
+  ];
+  const clientOut = ownerExcludedItems(schedule).map(
+    (i) => `${i.label} (${i.divisionLabel})`,
+  );
+  if (clientOut.length > 0) {
+    blocks.push({
+      kind: "chips",
+      ref: "",
+      title: "Outside the client's tender scope",
+      items: clientOut,
+      tone: "plain",
+    });
+  }
+  return blocks;
 }
 
 function docsModule(

@@ -101,6 +101,7 @@ export {
   allQuestions,
   allQuestionsFor,
   getQuestion,
+  questionInPlay,
   requiredQuestionIds,
   isValidAnswerShape,
   isAnswerComplete,
@@ -114,6 +115,35 @@ export type {
   ScopeState,
   TenderMetrics,
 } from "./instrument";
+
+// The tender schedule (pure — client-safe). Resolution from an
+// approved run lives server-side in @/modules/scope-engine.
+export {
+  SCHEDULE_STATES,
+  SCHEDULE_STATE_LABEL,
+  readScheduleAnswer,
+  scheduleDivisions,
+  scheduleTallies,
+  tenderableItems,
+  ownerExcludedItems,
+  isScheduleComplete,
+  deriveAllowanceRows,
+  deriveScheduleExclusions,
+  formatCitation,
+} from "./schedule";
+export type {
+  TenderSchedule,
+  TenderScheduleItem,
+  TenderScheduleCitation,
+  ScheduleItemKind,
+  ScheduleState,
+  ScheduleEntry,
+  ScheduleAnswer,
+  ScheduleDivision,
+  ScheduleTallies,
+  DerivedAllowanceRow,
+  DerivedExclusionRow,
+} from "./schedule";
 
 // Comparison derivation (pure — client-safe).
 export {

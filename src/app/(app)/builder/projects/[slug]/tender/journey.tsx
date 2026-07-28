@@ -52,10 +52,24 @@ import {
   isAnswerComplete,
   computeTenderMetrics,
   gateAllows,
+  questionInPlay,
   getQuestion,
   type InstrumentQuestion,
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
+import {
+  scheduleDivisions,
+  readScheduleAnswer,
+  deriveAllowanceRows,
+  deriveScheduleExclusions,
+  ownerExcludedItems,
+  formatCitation,
+  type ScheduleDivision,
+  type ScheduleEntry,
+  type ScheduleState,
+  type TenderSchedule,
+  type TenderScheduleItem,
+} from "@/modules/tenders/schedule";
 import {
   buildTenderDocument,
   type TenderDocumentModel,
@@ -124,15 +138,22 @@ const DOCS_MODULE: Extract<JourneyModule, { kind: "docs" }> = {
 
 export function buildModules(
   version: number | null | undefined,
+  hasSchedule = false,
 ): JourneyModule[] {
   const sections = sectionsFor(version);
+  // Audience-flagged questions filter here, at the single point every
+  // journey surface (deck, progress, contents, review, resume) builds
+  // from — so a schedule round can never show a legacy slide.
   const out: JourneyModule[] = sections.map((s) => ({
     kind: "questions",
     key: s.id,
     title: s.title,
     ask: s.ask,
     intro: s.intro,
-    section: s,
+    section: {
+      ...s,
+      questions: s.questions.filter((q) => questionInPlay(q, hasSchedule)),
+    },
   }));
   // Documents before sign-off when the set ends with one; appended
   // otherwise (v1 has no sign-off module).
@@ -177,6 +198,17 @@ export function summariseValue(
     ].filter(Boolean);
     return parts.join(" · ");
   }
+  if (q.type === "schedule") {
+    const entries = Object.values(readScheduleAnswer(v));
+    if (entries.length === 0) return null;
+    const count = (s: string) => entries.filter((e) => e.s === s).length;
+    const parts = [
+      `${count("documented")} as documented`,
+      count("allowance") ? `${count("allowance")} allowance` : null,
+      count("excluded") ? `${count("excluded")} excluded` : null,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }
   return formatAnswer(q, v);
 }
 
@@ -192,6 +224,7 @@ export function TenderJourney({
   initialAnswers,
   initialDocs,
   letterhead,
+  schedule = null,
 }: {
   slug: string;
   projectId: string;
@@ -202,12 +235,28 @@ export function TenderJourney({
   initialAnswers: Array<{ qid: string; v: unknown }>;
   initialDocs: Document[];
   letterhead: TenderLetterhead | null;
+  /**
+   * The client's approved tender schedule, when the round was
+   * published through the scope gate. Present, it flips modules 5, 6
+   * and 7 from the generic trade grid to the line-by-line walk of the
+   * client's pack.
+   */
+  schedule?: TenderSchedule | null;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const hasSchedule = schedule !== null && schedule.items.length > 0;
   const MODULES = useMemo(
-    () => buildModules(instrumentVersion),
-    [instrumentVersion],
+    () => buildModules(instrumentVersion, hasSchedule),
+    [instrumentVersion, hasSchedule],
+  );
+  // The schedule's division walk — module 5's slides on a gate round.
+  const SCHED_DIVISIONS = useMemo<ScheduleDivision[]>(
+    () =>
+      hasSchedule
+        ? scheduleDivisions(schedule!).filter((d) => d.items.length > 0)
+        : [],
+    [hasSchedule, schedule],
   );
 
   const tenderIdRef = useRef<string | null>(initialTenderId);
@@ -299,7 +348,7 @@ export function TenderJourney({
       const visible = m.section.questions.filter((q) => gatePasses(q, answers));
       const required = visible.filter((q) => q.required);
       const answered = required.filter((q) =>
-        isAnswerComplete(q, answers[q.id]),
+        isAnswerComplete(q, answers[q.id], { schedule }),
       );
       return {
         key: m.key,
@@ -317,7 +366,7 @@ export function TenderJourney({
       complete: answered >= required,
       pct: required === 0 ? 100 : Math.round((answered / required) * 100),
     };
-  }, [MODULES, answers]);
+  }, [MODULES, answers, schedule]);
 
   // ── the deck: one slide per visible question; the scope matrix
   //    fans out one slide per row; documents is one slide; review
@@ -338,6 +387,15 @@ export function TenderJourney({
         q: InstrumentQuestion;
         row: { id: string; label: string };
         rIdx: number;
+      }
+    | {
+        key: string;
+        kind: "division";
+        mIdx: number;
+        module: Extract<JourneyModule, { kind: "questions" }>;
+        q: InstrumentQuestion;
+        division: ScheduleDivision;
+        dIdx: number;
       }
     | { key: "documents"; kind: "docs"; mIdx: number }
     | { key: "review"; kind: "review" };
@@ -365,6 +423,18 @@ export function TenderJourney({
               rIdx,
             });
           });
+        } else if (q.type === "schedule") {
+          SCHED_DIVISIONS.forEach((division, dIdx) => {
+            out.push({
+              key: `${q.id}:${division.divisionId}`,
+              kind: "division",
+              mIdx,
+              module: m,
+              q,
+              division,
+              dIdx,
+            });
+          });
         } else {
           out.push({ key: q.id, kind: "q", mIdx, module: m, q });
         }
@@ -372,7 +442,19 @@ export function TenderJourney({
     });
     out.push({ key: "review", kind: "review" });
     return out;
-  }, [MODULES, answers]);
+  }, [MODULES, SCHED_DIVISIONS, answers]);
+
+  const divisionDone = useCallback(
+    (division: ScheduleDivision, value: unknown): boolean => {
+      const marks = readScheduleAnswer(value);
+      return division.items.every((item) => {
+        const e = marks[item.itemId];
+        if (!e) return false;
+        return e.s !== "allowance" || (typeof e.a === "number" && e.a > 0);
+      });
+    },
+    [],
+  );
 
   const slideDone = useCallback(
     (sl: Slide): boolean => {
@@ -385,9 +467,12 @@ export function TenderJourney({
           !!(v as Record<string, unknown>)[sl.row.id]
         );
       }
-      return isAnswerComplete(sl.q, answers[sl.q.id]);
+      if (sl.kind === "division") {
+        return divisionDone(sl.division, answers[sl.q.id]);
+      }
+      return isAnswerComplete(sl.q, answers[sl.q.id], { schedule });
     },
-    [answers],
+    [answers, divisionDone, schedule],
   );
 
   // Resume at the first unanswered REQUIRED question; everything
@@ -396,8 +481,11 @@ export function TenderJourney({
   // colour on the way through should not be dragged back to it.
   const [cursor, setCursor] = useState(() => {
     const init = Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v]));
+    const initDivisions = hasSchedule
+      ? scheduleDivisions(schedule!).filter((d) => d.items.length > 0)
+      : [];
     let i = 0;
-    for (const m of buildModules(instrumentVersion)) {
+    for (const m of buildModules(instrumentVersion, hasSchedule)) {
       if (m.kind === "docs") {
         i++;
         continue;
@@ -411,8 +499,26 @@ export function TenderJourney({
             if (q.required && (!v || !v[row.id])) return i;
             i++;
           }
+        } else if (q.type === "schedule") {
+          for (const d of initDivisions) {
+            const marks = readScheduleAnswer(init[q.id]);
+            const gap = d.items.some((item) => {
+              const e = marks[item.itemId];
+              return (
+                !e ||
+                (e.s === "allowance" && !(typeof e.a === "number" && e.a > 0))
+              );
+            });
+            if (q.required && gap) return i;
+            i++;
+          }
         } else {
-          if (q.required && !isAnswerComplete(q, init[q.id])) return i;
+          if (
+            q.required &&
+            !isAnswerComplete(q, init[q.id], { schedule })
+          ) {
+            return i;
+          }
           i++;
         }
       }
@@ -624,7 +730,7 @@ export function TenderJourney({
         return;
       }
       if (!byQ.has(sl.q.id)) byQ.set(sl.q.id, i);
-      if (sl.kind === "row") byRow.set(sl.key, i);
+      if (sl.kind === "row" || sl.kind === "division") byRow.set(sl.key, i);
     });
     return { byQ, byRow, docsIdx };
   }, [deck]);
@@ -640,10 +746,20 @@ export function TenderJourney({
         if (i !== undefined) jumpTo(i);
         return;
       }
+      if (q.type === "schedule") {
+        const gap = SCHED_DIVISIONS.find(
+          (d) => !divisionDone(d, liveAnswers.current[q.id]),
+        );
+        const i = gap
+          ? slideIndex.byRow.get(`${q.id}:${gap.divisionId}`)
+          : slideIndex.byQ.get(q.id);
+        if (i !== undefined) jumpTo(i);
+        return;
+      }
       const i = slideIndex.byQ.get(q.id);
       if (i !== undefined) jumpTo(i);
     },
-    [slideIndex, jumpTo],
+    [slideIndex, jumpTo, SCHED_DIVISIONS, divisionDone],
   );
 
   // Jump helper: first not-done slide of a module, else its start.
@@ -700,9 +816,42 @@ export function TenderJourney({
           abn: letterhead?.abn ?? null,
           licence: letterhead?.licence ?? null,
         },
+        schedule,
         now: new Date(),
       }),
-    [answers, docs, instrumentVersion, projectTitle, projectMeta, letterhead],
+    [
+      answers,
+      docs,
+      instrumentVersion,
+      projectTitle,
+      projectMeta,
+      letterhead,
+      schedule,
+    ],
+  );
+
+  // ── schedule marks ────────────────────────────────────────────────
+  // One write path for every division-slide tap. The first mark also
+  // pins the run the builder is answering against; leaving "allowance"
+  // clears the figure so a stale amount never prints.
+  const markScheduleItem = useCallback(
+    (q: InstrumentQuestion, item: TenderScheduleItem, next: ScheduleEntry) => {
+      if (
+        typeof liveAnswers.current["scope.schedule_run"] !== "string" &&
+        schedule
+      ) {
+        queue("scope.schedule_run", schedule.runId);
+      }
+      queue(q.id, (prev: unknown) => {
+        const cur = { ...readScheduleAnswer(prev) };
+        cur[item.itemId] =
+          next.s === "allowance"
+            ? { s: next.s, a: next.a ?? null }
+            : { s: next.s };
+        return cur;
+      });
+    },
+    [queue, schedule],
   );
 
   // ── submit ───────────────────────────────────────────────────────
@@ -825,6 +974,7 @@ export function TenderJourney({
                 <ContentsPopover
                   modules={MODULES}
                   answers={answers}
+                  schedule={schedule}
                   perModule={progress.perModule}
                   docsCount={docs.length}
                   currentModule={slide.kind === "review" ? null : slide.mIdx}
@@ -923,6 +1073,7 @@ export function TenderJourney({
                     slug={slug}
                     modules={MODULES}
                     answers={answers}
+                    schedule={schedule}
                     progress={progress}
                     docs={docs}
                     model={docModel}
@@ -943,6 +1094,38 @@ export function TenderJourney({
                     tenderId={tenderIdRef.current}
                     docs={docs}
                     onDocsChange={setDocs}
+                  />
+                ) : slide.kind === "division" ? (
+                  <DivisionSlide
+                    q={slide.q}
+                    division={slide.division}
+                    dIdx={slide.dIdx}
+                    total={SCHED_DIVISIONS.length}
+                    marks={readScheduleAnswer(answers[slide.q.id])}
+                    onMark={(item, entry) => {
+                      markScheduleItem(slide.q, item, entry);
+                      // The last unmarked line completing the division
+                      // advances the deck — unless the mark is an
+                      // allowance, which opens its amount field and
+                      // must hold the slide for the figure.
+                      if (entry.s !== "allowance") {
+                        const after = {
+                          ...readScheduleAnswer(
+                            liveAnswers.current[slide.q.id],
+                          ),
+                        };
+                        after[item.itemId] = entry;
+                        if (divisionDone(slide.division, after)) {
+                          if (advanceTimer.current) {
+                            clearTimeout(advanceTimer.current);
+                          }
+                          advanceTimer.current = setTimeout(
+                            () => advanceRef.current(),
+                            420,
+                          );
+                        }
+                      }
+                    }}
                   />
                 ) : slide.kind === "row" ? (
                   <MatrixRowSlide
@@ -1021,6 +1204,7 @@ export function TenderJourney({
                     {slide.q.id === "excl.derived_confirm" ? (
                       <DerivedExclusions
                         answers={answers}
+                        schedule={schedule}
                         onExtraChange={(update) =>
                           queue("scope.exclusions_list", (prev: unknown) =>
                             update(
@@ -1030,6 +1214,12 @@ export function TenderJourney({
                             ),
                           )
                         }
+                      />
+                    ) : null}
+                    {slide.q.id === "pcps.schedule_confirm" && schedule ? (
+                      <DerivedAllowances
+                        answers={answers}
+                        schedule={schedule}
                       />
                     ) : null}
                     <div className="mt-8">
@@ -1862,6 +2052,7 @@ function SealedMoment() {
 function ContentsPopover({
   modules,
   answers,
+  schedule,
   perModule,
   docsCount,
   currentModule,
@@ -1872,6 +2063,7 @@ function ContentsPopover({
 }: {
   modules: JourneyModule[];
   answers: Answers;
+  schedule?: TenderSchedule | null;
   perModule: Array<{
     key: string;
     required: number;
@@ -1961,7 +2153,9 @@ function ContentsPopover({
                         (q) => !isInlineQuestion(q) && gatePasses(q, answers),
                       )
                       .map((q) => {
-                        const done = isAnswerComplete(q, answers[q.id]);
+                        const done = isAnswerComplete(q, answers[q.id], {
+                          schedule,
+                        });
                         return (
                           <li key={q.id}>
                             <button
@@ -1987,7 +2181,9 @@ function ContentsPopover({
                               <span className="flex-1 min-w-0 text-[11.5px] text-text-muted truncate">
                                 {q.type === "matrix"
                                   ? "Scope coverage grid"
-                                  : q.prompt}
+                                  : q.type === "schedule"
+                                    ? "The tender schedule"
+                                    : q.prompt}
                               </span>
                             </button>
                           </li>
@@ -2122,6 +2318,288 @@ function MatrixRowSlide({
   );
 }
 
+/* ── the division slide (the schedule flip) ─────────────────────────── */
+
+const DIVISION_STATES: Array<{
+  value: ScheduleState;
+  label: string;
+  short: string;
+}> = [
+  { value: "documented", label: "Included as documented", short: "Documented" },
+  { value: "allowance", label: "Allowance", short: "Allowance" },
+  { value: "excluded", label: "Excluded", short: "Excluded" },
+];
+
+/**
+ * One slide per division of the client's schedule: every line the
+ * documents put in this division, marked in place. The client's
+ * allowances arrive pre-figured — one tap carries the stated amount —
+ * and a bulk control marks every untouched line as documented, so a
+ * clean division takes seconds without ever pre-marking anything.
+ */
+function DivisionSlide({
+  q,
+  division,
+  dIdx,
+  total,
+  marks,
+  onMark,
+}: {
+  q: InstrumentQuestion;
+  division: ScheduleDivision;
+  dIdx: number;
+  total: number;
+  marks: Record<string, ScheduleEntry>;
+  onMark: (item: TenderScheduleItem, entry: ScheduleEntry) => void;
+}) {
+  const unmarked = division.items.filter((i) => !marks[i.itemId]);
+  return (
+    <div>
+      <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold tabular-nums">
+        {q.ref ? <span className="text-accent-light">{q.ref}</span> : null}
+        {q.ref ? " · " : ""}
+        The tender schedule · {dIdx + 1} of {total}
+      </p>
+      <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text">
+        {division.label}
+      </h2>
+      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
+        {division.items.length} line{division.items.length === 1 ? "" : "s"}{" "}
+        from the client&rsquo;s documents. Mark what your price does with
+        each one.
+      </p>
+
+      <ul className="mt-7 space-y-2.5">
+        {division.items.map((item) => (
+          <ScheduleItemRow
+            key={item.itemId}
+            item={item}
+            entry={marks[item.itemId]}
+            onMark={(entry) => onMark(item, entry)}
+          />
+        ))}
+      </ul>
+
+      {unmarked.length >= 2 ? (
+        <button
+          type="button"
+          onClick={() => {
+            for (const item of unmarked) {
+              onMark(item, { s: "documented" });
+            }
+          }}
+          className="mt-4 inline-flex items-center gap-2 h-9 px-4 rounded-md border border-border-subtle text-[12.5px] font-ui text-text-muted hover:border-border-accent hover:text-text transition-colors"
+        >
+          <Check className="size-3.5" />
+          Mark the remaining {unmarked.length} as documented
+        </button>
+      ) : null}
+
+      {division.locked.length > 0 ? (
+        <div className="mt-6 border-t border-border-subtle pt-3.5">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            Outside the client&rsquo;s tender scope
+          </p>
+          <p className="mt-1.5 text-[12px] leading-[1.6] text-text-dim">
+            {division.locked.map((i) => i.label).join(" · ")}. The client
+            took {division.locked.length === 1 ? "this" : "these"} out of the
+            round; nothing to price.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** One line of the schedule: the mark control and, for allowances, the figure. */
+function ScheduleItemRow({
+  item,
+  entry,
+  onMark,
+}: {
+  item: TenderScheduleItem;
+  entry: ScheduleEntry | undefined;
+  onMark: (entry: ScheduleEntry) => void;
+}) {
+  const isOwnerAllowance = item.kind === "owner_allowance";
+  const state = entry?.s;
+  const cite = item.citations[0] ? formatCitation(item.citations[0]) : null;
+  return (
+    <li
+      className={cn(
+        "rounded-lg border px-4 py-3.5 transition-colors",
+        state
+          ? "border-border-accent/60 bg-[rgba(0,212,200,0.04)]"
+          : "border-border-subtle bg-surface-1 card-elev",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-ui font-semibold text-text leading-[1.35]">
+            {item.label}
+          </p>
+          <p className="mt-1 text-[12px] leading-[1.55] text-text-muted max-w-[56ch]">
+            {item.plain}
+          </p>
+          {isOwnerAllowance && item.ownerAmountAud !== null ? (
+            <p className="mt-1.5 text-[11.5px] text-[#8a6414]">
+              The client&rsquo;s schedule carries{" "}
+              {formatAud(item.ownerAmountAud)} for this line.
+            </p>
+          ) : cite ? (
+            <p className="mt-1.5 text-[11px] text-text-dim">{cite}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {isOwnerAllowance && item.ownerAmountAud !== null ? (
+          <button
+            type="button"
+            onClick={() =>
+              onMark({ s: "allowance", a: item.ownerAmountAud })
+            }
+            aria-pressed={
+              state === "allowance" && entry?.a === item.ownerAmountAud
+            }
+            className={cn(
+              "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+              state === "allowance" && entry?.a === item.ownerAmountAud
+                ? "border-transparent bg-accent text-accent-contrast font-semibold"
+                : "border-border-strong text-text hover:border-border-accent",
+            )}
+          >
+            Carry {formatAud(item.ownerAmountAud)}
+          </button>
+        ) : null}
+        {DIVISION_STATES.map((st) => {
+          // The carry chip owns the "allowance at the client's figure"
+          // case; the plain Allowance chip is the builder's own figure.
+          const on =
+            state === st.value &&
+            !(
+              st.value === "allowance" &&
+              isOwnerAllowance &&
+              entry?.a === item.ownerAmountAud &&
+              item.ownerAmountAud !== null
+            );
+          return (
+            <button
+              key={st.value}
+              type="button"
+              onClick={() =>
+                onMark(
+                  st.value === "allowance"
+                    ? {
+                        s: "allowance",
+                        a:
+                          entry?.s === "allowance"
+                            ? (entry.a ?? null)
+                            : null,
+                      }
+                    : { s: st.value },
+                )
+              }
+              aria-pressed={on}
+              className={cn(
+                "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+                on
+                  ? st.value === "excluded"
+                    ? "border-transparent bg-[#a8433e] text-white font-semibold"
+                    : "border-transparent bg-accent text-accent-contrast font-semibold"
+                  : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
+              )}
+            >
+              {isOwnerAllowance && st.value === "allowance"
+                ? "My own figure"
+                : st.short}
+            </button>
+          );
+        })}
+      </div>
+
+      {state === "allowance" ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Allowance in your price for this line
+          </p>
+          <CurrencyBox
+            value={typeof entry?.a === "number" ? entry.a : null}
+            onChange={(v) => onMark({ s: "allowance", a: v })}
+          />
+        </motion.div>
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * The allowance schedule module 7 confirms, derived live from the
+ * schedule marks: the client's allowances as carried, and every line
+ * the builder flipped to an allowance of their own.
+ */
+function DerivedAllowances({
+  answers,
+  schedule,
+}: {
+  answers: Answers;
+  schedule: TenderSchedule;
+}) {
+  const rows = deriveAllowanceRows(schedule, answers["scope.schedule"]);
+  if (rows.length === 0) {
+    return (
+      <div className="mt-6 border-y border-border-subtle py-4">
+        <p className="text-[12.5px] text-text-muted">
+          No allowances. Every line in your price is marked included as
+          documented — the strongest schedule a tender can carry.
+        </p>
+      </div>
+    );
+  }
+  const total = rows.reduce((n, r) => n + r.amountAud, 0);
+  return (
+    <div className="mt-6 border-y border-border-subtle">
+      <ul className="divide-y divide-border-subtle/60">
+        {rows.map((r) => (
+          <li
+            key={r.itemId}
+            className="py-3 flex items-baseline justify-between gap-3"
+          >
+            <div className="min-w-0">
+              <p className="text-[13px] font-ui text-text">{r.label}</p>
+              <p className="mt-0.5 text-[11px] text-text-dim">
+                {r.divisionLabel} ·{" "}
+                {r.source === "client_schedule"
+                  ? r.ownerAmountAud !== null &&
+                    r.amountAud === r.ownerAmountAud
+                    ? "Client's schedule, carried at the stated figure"
+                    : "Client's schedule, your figure"
+                  : "Your allowance"}
+              </p>
+            </div>
+            <span className="text-[13.5px] font-display tabular-nums text-text shrink-0">
+              {formatAud(r.amountAud)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="py-3 border-t border-border-subtle flex items-baseline justify-between">
+        <span className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+          Total allowances
+        </span>
+        <span className="text-[15px] font-display tabular-nums text-text">
+          {formatAud(total)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /** Entity facts that print on the document, shown beside declarations. */
 function LetterheadCard({ letterhead }: { letterhead: TenderLetterhead }) {
   const bits = [
@@ -2151,16 +2629,31 @@ function LetterheadCard({ letterhead }: { letterhead: TenderLetterhead }) {
  */
 function DerivedExclusions({
   answers,
+  schedule,
   onExtraChange,
 }: {
   answers: Answers;
+  schedule?: TenderSchedule | null;
   onExtraChange: (
     update: (rows: Record<string, unknown>[]) => Record<string, unknown>[],
   ) => void;
 }) {
+  // Schedule rounds derive from the line marks; legacy rounds from the
+  // trade grid. Same slide, same confirm, same printed record.
+  const fromSchedule = schedule
+    ? deriveScheduleExclusions(schedule, answers["scope.schedule"])
+    : null;
+  const scheduleAllowances = schedule
+    ? deriveAllowanceRows(schedule, answers["scope.schedule"])
+    : null;
+  const clientOut = schedule ? ownerExcludedItems(schedule) : [];
   const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
-  const excluded = MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
-  const allowance = MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
+  const excluded = fromSchedule
+    ? fromSchedule.map((r) => ({ id: r.itemId, label: r.label }))
+    : MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
+  const allowance = scheduleAllowances
+    ? scheduleAllowances.map((r) => ({ id: r.itemId, label: r.label }))
+    : MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
   const extraRows = Array.isArray(answers["scope.exclusions_list"])
     ? (answers["scope.exclusions_list"] as Record<string, unknown>[])
     : [];
@@ -2275,6 +2768,17 @@ function DerivedExclusions({
           </p>
           <p className="mt-1.5 text-[12.5px] text-text-muted">
             {allowance.map((r) => r.label).join(" · ")}
+          </p>
+        </div>
+      ) : null}
+      {clientOut.length > 0 ? (
+        <div className="py-3.5">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            Outside the client&rsquo;s tender scope
+          </p>
+          <p className="mt-1.5 text-[12.5px] text-text-muted">
+            {clientOut.map((i) => i.label).join(" · ")}. Taken out of the
+            round by the client; printed for the record.
           </p>
         </div>
       ) : null}
@@ -2583,6 +3087,7 @@ function ReviewSlide({
   slug,
   modules,
   answers,
+  schedule,
   progress,
   docs,
   model,
@@ -2598,6 +3103,7 @@ function ReviewSlide({
   slug: string;
   modules: JourneyModule[];
   answers: Answers;
+  schedule?: TenderSchedule | null;
   progress: ProgressShape;
   docs: Document[];
   model: TenderDocumentModel;
@@ -2633,6 +3139,7 @@ function ReviewSlide({
       <ModuleLedger
         modules={modules}
         answers={answers}
+        schedule={schedule}
         perModule={progress.perModule}
         docs={docs}
         onJumpModule={onJumpModule}
@@ -2799,8 +3306,17 @@ function CoverCard({
 
 /** Key tender metrics, rolled up live from the answers. Shared with the
  *  read-only outcome view. */
-export function MetricsPanel({ answers }: { answers: Answers }) {
-  const m = useMemo(() => computeTenderMetrics(answers), [answers]);
+export function MetricsPanel({
+  answers,
+  schedule = null,
+}: {
+  answers: Answers;
+  schedule?: TenderSchedule | null;
+}) {
+  const m = useMemo(
+    () => computeTenderMetrics(answers, schedule),
+    [answers, schedule],
+  );
 
   const fmtQ = (qid: string): string | null => {
     const q = getQuestion(qid);
@@ -2827,14 +3343,37 @@ export function MetricsPanel({ answers }: { answers: Answers }) {
   if (m.durationWeeks !== null) {
     cells.push({ k: "Build period", v: `${m.durationWeeks} weeks` });
   }
-  if (m.psCount + m.pcCount > 0) {
+  if (m.schedule) {
+    if (m.schedule.allowance > 0) {
+      cells.push({
+        k: "Allowances",
+        v: formatAud(m.schedule.allowanceTotal),
+        sub: `${m.schedule.allowance} line${m.schedule.allowance === 1 ? "" : "s"} of the schedule`,
+      });
+    }
+  } else if (m.psCount + m.pcCount > 0) {
     cells.push({
       k: "Allowances",
       v: formatAud(m.allowanceExposure),
       sub: `${m.psCount} provisional · ${m.pcCount} prime cost`,
     });
   }
-  const covered = MATRIX_ROWS.length - m.coverage.unmarked;
+  if (m.schedule && m.schedule.total - m.schedule.unmarked > 0) {
+    cells.push({
+      k: "Scope coverage",
+      v: `${m.schedule.documented} of ${m.schedule.total} as documented`,
+      sub:
+        [
+          m.schedule.allowance ? `${m.schedule.allowance} allowance` : null,
+          m.schedule.excluded ? `${m.schedule.excluded} excluded` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+    });
+  }
+  const covered = m.schedule
+    ? 0
+    : MATRIX_ROWS.length - m.coverage.unmarked;
   if (covered > 0) {
     cells.push({
       k: "Scope coverage",
@@ -2895,6 +3434,7 @@ export function MetricsPanel({ answers }: { answers: Answers }) {
 export function ModuleLedger({
   modules,
   answers,
+  schedule,
   perModule,
   docs,
   onJumpModule,
@@ -2903,6 +3443,7 @@ export function ModuleLedger({
 }: {
   modules: JourneyModule[];
   answers: Answers;
+  schedule?: TenderSchedule | null;
   perModule?: Array<{
     key: string;
     required: number;
@@ -3032,7 +3573,9 @@ export function ModuleLedger({
                       (q) => !isInlineQuestion(q) && gatePasses(q, answers),
                     )
                     .map((q) => {
-                      const done = isAnswerComplete(q, answers[q.id]);
+                      const done = isAnswerComplete(q, answers[q.id], {
+                        schedule,
+                      });
                       const summary = summariseValue(q, answers[q.id]);
                       const inner = (
                         <>
@@ -3043,7 +3586,9 @@ export function ModuleLedger({
                             <span className="block text-[12px] leading-[1.45] text-text-muted">
                               {q.type === "matrix"
                                 ? "Scope coverage grid"
-                                : q.prompt}
+                                : q.type === "schedule"
+                                  ? "The tender schedule"
+                                  : q.prompt}
                             </span>
                             <span
                               className={cn(
