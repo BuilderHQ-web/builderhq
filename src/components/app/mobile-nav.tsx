@@ -35,6 +35,7 @@ import {
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
+  ScanSearch,
   Sparkles,
   Hammer,
   House,
@@ -123,6 +124,7 @@ const adminNav: NavSection[] = [
       { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Later" },
       { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Later" },
       { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Later" },
+      { href: "/admin/scope", label: "Scope engine", icon: ScanSearch },
     ],
   },
   {
