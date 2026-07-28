@@ -265,6 +265,10 @@ export const projects = pgTable(
     description: text(),
 
     // Lifecycle.
+    /** Set when the runner submits for preparation under the scope
+     *  publish gate. Status stays 'draft' until the owner completes
+     *  their review and the real publish flips it. */
+    publishRequestedAt: timestamp({ mode: "date", withTimezone: true }),
     publishedAt: timestamp({ mode: "date", withTimezone: true }),
     tenderClosesAt: timestamp({ mode: "date", withTimezone: true }),
 

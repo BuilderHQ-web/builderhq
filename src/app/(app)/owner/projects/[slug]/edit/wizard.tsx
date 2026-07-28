@@ -434,6 +434,17 @@ export function ProjectWizard({
         );
         return;
       }
+      // Under the scope publish gate the project comes back still a
+      // draft, now in preparation — route to the tender pack page
+      // instead of the celebration.
+      if (r.value.status === "draft" && r.value.publishRequestedAt) {
+        toast.success(
+          "Submitted for preparation",
+          "We are reading your documents against the Scope Standard. You will be told when your tender pack is ready.",
+        );
+        router.push(`${base}/projects/${r.value.slug}/scope`);
+        return;
+      }
       // Flip local state to published — the draft→published effect above
       // takes it from here and routes to the celebration. One nav path for
       // both the manual button and an autosave that auto-promotes the draft.

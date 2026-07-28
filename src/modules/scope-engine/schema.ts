@@ -139,6 +139,32 @@ export const scopeReviewEvents = pgTable(
   (t) => [index("scope_review_events_run_idx").on(t.runId, t.createdAt)],
 );
 
+export const scopeGapResolutions = pgTable(
+  "scope_gap_resolutions",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    runId: uuid()
+      .notNull()
+      .references(() => scopeRuns.id, { onDelete: "cascade" }),
+    itemId: text().notNull(),
+    resolution: text().notNull(),
+    amountAud: integer(),
+    note: text(),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("scope_gap_resolutions_run_item_idx").on(t.runId, t.itemId),
+  ],
+);
+
+export type ScopeGapResolutionRow = typeof scopeGapResolutions.$inferSelect;
+
 export type ScopeRunRow = typeof scopeRuns.$inferSelect;
 export type ScopeRunDocumentRow = typeof scopeRunDocuments.$inferSelect;
 export type ScopeRunItemRow = typeof scopeRunItems.$inferSelect;

@@ -8,6 +8,16 @@
  */
 
 export {
+  requestPreparation,
+  getOwnerReview,
+  resolveGap,
+  requestReread,
+  completeOwnerReview,
+  type GapResolutionKind,
+  type OwnerScopeReview,
+} from "./service";
+export type { ScopeGapResolutionRow } from "./schema";
+export {
   startRun,
   processRunTick,
   listRuns,

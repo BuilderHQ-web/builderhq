@@ -148,6 +148,12 @@ const serverSchema = z.object({
    *  reject anything else. Optional in dev; auto-injected by Vercel
    *  in production / preview. */
   CRON_SECRET: z.string().min(16).optional(),
+  /** "1"/"true" turns on the scope publish gate: publishing submits
+   *  the project for preparation instead of going live directly. */
+  SCOPE_PUBLISH_GATE: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "true"),
 
   // Verification proxy — Cloudflare Worker fronting ABR + state licence
   // registries. One base URL with two paths: `/?abn=...` for ABR,

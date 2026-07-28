@@ -671,5 +671,347 @@ export async function approveRun(
     .where(eq(scopeRuns.id, runId));
   await recordReview(runId, "run", "run.approved", actorId, null, null);
   logger.info({ event: "scope.run.approved", runId, actorId }, "scope run approved");
+  // The runner hears their pack is ready — bell and letter. Failures
+  // never fail the approval; the desk shows the state regardless.
+  await dispatchScopeReady(runId).catch(() => undefined);
   return ok({ ok: true });
+}
+
+/** Bell + letter to the runner when ops approves their pack. */
+async function dispatchScopeReady(runId: string): Promise<void> {
+  try {
+    const { users } = await import("@/modules/users");
+    const { create: createNotification } = await import("@/modules/notifications");
+    const { sendScopeReadyEmail } = await import("@/modules/email");
+    const { env } = await import("@/lib/env");
+
+    const [row] = await db
+      .select({
+        projectId: projects.id,
+        projectSlug: projects.slug,
+        projectTitle: projects.title,
+        runnerId: projects.ownerId,
+        runnerEmail: users.email,
+        runnerFirstName: users.firstName,
+        runnerRole: users.role,
+      })
+      .from(scopeRuns)
+      .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
+      .innerJoin(users, eq(users.id, projects.ownerId))
+      .where(eq(scopeRuns.id, runId))
+      .limit(1);
+    if (!row) return;
+
+    const [tally] = await db
+      .select({
+        evidenced: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'evidenced' and ${scopeRunItems.opsStatus} <> 'removed')`.mapWith(Number),
+        gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap' and ${scopeRunItems.opsStatus} <> 'removed')`.mapWith(Number),
+      })
+      .from(scopeRunItems)
+      .where(eq(scopeRunItems.runId, runId));
+
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const reviewUrl = `${base}${row.runnerRole === "architect" ? "/architect" : "/owner"}/projects/${row.projectSlug}/scope`;
+
+    await Promise.allSettled([
+      createNotification({
+        userId: row.runnerId,
+        kind: "scope_ready",
+        title: `Your tender pack for ${row.projectTitle} is ready`,
+        body: `${tally?.evidenced ?? 0} items documented · ${tally?.gaps ?? 0} need your answer.`,
+        actionUrl: reviewUrl,
+        projectId: row.projectId,
+      }),
+      sendScopeReadyEmail({
+        to: row.runnerEmail,
+        runnerFirstName: row.runnerFirstName,
+        projectTitle: row.projectTitle,
+        evidencedCount: tally?.evidenced ?? 0,
+        gapCount: tally?.gaps ?? 0,
+        reviewUrl,
+      }),
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ event: "scope.ready.dispatch_failed", runId, msg }, "scope ready dispatch failed");
+  }
+}
+
+// ── S2 · the publish gate and the owner review ──────────────────────────
+
+import {
+  publish as publishProject,
+  checkPublishability,
+  getProjectAccess,
+  recordProjectEvent,
+} from "@/modules/projects";
+import { scopeGapResolutions, type ScopeGapResolutionRow } from "./schema";
+
+export type GapResolutionKind = "allowance" | "excluded" | "upload_later";
+
+/**
+ * The runner submits for preparation. Publishability is validated
+ * NOW, with the same rules the real publish enforces, so nobody
+ * waits a day to learn their draft was missing an address. Status
+ * stays draft; the run starts; ops hears through the desk.
+ */
+export async function requestPreparation(
+  projectId: string,
+  runnerId: string,
+): Promise<Result<{ runId: string }>> {
+  const report = await checkPublishability(runnerId, projectId);
+  if (!report.ok) return report;
+  if (!report.value.canPublish) {
+    return fail("validation", "Project isn't ready to submit yet.", {
+      missing: report.value.missing,
+      reasons: report.value.reasons,
+    });
+  }
+  const run = await startRun(projectId, runnerId);
+  if (!run.ok) return run;
+
+  await db
+    .update(projects)
+    .set({ publishRequestedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)));
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.preparation_requested",
+    subjectId: run.value.id,
+    summary: "Submitted the project for tender pack preparation.",
+  });
+  return ok({ runId: run.value.id });
+}
+
+export interface OwnerScopeReview {
+  phase: "reading" | "ready" | "none";
+  run: ScopeRunRow | null;
+  /** docId → display name, for citation rendering. */
+  documentNames: Record<string, string>;
+  items: ScopeRunItemRow[];
+  resolutions: ScopeGapResolutionRow[];
+  /** Runner may act; seats read. */
+  canResolve: boolean;
+}
+
+/**
+ * The owner-facing read: seat-aware (the runner and every joined
+ * participant see it; only the runner resolves). Before ops approval
+ * the owner sees only that reading is under way — never a half-
+ * reviewed pack.
+ */
+export async function getOwnerReview(
+  projectId: string,
+  userId: string,
+): Promise<Result<OwnerScopeReview>> {
+  const access = await getProjectAccess(projectId, userId);
+  if (!access) return fail("forbidden", "Not your project.");
+
+  const [run] = await db
+    .select()
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        inArray(scopeRuns.status, [
+          "pending",
+          "classifying",
+          "extracting",
+          "synthesising",
+          "review",
+          "approved",
+        ]),
+      ),
+    )
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(1);
+  if (!run) {
+    return ok({
+      phase: "none",
+      run: null,
+      documentNames: {},
+      items: [],
+      resolutions: [],
+      canResolve: access.kind === "runner",
+    });
+  }
+  if (run.status !== "approved") {
+    return ok({
+      phase: "reading",
+      run,
+      documentNames: {},
+      items: [],
+      resolutions: [],
+      canResolve: access.kind === "runner",
+    });
+  }
+  const [items, resolutions, register] = await Promise.all([
+    db
+      .select()
+      .from(scopeRunItems)
+      .where(
+        and(eq(scopeRunItems.runId, run.id), ne(scopeRunItems.opsStatus, "removed")),
+      ),
+    db
+      .select()
+      .from(scopeGapResolutions)
+      .where(eq(scopeGapResolutions.runId, run.id)),
+    db
+      .select({ documentId: scopeRunDocuments.documentId, filename: documents.filename })
+      .from(scopeRunDocuments)
+      .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+      .where(eq(scopeRunDocuments.runId, run.id)),
+  ]);
+  return ok({
+    phase: "ready",
+    run,
+    documentNames: Object.fromEntries(register.map((r) => [r.documentId, r.filename])),
+    items,
+    resolutions,
+    canResolve: access.kind === "runner",
+  });
+}
+
+/** The runner answers one gap. Allowances demand a positive amount —
+ *  a locked sum every builder prices against equally. */
+export async function resolveGap(
+  runnerId: string,
+  projectId: string,
+  itemId: string,
+  input: { resolution: GapResolutionKind; amountAud?: number | null; note?: string | null },
+): Promise<Result<ScopeGapResolutionRow>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner resolves the scope.");
+  }
+  const [run] = await db
+    .select({ id: scopeRuns.id, status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(and(eq(scopeRuns.projectId, projectId), eq(scopeRuns.status, "approved")))
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(1);
+  if (!run) return fail("conflict", "No approved tender pack to resolve against.");
+
+  const [item] = await db
+    .select({ id: scopeRunItems.id, status: scopeRunItems.status })
+    .from(scopeRunItems)
+    .where(and(eq(scopeRunItems.runId, run.id), eq(scopeRunItems.itemId, itemId)))
+    .limit(1);
+  if (!item || item.status !== "gap") {
+    return fail("validation", "That line is not an open gap on this pack.");
+  }
+  if (input.resolution === "allowance") {
+    if (!Number.isInteger(input.amountAud) || (input.amountAud ?? 0) <= 0) {
+      return fail("validation", "An allowance needs a whole-dollar amount above zero.");
+    }
+  }
+
+  const values = {
+    runId: run.id,
+    itemId,
+    resolution: input.resolution,
+    amountAud: input.resolution === "allowance" ? input.amountAud! : null,
+    note: input.note?.trim() || null,
+    createdBy: runnerId,
+    updatedAt: new Date(),
+  };
+  const [row] = await db
+    .insert(scopeGapResolutions)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [scopeGapResolutions.runId, scopeGapResolutions.itemId],
+      set: values,
+    })
+    .returning();
+  if (!row) return fail("internal", "Could not save the resolution.");
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.gap_resolved",
+    subjectId: row.id,
+    summary:
+      input.resolution === "allowance"
+        ? `Set an allowance of $${input.amountAud} for ${itemId}.`
+        : input.resolution === "excluded"
+          ? `Excluded ${itemId} from this tender.`
+          : `Marked ${itemId} as documents to come.`,
+  });
+  return ok(row);
+}
+
+/** Documents arrived after 'upload_later' answers — read again. A new
+ *  run supersedes the old; its resolutions die with it by design. */
+export async function requestReread(
+  projectId: string,
+  runnerId: string,
+): Promise<Result<{ runId: string }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner can request a re-read.");
+  }
+  const run = await startRun(projectId, runnerId);
+  if (!run.ok) return run;
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.reread_requested",
+    subjectId: run.value.id,
+    summary: "Requested a fresh read after adding documents.",
+  });
+  return ok({ runId: run.value.id });
+}
+
+/**
+ * The gate opens: every gap carries an allowance or an exclusion, so
+ * the round can go live. Publication runs through the EXISTING
+ * publish path — validation, fan-out, celebration all unchanged.
+ */
+export async function completeOwnerReview(
+  projectId: string,
+  runnerId: string,
+): Promise<Result<{ published: true }>> {
+  const review = await getOwnerReview(projectId, runnerId);
+  if (!review.ok) return review;
+  if (review.value.phase !== "ready" || !review.value.run) {
+    return fail("conflict", "The tender pack is not ready yet.");
+  }
+  if (!review.value.canResolve) {
+    return fail("forbidden", "Only the project runner can complete the review.");
+  }
+  const resolutionByItem = new Map(
+    review.value.resolutions.map((r) => [r.itemId, r]),
+  );
+  const gaps = review.value.items.filter((i) => i.status === "gap");
+  const unresolved = gaps.filter((g) => !resolutionByItem.has(g.itemId));
+  if (unresolved.length > 0) {
+    return fail(
+      "validation",
+      `${unresolved.length} gap(s) still need an answer before the round can go live.`,
+    );
+  }
+  const waitingOnDocs = gaps.filter(
+    (g) => resolutionByItem.get(g.itemId)?.resolution === "upload_later",
+  );
+  if (waitingOnDocs.length > 0) {
+    return fail(
+      "validation",
+      `${waitingOnDocs.length} gap(s) are marked as documents to come. Add the documents and request a re-read, or resolve them another way.`,
+    );
+  }
+
+  const published = await publishProject(runnerId, projectId);
+  if (!published.ok) return published;
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.accepted",
+    subjectId: review.value.run.id,
+    summary: "Accepted the tender pack. The round went live.",
+  });
+  logger.info(
+    { event: "scope.owner_review.completed", projectId, runId: review.value.run.id },
+    "owner review completed and project published",
+  );
+  return ok({ published: true });
 }

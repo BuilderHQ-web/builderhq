@@ -56,6 +56,7 @@ import { ParticipantInviteEmail } from "@/emails/ParticipantInviteEmail";
 import { ParticipantJoinedEmail } from "@/emails/ParticipantJoinedEmail";
 import { RoundAwardedNoticeEmail } from "@/emails/RoundAwardedNoticeEmail";
 import { TenderValidityExpiringEmail } from "@/emails/TenderValidityExpiringEmail";
+import { ScopeReadyEmail } from "@/emails/ScopeReadyEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -2354,6 +2355,54 @@ export async function sendTenderValidityExpiringEmail(
   logger.info(
     { event: "email.tender_validity_expiring.sent", to: input.to, resendId: data.id },
     "tender_validity_expiring email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeReadyEmailInput {
+  to: string;
+  runnerFirstName: string | null;
+  projectTitle: string;
+  evidencedCount: number;
+  gapCount: number;
+  reviewUrl: string;
+}
+
+/** The preparation phase's one letter: the pack is ready to review. */
+export async function sendScopeReadyEmail(
+  input: SendScopeReadyEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Your tender pack for ${input.projectTitle} is ready`;
+  const props = {
+    runnerFirstName: input.runnerFirstName,
+    projectTitle: input.projectTitle,
+    evidencedCount: input.evidencedCount,
+    gapCount: input.gapCount,
+    reviewUrl: input.reviewUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ScopeReadyEmail(props)),
+    render(ScopeReadyEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-ready" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_ready.failed", to: input.to, code: error.name, message: error.message },
+      "scope_ready email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_ready.sent", to: input.to, resendId: data.id },
+    "scope_ready email sent",
   );
   return ok({ id: data.id });
 }

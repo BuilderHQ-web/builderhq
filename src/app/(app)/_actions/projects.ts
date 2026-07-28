@@ -22,7 +22,8 @@ import {
   canDelete,
   type ActorContext,
 } from "@/modules/projects";
-import { fail, type Result } from "@/lib/result";
+import { env } from "@/lib/env";
+import { fail, ok, type Result } from "@/lib/result";
 import { requireActorForProject as resolveActorForProject } from "@/lib/actor";
 import type {
   CreateProjectInput,
@@ -105,6 +106,20 @@ export async function publishProjectAction(
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
   if (!canPublish(a.value, got.value)) return fail("forbidden", "Not allowed to publish.");
+
+  // The scope publish gate: when on, publishing becomes a submission
+  // for preparation — the pipeline reads the documents, ops reviews,
+  // the owner answers the gaps, and only then does the round go live
+  // (through this same publish path, called by completeOwnerReview).
+  if (env.SCOPE_PUBLISH_GATE) {
+    const { requestPreparation } = await import("@/modules/scope-engine");
+    const prepared = await requestPreparation(projectId, a.value.id);
+    if (!prepared.ok) return prepared;
+    const fresh = await getByIdForOwner(a.value.id, projectId);
+    if (!fresh.ok) return fresh;
+    return ok(fresh.value);
+  }
+
   return publish(a.value.id, projectId);
 }
 

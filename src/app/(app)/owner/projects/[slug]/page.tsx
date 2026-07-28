@@ -155,10 +155,16 @@ export default async function ProjectDetailPage({
     ? (sharedBy.practiceName ?? sharedBy.name ?? "the project runner")
     : null;
 
-  // Drafts always go to the wizard — for the runner. A participant's
-  // seat shows whatever exists, wizard included is not theirs.
+  // Drafts go to the wizard for the runner — unless the project is in
+  // preparation under the scope gate, in which case the tender pack
+  // page is the draft's home. A participant's seat shows whatever
+  // exists either way.
   if (project.status === "draft" && isRunner) {
-    redirect(`${base}/projects/${slug}/edit`);
+    redirect(
+      project.publishRequestedAt
+        ? `${base}/projects/${slug}/scope`
+        : `${base}/projects/${slug}/edit`,
+    );
   }
 
   // Independent reads — fan out in parallel. `builders` is the unlock

@@ -52,6 +52,8 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   // The seat + the clock
   "participant_joined", // → runner (an invited seat was claimed)
   "tender_validity_expiring", // → owner side (a priced tender's validity is closing)
+  // The scope engine
+  "scope_ready", // → runner (ops approved the tender pack; review awaits)
 ]);
 
 export const notifications = pgTable(
