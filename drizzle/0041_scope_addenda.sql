@@ -16,6 +16,12 @@ UPDATE scope_runs
 SET effective_at = COALESCE(approved_at, created_at)
 WHERE status = 'approved' AND effective_at IS NULL;
 
+-- The invariant: effective_at marks the ONE run that is a project's
+-- live schedule. A superseded run is never live, whatever it once was.
+UPDATE scope_runs
+SET effective_at = NULL
+WHERE status <> 'approved' AND effective_at IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS scope_addenda (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

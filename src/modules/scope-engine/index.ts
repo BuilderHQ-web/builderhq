@@ -24,12 +24,14 @@ export {
   startRun,
   processRunTick,
   listRuns,
+  listAddendaForOps,
   getRunForReview,
   reviewItem,
   addItem,
   reviewConflict,
   approveRun,
   type ItemVerdictInput,
+  type OpsAddendumRow,
 } from "./service";
 export {
   classifyDocument,

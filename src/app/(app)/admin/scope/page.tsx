@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, ScanSearch } from "lucide-react";
+import { ArrowRight, GitCompareArrows, ScanSearch } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { listRuns } from "@/modules/scope-engine";
@@ -50,7 +50,16 @@ export default async function ScopeRunsPage() {
               human has reviewed every line.
             </p>
           </div>
-          <StartRunPicker />
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/admin/scope/addenda"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-border-subtle text-[12px] font-ui text-text-muted hover:border-border-strong hover:text-text transition-colors"
+            >
+              <GitCompareArrows className="size-3.5" />
+              Addenda
+            </Link>
+            <StartRunPicker />
+          </div>
         </div>
 
         {runs.length === 0 ? (
@@ -74,6 +83,9 @@ export default async function ScopeRunsPage() {
                     <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
                       {r.documentCount} document{r.documentCount === 1 ? "" : "s"}
                       {r.itemCount > 0 ? ` · ${r.itemCount} items` : ""}
+                      {r.status === "approved" && !r.effectiveAt
+                        ? " · awaiting the runner"
+                        : ""}
                       {" · standard v"}
                       {r.scopeVersion}
                       {" · "}
@@ -83,6 +95,17 @@ export default async function ScopeRunsPage() {
                       })}
                     </span>
                   </span>
+                  {r.effectiveAt ? (
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold bg-[rgba(0,212,200,0.14)] text-accent-deep"
+                      title="This is the pack builders are pricing right now"
+                    >
+                      Live
+                      {r.addendumNumber
+                        ? ` · A${String(r.addendumNumber).padStart(2, "0")}`
+                        : ""}
+                    </span>
+                  ) : null}
                   <span
                     className={cn(
                       "shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold",

@@ -28,10 +28,13 @@ import {
   SCOPE_STANDARD_VERSION,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
+import { users } from "@/modules/users";
+import { unlocks } from "@/modules/unlocks/schema";
 import {
   toScheduleItem,
   diffSchedules,
   summariseDiff,
+  type ScheduleDiff,
   type ScheduleItemKind,
   type TenderSchedule,
   type TenderScheduleItem,
@@ -439,6 +442,8 @@ export async function listRuns(limit = 40): Promise<
       projectType: string;
       documentCount: number;
       itemCount: number;
+      /** The addendum this run was issued as, when it was one. */
+      addendumNumber: number | null;
     }
   >
 > {
@@ -450,12 +455,66 @@ export async function listRuns(limit = 40): Promise<
       projectType: projects.type,
       documentCount: sql<number>`(select count(*) from ${scopeRunDocuments} d where d."run_id" = ${scopeRuns.id})`.mapWith(Number),
       itemCount: sql<number>`(select count(*) from ${scopeRunItems} i where i."run_id" = ${scopeRuns.id})`.mapWith(Number),
+      addendumNumber: sql<number | null>`(select a."number" from ${scopeAddenda} a where a."run_id" = ${scopeRuns.id})`,
     })
     .from(scopeRuns)
     .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
     .orderBy(desc(scopeRuns.createdAt))
     .limit(limit);
   return rows.map((r) => ({ ...r.run, ...r }));
+}
+
+export interface OpsAddendumRow {
+  id: string;
+  number: number;
+  projectId: string;
+  projectTitle: string;
+  projectSlug: string;
+  runId: string;
+  prevRunId: string | null;
+  issuedAt: Date;
+  issuedByName: string | null;
+  diff: ScheduleDiff;
+  /** Builders who were told, counted at read time. */
+  notifiedCount: number;
+}
+
+/**
+ * Every addendum issued across the platform, newest first — the ops
+ * record of scope changes on live rounds. Ops never issues these (only
+ * a runner can), so this is a watch surface: what moved, on whose
+ * round, and how many builders were told.
+ */
+export async function listAddendaForOps(
+  limit = 50,
+): Promise<OpsAddendumRow[]> {
+  const rows = await db
+    .select({
+      addendum: scopeAddenda,
+      projectTitle: projects.title,
+      projectSlug: projects.slug,
+      issuedByName: users.name,
+      notifiedCount: sql<number>`(select count(*) from ${unlocks} u where u."project_id" = ${scopeAddenda.projectId})`.mapWith(Number),
+    })
+    .from(scopeAddenda)
+    .innerJoin(projects, eq(projects.id, scopeAddenda.projectId))
+    .leftJoin(users, eq(users.id, scopeAddenda.issuedBy))
+    .orderBy(desc(scopeAddenda.issuedAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    id: r.addendum.id,
+    number: r.addendum.number,
+    projectId: r.addendum.projectId,
+    projectTitle: r.projectTitle,
+    projectSlug: r.projectSlug,
+    runId: r.addendum.runId,
+    prevRunId: r.addendum.prevRunId,
+    issuedAt: r.addendum.issuedAt,
+    issuedByName: r.issuedByName,
+    diff: r.addendum.diff as ScheduleDiff,
+    notifiedCount: r.notifiedCount,
+  }));
 }
 
 export async function getRunForReview(runId: string): Promise<Result<{
@@ -745,7 +804,6 @@ async function carryForwardResolutions(
 /** Bell + letter to the runner when ops approves their pack. */
 async function dispatchScopeReady(runId: string): Promise<void> {
   try {
-    const { users } = await import("@/modules/users");
     const { create: createNotification } = await import("@/modules/notifications");
     const { sendScopeReadyEmail } = await import("@/modules/email");
     const { env } = await import("@/lib/env");
@@ -1216,9 +1274,13 @@ async function issueAddendum(
     .update(scopeRuns)
     .set({ effectiveAt: now, updatedAt: now })
     .where(eq(scopeRuns.id, newRunId));
+  // The old pack stops being effective the instant the new one starts.
+  // effective_at therefore means exactly one thing — "this run IS the
+  // round's live schedule" — with at most one per project. When it was
+  // effective stays on record via the addendum's prevRunId + issuedAt.
   await db
     .update(scopeRuns)
-    .set({ status: "superseded", updatedAt: now })
+    .set({ status: "superseded", effectiveAt: null, updatedAt: now })
     .where(eq(scopeRuns.id, prev.id));
 
   await recordProjectEvent({
@@ -1258,8 +1320,6 @@ async function dispatchAddendum(
   summary: string,
 ): Promise<void> {
   try {
-    const { users } = await import("@/modules/users");
-    const { unlocks } = await import("@/modules/unlocks/schema");
     const { tenders } = await import("@/modules/tenders/schema");
     const { create: createNotification } = await import(
       "@/modules/notifications"

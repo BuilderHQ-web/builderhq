@@ -63,11 +63,30 @@ const moduleDisciplineRule = {
   },
 };
 
+/**
+ * Override: tests and their fixtures may import module schemas directly.
+ * The discipline rule exists so app code depends on a module's public
+ * API rather than its tables. A fixture's whole job is to put rows in
+ * those tables and take them out again, and an integration test that
+ * asserts on a database invariant has to name the table to do it.
+ * Routing that through a module index would mean adding seeding and
+ * teardown helpers to production surfaces purely to satisfy tests.
+ */
+const testSchemaImportException = {
+  files: [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__fixtures__/**/*.ts",
+  ],
+  rules: { "no-restricted-imports": "off" },
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   moduleDisciplineRule,
   dbSchemaImportException,
+  testSchemaImportException,
   globalIgnores([
     ".next/**",
     "out/**",
