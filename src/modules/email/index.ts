@@ -24,6 +24,7 @@ export {
   sendTenderValidityExpiringEmail,
   sendScopeReadyEmail,
   sendScopeAddendumEmail,
+  sendScopeRunOpsEmail,
   sendOwnerSignupOpsEmail,
   sendBuilderSignupOpsEmail,
   sendProjectPublishedOwnerEmail,

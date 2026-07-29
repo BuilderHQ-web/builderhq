@@ -58,6 +58,7 @@ import { RoundAwardedNoticeEmail } from "@/emails/RoundAwardedNoticeEmail";
 import { TenderValidityExpiringEmail } from "@/emails/TenderValidityExpiringEmail";
 import { ScopeReadyEmail } from "@/emails/ScopeReadyEmail";
 import { ScopeAddendumEmail } from "@/emails/ScopeAddendumEmail";
+import { ScopeRunOpsEmail } from "@/emails/ScopeRunOpsEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -2454,6 +2455,51 @@ export async function sendScopeAddendumEmail(
   logger.info(
     { event: "email.scope_addendum.sent", to: input.to, resendId: data.id },
     "scope_addendum email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeRunOpsEmailInput {
+  kind: "review" | "failed";
+  projectTitle: string;
+  evidencedCount: number;
+  gapCount: number;
+  estimatedCostUsd: number | null;
+  error: string | null;
+  deskUrl: string;
+}
+
+/** The desk's push: a pack awaits review, or a run needs rescue. */
+export async function sendScopeRunOpsEmail(
+  input: SendScopeRunOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject =
+    input.kind === "review"
+      ? `Pack ready for review — ${input.projectTitle}`
+      : `Extraction failed — ${input.projectTitle}`;
+  const [html, text] = await Promise.all([
+    render(ScopeRunOpsEmail(input)),
+    render(ScopeRunOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-ops" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_ops.failed", code: error.name, message: error.message },
+      "scope_ops email send failed",
+    );
+    return fail("external_error", "Couldn't send the ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_ops.sent", kind: input.kind, resendId: data.id },
+    "scope_ops email sent",
   );
   return ok({ id: data.id });
 }

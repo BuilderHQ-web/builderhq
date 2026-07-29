@@ -29,7 +29,7 @@ import {
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { users } from "@/modules/users";
-import { unlocks } from "@/modules/unlocks/schema";
+import { unlocks } from "@/modules/unlocks";
 import {
   toScheduleItem,
   diffSchedules,
@@ -350,6 +350,9 @@ export async function processRunTick(
       },
       "scope run synthesised and ready for ops review",
     );
+    // The desk is a pull surface; this is the push. Ops hears the
+    // moment a pack is waiting, not when someone happens to look.
+    await dispatchScopeRunOps(runId, "review").catch(() => undefined);
     return ok({ status: "review", moreWork: false });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -358,8 +361,110 @@ export async function processRunTick(
       .set({ status: "failed", error: msg, usage, updatedAt: new Date() })
       .where(eq(scopeRuns.id, runId));
     logger.error({ event: "scope.run.failed", runId, msg }, "scope run failed");
+    // A stalled pack is a runner waiting on a promise the platform
+    // made. Ops must hear about failures before the client does.
+    await dispatchScopeRunOps(runId, "failed").catch(() => undefined);
     return ok({ status: "failed", moreWork: false });
   }
+}
+
+/** Bell-free ops push: the pack needs eyes (or the run needs rescue). */
+async function dispatchScopeRunOps(
+  runId: string,
+  kind: "review" | "failed",
+): Promise<void> {
+  try {
+    const { sendScopeRunOpsEmail } = await import("@/modules/email");
+    const { env } = await import("@/lib/env");
+
+    const [row] = await db
+      .select({
+        projectTitle: projects.title,
+        error: scopeRuns.error,
+        usage: scopeRuns.usage,
+      })
+      .from(scopeRuns)
+      .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
+      .where(eq(scopeRuns.id, runId))
+      .limit(1);
+    if (!row) return;
+
+    const [tally] = await db
+      .select({
+        evidenced: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'evidenced')`.mapWith(Number),
+        gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap')`.mapWith(Number),
+      })
+      .from(scopeRunItems)
+      .where(eq(scopeRunItems.runId, runId));
+
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const usage = row.usage as { estimatedCostUsd?: number } | null;
+    await sendScopeRunOpsEmail({
+      kind,
+      projectTitle: row.projectTitle,
+      evidencedCount: tally?.evidenced ?? 0,
+      gapCount: tally?.gaps ?? 0,
+      estimatedCostUsd: usage?.estimatedCostUsd ?? null,
+      error: row.error,
+      deskUrl: `${base}/admin/scope/${runId}`,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "scope.ops_dispatch_failed", runId, kind, msg },
+      "scope ops dispatch failed",
+    );
+  }
+}
+
+/**
+ * The queue driver. Advances every in-flight run, oldest first, within
+ * one wall-clock budget — called by the scope-tick cron (and by the
+ * local dev watcher). processRunTick is resumable and persists after
+ * every document, so a budget cutoff mid-run costs nothing: the next
+ * beat picks up exactly where this one stopped.
+ */
+export async function tickQueuedRuns(budgetMs = 50_000): Promise<{
+  ticked: number;
+  reachedReview: number;
+  failed: number;
+}> {
+  const started = Date.now();
+  const timeLeft = () => budgetMs - (Date.now() - started);
+
+  const queued = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      inArray(scopeRuns.status, [
+        "pending",
+        "classifying",
+        "extracting",
+        "synthesising",
+      ]),
+    )
+    .orderBy(scopeRuns.createdAt);
+
+  let ticked = 0;
+  let reachedReview = 0;
+  let failed = 0;
+  for (const run of queued) {
+    // A tick needs room to finish at least one model call; below the
+    // floor we stop and leave the rest to the next beat.
+    if (timeLeft() < 20_000) break;
+    const r = await processRunTick(run.id, timeLeft());
+    if (!r.ok) continue;
+    ticked++;
+    if (r.value.status === "review") reachedReview++;
+    if (r.value.status === "failed") failed++;
+  }
+  if (ticked > 0) {
+    logger.info(
+      { event: "scope.queue.ticked", queued: queued.length, ticked, reachedReview, failed },
+      "scope queue advanced",
+    );
+  }
+  return { ticked, reachedReview, failed };
 }
 
 async function classifyOne(

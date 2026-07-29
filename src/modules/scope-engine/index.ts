@@ -23,6 +23,7 @@ export type { ScopeGapResolutionRow, ScopeAddendumRow } from "./schema";
 export {
   startRun,
   processRunTick,
+  tickQueuedRuns,
   listRuns,
   listAddendaForOps,
   getRunForReview,
