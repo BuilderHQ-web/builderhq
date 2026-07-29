@@ -980,7 +980,21 @@ import {
   type ScopeAddendumRow,
 } from "./schema";
 
-export type GapResolutionKind = "allowance" | "excluded" | "upload_later";
+/**
+ * The four answers a runner can give an open question:
+ *   allowance      — a locked sum every builder prices against equally
+ *   builder_priced — the line stays on the schedule; each builder
+ *                    prices it within their quote (the everyday answer:
+ *                    skip bins, temporary fencing, a hundred small
+ *                    things no owner should have to cost themselves)
+ *   excluded       — outside this contract entirely
+ *   upload_later   — the documents are coming; re-read before going out
+ */
+export type GapResolutionKind =
+  | "allowance"
+  | "builder_priced"
+  | "excluded"
+  | "upload_later";
 
 /**
  * The runner submits for preparation. Publishability is validated
@@ -1022,6 +1036,14 @@ export interface OwnerScopeReview {
   run: ScopeRunRow | null;
   /** docId → display name, for citation rendering. */
   documentNames: Record<string, string>;
+  /** The document register: what was read, as the reader saw it. */
+  register: Array<{
+    documentId: string;
+    filename: string;
+    docTitle: string | null;
+    kind: string | null;
+    pageCount: number | null;
+  }>;
   items: ScopeRunItemRow[];
   resolutions: ScopeGapResolutionRow[];
   /** Runner may act; seats read. */
@@ -1089,6 +1111,7 @@ export async function getOwnerReview(
       phase: "none",
       run: null,
       documentNames: {},
+      register: [],
       items: [],
       resolutions: [],
       canResolve: access.kind === "runner",
@@ -1097,10 +1120,22 @@ export async function getOwnerReview(
     });
   }
   if (run.status !== "approved") {
+    const readingRegister = await db
+      .select({
+        documentId: scopeRunDocuments.documentId,
+        filename: documents.filename,
+        docTitle: scopeRunDocuments.docTitle,
+        kind: scopeRunDocuments.kind,
+        pageCount: scopeRunDocuments.pageCount,
+      })
+      .from(scopeRunDocuments)
+      .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+      .where(eq(scopeRunDocuments.runId, run.id));
     return ok({
       phase: "reading",
       run,
       documentNames: {},
+      register: readingRegister,
       items: [],
       resolutions: [],
       canResolve: access.kind === "runner",
@@ -1120,7 +1155,13 @@ export async function getOwnerReview(
       .from(scopeGapResolutions)
       .where(eq(scopeGapResolutions.runId, run.id)),
     db
-      .select({ documentId: scopeRunDocuments.documentId, filename: documents.filename })
+      .select({
+        documentId: scopeRunDocuments.documentId,
+        filename: documents.filename,
+        docTitle: scopeRunDocuments.docTitle,
+        kind: scopeRunDocuments.kind,
+        pageCount: scopeRunDocuments.pageCount,
+      })
       .from(scopeRunDocuments)
       .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
       .where(eq(scopeRunDocuments.runId, run.id)),
@@ -1129,6 +1170,7 @@ export async function getOwnerReview(
     phase: "ready",
     run,
     documentNames: Object.fromEntries(register.map((r) => [r.documentId, r.filename])),
+    register,
     items,
     resolutions,
     canResolve: access.kind === "runner",
@@ -1209,9 +1251,11 @@ export async function resolveGap(
     summary:
       input.resolution === "allowance"
         ? `Set an allowance of $${input.amountAud} for ${itemId}.`
-        : input.resolution === "excluded"
-          ? `Excluded ${itemId} from this tender.`
-          : `Marked ${itemId} as documents to come.`,
+        : input.resolution === "builder_priced"
+          ? `Left ${itemId} to the builders to price.`
+          : input.resolution === "excluded"
+            ? `Excluded ${itemId} from this tender.`
+            : `Marked ${itemId} as documents to come.`,
   });
   return ok(row);
 }
@@ -1611,6 +1655,8 @@ async function scheduleForRun(
       if (r.resolution === "allowance") {
         kind = "owner_allowance";
         ownerAmountAud = r.amountAud ?? null;
+      } else if (r.resolution === "builder_priced") {
+        kind = "owner_open";
       } else {
         kind = "owner_excluded";
       }
@@ -1632,4 +1678,151 @@ async function scheduleForRun(
   );
 
   return { runId: run.id, standardVersion: run.scopeVersion, items: out };
+}
+
+// ── list-surface phase + the desk's bulk verdict ────────────────────────
+
+export type ProjectScopePhase = "analysing" | "pack_ready";
+
+/**
+ * The scope phase of many projects in one query, for list surfaces:
+ * "analysing" while the pipeline or the ops desk holds the pack,
+ * "pack_ready" once it awaits the runner's answers. Projects with no
+ * live preparation are simply absent from the map.
+ */
+export async function scopePhaseForProjects(
+  projectIds: string[],
+): Promise<Map<string, ProjectScopePhase>> {
+  if (projectIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      projectId: scopeRuns.projectId,
+      status: scopeRuns.status,
+      effectiveAt: scopeRuns.effectiveAt,
+      createdAt: scopeRuns.createdAt,
+    })
+    .from(scopeRuns)
+    .where(
+      and(
+        inArray(scopeRuns.projectId, projectIds),
+        inArray(scopeRuns.status, [
+          "pending",
+          "classifying",
+          "extracting",
+          "synthesising",
+          "review",
+          "approved",
+        ]),
+      ),
+    )
+    .orderBy(desc(scopeRuns.createdAt));
+  const out = new Map<string, ProjectScopePhase>();
+  for (const r of rows) {
+    if (out.has(r.projectId)) continue; // newest run wins
+    if (r.status === "approved" && !r.effectiveAt) {
+      out.set(r.projectId, "pack_ready");
+    } else if (r.status !== "approved") {
+      out.set(r.projectId, "analysing");
+    }
+    // approved + effective = the round's live pack; the project's own
+    // status tells that story, so no phase chip.
+  }
+  return out;
+}
+
+/**
+ * The desk's sweep: confirm every line still awaiting a verdict. One
+ * review event records the sweep with its count — a bulk confirm is a
+ * weaker label than a considered one, and the training data should
+ * say so honestly.
+ */
+export async function bulkConfirmPending(
+  actorId: string,
+  runId: string,
+): Promise<Result<{ confirmed: number }>> {
+  const [run] = await db
+    .select({ id: scopeRuns.id, status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "review") {
+    return fail("conflict", "Only runs in review can be swept.");
+  }
+  const updated = await db
+    .update(scopeRunItems)
+    .set({ opsStatus: "confirmed", editedBy: actorId, editedAt: new Date() })
+    .where(
+      and(
+        eq(scopeRunItems.runId, runId),
+        eq(scopeRunItems.opsStatus, "pending"),
+        ne(scopeRunItems.status, "not_expected"),
+      ),
+    )
+    .returning({ id: scopeRunItems.id });
+  await recordReview(runId, "run", "run.bulk_confirmed", actorId, null, {
+    confirmed: updated.length,
+  });
+  logger.info(
+    { event: "scope.run.bulk_confirmed", runId, actorId, confirmed: updated.length },
+    "remaining verdicts bulk-confirmed",
+  );
+  return ok({ confirmed: updated.length });
+}
+
+/**
+ * The one-act sweep of the review desk's counterpart: every question
+ * still open goes to the builders to price — the ordinary answer in
+ * ordinary tendering. One insert, one audit line, nothing overwritten:
+ * answers the runner already gave stand untouched.
+ */
+export async function bulkResolveOpen(
+  runnerId: string,
+  projectId: string,
+): Promise<Result<{ resolved: number }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner resolves the scope.");
+  }
+  const [run] = await db
+    .select({ id: scopeRuns.id, effectiveAt: scopeRuns.effectiveAt })
+    .from(scopeRuns)
+    .where(and(eq(scopeRuns.projectId, projectId), eq(scopeRuns.status, "approved")))
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(1);
+  if (!run) return fail("conflict", "No approved tender pack to resolve against.");
+  if (run.effectiveAt) {
+    return fail(
+      "conflict",
+      "This pack is already live for the round. Add documents and request a re-read to change it.",
+    );
+  }
+
+  const result = await db.execute(sql`
+    insert into scope_gap_resolutions (run_id, item_id, resolution, created_by)
+    select i.run_id, i.item_id, 'builder_priced', ${runnerId}
+    from scope_run_items i
+    where i.run_id = ${run.id}
+      and i.status = 'gap'
+      and i.ops_status <> 'removed'
+      and not exists (
+        select 1 from scope_gap_resolutions r
+        where r.run_id = i.run_id and r.item_id = i.item_id
+      )
+    returning id
+  `);
+  const resolved = Array.isArray(result)
+    ? result.length
+    : (result.rows?.length ?? 0);
+
+  if (resolved > 0) {
+    await recordProjectEvent({
+      projectId,
+      actorId: runnerId,
+      kind: "scope.gap_resolved",
+      subjectId: run.id,
+      summary: `Left ${resolved} open line${resolved === 1 ? "" : "s"} to the builders to price.`,
+    });
+  }
+  return ok({ resolved });
 }

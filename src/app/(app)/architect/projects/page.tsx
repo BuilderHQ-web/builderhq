@@ -6,6 +6,10 @@ import { auth } from "@/modules/auth";
 import { dashboardForRole } from "@/lib/dashboard-route";
 import { listMine, type Project } from "@/modules/projects";
 import { countTendersForProject } from "@/modules/tenders";
+import {
+  scopePhaseForProjects,
+  type ProjectScopePhase,
+} from "@/modules/scope-engine";
 
 export const metadata = { title: "Tenders" };
 export const dynamic = "force-dynamic";
@@ -18,13 +22,20 @@ export default async function ArchitectProjectsPage() {
   if (role !== "architect") redirect(dashboardForRole(role));
 
   const projects = await listMine(session.user.id);
-  const counts = await Promise.all(
-    projects.map((p) =>
-      ["published", "tendering", "awarded"].includes(p.status)
-        ? countTendersForProject(p.id)
-        : Promise.resolve(0),
+  const [counts, phases] = await Promise.all([
+    Promise.all(
+      projects.map((p) =>
+        ["published", "tendering", "awarded"].includes(p.status)
+          ? countTendersForProject(p.id)
+          : Promise.resolve(0),
+      ),
     ),
-  );
+    // Drafts in preparation wear the truth: the pack is being
+    // analysed, or it is ready and waiting on the runner.
+    scopePhaseForProjects(
+      projects.filter((p) => p.status === "draft").map((p) => p.id),
+    ),
+  ]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
@@ -67,7 +78,12 @@ export default async function ArchitectProjectsPage() {
         ) : (
           <div className="mt-6 overflow-hidden rounded-xl border border-border-subtle divide-y divide-border-subtle bg-bg-raised">
             {projects.map((p, i) => (
-              <Row key={p.id} project={p} quotes={counts[i] ?? 0} />
+              <Row
+                key={p.id}
+                project={p}
+                quotes={counts[i] ?? 0}
+                phase={phases.get(p.id) ?? null}
+              />
             ))}
           </div>
         )}
@@ -91,8 +107,34 @@ const MODE_LABEL: Record<Project["tenderMode"], string> = {
   hybrid: "Open",
 };
 
-function Row({ project: p, quotes }: { project: Project; quotes: number }) {
+function Row({
+  project: p,
+  quotes,
+  phase,
+}: {
+  project: Project;
+  quotes: number;
+  phase: ProjectScopePhase | null;
+}) {
   const live = p.status === "published" || p.status === "tendering";
+  // A draft in preparation is not a draft to the person waiting on it.
+  // "Analysing" while the documents are read and checked; "Pack ready"
+  // the moment their answers are all that stands before going live.
+  const label =
+    p.status === "draft" && phase === "analysing"
+      ? "Analysing"
+      : p.status === "draft" && phase === "pack_ready"
+        ? "Pack ready"
+        : STATUS_LABEL[p.status];
+  const tone = live
+    ? "bg-[rgba(0,212,200,0.1)] text-accent-light"
+    : phase === "analysing"
+      ? "bg-[rgba(26,95,212,0.09)] text-[#2a5cae]"
+      : phase === "pack_ready"
+        ? "bg-[rgba(201,148,34,0.12)] text-[#8a6414]"
+        : p.status === "awarded"
+          ? "bg-[rgba(224,178,92,0.12)] text-[#8a6a2f]"
+          : "bg-[rgba(24,34,44,0.06)] text-text-muted";
   return (
     <Link
       href={`/architect/projects/${p.slug}`}
@@ -109,17 +151,19 @@ function Row({ project: p, quotes }: { project: Project; quotes: number }) {
           {live ? ` · ${quotes} ${quotes === 1 ? "quote" : "quotes"}` : ""}
         </p>
       </div>
+      {phase === "analysing" ? (
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-[#2a5cae] animate-pulse shrink-0"
+        />
+      ) : null}
       <span
         className={
           "shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold " +
-          (live
-            ? "bg-[rgba(0,212,200,0.1)] text-accent-light"
-            : p.status === "awarded"
-              ? "bg-[rgba(224,178,92,0.12)] text-[#8a6a2f]"
-              : "bg-[rgba(24,34,44,0.06)] text-text-muted")
+          tone
         }
       >
-        {STATUS_LABEL[p.status]}
+        {label}
       </span>
       <ArrowRight className="size-4 text-text-faint shrink-0" />
     </Link>

@@ -32,6 +32,12 @@ export type ScheduleItemKind =
   | "evidenced"
   /** The client resolved a gap by locking an allowance figure. */
   | "owner_allowance"
+  /**
+   * The documents are silent and the client left the line to the
+   * builders: each prices it within their quote, exactly as ordinary
+   * tendering works. Tenderable, no locked figure.
+   */
+  | "owner_open"
   /** The client excluded it from the tender; shown, never priced. */
   | "owner_excluded";
 

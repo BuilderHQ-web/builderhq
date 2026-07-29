@@ -17,7 +17,9 @@ import {
   addItem,
   reviewConflict,
   approveRun,
+  bulkConfirmPending,
   resolveGap,
+  bulkResolveOpen,
   requestReread,
   completeOwnerReview,
   type GapResolutionKind,
@@ -90,6 +92,15 @@ export async function approveScopeRunAction(
   return approveRun(a.value, runId);
 }
 
+/** Sweep every line still awaiting a verdict to confirmed. */
+export async function bulkConfirmScopeAction(
+  runId: string,
+): Promise<Result<{ confirmed: number }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return bulkConfirmPending(a.value, runId);
+}
+
 // ── owner-side (runner) actions — the review desk's writes ──────────────
 
 const RUNNER_ROLES = new Set(["project_owner", "architect", "admin"]);
@@ -111,6 +122,14 @@ export async function resolveScopeGapAction(
   const a = await requireRunner();
   if (!a.ok) return a;
   return resolveGap(a.value, projectId, itemId, input);
+}
+
+export async function bulkResolveOpenGapsAction(
+  projectId: string,
+): Promise<Result<{ resolved: number }>> {
+  const a = await requireRunner();
+  if (!a.ok) return a;
+  return bulkResolveOpen(a.value, projectId);
 }
 
 export async function requestScopeRereadAction(

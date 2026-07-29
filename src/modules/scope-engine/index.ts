@@ -16,7 +16,11 @@ export {
   getProjectSchedule,
   getScheduleForRun,
   listAddenda,
+  scopePhaseForProjects,
+  bulkConfirmPending,
+  bulkResolveOpen,
   type GapResolutionKind,
+  type ProjectScopePhase,
   type OwnerScopeReview,
 } from "./service";
 export type { ScopeGapResolutionRow, ScopeAddendumRow } from "./schema";

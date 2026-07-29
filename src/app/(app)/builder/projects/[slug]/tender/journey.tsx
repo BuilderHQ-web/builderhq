@@ -2466,6 +2466,11 @@ function ScheduleItemRow({
               The client&rsquo;s schedule carries{" "}
               {formatAud(item.ownerAmountAud)} for this line.
             </p>
+          ) : item.kind === "owner_open" ? (
+            <p className="mt-1.5 text-[11.5px] text-text-dim">
+              The documents are silent here. The client asks you to price
+              this line within your quote.
+            </p>
           ) : cite ? (
             <p className="mt-1.5 text-[11px] text-text-dim">{cite}</p>
           ) : null}

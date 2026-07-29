@@ -26,6 +26,7 @@ import {
 import {
   addScopeItemAction,
   approveScopeRunAction,
+  bulkConfirmScopeAction,
   reviewScopeConflictAction,
   reviewScopeItemAction,
   tickScopeRunAction,
@@ -270,13 +271,30 @@ function Selection({
           The selection · {evidenced} evidenced · {gaps} gaps
         </h2>
         {!readOnly ? (
-          <span
-            className={cn(
-              "text-[11px] tabular-nums",
-              pending > 0 ? "text-[#8a6414]" : "text-[#0a7d73]",
-            )}
-          >
-            {pending > 0 ? `${pending} awaiting verdict` : "All reviewed"}
+          <span className="flex items-center gap-3">
+            <span
+              className={cn(
+                "text-[11px] tabular-nums",
+                pending > 0 ? "text-[#8a6414]" : "text-[#0a7d73]",
+              )}
+            >
+              {pending > 0 ? `${pending} awaiting verdict` : "All reviewed"}
+            </span>
+            {pending > 0 ? (
+              <ConfirmAll
+                runId={runId}
+                pending={pending}
+                onDone={() =>
+                  setRows((prev) =>
+                    prev.map((r) =>
+                      r.opsStatus === "pending" && r.status !== "not_expected"
+                        ? { ...r, opsStatus: "confirmed" }
+                        : r,
+                    ),
+                  )
+                }
+              />
+            ) : null}
           </span>
         ) : null}
       </div>
@@ -306,6 +324,53 @@ function Selection({
 
       {!readOnly ? <AddItem runId={runId} onAdded={(r) => setRows((p) => [...p, r])} /> : null}
     </section>
+  );
+}
+
+/**
+ * The sweep: confirm every line still awaiting a verdict. Sits beside
+ * the pending count so the reviewer confirms the tail in one act after
+ * working the lines that deserved individual attention.
+ */
+function ConfirmAll({
+  runId,
+  pending,
+  onDone,
+}: {
+  runId: string;
+  pending: number;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const sweep = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await bulkConfirmScopeAction(runId);
+      if (!r.ok) {
+        toast.error("Could not confirm", r.error.message);
+        return;
+      }
+      toast.success(`${r.value.confirmed} lines confirmed.`);
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={sweep}
+      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-border-strong text-[11px] font-ui text-text hover:bg-bg-elev transition-colors disabled:opacity-60"
+    >
+      {busy ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : (
+        <Check className="size-3" />
+      )}
+      Confirm all {pending}
+    </button>
   );
 }
 
