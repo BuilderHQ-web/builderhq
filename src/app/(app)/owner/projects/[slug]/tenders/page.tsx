@@ -43,6 +43,7 @@ export default async function ProjectTendersPage({
     summaries,
     round,
     schedule,
+    addenda,
   } = r.value;
   const unlockCount = await countUnlocksForProject(project.id);
   const seatLine =
@@ -179,6 +180,7 @@ export default async function ProjectTendersPage({
               access.kind === "runner" || access.role === "decider"
             }
             schedule={schedule}
+            addenda={addenda}
           />
         )}
       </div>

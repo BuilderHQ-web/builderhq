@@ -36,6 +36,12 @@ export const scopeRuns = pgTable(
     startedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     approvedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     approvedAt: timestamp({ mode: "date", withTimezone: true }),
+    /**
+     * When this approved run BECAME the round's schedule — at publish
+     * acceptance, or when its addendum issued. A re-read approved by
+     * ops stays invisible to builders until the runner issues it.
+     */
+    effectiveAt: timestamp({ mode: "date", withTimezone: true }),
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -170,3 +176,38 @@ export type ScopeRunDocumentRow = typeof scopeRunDocuments.$inferSelect;
 export type ScopeRunItemRow = typeof scopeRunItems.$inferSelect;
 export type ScopeRunConflictRow = typeof scopeRunConflicts.$inferSelect;
 export type ScopeReviewEventRow = typeof scopeReviewEvents.$inferSelect;
+
+/**
+ * The addendum register — every formal re-issue of a live round's
+ * pack, numbered per project. The diff is denormalised at issue time
+ * so the record reads forever, independent of later runs.
+ */
+export const scopeAddenda = pgTable(
+  "scope_addenda",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    runId: uuid()
+      .notNull()
+      .unique()
+      .references(() => scopeRuns.id, { onDelete: "cascade" }),
+    prevRunId: uuid().references(() => scopeRuns.id, {
+      onDelete: "set null",
+    }),
+    number: integer().notNull(),
+    diff: jsonb().notNull().default({}),
+    note: text(),
+    issuedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    issuedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("scope_addenda_project_idx").on(t.projectId, t.number),
+    uniqueIndex("scope_addenda_project_number_idx").on(t.projectId, t.number),
+  ],
+);
+
+export type ScopeAddendumRow = typeof scopeAddenda.$inferSelect;

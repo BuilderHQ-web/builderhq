@@ -36,7 +36,7 @@ import {
   type RoundEvaluation,
 } from "@/modules/tenders/evaluation";
 import type { TenderSchedule } from "@/modules/tenders/schedule";
-import { getProjectSchedule } from "@/modules/scope-engine";
+import { getProjectSchedule, listAddenda } from "@/modules/scope-engine";
 
 export interface LoadedRound {
   project: Project;
@@ -60,6 +60,8 @@ export interface LoadedRound {
    * round answered line by line. Null on legacy rounds.
    */
   schedule: TenderSchedule | null;
+  /** The round's addendum register, newest first. */
+  addenda: Array<{ number: number; runId: string; issuedAtISO: string }>;
 }
 
 export async function loadRound(
@@ -82,20 +84,22 @@ export async function loadRound(
   }
   const { project, access, sharedBy } = r.value;
 
-  const [tenders, responsesByTender, [runner], schedule] = await Promise.all([
-    listTendersForOwner(project.id),
-    listResponsesForProjectTenders(project.id),
-    db
-      .select({
-        runnerName: users.name,
-        practiceName: architectProfiles.practiceName,
-      })
-      .from(users)
-      .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
-      .where(eq(users.id, project.ownerId))
-      .limit(1),
-    getProjectSchedule(project.id),
-  ]);
+  const [tenders, responsesByTender, [runner], schedule, addendaRows] =
+    await Promise.all([
+      listTendersForOwner(project.id),
+      listResponsesForProjectTenders(project.id),
+      db
+        .select({
+          runnerName: users.name,
+          practiceName: architectProfiles.practiceName,
+        })
+        .from(users)
+        .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
+        .where(eq(users.id, project.ownerId))
+        .limit(1),
+      getProjectSchedule(project.id),
+      listAddenda(project.id),
+    ]);
   const analytics = computeTenderAnalytics(tenders, project.publishedAt);
 
   const summaries: Record<string, TenderInstrumentSummary | null> = {};
@@ -145,6 +149,11 @@ export async function loadRound(
       summaries,
       round: evaluateRound(inputs, schedule),
       schedule,
+      addenda: addendaRows.map((a) => ({
+        number: a.number,
+        runId: a.runId,
+        issuedAtISO: a.issuedAt.toISOString(),
+      })),
     },
   };
 }

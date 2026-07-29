@@ -54,6 +54,7 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   "tender_validity_expiring", // → owner side (a priced tender's validity is closing)
   // The scope engine
   "scope_ready", // → runner (ops approved the tender pack; review awaits)
+  "scope_addendum", // → builders on the round (the pack was re-issued)
 ]);
 
 export const notifications = pgTable(

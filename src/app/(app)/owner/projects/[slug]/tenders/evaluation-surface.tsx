@@ -97,6 +97,7 @@ export function TenderEvaluationSurface({
   projectSlug,
   canDecide = true,
   schedule = null,
+  addenda = [],
 }: {
   tenders: TenderForOwner[];
   round: RoundEvaluation;
@@ -108,6 +109,8 @@ export function TenderEvaluationSurface({
   canDecide?: boolean;
   /** The client's approved pack on gate rounds. */
   schedule?: TenderSchedule | null;
+  /** The round's addendum register, newest first. */
+  addenda?: Array<{ number: number; runId: string; issuedAtISO: string }>;
 }) {
   const decisions = useDecisions(canDecide);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -119,6 +122,21 @@ export function TenderEvaluationSurface({
     for (const t of tenders) m.set(t.id, t);
     return m;
   }, [tenders]);
+
+  // Tenders priced before the latest addendum: their pinned run is not
+  // the round's current schedule. The chip keeps the comparison honest.
+  const latestAddendum = addenda[0] ?? null;
+  const staleTenders = useMemo(() => {
+    const out = new Set<string>();
+    if (!schedule) return out;
+    for (const t of tenders) {
+      const pinned = summaries[t.id]?.answers["scope.schedule_run"];
+      if (typeof pinned === "string" && pinned !== schedule.runId) {
+        out.add(t.id);
+      }
+    }
+    return out;
+  }, [schedule, tenders, summaries]);
 
   const evaluated = round.tenders;
   const evaluatedIds = useMemo(
@@ -218,6 +236,11 @@ export function TenderEvaluationSurface({
                   decisions={decisions}
                   onOpen={() => setOpenId(ev.tenderId)}
                   onAward={() => setAwardId(ev.tenderId)}
+                  staleAddendum={
+                    staleTenders.has(ev.tenderId) && latestAddendum
+                      ? latestAddendum.number
+                      : null
+                  }
                 />
               ))}
             </div>
@@ -939,6 +962,7 @@ function TenderCard({
   decisions,
   onOpen,
   onAward,
+  staleAddendum = null,
 }: {
   ev: TenderEvaluation;
   tender: TenderForOwner;
@@ -947,6 +971,8 @@ function TenderCard({
   decisions: ReturnType<typeof useDecisions>;
   onOpen: () => void;
   onAward: () => void;
+  /** Set when this tender was priced before the given addendum. */
+  staleAddendum?: number | null;
 }) {
   const status = STATUS_META[ev.status];
   const high = ev.flags.filter((f) => f.severity === "high").length;
@@ -992,6 +1018,14 @@ function TenderCard({
           </span>
         ) : null}
       </div>
+
+      {staleAddendum !== null ? (
+        <div className="px-5 mt-3">
+          <span className="inline-flex items-center rounded-full border border-[rgba(201,148,34,0.45)] bg-[rgba(201,148,34,0.07)] px-2.5 py-[3px] text-[10.5px] font-ui font-medium text-[#8a6414]">
+            Priced before Addendum {String(staleAddendum).padStart(2, "0")}
+          </span>
+        </div>
+      ) : null}
 
       {/* the number */}
       <div className="px-5 mt-5">

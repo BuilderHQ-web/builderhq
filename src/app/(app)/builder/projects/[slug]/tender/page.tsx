@@ -12,7 +12,7 @@ import {
 } from "@/modules/tenders";
 import { getBuilderProfile, getOwnerContactPublic } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
-import { getProjectSchedule } from "@/modules/scope-engine";
+import { getProjectSchedule, getScheduleForRun } from "@/modules/scope-engine";
 import type { MarketplacePreview } from "@/modules/projects";
 import { TenderJourney, type TenderLetterhead } from "./journey";
 import { TenderOutcome } from "./outcome";
@@ -97,7 +97,14 @@ export default async function TenderRoute({
 
   // The client's approved tender schedule, when the round was
   // published through the scope gate. Null keeps the legacy deck.
+  // Drafts answer the CURRENT pack; a sealed tender reads back against
+  // the pack it was priced on (its pinned run), never a later one.
   const schedule = await getProjectSchedule(preview.id);
+  const pinnedRun = answers.find((a) => a.qid === "scope.schedule_run")?.v;
+  const sealedSchedule =
+    typeof pinnedRun === "string" && pinnedRun !== schedule?.runId
+      ? ((await getScheduleForRun(pinnedRun)) ?? schedule)
+      : schedule;
 
   // ── sealed: the read-only outcome ─────────────────────────────────
   if (existing && existing.status !== "draft") {
@@ -118,7 +125,12 @@ export default async function TenderRoute({
         answers={Object.fromEntries(answers.map((a) => [a.qid, a.v]))}
         docs={docs}
         ownerContact={ownerContact}
-        schedule={schedule}
+        schedule={sealedSchedule}
+        packChanged={
+          typeof pinnedRun === "string" &&
+          schedule !== null &&
+          pinnedRun !== schedule.runId
+        }
       />
     );
   }

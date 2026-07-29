@@ -65,6 +65,7 @@ export function TenderOutcome({
   docs,
   ownerContact,
   schedule = null,
+  packChanged = false,
 }: {
   slug: string;
   projectTitle: string;
@@ -74,6 +75,8 @@ export function TenderOutcome({
   docs: Document[];
   ownerContact: OwnerContact | null;
   schedule?: TenderSchedule | null;
+  /** An addendum re-issued the round's pack after this tender sealed. */
+  packChanged?: boolean;
 }) {
   const router = useRouter();
   const [withdrawing, setWithdrawing] = useState(false);
@@ -160,6 +163,16 @@ export function TenderOutcome({
                 )}.`
               : ""}
           </p>
+          {packChanged ? (
+            <div className="mt-4 rounded-lg border border-[rgba(201,148,34,0.45)] bg-[rgba(201,148,34,0.06)] px-4 py-3 max-w-[62ch]">
+              <p className="text-[12.5px] leading-[1.6] text-[#8a6414]">
+                An addendum re-issued the tender schedule after this tender
+                sealed. Your document below still reads exactly as priced;
+                if your price should change, withdraw and submit against the
+                revised schedule.
+              </p>
+            </div>
+          ) : null}
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <a
               href={`/builder/projects/${slug}/tender/document`}

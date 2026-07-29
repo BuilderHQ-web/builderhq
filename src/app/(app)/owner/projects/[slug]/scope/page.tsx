@@ -18,6 +18,7 @@ import { ArrowLeft, BookOpenCheck, Clock } from "lucide-react";
 import { auth } from "@/modules/auth";
 import { getBySlugForViewer } from "@/modules/projects";
 import { getOwnerReview } from "@/modules/scope-engine";
+import { summariseDiff, type ScheduleDiff } from "@/modules/tenders/schedule";
 import { projectsBase } from "@/lib/dashboard-route";
 import { PackReview } from "./pack-review";
 
@@ -40,8 +41,21 @@ export default async function ScopeReviewPage({
 
   const review = await getOwnerReview(project.id, session.user.id!);
   if (!review.ok) notFound();
-  const { phase, run, documentNames, items, resolutions, canResolve } =
-    review.value;
+  const {
+    phase,
+    run,
+    documentNames,
+    items,
+    resolutions,
+    canResolve,
+    mode,
+    addenda,
+  } = review.value;
+  const addendaForClient = addenda.map((a) => ({
+    number: a.number,
+    issuedAtISO: a.issuedAt.toISOString(),
+    summary: summariseDiff(a.diff as ScheduleDiff),
+  }));
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
@@ -63,9 +77,11 @@ export default async function ScopeReviewPage({
             {project.title}
           </h1>
           <p className="mt-2 text-[13px] text-text-muted max-w-[62ch]">
-            Every document read against the BuilderHQ Scope Standard and
-            checked by a person. What is covered, what is not, and what that
-            means for your tender.
+            {mode === "record"
+              ? "The pack your round runs on. Every document read against the BuilderHQ Scope Standard, checked by a person, and accepted by you. Changes go out as numbered addenda."
+              : mode === "addendum"
+                ? "The re-read pack. Your earlier answers carried forward; review what changed and issue the addendum when you are ready. Builders keep pricing the current schedule until you do."
+                : "Every document read against the BuilderHQ Scope Standard and checked by a person. What is covered, what is not, and what that means for your tender."}
           </p>
         </div>
 
@@ -91,6 +107,8 @@ export default async function ScopeReviewPage({
             projectType={project.type}
             documentNames={documentNames}
             canResolve={canResolve}
+            mode={mode}
+            addenda={addendaForClient}
             items={items.map((i) => ({
               id: i.id,
               itemId: i.itemId,

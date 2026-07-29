@@ -23,6 +23,7 @@ export {
   sendRoundAwardedNoticeEmail,
   sendTenderValidityExpiringEmail,
   sendScopeReadyEmail,
+  sendScopeAddendumEmail,
   sendOwnerSignupOpsEmail,
   sendBuilderSignupOpsEmail,
   sendProjectPublishedOwnerEmail,

@@ -8,7 +8,7 @@ import {
   listResponsesForTender,
 } from "@/modules/tenders";
 import { buildTenderDocument } from "@/modules/tenders/document";
-import { getProjectSchedule } from "@/modules/scope-engine";
+import { getProjectSchedule, getScheduleForRun } from "@/modules/scope-engine";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import type { MarketplacePreview } from "@/modules/projects";
@@ -60,12 +60,21 @@ export async function GET(
     }
   }
 
-  const [docs, bundle, schedule] = await Promise.all([
+  const [docs, bundle, currentSchedule] = await Promise.all([
     listForTenderUnchecked(tender.id),
     getBuilderProfile(userId),
     getProjectSchedule(preview.id),
   ]);
   const licence = bundle?.licences[0] ?? null;
+
+  // The document renders against the pack this tender was PRICED on.
+  // An addendum re-issues the round's schedule, but a sealed record
+  // never rewrites itself — the pinned run wins over the current one.
+  const pinnedRun = answers["scope.schedule_run"];
+  const schedule =
+    typeof pinnedRun === "string" && pinnedRun !== currentSchedule?.runId
+      ? ((await getScheduleForRun(pinnedRun)) ?? currentSchedule)
+      : currentSchedule;
 
   const model = buildTenderDocument({
     tenderId: tender.id,

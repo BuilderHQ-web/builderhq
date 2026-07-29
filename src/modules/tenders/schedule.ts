@@ -374,3 +374,175 @@ export function toScheduleItem(row: {
     note: row.note,
   };
 }
+
+/* ── addenda (pure halves) ──────────────────────────────────────────── */
+
+export interface ScheduleDiffLine {
+  itemId: string;
+  label: string;
+  divisionLabel: string;
+  /** The line's shape on the side it exists on (or moved to). */
+  kind: ScheduleItemKind;
+  ownerAmountAud: number | null;
+}
+
+export interface ScheduleDiffChange {
+  itemId: string;
+  label: string;
+  divisionLabel: string;
+  fromKind: ScheduleItemKind;
+  toKind: ScheduleItemKind;
+  fromAmountAud: number | null;
+  toAmountAud: number | null;
+}
+
+export interface ScheduleDiff {
+  /** Priceable on the new pack, absent (or client-excluded) before. */
+  added: ScheduleDiffLine[];
+  /** Priceable before, gone (or client-excluded) now. */
+  removed: ScheduleDiffLine[];
+  /** Priceable both sides, but the line's shape or figure moved. */
+  changed: ScheduleDiffChange[];
+}
+
+/**
+ * What an addendum actually says: the movement of the PRICEABLE set
+ * between two packs. Membership changes land in added/removed (a line
+ * the client pulls out of the round is "removed" for tenderers, even
+ * though it still prints as context); shape changes — an evidenced
+ * line becoming a client allowance, a figure moving — land in changed.
+ */
+export function diffSchedules(
+  prev: TenderSchedule,
+  next: TenderSchedule,
+): ScheduleDiff {
+  const prevBy = new Map(tenderableItems(prev).map((i) => [i.itemId, i]));
+  const nextBy = new Map(tenderableItems(next).map((i) => [i.itemId, i]));
+  const line = (i: TenderScheduleItem): ScheduleDiffLine => ({
+    itemId: i.itemId,
+    label: i.label,
+    divisionLabel: i.divisionLabel,
+    kind: i.kind,
+    ownerAmountAud: i.ownerAmountAud,
+  });
+
+  const added: ScheduleDiffLine[] = [];
+  const removed: ScheduleDiffLine[] = [];
+  const changed: ScheduleDiffChange[] = [];
+
+  for (const [id, n] of nextBy) {
+    const p = prevBy.get(id);
+    if (!p) {
+      added.push(line(n));
+    } else if (p.kind !== n.kind || p.ownerAmountAud !== n.ownerAmountAud) {
+      changed.push({
+        itemId: id,
+        label: n.label,
+        divisionLabel: n.divisionLabel,
+        fromKind: p.kind,
+        toKind: n.kind,
+        fromAmountAud: p.ownerAmountAud,
+        toAmountAud: n.ownerAmountAud,
+      });
+    }
+  }
+  for (const [id, p] of prevBy) {
+    if (!nextBy.has(id)) removed.push(line(p));
+  }
+  return { added, removed, changed };
+}
+
+/** "2 lines added, 1 revised, 1 removed" — the addendum's one-liner. */
+export function summariseDiff(diff: ScheduleDiff): string {
+  const bits = [
+    diff.added.length
+      ? `${diff.added.length} line${diff.added.length === 1 ? "" : "s"} added`
+      : null,
+    diff.changed.length
+      ? `${diff.changed.length} revised`
+      : null,
+    diff.removed.length
+      ? `${diff.removed.length} removed`
+      : null,
+  ].filter(Boolean);
+  return bits.length > 0 ? bits.join(", ") : "No priceable lines moved";
+}
+
+/* ── the pack, for browsing ─────────────────────────────────────────── */
+
+export interface PackHighlight {
+  itemId: string;
+  label: string;
+  divisionLabel: string;
+  /** The reader's line — what the documents actually say. */
+  note: string;
+}
+
+export interface PackSummary {
+  runId: string;
+  standardVersion: string;
+  lines: number;
+  tenderable: number;
+  evidenced: number;
+  ownerAllowances: number;
+  ownerAllowanceTotal: number;
+  ownerExcluded: number;
+  divisions: string[];
+  /** A spread of evidenced lines with substantive notes, build order. */
+  highlights: PackHighlight[];
+}
+
+/**
+ * The pack shaped for the marketplace: what a builder weighs before
+ * unlocking. Counts and division names carry no document content;
+ * highlights DO quote the documents and belong behind the unlock.
+ */
+export function packSummary(schedule: TenderSchedule, opts?: {
+  highlightLimit?: number;
+}): PackSummary {
+  const limit = opts?.highlightLimit ?? 8;
+  const tenderable = tenderableItems(schedule);
+  const allowances = schedule.items.filter(
+    (i) => i.kind === "owner_allowance",
+  );
+  const divisions: string[] = [];
+  for (const d of scheduleDivisions(schedule)) {
+    if (d.items.length > 0) divisions.push(d.label);
+  }
+  // One highlight per division until the limit — a spread of the pack,
+  // not eight lines about the slab. Substantive notes only.
+  const highlights: PackHighlight[] = [];
+  const seenDivision = new Set<string>();
+  for (const pass of [true, false]) {
+    for (const item of schedule.items) {
+      if (highlights.length >= limit) break;
+      if (item.kind !== "evidenced") continue;
+      const note = item.note?.trim() ?? "";
+      if (note.length < 24) continue;
+      if (pass && seenDivision.has(item.divisionId)) continue;
+      if (!pass && highlights.some((h) => h.itemId === item.itemId)) continue;
+      seenDivision.add(item.divisionId);
+      highlights.push({
+        itemId: item.itemId,
+        label: item.label,
+        divisionLabel: item.divisionLabel,
+        note,
+      });
+    }
+  }
+  return {
+    runId: schedule.runId,
+    standardVersion: schedule.standardVersion,
+    lines: schedule.items.length,
+    tenderable: tenderable.length,
+    evidenced: schedule.items.filter((i) => i.kind === "evidenced").length,
+    ownerAllowances: allowances.length,
+    ownerAllowanceTotal: allowances.reduce(
+      (n, i) => n + (i.ownerAmountAud ?? 0),
+      0,
+    ),
+    ownerExcluded: ownerExcludedItems(schedule).length,
+    divisions,
+    highlights,
+  };
+}

@@ -5,7 +5,7 @@ import { getBySlugForOwner } from "@/modules/projects";
 import { listTendersForOwner } from "@/modules/tenders";
 import { listResponsesForProjectTenders } from "@/modules/tenders";
 import { buildTenderDocument } from "@/modules/tenders/document";
-import { getProjectSchedule } from "@/modules/scope-engine";
+import { getProjectSchedule, getScheduleForRun } from "@/modules/scope-engine";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import { renderTenderPdf } from "@/lib/tender-pdf";
@@ -53,12 +53,20 @@ export async function GET(
     answers[r.qid] = (r.value as { v: unknown }).v;
   }
 
-  const [docs, bundle, schedule] = await Promise.all([
+  const [docs, bundle, currentSchedule] = await Promise.all([
     listForTenderUnchecked(tender.id, { activeOnly: true }),
     getBuilderProfile(tender.builderId),
     getProjectSchedule(project.id),
   ]);
   const licence = bundle?.licences[0] ?? null;
+
+  // A sealed record renders against the pack it was priced on: the
+  // tender's pinned run wins over the round's current schedule.
+  const pinnedRun = answers["scope.schedule_run"];
+  const schedule =
+    typeof pinnedRun === "string" && pinnedRun !== currentSchedule?.runId
+      ? ((await getScheduleForRun(pinnedRun)) ?? currentSchedule)
+      : currentSchedule;
 
   const model = buildTenderDocument({
     tenderId: tender.id,

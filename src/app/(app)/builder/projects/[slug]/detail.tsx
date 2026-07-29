@@ -15,6 +15,7 @@ import {
   FileText,
   Bookmark,
   BookmarkCheck,
+  BookOpenCheck,
   Lock,
   Unlock,
   ArrowLeft,
@@ -41,6 +42,8 @@ import {
 } from "@/app/(app)/_actions/marketplace";
 import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
+import { formatAud } from "@/modules/tenders/comparison";
+import type { PackSummary } from "@/modules/tenders/schedule";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
@@ -166,6 +169,8 @@ export function ProjectDetail({
   viewerMode,
   myUserId,
   initialConversations,
+  pack = null,
+  latestAddendum = null,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -177,6 +182,9 @@ export function ProjectDetail({
   priceAud: number;
   myUserId: string;
   initialConversations: ConversationListItem[];
+  /** The approved pack, shaped for browsing; null on legacy rounds. */
+  pack?: PackSummary | null;
+  latestAddendum?: { number: number; issuedAtISO: string } | null;
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -518,6 +526,23 @@ export function ProjectDetail({
                   <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
                     {unlocked ? full?.description : preview.description}
                   </p>
+                </Card>
+              </Reveal>
+            ) : null}
+
+            {/* The tender pack — the documents, read. Counts for
+                everyone; the quoted highlights sit behind the unlock. */}
+            {pack ? (
+              <Reveal immediate delay={0.19}>
+                <Card
+                  title="The tender pack"
+                  icon={<BookOpenCheck className="size-4" />}
+                >
+                  <TenderPackPanel
+                    pack={pack}
+                    latestAddendum={latestAddendum ?? null}
+                    unlocked={unlocked}
+                  />
                 </Card>
               </Reveal>
             ) : null}
@@ -1383,6 +1408,110 @@ function PlaceholderContactBlock() {
         <div className="h-9 rounded-sm bg-[rgba(24,34,44,0.035)]" />
         <div className="h-9 rounded-sm bg-[rgba(24,34,44,0.035)]" />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The pack, browsable: what a builder weighs before unlocking. Every
+ * line of it comes from the client's documents read under the Scope
+ * Standard and checked by a person — the counts say how much of the
+ * project is genuinely documented, and the highlights (post-unlock)
+ * quote what the documents actually say.
+ */
+function TenderPackPanel({
+  pack,
+  latestAddendum,
+  unlocked,
+}: {
+  pack: PackSummary;
+  latestAddendum: { number: number; issuedAtISO: string } | null;
+  unlocked: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
+        Every document on this round has been read against the BuilderHQ
+        Scope Standard and checked by a person. Tenders here answer this
+        schedule line by line, so every quote lands on the same scope.
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-px rounded-lg overflow-hidden border border-border-subtle bg-border-subtle">
+        {[
+          { k: "Schedule lines", v: String(pack.tenderable) },
+          { k: "Divisions", v: String(pack.divisions.length) },
+          {
+            k: "Client allowances",
+            v:
+              pack.ownerAllowances > 0
+                ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
+                : "None",
+          },
+          { k: "Outside this round", v: String(pack.ownerExcluded) },
+        ].map((s) => (
+          <div key={s.k} className="bg-surface-1 px-3.5 py-3">
+            <p className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              {s.k}
+            </p>
+            <p className="mt-1 font-display text-[17px] leading-none text-text tabular-nums">
+              {s.v}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {latestAddendum ? (
+        <p className="mt-3 text-[12px] text-[#8a6414]">
+          Addendum {String(latestAddendum.number).padStart(2, "0")} issued{" "}
+          {new Date(latestAddendum.issuedAtISO).toLocaleDateString("en-AU", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+          . The schedule below is the re-issued one.
+        </p>
+      ) : null}
+
+      {pack.highlights.length > 0 ? (
+        <div className="mt-4 relative">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            What the documents say
+          </p>
+          <ul
+            className={cn(
+              "mt-2 space-y-2",
+              unlocked ? "" : "blur-md select-none pointer-events-none",
+            )}
+          >
+            {pack.highlights.map((h) => (
+              <li key={h.itemId} className="flex items-start gap-2.5">
+                <span className="mt-[7px] size-1.5 rounded-full bg-accent shrink-0" />
+                <p className="text-[12.5px] leading-[1.6] text-text-muted min-w-0">
+                  <span className="font-ui font-medium text-text">
+                    {h.label}
+                  </span>
+                  <span className="text-text-dim"> · {h.divisionLabel}</span>
+                  <br />
+                  {unlocked ? h.note : "The stated figures unlock with the documents."}
+                </p>
+              </li>
+            ))}
+          </ul>
+          {!unlocked ? (
+            <BlurOverlay
+              icon={<Lock className="size-3.5" />}
+              title="What the documents say, line by line"
+              sub={`${pack.highlights.length} highlights from the pack`}
+              compact
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="mt-4 text-[11px] text-text-dim">
+        BuilderHQ Scope Standard v{pack.standardVersion} ·{" "}
+        {pack.evidenced} lines documented · {pack.lines} lines on the record
+      </p>
     </div>
   );
 }

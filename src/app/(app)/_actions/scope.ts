@@ -123,7 +123,9 @@ export async function requestScopeRereadAction(
 
 export async function completeScopeReviewAction(
   projectId: string,
-): Promise<Result<{ published: true }>> {
+): Promise<
+  Result<{ published: true } | { addendum: number; summary: string }>
+> {
   const a = await requireRunner();
   if (!a.ok) return a;
   return completeOwnerReview(projectId, a.value);

@@ -57,6 +57,7 @@ import { ParticipantJoinedEmail } from "@/emails/ParticipantJoinedEmail";
 import { RoundAwardedNoticeEmail } from "@/emails/RoundAwardedNoticeEmail";
 import { TenderValidityExpiringEmail } from "@/emails/TenderValidityExpiringEmail";
 import { ScopeReadyEmail } from "@/emails/ScopeReadyEmail";
+import { ScopeAddendumEmail } from "@/emails/ScopeAddendumEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -2403,6 +2404,56 @@ export async function sendScopeReadyEmail(
   logger.info(
     { event: "email.scope_ready.sent", to: input.to, resendId: data.id },
     "scope_ready email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeAddendumEmailInput {
+  to: string;
+  builderFirstName: string | null;
+  projectTitle: string;
+  addendumLabel: string;
+  summary: string;
+  hasTender: boolean;
+  actionUrl: string;
+}
+
+/** The formal letter every tenderer gets when a live pack re-issues. */
+export async function sendScopeAddendumEmail(
+  input: SendScopeAddendumEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.addendumLabel} issued — ${input.projectTitle}`;
+  const props = {
+    builderFirstName: input.builderFirstName,
+    projectTitle: input.projectTitle,
+    addendumLabel: input.addendumLabel,
+    summary: input.summary,
+    hasTender: input.hasTender,
+    actionUrl: input.actionUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ScopeAddendumEmail(props)),
+    render(ScopeAddendumEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-addendum" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_addendum.failed", to: input.to, code: error.name, message: error.message },
+      "scope_addendum email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_addendum.sent", to: input.to, resendId: data.id },
+    "scope_addendum email sent",
   );
   return ok({ id: data.id });
 }

@@ -836,9 +836,10 @@ export function TenderJourney({
   // clears the figure so a stale amount never prints.
   const markScheduleItem = useCallback(
     (q: InstrumentQuestion, item: TenderScheduleItem, next: ScheduleEntry) => {
+      // Pin (or re-pin after an addendum) the run these marks answer.
       if (
-        typeof liveAnswers.current["scope.schedule_run"] !== "string" &&
-        schedule
+        schedule &&
+        liveAnswers.current["scope.schedule_run"] !== schedule.runId
       ) {
         queue("scope.schedule_run", schedule.runId);
       }
@@ -887,6 +888,16 @@ export function TenderJourney({
     }
   }, [submitting, flush, router]);
 
+  // An addendum re-issued the pack after this draft pinned an earlier
+  // one. The deck already answers the CURRENT schedule; the strip
+  // tells the builder why lines may read differently, and the submit
+  // gate holds any mark the revised schedule no longer carries.
+  const pinnedRunAnswer = answers["scope.schedule_run"];
+  const packReissued =
+    hasSchedule &&
+    typeof pinnedRunAnswer === "string" &&
+    pinnedRunAnswer !== schedule!.runId;
+
   return (
     <div
       // Fills the viewport under the 56px app topbar so the footer
@@ -894,6 +905,15 @@ export function TenderJourney({
       className="min-h-[calc(100dvh-3.5rem)] flex flex-col"
       onKeyDown={onKeyDown}
     >
+      {packReissued && stage !== "sealed" ? (
+        <div className="bg-[rgba(201,148,34,0.08)] border-b border-[rgba(201,148,34,0.35)]">
+          <p className="px-4 sm:px-6 lg:px-10 py-2 mx-auto max-w-[1100px] text-[12px] text-[#8a6414]">
+            An addendum re-issued the tender schedule since this draft
+            began. Review module 5 — your marks now answer the revised
+            lines.
+          </p>
+        </div>
+      ) : null}
       {/* ── slim bar: exit · where you are · contents · save ───────
           Sticky just below the app topbar (h-14, z-30) so it reads as
           the journey's sub-header; the solid canvas background makes

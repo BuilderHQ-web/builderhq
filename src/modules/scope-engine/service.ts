@@ -30,6 +30,8 @@ import {
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import {
   toScheduleItem,
+  diffSchedules,
+  summariseDiff,
   type ScheduleItemKind,
   type TenderSchedule,
   type TenderScheduleItem,
@@ -680,11 +682,64 @@ export async function approveRun(
     })
     .where(eq(scopeRuns.id, runId));
   await recordReview(runId, "run", "run.approved", actorId, null, null);
+
+  // Re-reads carry the client's prior answers forward: a gap they
+  // already resolved on the effective pack keeps its resolution, so
+  // only what CHANGED asks again. upload_later never carries — the
+  // re-read exists because those documents arrived.
+  const carried = await carryForwardResolutions(run.projectId, runId);
+  if (carried > 0) {
+    logger.info(
+      { event: "scope.run.resolutions_carried", runId, carried },
+      "prior gap resolutions carried onto the new run",
+    );
+  }
+
   logger.info({ event: "scope.run.approved", runId, actorId }, "scope run approved");
   // The runner hears their pack is ready — bell and letter. Failures
   // never fail the approval; the desk shows the state regardless.
   await dispatchScopeReady(runId).catch(() => undefined);
   return ok({ ok: true });
+}
+
+/** Copy still-relevant gap resolutions from the effective run. */
+async function carryForwardResolutions(
+  projectId: string,
+  newRunId: string,
+): Promise<number> {
+  const [prev] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+        ne(scopeRuns.id, newRunId),
+      ),
+    )
+    .orderBy(desc(scopeRuns.effectiveAt))
+    .limit(1);
+  if (!prev) return 0;
+
+  const rows = await db.execute(sql`
+    insert into scope_gap_resolutions
+      (run_id, item_id, resolution, amount_aud, note, created_by)
+    select ${newRunId}, r.item_id, r.resolution, r.amount_aud, r.note, r.created_by
+    from scope_gap_resolutions r
+    where r.run_id = ${prev.id}
+      and r.resolution <> 'upload_later'
+      and exists (
+        select 1 from scope_run_items i
+        where i.run_id = ${newRunId}
+          and i.item_id = r.item_id
+          and i.status = 'gap'
+          and i.ops_status <> 'removed'
+      )
+    on conflict (run_id, item_id) do nothing
+    returning id
+  `);
+  return Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
 }
 
 /** Bell + letter to the runner when ops approves their pack. */
@@ -755,7 +810,12 @@ import {
   getProjectAccess,
   recordProjectEvent,
 } from "@/modules/projects";
-import { scopeGapResolutions, type ScopeGapResolutionRow } from "./schema";
+import {
+  scopeGapResolutions,
+  scopeAddenda,
+  type ScopeGapResolutionRow,
+  type ScopeAddendumRow,
+} from "./schema";
 
 export type GapResolutionKind = "allowance" | "excluded" | "upload_later";
 
@@ -803,6 +863,15 @@ export interface OwnerScopeReview {
   resolutions: ScopeGapResolutionRow[];
   /** Runner may act; seats read. */
   canResolve: boolean;
+  /**
+   * The acceptance this review ends in. "publish" opens the round;
+   * "addendum" re-issues a live round's pack; "record" means the
+   * shown pack is already the round's effective schedule — nothing
+   * left to accept, only a re-read to request.
+   */
+  mode: "publish" | "addendum" | "record";
+  /** The round's addendum register, newest first. */
+  addenda: ScopeAddendumRow[];
 }
 
 /**
@@ -818,24 +887,40 @@ export async function getOwnerReview(
   const access = await getProjectAccess(projectId, userId);
   if (!access) return fail("forbidden", "Not your project.");
 
-  const [run] = await db
-    .select()
-    .from(scopeRuns)
-    .where(
-      and(
-        eq(scopeRuns.projectId, projectId),
-        inArray(scopeRuns.status, [
-          "pending",
-          "classifying",
-          "extracting",
-          "synthesising",
-          "review",
-          "approved",
-        ]),
-      ),
-    )
-    .orderBy(desc(scopeRuns.createdAt))
-    .limit(1);
+  const [[run], [project], addenda] = await Promise.all([
+    db
+      .select()
+      .from(scopeRuns)
+      .where(
+        and(
+          eq(scopeRuns.projectId, projectId),
+          inArray(scopeRuns.status, [
+            "pending",
+            "classifying",
+            "extracting",
+            "synthesising",
+            "review",
+            "approved",
+          ]),
+        ),
+      )
+      .orderBy(desc(scopeRuns.createdAt))
+      .limit(1),
+    db
+      .select({ status: projects.status })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1),
+    listAddenda(projectId),
+  ]);
+  const live =
+    project?.status === "published" || project?.status === "tendering";
+  const mode: OwnerScopeReview["mode"] =
+    run?.status === "approved" && run.effectiveAt
+      ? "record"
+      : live
+        ? "addendum"
+        : "publish";
   if (!run) {
     return ok({
       phase: "none",
@@ -844,6 +929,8 @@ export async function getOwnerReview(
       items: [],
       resolutions: [],
       canResolve: access.kind === "runner",
+      mode,
+      addenda,
     });
   }
   if (run.status !== "approved") {
@@ -854,6 +941,8 @@ export async function getOwnerReview(
       items: [],
       resolutions: [],
       canResolve: access.kind === "runner",
+      mode,
+      addenda,
     });
   }
   const [items, resolutions, register] = await Promise.all([
@@ -880,6 +969,8 @@ export async function getOwnerReview(
     items,
     resolutions,
     canResolve: access.kind === "runner",
+    mode,
+    addenda,
   });
 }
 
@@ -896,12 +987,24 @@ export async function resolveGap(
     return fail("forbidden", "Only the project runner resolves the scope.");
   }
   const [run] = await db
-    .select({ id: scopeRuns.id, status: scopeRuns.status })
+    .select({
+      id: scopeRuns.id,
+      status: scopeRuns.status,
+      effectiveAt: scopeRuns.effectiveAt,
+    })
     .from(scopeRuns)
     .where(and(eq(scopeRuns.projectId, projectId), eq(scopeRuns.status, "approved")))
     .orderBy(desc(scopeRuns.createdAt))
     .limit(1);
   if (!run) return fail("conflict", "No approved tender pack to resolve against.");
+  // A pack that is live for builders never changes in place — answers
+  // move only through a re-read and a numbered addendum.
+  if (run.effectiveAt) {
+    return fail(
+      "conflict",
+      "This pack is already live for the round. Add documents and request a re-read to change it.",
+    );
+  }
 
   const [item] = await db
     .select({ id: scopeRunItems.id, status: scopeRunItems.status })
@@ -973,14 +1076,19 @@ export async function requestReread(
 }
 
 /**
- * The gate opens: every gap carries an allowance or an exclusion, so
- * the round can go live. Publication runs through the EXISTING
- * publish path — validation, fan-out, celebration all unchanged.
+ * The gate opens: every gap carries an allowance or an exclusion. On a
+ * draft the round goes live through the EXISTING publish path —
+ * validation, fan-out, celebration all unchanged. On a round already
+ * live, the same acceptance ISSUES AN ADDENDUM instead: the new pack
+ * becomes effective, the change is diffed and numbered, and every
+ * builder on the round is told formally.
  */
 export async function completeOwnerReview(
   projectId: string,
   runnerId: string,
-): Promise<Result<{ published: true }>> {
+): Promise<
+  Result<{ published: true } | { addendum: number; summary: string }>
+> {
   const review = await getOwnerReview(projectId, runnerId);
   if (!review.ok) return review;
   if (review.value.phase !== "ready" || !review.value.run) {
@@ -988,6 +1096,9 @@ export async function completeOwnerReview(
   }
   if (!review.value.canResolve) {
     return fail("forbidden", "Only the project runner can complete the review.");
+  }
+  if (review.value.run.effectiveAt) {
+    return fail("conflict", "This pack is already live for the round.");
   }
   const resolutionByItem = new Map(
     review.value.resolutions.map((r) => [r.itemId, r]),
@@ -997,7 +1108,7 @@ export async function completeOwnerReview(
   if (unresolved.length > 0) {
     return fail(
       "validation",
-      `${unresolved.length} gap(s) still need an answer before the round can go live.`,
+      `${unresolved.length} gap(s) still need an answer before the pack can go out.`,
     );
   }
   const waitingOnDocs = gaps.filter(
@@ -1010,8 +1121,25 @@ export async function completeOwnerReview(
     );
   }
 
+  const [project] = await db
+    .select({ status: projects.status })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!project) return fail("not_found", "Project not found.");
+
+  // ── a live round: issue the addendum ────────────────────────────────
+  if (project.status === "published" || project.status === "tendering") {
+    return issueAddendum(projectId, runnerId, review.value.run.id);
+  }
+
+  // ── a draft: the one true publish path ──────────────────────────────
   const published = await publishProject(runnerId, projectId);
   if (!published.ok) return published;
+  await db
+    .update(scopeRuns)
+    .set({ effectiveAt: new Date(), updatedAt: new Date() })
+    .where(eq(scopeRuns.id, review.value.run.id));
   await recordProjectEvent({
     projectId,
     actorId: runnerId,
@@ -1026,12 +1154,191 @@ export async function completeOwnerReview(
   return ok({ published: true });
 }
 
+/**
+ * The formal re-issue: diff the accepted pack against the round's
+ * effective one, number it, flip effectiveness, retire the old run,
+ * record it, and tell every builder on the round. One transaction of
+ * meaning — a round's scope never changes quietly.
+ */
+async function issueAddendum(
+  projectId: string,
+  runnerId: string,
+  newRunId: string,
+): Promise<Result<{ addendum: number; summary: string }>> {
+  const [prev] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+        ne(scopeRuns.id, newRunId),
+      ),
+    )
+    .orderBy(desc(scopeRuns.effectiveAt))
+    .limit(1);
+  if (!prev) {
+    return fail("conflict", "No effective pack to issue an addendum against.");
+  }
+
+  const [prevSchedule, nextSchedule] = await Promise.all([
+    getScheduleForRun(prev.id),
+    getScheduleForRun(newRunId),
+  ]);
+  if (!prevSchedule || !nextSchedule) {
+    return fail("internal", "Could not resolve the packs to compare.");
+  }
+  const diff = diffSchedules(prevSchedule, nextSchedule);
+  const summary = summariseDiff(diff);
+
+  const [countRow] = await db
+    .select({ n: sql<number>`count(*)`.mapWith(Number) })
+    .from(scopeAddenda)
+    .where(eq(scopeAddenda.projectId, projectId));
+  const number = (countRow?.n ?? 0) + 1;
+
+  const now = new Date();
+  const [row] = await db
+    .insert(scopeAddenda)
+    .values({
+      projectId,
+      runId: newRunId,
+      prevRunId: prev.id,
+      number,
+      diff,
+      issuedBy: runnerId,
+    })
+    .returning();
+  if (!row) return fail("internal", "Could not record the addendum.");
+
+  await db
+    .update(scopeRuns)
+    .set({ effectiveAt: now, updatedAt: now })
+    .where(eq(scopeRuns.id, newRunId));
+  await db
+    .update(scopeRuns)
+    .set({ status: "superseded", updatedAt: now })
+    .where(eq(scopeRuns.id, prev.id));
+
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.addendum_issued",
+    subjectId: row.id,
+    summary: `Issued Addendum ${String(number).padStart(2, "0")}. ${summary}.`,
+  });
+  logger.info(
+    { event: "scope.addendum.issued", projectId, runId: newRunId, number },
+    "scope addendum issued",
+  );
+  await dispatchAddendum(projectId, number, summary).catch(() => undefined);
+  return ok({ addendum: number, summary });
+}
+
+/** The addendum register, newest first. */
+export async function listAddenda(
+  projectId: string,
+): Promise<ScopeAddendumRow[]> {
+  return db
+    .select()
+    .from(scopeAddenda)
+    .where(eq(scopeAddenda.projectId, projectId))
+    .orderBy(desc(scopeAddenda.number));
+}
+
+/**
+ * Bell and letter to every builder on the round — unlocked, invited
+ * through an unlock, drafting or submitted. A scope change is exactly
+ * the news a tenderer must never miss.
+ */
+async function dispatchAddendum(
+  projectId: string,
+  number: number,
+  summary: string,
+): Promise<void> {
+  try {
+    const { users } = await import("@/modules/users");
+    const { unlocks } = await import("@/modules/unlocks/schema");
+    const { tenders } = await import("@/modules/tenders/schema");
+    const { create: createNotification } = await import(
+      "@/modules/notifications"
+    );
+    const { sendScopeAddendumEmail } = await import("@/modules/email");
+    const { env } = await import("@/lib/env");
+
+    const [project] = await db
+      .select({ slug: projects.slug, title: projects.title })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!project) return;
+
+    const audience = await db
+      .selectDistinct({
+        builderId: unlocks.builderId,
+        email: users.email,
+        firstName: users.firstName,
+      })
+      .from(unlocks)
+      .innerJoin(users, eq(users.id, unlocks.builderId))
+      .where(eq(unlocks.projectId, projectId));
+
+    const holders = await db
+      .select({ builderId: tenders.builderId, status: tenders.status })
+      .from(tenders)
+      .where(
+        and(
+          eq(tenders.projectId, projectId),
+          inArray(tenders.status, ["draft", "submitted", "shortlisted"]),
+        ),
+      );
+    const holding = new Set(holders.map((h) => h.builderId));
+
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const label = `Addendum ${String(number).padStart(2, "0")}`;
+    await Promise.allSettled(
+      audience.flatMap((b) => {
+        const hasTender = holding.has(b.builderId);
+        const url = `${base}/builder/projects/${project.slug}${hasTender ? "/tender" : ""}`;
+        return [
+          createNotification({
+            userId: b.builderId,
+            kind: "scope_addendum",
+            title: `${label} issued — ${project.title}`,
+            body: `${summary}. ${hasTender ? "Review your tender against the revised schedule." : "The tender schedule was re-issued."}`,
+            actionUrl: url,
+            projectId,
+          }),
+          sendScopeAddendumEmail({
+            to: b.email,
+            builderFirstName: b.firstName,
+            projectTitle: project.title,
+            addendumLabel: label,
+            summary,
+            hasTender,
+            actionUrl: url,
+          }),
+        ];
+      }),
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "scope.addendum.dispatch_failed", projectId, msg },
+      "addendum dispatch failed",
+    );
+  }
+}
+
 // ── the tender schedule ─────────────────────────────────────────────────
 
 /**
- * Resolve the project's TENDER SCHEDULE — the approved pack shaped for
- * tendering. Null when the project has no approved run (the round runs
- * the legacy instrument). Lines:
+ * Resolve the project's TENDER SCHEDULE — the EFFECTIVE pack shaped
+ * for tendering. Null when the project has no effective run (the round
+ * runs the legacy instrument). A re-read that ops has approved but the
+ * runner has not issued stays invisible here: the round's truth moves
+ * only when the addendum does. Lines:
  *   evidenced items (ops kept)      → "evidenced", with citations
  *   gaps the client set a figure on → "owner_allowance"
  *   gaps the client excluded        → "owner_excluded" (context, never priced)
@@ -1044,12 +1351,41 @@ export async function getProjectSchedule(
     .select({ id: scopeRuns.id, scopeVersion: scopeRuns.scopeVersion })
     .from(scopeRuns)
     .where(
-      and(eq(scopeRuns.projectId, projectId), eq(scopeRuns.status, "approved")),
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+      ),
     )
-    .orderBy(desc(scopeRuns.createdAt))
+    .orderBy(desc(scopeRuns.effectiveAt))
     .limit(1);
   if (!run) return null;
+  return scheduleForRun(run.id, run.scopeVersion);
+}
 
+/**
+ * The schedule a SPECIFIC run resolves to, regardless of whether it is
+ * still the round's effective pack. A sealed tender renders against
+ * the pack it was priced on (its pinned run) forever — an addendum
+ * must never silently rewrite a submitted document.
+ */
+export async function getScheduleForRun(
+  runId: string,
+): Promise<TenderSchedule | null> {
+  const [run] = await db
+    .select({ id: scopeRuns.id, scopeVersion: scopeRuns.scopeVersion })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, runId))
+    .limit(1);
+  if (!run) return null;
+  return scheduleForRun(run.id, run.scopeVersion);
+}
+
+async function scheduleForRun(
+  runId: string,
+  scopeVersion: string,
+): Promise<TenderSchedule | null> {
+  const run = { id: runId, scopeVersion };
   const [items, resolutions, docRows] = await Promise.all([
     db
       .select()

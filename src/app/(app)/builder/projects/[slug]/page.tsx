@@ -12,6 +12,8 @@ import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
+import { packSummary } from "@/modules/tenders/schedule";
+import { getProjectSchedule, listAddenda } from "@/modules/scope-engine";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
@@ -47,10 +49,18 @@ export default async function BuilderProjectPage({
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
-  const [unlocked, saved] = await Promise.all([
+  const [unlocked, saved, schedule, addenda] = await Promise.all([
     isUnlocked(userId, preview.id),
     isSaved(userId, preview.id),
+    getProjectSchedule(preview.id),
+    listAddenda(preview.id),
   ]);
+  // The pack, shaped for browsing. Counts travel to everyone; the
+  // highlights quote the documents and stay behind the unlock.
+  const pack = schedule ? packSummary(schedule) : null;
+  const latestAddendum = addenda[0]
+    ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
+    : null;
 
   // If unlocked, fetch the full row + docs for download + owner contact.
   const fullR = unlocked ? await getFullForUnlockedBuilder(slug) : null;
@@ -113,6 +123,8 @@ export default async function BuilderProjectPage({
       viewerMode={viewerMode}
       myUserId={userId}
       initialConversations={conversations}
+      pack={pack}
+      latestAddendum={latestAddendum}
     />
   );
 }

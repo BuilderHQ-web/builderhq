@@ -47,6 +47,12 @@ interface PackResolution {
   amountAud: number | null;
 }
 
+export interface PackAddendum {
+  number: number;
+  issuedAtISO: string;
+  summary: string;
+}
+
 export function PackReview({
   projectId,
   projectType,
@@ -54,6 +60,8 @@ export function PackReview({
   canResolve,
   items,
   resolutions,
+  mode = "publish",
+  addenda = [],
 }: {
   projectId: string;
   projectType: string;
@@ -61,6 +69,13 @@ export function PackReview({
   canResolve: boolean;
   items: PackItem[];
   resolutions: PackResolution[];
+  /**
+   * What acceptance means here: "publish" opens the round, "addendum"
+   * re-issues a live round's pack, "record" shows the effective pack
+   * read-only with the re-read as the only act left.
+   */
+  mode?: "publish" | "addendum" | "record";
+  addenda?: PackAddendum[];
 }) {
   void projectType;
   const router = useRouter();
@@ -135,7 +150,13 @@ export function PackReview({
         toast.error("Not quite yet", r.error.message);
         return;
       }
-      toast.success("Your round is live. Builders can now see it.");
+      if ("addendum" in r.value) {
+        toast.success(
+          `Addendum ${String(r.value.addendum).padStart(2, "0")} issued. Every builder on the round has been told.`,
+        );
+      } else {
+        toast.success("Your round is live. Builders can now see it.");
+      }
       router.refresh();
     } finally {
       setCompleting(false);
@@ -177,10 +198,9 @@ export function PackReview({
             The questions · {gaps.length - answered} still open
           </h2>
           <p className="mt-2 text-[12.5px] text-text-muted max-w-[64ch]">
-            Your documents are silent on these. Each needs one answer before
-            the round goes live: set an allowance every builder prices
-            against equally, exclude it from this contract, or add the
-            missing documents.
+            {mode === "addendum"
+              ? "The re-read raised these. Answers you already gave carried forward; only what changed asks again. Each needs one answer before the addendum can issue."
+              : "Your documents are silent on these. Each needs one answer before the round goes live: set an allowance every builder prices against equally, exclude it from this contract, or add the missing documents."}
           </p>
           {SCOPE_DIVISIONS.map((d) => {
             const divGaps = gapsByDivision.get(d.id);
@@ -196,7 +216,7 @@ export function PackReview({
                       key={g.id}
                       gap={g}
                       resolution={resolved.get(g.itemId) ?? null}
-                      canResolve={canResolve}
+                      canResolve={canResolve && mode !== "record"}
                       onResolve={onResolve}
                     />
                   ))}
@@ -231,8 +251,57 @@ export function PackReview({
         })}
       </section>
 
+      {/* the addendum register */}
+      {addenda.length > 0 ? (
+        <section>
+          <h2 className="text-[10px] tracking-[0.22em] uppercase text-text-dim font-ui font-semibold pb-2.5 border-b border-border-subtle">
+            Addenda issued on this round
+          </h2>
+          <ul className="mt-2 divide-y divide-border-subtle/60">
+            {addenda.map((a) => (
+              <li
+                key={a.number}
+                className="py-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1"
+              >
+                <span className="text-[13px] font-ui font-semibold text-text">
+                  Addendum {String(a.number).padStart(2, "0")}
+                </span>
+                <span className="text-[12px] text-text-muted">{a.summary}</span>
+                <span className="text-[11px] text-text-dim ml-auto">
+                  {new Date(a.issuedAtISO).toLocaleDateString("en-AU", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {/* the gate */}
-      {canResolve ? (
+      {canResolve && mode === "record" ? (
+        <div className="sticky bottom-4 flex items-center justify-end gap-3">
+          <p className="text-[12px] text-text-dim mr-auto">
+            This pack is live for the round. Changing it starts with a
+            re-read of the documents.
+          </p>
+          <button
+            type="button"
+            disabled={rereading}
+            onClick={reread}
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-full border border-border-strong bg-surface-1 text-text text-[13px] hover:bg-bg-elev transition-colors disabled:opacity-60"
+          >
+            {rereading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileUp className="size-4" />
+            )}
+            Documents changed, read again
+          </button>
+        </div>
+      ) : canResolve ? (
         <div className="sticky bottom-4 flex items-center justify-end gap-3">
           {waitingOnDocs > 0 ? (
             <button
@@ -267,7 +336,7 @@ export function PackReview({
             ) : (
               <Rocket className="size-4" />
             )}
-            Approve and go live
+            {mode === "addendum" ? "Issue the addendum" : "Approve and go live"}
           </button>
         </div>
       ) : null}

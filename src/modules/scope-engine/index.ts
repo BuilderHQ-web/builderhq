@@ -14,10 +14,12 @@ export {
   requestReread,
   completeOwnerReview,
   getProjectSchedule,
+  getScheduleForRun,
+  listAddenda,
   type GapResolutionKind,
   type OwnerScopeReview,
 } from "./service";
-export type { ScopeGapResolutionRow } from "./schema";
+export type { ScopeGapResolutionRow, ScopeAddendumRow } from "./schema";
 export {
   startRun,
   processRunTick,
