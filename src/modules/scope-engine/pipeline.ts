@@ -273,7 +273,12 @@ export async function extractDocument(args: {
   filename: string;
   kind: string;
   projectType: ScopeProjectType;
-}): Promise<{ findings: DocumentFindings; usage: StageUsage }> {
+}): Promise<{
+  findings: DocumentFindings;
+  usage: StageUsage;
+  /** Ids the model proposed that the Standard does not define. */
+  unknownIds: string[];
+}> {
   const base64 = Buffer.from(args.bytes).toString("base64");
   // Streamed: dense plan sets can exceed the SDK's non-streaming
   // duration guard. finalMessage() collects the complete response.
@@ -327,13 +332,16 @@ export async function extractDocument(args: {
     );
   }
   // Closed vocabulary, enforced in code as well as prompt: unknown ids
-  // are dropped and logged, never stored.
-  let dropped = 0;
+  // are dropped, never stored. The dropped VALUES are logged, not just
+  // the count: an id the model keeps reaching for is a candidate the
+  // Scope Standard may be missing, and that is how the vocabulary
+  // learns from real packages.
+  const unknown = new Set<string>();
   const pages = parsed.data.pages.map((p) => ({
     ...p,
     itemIds: p.itemIds.filter((id) => {
       const ok = getScopeItem(id) != null;
-      if (!ok) dropped += 1;
+      if (!ok) unknown.add(id);
       return ok;
     }),
     statedFigures: p.statedFigures.map((f) => ({
@@ -341,13 +349,22 @@ export async function extractDocument(args: {
       itemId: f.itemId && getScopeItem(f.itemId) ? f.itemId : null,
     })),
   }));
-  if (dropped > 0) {
+  if (unknown.size > 0) {
     logger.warn(
-      { event: "scope.extract.unknown_ids_dropped", file: args.filename, dropped },
+      {
+        event: "scope.extract.unknown_ids_dropped",
+        file: args.filename,
+        dropped: unknown.size,
+        ids: [...unknown].slice(0, 40),
+      },
       "extraction proposed ids outside the Scope Standard — dropped",
     );
   }
-  return { findings: { pages }, usage: usageOf(message) };
+  return {
+    findings: { pages },
+    usage: usageOf(message),
+    unknownIds: [...unknown],
+  };
 }
 
 // ── stage 3 · synthesis ─────────────────────────────────────────────────
