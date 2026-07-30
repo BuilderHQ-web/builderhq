@@ -15,10 +15,17 @@
  * can never do.
  *
  * ANSWER CHANNEL. `scope.schedule` holds the builder's confirmations:
- *   Record<itemId, { s: ScheduleState; a?: number }>
- *   - "documented"  — in the price exactly as the documents describe
+ *   Record<itemId, { s: ScheduleState; a?: number; p?: number; n?: string }>
+ *   - "documented"  — in the price exactly as the documents describe;
+ *                     `p` optionally discloses the line's price
  *   - "allowance"   — carried as an allowance; `a` = whole AUD ex GST
  *   - "excluded"    — not in the price
+ *   - "na"          — the builder holds the line does not apply to this
+ *                     project (wrong for the site, already superseded);
+ *                     `n` optionally says why in one line. An NA line
+ *                     leaves the applicable set rather than reading as
+ *                     a refusal — but a split against rivals who priced
+ *                     it surfaces as a round disagreement.
  * `scope.schedule_run` pins the approved run the builder answered
  * against, written by the deck alongside the first mark.
  */
@@ -79,6 +86,7 @@ export const SCHEDULE_STATES = [
   { value: "documented", label: "Included as documented" },
   { value: "allowance", label: "Allowance" },
   { value: "excluded", label: "Excluded" },
+  { value: "na", label: "Not applicable" },
 ] as const;
 
 export type ScheduleState = (typeof SCHEDULE_STATES)[number]["value"];
@@ -95,6 +103,14 @@ export interface ScheduleEntry {
   s: ScheduleState;
   /** Whole AUD ex GST; meaningful only when s === "allowance". */
   a?: number | null;
+  /**
+   * Optional disclosed line price, whole AUD ex GST; meaningful only
+   * when s === "documented". Never required — disclosure is a
+   * strength the builder chooses, and it reads as itemisation.
+   */
+  p?: number | null;
+  /** One line on why a line is "na"; meaningful only for that state. */
+  n?: string | null;
 }
 
 export type ScheduleAnswer = Record<string, ScheduleEntry>;
@@ -109,11 +125,23 @@ export function readScheduleAnswer(v: unknown): ScheduleAnswer {
     }
     const e = entry as Record<string, unknown>;
     if (typeof e.s !== "string" || !SCHEDULE_STATE_VALUES.has(e.s)) continue;
-    const a =
-      typeof e.a === "number" && Number.isFinite(e.a) && e.a >= 0
-        ? Math.round(e.a)
+    const money = (v: unknown): number | null =>
+      typeof v === "number" && Number.isFinite(v) && v >= 0
+        ? Math.round(v)
         : null;
-    out[itemId] = { s: e.s as ScheduleState, a };
+    const state = e.s as ScheduleState;
+    const note =
+      typeof e.n === "string" && e.n.trim().length > 0
+        ? e.n.trim().slice(0, 200)
+        : null;
+    // Fields only mean something in their state; strip strays so no
+    // derivation downstream ever needs to re-check.
+    out[itemId] = {
+      s: state,
+      a: state === "allowance" ? money(e.a) : null,
+      p: state === "documented" ? money(e.p) : null,
+      n: state === "na" ? note : null,
+    };
   }
   return out;
 }
@@ -133,11 +161,15 @@ export function isScheduleAnswerShape(v: unknown): boolean {
     if (typeof e.s !== "string" || !SCHEDULE_STATE_VALUES.has(e.s)) {
       return false;
     }
-    return (
-      e.a === undefined ||
-      e.a === null ||
-      (typeof e.a === "number" && Number.isFinite(e.a) && e.a >= 0)
-    );
+    const moneyOk = (v: unknown) =>
+      v === undefined ||
+      v === null ||
+      (typeof v === "number" && Number.isFinite(v) && v >= 0);
+    const noteOk =
+      e.n === undefined ||
+      e.n === null ||
+      (typeof e.n === "string" && e.n.length <= 400);
+    return moneyOk(e.a) && moneyOk(e.p) && noteOk;
   });
 }
 
@@ -196,9 +228,15 @@ export interface ScheduleTallies {
   documented: number;
   allowance: number;
   excluded: number;
+  /** Lines the builder holds do not apply to this project. */
+  notApplicable: number;
   unmarked: number;
   /** Sum of every allowance the price carries, whole AUD ex GST. */
   allowanceTotal: number;
+  /** Documented lines whose price the builder chose to disclose. */
+  disclosedCount: number;
+  /** Sum of the disclosed line prices, whole AUD ex GST. */
+  disclosedTotal: number;
   /** Client allowances on the pack, and what the builder did with them. */
   ownerAllowances: {
     count: number;
@@ -223,8 +261,11 @@ export function scheduleTallies(
     documented: 0,
     allowance: 0,
     excluded: 0,
+    notApplicable: 0,
     unmarked: 0,
     allowanceTotal: 0,
+    disclosedCount: 0,
+    disclosedTotal: 0,
     ownerAllowances: {
       count: 0,
       carried: 0,
@@ -244,10 +285,16 @@ export function scheduleTallies(
     }
     if (e.s === "documented") {
       t.documented++;
+      if (typeof e.p === "number" && e.p > 0) {
+        t.disclosedCount++;
+        t.disclosedTotal += e.p;
+      }
       if (isOwner) t.ownerAllowances.firmPriced++;
     } else if (e.s === "excluded") {
       t.excluded++;
       if (isOwner) t.ownerAllowances.excluded++;
+    } else if (e.s === "na") {
+      t.notApplicable++;
     } else {
       t.allowance++;
       const amt = typeof e.a === "number" ? e.a : 0;
@@ -279,6 +326,8 @@ export function isScheduleComplete(
     if (e.s === "allowance") {
       return typeof e.a === "number" && e.a > 0;
     }
+    // "documented", "excluded" and "na" are complete answers as they
+    // stand; a disclosed price and an NA reason are optional strengths.
     return true;
   });
 }
@@ -342,6 +391,62 @@ export function deriveScheduleExclusions(
       label: item.label,
       divisionLabel: item.divisionLabel,
     }));
+}
+
+export interface DerivedNotApplicableRow {
+  itemId: string;
+  label: string;
+  divisionLabel: string;
+  /** The builder's one-line reason, when offered. */
+  note: string | null;
+}
+
+/**
+ * Lines the builder set aside as not applicable. These print as their
+ * own register — a challenge to the pack is a disclosure, not an
+ * exclusion, and the client deserves to see it stated plainly.
+ */
+export function deriveNotApplicable(
+  schedule: TenderSchedule,
+  answerValue: unknown,
+): DerivedNotApplicableRow[] {
+  const answer = readScheduleAnswer(answerValue);
+  return tenderableItems(schedule)
+    .filter((item) => answer[item.itemId]?.s === "na")
+    .map((item) => ({
+      itemId: item.itemId,
+      label: item.label,
+      divisionLabel: item.divisionLabel,
+      note: answer[item.itemId]?.n ?? null,
+    }));
+}
+
+export interface DisclosedPriceRow {
+  itemId: string;
+  label: string;
+  divisionLabel: string;
+  amountAud: number;
+}
+
+/** Documented lines whose price the builder chose to disclose. */
+export function deriveDisclosedPrices(
+  schedule: TenderSchedule,
+  answerValue: unknown,
+): DisclosedPriceRow[] {
+  const answer = readScheduleAnswer(answerValue);
+  const rows: DisclosedPriceRow[] = [];
+  for (const item of tenderableItems(schedule)) {
+    const e = answer[item.itemId];
+    if (!e || e.s !== "documented") continue;
+    if (typeof e.p !== "number" || e.p <= 0) continue;
+    rows.push({
+      itemId: item.itemId,
+      label: item.label,
+      divisionLabel: item.divisionLabel,
+      amountAud: e.p,
+    });
+  }
+  return rows;
 }
 
 /** "Sheet 3 of 6, Rev B" — the trust line under an evidenced item. */

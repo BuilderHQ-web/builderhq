@@ -1931,8 +1931,13 @@ export function computeTenderMetrics(
     coverage.included = tallies.documented;
     coverage.allowance = tallies.allowance;
     coverage.excluded = tallies.excluded;
-    coverage.notApplicable = 0;
+    coverage.notApplicable = tallies.notApplicable;
     coverage.unmarked = tallies.unmarked;
+    // Disclosed line prices ARE itemisation on a schedule round — the
+    // same act of showing the working, line by line instead of trade
+    // by trade.
+    itemisedCount = tallies.disclosedCount;
+    itemisedTotal = tallies.disclosedTotal;
   }
 
   return {

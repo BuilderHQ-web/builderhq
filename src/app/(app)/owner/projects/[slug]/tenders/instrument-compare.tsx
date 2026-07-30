@@ -606,6 +606,11 @@ const SCHED_META: Record<
     dot: "bg-[#c25550]",
     cls: "text-[#a8433e]",
   },
+  na: {
+    label: "Not applicable",
+    dot: "bg-[#8a8577]",
+    cls: "text-text-dim",
+  },
 };
 
 /**
