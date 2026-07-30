@@ -12,7 +12,11 @@ import {
 } from "@/modules/tenders";
 import { getBuilderProfile, getOwnerContactPublic } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
-import { getProjectSchedule, getScheduleForRun } from "@/modules/scope-engine";
+import {
+  getProjectSchedule,
+  getScheduleForRun,
+  getRoundContextForBuilders,
+} from "@/modules/scope-engine";
 import type { MarketplacePreview } from "@/modules/projects";
 import { TenderJourney, type TenderLetterhead } from "./journey";
 import { TenderOutcome } from "./outcome";
@@ -100,6 +104,7 @@ export default async function TenderRoute({
   // Drafts answer the CURRENT pack; a sealed tender reads back against
   // the pack it was priced on (its pinned run), never a later one.
   const schedule = await getProjectSchedule(preview.id);
+  const roundContext = await getRoundContextForBuilders(preview.id);
   const pinnedRun = answers.find((a) => a.qid === "scope.schedule_run")?.v;
   const sealedSchedule =
     typeof pinnedRun === "string" && pinnedRun !== schedule?.runId
@@ -161,6 +166,7 @@ export default async function TenderRoute({
       initialDocs={docs}
       letterhead={letterhead}
       schedule={schedule}
+      clientBrief={roundContext.brief}
     />
   );
 }

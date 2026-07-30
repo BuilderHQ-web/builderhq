@@ -40,6 +40,7 @@ import {
   ListOrdered,
   Loader2,
   Paperclip,
+  Landmark,
   Plus,
   Trash2,
   X,
@@ -62,6 +63,7 @@ import {
   readScheduleAnswer,
   deriveAllowanceRows,
   deriveScheduleExclusions,
+  deriveNotApplicable,
   ownerExcludedItems,
   formatCitation,
   type ScheduleDivision,
@@ -206,6 +208,7 @@ export function summariseValue(
       `${count("documented")} as documented`,
       count("allowance") ? `${count("allowance")} allowance` : null,
       count("excluded") ? `${count("excluded")} excluded` : null,
+      count("na") ? `${count("na")} not applicable` : null,
     ].filter(Boolean);
     return parts.join(" · ");
   }
@@ -225,6 +228,7 @@ export function TenderJourney({
   initialDocs,
   letterhead,
   schedule = null,
+  clientBrief = [],
 }: {
   slug: string;
   projectId: string;
@@ -242,6 +246,8 @@ export function TenderJourney({
    * client's pack.
    */
   schedule?: TenderSchedule | null;
+  /** The client's brief as labelled facts; [] when unanswered. */
+  clientBrief?: Array<{ k: string; v: string }>;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -1125,10 +1131,10 @@ export function TenderJourney({
                     onMark={(item, entry) => {
                       markScheduleItem(slide.q, item, entry);
                       // The last unmarked line completing the division
-                      // advances the deck — unless the mark is an
-                      // allowance, which opens its amount field and
-                      // must hold the slide for the figure.
-                      if (entry.s !== "allowance") {
+                      // advances the deck — unless the mark opens an
+                      // input that must hold the slide: an allowance
+                      // for its figure, not-applicable for its reason.
+                      if (entry.s !== "allowance" && entry.s !== "na") {
                         const after = {
                           ...readScheduleAnswer(
                             liveAnswers.current[slide.q.id],
@@ -1217,6 +1223,9 @@ export function TenderJourney({
                       <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
                         {slide.q.help}
                       </p>
+                    ) : null}
+                    {clientBrief.length > 0 ? (
+                      <BriefHint qid={slide.q.id} brief={clientBrief} />
                     ) : null}
                     {slide.q.id === "elig.authority" && letterhead ? (
                       <LetterheadCard letterhead={letterhead} />
@@ -2338,6 +2347,45 @@ function MatrixRowSlide({
   );
 }
 
+/* ── the client's brief, surfaced where it changes the answer ───────── */
+
+/**
+ * Which brief fact matters on which slide. The client answered a
+ * handful of questions before the round opened; each surfaces exactly
+ * where a builder would otherwise guess: funding beside the price,
+ * planning beside the start date, priority beside the pitch,
+ * selections beside the allowance schedule.
+ */
+const BRIEF_HINT_FOR_QID: Record<string, string> = {
+  "price.total": "Funding",
+  "programme.start": "Planning approval",
+  "comment.approach": "What they value",
+  "pcps.schedule_confirm": "Selections",
+  "pcps.basis": "Selections",
+};
+
+function BriefHint({
+  qid,
+  brief,
+}: {
+  qid: string;
+  brief: Array<{ k: string; v: string }>;
+}) {
+  const key = BRIEF_HINT_FOR_QID[qid];
+  if (!key) return null;
+  const row = brief.find((r) => r.k === key);
+  if (!row) return null;
+  return (
+    <p className="mt-2.5 inline-flex items-center gap-2 rounded-md border border-border-accent/40 bg-[rgba(0,212,200,0.05)] px-3 py-2 text-[12px] text-text-muted">
+      <Landmark className="size-3.5 text-accent-light shrink-0" />
+      <span>
+        From the client&rsquo;s brief · {row.k}:{" "}
+        <span className="font-ui font-medium text-text">{row.v}</span>
+      </span>
+    </p>
+  );
+}
+
 /* ── the division slide (the schedule flip) ─────────────────────────── */
 
 const DIVISION_STATES: Array<{
@@ -2348,6 +2396,7 @@ const DIVISION_STATES: Array<{
   { value: "documented", label: "Included as documented", short: "Documented" },
   { value: "allowance", label: "Allowance", short: "Allowance" },
   { value: "excluded", label: "Excluded", short: "Excluded" },
+  { value: "na", label: "Not applicable", short: "Not applicable" },
 ];
 
 /**
@@ -2444,12 +2493,19 @@ function ScheduleItemRow({
   const isOwnerAllowance = item.kind === "owner_allowance";
   const state = entry?.s;
   const cite = item.citations[0] ? formatCitation(item.citations[0]) : null;
+  // Price disclosure stays open once used; opening it is a deliberate
+  // act, so it never flashes on a passing "documented" tap.
+  const [priceOpen, setPriceOpen] = useState(false);
+  const showPrice =
+    state === "documented" && (priceOpen || typeof entry?.p === "number");
   return (
     <li
       className={cn(
         "rounded-lg border px-4 py-3.5 transition-colors",
         state
-          ? "border-border-accent/60 bg-[rgba(0,212,200,0.04)]"
+          ? state === "na"
+            ? "border-border-strong bg-[rgba(24,34,44,0.03)]"
+            : "border-border-accent/60 bg-[rgba(0,212,200,0.04)]"
           : "border-border-subtle bg-surface-1 card-elev",
       )}
     >
@@ -2461,6 +2517,12 @@ function ScheduleItemRow({
           <p className="mt-1 text-[12px] leading-[1.55] text-text-muted max-w-[56ch]">
             {item.plain}
           </p>
+          {item.note ? (
+            <p className="mt-1.5 text-[11.5px] leading-[1.55] text-text-muted max-w-[56ch]">
+              <span className="text-accent-light">Documents:</span>{" "}
+              {item.note}
+            </p>
+          ) : null}
           {isOwnerAllowance && item.ownerAmountAud !== null ? (
             <p className="mt-1.5 text-[11.5px] text-[#8a6414]">
               The client&rsquo;s schedule carries{" "}
@@ -2531,7 +2593,9 @@ function ScheduleItemRow({
                 on
                   ? st.value === "excluded"
                     ? "border-transparent bg-[#a8433e] text-white font-semibold"
-                    : "border-transparent bg-accent text-accent-contrast font-semibold"
+                    : st.value === "na"
+                      ? "border-transparent bg-[#5c574b] text-white font-semibold"
+                      : "border-transparent bg-accent text-accent-contrast font-semibold"
                   : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
               )}
             >
@@ -2556,6 +2620,58 @@ function ScheduleItemRow({
           <CurrencyBox
             value={typeof entry?.a === "number" ? entry.a : null}
             onChange={(v) => onMark({ s: "allowance", a: v })}
+          />
+        </motion.div>
+      ) : null}
+
+      {state === "na" ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            One line on why this does not apply. Optional, and it reads
+            far better to the client than a bare mark.
+          </p>
+          <input
+            type="text"
+            maxLength={200}
+            value={entry?.n ?? ""}
+            onChange={(e) =>
+              onMark({ s: "na", n: e.target.value || null })
+            }
+            placeholder="Superseded by the addendum, not on this site plan..."
+            className="h-11 w-full max-w-[420px] rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3 text-[13px] text-text outline-none focus:border-border-accent transition-colors"
+          />
+        </motion.div>
+      ) : null}
+
+      {state === "documented" && !showPrice ? (
+        <button
+          type="button"
+          onClick={() => setPriceOpen(true)}
+          className="mt-2.5 inline-flex items-center gap-1 text-[11px] text-text-dim hover:text-text transition-colors"
+        >
+          <Plus className="size-3" />
+          Disclose this line&rsquo;s price
+        </button>
+      ) : null}
+      {showPrice ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Optional. A disclosed line price reads as itemised working
+            and lifts how your preparation scores.
+          </p>
+          <CurrencyBox
+            value={typeof entry?.p === "number" ? entry.p : null}
+            onChange={(v) => onMark({ s: "documented", p: v })}
           />
         </motion.div>
       ) : null}
@@ -2671,6 +2787,9 @@ function DerivedExclusions({
   const scheduleAllowances = schedule
     ? deriveAllowanceRows(schedule, answers["scope.schedule"])
     : null;
+  const notApplicable = schedule
+    ? deriveNotApplicable(schedule, answers["scope.schedule"])
+    : [];
   const clientOut = schedule ? ownerExcludedItems(schedule) : [];
   const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
   const excluded = fromSchedule
@@ -2793,6 +2912,27 @@ function DerivedExclusions({
           </p>
           <p className="mt-1.5 text-[12.5px] text-text-muted">
             {allowance.map((r) => r.label).join(" · ")}
+          </p>
+        </div>
+      ) : null}
+      {notApplicable.length > 0 ? (
+        <div className="py-3.5">
+          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+            Set aside as not applicable
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {notApplicable.map((r) => (
+              <li key={r.itemId} className="text-[12.5px] text-text-muted">
+                {r.label}
+                {r.note ? (
+                  <span className="text-text-dim"> · {r.note}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-[11.5px] text-text-dim">
+            These print on your document as lines you hold do not apply
+            to this project.
           </p>
         </div>
       ) : null}

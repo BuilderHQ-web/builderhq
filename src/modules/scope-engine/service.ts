@@ -20,10 +20,12 @@ import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
 import { logger } from "@/lib/logger";
-import { projects } from "@/modules/projects";
+import { projects, briefForBuilders } from "@/modules/projects";
 import { documents, getObjectBytes } from "@/modules/documents";
 import {
   getScopeItem,
+  adviseMissingDocuments,
+  type DocumentAdvice,
   SCOPE_ITEMS,
   SCOPE_STANDARD_VERSION,
   ownerAllowanceEligible,
@@ -64,6 +66,7 @@ import {
   type DocumentFindings,
   type StageUsage,
   type SynthesisDocumentInput,
+  type SynthesisOverview,
 } from "./pipeline";
 
 type ScopeProjectType =
@@ -949,6 +952,106 @@ async function autoResolveBuilderWork(runId: string): Promise<number> {
     .onConflictDoNothing()
     .returning({ id: scopeGapResolutions.id });
   return inserted.length;
+}
+
+/* ── the round, read from the builder's side ─────────────────────── */
+
+export interface BuilderRoundContext {
+  /** The client's brief as short labelled facts, builder order. */
+  brief: Array<{ k: string; v: string }>;
+  /** The reader's overview of the documents — post-unlock material. */
+  overview: SynthesisOverview | null;
+  /** What the register lacks — post-unlock pricing intelligence. */
+  advisories: DocumentAdvice[];
+}
+
+/**
+ * Everything the analysis learned that helps a builder weigh and then
+ * price the round, in one read. The caller decides what travels to an
+ * un-unlocked viewer: the BRIEF is qualification data and safe
+ * everywhere; the overview and advisories quote and judge the
+ * documents, so they stay behind the unlock.
+ */
+export async function getRoundContextForBuilders(
+  projectId: string,
+): Promise<BuilderRoundContext> {
+  const [project] = await db
+    .select({ ownerBrief: projects.ownerBrief, type: projects.type })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  const brief = briefForBuilders(project?.ownerBrief ?? null);
+
+  const [run] = await db
+    .select({ id: scopeRuns.id, overview: scopeRuns.overview })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+      ),
+    )
+    .limit(1);
+  if (!run || !project) {
+    return { brief, overview: null, advisories: [] };
+  }
+
+  const [register, items] = await Promise.all([
+    db
+      .select({
+        documentId: scopeRunDocuments.documentId,
+        kind: scopeRunDocuments.kind,
+      })
+      .from(scopeRunDocuments)
+      .where(eq(scopeRunDocuments.runId, run.id)),
+    db
+      .select({
+        itemId: scopeRunItems.itemId,
+        status: scopeRunItems.status,
+        citations: scopeRunItems.citations,
+      })
+      .from(scopeRunItems)
+      .where(
+        and(
+          eq(scopeRunItems.runId, run.id),
+          ne(scopeRunItems.opsStatus, "removed"),
+        ),
+      ),
+  ]);
+
+  const kindByDoc = new Map<string, string>();
+  for (const r of register) {
+    if (r.kind) kindByDoc.set(r.documentId, r.kind);
+  }
+  const divisionSources: Record<string, string[]> = {};
+  const evidencedDivisions = new Set<string>();
+  for (const i of items) {
+    if (i.status !== "evidenced") continue;
+    const div = getScopeItem(i.itemId)?.division;
+    if (!div) continue;
+    evidencedDivisions.add(div);
+    const kinds = new Set(divisionSources[div] ?? []);
+    for (const c of (i.citations ?? []) as Array<{ documentId: string }>) {
+      const k = kindByDoc.get(c.documentId);
+      if (k) kinds.add(k);
+    }
+    divisionSources[div] = [...kinds];
+  }
+  const advisories = adviseMissingDocuments({
+    registerKinds: register
+      .map((r) => r.kind)
+      .filter((k): k is string => !!k),
+    evidencedDivisions: [...evidencedDivisions],
+    divisionSources,
+    projectType: project.type,
+  });
+
+  return {
+    brief,
+    overview: (run.overview as SynthesisOverview | null) ?? null,
+    advisories,
+  };
 }
 
 /** Copy still-relevant gap resolutions from the effective run. */

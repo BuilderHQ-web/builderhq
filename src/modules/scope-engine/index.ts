@@ -14,6 +14,8 @@ export {
   requestReread,
   completeOwnerReview,
   getProjectSchedule,
+  getRoundContextForBuilders,
+  type BuilderRoundContext,
   getScheduleForRun,
   listAddenda,
   scopePhaseForProjects,
