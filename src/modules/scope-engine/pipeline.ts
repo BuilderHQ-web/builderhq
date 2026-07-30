@@ -494,7 +494,7 @@ const SYNTHESIS_RULES = `You are synthesising an Australian residential tender p
 Your job, in order:
 0. THE OVERVIEW. Describe the project as the documents describe it: two to four sentences a homeowner would be proud to publish (form, storeys, construction, notable systems and finishes), plus the countable facts (dwellings, total bedrooms, total bathrooms, storeys) ONLY where the documents state or clearly show them; omit a count rather than guess it. NEVER include the street address, lot or plan numbers, or any person's name: the overview is published to builders before they unlock the address.
 1. THE SELECTION. For every item id that any document evidences, emit ONE entry with status "evidenced", merged citations (the strongest pages across documents, up to 5) and a one-line note in the documents' own terms. No citation, no claim: an evidenced entry without citations will be discarded.
-2. THE GAPS. This step is NOT optional and an empty gap list on an incomplete package is a wrong answer. Walk EVERY division of the Scope Standard for this project type, in order, and for each commonly required item that no document evidences, emit "gap" with a one-line reason a homeowner could understand ("No soil report is included, so footing design cannot be confirmed"). A typical package with only architectural drawings should produce roughly 15 to 40 gaps: structural engineering, soil report, service connections, finishes selections and external works are usually silent. Use "not_expected" only where absence is clearly legitimate for this project (no pool shown anywhere means pool items are not_expected, not gaps); include not_expected entries only where a reader might genuinely wonder.
+2. THE GAPS YOU CAN GROUND. Emit "gap" for items where the DOCUMENTS THEMSELVES make the silence pointed, with a one-line reason a homeowner could understand ("The drawings show a kitchen but no appliance schedule names the appliances"). Use "not_expected" where absence is clearly legitimate for this project (no pool shown anywhere means pool items are not_expected). Do NOT attempt an exhaustive sweep: every Standard item you do not mention is classified downstream in a dedicated pass, so completeness is not your burden here — precision and grounded notes are. When unsure between gap and not_expected, choose gap.
 3. THE CONFLICTS. Where documents contradict each other (different figures for the same thing, plan vs specification mismatches, stale revisions disagreeing), record each conflict with both citations and severity "high" when it would change price or compliance.
 
 Discipline: cite only (documentId, page) pairs that exist in the findings you were given. Never invent evidence. When unsure between gap and not_expected, choose gap: a false gap costs a question, a false not_expected hides a hole in the tender.`;
@@ -606,6 +606,140 @@ export async function synthesiseRun(args: {
   return { synthesis: { overview, items, conflicts }, usage: usageOf(message) };
 }
 
+/* ── the residual classifier ────────────────────────────────────────── */
+
+const ResidualSchema = z.object({
+  verdicts: z
+    .array(
+      z.object({
+        itemId: z.string(),
+        verdict: z.enum(["gap", "not_expected"]),
+        note: z
+          .string()
+          .max(300)
+          .nullish()
+          .transform((v) => v ?? null),
+      }),
+    )
+    .max(400),
+});
+
+const RESIDUAL_TOOL: Anthropic.Tool = {
+  name: "record_residual_verdicts",
+  description:
+    "For every listed item id, record whether its absence from the documents is a gap or legitimately not expected.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      verdicts: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            itemId: { type: "string" },
+            verdict: {
+              type: "string",
+              enum: ["gap", "not_expected"],
+              description:
+                "gap = a builder would need this priced or answered for this project and the documents are silent. not_expected = absence is clearly legitimate for THIS project (no basement drawn means no basement tanking; single storey means no stairs).",
+            },
+            note: {
+              type: ["string", "null"],
+              description:
+                "One line a homeowner understands: for a gap, what is missing and why it matters; for not_expected, why absence is fine. Ground it in this project's documents.",
+            },
+          },
+          required: ["itemId", "verdict", "note"],
+        },
+      },
+    },
+    required: ["verdicts"],
+  },
+};
+
+const RESIDUAL_RULES = `You are completing the read of an Australian residential tender package. The synthesis has already named every item the documents evidence. You are given the RESIDUAL list: every remaining item of the Scope Standard for this project type. The documents are silent on all of them; your only job is to judge each silence.
+
+For EVERY item in the residual list, record exactly one verdict:
+- "gap": a builder pricing this project would need the item answered, and the documents do not answer it. Most residuals on a drawings-only package are gaps: engineering, reports, service connections, selections, external works.
+- "not_expected": absence is clearly legitimate for THIS project, judged from the overview and what IS evidenced. No pool anywhere means pool items are not_expected. Single storey means stairs are not_expected. A renovation with no roof work shown may make roofing items not_expected.
+
+When unsure, choose "gap": a false gap costs one question; a false not_expected hides a hole in a tender. Never invent evidence and never cite; these items have none. Answer every id you are given and no others.`;
+
+export async function classifyResidualItems(args: {
+  projectType: ScopeProjectType;
+  overviewSummary: string | null;
+  registerKinds: string[];
+  evidencedIds: string[];
+  residualIds: string[];
+}): Promise<{
+  verdicts: Map<string, { verdict: "gap" | "not_expected"; note: string | null }>;
+  usage: StageUsage;
+}> {
+  if (args.residualIds.length === 0) {
+    return { verdicts: new Map(), usage: { inputTokens: 0, outputTokens: 0 } };
+  }
+  const payload = JSON.stringify({
+    projectType: args.projectType,
+    overview: args.overviewSummary,
+    documentKinds: args.registerKinds,
+    evidencedItemIds: args.evidencedIds,
+    residualItemIds: args.residualIds,
+  });
+  const message = await anthropic()
+    .messages.stream({
+      model: SYNTHESIS_MODEL,
+      max_tokens: 24_000,
+      thinking: { type: "adaptive" } as unknown as Anthropic.ThinkingConfigParam,
+      system: [
+        { type: "text", text: RESIDUAL_RULES },
+        {
+          type: "text",
+          text: ontologyDigest(args.projectType),
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      tools: [RESIDUAL_TOOL],
+      tool_choice: { type: "tool", name: RESIDUAL_TOOL.name },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `The package's read so far:\n\n${payload}\n\nRecord a verdict for every residual item id with the record_residual_verdicts tool.`,
+            },
+          ],
+        },
+      ],
+    })
+    .finalMessage();
+  if (message.stop_reason === "max_tokens") {
+    throw new Error("residual classification truncated at the token ceiling");
+  }
+  const toolUse = message.content.find(
+    (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+  );
+  const parsed = ResidualSchema.safeParse(toolUse?.input);
+  if (!parsed.success) {
+    logger.warn(
+      { event: "scope.residual.invalid_shape", issues: parsed.error.issues.slice(0, 5) },
+      "residual classification shape rejected",
+    );
+    throw new Error("residual classification invalid");
+  }
+  const residualSet = new Set(args.residualIds);
+  const verdicts = new Map<
+    string,
+    { verdict: "gap" | "not_expected"; note: string | null }
+  >();
+  for (const v of parsed.data.verdicts) {
+    if (!residualSet.has(v.itemId)) continue;
+    if (verdicts.has(v.itemId)) continue;
+    verdicts.set(v.itemId, { verdict: v.verdict, note: v.note });
+  }
+  return { verdicts, usage: usageOf(message) };
+}
+
 /** Rough cost in USD for a run's usage ledger, using published
  *  per-million rates. Bookkeeping, not billing. */
 export function estimateCostUsd(
@@ -615,6 +749,7 @@ export function estimateCostUsd(
     classify: { in: 1, out: 5 },
     extract: { in: 5, out: 25 },
     synthesis: { in: 5, out: 25 },
+    residual: { in: 5, out: 25 },
   };
   let usd = 0;
   for (const [stage, usage] of Object.entries(stages)) {

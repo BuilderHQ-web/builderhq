@@ -34,6 +34,13 @@ import {
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
+import {
+  enforceCitationConsistency,
+  residualPool,
+  foldResiduals,
+  coverageReport,
+  dedupeRegister,
+} from "./analysis";
 import { users } from "@/modules/users";
 import { unlocks } from "@/modules/unlocks";
 import {
@@ -61,6 +68,7 @@ import {
   classifyDocument,
   extractDocument,
   synthesiseRun,
+  classifyResidualItems,
   estimateCostUsd,
   MAX_PDF_BYTES,
   type DocumentFindings,
@@ -272,15 +280,36 @@ export async function processRunTick(
       .from(scopeRunDocuments)
       .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
       .where(eq(scopeRunDocuments.runId, runId));
-    const extracted: SynthesisDocumentInput[] = docRows
-      .filter((d) => d.row.status === "extracted" && d.row.findings)
-      .map((d) => ({
-        documentId: d.row.documentId,
-        filename: d.filename,
-        kind: d.row.kind ?? "other",
-        revision: d.row.revision,
-        findings: d.row.findings as DocumentFindings,
-      }));
+    // Register hygiene: the same document uploaded twice must not read
+    // as twice the evidence.
+    const deduped = dedupeRegister(
+      docRows
+        .filter((d) => d.row.status === "extracted" && d.row.findings)
+        .map((d) => ({
+          documentId: d.row.documentId,
+          kind: d.row.kind,
+          docTitle: d.row.docTitle,
+          pageCount: d.row.pageCount,
+          d,
+        })),
+    );
+    if (deduped.duplicates.length > 0) {
+      logger.warn(
+        {
+          event: "scope.synthesis.register_deduped",
+          runId,
+          duplicates: deduped.duplicates.map((x) => x.documentId),
+        },
+        "duplicate register rows excluded from synthesis",
+      );
+    }
+    const extracted: SynthesisDocumentInput[] = deduped.keep.map(({ d }) => ({
+      documentId: d.row.documentId,
+      filename: d.filename,
+      kind: d.row.kind ?? "other",
+      revision: d.row.revision,
+      findings: d.row.findings as DocumentFindings,
+    }));
     if (extracted.length === 0) {
       await db
         .update(scopeRuns)
@@ -300,6 +329,63 @@ export async function processRunTick(
     });
     usage = addUsage(usage, "synthesis", synthUsage);
 
+    // ── the deterministic half of accuracy ──────────────────────────
+    // Citations checked against the extract stage's own findings;
+    // demoted items rejoin the residual pool.
+    const enforced = enforceCitationConsistency(synthesis.items, extracted);
+    // The complement is arithmetic: every relevant item the synthesis
+    // did not account for goes to the closed-choice classifier. A
+    // synthesis can no longer forget to sweep for gaps.
+    const residual = residualPool(projectType, enforced.items);
+    let residualVerdicts = new Map<
+      string,
+      { verdict: "gap" | "not_expected"; note: string | null }
+    >();
+    if (residual.length > 0) {
+      await bump("synthesising");
+      const evidencedIds = enforced.items
+        .filter((i) => i.status === "evidenced")
+        .map((i) => i.itemId);
+      const { verdicts, usage: residualUsage } = await classifyResidualItems({
+        projectType,
+        overviewSummary: synthesis.overview?.summary ?? null,
+        registerKinds: [
+          ...new Set(extracted.map((d) => d.kind).filter(Boolean)),
+        ],
+        evidencedIds,
+        residualIds: residual,
+      });
+      residualVerdicts = verdicts;
+      usage = addUsage(usage, "residual", residualUsage);
+    }
+    const finalItems = [
+      ...enforced.items,
+      ...foldResiduals(residual, residualVerdicts),
+    ];
+    // The invariant this rework exists for, checked every run.
+    const coverage = coverageReport(projectType, finalItems);
+    if (coverage.missing.length > 0 || coverage.strays.length > 0) {
+      logger.warn(
+        {
+          event: "scope.synthesis.coverage_gap",
+          runId,
+          missing: coverage.missing.slice(0, 10),
+          strays: coverage.strays.slice(0, 10),
+        },
+        "synthesis coverage invariant violated",
+      );
+    }
+    const analysis = {
+      citationHardDropped: enforced.hardDropped,
+      citationSoftFlagged: enforced.softFlagged,
+      demotedToResidual: enforced.demoted.length,
+      residualClassified: residualVerdicts.size,
+      residualDefaulted: residual.length - residualVerdicts.size,
+      registerDeduped: deduped.duplicates.length,
+      poolSize: coverage.poolSize,
+      covered: coverage.covered,
+    };
+
     // Persist the selection — revisions denormalised onto citations so
     // every claim reads (document, page, revision) forever.
     const revisionByDoc = new Map(
@@ -307,9 +393,9 @@ export async function processRunTick(
     );
     await db.delete(scopeRunItems).where(eq(scopeRunItems.runId, runId));
     await db.delete(scopeRunConflicts).where(eq(scopeRunConflicts.runId, runId));
-    if (synthesis.items.length > 0) {
+    if (finalItems.length > 0) {
       await db.insert(scopeRunItems).values(
-        synthesis.items.map((i) => ({
+        finalItems.map((i) => ({
           runId,
           itemId: i.itemId,
           status: i.status,
@@ -344,7 +430,7 @@ export async function processRunTick(
       .set({
         status: "review",
         overview: synthesis.overview as object | null,
-        usage: { ...usage, estimatedCostUsd: cost } as object,
+        usage: { ...usage, estimatedCostUsd: cost, analysis } as object,
         updatedAt: new Date(),
       })
       .where(eq(scopeRuns.id, runId));
@@ -352,7 +438,8 @@ export async function processRunTick(
       {
         event: "scope.run.ready_for_review",
         runId,
-        items: synthesis.items.length,
+        items: finalItems.length,
+        analysis,
         conflicts: synthesis.conflicts.length,
         estimatedCostUsd: cost,
       },
@@ -1017,6 +1104,173 @@ export async function packStatsForProjects(
     };
   }
   return out;
+}
+
+/* ── the model report ───────────────────────────────────────────────── */
+
+export interface ModelReport {
+  runs: Array<{
+    runId: string;
+    projectSlug: string | null;
+    status: string;
+    createdAtISO: string;
+    items: number;
+    gaps: number;
+    costUsd: number | null;
+    analysis: Record<string, number> | null;
+  }>;
+  /** Ops verdicts by confidence bucket: the calibration read. */
+  calibration: Array<{
+    bucket: string;
+    confirmed: number;
+    edited: number;
+    removed: number;
+    pending: number;
+    /** confirmed / (confirmed + removed); null until verdicts exist. */
+    precisionProxy: number | null;
+  }>;
+  /** Divisions ranked by how often ops removes the model's claims. */
+  divisions: Array<{
+    divisionId: string;
+    confirmed: number;
+    edited: number;
+    removed: number;
+    removalRate: number;
+  }>;
+  totals: { runs: number; costUsd: number; verdicts: number };
+}
+
+/**
+ * Every ops verdict is a label. This report reads them back as the
+ * model's report card: precision by confidence bucket (does the 0.65
+ * floor sit where it should), removal rates by division (where does
+ * the model over-claim), and each run's analysis counters (citation
+ * violations, residual defaults, register dedupes). No golden set
+ * required — this is the measurement we get for free from running
+ * the desk, and the golden set will sharpen it, not replace it.
+ */
+export async function scopeModelReport(): Promise<ModelReport> {
+  const runRows = await db
+    .select({
+      runId: scopeRuns.id,
+      status: scopeRuns.status,
+      createdAt: scopeRuns.createdAt,
+      usage: scopeRuns.usage,
+      projectSlug: projects.slug,
+    })
+    .from(scopeRuns)
+    .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(30);
+
+  const counts = await db
+    .select({
+      runId: scopeRunItems.runId,
+      items: sql<number>`count(*)::int`,
+      gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap')::int`,
+    })
+    .from(scopeRunItems)
+    .groupBy(scopeRunItems.runId);
+  const countByRun = new Map(counts.map((c) => [c.runId, c]));
+
+  const buckets = await db
+    .select({
+      bucket: sql<string>`case
+        when coalesce(${scopeRunItems.confidence}, 0)::real < 0.5 then 'under 0.5'
+        when coalesce(${scopeRunItems.confidence}, 0)::real < 0.65 then '0.5 to 0.65'
+        when coalesce(${scopeRunItems.confidence}, 0)::real < 0.8 then '0.65 to 0.8'
+        else '0.8 and up'
+      end`,
+      opsStatus: scopeRunItems.opsStatus,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(scopeRunItems)
+    .groupBy(sql`1`, scopeRunItems.opsStatus);
+
+  const BUCKET_ORDER = ["under 0.5", "0.5 to 0.65", "0.65 to 0.8", "0.8 and up"];
+  const calibration = BUCKET_ORDER.map((bucket) => {
+    const of = (status: string) =>
+      buckets.find((b) => b.bucket === bucket && b.opsStatus === status)?.n ?? 0;
+    const confirmed = of("confirmed");
+    const edited = of("edited");
+    const removed = of("removed");
+    const judged = confirmed + removed;
+    return {
+      bucket,
+      confirmed,
+      edited,
+      removed,
+      pending: of("pending"),
+      precisionProxy:
+        judged > 0 ? Math.round((confirmed / judged) * 1000) / 1000 : null,
+    };
+  });
+
+  const divisionRows = await db
+    .select({
+      divisionId: sql<string>`split_part(${scopeRunItems.itemId}, '.', 1)`,
+      opsStatus: scopeRunItems.opsStatus,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(scopeRunItems)
+    .where(ne(scopeRunItems.opsStatus, "pending"))
+    .groupBy(sql`1`, scopeRunItems.opsStatus);
+  const divisionIds = [...new Set(divisionRows.map((r) => r.divisionId))];
+  const divisions = divisionIds
+    .map((divisionId) => {
+      const of = (status: string) =>
+        divisionRows.find(
+          (r) => r.divisionId === divisionId && r.opsStatus === status,
+        )?.n ?? 0;
+      const confirmed = of("confirmed");
+      const edited = of("edited");
+      const removed = of("removed");
+      const judged = confirmed + edited + removed;
+      return {
+        divisionId,
+        confirmed,
+        edited,
+        removed,
+        removalRate: judged > 0 ? Math.round((removed / judged) * 1000) / 1000 : 0,
+      };
+    })
+    .filter((d) => d.confirmed + d.edited + d.removed > 0)
+    .sort((a, b) => b.removalRate - a.removalRate);
+
+  const runs = runRows.map((r) => {
+    const u = (r.usage ?? {}) as Record<string, unknown>;
+    const c = countByRun.get(r.runId);
+    return {
+      runId: r.runId,
+      projectSlug: r.projectSlug,
+      status: r.status,
+      createdAtISO: r.createdAt.toISOString(),
+      items: c?.items ?? 0,
+      gaps: c?.gaps ?? 0,
+      costUsd:
+        typeof u.estimatedCostUsd === "number" ? u.estimatedCostUsd : null,
+      analysis:
+        u.analysis && typeof u.analysis === "object"
+          ? (u.analysis as Record<string, number>)
+          : null,
+    };
+  });
+
+  return {
+    runs,
+    calibration,
+    divisions,
+    totals: {
+      runs: runRows.length,
+      costUsd:
+        Math.round(
+          runs.reduce((n, r) => n + (r.costUsd ?? 0), 0) * 100,
+        ) / 100,
+      verdicts: buckets
+        .filter((b) => b.opsStatus !== "pending")
+        .reduce((n, b) => n + b.n, 0),
+    },
+  };
 }
 
 /* ── the round, read from the builder's side ─────────────────────── */

@@ -16,6 +16,8 @@ export {
   getProjectSchedule,
   getRoundContextForBuilders,
   packStatsForProjects,
+  scopeModelReport,
+  type ModelReport,
   type BuilderRoundContext,
   getScheduleForRun,
   listAddenda,

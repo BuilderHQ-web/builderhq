@@ -52,6 +52,12 @@ export default async function ScopeRunsPage() {
           </div>
           <div className="flex items-center gap-2.5">
             <Link
+              href="/admin/scope/metrics"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border border-border-subtle text-[12px] text-text-muted hover:text-text hover:border-border-strong transition-colors"
+            >
+              Model report
+            </Link>
+            <Link
               href="/admin/scope/addenda"
               className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-border-subtle text-[12px] font-ui text-text-muted hover:border-border-strong hover:text-text transition-colors"
             >
