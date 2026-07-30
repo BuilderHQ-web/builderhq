@@ -143,7 +143,10 @@ export async function requestScopeRereadAction(
 export async function completeScopeReviewAction(
   projectId: string,
 ): Promise<
-  Result<{ published: true } | { addendum: number; summary: string }>
+  Result<
+    | { published: true; slug: string }
+    | { addendum: number; summary: string }
+  >
 > {
   const a = await requireRunner();
   if (!a.ok) return a;

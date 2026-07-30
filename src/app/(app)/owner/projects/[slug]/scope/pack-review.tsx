@@ -128,6 +128,8 @@ type Chapter = 0 | 1 | 2 | 3 | 4;
 
 export function PackReview({
   projectId,
+  slug,
+  basePath,
   canResolve,
   mode = "publish",
   addenda = [],
@@ -144,6 +146,10 @@ export function PackReview({
   resolutions,
 }: {
   projectId: string;
+  /** Current slug. Publishing regenerates it; never route from this. */
+  slug: string;
+  /** "/owner" or "/architect" — the runner's own mount point. */
+  basePath: string;
   canResolve: boolean;
   mode?: "publish" | "addendum" | "record";
   addenda?: PackAddendum[];
@@ -331,14 +337,18 @@ export function PackReview({
         toast.success(
           `Addendum ${String(r.value.addendum).padStart(2, "0")} issued. Every builder on the round has been told.`,
         );
-      } else {
-        toast.success("Your round is live. Builders can now see it.");
+        router.push(`${basePath}/projects/${slug}/live`);
+        return;
       }
-      router.refresh();
+      toast.success("Your round is live. Builders can now see it.");
+      // Publishing REGENERATES the slug, so the URL this page is
+      // standing on stops existing the moment the round opens. Route
+      // to the new one, never refresh the old.
+      router.push(`${basePath}/projects/${r.value.slug}/live`);
     } finally {
       setCompleting(false);
     }
-  }, [projectId, router]);
+  }, [projectId, router, basePath, slug]);
 
   const reread = useCallback(async () => {
     setRereading(true);

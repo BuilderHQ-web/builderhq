@@ -1491,7 +1491,10 @@ export async function completeOwnerReview(
   projectId: string,
   runnerId: string,
 ): Promise<
-  Result<{ published: true } | { addendum: number; summary: string }>
+  Result<
+    | { published: true; slug: string }
+    | { addendum: number; summary: string }
+  >
 > {
   const review = await getOwnerReview(projectId, runnerId);
   if (!review.ok) return review;
@@ -1579,7 +1582,9 @@ export async function completeOwnerReview(
     { event: "scope.owner_review.completed", projectId, runId: review.value.run.id },
     "owner review completed and project published",
   );
-  return ok({ published: true });
+  // Publishing REGENERATES the slug, so the caller cannot route from
+  // the URL it is standing on. Hand back the new one.
+  return ok({ published: true as const, slug: published.value.slug });
 }
 
 /**

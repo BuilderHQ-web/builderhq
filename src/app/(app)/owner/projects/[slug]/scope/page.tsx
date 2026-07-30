@@ -165,6 +165,8 @@ export default async function ScopeReviewPage({
         ) : (
           <PackReview
             projectId={project.id}
+            slug={project.slug}
+            basePath={base}
             canResolve={canResolve}
             mode={mode}
             addenda={addendaForClient}
