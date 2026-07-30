@@ -124,7 +124,7 @@ function buildSlides(
             {fmtAud(b.exposureExGst)}
           </p>
           <p className="mt-1 text-[14px]" style={{ color: INK.dim }}>
-            of that price can still move
+            of that price sits in allowances of its own choosing
           </p>
           <div className="my-6 h-px w-16" style={{ background: INK.hairline }} />
           <p className="text-[15px] sm:text-[17px] leading-[1.6] max-w-[44ch]" style={{ color: INK.cream }}>
@@ -166,7 +166,7 @@ function buildSlides(
                 <span className="text-[13.5px]" style={{ color: INK.dim }}>
                   {e.builderName}
                 </span>
-                <span className="font-display text-[22px] leading-none" style={{ color: e.money.firmPct >= 99 ? INK.teal : INK.cream }}>
+                <span className="font-display text-[22px] leading-none" style={{ color: e.money.builderFirmPct >= 99 ? INK.teal : INK.cream }}>
                   {Math.round(e.money.firmPct)}% firm
                 </span>
               </div>
@@ -181,7 +181,9 @@ function buildSlides(
               </div>
               {e.money.exposure > 0 ? (
                 <p className="mt-1.5 text-[11.5px]" style={{ color: INK.faint }}>
-                  {fmtAud(e.money.exposure)} sits in allowances
+                  {e.money.clientAllowanceExGst > 0
+                    ? `${fmtAud(e.money.clientAllowanceExGst)} your allowances${e.money.builderExposureExGst > 0 ? ` · ${fmtAud(e.money.builderExposureExGst)} the builder's own` : ""}`
+                    : `${fmtAud(e.money.exposure)} sits in allowances`}
                 </p>
               ) : null}
             </div>

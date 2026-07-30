@@ -916,12 +916,22 @@ function PricePanel({ active }: { active: TenderEvaluation[] }) {
                   </p>
                 </div>
                 <div style={{ width: `${width}%`, minWidth: "42%" }}>
-                  <FirmSplitBar firmPct={e.money.firmPct} height={12} />
+                  <FirmSplitBar
+                    firmPct={e.money.firmPct}
+                    clientPct={
+                      e.money.exGst && e.money.exGst > 0
+                        ? (e.money.clientAllowanceExGst / e.money.exGst) * 100
+                        : 0
+                    }
+                    height={12}
+                  />
                 </div>
                 <p className="mt-1.5 text-[11px] font-ui text-text-muted">
-                  {e.money.exposure > 0
-                    ? `${fmtAud(e.money.firmExGst)} committed · ${fmtAud(e.money.exposure)} in allowances that can move either way`
-                    : "Every dollar committed"}
+                  {e.money.clientAllowanceExGst > 0
+                    ? `${fmtAud(e.money.firmExGst)} committed · ${fmtAud(e.money.clientAllowanceExGst)} your stated allowances${e.money.builderExposureExGst > 0 ? ` · ${fmtAud(e.money.builderExposureExGst)} the builder's own` : ""}`
+                    : e.money.exposure > 0
+                      ? `${fmtAud(e.money.firmExGst)} committed · ${fmtAud(e.money.exposure)} in allowances that can move either way`
+                      : "Every dollar committed"}
                 </p>
               </HoverCard>
             );
@@ -1048,11 +1058,21 @@ function TenderCard({
       </div>
 
       <div className="px-5 mt-3.5">
-        <FirmSplitBar firmPct={ev.money.firmPct} height={7} />
+        <FirmSplitBar
+          firmPct={ev.money.firmPct}
+          clientPct={
+            ev.money.exGst && ev.money.exGst > 0
+              ? (ev.money.clientAllowanceExGst / ev.money.exGst) * 100
+              : 0
+          }
+          height={7}
+        />
         <p className="mt-1.5 text-[10.5px] font-ui text-text-muted">
-          {ev.money.exposure > 0
-            ? `Firm to ${Math.round(ev.money.firmPct)}% · ${fmtAud(ev.money.exposure)} in allowances`
-            : "Fully priced, no allowances"}
+          {ev.money.clientAllowanceExGst > 0
+            ? `Firm to ${Math.round(ev.money.firmPct)}% · ${fmtAud(ev.money.clientAllowanceExGst)} your allowances${ev.money.builderExposureExGst > 0 ? ` · ${fmtAud(ev.money.builderExposureExGst)} their own` : " · nothing of their own"}`
+            : ev.money.exposure > 0
+              ? `Firm to ${Math.round(ev.money.firmPct)}% · ${fmtAud(ev.money.exposure)} in allowances`
+              : "Fully priced, no allowances"}
         </p>
       </div>
 
@@ -1221,19 +1241,25 @@ const GRID: GridGroup[] = [
           e.money.exGst === null
             ? "Not stated"
             : `${fmtAud(e.money.firmExGst)} (${Math.round(e.money.firmPct)}%)`,
-        best: highestBy((e) => (e.money.exGst === null ? null : e.money.firmPct)),
+        best: highestBy((e) =>
+          e.money.exGst === null ? null : e.money.builderFirmPct,
+        ),
       },
       {
         label: "Allowances",
         info: {
-          title: "Allowances (PS and PC)",
-          text: "Money set aside for work that cannot be priced exactly yet. A provisional sum (PS) covers work, a prime cost (PC) covers items such as tapware or appliances. Each can end up costing more or less than the figure allowed.",
+          title: "Allowances",
+          text: "Money that can move from its stated figure. Allowances you set on the pack sit on every tender identically by your instruction, so only a builder's own allowances differentiate the prices. Legacy rounds show provisional sums (PS) and prime costs (PC).",
         },
         value: (e) =>
-          e.money.exposure > 0
-            ? `${fmtAud(e.money.exposure)} (${e.money.psCount} PS, ${e.money.pcCount} PC)`
-            : "None",
-        best: lowestBy((e) => (e.money.exGst === null ? null : e.money.exposure)),
+          e.money.clientAllowanceExGst > 0
+            ? `${fmtAud(e.money.clientAllowanceExGst)} yours · ${e.money.builderExposureExGst > 0 ? `${fmtAud(e.money.builderExposureExGst)} their own` : "none of their own"}`
+            : e.money.exposure > 0
+              ? `${fmtAud(e.money.exposure)} (${e.money.psCount} PS, ${e.money.pcCount} PC)`
+              : "None",
+        best: lowestBy((e) =>
+          e.money.exGst === null ? null : e.money.builderExposureExGst,
+        ),
       },
       {
         label: "Price basis",

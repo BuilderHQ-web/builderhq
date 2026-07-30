@@ -34,6 +34,8 @@ import {
   readScheduleAnswer,
   deriveAllowanceRows,
   deriveScheduleExclusions,
+  deriveNotApplicable,
+  deriveDisclosedPrices,
   type TenderSchedule,
 } from "./schedule";
 
@@ -164,6 +166,11 @@ export interface MoneyPicture {
    * a builder's firmness.
    */
   clientAllowanceExGst: number;
+  /** exposure − clientAllowanceExGst: movement the builder chose. */
+  builderExposureExGst: number;
+  /** 100 − the builder-originated share of the price. The number that
+   *  fairly compares tenders on a schedule round. */
+  builderFirmPct: number;
   psCount: number;
   pcCount: number;
   /** Share of the ex-GST price that can still move. 0 when no price. */
@@ -208,6 +215,10 @@ export interface ScopeRead {
   ownerSupplied: string[];
   itemisedCount: number;
   itemisedTotal: number;
+  /** Lines the builder held do not apply, with their stated reasons. */
+  notApplicableRows: Array<{ label: string; note: string | null }>;
+  /** Documented lines whose price the builder chose to show. */
+  disclosedRows: Array<{ label: string; amountAud: number }>;
 }
 
 export interface CommentaryRead {
@@ -494,6 +505,8 @@ export function evaluateTender(
     incGst: metrics.priceIncGst,
     exposure,
     clientAllowanceExGst: clientCarried,
+    builderExposureExGst: builderExposure,
+    builderFirmPct: 100 - builderExposurePct,
     psCount: metrics.psCount,
     pcCount: metrics.pcCount,
     exposurePct,
@@ -555,6 +568,18 @@ export function evaluateTender(
     ownerSupplied,
     itemisedCount: metrics.itemisedCount,
     itemisedTotal: metrics.itemisedTotal,
+    notApplicableRows: schedule
+      ? deriveNotApplicable(schedule, a["scope.schedule"]).map((r) => ({
+          label: r.label,
+          note: r.note,
+        }))
+      : [],
+    disclosedRows: schedule
+      ? deriveDisclosedPrices(schedule, a["scope.schedule"]).map((r) => ({
+          label: r.label,
+          amountAud: r.amountAud,
+        }))
+      : [],
   };
 
   /* programme */
@@ -1648,8 +1673,12 @@ export function evaluateRound(
       (a, b) => a.money.incGst! - b.money.incGst!,
     );
     const cheapest = byHeadline[0]!;
+    // Certainty compares what each BUILDER left open. The client's own
+    // allowance lines sit on every tender identically, so a builder
+    // who carried them as instructed must never rank below one who
+    // firm-priced figures the client asked to hold.
     const certainty = [...priced].sort(
-      (a, b) => b.money.firmPct - a.money.firmPct,
+      (a, b) => b.money.builderFirmPct - a.money.builderFirmPct,
     )[0]!;
     spread = {
       lowestInc: cheapest.money.incGst!,
@@ -1663,15 +1692,17 @@ export function evaluateRound(
 
     // Breakeven: among firmer rivals within reach of the allowance
     // pool, take the NEAREST price — the tightest test of the saving.
-    // Compared ex GST on both sides.
-    if (cheapest.money.exposure > 0) {
+    // Compared ex GST on both sides, and only on the allowances the
+    // cheapest builder CHOSE: the client's own lines move identically
+    // for everyone, so they can never eat a saving between tenders.
+    if (cheapest.money.builderExposureExGst > 0) {
       const rival = [...priced]
         .filter(
           (r) =>
             r.tenderId !== cheapest.tenderId &&
-            r.money.firmPct > cheapest.money.firmPct &&
+            r.money.builderFirmPct > cheapest.money.builderFirmPct &&
             r.money.exGst! - cheapest.money.exGst! <
-              cheapest.money.exposure,
+              cheapest.money.builderExposureExGst,
         )
         .sort((a, b) => a.money.exGst! - b.money.exGst!)[0];
       if (rival) {
@@ -1680,9 +1711,9 @@ export function evaluateRound(
           cheaperId: cheapest.tenderId,
           rivalId: rival.tenderId,
           savingExGst: saving,
-          exposureExGst: cheapest.money.exposure,
+          exposureExGst: cheapest.money.builderExposureExGst,
           breakevenPct: Math.round(
-            (saving / cheapest.money.exposure) * 100,
+            (saving / cheapest.money.builderExposureExGst) * 100,
           ),
         };
       }
@@ -1690,9 +1721,9 @@ export function evaluateRound(
 
     if (breakeven) {
       const rival = tenders.find((t) => t.tenderId === breakeven!.rivalId)!;
-      priceStory = `${cheapest.builderName} is ${aud(breakeven.savingExGst)} cheaper on paper, but ${aud(breakeven.exposureExGst)} of its price sits in allowances that ${rival.builderName} has priced in full. If those allowances overrun their stated figures by more than ${breakeven.breakevenPct}%, the saving is gone. The decision is not which number is lower; it is how much you trust the allowances.`;
-    } else if (cheapest.money.exposurePct >= 8) {
-      priceStory = `${cheapest.builderName} leads on price, but ${Math.round(cheapest.money.exposurePct)}% of that number sits in allowances that can still move. Weigh the firm portion, not the headline.`;
+      priceStory = `${cheapest.builderName} is ${aud(breakeven.savingExGst)} cheaper on paper, but ${aud(breakeven.exposureExGst)} of its price sits in allowances of its own choosing that ${rival.builderName} has priced in full. If those allowances overrun their stated figures by more than ${breakeven.breakevenPct}%, the saving is gone. The decision is not which number is lower; it is how much you trust the allowances.`;
+    } else if (100 - cheapest.money.builderFirmPct >= 8) {
+      priceStory = `${cheapest.builderName} leads on price, but ${Math.round(100 - cheapest.money.builderFirmPct)}% of that number sits in allowances of the builder's own choosing. Weigh the firm portion, not the headline.`;
     } else {
       const runner = byHeadline[1]!;
       priceStory = `${cheapest.builderName} leads on price by ${aud(runner.money.incGst! - cheapest.money.incGst!)}, and the number is largely firm. This round is more likely decided on scope, credentials and delivery than on price.`;
@@ -1722,9 +1753,16 @@ export function evaluateRound(
       }
     };
     give(spread!.cheapestHeadlineId, "Lowest headline price");
-    const fullyPriced = priced.filter((t) => t.money.firmPct >= 99);
+    const fullyPriced = priced.filter((t) => t.money.builderFirmPct >= 99);
     if (fullyPriced.length > 0) {
-      for (const t of fullyPriced) give(t.tenderId, "Fully priced");
+      for (const t of fullyPriced) {
+        give(
+          t.tenderId,
+          t.money.clientAllowanceExGst > 0
+            ? "Firm beyond your allowances"
+            : "Fully priced",
+        );
+      }
     } else {
       const firmest = tenders.find(
         (t) => t.tenderId === spread!.certaintyId,
@@ -1852,11 +1890,11 @@ export function evaluateRound(
       const lo = live[i]!;
       const hi = live[i + 1]!;
       const gains: string[] = [];
-      if (hi.money.exposure < lo.money.exposure) {
+      if (hi.money.builderExposureExGst < lo.money.builderExposureExGst) {
         gains.push(
-          hi.money.exposure === 0
-            ? `fully priced, removing ${aud(lo.money.exposure)} of allowance movement`
-            : `${aud(lo.money.exposure - hi.money.exposure)} less held in allowances`,
+          hi.money.builderExposureExGst === 0
+            ? `nothing of its own in allowances, removing ${aud(lo.money.builderExposureExGst)} of movement`
+            : `${aud(lo.money.builderExposureExGst - hi.money.builderExposureExGst)} less held in allowances of its own`,
         );
       }
       if (

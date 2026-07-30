@@ -304,6 +304,71 @@ describe("na marks on a schedule round", () => {
     expect(e.flags.some((f) => f.id === "na-heavy")).toBe(true);
   });
 
+  test("round verdicts compare only what each builder left open", () => {
+    const sched = pack();
+    const carryMarks = {
+      "framing.wall-frames": { s: "documented" },
+      "roofing.tile-roof": { s: "documented" },
+      "earthworks.site-strip": { s: "documented" },
+      "landscaping.turf": { s: "documented" },
+      "appliances.oven": { s: "allowance", a: 5_000 },
+    };
+    // A is cheaper but holds $10,000 of its own; B follows the
+    // client's instruction exactly and holds nothing of its own.
+    const a = input({
+      "price.total": 995_000,
+      "scope.schedule": {
+        ...carryMarks,
+        "framing.wall-frames": { s: "allowance", a: 10_000 },
+      },
+    });
+    const b = {
+      ...input({ "price.total": 1_000_000, "scope.schedule": carryMarks }),
+      tenderId: "t2",
+      builderName: "Rival Builds",
+    };
+    const round = evaluateRound([a, b], sched);
+    // B is the certainty leader even though both carry the client's
+    // $5,000: the client's lines can never decide certainty.
+    expect(round.spread?.certaintyId).toBe("t2");
+    // Breakeven tests the saving against A's OWN $10,000 only.
+    expect(round.breakeven).toMatchObject({
+      cheaperId: "t1",
+      rivalId: "t2",
+      savingExGst: 5_000,
+      exposureExGst: 10_000,
+      breakevenPct: 50,
+    });
+    expect(round.priceStory).toContain("of its own choosing");
+    // B carried the client's allowance, so its position says firm
+    // beyond them, never a bare "fully priced" that the cover's
+    // allowance line would contradict.
+    const bEval = round.tenders.find((t) => t.tenderId === "t2")!;
+    expect(bEval.positions).toContain("Firm beyond your allowances");
+  });
+
+  test("na reasons and disclosed prices reach the owner's read", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "scope.schedule": {
+          "framing.wall-frames": { s: "documented", p: 42_000 },
+          "roofing.tile-roof": { s: "na", n: "flat roof per addendum" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    expect(e.scope.notApplicableRows).toEqual([
+      { label: "Roof tiles", note: "flat roof per addendum" },
+    ]);
+    expect(e.scope.disclosedRows).toEqual([
+      { label: "Wall framing", amountAud: 42_000 },
+    ]);
+  });
+
   test("a split between priced and na surfaces as a round disagreement", () => {
     const sched = pack();
     const a = input({

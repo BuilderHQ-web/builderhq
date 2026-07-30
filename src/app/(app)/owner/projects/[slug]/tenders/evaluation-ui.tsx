@@ -340,10 +340,18 @@ export function HoverCard({
 /** Horizontal split bar: firm portion vs allowance portion. */
 export function FirmSplitBar({
   firmPct,
+  clientPct = 0,
   height = 8,
   animate = true,
 }: {
   firmPct: number;
+  /**
+   * The share of the price sitting on the CLIENT'S own allowance
+   * lines. Rendered as a neutral middle band: it moves, but by the
+   * client's instruction, identically on every tender — only the
+   * amber remainder is the builder's own movement.
+   */
+  clientPct?: number;
   height?: number;
   animate?: boolean;
 }) {
@@ -354,12 +362,23 @@ export function FirmSplitBar({
     return () => window.clearTimeout(t);
   }, [animate]);
   const firm = Math.max(0, Math.min(100, firmPct));
+  const client = Math.max(0, Math.min(100 - firm, clientPct));
   return (
     <span
       className="relative block w-full overflow-hidden rounded-full"
       style={{ height, background: "rgba(217,164,65,0.30)" }}
       aria-hidden
     >
+      {client > 0 ? (
+        <span
+          className="absolute inset-y-0 rounded-r-full transition-[width,left] duration-700 ease-out"
+          style={{
+            left: on ? `${firm}%` : "0%",
+            width: on ? `${client}%` : "0%",
+            background: "rgba(24,34,44,0.22)",
+          }}
+        />
+      ) : null}
       <span
         className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 ease-out"
         style={{
@@ -954,8 +973,16 @@ function MoneySection({ ev }: { ev: TenderEvaluation }) {
             </div>
           </div>
           <div className="mt-4">
-            <FirmSplitBar firmPct={m.firmPct} height={10} />
-            <div className="mt-2 flex items-center justify-between text-[11px] font-ui">
+            <FirmSplitBar
+              firmPct={m.firmPct}
+              clientPct={
+                m.exGst && m.exGst > 0
+                  ? (m.clientAllowanceExGst / m.exGst) * 100
+                  : 0
+              }
+              height={10}
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-ui">
               <span className="text-text-muted">
                 <span
                   className="inline-block size-2 rounded-full mr-1.5 align-middle"
@@ -963,21 +990,36 @@ function MoneySection({ ev }: { ev: TenderEvaluation }) {
                 />
                 Firm {fmtAud(m.firmExGst)} ({Math.round(m.firmPct)}%)
               </span>
-              <span className="text-text-muted">
-                <span
-                  className="inline-block size-2 rounded-full mr-1.5 align-middle"
-                  style={{ background: "rgba(217,164,65,0.85)" }}
-                />
-                Allowances {fmtAud(m.exposure)}
-              </span>
+              {m.clientAllowanceExGst > 0 ? (
+                <span className="text-text-muted">
+                  <span
+                    className="inline-block size-2 rounded-full mr-1.5 align-middle"
+                    style={{ background: "rgba(24,34,44,0.35)" }}
+                  />
+                  Your allowances {fmtAud(m.clientAllowanceExGst)}
+                </span>
+              ) : null}
+              {m.builderExposureExGst > 0 || m.clientAllowanceExGst === 0 ? (
+                <span className="text-text-muted">
+                  <span
+                    className="inline-block size-2 rounded-full mr-1.5 align-middle"
+                    style={{ background: "rgba(217,164,65,0.85)" }}
+                  />
+                  {m.clientAllowanceExGst > 0
+                    ? `Their own ${fmtAud(m.builderExposureExGst)}`
+                    : `Allowances ${fmtAud(m.exposure)}`}
+                </span>
+              ) : null}
             </div>
           </div>
           <p className="mt-3 text-[11.5px] leading-[1.55] text-text-muted">
-            {m.exposure > 0
-              ? `${m.psCount} provisional sum${m.psCount === 1 ? "" : "s"} and ${m.pcCount} prime cost item${m.pcCount === 1 ? "" : "s"} can move up or down from their stated figures. Everything else is committed.`
-              : m.fixed === true
-                ? "No provisional sums and no prime cost items. Every dollar of this price is committed."
-                : "No allowances disclosed."}
+            {m.clientAllowanceExGst > 0
+              ? `${fmtAud(m.clientAllowanceExGst)} carries the allowance lines you set on the pack; every tender carries those identically, so they never decide the comparison.${m.builderExposureExGst > 0 ? ` ${fmtAud(m.builderExposureExGst)} is movement this builder chose, and the part worth questioning.` : " Nothing beyond them can move."}`
+              : m.exposure > 0
+                ? `${m.psCount} provisional sum${m.psCount === 1 ? "" : "s"} and ${m.pcCount} prime cost item${m.pcCount === 1 ? "" : "s"} can move up or down from their stated figures. Everything else is committed.`
+                : m.fixed === true
+                  ? "No provisional sums and no prime cost items. Every dollar of this price is committed."
+                  : "No allowances disclosed."}
           </p>
         </div>
         <FactTable
@@ -1157,6 +1199,53 @@ function ScopeSection({ ev }: { ev: TenderEvaluation }) {
         <ChipRow label="Carried as allowances" items={s.allowanceTrades} tone={TONE.warn} />
         <ChipRow label="Excluded scope lines" items={s.excludedTrades} tone={TONE.risk} />
         <ChipRow label="Written exclusions" items={s.extraExclusions} tone={TONE.ink} />
+        {s.notApplicableRows.length > 0 ? (
+          <div className="mt-3">
+            <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              Held not applicable to this project
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {s.notApplicableRows.map((r) => (
+                <li key={r.label} className="text-[12px] leading-[1.55] text-text-muted">
+                  <span className="font-ui font-medium text-text">
+                    {r.label}
+                  </span>
+                  {r.note ? <span className="text-text-dim"> · {r.note}</span> : (
+                    <span className="text-text-dim"> · no reason stated</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[11px] text-text-dim">
+              The builder holds these lines sit outside the project.
+              Confirm you agree before comparing prices.
+            </p>
+          </div>
+        ) : null}
+        {s.disclosedRows.length > 0 ? (
+          <div className="mt-3">
+            <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              Line prices disclosed
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {s.disclosedRows.map((r) => (
+                <li
+                  key={r.label}
+                  className="flex items-baseline justify-between gap-3 text-[12px] text-text-muted"
+                >
+                  <span className="min-w-0 truncate">{r.label}</span>
+                  <span className="shrink-0 tabular-nums font-ui font-medium text-text">
+                    {fmtAud(r.amountAud)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[11px] text-text-dim">
+              Shown voluntarily. A builder who shows the working is
+              easier to trust and easier to compare.
+            </p>
+          </div>
+        ) : null}
         <ChipRow label="Owner supplies" items={s.ownerSupplied} tone={TONE.ink} />
       </div>
     </DossierSection>
