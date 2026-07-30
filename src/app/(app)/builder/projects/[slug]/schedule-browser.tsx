@@ -167,6 +167,14 @@ export function ScheduleBrowser({
         </div>
       </div>
 
+      <p className="mt-1.5 text-[11.5px] leading-[1.6] text-text-dim max-w-[68ch]">
+        Every line below goes to your tender, whatever its label here.
+        Documented means the client&rsquo;s documents evidence the line
+        and show where; open to price means the documents are silent and
+        the client asks you to price it within your quote. When you
+        tender, you mark every one.
+      </p>
+
       <ul className="mt-2.5 space-y-1.5">
         {visible.map((d) => {
           const expanded = searching || open.has(d.divisionId);
