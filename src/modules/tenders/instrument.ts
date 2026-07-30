@@ -244,7 +244,6 @@ export const INSTRUMENT_SECTIONS_V2: InstrumentSection[] = [
         type: "select",
         options: [
           { value: "inspected", label: "Inspected" },
-          { value: "external_only", label: "Viewed externally" },
           { value: "not_inspected", label: "Not inspected" },
         ],
         required: true,

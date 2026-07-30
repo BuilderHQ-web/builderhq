@@ -928,15 +928,13 @@ export function evaluateTender(
     //   commentary 10
     const L = ledger(0, null);
     const insp = str(a["elig.site_inspection"]);
-    if (insp === "inspected") L.add(22, "inspected the site");
-    else if (insp === "external_only") {
-      L.add(8, "viewed the site externally");
-      L.miss(14, "a full site inspection earns the balance");
+    if (insp === "inspected") {
+      L.add(22, "inspected the site");
     } else {
       if (insp === "not_inspected") {
         L.note("priced without a site inspection, acknowledged");
       }
-      L.miss(22, "no site inspection recorded");
+      L.miss(22, "walking the site earns these");
     }
     const docs = str(a["elig.docs_reviewed"]);
     if (docs === "full_set") L.add(16, "reviewed the full document set");

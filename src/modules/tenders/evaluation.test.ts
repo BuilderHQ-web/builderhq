@@ -129,15 +129,35 @@ describe("the rubric's two ends", () => {
   });
 
   test("partial credit shows both sides of the slot", () => {
+    // Document review is the graded slot: 16 for the full set, 5 for a
+    // partial read, so 11 of the 100 stay visible as a miss.
     const e = evaluateTender(
-      input({ ...perfectAnswers(), "elig.site_inspection": "external_only" }, { documentCount: 3 }),
+      input({ ...perfectAnswers(), "elig.docs_reviewed": "partial" }, { documentCount: 3 }),
     );
     const prep = e.dimensions.find((d) => d.key === "preparation")!;
-    expect(prep.score).toBe(86);
-    const gain = prep.receipts.find((r) => r.label.includes("externally"));
-    expect(gain?.value).toBe(8);
+    expect(prep.score).toBe(89);
+    const gain = prep.receipts.find((r) => r.label.includes("partially"));
+    expect(gain?.value).toBe(5);
     const miss = prep.receipts.find((r) => r.kind === "miss");
-    expect(miss?.potential).toBe(14);
+    expect(miss?.potential).toBe(11);
+  });
+
+  // Site inspection is all or nothing now: a builder either walked the
+  // site or they did not.
+  test("an uninspected site loses the whole slot, and says so", () => {
+    const e = evaluateTender(
+      input(
+        { ...perfectAnswers(), "elig.site_inspection": "not_inspected" },
+        { documentCount: 3 },
+      ),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(78);
+    expect(
+      prep.receipts.some(
+        (r) => r.kind === "miss" && r.potential === 22,
+      ),
+    ).toBe(true);
   });
 });
 
