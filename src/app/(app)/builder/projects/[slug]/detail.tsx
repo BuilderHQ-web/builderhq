@@ -43,8 +43,15 @@ import {
 import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
 import { formatAud } from "@/modules/tenders/comparison";
-import type { PackSummary } from "@/modules/tenders/schedule";
-import { briefForBuilders } from "@/modules/projects/owner-brief";
+import type {
+  PackSummary,
+  TenderSchedule,
+} from "@/modules/tenders/schedule";
+import {
+  ScheduleBrowser,
+  type PackOverview,
+  type PackAdvisory,
+} from "./schedule-browser";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
@@ -57,6 +64,7 @@ import {
   totalUnread,
 } from "@/components/app/messaging/project-thread";
 import { cn } from "@/lib/utils";
+import { BUDGET_BAND_MIDPOINT } from "@/modules/scope";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
 
@@ -172,6 +180,10 @@ export function ProjectDetail({
   initialConversations,
   pack = null,
   latestAddendum = null,
+  clientBrief = [],
+  overview = null,
+  advisories = [],
+  schedule = null,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -186,6 +198,12 @@ export function ProjectDetail({
   /** The approved pack, shaped for browsing; null on legacy rounds. */
   pack?: PackSummary | null;
   latestAddendum?: { number: number; issuedAtISO: string } | null;
+  /** The client's brief, safe for every viewer. */
+  clientBrief?: Array<{ k: string; v: string }>;
+  /** Post-unlock only — the server withholds these until then. */
+  overview?: PackOverview | null;
+  advisories?: PackAdvisory[];
+  schedule?: TenderSchedule | null;
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -543,6 +561,23 @@ export function ProjectDetail({
                     pack={pack}
                     latestAddendum={latestAddendum ?? null}
                     unlocked={unlocked}
+                    budgetBand={preview.budgetBand ?? null}
+                  />
+                </Card>
+              </Reveal>
+            ) : null}
+
+            {/* The full reading room — the analysis a spot buys. */}
+            {unlocked && schedule ? (
+              <Reveal immediate delay={0.21}>
+                <Card
+                  title="The pack, in full"
+                  icon={<BookOpenCheck className="size-4" />}
+                >
+                  <ScheduleBrowser
+                    schedule={schedule}
+                    overview={overview}
+                    advisories={advisories}
                   />
                 </Card>
               </Reveal>
@@ -595,7 +630,7 @@ export function ProjectDetail({
             </Card>
             </Reveal>
 
-            {unlocked && briefForBuilders(full?.ownerBrief).length > 0 ? (
+            {clientBrief.length > 0 ? (
               <Reveal immediate delay={0.1}>
                 <Card
                   title="The client"
@@ -603,10 +638,12 @@ export function ProjectDetail({
                 >
                   <p className="text-[11.5px] leading-[1.6] text-text-muted">
                     Answered by the client before the round opened. The
-                    pre-tender meeting, already held.
+                    pre-tender meeting, already held: whether the money
+                    is real, where approval stands, and what wins the
+                    job.
                   </p>
                   <dl className="mt-3 space-y-2">
-                    {briefForBuilders(full?.ownerBrief).map((row) => (
+                    {clientBrief.map((row) => (
                       <div
                         key={row.k}
                         className="flex items-baseline justify-between gap-3"
@@ -1453,11 +1490,20 @@ function TenderPackPanel({
   pack,
   latestAddendum,
   unlocked,
+  budgetBand,
 }: {
   pack: PackSummary;
   latestAddendum: { number: number; issuedAtISO: string } | null;
   unlocked: boolean;
+  budgetBand: string | null;
 }) {
+  // Client allowances against the stated budget: plain arithmetic a
+  // builder would do on paper, done for them.
+  const mid = budgetBand ? (BUDGET_BAND_MIDPOINT[budgetBand] ?? null) : null;
+  const allowancePct =
+    mid && pack.ownerAllowanceTotal > 0
+      ? Math.round((pack.ownerAllowanceTotal / mid) * 1000) / 10
+      : null;
   return (
     <div>
       <p className="text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
@@ -1489,6 +1535,17 @@ function TenderPackPanel({
           </div>
         ))}
       </div>
+
+      {pack.ownerAllowances > 0 ? (
+        <p className="mt-3 text-[12px] leading-[1.6] text-text-muted">
+          The client&rsquo;s allowances are locked figures every tender
+          carries identically, so those lines never decide the
+          comparison.
+          {allowancePct !== null
+            ? ` They total ${formatAud(pack.ownerAllowanceTotal)}, about ${allowancePct} percent of the stated budget.`
+            : ""}
+        </p>
+      ) : null}
 
       {latestAddendum ? (
         <p className="mt-3 text-[12px] text-[#8a6414]">
@@ -1536,6 +1593,14 @@ function TenderPackPanel({
             />
           ) : null}
         </div>
+      ) : null}
+
+      {!unlocked ? (
+        <p className="mt-3 text-[12px] text-text-muted">
+          Your spot opens the reader&rsquo;s overview of the documents,
+          the list of what the pack does not settle, and the full
+          schedule line by line with citations.
+        </p>
       ) : null}
 
       <p className="mt-4 text-[11px] text-text-dim">

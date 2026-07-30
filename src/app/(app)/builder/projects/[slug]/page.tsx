@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
@@ -13,7 +12,11 @@ import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
 import { packSummary } from "@/modules/tenders/schedule";
-import { getProjectSchedule, listAddenda } from "@/modules/scope-engine";
+import {
+  getProjectSchedule,
+  listAddenda,
+  getRoundContextForBuilders,
+} from "@/modules/scope-engine";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
@@ -49,11 +52,12 @@ export default async function BuilderProjectPage({
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
-  const [unlocked, saved, schedule, addenda] = await Promise.all([
+  const [unlocked, saved, schedule, addenda, roundContext] = await Promise.all([
     isUnlocked(userId, preview.id),
     isSaved(userId, preview.id),
     getProjectSchedule(preview.id),
     listAddenda(preview.id),
+    getRoundContextForBuilders(preview.id),
   ]);
   // The pack, shaped for browsing. Counts travel to everyone; the
   // highlights quote the documents and stay behind the unlock.
@@ -125,6 +129,10 @@ export default async function BuilderProjectPage({
       initialConversations={conversations}
       pack={pack}
       latestAddendum={latestAddendum}
+      clientBrief={roundContext.brief}
+      overview={unlocked ? roundContext.overview : null}
+      advisories={unlocked ? roundContext.advisories : []}
+      schedule={unlocked ? schedule : null}
     />
   );
 }
