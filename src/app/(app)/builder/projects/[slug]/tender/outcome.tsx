@@ -40,6 +40,34 @@ import {
   ModuleLedger,
   MetricsPanel,
 } from "./journey";
+import { BuilderScorecard, useSelfEvaluation } from "./scorecard";
+
+function SealedScorecard({
+  answers,
+  schedule,
+  documentCount,
+  companyName,
+  projectState,
+}: {
+  answers: Record<string, unknown>;
+  schedule: TenderSchedule | null;
+  documentCount: number;
+  companyName: string | null;
+  projectState: string | null;
+}) {
+  const ev = useSelfEvaluation({
+    answers,
+    schedule,
+    documentCount,
+    companyName,
+    projectState,
+  });
+  return (
+    <div className="mt-6">
+      <BuilderScorecard ev={ev} mode="sealed" />
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   submitted: "Submitted",
@@ -66,6 +94,8 @@ export function TenderOutcome({
   ownerContact,
   schedule = null,
   packChanged = false,
+  companyName = null,
+  projectState = null,
 }: {
   slug: string;
   projectTitle: string;
@@ -77,6 +107,8 @@ export function TenderOutcome({
   schedule?: TenderSchedule | null;
   /** An addendum re-issued the round's pack after this tender sealed. */
   packChanged?: boolean;
+  companyName?: string | null;
+  projectState?: string | null;
 }) {
   const router = useRouter();
   const [withdrawing, setWithdrawing] = useState(false);
@@ -238,6 +270,13 @@ export function TenderOutcome({
         {hasInstrument ? (
           <>
             <MetricsPanel answers={answers} schedule={schedule} />
+            <SealedScorecard
+              answers={answers}
+              schedule={schedule}
+              documentCount={docs.length}
+              companyName={companyName}
+              projectState={projectState}
+            />
             <ModuleLedger
               modules={modules}
               answers={answers}
@@ -283,7 +322,7 @@ export function TenderOutcome({
             {confirmingWithdraw ? (
               <div className="border-y border-border-subtle py-5">
                 <p className="text-[13px] leading-[1.65] text-text max-w-[52ch]">
-                  Withdrawing removes this tender from the owner's round.
+                  Withdrawing removes this tender from the owner&rsquo;s round.
                   You can prepare and submit a new one afterwards, but this
                   version is marked withdrawn.
                 </p>

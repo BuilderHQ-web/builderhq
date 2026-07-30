@@ -1066,6 +1066,26 @@ function TenderCard({
 
       {/* the read — single calm column */}
       <div className="mx-5 mt-4 border-t border-border-subtle/70 pt-3.5 space-y-2">
+        <div className="flex items-center gap-3">
+          <span className="w-[136px] shrink-0 text-[11px] font-ui font-semibold text-text truncate">
+            Weighted overall
+          </span>
+          <span
+            className="flex-1 block h-[5px] overflow-hidden rounded-full"
+            style={{ background: "rgba(24,34,44,0.07)" }}
+          >
+            <span
+              className="block h-full rounded-full"
+              style={{
+                width: `${ev.overall}%`,
+                background: "linear-gradient(90deg, #14343c, #0a7d73)",
+              }}
+            />
+          </span>
+          <span className="w-8 shrink-0 text-right font-display text-[15px] font-semibold tabular-nums text-text">
+            {ev.overall}
+          </span>
+        </div>
         {ev.dimensions.map((d) => {
           const leads = leaders[d.key] === ev.tenderId;
           return (
@@ -1512,6 +1532,29 @@ function DecisionGrid({
                   The six dimensions
                 </span>
               </td>
+            </tr>
+            <tr className="border-t border-border-subtle/40">
+              <td className="sticky left-0 bg-surface-1 z-10 px-5 py-3 text-[11.5px] font-ui font-semibold text-text">
+                Weighted overall
+              </td>
+              {evaluations.map((e) => {
+                const best = Math.max(...evaluations.map((x) => x.overall));
+                const leads = e.overall === best && evaluations.length > 1;
+                return (
+                  <td
+                    key={e.tenderId}
+                    className="px-4 py-3"
+                    style={leads ? { background: TONE.good.bg } : undefined}
+                  >
+                    <span
+                      className="font-display text-[16px] font-semibold tabular-nums"
+                      style={{ color: leads ? TONE.good.text : undefined }}
+                    >
+                      {e.overall}
+                    </span>
+                  </td>
+                );
+              })}
             </tr>
             {evaluations[0]!.dimensions.map((d) => (
               <tr key={d.key} className="border-t border-border-subtle/40">

@@ -72,6 +72,7 @@ import {
   type TenderSchedule,
   type TenderScheduleItem,
 } from "@/modules/tenders/schedule";
+import { BuilderScorecard, useSelfEvaluation } from "./scorecard";
 import {
   buildTenderDocument,
   type TenderDocumentModel,
@@ -229,6 +230,7 @@ export function TenderJourney({
   letterhead,
   schedule = null,
   clientBrief = [],
+  projectState = null,
 }: {
   slug: string;
   projectId: string;
@@ -248,6 +250,8 @@ export function TenderJourney({
   schedule?: TenderSchedule | null;
   /** The client's brief as labelled facts; [] when unanswered. */
   clientBrief?: Array<{ k: string; v: string }>;
+  /** Project home state ("VIC") — drives the statutory deposit check. */
+  projectState?: string | null;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -1103,6 +1107,8 @@ export function TenderJourney({
                     progress={progress}
                     docs={docs}
                     model={docModel}
+                    companyName={letterhead?.companyName ?? null}
+                    projectState={projectState}
                     onPreview={() => setPreviewOpen(true)}
                     confirming={confirmingSubmit}
                     submitting={submitting}
@@ -3256,6 +3262,8 @@ function ReviewSlide({
   progress,
   docs,
   model,
+  companyName,
+  projectState,
   onPreview,
   confirming,
   submitting,
@@ -3272,6 +3280,8 @@ function ReviewSlide({
   progress: ProgressShape;
   docs: Document[];
   model: TenderDocumentModel;
+  companyName: string | null;
+  projectState: string | null;
   onPreview: () => void;
   confirming: boolean;
   submitting: boolean;
@@ -3282,6 +3292,13 @@ function ReviewSlide({
   onJumpDocs: () => void;
 }) {
   const remaining = progress.required - progress.answered;
+  const selfRead = useSelfEvaluation({
+    answers,
+    schedule: schedule ?? null,
+    documentCount: docs.length,
+    companyName,
+    projectState,
+  });
 
   return (
     <div>
@@ -3300,6 +3317,10 @@ function ReviewSlide({
       </p>
 
       <CoverCard model={model} onPreview={onPreview} />
+
+      <div className="mt-5">
+        <BuilderScorecard ev={selfRead} mode="draft" />
+      </div>
 
       <ModuleLedger
         modules={modules}

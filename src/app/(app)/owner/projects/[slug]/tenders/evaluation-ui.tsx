@@ -48,10 +48,12 @@ import {
 } from "@/app/(app)/_actions/tenders";
 import { getBuilderDownloadUrlAction } from "@/app/(app)/_actions/marketplace";
 import type { TenderForOwner } from "@/modules/tenders";
-import type {
-  DimensionScore,
-  EvalFlag,
-  TenderEvaluation,
+import {
+  DIMENSION_WEIGHTS,
+  type DimensionScore,
+  type EvalFlag,
+  type ReceiptLine,
+  type TenderEvaluation,
 } from "@/modules/tenders/evaluation";
 import type { Document } from "@/modules/documents";
 import { cn } from "@/lib/utils";
@@ -441,66 +443,103 @@ export function DimensionRows({
                 />
               </span>
             </button>
-            {isOpen ? (
-              <div className="mt-2 rounded-sm border border-border-subtle/70 bg-[rgba(24,34,44,0.02)] px-3.5 py-3">
-                <p className="flex items-baseline justify-between text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui mb-2">
-                  <span>The working</span>
-                  <span className="tracking-normal normal-case">out of 100</span>
-                </p>
-                <dl>
-                  {d.receipts.map((r, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "flex items-baseline gap-3 py-[3px]",
-                        r.kind === "base" &&
-                          "border-b border-border-subtle/60 pb-1.5 mb-1",
-                      )}
-                    >
-                      <dt
-                        className={cn(
-                          "w-8 shrink-0 text-right font-mono text-[11px] tabular-nums",
-                          r.kind === "note" && "text-text-dim",
-                          r.kind === "base" && "font-semibold text-text",
-                          r.kind === "delta" &&
-                            ((r.value ?? 0) > 0
-                              ? "font-medium text-[#0a7d73]"
-                              : "font-medium text-text"),
-                          r.kind === "clamp" && "text-text-dim",
-                        )}
-                      >
-                        {r.value === null
-                          ? "·"
-                          : r.kind === "base"
-                            ? r.value
-                            : r.value > 0
-                              ? `+${r.value}`
-                              : `−${Math.abs(r.value)}`}
-                      </dt>
-                      <dd
-                        className={cn(
-                          "text-[11.5px] leading-[1.45]",
-                          r.kind === "note" ? "text-text-dim" : "text-text-muted",
-                        )}
-                      >
-                        {r.label}
-                      </dd>
-                    </div>
-                  ))}
-                  <div className="mt-1.5 flex items-baseline gap-3 border-t border-border-subtle/60 pt-1.5">
-                    <dt className="w-8 shrink-0 text-right font-mono text-[11.5px] font-semibold text-text tabular-nums">
-                      {d.score}
-                    </dt>
-                    <dd className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui">
-                      Score
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            ) : null}
+            {isOpen ? <ReceiptWorking d={d} /> : null}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * One dimension's working, both sides shown. The gains column is what
+ * the tender earned or held; the misses column is every point that
+ * was available and not taken, so the reader sees the path up as
+ * clearly as the score. base + deltas + clamps always equals the
+ * score; on disclosure dimensions, score + missed always equals 100.
+ */
+function ReceiptWorking({ d }: { d: DimensionScore }) {
+  const gains = d.receipts.filter(
+    (r) =>
+      r.kind === "base" ||
+      r.kind === "note" ||
+      (r.kind === "delta" && (r.value ?? 0) > 0),
+  );
+  const losses = d.receipts.filter(
+    (r) =>
+      r.kind === "miss" ||
+      r.kind === "clamp" ||
+      (r.kind === "delta" && (r.value ?? 0) < 0),
+  );
+  const weight = DIMENSION_WEIGHTS[d.key];
+  const line = (r: ReceiptLine, i: number) => (
+    <div
+      key={i}
+      className={cn(
+        "flex items-baseline gap-3 py-[3px]",
+        r.kind === "base" && "border-b border-border-subtle/60 pb-1.5 mb-1",
+      )}
+    >
+      <dt
+        className={cn(
+          "w-9 shrink-0 text-right font-mono text-[11px] tabular-nums",
+          r.kind === "note" && "text-text-dim",
+          r.kind === "base" && "font-semibold text-text",
+          r.kind === "delta" &&
+            ((r.value ?? 0) > 0
+              ? "font-medium text-[#0a7d73]"
+              : "font-medium text-[#a8433e]"),
+          r.kind === "miss" && "text-[#a8433e]/70",
+          r.kind === "clamp" && "text-text-dim",
+        )}
+      >
+        {r.kind === "miss"
+          ? `−${r.potential ?? 0}`
+          : r.value === null
+            ? "·"
+            : r.kind === "base"
+              ? r.value
+              : r.value > 0
+                ? `+${r.value}`
+                : `−${Math.abs(r.value)}`}
+      </dt>
+      <dd
+        className={cn(
+          "text-[11.5px] leading-[1.45]",
+          r.kind === "note" || r.kind === "miss"
+            ? "text-text-dim"
+            : "text-text-muted",
+        )}
+      >
+        {r.label}
+      </dd>
+    </div>
+  );
+  return (
+    <div className="mt-2 rounded-sm border border-border-subtle/70 bg-[rgba(24,34,44,0.02)] px-3.5 py-3">
+      <p className="flex items-baseline justify-between text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui mb-2">
+        <span>The working</span>
+        <span className="tracking-normal normal-case">
+          {weight} percent of the overall · out of 100
+        </span>
+      </p>
+      <dl>
+        {gains.map(line)}
+        {losses.length > 0 ? (
+          <p className="mt-2 mb-1 text-[9.5px] tracking-[0.16em] uppercase text-[#a8433e]/70 font-ui font-semibold">
+            Missed or lost
+          </p>
+        ) : null}
+        {losses.map(line)}
+        <div className="mt-1.5 flex items-baseline gap-3 border-t border-border-subtle/60 pt-1.5">
+          <dt className="w-9 shrink-0 text-right font-mono text-[11.5px] font-semibold text-text tabular-nums">
+            {d.score}
+          </dt>
+          <dd className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui">
+            Score
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }
@@ -1446,10 +1485,22 @@ export function DossierBody({
             </SectionKicker>
             <p className="mt-2 max-w-[58ch] text-[12.5px] leading-[1.6] text-text-muted">
               Each dimension is scored out of 100 under a fixed rubric,
-              applied identically to every tender. Open any line: the
-              working shows every point, and it always adds up.
+              applied identically to every tender, and weighted by how
+              often it decides real projects: price firmness and scope
+              carry 25 each, preparation and credentials 15, delivery
+              12, programme 8. Open any line: the working shows every
+              point earned and every point missed, and it always adds
+              up.
             </p>
             <div className="mt-4 rounded-sm border border-border-subtle bg-surface-1 px-4 py-3">
+              <div className="flex items-baseline justify-between gap-3 border-b border-border-subtle/70 pb-2.5 mb-2.5">
+                <span className="text-[12px] font-ui font-semibold text-text">
+                  Weighted overall
+                </span>
+                <span className="font-display text-[22px] leading-none text-text tabular-nums">
+                  {ev.overall}
+                </span>
+              </div>
               <DimensionRows
                 dimensions={ev.dimensions}
                 leaders={leaders}

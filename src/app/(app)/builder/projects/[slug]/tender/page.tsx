@@ -131,6 +131,8 @@ export default async function TenderRoute({
         docs={docs}
         ownerContact={ownerContact}
         schedule={sealedSchedule}
+        companyName={null}
+        projectState={preview.state ?? null}
         packChanged={
           typeof pinnedRun === "string" &&
           schedule !== null &&
@@ -167,6 +169,7 @@ export default async function TenderRoute({
       letterhead={letterhead}
       schedule={schedule}
       clientBrief={roundContext.brief}
+      projectState={preview.state ?? null}
     />
   );
 }
