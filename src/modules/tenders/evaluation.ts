@@ -157,6 +157,13 @@ export interface MoneyPicture {
   incGst: number | null;
   /** PS + PC allowances inside the price (ex GST). */
   exposure: number;
+  /**
+   * The part of the exposure that is the CLIENT'S: allowance money
+   * carried on the client's own allowance lines. Every tender on the
+   * round carries these by instruction, so they never count against
+   * a builder's firmness.
+   */
+  clientAllowanceExGst: number;
   psCount: number;
   pcCount: number;
   /** Share of the ex-GST price that can still move. 0 when no price. */
@@ -461,6 +468,13 @@ export function evaluateTender(
   const exposure = metrics.allowanceExposure;
   const exposurePct =
     exGst && exGst > 0 ? Math.min(100, (exposure / exGst) * 100) : 0;
+  // Movement the BUILDER chose, as opposed to allowance lines the
+  // client put on the pack. Legacy rounds have no client lines, so
+  // the builder share is the whole exposure there.
+  const clientCarried = metrics.schedule?.clientAllowanceTotal ?? 0;
+  const builderExposure = Math.max(0, exposure - clientCarried);
+  const builderExposurePct =
+    exGst && exGst > 0 ? Math.min(100, (builderExposure / exGst) * 100) : 0;
   const escalation: MoneyPicture["escalation"] =
     a["price.escalation"] === true
       ? a["price.escalation_cap"] === "capped"
@@ -479,6 +493,7 @@ export function evaluateTender(
     exGst,
     incGst: metrics.priceIncGst,
     exposure,
+    clientAllowanceExGst: clientCarried,
     psCount: metrics.psCount,
     pcCount: metrics.pcCount,
     exposurePct,
@@ -842,14 +857,27 @@ export function evaluateTender(
     } else if (money.fixed === true) {
       L.note("fixed contract sum, held");
     }
-    const expPenalty = Math.min(60, Math.round(exposurePct * 2));
+    if (clientCarried > 0) {
+      L.note(
+        `carries the client's stated allowances (${aud(clientCarried)}), the round's own exposure, no deduction`,
+      );
+    }
+    const expPenalty = Math.min(60, Math.round(builderExposurePct * 2));
     if (expPenalty > 0) {
+      const pctLabel =
+        builderExposurePct >= 1
+          ? `${Math.round(builderExposurePct)}%`
+          : `${builderExposurePct.toFixed(1)}%`;
       L.add(
         -expPenalty,
-        `${Math.round(exposurePct)}% of the price sits in allowances (${aud(exposure)}), 2 points per percent`,
+        `${pctLabel} of the price sits in the builder's own allowances (${aud(builderExposure)}), 2 points per percent`,
       );
     } else if (exGst) {
-      L.note("no provisional sums or prime costs, fully priced, held");
+      L.note(
+        clientCarried > 0
+          ? "no allowances of the builder's own, held"
+          : "no provisional sums or prime costs, fully priced, held",
+      );
     }
     if (escalation === "uncapped") {
       L.add(-25, "rise-and-fall clause with no cap");
@@ -886,21 +914,36 @@ export function evaluateTender(
     // never ruinous). Schedule rounds score line by line against the
     // client's pack; legacy rounds against the trade grid.
     const app = Math.max(applicable, 1);
+    // On a schedule round, an allowance mark on the CLIENT'S allowance
+    // line is exactly what the pack asked for — full compliance, never
+    // half. Half credit is reserved for lines the builder chose to
+    // allow instead of price.
+    const ownerCompliant = metrics.schedule
+      ? metrics.schedule.ownerAllowances.carried +
+        metrics.schedule.ownerAllowances.repriced
+      : 0;
+    const halfCredit = Math.max(0, metrics.coverage.allowance - ownerCompliant);
     const base = Math.round(
-      ((metrics.coverage.included + metrics.coverage.allowance * 0.5) / app) *
+      ((metrics.coverage.included + ownerCompliant + halfCredit * 0.5) / app) *
         100,
     );
     const unit = metrics.schedule ? "schedule line" : "applicable trade";
-    const L = ledger(
-      base,
+    const parts = [
       `${metrics.coverage.included} of ${app} ${unit}s ${
         metrics.schedule ? "priced as documented" : "in the price"
-      }${
-        metrics.coverage.allowance > 0
-          ? `, plus ${metrics.coverage.allowance} as allowance${metrics.coverage.allowance === 1 ? "" : "s"} counted half`
-          : ""
       }`,
-    );
+    ];
+    if (ownerCompliant > 0) {
+      parts.push(
+        `${ownerCompliant} client allowance line${ownerCompliant === 1 ? "" : "s"} carried in full`,
+      );
+    }
+    if (halfCredit > 0) {
+      parts.push(
+        `${halfCredit} builder allowance${halfCredit === 1 ? "" : "s"} counted half`,
+      );
+    }
+    const L = ledger(base, parts.join(", plus "));
     if (metrics.coverage.excluded > 0) {
       L.note(
         `${metrics.coverage.excluded} ${unit}${metrics.coverage.excluded === 1 ? "" : "s"} excluded, already outside the base`,
@@ -1305,20 +1348,24 @@ export function evaluateTender(
       "Ask for the cap and the trigger conditions in writing.",
     );
   }
-  if (exposurePct >= 12) {
+  if (builderExposurePct >= 12) {
     flag(
       "exposure-high",
       "high",
-      `${Math.round(exposurePct)}% of the price can still move`,
-      `${aud(exposure)} sits in provisional sums and prime costs (${metrics.psCount} PS, ${metrics.pcCount} PC).`,
+      `${Math.round(builderExposurePct)}% of the price can still move`,
+      metrics.schedule
+        ? `${aud(builderExposure)} sits in allowances of the builder's own choosing, beyond the client's stated allowance lines.`
+        : `${aud(exposure)} sits in provisional sums and prime costs (${metrics.psCount} PS, ${metrics.pcCount} PC).`,
       "Ask which allowances they would fix if the documents were finalised now.",
     );
-  } else if (exposurePct >= 5) {
+  } else if (builderExposurePct >= 5) {
     flag(
       "exposure-medium",
       "attention",
-      `${aud(exposure)} in allowances`,
-      `${Math.round(exposurePct)}% of the price is provisional sums and prime costs.`,
+      `${aud(builderExposure)} in the builder's own allowances`,
+      metrics.schedule
+        ? `${Math.round(builderExposurePct)}% of the price moves beyond the client's stated allowance lines.`
+        : `${Math.round(exposurePct)}% of the price is provisional sums and prime costs.`,
       "Ask what each allowance is based on for this site.",
     );
   }
@@ -1488,8 +1535,12 @@ export function evaluateTender(
 
   /* highlights — the strengths, in the same plain register */
   const highlights: string[] = [];
-  if (exGst && exposure === 0 && money.fixed === true) {
-    highlights.push("Fully priced, no provisional sums or prime costs");
+  if (exGst && builderExposure === 0 && money.fixed === true) {
+    highlights.push(
+      clientCarried > 0
+        ? "No allowances beyond the client's own stated lines"
+        : "Fully priced, no provisional sums or prime costs",
+    );
   }
   if (escalation === "none") highlights.push("No rise-and-fall clause");
   if (metrics.ldPerWeek !== null) {

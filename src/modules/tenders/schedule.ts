@@ -233,6 +233,14 @@ export interface ScheduleTallies {
   unmarked: number;
   /** Sum of every allowance the price carries, whole AUD ex GST. */
   allowanceTotal: number;
+  /**
+   * The split that matters for judging firmness: allowance money on
+   * the CLIENT'S allowance lines is the round's own exposure — every
+   * tender carries those lines by the client's instruction — while
+   * allowance money on any other line is movement the builder chose.
+   */
+  clientAllowanceTotal: number;
+  builderAllowanceTotal: number;
   /** Documented lines whose price the builder chose to disclose. */
   disclosedCount: number;
   /** Sum of the disclosed line prices, whole AUD ex GST. */
@@ -264,6 +272,8 @@ export function scheduleTallies(
     notApplicable: 0,
     unmarked: 0,
     allowanceTotal: 0,
+    clientAllowanceTotal: 0,
+    builderAllowanceTotal: 0,
     disclosedCount: 0,
     disclosedTotal: 0,
     ownerAllowances: {
@@ -300,11 +310,14 @@ export function scheduleTallies(
       const amt = typeof e.a === "number" ? e.a : 0;
       t.allowanceTotal += amt;
       if (isOwner) {
+        t.clientAllowanceTotal += amt;
         if (item.ownerAmountAud !== null && amt === item.ownerAmountAud) {
           t.ownerAllowances.carried++;
         } else {
           t.ownerAllowances.repriced++;
         }
+      } else {
+        t.builderAllowanceTotal += amt;
       }
     }
   }

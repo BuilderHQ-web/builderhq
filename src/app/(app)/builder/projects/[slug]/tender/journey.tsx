@@ -230,6 +230,7 @@ export function TenderJourney({
   letterhead,
   schedule = null,
   clientBrief = [],
+  packAdvisories = [],
   projectState = null,
 }: {
   slug: string;
@@ -250,6 +251,8 @@ export function TenderJourney({
   schedule?: TenderSchedule | null;
   /** The client's brief as labelled facts; [] when unanswered. */
   clientBrief?: Array<{ k: string; v: string }>;
+  /** What the pack's own reading flagged as unsettled. */
+  packAdvisories?: Array<{ key: string; title: string; why: string }>;
   /** Project home state ("VIC") — drives the statutory deposit check. */
   projectState?: string | null;
 }) {
@@ -1232,6 +1235,18 @@ export function TenderJourney({
                     ) : null}
                     {clientBrief.length > 0 ? (
                       <BriefHint qid={slide.q.id} brief={clientBrief} />
+                    ) : null}
+                    {slide.q.id === "understand.gaps" ? (
+                      <PackGapsHint
+                        advisories={packAdvisories}
+                        openLineCount={
+                          schedule
+                            ? schedule.items.filter(
+                                (i) => i.kind === "owner_open",
+                              ).length
+                            : 0
+                        }
+                      />
                     ) : null}
                     {slide.q.id === "elig.authority" && letterhead ? (
                       <LetterheadCard letterhead={letterhead} />
@@ -2392,6 +2407,45 @@ function BriefHint({
   );
 }
 
+/**
+ * On the gaps question, the builder should not have to repeat what
+ * the platform's own reading already put on the record. This panel
+ * states what is already flagged, so their answer carries only what
+ * WE missed — which is exactly what makes it worth points.
+ */
+function PackGapsHint({
+  advisories,
+  openLineCount,
+}: {
+  advisories: Array<{ key: string; title: string; why: string }>;
+  openLineCount: number;
+}) {
+  if (advisories.length === 0 && openLineCount === 0) return null;
+  return (
+    <div className="mt-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)] px-3.5 py-3 max-w-[58ch]">
+      <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+        Already on the record from our reading
+      </p>
+      <ul className="mt-2 space-y-1 text-[12px] leading-[1.55] text-text-muted">
+        {openLineCount > 0 ? (
+          <li>
+            {openLineCount} schedule line{openLineCount === 1 ? "" : "s"} the
+            documents leave unpriced, already in module 5 for your marks.
+          </li>
+        ) : null}
+        {advisories.map((a) => (
+          <li key={a.key}>{a.title}: {a.why}</li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11.5px] text-text-dim">
+        No need to repeat these. This question is for anything our
+        reading missed: a detail the drawings skip, an unclear junction,
+        a schedule that stops short.
+      </p>
+    </div>
+  );
+}
+
 /* ── the division slide (the schedule flip) ─────────────────────────── */
 
 const DIVISION_STATES: Array<{
@@ -2428,6 +2482,42 @@ function DivisionSlide({
   onMark: (item: TenderScheduleItem, entry: ScheduleEntry) => void;
 }) {
   const unmarked = division.items.filter((i) => !marks[i.itemId]);
+  const unmarkedCarries = unmarked.filter(
+    (i) => i.kind === "owner_allowance" && i.ownerAmountAud !== null,
+  );
+  // The sweep does the right thing per line: documented for lines the
+  // documents cover, the client's stated figure for their allowance
+  // lines — never a silent firm-price of a figure the client set.
+  // Carries go last so the slide holds and the figures are seen.
+  const markRemaining = () => {
+    for (const item of unmarked) {
+      if (item.kind === "owner_allowance" && item.ownerAmountAud !== null) {
+        continue;
+      }
+      onMark(item, { s: "documented" });
+    }
+    for (const item of unmarkedCarries) {
+      onMark(item, { s: "allowance", a: item.ownerAmountAud });
+    }
+  };
+  const bulk =
+    unmarked.length >= 2 ? (
+      <div>
+        <button
+          type="button"
+          onClick={markRemaining}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-md border border-border-subtle text-[12.5px] font-ui text-text-muted hover:border-border-accent hover:text-text transition-colors"
+        >
+          <Check className="size-3.5" />
+          Mark the remaining {unmarked.length}
+        </button>
+        <p className="mt-1.5 text-[11px] text-text-dim">
+          {unmarkedCarries.length > 0
+            ? `Documented lines as documented; ${unmarkedCarries.length === 1 ? "the client's allowance line carries its" : `${unmarkedCarries.length} client allowance lines carry their`} stated figure${unmarkedCarries.length === 1 ? "" : "s"}.`
+            : "Everything left goes in as documented."}
+        </p>
+      </div>
+    ) : null;
   return (
     <div>
       <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold tabular-nums">
@@ -2444,7 +2534,9 @@ function DivisionSlide({
         each one.
       </p>
 
-      <ul className="mt-7 space-y-2.5">
+      {bulk ? <div className="mt-4">{bulk}</div> : null}
+
+      <ul className="mt-5 space-y-2.5">
         {division.items.map((item) => (
           <ScheduleItemRow
             key={item.itemId}
@@ -2455,20 +2547,7 @@ function DivisionSlide({
         ))}
       </ul>
 
-      {unmarked.length >= 2 ? (
-        <button
-          type="button"
-          onClick={() => {
-            for (const item of unmarked) {
-              onMark(item, { s: "documented" });
-            }
-          }}
-          className="mt-4 inline-flex items-center gap-2 h-9 px-4 rounded-md border border-border-subtle text-[12.5px] font-ui text-text-muted hover:border-border-accent hover:text-text transition-colors"
-        >
-          <Check className="size-3.5" />
-          Mark the remaining {unmarked.length} as documented
-        </button>
-      ) : null}
+      {bulk ? <div className="mt-4">{bulk}</div> : null}
 
       {division.locked.length > 0 ? (
         <div className="mt-6 border-t border-border-subtle pt-3.5">

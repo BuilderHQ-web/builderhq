@@ -226,9 +226,69 @@ describe("na marks on a schedule round", () => {
     };
     const e = evaluateTender(input({ "scope.schedule": marks }), sched);
     const scope = e.dimensions.find((d) => d.key === "scope")!;
-    // 3 documented + 1 allowance at half, over 4 applicable (5 − 1 na).
-    expect(scope.score).toBe(88);
+    // 3 documented + the client's allowance line carried IN FULL,
+    // over 4 applicable (5 − 1 na). Carrying the client's stated
+    // figure is exactly what the pack asked for.
+    expect(scope.score).toBe(100);
     expect(e.scope.notApplicable).toBe(1);
+  });
+
+  test("the client's allowances never cost the builder firmness", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "price.total": 1_000_000,
+        "price.fixed": true,
+        "price.escalation": false,
+        "scope.schedule": {
+          "framing.wall-frames": { s: "documented" },
+          "roofing.tile-roof": { s: "documented" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(100);
+    expect(
+      firm.receipts.some(
+        (r) =>
+          r.kind === "note" && r.label.includes("client's stated allowances"),
+      ),
+    ).toBe(true);
+    expect(e.money.exposure).toBe(5_000);
+    expect(e.money.clientAllowanceExGst).toBe(5_000);
+    // No exposure flag either: the movement is the client's choice.
+    expect(e.flags.some((f) => f.id.startsWith("exposure"))).toBe(false);
+  });
+
+  test("the builder's own allowance still costs firmness and reads half on scope", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "price.total": 100_000,
+        "scope.schedule": {
+          "framing.wall-frames": { s: "allowance", a: 10_000 },
+          "roofing.tile-roof": { s: "documented" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    // 10% of the price is the builder's own movement: −20. The
+    // client's $5,000 is carved out.
+    expect(
+      firm.receipts.find((r) => r.kind === "delta" && r.value === -20),
+    ).toBeDefined();
+    const scope = e.dimensions.find((d) => d.key === "scope")!;
+    // 3 documented + 1 client line full + 1 builder allowance at half
+    // over 5 applicable = 90.
+    expect(scope.score).toBe(90);
   });
 
   test("three or more na marks raise the round-hygiene flag", () => {

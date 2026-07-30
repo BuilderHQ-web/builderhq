@@ -169,6 +169,7 @@ export default async function TenderRoute({
       letterhead={letterhead}
       schedule={schedule}
       clientBrief={roundContext.brief}
+      packAdvisories={roundContext.advisories}
       projectState={preview.state ?? null}
     />
   );
