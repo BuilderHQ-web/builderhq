@@ -20,7 +20,11 @@ import {
   SOFT_CITATION_PENALTY,
 } from "./analysis";
 import { itemsFor } from "@/modules/scope";
-import type { SynthesisDocumentInput } from "./pipeline";
+import {
+  OVERVIEW_MAX_CHARS,
+  SynthesisSchemaForTest,
+  type SynthesisDocumentInput,
+} from "./pipeline";
 
 const DOCS: SynthesisDocumentInput[] = [
   {
@@ -220,5 +224,46 @@ describe("dedupeRegister", () => {
   test("unclassified documents are never deduped", () => {
     const r = dedupeRegister([doc("a", null, 6), doc("b", null, 6)]);
     expect(r.keep).toHaveLength(2);
+  });
+});
+
+/* ── the overview must never sink a run ─────────────────────────────── */
+
+describe("overview resilience", () => {
+  test("a long summary is clipped at a sentence, not rejected", () => {
+    const long =
+      "A double storey dwelling with a basement garage. " .repeat(30);
+    const parsed = SynthesisSchemaForTest.safeParse({
+      overview: { summary: long, storeys: 2 },
+      items: [],
+      conflicts: [],
+    });
+    expect(parsed.success).toBe(true);
+    const summary = parsed.success ? parsed.data.overview?.summary ?? "" : "";
+    expect(summary.length).toBeLessThanOrEqual(OVERVIEW_MAX_CHARS);
+    // Clipped at a sentence boundary, so it reads as finished prose.
+    expect(summary.endsWith(".")).toBe(true);
+    expect(parsed.success && parsed.data.overview?.storeys).toBe(2);
+  });
+
+  test("a malformed overview degrades to null and keeps the selection", () => {
+    // Two real packages failed on this: one bad prose field discarded a
+    // correct read of two hundred scope lines.
+    const parsed = SynthesisSchemaForTest.safeParse({
+      overview: { summary: "too short", storeys: 99_999 },
+      items: [
+        {
+          itemId: "framing.wall-frames",
+          status: "evidenced",
+          citations: [{ documentId: "d", page: 1 }],
+          note: null,
+          confidence: 0.9,
+        },
+      ],
+      conflicts: [],
+    });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.overview).toBeNull();
+    expect(parsed.success && parsed.data.items).toHaveLength(1);
   });
 });

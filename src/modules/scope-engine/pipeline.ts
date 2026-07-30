@@ -391,16 +391,48 @@ const SelectionEntrySchema = z.object({
     .transform((v) => v ?? null),
   confidence: z.number().min(0).max(1).nullish().transform((v) => v ?? 0.5),
 });
+/** The published ceiling for overview prose. */
+export const OVERVIEW_MAX_CHARS = 900;
+
+/**
+ * Clip prose to a ceiling at the last sentence boundary, so a long
+ * overview reads as finished rather than truncated mid-word.
+ */
+function clipToSentence(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const lastStop = Math.max(
+    cut.lastIndexOf(". "),
+    cut.lastIndexOf("! "),
+    cut.lastIndexOf("? "),
+  );
+  return lastStop > max * 0.5 ? cut.slice(0, lastStop + 1) : `${cut.trimEnd()}.`;
+}
+
+/**
+ * The overview is the only PROSE the synthesis produces, and prose
+ * runs long. It must never be able to discard the selection: a
+ * summary over the ceiling is clipped at a sentence boundary, and
+ * anything else malformed degrades the overview to null rather than
+ * failing a run that read two hundred scope lines correctly.
+ */
 const OverviewSchema = z
   .object({
-    summary: z.string().min(60).max(900),
+    summary: z
+      .string()
+      .min(60)
+      .transform((v) => clipToSentence(v, OVERVIEW_MAX_CHARS)),
     dwellings: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
     bedrooms: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
     bathrooms: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
     storeys: z.number().int().min(1).max(20).nullish().transform((v) => v ?? null),
   })
   .nullish()
-  .transform((v) => v ?? null);
+  .transform((v) => v ?? null)
+  .catch(null);
+
+
 export type SynthesisOverview = NonNullable<z.infer<typeof OverviewSchema>>;
 
 const SynthesisSchema = z.object({
@@ -420,6 +452,9 @@ const SynthesisSchema = z.object({
 });
 export type SynthesisResult = z.infer<typeof SynthesisSchema>;
 
+/** Exposed so the overview's resilience rules can be pinned directly. */
+export const SynthesisSchemaForTest = SynthesisSchema;
+
 const SYNTHESIS_TOOL: Anthropic.Tool = {
   name: "record_scope_synthesis",
   description:
@@ -435,7 +470,7 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
           summary: {
             type: "string",
             description:
-              "Two to four sentences describing the project purely from the documents: form, storeys, construction, notable systems and finishes. NEVER include the street address, lot number or any occupant name. Written for a homeowner, no jargon.",
+              "Two to four sentences (STRICTLY UNDER 900 CHARACTERS) describing the project purely from the documents: form, storeys, construction, notable systems and finishes. NEVER include the street address, lot number or any occupant name. Written for a homeowner, no jargon.",
           },
           dwellings: { type: "integer", description: "Dwelling count the documents show, if stated or clearly drawn." },
           bedrooms: { type: "integer", description: "Total bedrooms across all dwellings, only if countable from the documents." },
