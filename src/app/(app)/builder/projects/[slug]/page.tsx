@@ -11,7 +11,8 @@ import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
-import { packSummary } from "@/modules/tenders/schedule";
+import { packSummary, tenderableItems } from "@/modules/tenders/schedule";
+import { groupPackDivisions } from "@/modules/scope/groups";
 import {
   getProjectSchedule,
   listAddenda,
@@ -62,6 +63,12 @@ export default async function BuilderProjectPage({
   // The pack, shaped for browsing. Counts travel to everyone; the
   // highlights quote the documents and stay behind the unlock.
   const pack = schedule ? packSummary(schedule) : null;
+  // The pack's priceable lines folded into build chapters — division
+  // names are already public in the pack panel, so this is safe for
+  // every viewer.
+  const scopeGroups = schedule
+    ? groupPackDivisions(tenderableItems(schedule))
+    : [];
   const latestAddendum = addenda[0]
     ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
     : null;
@@ -133,6 +140,7 @@ export default async function BuilderProjectPage({
       overview={unlocked ? roundContext.overview : null}
       advisories={unlocked ? roundContext.advisories : []}
       schedule={unlocked ? schedule : null}
+      scopeGroups={scopeGroups}
     />
   );
 }

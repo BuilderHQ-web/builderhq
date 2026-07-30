@@ -10,8 +10,6 @@ import {
   Wrench,
   Layers,
   MapPin,
-  DollarSign,
-  Calendar,
   FileText,
   Bookmark,
   BookmarkCheck,
@@ -52,6 +50,13 @@ import {
   type PackOverview,
   type PackAdvisory,
 } from "./schedule-browser";
+import {
+  FactSheet,
+  ScopeOfWorks,
+  ProjectTimeline,
+  buildTimeline,
+} from "./brief-sections";
+import type { ScopeGroup } from "@/modules/scope/groups";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
@@ -184,6 +189,7 @@ export function ProjectDetail({
   overview = null,
   advisories = [],
   schedule = null,
+  scopeGroups = [],
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -204,6 +210,8 @@ export function ProjectDetail({
   overview?: PackOverview | null;
   advisories?: PackAdvisory[];
   schedule?: TenderSchedule | null;
+  /** The pack's lines folded into build chapters; safe for all viewers. */
+  scopeGroups?: ScopeGroup[];
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -457,81 +465,83 @@ export function ProjectDetail({
           {/* Left — public details (staggered entrance) */}
           <div className="space-y-10">
             <Reveal immediate delay={0.04}>
-            <Card title="The build" icon={meta.icon}>
-              <KvGrid>
-                {preview.type === "multi_dwelling" ? (
-                  <Kv label="Dwellings" value={preview.dwellingCount} />
-                ) : null}
-                <Kv label="Bedrooms" value={preview.bedrooms} />
-                <Kv label="Bathrooms" value={preview.bathrooms} />
-                {preview.type !== "multi_dwelling" ? (
-                  <Kv label="Storeys" value={preview.floors} />
-                ) : null}
-                <Kv
-                  label="Land size"
-                  value={preview.landSizeBand ? LAND_LBL[preview.landSizeBand] : null}
+            <Card title="Project fact sheet" icon={meta.icon}>
+              <FactSheet
+                rows={[
+                  { k: "Type", v: meta.label },
+                  preview.type === "multi_dwelling"
+                    ? { k: "Dwellings", v: preview.dwellingCount ? String(preview.dwellingCount) : null }
+                    : { k: "Storeys", v: preview.floors ? String(preview.floors) : null },
+                  { k: "Bedrooms", v: preview.bedrooms ? String(preview.bedrooms) : null },
+                  { k: "Bathrooms", v: preview.bathrooms ? String(preview.bathrooms) : null },
+                  {
+                    k: "Land size",
+                    v: preview.landSizeBand ? LAND_LBL[preview.landSizeBand] ?? null : null,
+                  },
+                  {
+                    k: "Build size",
+                    v: preview.buildSizeBand ? BUILD_LBL[preview.buildSizeBand] ?? null : null,
+                  },
+                  ...(preview.type === "renovation"
+                    ? [
+                        {
+                          k: "Scope",
+                          v: preview.renovationScope
+                            ? RENO_LBL[preview.renovationScope] ?? null
+                            : null,
+                        },
+                        {
+                          k: "Existing age",
+                          v: preview.existingAgeBand
+                            ? AGE_LBL[preview.existingAgeBand] ?? null
+                            : null,
+                        },
+                      ]
+                    : []),
+                  ...(preview.type === "extension"
+                    ? [
+                        {
+                          k: "Extension",
+                          v: preview.extensionType
+                            ? EXT_TYPE_LBL[preview.extensionType] ?? null
+                            : null,
+                        },
+                        {
+                          k: "Extension size",
+                          v: preview.extensionSizeBand
+                            ? EXT_SIZE_LBL[preview.extensionSizeBand] ?? null
+                            : null,
+                        },
+                      ]
+                    : []),
+                  {
+                    k: "Budget",
+                    v: preview.budgetBand ? BUDGET_LABEL[preview.budgetBand] ?? null : null,
+                  },
+                  {
+                    k: "Target start",
+                    v: formatMonth(preview.targetStartMonth),
+                  },
+                  {
+                    k: "Target completion",
+                    v: formatMonth(preview.targetCompletionMonth),
+                  },
+                ]}
+              />
+              <div className="mt-6 border-t border-border-subtle pt-5">
+                <p className="mb-4 text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+                  Project timeline
+                </p>
+                <ProjectTimeline
+                  stations={buildTimeline({
+                    publishedAt: preview.publishedAt
+                      ? new Date(preview.publishedAt).toISOString()
+                      : null,
+                    targetStartMonth: preview.targetStartMonth,
+                    targetCompletionMonth: preview.targetCompletionMonth,
+                  })}
                 />
-                <Kv
-                  label="Build size"
-                  value={preview.buildSizeBand ? BUILD_LBL[preview.buildSizeBand] : null}
-                />
-                {preview.type === "renovation" ? (
-                  <>
-                    <Kv
-                      label="Scope"
-                      value={
-                        preview.renovationScope
-                          ? RENO_LBL[preview.renovationScope]
-                          : null
-                      }
-                    />
-                    <Kv
-                      label="Existing age"
-                      value={
-                        preview.existingAgeBand
-                          ? AGE_LBL[preview.existingAgeBand]
-                          : null
-                      }
-                    />
-                  </>
-                ) : null}
-                {preview.type === "extension" ? (
-                  <>
-                    <Kv
-                      label="Type"
-                      value={
-                        preview.extensionType
-                          ? EXT_TYPE_LBL[preview.extensionType]
-                          : null
-                      }
-                    />
-                    <Kv
-                      label="Size"
-                      value={
-                        preview.extensionSizeBand
-                          ? EXT_SIZE_LBL[preview.extensionSizeBand]
-                          : null
-                      }
-                    />
-                  </>
-                ) : null}
-              </KvGrid>
-            </Card>
-            </Reveal>
-
-            <Reveal immediate delay={0.10}>
-            <Card title="Budget and timeline" icon={<DollarSign className="size-4" />}>
-              <KvGrid>
-                <Kv
-                  label="Budget"
-                  value={preview.budgetBand ? BUDGET_LABEL[preview.budgetBand] : null}
-                />
-                <Kv label="Target start" value={formatMonth(preview.targetStartMonth)} />
-                <Kv
-                  label="Target completion"
-                  value={formatMonth(preview.targetCompletionMonth)}
-                />
-              </KvGrid>
+              </div>
             </Card>
             </Reveal>
 
@@ -545,6 +555,24 @@ export function ProjectDetail({
                   <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
                     {unlocked ? full?.description : preview.description}
                   </p>
+                </Card>
+              </Reveal>
+            ) : null}
+
+            {/* The scope of works, in build chapters — every line of
+                the pack folded into the six parts of a job. */}
+            {scopeGroups.some((g) => g.lines > 0) ? (
+              <Reveal immediate delay={0.17}>
+                <Card
+                  title="Scope of works"
+                  icon={<BookOpenCheck className="size-4" />}
+                >
+                  <p className="mb-4 text-[12.5px] leading-[1.65] text-text-muted max-w-[62ch]">
+                    Every priceable line of the pack, folded into the six
+                    chapters of a build. The full line-by-line schedule
+                    sits {unlocked ? "below" : "behind your spot"}.
+                  </p>
+                  <ScopeOfWorks groups={scopeGroups} />
                 </Card>
               </Reveal>
             ) : null}
@@ -684,29 +712,6 @@ export function ProjectDetail({
                   />
                 ) : null}
               </div>
-            </Card>
-            </Reveal>
-
-            <Reveal immediate delay={0.18}>
-            <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
-              <KvGrid>
-                <Kv
-                  label="Published"
-                  value={
-                    preview.publishedAt
-                      ? new Date(preview.publishedAt).toLocaleDateString("en-AU", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "—"
-                  }
-                />
-                <Kv
-                  label="Documents"
-                  value={`${documents.length} file${documents.length === 1 ? "" : "s"}`}
-                />
-              </KvGrid>
             </Card>
             </Reveal>
 
@@ -1284,35 +1289,6 @@ function Card({
       </header>
       <div className="pt-4">{children}</div>
     </section>
-  );
-}
-
-function KvGrid({ children }: { children: React.ReactNode }) {
-  return <dl className="grid grid-cols-2 gap-x-6 gap-y-5">{children}</dl>;
-}
-
-function Kv({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null | undefined;
-}) {
-  const isEmpty = value === null || value === undefined || value === "";
-  return (
-    <div>
-      <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim mb-1">
-        {label}
-      </dt>
-      <dd
-        className={cn(
-          "text-[15.5px] font-ui font-medium tabular-nums",
-          isEmpty ? "text-text-dim/60" : "text-text",
-        )}
-      >
-        {isEmpty ? "—" : value}
-      </dd>
-    </div>
   );
 }
 

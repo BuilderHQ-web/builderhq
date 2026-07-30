@@ -142,3 +142,9 @@ export {
   type AllowancePackage,
   type AllowancePackageDef,
 } from "./advice";
+
+export {
+  DIVISION_GROUPS,
+  groupPackDivisions,
+  type ScopeGroup,
+} from "./groups";

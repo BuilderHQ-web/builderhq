@@ -954,6 +954,71 @@ async function autoResolveBuilderWork(runId: string): Promise<number> {
   return inserted.length;
 }
 
+/**
+ * Card-weight pack stats for a set of projects: how much was read and
+ * how many lines the pack carries, keyed by project. Marketplace
+ * surfaces print these as the trust line; projects without an
+ * effective pack simply have no entry. Three small grouped queries,
+ * nothing clever.
+ */
+export async function packStatsForProjects(
+  projectIds: string[],
+): Promise<
+  Record<string, { documents: number; pages: number; lines: number }>
+> {
+  if (projectIds.length === 0) return {};
+  const runs = await db
+    .select({ id: scopeRuns.id, projectId: scopeRuns.projectId })
+    .from(scopeRuns)
+    .where(
+      and(
+        inArray(scopeRuns.projectId, projectIds),
+        sql`${scopeRuns.effectiveAt} is not null`,
+      ),
+    );
+  if (runs.length === 0) return {};
+  const runIds = runs.map((r) => r.id);
+  const [docAgg, itemAgg] = await Promise.all([
+    db
+      .select({
+        runId: scopeRunDocuments.runId,
+        documents: sql<number>`count(*)::int`,
+        pages: sql<number>`coalesce(sum(${scopeRunDocuments.pageCount}), 0)::int`,
+      })
+      .from(scopeRunDocuments)
+      .where(inArray(scopeRunDocuments.runId, runIds))
+      .groupBy(scopeRunDocuments.runId),
+    db
+      .select({
+        runId: scopeRunItems.runId,
+        lines: sql<number>`count(*)::int`,
+      })
+      .from(scopeRunItems)
+      .where(
+        and(
+          inArray(scopeRunItems.runId, runIds),
+          ne(scopeRunItems.opsStatus, "removed"),
+        ),
+      )
+      .groupBy(scopeRunItems.runId),
+  ]);
+  const docsByRun = new Map(docAgg.map((r) => [r.runId, r]));
+  const linesByRun = new Map(itemAgg.map((r) => [r.runId, r.lines]));
+  const out: Record<
+    string,
+    { documents: number; pages: number; lines: number }
+  > = {};
+  for (const run of runs) {
+    const d = docsByRun.get(run.id);
+    out[run.projectId] = {
+      documents: Number(d?.documents ?? 0),
+      pages: Number(d?.pages ?? 0),
+      lines: Number(linesByRun.get(run.id) ?? 0),
+    };
+  }
+  return out;
+}
+
 /* ── the round, read from the builder's side ─────────────────────── */
 
 export interface BuilderRoundContext {

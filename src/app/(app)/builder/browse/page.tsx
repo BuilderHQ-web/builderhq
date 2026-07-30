@@ -15,6 +15,7 @@ import {
   countMySaved,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import { packStatsForProjects } from "@/modules/scope-engine";
 import { ProjectCard, PrivateRoundStubCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { EmptyState } from "@/components/app/empty-state";
@@ -77,6 +78,8 @@ export default async function BrowsePage({
     ]);
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  // The trust line: which of these rounds carry an analysed pack.
+  const packStats = await packStatsForProjects(projects.map((p) => p.id));
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   // A builder who already holds a spot on a private round sees it in
@@ -140,6 +143,7 @@ export default async function BrowsePage({
                   isSaved={savedSet.has(p.id)}
                   isUnlocked={unlockedSet.has(p.id)}
                   fbaActive={fbaActive}
+                  packStats={packStats[p.id] ?? null}
                 />
               </Reveal>
             ))}

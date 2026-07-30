@@ -15,6 +15,7 @@ export {
   completeOwnerReview,
   getProjectSchedule,
   getRoundContextForBuilders,
+  packStatsForProjects,
   type BuilderRoundContext,
   getScheduleForRun,
   listAddenda,

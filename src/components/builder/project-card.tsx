@@ -34,6 +34,7 @@ import {
   ArrowUpRight,
   Bath,
   Bed,
+  BookOpenCheck,
   Bookmark,
   BookmarkCheck,
   Building,
@@ -107,16 +108,25 @@ const LAND_LABEL: Record<string, string> = {
   over_1000: ">1000",
 };
 
+export interface CardPackStats {
+  documents: number;
+  pages: number;
+  lines: number;
+}
+
 export function ProjectCard({
   project,
   isSaved,
   isUnlocked,
   fbaActive = false,
+  packStats = null,
 }: {
   project: MarketplacePreview;
   isSaved: boolean;
   isUnlocked: boolean;
   fbaActive?: boolean;
+  /** The analysed pack's card-weight stats; null on legacy rounds. */
+  packStats?: CardPackStats | null;
 }) {
   const meta = TYPE_META[project.type];
   const [saved, setSaved] = useState(isSaved);
@@ -180,6 +190,21 @@ export function ProjectCard({
           meta.band,
         )}
       >
+        {/* blueprint grid — the drafting-sheet texture */}
+        <span
+          aria-hidden
+          className="absolute inset-0 opacity-[0.5]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px)",
+          }}
+        />
+        {/* the type, oversized and fading off the sheet */}
+        <meta.Icon
+          aria-hidden
+          strokeWidth={0.9}
+          className="absolute -bottom-5 -right-4 lg:-bottom-6 lg:-right-5 size-[92px] lg:size-[110px] text-text opacity-[0.06] rotate-[-6deg] transition-transform duration-300 group-hover:rotate-[-2deg] group-hover:scale-[1.03]"
+        />
         {/* type chip */}
         <span className="relative inline-flex items-center gap-1.5 min-w-0">
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
@@ -240,6 +265,20 @@ export function ProjectCard({
             ))}
           </div>
         ) : null}
+
+        {/* the line no other marketplace can print: the pack is READ */}
+        {packStats && packStats.lines > 0 ? (
+          <p className="inline-flex items-center gap-1.5 text-[11.5px] text-[#0a7d73] font-ui">
+            <BookOpenCheck className="size-3.5 shrink-0" />
+            <span className="min-w-0 truncate">
+              Tender pack analysed
+              <span className="text-text-muted">
+                {" "}· {packStats.pages} pages read · {packStats.lines} scope
+                lines on the schedule
+              </span>
+            </span>
+          </p>
+        ) : null}
       </div>
 
       {/* ── round state — dots, the fee, the way in ───────────────── */}
@@ -264,6 +303,15 @@ export function ProjectCard({
             `$${priceAud} to enter`
           )}
         </span>
+        {project.publishedAt ? (
+          <span className="hidden lg:block text-[10.5px] text-text-dim tabular-nums">
+            Opened{" "}
+            {new Date(project.publishedAt).toLocaleDateString("en-AU", {
+              day: "numeric",
+              month: "short",
+            })}
+          </span>
+        ) : null}
         <span className="hidden lg:inline-flex items-center gap-1 text-[11.5px] text-accent-light opacity-60 group-hover:opacity-100 transition-opacity mt-1">
           View
           <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:translate-x-px group-hover:-translate-y-px" />
