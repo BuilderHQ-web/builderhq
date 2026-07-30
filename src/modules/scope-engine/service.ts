@@ -27,6 +27,7 @@ import {
   SCOPE_ITEMS,
   SCOPE_STANDARD_VERSION,
   ownerAllowanceEligible,
+  isOwnerAskableGap,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
@@ -862,11 +863,56 @@ export async function approveRun(
     );
   }
 
+  // The client is asked ONLY what is genuinely theirs: cosmetic
+  // allowances, missing documents, the demolition question. Every
+  // other gap — preliminaries, earthworks, services, structure — is
+  // the builders' ordinary work and resolves to builder-priced here,
+  // at approval, before the client ever sees the pack. It reaches
+  // them as information in the scope of works, never as a task.
+  const auto = await autoResolveBuilderWork(runId);
+  if (auto > 0) {
+    logger.info(
+      { event: "scope.run.auto_resolved", runId, auto },
+      "non-client gaps resolved to builder-priced",
+    );
+  }
+
   logger.info({ event: "scope.run.approved", runId, actorId }, "scope run approved");
   // The runner hears their pack is ready — bell and letter. Failures
   // never fail the approval; the desk shows the state regardless.
   await dispatchScopeReady(runId).catch(() => undefined);
   return ok({ ok: true });
+}
+
+/**
+ * Resolve every gap the client should never be asked about to
+ * builder-priced. The predicate is the pure isOwnerAskableGap rule;
+ * anything already resolved (carried forward, or answered by hand on
+ * the desk's watch) is left untouched.
+ */
+async function autoResolveBuilderWork(runId: string): Promise<number> {
+  const gaps = await db
+    .select({ itemId: scopeRunItems.itemId })
+    .from(scopeRunItems)
+    .where(
+      and(
+        eq(scopeRunItems.runId, runId),
+        eq(scopeRunItems.status, "gap"),
+        ne(scopeRunItems.opsStatus, "removed"),
+      ),
+    );
+  const builderWork = gaps
+    .map((g) => g.itemId)
+    .filter((id) => !isOwnerAskableGap(id));
+  if (builderWork.length === 0) return 0;
+  const rows = await db.execute(sql`
+    insert into scope_gap_resolutions (run_id, item_id, resolution, created_by)
+    select ${runId}, x.item_id, 'builder_priced', null
+    from unnest(${builderWork}::text[]) as x(item_id)
+    on conflict (run_id, item_id) do nothing
+    returning id
+  `);
+  return Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
 }
 
 /** Copy still-relevant gap resolutions from the effective run. */

@@ -15,7 +15,10 @@ import { describe, expect, test } from "vitest";
 import {
   ownerAllowanceEligible,
   isOwnerDocGap,
+  isOwnerAskableGap,
   adviseMissingDocuments,
+  buildAllowancePackages,
+  splitPackageAmount,
   OWNER_DOC_ITEMS,
 } from "./advice";
 import { getScopeItem, SCOPE_ITEMS } from "./index";
@@ -178,5 +181,140 @@ describe("adviseMissingDocuments", () => {
   test("no joinery evidence at all raises nothing about joinery", () => {
     const advice = adviseMissingDocuments(base);
     expect(advice.map((a) => a.key)).not.toContain("joinery-package");
+  });
+});
+
+describe("isOwnerAskableGap", () => {
+  test.each([
+    "appliances.oven",
+    "landscaping.turf",
+    "approvals.soil-geotech",
+    "demolition.asbestos-removal",
+  ])("cosmetic, document and demolition gaps ask the client: %s", (id) => {
+    expect(isOwnerAskableGap(id)).toBe(true);
+  });
+
+  // The rule the whole rework hangs on: builders' ordinary work never
+  // reaches the client as a question.
+  test.each([
+    "preliminaries.site-establishment",
+    "preliminaries.temporary-fencing",
+    "preliminaries.waste-management",
+    "earthworks.spoil-removal",
+    "earthworks.site-strip",
+    "framing.wall-framing",
+    "steel.beams-columns",
+    "approvals.occupancy-certificate",
+    "approvals.handover-documentation",
+    "site-services.power-connection",
+    "electrical.rough-in",
+    "plumbing.rough-in",
+  ])("builder work never asks the client: %s", (id) => {
+    expect(isOwnerAskableGap(id)).toBe(false);
+  });
+
+  // Exhaustive: every askable gap is cosmetic, a document, or
+  // demolition. Nothing else may ever slip into the client's lap.
+  test("the askable set is exactly the three sanctioned shapes", () => {
+    for (const item of SCOPE_ITEMS) {
+      const askable = isOwnerAskableGap(item.id);
+      const sanctioned =
+        ownerAllowanceEligible(item.id) ||
+        isOwnerDocGap(item.id) ||
+        item.division === "demolition";
+      expect(askable, item.id).toBe(sanctioned);
+    }
+  });
+});
+
+describe("allowance packages", () => {
+  const GAPS = [
+    "appliances.oven",
+    "appliances.cooktop",
+    "appliances.rangehood",
+    "joinery.benchtops",
+    "joinery.vanities",
+    "plumbing.tapware",
+    "landscaping.turf",
+    "preliminaries.craneage", // not eligible: must never appear
+    "earthworks.spoil-removal", // not eligible: must never appear
+  ];
+
+  test("groups cosmetic gaps into packages and prices from the band", () => {
+    const packs = buildAllowancePackages(GAPS, "1_5m_2m");
+    const byKey = new Map(packs.map((p) => [p.key, p]));
+
+    expect(byKey.get("appliances")?.itemIds.sort()).toEqual([
+      "appliances.cooktop",
+      "appliances.oven",
+      "appliances.rangehood",
+    ]);
+    expect(byKey.get("joinery")?.itemIds.sort()).toEqual([
+      "joinery.benchtops",
+      "joinery.vanities",
+    ]);
+    expect(byKey.get("plumbing-fixtures")?.itemIds).toEqual([
+      "plumbing.tapware",
+    ]);
+    expect(byKey.get("landscaping")?.itemIds).toEqual(["landscaping.turf"]);
+
+    // The non-cosmetic gaps appear in NO package.
+    const allPackaged = packs.flatMap((p) => p.itemIds);
+    expect(allPackaged).not.toContain("preliminaries.craneage");
+    expect(allPackaged).not.toContain("earthworks.spoil-removal");
+
+    // Appliances at 1 to 2 percent of a $1.75m midpoint: $26,250
+    // midway, rounded to the nearest thousand.
+    expect(byKey.get("appliances")?.suggestedAud).toBe(26_000);
+    expect(byKey.get("appliances")?.budgetLabel).toBe("around $1.75m");
+  });
+
+  test("no budget band means guidance without a figure", () => {
+    const packs = buildAllowancePackages(["appliances.oven"], null);
+    expect(packs[0]?.suggestedAud).toBeNull();
+    expect(packs[0]?.budgetLabel).toBeNull();
+    expect(packs[0]?.pctRange).toEqual([1, 2]);
+  });
+
+  test("every gap lands in at most one package", () => {
+    const packs = buildAllowancePackages(GAPS, "1m_1_5m");
+    const seen = new Set<string>();
+    for (const p of packs) {
+      for (const id of p.itemIds) {
+        expect(seen.has(id), id).toBe(false);
+        seen.add(id);
+      }
+    }
+  });
+});
+
+describe("splitPackageAmount", () => {
+  test("splits by weight and sums exactly", () => {
+    const parts = splitPackageAmount(
+      "appliances",
+      ["appliances.oven", "appliances.cooktop", "appliances.rangehood"],
+      10_000,
+    );
+    const total = parts.reduce((n, p) => n + p.amountAud, 0);
+    expect(total).toBe(10_000);
+    const byId = new Map(parts.map((p) => [p.itemId, p.amountAud]));
+    // Weights 3:2:1 — the oven carries the most, remainder included.
+    expect(byId.get("appliances.oven")).toBeGreaterThan(
+      byId.get("appliances.cooktop")!,
+    );
+    expect(byId.get("appliances.cooktop")).toBeGreaterThan(
+      byId.get("appliances.rangehood")!,
+    );
+  });
+
+  test("unknown package splits equally and still sums exactly", () => {
+    const parts = splitPackageAmount("no-such-package", ["a", "b", "c"], 100);
+    expect(parts.reduce((n, p) => n + p.amountAud, 0)).toBe(100);
+  });
+
+  test("a single line takes the whole figure", () => {
+    expect(splitPackageAmount("landscaping", ["landscaping.turf"], 7_500)).toEqual([
+      { itemId: "landscaping.turf", amountAud: 7_500 },
+    ]);
   });
 });

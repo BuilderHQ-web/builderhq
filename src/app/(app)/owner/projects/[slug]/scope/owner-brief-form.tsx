@@ -1,20 +1,26 @@
 "use client";
 
 /**
- * The Owner Brief form — six questions, one tap each, saved as they
- * land. Lives in two places: on the waiting page (the read fills the
- * dead time) and in the pack review (chapter 05, for anyone who
- * skipped it). Builders answer seventy questions before pricing; this
- * is the client's six, and the round will not open without them.
+ * The Owner Brief — six questions, one at a time.
+ *
+ * One question fills the card; a tap answers it and the next glides
+ * in. Progress dots above, back arrow for second thoughts, and a
+ * summary once all six are in with every answer one tap from
+ * changing. Builders answer seventy questions before pricing; this is
+ * the client's six, staged so it feels like six, not a form.
+ *
+ * Saves as answers land (serialised so fast taps never race), lives
+ * on the waiting page and in chapter 05, both reading the same store.
  */
 
 import { useMemo, useRef, useState } from "react";
-import { BadgeCheck, Check } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Check, Pencil } from "lucide-react";
 
 import { saveOwnerBriefAction } from "@/app/(app)/_actions/projects";
 import {
   OWNER_BRIEF_QUESTIONS,
   isOwnerBriefComplete,
+  briefLabel,
 } from "@/modules/projects/owner-brief";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -31,13 +37,17 @@ export function OwnerBriefForm({
   onComplete?: () => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>(initial);
-  // Serialise saves so a fast tapper never races two writes.
+  // Resume at the first unanswered question; land on the summary when
+  // everything already carries an answer.
+  const [step, setStep] = useState(() => {
+    const first = OWNER_BRIEF_QUESTIONS.findIndex((q) => !initial[q.id]);
+    return first === -1 ? OWNER_BRIEF_QUESTIONS.length : first;
+  });
   const chain = useRef<Promise<unknown>>(Promise.resolve());
 
   const complete = useMemo(() => isOwnerBriefComplete(answers), [answers]);
-  const answeredCount = OWNER_BRIEF_QUESTIONS.filter(
-    (q) => answers[q.id],
-  ).length;
+  const onSummary = step >= OWNER_BRIEF_QUESTIONS.length;
+  const q = OWNER_BRIEF_QUESTIONS[Math.min(step, OWNER_BRIEF_QUESTIONS.length - 1)]!;
 
   const pick = (qid: string, value: string) => {
     if (readOnly) return;
@@ -51,70 +61,157 @@ export function OwnerBriefForm({
       }
       if (r.value.complete) onComplete?.();
     });
+    // A short beat so the tick is seen, then the next question.
+    setTimeout(() => setStep((s) => Math.min(s + 1, OWNER_BRIEF_QUESTIONS.length)), 240);
   };
+
+  if (readOnly || (onSummary && complete)) {
+    return (
+      <div>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+            Your brief for the builders
+          </p>
+          <span className="inline-flex items-center gap-1 text-[10.5px] text-[#0a7d73]">
+            <BadgeCheck className="size-3" />
+            Complete
+          </span>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {OWNER_BRIEF_QUESTIONS.map((question) => (
+            <li
+              key={question.id}
+              className="flex items-center justify-between gap-3"
+            >
+              <span className="text-[11.5px] text-text-dim min-w-0 truncate">
+                {question.prompt}
+              </span>
+              <span className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[12px] font-ui font-medium text-text">
+                  {briefLabel(question.id, answers[question.id]) ?? "Not answered"}
+                </span>
+                {!readOnly ? (
+                  <button
+                    type="button"
+                    aria-label={`Change: ${question.prompt}`}
+                    onClick={() =>
+                      setStep(
+                        OWNER_BRIEF_QUESTIONS.findIndex(
+                          (x) => x.id === question.id,
+                        ),
+                      )
+                    }
+                    className="text-text-faint hover:text-text transition-colors"
+                  >
+                    <Pencil className="size-3" />
+                  </button>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
           Your brief for the builders
         </p>
-        <p
-          className={cn(
-            "text-[10.5px] tabular-nums",
-            complete ? "text-[#0a7d73]" : "text-text-dim",
-          )}
-        >
-          {complete ? (
-            <span className="inline-flex items-center gap-1">
-              <BadgeCheck className="size-3" />
-              Complete
-            </span>
-          ) : (
-            `${answeredCount} of ${OWNER_BRIEF_QUESTIONS.length}`
-          )}
-        </p>
+        {/* progress dots */}
+        <span className="flex items-center gap-1.5" aria-hidden>
+          {OWNER_BRIEF_QUESTIONS.map((question, i) => (
+            <span
+              key={question.id}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                i === step
+                  ? "size-[7px] bg-accent"
+                  : answers[question.id]
+                    ? "size-[5px] bg-accent/50"
+                    : "size-[5px] bg-border-strong",
+              )}
+            />
+          ))}
+        </span>
       </div>
-      <p className="mt-1 text-[11.5px] leading-[1.6] text-text-muted">
-        Six taps, no typing. These are the questions every builder asks
-        before pricing seriously; answering them here means your round
-        starts with the pre-tender meeting already held.
+
+      <p className="mt-1 text-[10.5px] text-text-dim">
+        Question {Math.min(step + 1, OWNER_BRIEF_QUESTIONS.length)} of{" "}
+        {OWNER_BRIEF_QUESTIONS.length} · one tap each. Builders read these
+        before they price.
       </p>
 
-      <div className="mt-4 space-y-4">
-        {OWNER_BRIEF_QUESTIONS.map((q) => (
-          <div key={q.id}>
-            <p className="text-[12.5px] font-ui font-medium text-text">
-              {q.prompt}
-            </p>
-            {q.help ? (
-              <p className="mt-0.5 text-[10.5px] text-text-dim">{q.help}</p>
-            ) : null}
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {q.options.map((o) => {
-                const on = answers[q.id] === o.value;
-                return (
-                  <button
-                    key={o.value}
-                    type="button"
-                    disabled={readOnly}
-                    onClick={() => pick(q.id, o.value)}
-                    aria-pressed={on}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[11.5px] font-ui transition-colors disabled:opacity-70",
-                      on
-                        ? "border-transparent bg-accent text-accent-contrast font-semibold"
-                        : "border-border-subtle text-text-muted hover:text-text hover:border-border-strong",
-                    )}
-                  >
-                    {on ? <Check className="size-3" strokeWidth={3} /> : null}
-                    {o.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      {/* the one question, keyed so it glides in */}
+      <div key={q.id} className="mt-4 animate-[brief-in_.28s_ease-out]">
+        <style>{`@keyframes brief-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }`}</style>
+        <p className="text-[15px] font-ui font-semibold text-text leading-snug">
+          {q.prompt}
+        </p>
+        {q.help ? (
+          <p className="mt-1 text-[11px] leading-[1.55] text-text-dim">
+            {q.help}
+          </p>
+        ) : null}
+        <div className="mt-3 grid gap-1.5">
+          {q.options.map((o) => {
+            const on = answers[q.id] === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => pick(q.id, o.value)}
+                aria-pressed={on}
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-md border px-3.5 py-2.5 text-left text-[13px] font-ui transition-colors",
+                  on
+                    ? "border-border-accent bg-[rgba(0,212,200,0.07)] text-text"
+                    : "border-border-subtle text-text-muted hover:text-text hover:border-border-strong",
+                )}
+              >
+                {o.label}
+                <span
+                  className={cn(
+                    "flex size-[18px] shrink-0 items-center justify-center rounded-full border",
+                    on
+                      ? "border-transparent bg-accent text-accent-contrast"
+                      : "border-border-strong",
+                  )}
+                >
+                  {on ? <Check className="size-2.5" strokeWidth={3.5} /> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-3.5 flex items-center justify-between">
+        {step > 0 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            className="inline-flex items-center gap-1 text-[11px] text-text-dim hover:text-text transition-colors"
+          >
+            <ArrowLeft className="size-3" />
+            Back
+          </button>
+        ) : (
+          <span />
+        )}
+        {answers[q.id] ? (
+          <button
+            type="button"
+            onClick={() =>
+              setStep((s) => Math.min(s + 1, OWNER_BRIEF_QUESTIONS.length))
+            }
+            className="text-[11px] text-text-dim hover:text-text transition-colors"
+          >
+            Skip ahead
+          </button>
+        ) : null}
       </div>
     </div>
   );

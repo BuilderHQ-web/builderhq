@@ -192,3 +192,259 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
 
   return out;
 }
+
+/* ── what the OWNER is actually asked ───────────────────────────────── */
+
+/**
+ * The demolition division earns one simple question on renovations
+ * and extensions: is the builder demolishing, or has the client
+ * arranged it separately? Two answers, both already in the
+ * vocabulary (builders price it / excluded).
+ */
+export function isDemolitionGap(itemId: string): boolean {
+  return getScopeItem(itemId)?.division === "demolition";
+}
+
+/**
+ * Does this gap need the CLIENT at all? Three shapes do:
+ * a cosmetic selection (allowance packages), a client-suppliable
+ * document, or the demolition question. EVERYTHING else is builders'
+ * work: it auto-resolves to builder-priced at ops approval and is
+ * shown to the client as information, never as a task.
+ */
+export function isOwnerAskableGap(itemId: string): boolean {
+  return (
+    ownerAllowanceEligible(itemId) ||
+    isOwnerDocGap(itemId) ||
+    isDemolitionGap(itemId)
+  );
+}
+
+/* ── allowance packages ─────────────────────────────────────────────── */
+
+/**
+ * The cosmetic gaps, grouped the way real tenders group them: one
+ * package, one figure, one decision. A client answers "Appliances"
+ * once instead of oven, cooktop, rangehood and dishwasher four times;
+ * the figure distributes across the constituent lines by weight so
+ * every builder still prices the same per-line schedule.
+ *
+ * Benchmarks are stated as a share of the build budget — honest
+ * industry rules of thumb for Australian residential work, shown to
+ * the client AS guidance and never applied without their tap.
+ */
+export interface AllowancePackageDef {
+  key: string;
+  title: string;
+  /** One sentence of what the package covers, client-grade. */
+  covers: string;
+  /** Which gap item ids fold into this package. */
+  match: (itemId: string) => boolean;
+  /** Typical share of build budget, as a [low, high] percent range. */
+  pctRange: [number, number];
+  /**
+   * Relative weights for splitting the package figure across specific
+   * items; unlisted items share equally in the remainder.
+   */
+  weights?: Record<string, number>;
+}
+
+const div = (itemId: string) => getScopeItem(itemId)?.division ?? "";
+
+export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
+  {
+    key: "joinery",
+    title: "Joinery and cabinetry",
+    covers: "Kitchen, vanities, robes, laundry and built-in cabinetry.",
+    match: (id) => div(id) === "joinery",
+    pctRange: [3.5, 6],
+    weights: {
+      "joinery.benchtops": 3,
+      "joinery.vanities": 2,
+      "joinery.robe-fitouts": 2,
+      "joinery.laundry-joinery": 1,
+    },
+  },
+  {
+    key: "appliances",
+    title: "Appliances",
+    covers: "Ovens, cooktops, rangehoods, dishwashers and laundry appliances.",
+    match: (id) => div(id) === "appliances",
+    pctRange: [1, 2],
+    weights: {
+      "appliances.oven": 3,
+      "appliances.cooktop": 2,
+      "appliances.dishwasher": 2,
+      "appliances.rangehood": 1,
+    },
+  },
+  {
+    key: "plumbing-fixtures",
+    title: "Bathroom fittings and fixtures",
+    covers: "Tapware, sanitary fixtures, shower screens and accessories.",
+    match: (id) => div(id) === "plumbing" && ownerAllowanceEligible(id),
+    pctRange: [1, 2],
+    weights: {
+      "plumbing.sanitary-fixtures": 3,
+      "plumbing.tapware": 2,
+    },
+  },
+  {
+    key: "electrical-fittings",
+    title: "Light fittings and electrical extras",
+    covers: "Feature lighting, fans and the electrical comforts you choose.",
+    match: (id) => div(id) === "electrical" && ownerAllowanceEligible(id),
+    pctRange: [0.5, 1.5],
+  },
+  {
+    key: "flooring",
+    title: "Floor coverings",
+    covers: "Carpet, timber and laminate to the areas the drawings show.",
+    match: (id) => div(id) === "flooring",
+    pctRange: [1.5, 3],
+  },
+  {
+    key: "tiling",
+    title: "Tile selections",
+    covers: "The tiles themselves; laying is priced by the builders.",
+    match: (id) => div(id) === "tiling" && ownerAllowanceEligible(id),
+    pctRange: [0.75, 1.5],
+  },
+  {
+    key: "doors-hardware",
+    title: "Doors and hardware",
+    covers: "Entry and internal door selections, handles and hardware.",
+    match: (id) =>
+      (div(id) === "internal-doors" || div(id) === "external-doors") &&
+      ownerAllowanceEligible(id),
+    pctRange: [0.5, 1.5],
+  },
+  {
+    key: "stairs-features",
+    title: "Staircase features",
+    covers: "Balustrades, screens and feature stair elements.",
+    match: (id) => div(id) === "stairs" && ownerAllowanceEligible(id),
+    pctRange: [0.5, 1.5],
+  },
+  {
+    key: "hvac-comfort",
+    title: "Heating and cooling comforts",
+    covers: "Fireplaces and the comfort systems you select.",
+    match: (id) => div(id) === "hvac" && ownerAllowanceEligible(id),
+    pctRange: [1, 2.5],
+  },
+  {
+    key: "landscaping",
+    title: "Landscaping",
+    covers: "Gardens, turf, irrigation and the outdoor finish.",
+    match: (id) => div(id) === "landscaping" && ownerAllowanceEligible(id),
+    pctRange: [2.5, 5],
+  },
+  {
+    key: "external-features",
+    title: "External features",
+    covers: "Fencing, gates, external lighting and garden structures.",
+    match: (id) => div(id) === "external-works" && ownerAllowanceEligible(id),
+    pctRange: [1, 2.5],
+  },
+  {
+    key: "feature-finishes",
+    title: "Feature finishes",
+    covers: "Feature stone, skylights, window furnishings and the like.",
+    match: (id) => ownerAllowanceEligible(id),
+    pctRange: [0.5, 1.5],
+  },
+];
+
+/** Midpoints of the wizard's budget bands, whole AUD. */
+export const BUDGET_BAND_MIDPOINT: Record<string, number> = {
+  under_500k: 400_000,
+  "500k_1m": 750_000,
+  "1m_1_5m": 1_250_000,
+  "1_5m_2m": 1_750_000,
+  "2m_3m": 2_500_000,
+  "3m_5m": 4_000_000,
+  over_5m: 6_000_000,
+};
+
+export interface AllowancePackage {
+  key: string;
+  title: string;
+  covers: string;
+  itemIds: string[];
+  pctRange: [number, number];
+  /** Suggested whole-AUD figure, when a budget band is known. */
+  suggestedAud: number | null;
+  /** "around $1.75m" — the budget the suggestion was drawn from. */
+  budgetLabel: string | null;
+}
+
+function roundAllowance(n: number): number {
+  if (n >= 20_000) return Math.round(n / 1000) * 1000;
+  if (n >= 2_000) return Math.round(n / 500) * 500;
+  return Math.max(100, Math.round(n / 100) * 100);
+}
+
+function budgetLabel(mid: number): string {
+  return mid >= 1_000_000
+    ? `around $${(mid / 1_000_000).toFixed(2).replace(/\.?0+$/, "")}m`
+    : `around $${Math.round(mid / 1000)}k`;
+}
+
+/**
+ * Fold the cosmetic gaps into packages, first match wins, and price
+ * the suggestion from the budget band. No band, no dollar figure —
+ * the percent guidance still shows and the input stays open.
+ */
+export function buildAllowancePackages(
+  gapItemIds: string[],
+  budgetBand: string | null,
+): AllowancePackage[] {
+  const mid = budgetBand ? (BUDGET_BAND_MIDPOINT[budgetBand] ?? null) : null;
+  const eligible = gapItemIds.filter((id) => ownerAllowanceEligible(id));
+  const taken = new Set<string>();
+  const out: AllowancePackage[] = [];
+  for (const def of ALLOWANCE_PACKAGES) {
+    const itemIds = eligible.filter((id) => !taken.has(id) && def.match(id));
+    if (itemIds.length === 0) continue;
+    for (const id of itemIds) taken.add(id);
+    const midPct = (def.pctRange[0] + def.pctRange[1]) / 2;
+    out.push({
+      key: def.key,
+      title: def.title,
+      covers: def.covers,
+      itemIds,
+      pctRange: def.pctRange,
+      suggestedAud: mid !== null ? roundAllowance((mid * midPct) / 100) : null,
+      budgetLabel: mid !== null ? budgetLabel(mid) : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Split a package figure across its lines by weight, whole dollars,
+ * remainder on the heaviest line so the parts always sum exactly.
+ */
+export function splitPackageAmount(
+  packageKey: string,
+  itemIds: string[],
+  totalAud: number,
+): Array<{ itemId: string; amountAud: number }> {
+  const def = ALLOWANCE_PACKAGES.find((d) => d.key === packageKey);
+  const weights = itemIds.map((id) => def?.weights?.[id] ?? 1);
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  const parts = itemIds.map((id, i) => ({
+    itemId: id,
+    amountAud: Math.floor((totalAud * weights[i]!) / totalWeight),
+  }));
+  const allocated = parts.reduce((a, p) => a + p.amountAud, 0);
+  if (parts.length > 0 && allocated !== totalAud) {
+    let heaviest = 0;
+    for (let i = 1; i < parts.length; i++) {
+      if (weights[i]! > weights[heaviest]!) heaviest = i;
+    }
+    parts[heaviest]!.amountAud += totalAud - allocated;
+  }
+  return parts;
+}

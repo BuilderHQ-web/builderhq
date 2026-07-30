@@ -129,8 +129,16 @@ export type {
 export {
   ownerAllowanceEligible,
   isOwnerDocGap,
+  isDemolitionGap,
+  isOwnerAskableGap,
   adviseMissingDocuments,
+  buildAllowancePackages,
+  splitPackageAmount,
   OWNER_DOC_ITEMS,
+  ALLOWANCE_PACKAGES,
+  BUDGET_BAND_MIDPOINT,
   type DocumentAdvice,
   type AdviceInput,
+  type AllowancePackage,
+  type AllowancePackageDef,
 } from "./advice";

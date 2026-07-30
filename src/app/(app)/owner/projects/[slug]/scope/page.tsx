@@ -188,6 +188,7 @@ export default async function ScopeReviewPage({
               dwellings: project.dwellingCount,
               bedrooms: project.bedrooms,
               bathrooms: project.bathrooms,
+              budgetBand: project.budgetBand,
             }}
             standardVersion={run.scopeVersion}
             items={items.map((i) => ({
