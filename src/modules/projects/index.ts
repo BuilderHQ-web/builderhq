@@ -109,3 +109,21 @@ export {
 } from "./audit";
 export type { RecordProjectEventInput } from "./audit";
 export type { ProjectAuditEventRow } from "./schema";
+
+// The owner brief (pure definitions) + its write, and the pack's
+// corrections back onto the listing.
+export {
+  OWNER_BRIEF_QUESTIONS,
+  OWNER_BRIEF_VERSION,
+  isOwnerBriefComplete,
+  isOwnerBriefShape,
+  briefLabel,
+  briefForBuilders,
+  type OwnerBrief,
+  type OwnerBriefQuestion,
+} from "./owner-brief";
+export {
+  saveOwnerBrief,
+  applyPackCorrections,
+  type PackCorrections,
+} from "./service";

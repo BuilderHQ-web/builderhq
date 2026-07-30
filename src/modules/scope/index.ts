@@ -125,3 +125,12 @@ export type {
   ExtractionResultForScoring,
   GoldenScore,
 } from "./golden";
+
+export {
+  ownerAllowanceEligible,
+  isOwnerDocGap,
+  adviseMissingDocuments,
+  OWNER_DOC_ITEMS,
+  type DocumentAdvice,
+  type AdviceInput,
+} from "./advice";

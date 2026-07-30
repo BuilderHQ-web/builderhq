@@ -133,3 +133,31 @@ export async function softDeleteProjectAction(
   if (!canDelete(a.value, got.value)) return fail("forbidden", "Not allowed to delete.");
   return softDelete(a.value.id, projectId);
 }
+
+/** The runner's pre-tender brief: click answers, saved as they land. */
+export async function saveOwnerBriefAction(
+  projectId: string,
+  brief: unknown,
+): Promise<Result<{ complete: boolean }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const { saveOwnerBrief } = await import("@/modules/projects");
+  return saveOwnerBrief(a.value.id, projectId, brief);
+}
+
+/** Apply the pack's read (facts, description) back onto the listing. */
+export async function applyPackCorrectionsAction(
+  projectId: string,
+  input: {
+    description?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    dwellingCount?: number;
+    floors?: number;
+  },
+): Promise<Result<{ applied: string[] }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const { applyPackCorrections } = await import("@/modules/projects");
+  return applyPackCorrections(a.value.id, projectId, input);
+}

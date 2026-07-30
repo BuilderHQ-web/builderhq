@@ -32,6 +32,7 @@ import {
   tickScopeRunAction,
 } from "@/app/(app)/_actions/scope";
 import { toast } from "@/components/ui/toast";
+import { SCOPE_CONFIDENCE_FLOOR } from "@/modules/scope-engine/floor";
 import { cn } from "@/lib/utils";
 import {
   SCOPE_DIVISIONS,
@@ -287,7 +288,12 @@ function Selection({
                 onDone={() =>
                   setRows((prev) =>
                     prev.map((r) =>
-                      r.opsStatus === "pending" && r.status !== "not_expected"
+                      r.opsStatus === "pending" &&
+                      r.status !== "not_expected" &&
+                      !(
+                        r.status === "evidenced" &&
+                        (r.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR
+                      )
                         ? { ...r, opsStatus: "confirmed" }
                         : r,
                     ),
@@ -443,6 +449,15 @@ function ItemLine({
             <span className="ml-2 font-mono text-[10px] text-text-faint">
               {row.itemId}
             </span>
+            {row.status === "evidenced" &&
+            (row.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR ? (
+              <span
+                className="shrink-0 rounded-full bg-[rgba(201,148,34,0.14)] text-[#8a6414] px-2 py-[2px] text-[9.5px] tracking-[0.08em] uppercase font-ui font-semibold"
+                title="Below the confidence floor: the sweep skips this line; it needs an individual verdict"
+              >
+                Low confidence
+              </span>
+            ) : null}
             {row.confidence != null ? (
               <span className="ml-2 text-[10.5px] tabular-nums text-text-dim">
                 {(row.confidence * 100).toFixed(0)}%

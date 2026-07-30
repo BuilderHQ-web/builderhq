@@ -374,7 +374,20 @@ const SelectionEntrySchema = z.object({
     .transform((v) => v ?? null),
   confidence: z.number().min(0).max(1).nullish().transform((v) => v ?? 0.5),
 });
+const OverviewSchema = z
+  .object({
+    summary: z.string().min(60).max(900),
+    dwellings: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
+    bedrooms: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
+    bathrooms: z.number().int().min(1).max(99).nullish().transform((v) => v ?? null),
+    storeys: z.number().int().min(1).max(20).nullish().transform((v) => v ?? null),
+  })
+  .nullish()
+  .transform((v) => v ?? null);
+export type SynthesisOverview = NonNullable<z.infer<typeof OverviewSchema>>;
+
 const SynthesisSchema = z.object({
+  overview: OverviewSchema,
   items: z.array(SelectionEntrySchema).max(400),
   conflicts: z
     .array(
@@ -397,6 +410,23 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
   input_schema: {
     type: "object" as const,
     properties: {
+      overview: {
+        type: "object",
+        description:
+          "A short factual overview of the project as the documents describe it.",
+        properties: {
+          summary: {
+            type: "string",
+            description:
+              "Two to four sentences describing the project purely from the documents: form, storeys, construction, notable systems and finishes. NEVER include the street address, lot number or any occupant name. Written for a homeowner, no jargon.",
+          },
+          dwellings: { type: "integer", description: "Dwelling count the documents show, if stated or clearly drawn." },
+          bedrooms: { type: "integer", description: "Total bedrooms across all dwellings, only if countable from the documents." },
+          bathrooms: { type: "integer", description: "Total bathrooms/ensuites across all dwellings, only if countable." },
+          storeys: { type: "integer", description: "Storeys, if shown." },
+        },
+        required: ["summary"],
+      },
       items: {
         type: "array",
         items: {
@@ -455,13 +485,14 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
         },
       },
     },
-    required: ["items", "conflicts"],
+    required: ["overview", "items", "conflicts"],
   },
 };
 
 const SYNTHESIS_RULES = `You are synthesising an Australian residential tender package: several documents' page-level findings, produced against the Scope Standard, are given as JSON.
 
 Your job, in order:
+0. THE OVERVIEW. Describe the project as the documents describe it: two to four sentences a homeowner would be proud to publish (form, storeys, construction, notable systems and finishes), plus the countable facts (dwellings, total bedrooms, total bathrooms, storeys) ONLY where the documents state or clearly show them; omit a count rather than guess it. NEVER include the street address, lot or plan numbers, or any person's name: the overview is published to builders before they unlock the address.
 1. THE SELECTION. For every item id that any document evidences, emit ONE entry with status "evidenced", merged citations (the strongest pages across documents, up to 5) and a one-line note in the documents' own terms. No citation, no claim: an evidenced entry without citations will be discarded.
 2. THE GAPS. This step is NOT optional and an empty gap list on an incomplete package is a wrong answer. Walk EVERY division of the Scope Standard for this project type, in order, and for each commonly required item that no document evidences, emit "gap" with a one-line reason a homeowner could understand ("No soil report is included, so footing design cannot be confirmed"). A typical package with only architectural drawings should produce roughly 15 to 40 gaps: structural engineering, soil report, service connections, finishes selections and external works are usually silent. Use "not_expected" only where absence is clearly legitimate for this project (no pool shown anywhere means pool items are not_expected, not gaps); include not_expected entries only where a reader might genuinely wonder.
 3. THE CONFLICTS. Where documents contradict each other (different figures for the same thing, plan vs specification mismatches, stale revisions disagreeing), record each conflict with both citations and severity "high" when it would change price or compliance.
@@ -562,7 +593,17 @@ export async function synthesiseRun(args: {
       "synthesis entries dropped by post-processing rules",
     );
   }
-  return { synthesis: { items, conflicts }, usage: usageOf(message) };
+  // Address hygiene, enforced beyond the prompt: an overview that
+  // leaks digits-and-street shapes is blanked rather than published.
+  let overview = parsed.data.overview;
+  if (overview && /\b\d{1,5}[a-z]?\s+[A-Z][a-z]+\s+(Street|St|Road|Rd|Avenue|Ave|Court|Ct|Drive|Dr|Lane|Ln|Place|Pl|Crescent|Cres|Parade|Pde|Terrace|Tce|Grove|Gr|Close|Cl|Way|Boulevard|Blvd)\b/i.test(overview.summary)) {
+    logger.warn(
+      { event: "scope.synthesis.overview_address_blanked" },
+      "overview summary looked like it carried an address; withheld",
+    );
+    overview = null;
+  }
+  return { synthesis: { overview, items, conflicts }, usage: usageOf(message) };
 }
 
 /** Rough cost in USD for a run's usage ledger, using published

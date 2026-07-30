@@ -37,6 +37,11 @@ export const scopeRuns = pgTable(
     approvedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     approvedAt: timestamp({ mode: "date", withTimezone: true }),
     /**
+     * The synthesis's short project overview (summary prose plus the
+     * countable facts it read). Shape belongs to the pipeline.
+     */
+    overview: jsonb(),
+    /**
      * When this approved run BECAME the round's schedule — at publish
      * acceptance, or when its addendum issued. A re-read approved by
      * ops stays invisible to builders until the runner issues it.

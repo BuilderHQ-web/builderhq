@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -26,8 +26,10 @@ import {
   getScopeItem,
   SCOPE_ITEMS,
   SCOPE_STANDARD_VERSION,
+  ownerAllowanceEligible,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
+import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
 import { users } from "@/modules/users";
 import { unlocks } from "@/modules/unlocks";
 import {
@@ -336,6 +338,7 @@ export async function processRunTick(
       .update(scopeRuns)
       .set({
         status: "review",
+        overview: synthesis.overview as object | null,
         usage: { ...usage, estimatedCostUsd: cost } as object,
         updatedAt: new Date(),
       })
@@ -1223,6 +1226,15 @@ export async function resolveGap(
     if (!Number.isInteger(input.amountAud) || (input.amountAud ?? 0) <= 0) {
       return fail("validation", "An allowance needs a whole-dollar amount above zero.");
     }
+    // Client allowances belong on selections and cosmetic works only.
+    // A client-locked figure on structure or ground works would
+    // distort every quote on the round — the builders price those.
+    if (!ownerAllowanceEligible(itemId)) {
+      return fail(
+        "validation",
+        "This line is priced by the builders, not by an allowance. Leave it to them, or exclude it from the contract.",
+      );
+    }
   }
 
   const values = {
@@ -1329,11 +1341,20 @@ export async function completeOwnerReview(
   }
 
   const [project] = await db
-    .select({ status: projects.status })
+    .select({ status: projects.status, ownerBriefAt: projects.ownerBriefAt })
     .from(projects)
     .where(eq(projects.id, projectId))
     .limit(1);
   if (!project) return fail("not_found", "Project not found.");
+  // Builders answer seventy questions before pricing; the client
+  // answers six before going to market. The round does not open on a
+  // one-way street.
+  if (!project.ownerBriefAt) {
+    return fail(
+      "validation",
+      "Answer the six-question brief for builders first. It takes under a minute.",
+    );
+  }
 
   // ── a live round: issue the addendum ────────────────────────────────
   if (project.status === "published" || project.status === "tendering") {
@@ -1749,6 +1770,9 @@ export async function bulkConfirmPending(
   if (run.status !== "review") {
     return fail("conflict", "Only runs in review can be swept.");
   }
+  // The sweep never launders doubt: an evidenced line below the
+  // confidence floor stays pending until a person looks at it, and
+  // approval stays blocked until they do.
   const updated = await db
     .update(scopeRunItems)
     .set({ opsStatus: "confirmed", editedBy: actorId, editedAt: new Date() })
@@ -1757,6 +1781,13 @@ export async function bulkConfirmPending(
         eq(scopeRunItems.runId, runId),
         eq(scopeRunItems.opsStatus, "pending"),
         ne(scopeRunItems.status, "not_expected"),
+        or(
+          ne(scopeRunItems.status, "evidenced"),
+          // Both sides cast to real so the boundary resolves the same
+          // way here, in the desk badge, and in any ad-hoc query: a
+          // line AT the floor sweeps; strictly below it waits.
+          sql`coalesce(${scopeRunItems.confidence}, 0)::real >= ${SCOPE_CONFIDENCE_FLOOR}::real`,
+        ),
       ),
     )
     .returning({ id: scopeRunItems.id });

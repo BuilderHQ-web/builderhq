@@ -28,6 +28,9 @@ import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
 
 import { projects, type ProjectRow } from "./schema";
+import { getProjectAccess } from "./participants";
+import { recordProjectEvent } from "./audit";
+import { isOwnerBriefShape, isOwnerBriefComplete } from "./owner-brief";
 import type {
   CreateProjectInput,
   MarketplaceFilters,
@@ -925,4 +928,126 @@ function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   }
 
   return out;
+}
+
+// ── the owner brief + the pack's corrections ─────────────────────────────
+
+/**
+ * Save the runner's pre-tender brief. Validated against the question
+ * set (partial saves welcome mid-form); stamped complete only when
+ * every question carries a listed answer.
+ */
+export async function saveOwnerBrief(
+  runnerId: string,
+  projectId: string,
+  brief: unknown,
+): Promise<Result<{ complete: boolean }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner answers the brief.");
+  }
+  if (!isOwnerBriefShape(brief)) {
+    return fail("validation", "Those answers don't match the questions.");
+  }
+  const complete = isOwnerBriefComplete(brief);
+  const [row] = await db
+    .update(projects)
+    .set({
+      ownerBrief: brief as object,
+      ownerBriefAt: complete ? new Date() : null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .returning({ id: projects.id });
+  if (!row) return fail("not_found", "Project not found.");
+  if (complete) {
+    await recordProjectEvent({
+      projectId,
+      actorId: runnerId,
+      kind: "brief.completed",
+      subjectId: projectId,
+      summary: "Completed the pre-tender brief for builders.",
+    });
+  }
+  return ok({ complete });
+}
+
+export interface PackCorrections {
+  /** Replace the free-form description with the pack's summary. */
+  description?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  dwellingCount?: number;
+  floors?: number;
+}
+
+/**
+ * Apply the pack's read of the project back onto the listing: the
+ * countable facts the documents actually show, and a description
+ * written from the pack. Strictly the marketing fields — never the
+ * address, never the status, never anything the publish path owns.
+ * Runner only, audited per application.
+ */
+export async function applyPackCorrections(
+  runnerId: string,
+  projectId: string,
+  input: PackCorrections,
+): Promise<Result<{ applied: string[] }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner can update the listing.");
+  }
+
+  const patch: Record<string, unknown> = {};
+  const applied: string[] = [];
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isInteger(v) && v > 0 && v < 100;
+
+  if (typeof input.description === "string") {
+    const text = input.description.trim();
+    if (text.length < 40 || text.length > 2000) {
+      return fail("validation", "The description must be 40 to 2000 characters.");
+    }
+    patch.description = text;
+    applied.push("description");
+  }
+  if (input.bedrooms !== undefined) {
+    if (!num(input.bedrooms)) return fail("validation", "Bedrooms looks wrong.");
+    patch.bedrooms = input.bedrooms;
+    applied.push("bedrooms");
+  }
+  if (input.bathrooms !== undefined) {
+    if (!num(input.bathrooms)) return fail("validation", "Bathrooms looks wrong.");
+    patch.bathrooms = input.bathrooms;
+    applied.push("bathrooms");
+  }
+  if (input.dwellingCount !== undefined) {
+    if (!num(input.dwellingCount)) return fail("validation", "Dwellings looks wrong.");
+    patch.dwellingCount = input.dwellingCount;
+    applied.push("dwellings");
+  }
+  if (input.floors !== undefined) {
+    if (!num(input.floors)) return fail("validation", "Storeys looks wrong.");
+    patch.floors = input.floors;
+    applied.push("storeys");
+  }
+  if (applied.length === 0) {
+    return fail("validation", "Nothing to apply.");
+  }
+
+  const [row] = await db
+    .update(projects)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .returning({ id: projects.id });
+  if (!row) return fail("not_found", "Project not found.");
+
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.listing_corrected",
+    subjectId: projectId,
+    summary: `Updated the listing from the pack: ${applied.join(", ")}.`,
+  });
+  return ok({ applied });
 }

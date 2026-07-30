@@ -68,6 +68,38 @@ export default async function ScopeRunPage({
           </p>
         </div>
 
+        {(() => {
+          const ov = run.overview as {
+            summary?: string;
+            dwellings?: number | null;
+            bedrooms?: number | null;
+            bathrooms?: number | null;
+            storeys?: number | null;
+          } | null;
+          if (!ov?.summary) return null;
+          const counts = [
+            ov.dwellings ? `${ov.dwellings} dwellings` : null,
+            ov.bedrooms ? `${ov.bedrooms} bedrooms` : null,
+            ov.bathrooms ? `${ov.bathrooms} bathrooms` : null,
+            ov.storeys ? `${ov.storeys} storeys` : null,
+          ].filter(Boolean);
+          return (
+            <div className="mb-6 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
+              <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+                The overview the client may adopt as their listing
+              </p>
+              <p className="mt-1.5 text-[13px] leading-[1.7] text-text italic">
+                &ldquo;{ov.summary}&rdquo;
+              </p>
+              {counts.length > 0 ? (
+                <p className="mt-1.5 text-[11px] text-text-dim">
+                  Read from the documents: {counts.join(" · ")}
+                </p>
+              ) : null}
+            </div>
+          );
+        })()}
+
         <RunReview
           runId={run.id}
           initialStatus={run.status}

@@ -44,6 +44,7 @@ import type { MarketplacePreview, Project } from "@/modules/projects";
 import type { Document, DocumentCategory } from "@/modules/documents";
 import { formatAud } from "@/modules/tenders/comparison";
 import type { PackSummary } from "@/modules/tenders/schedule";
+import { briefForBuilders } from "@/modules/projects/owner-brief";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
@@ -593,6 +594,35 @@ export function ProjectDetail({
               </div>
             </Card>
             </Reveal>
+
+            {unlocked && briefForBuilders(full?.ownerBrief).length > 0 ? (
+              <Reveal immediate delay={0.1}>
+                <Card
+                  title="The client"
+                  icon={<Sparkles className="size-4" />}
+                >
+                  <p className="text-[11.5px] leading-[1.6] text-text-muted">
+                    Answered by the client before the round opened. The
+                    pre-tender meeting, already held.
+                  </p>
+                  <dl className="mt-3 space-y-2">
+                    {briefForBuilders(full?.ownerBrief).map((row) => (
+                      <div
+                        key={row.k}
+                        className="flex items-baseline justify-between gap-3"
+                      >
+                        <dt className="text-[10.5px] tracking-[0.1em] uppercase text-text-dim font-ui font-semibold shrink-0">
+                          {row.k}
+                        </dt>
+                        <dd className="text-[12.5px] font-ui font-medium text-text text-right">
+                          {row.v}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </Card>
+              </Reveal>
+            ) : null}
 
             <Reveal immediate delay={0.12}>
             <Card title="Project owner" icon={<Sparkles className="size-4" />}>

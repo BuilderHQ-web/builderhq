@@ -40,6 +40,8 @@ import {
   MinusCircle,
   Rocket,
   ShieldCheck,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
 
 import {
@@ -50,7 +52,15 @@ import {
 } from "@/app/(app)/_actions/scope";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { SCOPE_DIVISIONS, getScopeItem } from "@/modules/scope";
+import {
+  SCOPE_DIVISIONS,
+  getScopeItem,
+  isOwnerDocGap,
+  ownerAllowanceEligible,
+  type DocumentAdvice,
+} from "@/modules/scope";
+import { applyPackCorrectionsAction } from "@/app/(app)/_actions/projects";
+import { OwnerBriefForm } from "./owner-brief-form";
 
 /* ── props ──────────────────────────────────────────────────────────── */
 
@@ -86,9 +96,13 @@ interface PackFacts {
   bedrooms: number | null;
   bathrooms: number | null;
 }
-
-/** The division whose gaps are document-shaped, not build-shaped. */
-const DOCS_DIVISION = "approvals";
+interface PackOverview {
+  summary: string;
+  dwellings: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  storeys: number | null;
+}
 
 const KIND_LABEL: Record<string, string> = {
   architectural: "Architectural",
@@ -100,13 +114,18 @@ const KIND_LABEL: Record<string, string> = {
   other: "Supporting",
 };
 
-type Chapter = 0 | 1 | 2 | 3;
+type Chapter = 0 | 1 | 2 | 3 | 4;
 
 export function PackReview({
   projectId,
   canResolve,
   mode = "publish",
   addenda = [],
+  overview = null,
+  currentDescription = null,
+  advisories = [],
+  brief = {},
+  briefComplete: briefCompleteInitial = false,
   documentNames,
   register,
   facts,
@@ -118,6 +137,11 @@ export function PackReview({
   canResolve: boolean;
   mode?: "publish" | "addendum" | "record";
   addenda?: PackAddendum[];
+  overview?: PackOverview | null;
+  currentDescription?: string | null;
+  advisories?: DocumentAdvice[];
+  brief?: Record<string, string>;
+  briefComplete?: boolean;
   documentNames: Record<string, string>;
   register: RegisterRow[];
   facts: PackFacts;
@@ -132,6 +156,7 @@ export function PackReview({
     () => new Map(resolutions.map((r) => [r.itemId, r])),
   );
   const [chapter, setChapter] = useState<Chapter>(0);
+  const [briefComplete, setBriefComplete] = useState(briefCompleteInitial);
   const [completing, setCompleting] = useState(false);
   const [rereading, setRereading] = useState(false);
   const [sweeping, setSweeping] = useState(false);
@@ -158,15 +183,18 @@ export function PackReview({
     () => byDivision(evidenced),
     [byDivision, evidenced],
   );
-  const gapsByDivision = useMemo(() => byDivision(gaps), [byDivision, gaps]);
 
-  // Chapter 3: the document-shaped gaps. Chapter 4: everything else.
+  // Chapter 3 holds only the gaps whose missing DOCUMENT is the
+  // client's to supply (soil report, engineering, permit conditions).
+  // Builder deliverables that live in the same division (occupancy
+  // certificates, handover manuals) are decisions like any other —
+  // the tender itself asks builders about them.
   const docGaps = useMemo(
-    () => gaps.filter((g) => getScopeItem(g.itemId)?.division === DOCS_DIVISION),
+    () => gaps.filter((g) => isOwnerDocGap(g.itemId)),
     [gaps],
   );
   const decisionGaps = useMemo(
-    () => gaps.filter((g) => getScopeItem(g.itemId)?.division !== DOCS_DIVISION),
+    () => gaps.filter((g) => !isOwnerDocGap(g.itemId)),
     [gaps],
   );
 
@@ -175,7 +203,8 @@ export function PackReview({
     (g) => resolved.get(g.itemId)?.resolution === "upload_later",
   ).length;
   const openCount = gaps.length - answered;
-  const readyToGoLive = openCount === 0 && waitingOnDocs === 0;
+  const readyToGoLive =
+    openCount === 0 && waitingOnDocs === 0 && briefComplete;
 
   const divisionsCovered = evidencedByDivision.size;
   const pagesRead = register.reduce((n, r) => n + (r.pages ?? 0), 0);
@@ -290,6 +319,11 @@ export function PackReview({
       title: "Your decisions",
       badge: decisionOpen > 0 ? String(decisionOpen) : undefined,
     },
+    {
+      n: "05",
+      title: "About you",
+      badge: briefComplete ? undefined : "6",
+    },
   ];
 
   return (
@@ -344,6 +378,10 @@ export function PackReview({
         {chapter === 0 ? (
           <ChapterPack
             facts={facts}
+            overview={overview}
+            currentDescription={currentDescription}
+            projectId={projectId}
+            readOnly={readOnly}
             register={register}
             standardVersion={standardVersion}
             stats={{
@@ -367,22 +405,33 @@ export function PackReview({
         ) : chapter === 2 ? (
           <ChapterDocuments
             docGaps={docGaps}
+            advisories={advisories}
             register={register}
             resolved={resolved}
             readOnly={readOnly}
+            rereading={rereading}
+            onReread={reread}
             onResolve={onResolve}
             onContinue={() => setChapter(3)}
           />
-        ) : (
+        ) : chapter === 3 ? (
           <ChapterDecisions
             decisionGaps={decisionGaps}
-            gapsByDivision={gapsByDivision}
             resolved={resolved}
             readOnly={readOnly}
             sweeping={sweeping}
-            openCount={openCount}
+            openCount={decisionOpen}
             onResolve={onResolve}
             onSweep={sweepRemaining}
+            onContinue={() => setChapter(4)}
+          />
+        ) : (
+          <ChapterAboutYou
+            projectId={projectId}
+            brief={brief}
+            briefComplete={briefComplete}
+            readOnly={readOnly}
+            onComplete={() => setBriefComplete(true)}
           />
         )}
       </div>
@@ -402,8 +451,10 @@ export function PackReview({
                 </span>
               ) : waitingOnDocs > 0 ? (
                 `${waitingOnDocs} answer${waitingOnDocs === 1 ? "" : "s"} promise documents. Add them and read again, or answer another way.`
+              ) : openCount > 0 ? (
+                `${openCount} question${openCount === 1 ? "" : "s"} still open across chapters 03 and 04.`
               ) : (
-                `${openCount} question${openCount === 1 ? "" : "s"} still open. Chapter 04 has them ready.`
+                "One last thing: the six-question brief in chapter 05."
               )}
             </p>
             <div className="ml-auto flex items-center gap-2.5 shrink-0">
@@ -422,7 +473,7 @@ export function PackReview({
                   Documents added, read again
                 </button>
               ) : null}
-              {chapter < 3 && !readyToGoLive ? (
+              {chapter < 4 && !readyToGoLive ? (
                 <button
                   type="button"
                   onClick={() => setChapter((c) => (c + 1) as Chapter)}
@@ -441,7 +492,9 @@ export function PackReview({
                     ? undefined
                     : waitingOnDocs > 0
                       ? "Some answers promise documents. Add them and request a re-read first."
-                      : "Answer every question first. Chapter 04 has them."
+                      : openCount > 0
+                        ? "Answer every question first. Chapters 03 and 04 have them."
+                        : "Answer the six-question brief in chapter 05 first."
                 }
                 className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-accent text-accent-contrast text-[12.5px] font-semibold hover:bg-accent-hover transition-colors shadow-[0_8px_24px_-8px_rgba(0,212,200,0.5)] disabled:opacity-50"
               >
@@ -486,6 +539,10 @@ export function PackReview({
 
 function ChapterPack({
   facts,
+  overview,
+  currentDescription,
+  projectId,
+  readOnly,
   register,
   standardVersion,
   stats,
@@ -494,6 +551,10 @@ function ChapterPack({
   onContinue,
 }: {
   facts: PackFacts;
+  overview: PackOverview | null;
+  currentDescription: string | null;
+  projectId: string;
+  readOnly: boolean;
   register: RegisterRow[];
   standardVersion: string;
   stats: {
@@ -563,6 +624,16 @@ function ChapterPack({
           </div>
         ))}
       </div>
+
+      {overview ? (
+        <PackVerification
+          overview={overview}
+          facts={facts}
+          currentDescription={currentDescription}
+          projectId={projectId}
+          readOnly={readOnly}
+        />
+      ) : null}
 
       {/* the register */}
       <div className="mt-6 rounded-lg border border-border-subtle bg-surface-1 card-elev">
@@ -642,6 +713,147 @@ function ChapterPack({
 
 function Strong({ children }: { children: React.ReactNode }) {
   return <span className="font-ui font-semibold text-text">{children}</span>;
+}
+
+/* ── the pack checks the listing ────────────────────────────────────── */
+
+/**
+ * The documents against what the runner typed. Counts that disagree
+ * get a one-tap correction; the pack's own overview is offered as the
+ * listing description. The address is never touched, and nothing here
+ * changes without the runner's tap.
+ */
+function PackVerification({
+  overview,
+  facts,
+  currentDescription,
+  projectId,
+  readOnly,
+}: {
+  overview: PackOverview;
+  facts: PackFacts;
+  currentDescription: string | null;
+  projectId: string;
+  readOnly: boolean;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [applied, setApplied] = useState<Set<string>>(() => new Set());
+
+  const mismatches: Array<{
+    key: "bedrooms" | "bathrooms" | "dwellingCount" | "floors";
+    label: string;
+    entered: number | null;
+    read: number;
+  }> = [];
+  if (overview.bedrooms !== null && overview.bedrooms !== facts.bedrooms) {
+    mismatches.push({ key: "bedrooms", label: "Bedrooms", entered: facts.bedrooms, read: overview.bedrooms });
+  }
+  if (overview.bathrooms !== null && overview.bathrooms !== facts.bathrooms) {
+    mismatches.push({ key: "bathrooms", label: "Bathrooms", entered: facts.bathrooms, read: overview.bathrooms });
+  }
+  if (overview.dwellings !== null && overview.dwellings !== facts.dwellings) {
+    mismatches.push({ key: "dwellingCount", label: "Dwellings", entered: facts.dwellings, read: overview.dwellings });
+  }
+
+  const descriptionDiffers =
+    overview.summary.trim().length >= 40 &&
+    overview.summary.trim() !== (currentDescription ?? "").trim();
+
+  const apply = async (
+    key: string,
+    input: Parameters<typeof applyPackCorrectionsAction>[1],
+  ) => {
+    setBusy(key);
+    try {
+      const r = await applyPackCorrectionsAction(projectId, input);
+      if (!r.ok) {
+        toast.error("Could not update", r.error.message);
+        return;
+      }
+      setApplied((prev) => new Set(prev).add(key));
+      toast.success("Listing updated from the pack.");
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (mismatches.length === 0 && !descriptionDiffers) return null;
+
+  return (
+    <div className="mt-6 rounded-lg border border-border-accent/40 bg-[rgba(0,212,200,0.03)] card-elev px-4.5 py-4">
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-accent-deep font-ui font-semibold inline-flex items-center gap-1.5">
+        <Sparkles className="size-3" />
+        The documents, checked against your listing
+      </p>
+
+      {mismatches.length > 0 ? (
+        <ul className="mt-3 space-y-2">
+          {mismatches.map((m) => (
+            <li
+              key={m.key}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1.5"
+            >
+              <p className="text-[12.5px] text-text-muted min-w-0">
+                <span className="font-ui font-medium text-text">{m.label}:</span>{" "}
+                you entered {m.entered ?? "nothing"}; the documents show{" "}
+                <span className="font-ui font-semibold text-text">{m.read}</span>.
+              </p>
+              {!readOnly && !applied.has(m.key) ? (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => apply(m.key, { [m.key]: m.read })}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full border border-border-strong text-[11px] font-ui text-text hover:bg-bg-elev transition-colors disabled:opacity-60"
+                >
+                  {busy === m.key ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : null}
+                  Use the documents&rsquo; figure
+                </button>
+              ) : applied.has(m.key) ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-[#0a7d73] font-ui font-medium">
+                  <Check className="size-3" />
+                  Updated
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {descriptionDiffers ? (
+        <div className={cn("pt-3", mismatches.length > 0 && "mt-3 border-t border-border-subtle/60")}>
+          <p className="text-[11px] text-text-dim">
+            A description written from the documents, ready for your
+            listing. No address, ever.
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-[1.7] text-text italic">
+            &ldquo;{overview.summary}&rdquo;
+          </p>
+          {!readOnly && !applied.has("description") ? (
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => apply("description", { description: overview.summary })}
+              className="mt-2.5 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-strong text-[11.5px] font-ui text-text hover:bg-bg-elev transition-colors disabled:opacity-60"
+            >
+              {busy === "description" ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : null}
+              Use as the project description
+            </button>
+          ) : applied.has("description") ? (
+            <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#0a7d73] font-ui font-medium">
+              <Check className="size-3" />
+              Description updated
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 /* ── chapter 02 · the coverage ──────────────────────────────────────── */
@@ -779,16 +991,22 @@ function EvidencedDivision({
 
 function ChapterDocuments({
   docGaps,
+  advisories,
   register,
   resolved,
   readOnly,
+  rereading,
+  onReread,
   onResolve,
   onContinue,
 }: {
   docGaps: PackItem[];
+  advisories: DocumentAdvice[];
   register: RegisterRow[];
   resolved: Map<string, PackResolution>;
   readOnly: boolean;
+  rereading: boolean;
+  onReread: () => void;
   onResolve: (
     itemId: string,
     resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
@@ -797,18 +1015,19 @@ function ChapterDocuments({
   onContinue: () => void;
 }) {
   const kinds = new Set(register.map((r) => r.kind).filter(Boolean));
+  const nothing = docGaps.length === 0 && advisories.length === 0;
   return (
     <div>
       <h2 className="font-display uppercase tracking-[-0.014em] text-[24px] sm:text-[30px] leading-[1] text-text">
         Documents worth adding
       </h2>
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
-        {docGaps.length === 0
-          ? "Your document set covers the approvals and reports builders usually ask for. Nothing needs adding before the round goes out."
-          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. The items below were not found in it. None of them blocks your round: tell us a document is coming and we will read it in, or carry on and the builders will price the work within their quotes.`}
+        {nothing
+          ? "Your document set covers the reports and schedules builders usually ask for. Nothing needs adding before the round goes out."
+          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. None of it blocks your round: every quote simply carries fewer assumptions for each document you add.`}
       </p>
 
-      {docGaps.length === 0 ? (
+      {nothing ? (
         <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-6 flex items-center gap-3">
           <BadgeCheck className="size-5 text-[#0a7d73] shrink-0" />
           <p className="text-[13px] text-text-muted">
@@ -817,18 +1036,77 @@ function ChapterDocuments({
           </p>
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-2.5">
-          {docGaps.map((g) => (
-            <QuestionCard
-              key={g.id}
-              gap={g}
-              resolution={resolved.get(g.itemId) ?? null}
-              readOnly={readOnly}
-              onResolve={onResolve}
-              docMood
-            />
-          ))}
-        </ul>
+        <>
+          {docGaps.length > 0 ? (
+            <>
+              <p className="mt-5 text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                Reports the pack looked for
+              </p>
+              <ul className="mt-2 flex flex-col gap-2.5">
+                {docGaps.map((g) => (
+                  <QuestionCard
+                    key={g.id}
+                    gap={g}
+                    resolution={resolved.get(g.itemId) ?? null}
+                    readOnly={readOnly}
+                    onResolve={onResolve}
+                    docMood
+                  />
+                ))}
+              </ul>
+            </>
+          ) : null}
+
+          {advisories.length > 0 ? (
+            <>
+              <p className="mt-6 text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                What a builder would notice
+              </p>
+              <ul className="mt-2 grid gap-2.5 sm:grid-cols-2">
+                {advisories.map((a) => (
+                  <li
+                    key={a.key}
+                    className="rounded-md border border-border-subtle bg-surface-1 px-4 py-3.5"
+                  >
+                    <p className="flex items-center gap-2 text-[13px] font-ui font-medium text-text">
+                      <FileText className="size-3.5 text-text-dim shrink-0" />
+                      {a.title}
+                      {a.severity === "recommended" ? (
+                        <span className="ml-auto shrink-0 rounded-full bg-[rgba(201,148,34,0.12)] text-[#8a6414] px-2 py-px text-[9px] tracking-[0.08em] uppercase font-ui font-semibold">
+                          Recommended
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="mt-1 text-[11.5px] leading-[1.6] text-text-muted">
+                      {a.why}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <p className="text-[10.5px] text-text-dim min-w-0">
+                  To add any of these: upload it to the project, then have
+                  the pack read again. Your answers so far carry forward.
+                </p>
+                {!readOnly ? (
+                  <button
+                    type="button"
+                    disabled={rereading}
+                    onClick={onReread}
+                    className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-subtle text-[11.5px] font-ui text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-60"
+                  >
+                    {rereading ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <FileUp className="size-3" />
+                    )}
+                    Documents added, read again
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </>
       )}
 
       <div className="mt-6 flex justify-end">
@@ -849,16 +1127,15 @@ function ChapterDocuments({
 
 function ChapterDecisions({
   decisionGaps,
-  gapsByDivision,
   resolved,
   readOnly,
   sweeping,
   openCount,
   onResolve,
   onSweep,
+  onContinue,
 }: {
   decisionGaps: PackItem[];
-  gapsByDivision: Map<string, PackItem[]>;
   resolved: Map<string, PackResolution>;
   readOnly: boolean;
   sweeping: boolean;
@@ -869,8 +1146,14 @@ function ChapterDecisions({
     amountAud?: number,
   ) => Promise<boolean>;
   onSweep: () => void;
+  onContinue: () => void;
 }) {
   const answeredHere = decisionGaps.filter((g) => resolved.has(g.itemId)).length;
+  const byDivision = new Map<string, PackItem[]>();
+  for (const g of decisionGaps) {
+    const div = getScopeItem(g.itemId)?.division ?? "unknown";
+    byDivision.set(div, [...(byDivision.get(div) ?? []), g]);
+  }
   return (
     <div>
       <h2 className="font-display uppercase tracking-[-0.014em] text-[24px] sm:text-[30px] leading-[1] text-text">
@@ -916,8 +1199,7 @@ function ChapterDecisions({
       </p>
 
       {SCOPE_DIVISIONS.map((d) => {
-        if (d.id === DOCS_DIVISION) return null;
-        const divGaps = gapsByDivision.get(d.id);
+        const divGaps = byDivision.get(d.id);
         if (!divGaps?.length) return null;
         const done = divGaps.filter((g) => resolved.has(g.itemId)).length;
         return (
@@ -949,6 +1231,76 @@ function ChapterDecisions({
           </div>
         );
       })}
+
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="inline-flex items-center gap-1.5 h-10 px-4.5 rounded-full border border-border-strong text-[12.5px] font-ui text-text hover:bg-bg-elev transition-colors"
+        >
+          One last thing
+          <ArrowRight className="size-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── chapter 05 · about you ─────────────────────────────────────────── */
+
+/**
+ * The client's six answers, right where the round closes. Builders on
+ * this round see the labels, never the address or any figure: who the
+ * client is, whether the money is real, and what they value.
+ */
+function ChapterAboutYou({
+  projectId,
+  brief,
+  briefComplete,
+  readOnly,
+  onComplete,
+}: {
+  projectId: string;
+  brief: Record<string, string>;
+  briefComplete: boolean;
+  readOnly: boolean;
+  onComplete: () => void;
+}) {
+  return (
+    <div>
+      <h2 className="font-display uppercase tracking-[-0.014em] text-[24px] sm:text-[30px] leading-[1] text-text">
+        About you
+      </h2>
+      <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
+        Builders on your round answer seventy structured questions before
+        you read a word of their tender. These six are yours. They are
+        what any builder would ask at a pre-tender meeting, and answering
+        them here means every tender you receive was priced by someone
+        who took your round seriously.
+      </p>
+
+      <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-4.5 max-w-[640px]">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-accent-light">
+            <UserRound className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <OwnerBriefForm
+              projectId={projectId}
+              initial={brief}
+              readOnly={readOnly}
+              onComplete={onComplete}
+            />
+          </div>
+        </div>
+      </div>
+
+      {briefComplete ? (
+        <p className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-[#0a7d73] font-ui font-medium">
+          <BadgeCheck className="size-3.5" />
+          Done. Builders see these answers with your project.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -973,7 +1325,11 @@ function QuestionCard({
   docMood?: boolean;
 }) {
   const item = getScopeItem(gap.itemId);
-  const suggestAllowance = !!item?.allowance;
+  // A client may lock an allowance only on selections and cosmetic
+  // works; the server refuses everything else, so the chip never
+  // offers what the engine would reject.
+  const allowanceEligible = ownerAllowanceEligible(gap.itemId);
+  const suggestAllowance = allowanceEligible;
   const [amountOpen, setAmountOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1038,15 +1394,17 @@ function QuestionCard({
             <Hammer className="size-3.5" />
             Builders price this
           </AnswerChip>
-          <AnswerChip
-            disabled={busy}
-            active={resolution?.resolution === "allowance"}
-            suggested={suggestAllowance && !docMood && !resolution}
-            onClick={() => setAmountOpen(true)}
-          >
-            <CircleDollarSign className="size-3.5" />
-            Set an allowance
-          </AnswerChip>
+          {allowanceEligible ? (
+            <AnswerChip
+              disabled={busy}
+              active={resolution?.resolution === "allowance"}
+              suggested={suggestAllowance && !docMood && !resolution}
+              onClick={() => setAmountOpen(true)}
+            >
+              <CircleDollarSign className="size-3.5" />
+              Set an allowance
+            </AnswerChip>
+          ) : null}
           <AnswerChip
             disabled={busy}
             active={resolution?.resolution === "excluded"}

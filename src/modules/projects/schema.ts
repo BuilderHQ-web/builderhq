@@ -261,6 +261,17 @@ export const projects = pgTable(
     targetStartMonth: text(),
     targetCompletionMonth: text(),
 
+    /**
+     * The client's pre-tender brief: click-based answers to what
+     * builders ask before pricing (funding, timing, occupancy...).
+     * Shape belongs to owner-brief.ts; written by the runner only.
+     */
+    ownerBrief: jsonb("owner_brief"),
+    ownerBriefAt: timestamp("owner_brief_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+
     // Free-form scope description.
     description: text(),
 

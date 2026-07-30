@@ -23,10 +23,13 @@ import { ArrowLeft, BookOpenCheck, FileSearch } from "lucide-react";
 import { auth } from "@/modules/auth";
 import { getBySlugForViewer } from "@/modules/projects";
 import { getOwnerReview } from "@/modules/scope-engine";
+import type { SynthesisOverview } from "@/modules/scope-engine/pipeline";
+import { adviseMissingDocuments, getScopeItem } from "@/modules/scope";
 import { summariseDiff, type ScheduleDiff } from "@/modules/tenders/schedule";
 import { projectsBase } from "@/lib/dashboard-route";
 import { PackReview } from "./pack-review";
 import { AnalysisTracker } from "./analysis-tracker";
+import { OwnerBriefForm } from "./owner-brief-form";
 
 export const metadata = { title: "Tender pack" };
 export const dynamic = "force-dynamic";
@@ -70,6 +73,37 @@ export default async function ScopeReviewPage({
     issuedAtISO: a.issuedAt.toISOString(),
     summary: summariseDiff(a.diff as ScheduleDiff),
   }));
+
+  // The pack's own read of the project, written at synthesis.
+  const overview = (run?.overview ?? null) as SynthesisOverview | null;
+
+  // Document advisories: what the register lacks, and which divisions
+  // exist only on the architect's drawings.
+  const kindByDoc = new Map(register.map((r) => [r.documentId, r.kind]));
+  const divisionSources: Record<string, string[]> = {};
+  for (const i of items) {
+    if (i.status !== "evidenced") continue;
+    const div = getScopeItem(i.itemId)?.division;
+    if (!div) continue;
+    const kinds = new Set(divisionSources[div] ?? []);
+    for (const c of (i.citations ?? []) as Array<{ documentId: string }>) {
+      const k = kindByDoc.get(c.documentId);
+      if (k) kinds.add(k);
+    }
+    divisionSources[div] = [...kinds];
+  }
+  const advisories =
+    phase === "ready"
+      ? adviseMissingDocuments({
+          registerKinds: register.map((r) => r.kind).filter((k): k is string => !!k),
+          evidencedDivisions: [...new Set(items.filter((i) => i.status === "evidenced").map((i) => getScopeItem(i.itemId)?.division).filter((d): d is string => !!d))],
+          divisionSources,
+          projectType: project.type,
+        })
+      : [];
+
+  const brief = (project.ownerBrief ?? {}) as Record<string, string>;
+  const briefComplete = !!project.ownerBriefAt;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
@@ -119,6 +153,13 @@ export default async function ScopeReviewPage({
               runStatus={run?.status ?? "pending"}
               register={register}
               projectType={TYPE_LABEL[project.type] ?? project.type}
+              briefSlot={
+                canResolve && !briefComplete ? (
+                  <div className="rounded-lg border border-border-accent/40 bg-surface-1 card-elev px-4.5 py-4">
+                    <OwnerBriefForm projectId={project.id} initial={brief} />
+                  </div>
+                ) : null
+              }
             />
           )
         ) : (
@@ -127,6 +168,11 @@ export default async function ScopeReviewPage({
             canResolve={canResolve}
             mode={mode}
             addenda={addendaForClient}
+            overview={overview}
+            currentDescription={project.description}
+            advisories={advisories}
+            brief={brief}
+            briefComplete={briefComplete}
             documentNames={documentNames}
             register={register.map((r) => ({
               title: r.docTitle ?? r.filename,
@@ -178,6 +224,7 @@ function ReadingState({
   runStatus,
   register,
   projectType,
+  briefSlot,
 }: {
   runStatus: string;
   register: Array<{
@@ -188,6 +235,7 @@ function ReadingState({
     pageCount: number | null;
   }>;
   projectType: string;
+  briefSlot?: React.ReactNode;
 }) {
   const pages = register.reduce((n, r) => n + (r.pageCount ?? 0), 0);
   return (
@@ -239,8 +287,9 @@ function ReadingState({
         ) : null}
       </div>
 
-      {/* right: what arrives at the end */}
+      {/* right: the brief to answer, then what arrives at the end */}
       <div className="lg:sticky lg:top-20 space-y-3">
+        {briefSlot}
         <p className="text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold px-1">
           What you will receive
         </p>
