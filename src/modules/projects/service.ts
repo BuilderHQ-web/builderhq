@@ -22,7 +22,7 @@
 
 import "server-only";
 import { after } from "next/server";
-import { and, desc, eq, gt, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -41,9 +41,10 @@ import type {
   UpdateProjectInput,
 } from "./types";
 
-import { documents } from "@/modules/documents/schema";
-// Cross-module table reads — go through public barrel so we don't
-// drag the unlocks service (and the lib/db chain) into a runtime cycle.
+// Cross-module table reads — go through each public barrel so we don't
+// drag another module's service (and the lib/db chain) into a runtime
+// cycle.
+import { documents } from "@/modules/documents";
 import { unlocks } from "@/modules/unlocks";
 
 // Pricing intentionally not imported here — service.ts only needs it
@@ -949,7 +950,13 @@ export async function saveOwnerBrief(
   if (!isOwnerBriefShape(brief)) {
     return fail("validation", "Those answers don't match the questions.");
   }
-  const complete = isOwnerBriefComplete(brief);
+  const [proj] = await db
+    .select({ type: projects.type })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .limit(1);
+  if (!proj) return fail("not_found", "Project not found.");
+  const complete = isOwnerBriefComplete(brief, proj.type);
   const [row] = await db
     .update(projects)
     .set({

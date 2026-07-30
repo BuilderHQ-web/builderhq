@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * The Owner Brief — six questions, one at a time.
+ * The Owner Brief — a handful of questions, one at a time.
  *
  * One question fills the card; a tap answers it and the next glides
  * in. Progress dots above, back arrow for second thoughts, and a
- * summary once all six are in with every answer one tap from
+ * summary once every answer is in, each one a tap from
  * changing. Builders answer seventy questions before pricing; this is
  * the client's six, staged so it feels like six, not a form.
  *
@@ -18,7 +18,7 @@ import { ArrowLeft, BadgeCheck, Check, Pencil } from "lucide-react";
 
 import { saveOwnerBriefAction } from "@/app/(app)/_actions/projects";
 import {
-  OWNER_BRIEF_QUESTIONS,
+  questionsForOwnerBrief,
   isOwnerBriefComplete,
   briefLabel,
 } from "@/modules/projects/owner-brief";
@@ -27,27 +27,36 @@ import { cn } from "@/lib/utils";
 
 export function OwnerBriefForm({
   projectId,
+  projectType,
   initial,
   readOnly = false,
   onComplete,
 }: {
   projectId: string;
+  projectType: string;
   initial: Record<string, string>;
   readOnly?: boolean;
   onComplete?: () => void;
 }) {
+  const QUESTIONS = useMemo(
+    () => questionsForOwnerBrief(projectType),
+    [projectType],
+  );
   const [answers, setAnswers] = useState<Record<string, string>>(initial);
   // Resume at the first unanswered question; land on the summary when
   // everything already carries an answer.
   const [step, setStep] = useState(() => {
-    const first = OWNER_BRIEF_QUESTIONS.findIndex((q) => !initial[q.id]);
-    return first === -1 ? OWNER_BRIEF_QUESTIONS.length : first;
+    const first = QUESTIONS.findIndex((q) => !initial[q.id]);
+    return first === -1 ? QUESTIONS.length : first;
   });
   const chain = useRef<Promise<unknown>>(Promise.resolve());
 
-  const complete = useMemo(() => isOwnerBriefComplete(answers), [answers]);
-  const onSummary = step >= OWNER_BRIEF_QUESTIONS.length;
-  const q = OWNER_BRIEF_QUESTIONS[Math.min(step, OWNER_BRIEF_QUESTIONS.length - 1)]!;
+  const complete = useMemo(
+    () => isOwnerBriefComplete(answers, projectType),
+    [answers, projectType],
+  );
+  const onSummary = step >= QUESTIONS.length;
+  const q = QUESTIONS[Math.min(step, QUESTIONS.length - 1)]!;
 
   const pick = (qid: string, value: string) => {
     if (readOnly) return;
@@ -62,7 +71,7 @@ export function OwnerBriefForm({
       if (r.value.complete) onComplete?.();
     });
     // A short beat so the tick is seen, then the next question.
-    setTimeout(() => setStep((s) => Math.min(s + 1, OWNER_BRIEF_QUESTIONS.length)), 240);
+    setTimeout(() => setStep((s) => Math.min(s + 1, QUESTIONS.length)), 240);
   };
 
   if (readOnly || (onSummary && complete)) {
@@ -78,7 +87,7 @@ export function OwnerBriefForm({
           </span>
         </div>
         <ul className="mt-3 space-y-2">
-          {OWNER_BRIEF_QUESTIONS.map((question) => (
+          {QUESTIONS.map((question) => (
             <li
               key={question.id}
               className="flex items-center justify-between gap-3"
@@ -96,9 +105,7 @@ export function OwnerBriefForm({
                     aria-label={`Change: ${question.prompt}`}
                     onClick={() =>
                       setStep(
-                        OWNER_BRIEF_QUESTIONS.findIndex(
-                          (x) => x.id === question.id,
-                        ),
+                        QUESTIONS.findIndex((x) => x.id === question.id),
                       )
                     }
                     className="text-text-faint hover:text-text transition-colors"
@@ -122,7 +129,7 @@ export function OwnerBriefForm({
         </p>
         {/* progress dots */}
         <span className="flex items-center gap-1.5" aria-hidden>
-          {OWNER_BRIEF_QUESTIONS.map((question, i) => (
+          {QUESTIONS.map((question, i) => (
             <span
               key={question.id}
               className={cn(
@@ -139,8 +146,8 @@ export function OwnerBriefForm({
       </div>
 
       <p className="mt-1 text-[10.5px] text-text-dim">
-        Question {Math.min(step + 1, OWNER_BRIEF_QUESTIONS.length)} of{" "}
-        {OWNER_BRIEF_QUESTIONS.length} · one tap each. Builders read these
+        Question {Math.min(step + 1, QUESTIONS.length)} of{" "}
+        {QUESTIONS.length} · one tap each. Builders read these
         before they price.
       </p>
 
@@ -205,7 +212,7 @@ export function OwnerBriefForm({
           <button
             type="button"
             onClick={() =>
-              setStep((s) => Math.min(s + 1, OWNER_BRIEF_QUESTIONS.length))
+              setStep((s) => Math.min(s + 1, QUESTIONS.length))
             }
             className="text-[11px] text-text-dim hover:text-text transition-colors"
           >

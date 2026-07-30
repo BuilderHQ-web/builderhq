@@ -64,6 +64,8 @@ import {
 } from "@/modules/scope";
 import { applyPackCorrectionsAction } from "@/app/(app)/_actions/projects";
 import { OwnerBriefForm } from "./owner-brief-form";
+import { questionsForOwnerBrief } from "@/modules/projects/owner-brief";
+import { AddDocuments } from "./add-documents";
 
 /* ── props ──────────────────────────────────────────────────────────── */
 
@@ -92,6 +94,8 @@ interface RegisterRow {
 }
 interface PackFacts {
   title: string;
+  /** Raw project type id ("multi_dwelling") — drives question scoping. */
+  type: string;
   typeLabel: string;
   suburb: string | null;
   state: string | null;
@@ -205,13 +209,15 @@ export function PackReview({
       buildAllowancePackages(
         gaps.map((g) => g.itemId),
         facts.budgetBand,
+        facts.type,
       ),
-    [gaps, facts.budgetBand],
+    [gaps, facts.budgetBand, facts.type],
   );
   const gapByItemId = useMemo(
     () => new Map(gaps.map((g) => [g.itemId, g])),
     [gaps],
   );
+  const briefQuestionCount = questionsForOwnerBrief(facts.type).length;
   // Builder-priced lines (auto-resolved or answered) shown in the
   // scope of works, per division.
   const builderPriced = useMemo(
@@ -361,7 +367,7 @@ export function PackReview({
     {
       n: "05",
       title: "About you",
-      badge: briefComplete ? undefined : "6",
+      badge: briefComplete ? undefined : String(briefQuestionCount),
     },
   ];
 
@@ -445,6 +451,7 @@ export function PackReview({
           />
         ) : chapter === 2 ? (
           <ChapterDocuments
+            projectId={projectId}
             docGaps={docGaps}
             advisories={advisories}
             register={register}
@@ -469,6 +476,7 @@ export function PackReview({
         ) : (
           <ChapterAboutYou
             projectId={projectId}
+            projectType={facts.type}
             brief={brief}
             briefComplete={briefComplete}
             readOnly={readOnly}
@@ -495,7 +503,7 @@ export function PackReview({
               ) : openCount > 0 ? (
                 `${openCount} answer${openCount === 1 ? "" : "s"} to go: allowances in 04${docOpen > 0 ? ", documents in 03" : ""}.`
               ) : (
-                "One last thing: the six-question brief in chapter 05."
+                "One last thing: your brief for the builders in chapter 05."
               )}
             </p>
             <div className="ml-auto flex items-center gap-2.5 shrink-0">
@@ -535,7 +543,7 @@ export function PackReview({
                       ? "Some answers promise documents. Add them and request a re-read first."
                       : openCount > 0
                         ? "A few answers remain in chapters 03 and 04."
-                        : "Answer the six-question brief in chapter 05 first."
+                        : "Answer your brief for the builders in chapter 05 first."
                 }
                 className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-accent text-accent-contrast text-[12.5px] font-semibold hover:bg-accent-hover transition-colors shadow-[0_8px_24px_-8px_rgba(0,212,200,0.5)] disabled:opacity-50"
               >
@@ -1090,6 +1098,7 @@ function ScopeDivisionBlock({
 /* ── chapter 03 · the documents ─────────────────────────────────────── */
 
 function ChapterDocuments({
+  projectId,
   docGaps,
   advisories,
   register,
@@ -1100,6 +1109,7 @@ function ChapterDocuments({
   onResolve,
   onContinue,
 }: {
+  projectId: string;
   docGaps: PackItem[];
   advisories: DocumentAdvice[];
   register: RegisterRow[];
@@ -1183,27 +1193,36 @@ function ChapterDocuments({
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <p className="text-[10.5px] text-text-dim min-w-0">
-                  To add any of these: upload it to the project, then have
-                  the pack read again. Your answers so far carry forward.
-                </p>
-                {!readOnly ? (
-                  <button
-                    type="button"
-                    disabled={rereading}
-                    onClick={onReread}
-                    className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-subtle text-[11.5px] font-ui text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-60"
-                  >
-                    {rereading ? (
-                      <Loader2 className="size-3 animate-spin" />
-                    ) : (
-                      <FileUp className="size-3" />
-                    )}
-                    Documents added, read again
-                  </button>
-                ) : null}
-              </div>
+              {!readOnly ? (
+                <div className="mt-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4 py-3.5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                      Add documents here
+                    </p>
+                    <p className="text-[10.5px] text-text-dim">
+                      Your answers so far carry forward through the re-read.
+                    </p>
+                  </div>
+                  <div className="mt-2.5">
+                    <AddDocuments projectId={projectId} />
+                  </div>
+                  <div className="mt-2.5 flex justify-end">
+                    <button
+                      type="button"
+                      disabled={rereading}
+                      onClick={onReread}
+                      className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-subtle text-[11.5px] font-ui text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-60"
+                    >
+                      {rereading ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <FileUp className="size-3" />
+                      )}
+                      Documents added, read again
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </>
           ) : null}
         </>
@@ -1610,12 +1629,14 @@ function DemolitionCard({
  */
 function ChapterAboutYou({
   projectId,
+  projectType,
   brief,
   briefComplete,
   readOnly,
   onComplete,
 }: {
   projectId: string;
+  projectType: string;
   brief: Record<string, string>;
   briefComplete: boolean;
   readOnly: boolean;
@@ -1642,6 +1663,7 @@ function ChapterAboutYou({
           <div className="min-w-0 flex-1">
             <OwnerBriefForm
               projectId={projectId}
+              projectType={projectType}
               initial={brief}
               readOnly={readOnly}
               onComplete={onComplete}

@@ -156,7 +156,7 @@ export default async function ScopeReviewPage({
               briefSlot={
                 canResolve && !briefComplete ? (
                   <div className="rounded-lg border border-border-accent/40 bg-surface-1 card-elev px-4.5 py-4">
-                    <OwnerBriefForm projectId={project.id} initial={brief} />
+                    <OwnerBriefForm projectId={project.id} projectType={project.type} initial={brief} />
                   </div>
                 ) : null
               }
@@ -182,6 +182,7 @@ export default async function ScopeReviewPage({
             }))}
             facts={{
               title: project.title,
+              type: project.type,
               typeLabel: TYPE_LABEL[project.type] ?? project.type,
               suburb: project.suburb,
               state: project.state,

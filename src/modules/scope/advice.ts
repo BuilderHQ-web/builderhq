@@ -251,13 +251,29 @@ export interface AllowancePackageDef {
 
 const div = (itemId: string) => getScopeItem(itemId)?.division ?? "";
 
+/*
+ * CALIBRATION BASIS (reviewed 2026-07). Ranges are shares of the
+ * CONSTRUCTION budget for a documented mid-range Australian
+ * residential build, assembled from published industry material:
+ * HIA kitchens and bathrooms reporting (average new kitchen $26k to
+ * $35k installed; bathroom fitout supply $4k to $8k per room),
+ * elemental cost-proportion guides of the Rawlinsons kind (finishes
+ * and fitout at 25 to 30 percent of new-build cost, higher on
+ * renovations), and prevailing supply rates (floor coverings $70 to
+ * $160 per square metre laid; tile supply $30 to $90 per square
+ * metre; landscaping guidance of 5 to 10 percent of property value,
+ * carried here as 4 to 7 percent of build cost). Worked example on a
+ * $750k single dwelling: kitchen $30k + vanities $8k + robes $12k +
+ * laundry $4k lands joinery at 7 percent. Every figure is guidance a
+ * client adjusts, never a number applied for them.
+ */
 export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
   {
     key: "joinery",
     title: "Joinery and cabinetry",
     covers: "Kitchen, vanities, robes, laundry and built-in cabinetry.",
     match: (id) => div(id) === "joinery",
-    pctRange: [3.5, 6],
+    pctRange: [5, 8],
     weights: {
       "joinery.benchtops": 3,
       "joinery.vanities": 2,
@@ -270,7 +286,7 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
     title: "Appliances",
     covers: "Ovens, cooktops, rangehoods, dishwashers and laundry appliances.",
     match: (id) => div(id) === "appliances",
-    pctRange: [1, 2],
+    pctRange: [1, 2.5],
     weights: {
       "appliances.oven": 3,
       "appliances.cooktop": 2,
@@ -283,7 +299,7 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
     title: "Bathroom fittings and fixtures",
     covers: "Tapware, sanitary fixtures, shower screens and accessories.",
     match: (id) => div(id) === "plumbing" && ownerAllowanceEligible(id),
-    pctRange: [1, 2],
+    pctRange: [1.5, 3],
     weights: {
       "plumbing.sanitary-fixtures": 3,
       "plumbing.tapware": 2,
@@ -294,14 +310,14 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
     title: "Light fittings and electrical extras",
     covers: "Feature lighting, fans and the electrical comforts you choose.",
     match: (id) => div(id) === "electrical" && ownerAllowanceEligible(id),
-    pctRange: [0.5, 1.5],
+    pctRange: [0.75, 2],
   },
   {
     key: "flooring",
     title: "Floor coverings",
-    covers: "Carpet, timber and laminate to the areas the drawings show.",
+    covers: "Floorboards, carpet, engineered timber and laminate to the areas the drawings show.",
     match: (id) => div(id) === "flooring",
-    pctRange: [1.5, 3],
+    pctRange: [2, 3.5],
   },
   {
     key: "tiling",
@@ -317,14 +333,14 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
     match: (id) =>
       (div(id) === "internal-doors" || div(id) === "external-doors") &&
       ownerAllowanceEligible(id),
-    pctRange: [0.5, 1.5],
+    pctRange: [1, 2],
   },
   {
     key: "stairs-features",
     title: "Staircase features",
     covers: "Balustrades, screens and feature stair elements.",
     match: (id) => div(id) === "stairs" && ownerAllowanceEligible(id),
-    pctRange: [0.5, 1.5],
+    pctRange: [1, 2],
   },
   {
     key: "hvac-comfort",
@@ -338,21 +354,21 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
     title: "Landscaping",
     covers: "Gardens, turf, irrigation and the outdoor finish.",
     match: (id) => div(id) === "landscaping" && ownerAllowanceEligible(id),
-    pctRange: [2.5, 5],
+    pctRange: [4, 7],
   },
   {
     key: "external-features",
     title: "External features",
     covers: "Fencing, gates, external lighting and garden structures.",
     match: (id) => div(id) === "external-works" && ownerAllowanceEligible(id),
-    pctRange: [1, 2.5],
+    pctRange: [1.5, 3],
   },
   {
     key: "feature-finishes",
     title: "Feature finishes",
     covers: "Feature stone, skylights, window furnishings and the like.",
     match: (id) => ownerAllowanceEligible(id),
-    pctRange: [0.5, 1.5],
+    pctRange: [0.75, 2],
   },
 ];
 
@@ -396,10 +412,23 @@ function budgetLabel(mid: number): string {
  * the suggestion from the budget band. No band, no dollar figure —
  * the percent guidance still shows and the input stays open.
  */
+/**
+ * Finishes and selections carry a larger share of renovation and
+ * extension budgets than of new-build budgets (elemental breakdowns
+ * put fitout near 35 to 45 percent of renovation cost against 25 to
+ * 30 on new work), so suggestions scale up accordingly.
+ */
+const TYPE_FACTOR: Record<string, number> = {
+  renovation: 1.25,
+  extension: 1.15,
+};
+
 export function buildAllowancePackages(
   gapItemIds: string[],
   budgetBand: string | null,
+  projectType: string | null = null,
 ): AllowancePackage[] {
+  const factor = (projectType && TYPE_FACTOR[projectType]) || 1;
   const mid = budgetBand ? (BUDGET_BAND_MIDPOINT[budgetBand] ?? null) : null;
   const eligible = gapItemIds.filter((id) => ownerAllowanceEligible(id));
   const taken = new Set<string>();
@@ -415,7 +444,8 @@ export function buildAllowancePackages(
       covers: def.covers,
       itemIds,
       pctRange: def.pctRange,
-      suggestedAud: mid !== null ? roundAllowance((mid * midPct) / 100) : null,
+      suggestedAud:
+        mid !== null ? roundAllowance((mid * midPct * factor) / 100) : null,
       budgetLabel: mid !== null ? budgetLabel(mid) : null,
     });
   }

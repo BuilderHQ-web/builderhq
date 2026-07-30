@@ -10,6 +10,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   OWNER_BRIEF_QUESTIONS,
+  questionsForOwnerBrief,
   isOwnerBriefComplete,
   isOwnerBriefShape,
   briefLabel,
@@ -40,16 +41,43 @@ describe("shape", () => {
   });
 });
 
+describe("type scoping", () => {
+  test("occupancy is asked on renovations and extensions only", () => {
+    const ids = (t: string) => questionsForOwnerBrief(t).map((q) => q.id);
+    expect(ids("renovation")).toContain("occupancy");
+    expect(ids("extension")).toContain("occupancy");
+    // A multi-dwelling or new-build site is vacant by definition.
+    expect(ids("multi_dwelling")).not.toContain("occupancy");
+    expect(ids("single_dwelling")).not.toContain("occupancy");
+  });
+  test("planning approval is asked of everyone", () => {
+    for (const t of ["renovation", "multi_dwelling", "single_dwelling"]) {
+      expect(questionsForOwnerBrief(t).map((q) => q.id)).toContain("planning");
+    }
+  });
+});
+
 describe("completeness", () => {
-  test("all six answered is complete", () => {
-    expect(isOwnerBriefComplete(FULL)).toBe(true);
+  test("every question answered is complete for any type", () => {
+    expect(isOwnerBriefComplete(FULL, "renovation")).toBe(true);
+    expect(isOwnerBriefComplete(FULL, "multi_dwelling")).toBe(true);
   });
-  test("five of six is not", () => {
+  test("a missing answer blocks completion", () => {
     const { funding: _dropped, ...partial } = FULL;
-    expect(isOwnerBriefComplete(partial)).toBe(false);
+    expect(isOwnerBriefComplete(partial, "multi_dwelling")).toBe(false);
   });
-  test("six answers with one junk value is not", () => {
-    expect(isOwnerBriefComplete({ ...FULL, funding: "maybe" })).toBe(false);
+  test("a junk value blocks completion", () => {
+    expect(
+      isOwnerBriefComplete({ ...FULL, funding: "maybe" }, "multi_dwelling"),
+    ).toBe(false);
+  });
+  // The scoping rule doing real work: the same answers read differently
+  // by project type. No occupancy answer is fine on a new build and a
+  // blocker on a renovation.
+  test("occupancy is required only where it is asked", () => {
+    const { occupancy: _dropped, ...withoutOccupancy } = FULL;
+    expect(isOwnerBriefComplete(withoutOccupancy, "multi_dwelling")).toBe(true);
+    expect(isOwnerBriefComplete(withoutOccupancy, "renovation")).toBe(false);
   });
 });
 
@@ -62,8 +90,12 @@ describe("display", () => {
     const rows = briefForBuilders({ funding: "savings" });
     expect(rows).toEqual([{ k: "Funding", v: "Own funds" }]);
   });
-  test("a full brief renders all six rows", () => {
-    expect(briefForBuilders(FULL)).toHaveLength(6);
+  test("a full brief renders every answered row", () => {
+    expect(briefForBuilders(FULL)).toHaveLength(OWNER_BRIEF_QUESTIONS.length);
+  });
+  test("planning approval reaches the builder read", () => {
+    const rows = briefForBuilders({ planning: "approved" });
+    expect(rows).toEqual([{ k: "Planning approval", v: "Approved and in hand" }]);
   });
   test("junk never renders", () => {
     expect(briefForBuilders(null)).toEqual([]);

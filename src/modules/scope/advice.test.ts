@@ -263,9 +263,9 @@ describe("allowance packages", () => {
     expect(allPackaged).not.toContain("preliminaries.craneage");
     expect(allPackaged).not.toContain("earthworks.spoil-removal");
 
-    // Appliances at 1 to 2 percent of a $1.75m midpoint: $26,250
+    // Appliances at 1 to 2.5 percent of a $1.75m midpoint: $30,625
     // midway, rounded to the nearest thousand.
-    expect(byKey.get("appliances")?.suggestedAud).toBe(26_000);
+    expect(byKey.get("appliances")?.suggestedAud).toBe(31_000);
     expect(byKey.get("appliances")?.budgetLabel).toBe("around $1.75m");
   });
 
@@ -273,7 +273,25 @@ describe("allowance packages", () => {
     const packs = buildAllowancePackages(["appliances.oven"], null);
     expect(packs[0]?.suggestedAud).toBeNull();
     expect(packs[0]?.budgetLabel).toBeNull();
-    expect(packs[0]?.pctRange).toEqual([1, 2]);
+    expect(packs[0]?.pctRange).toEqual([1, 2.5]);
+  });
+
+  // Finishes carry a larger share of renovation budgets, so the same
+  // gap on the same band suggests a higher figure on a renovation.
+  test("renovations scale the suggestion up; new builds do not", () => {
+    const newBuild = buildAllowancePackages(
+      ["appliances.oven"],
+      "1_5m_2m",
+      "multi_dwelling",
+    );
+    const reno = buildAllowancePackages(
+      ["appliances.oven"],
+      "1_5m_2m",
+      "renovation",
+    );
+    // $30,625 base; times 1.25 on a renovation is $38,281, rounded.
+    expect(newBuild[0]?.suggestedAud).toBe(31_000);
+    expect(reno[0]?.suggestedAud).toBe(38_000);
   });
 
   test("every gap lands in at most one package", () => {

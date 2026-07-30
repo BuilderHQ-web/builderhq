@@ -1398,7 +1398,7 @@ export async function completeOwnerReview(
   if (!project.ownerBriefAt) {
     return fail(
       "validation",
-      "Answer the six-question brief for builders first. It takes under a minute.",
+      "Answer your brief for the builders first. It takes under a minute.",
     );
   }
 

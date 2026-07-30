@@ -14,9 +14,10 @@
  *     signals whether this is a one-off home or a professional client
  *   funding    — the single biggest qualifier of a genuine round;
  *     builders quietly deprioritise tenders that may never proceed
- *   decision   — validity windows and start dates hang off it
+ *   planning   — approval status sets the earliest realistic start
  *   occupancy  — a lived-in site prices differently to a vacant one
- *     (protection, staging, hours, dust and days)
+ *     (asked only on renovations and extensions; a new-build site is
+ *     vacant by definition)
  *   priority   — lets a builder pitch the tender at what the client
  *     values instead of guessing
  *   selections — predicts the allowance load and the variations risk
@@ -32,6 +33,12 @@ export interface OwnerBriefQuestion {
   /** One quiet line under the prompt. */
   help?: string;
   options: Array<{ value: string; label: string }>;
+  /**
+   * Ask only on these project types. A multi-dwelling site is vacant
+   * by definition, so the occupancy question would insult the reader;
+   * scoping keeps every question worth its tap.
+   */
+  types?: string[];
 }
 
 export const OWNER_BRIEF_VERSION = 1;
@@ -59,18 +66,21 @@ export const OWNER_BRIEF_QUESTIONS: OwnerBriefQuestion[] = [
     ],
   },
   {
-    id: "decision",
-    prompt: "Once tenders arrive, when will you decide?",
+    id: "planning",
+    prompt: "Where is planning approval up to?",
+    help: "Approval status sets the earliest realistic start, so builders programme around it.",
     options: [
-      { value: "two_weeks", label: "Within two weeks" },
-      { value: "month", label: "Within a month" },
-      { value: "no_date", label: "No fixed date yet" },
+      { value: "approved", label: "Approved and in hand" },
+      { value: "lodged", label: "Lodged, awaiting decision" },
+      { value: "not_required", label: "Not required" },
+      { value: "not_started", label: "Not started yet" },
     ],
   },
   {
     id: "occupancy",
     prompt: "During construction, the property will be",
     help: "A lived-in site is planned and priced differently to a vacant one.",
+    types: ["renovation", "extension"],
     options: [
       { value: "vacant", label: "Vacant" },
       { value: "lived_in", label: "Lived in by us" },
@@ -109,11 +119,23 @@ const VALID = new Map(
   ]),
 );
 
-/** Every question answered with a listed option. */
-export function isOwnerBriefComplete(v: unknown): v is OwnerBrief {
+/** The questions this project type is actually asked. */
+export function questionsForOwnerBrief(
+  projectType: string | null,
+): OwnerBriefQuestion[] {
+  return OWNER_BRIEF_QUESTIONS.filter(
+    (q) => !q.types || (projectType !== null && q.types.includes(projectType)),
+  );
+}
+
+/** Every APPLICABLE question answered with a listed option. */
+export function isOwnerBriefComplete(
+  v: unknown,
+  projectType: string | null = null,
+): v is OwnerBrief {
   if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
   const rec = v as Record<string, unknown>;
-  return OWNER_BRIEF_QUESTIONS.every((q) => {
+  return questionsForOwnerBrief(projectType).every((q) => {
     const answer = rec[q.id];
     return typeof answer === "string" && VALID.get(q.id)!.has(answer);
   });
@@ -151,7 +173,7 @@ export function briefForBuilders(
     if (label) rows.push({ k, v: label });
   };
   push("funding", "Funding");
-  push("decision", "Decision timing");
+  push("planning", "Planning approval");
   push("experience", "The client");
   push("occupancy", "Site during works");
   push("priority", "What they value");
