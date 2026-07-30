@@ -29,7 +29,10 @@ import {
   bulkConfirmPending,
 } from "@/modules/scope-engine";
 import { SCOPE_CONFIDENCE_FLOOR } from "@/modules/scope-engine/floor";
-import { scopeRunItems } from "@/modules/scope-engine/schema";
+import {
+  scopeRunItems,
+  scopeGapResolutions,
+} from "@/modules/scope-engine/schema";
 import { eq } from "drizzle-orm";
 import {
   seedSeats,
@@ -208,6 +211,80 @@ describe("bulkConfirmPending and the confidence floor", () => {
     expect(byItem.get("roofing.tile-roof")).toBe("pending");
 
     await db.delete(scopeRuns).where(eq(scopeRuns.id, run!.id));
+  });
+});
+
+/* ── legacy packs heal before they are judged ───────────────────── */
+
+describe("completeOwnerReview heals builders' work before judging", () => {
+  test("only genuine document promises block; builders' work never does", async () => {
+    // A pack approved before auto-resolve existed: builders' work
+    // carries no resolutions, one line even holds a stale
+    // documents-to-come answer from the earlier interface. The only
+    // legitimate blocker is the genuine document promise.
+    const [run] = await db
+      .insert(scopeRuns)
+      .values({
+        projectId: f.projectId,
+        status: "approved",
+        scopeVersion: "1.0.0",
+        approvedAt: new Date(),
+      })
+      .returning({ id: scopeRuns.id });
+    try {
+    await db.insert(scopeRunItems).values(
+      [
+        "preliminaries.craneage", // builders' work, no resolution
+        "preliminaries.temporary-fencing", // builders' work, stale promise
+        "approvals.soil-geotech", // the client's document, real promise
+      ].map((itemId) => ({
+        runId: run!.id,
+        itemId,
+        status: "gap" as const,
+        citations: [],
+        opsStatus: "confirmed" as const,
+      })),
+    );
+    await db.insert(scopeGapResolutions).values([
+      {
+        runId: run!.id,
+        itemId: "preliminaries.temporary-fencing",
+        resolution: "upload_later",
+      },
+      {
+        runId: run!.id,
+        itemId: "approvals.soil-geotech",
+        resolution: "upload_later",
+      },
+    ]);
+
+    const r = await completeOwnerReview(f.projectId, f.ids.runner);
+    expect(r.ok).toBe(false);
+    // Not "answers are still needed" (craneage healed to builder
+    // priced), not blocked by the fencing promise (flipped): the one
+    // remaining blocker is the soil report the client promised.
+    expect(!r.ok && r.error.message).toContain("1 answer promises documents");
+
+    const rows = await db
+      .select({
+        itemId: scopeGapResolutions.itemId,
+        resolution: scopeGapResolutions.resolution,
+      })
+      .from(scopeGapResolutions)
+      .where(eq(scopeGapResolutions.runId, run!.id));
+    const byItem = new Map(rows.map((x) => [x.itemId, x.resolution]));
+    expect(byItem.get("preliminaries.craneage")).toBe("builder_priced");
+    expect(byItem.get("preliminaries.temporary-fencing")).toBe(
+      "builder_priced",
+    );
+    // The heal must never eat a genuine promise: that is the whole
+    // reason the re-read path exists.
+    expect(byItem.get("approvals.soil-geotech")).toBe("upload_later");
+    } finally {
+      // Cascade removes items and resolutions; a failure above must
+      // not leave an approved pack behind to pollute later suites.
+      await db.delete(scopeRuns).where(eq(scopeRuns.id, run!.id));
+    }
   });
 });
 

@@ -42,6 +42,7 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  Pencil,
 } from "lucide-react";
 
 import {
@@ -56,6 +57,7 @@ import {
   getScopeItem,
   isOwnerDocGap,
   isDemolitionGap,
+  isOwnerAskableGap,
   ownerAllowanceEligible,
   buildAllowancePackages,
   splitPackageAmount,
@@ -223,7 +225,9 @@ export function PackReview({
   const builderPriced = useMemo(
     () =>
       gaps.filter(
-        (g) => resolved.get(g.itemId)?.resolution === "builder_priced",
+        (g) =>
+          !isOwnerAskableGap(g.itemId) ||
+          resolved.get(g.itemId)?.resolution === "builder_priced",
       ),
     [gaps, resolved],
   );
@@ -232,11 +236,21 @@ export function PackReview({
     [byDivision, builderPriced],
   );
 
-  const answered = gaps.filter((g) => resolved.has(g.itemId)).length;
-  const waitingOnDocs = gaps.filter(
+  // Only the questions the client is actually asked can block going
+  // live. Builders' ordinary work is information here regardless of
+  // its data history: runs approved before auto-resolve existed carry
+  // no rows for it, and one may even hold a stale documents-to-come
+  // answer from the earlier interface. Neither state is the client's
+  // to fix.
+  const askable = useMemo(
+    () => gaps.filter((g) => isOwnerAskableGap(g.itemId)),
+    [gaps],
+  );
+  const answered = askable.filter((g) => resolved.has(g.itemId)).length;
+  const waitingOnDocs = docGaps.filter(
     (g) => resolved.get(g.itemId)?.resolution === "upload_later",
   ).length;
-  const openCount = gaps.length - answered;
+  const openCount = askable.length - answered;
   const readyToGoLive =
     openCount === 0 && waitingOnDocs === 0 && briefComplete;
 
@@ -499,7 +513,9 @@ export function PackReview({
                     : " Your round is ready to go live."}
                 </span>
               ) : waitingOnDocs > 0 ? (
-                `${waitingOnDocs} answer${waitingOnDocs === 1 ? "" : "s"} promise documents. Add them and read again, or answer another way.`
+                waitingOnDocs === 1
+                  ? "1 answer promises documents. Add it and read again, or answer another way."
+                  : `${waitingOnDocs} answers promise documents. Add them and read again, or answer another way.`
               ) : openCount > 0 ? (
                 `${openCount} answer${openCount === 1 ? "" : "s"} to go: allowances in 04${docOpen > 0 ? ", documents in 03" : ""}.`
               ) : (
@@ -1367,6 +1383,16 @@ function AllowancePackageCard({
   );
   const [busy, setBusy] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  // A locked figure is a decision, not a sentence: Change reopens the
+  // card seeded with the locked total, and saving locks it again.
+  const [editing, setEditing] = useState(false);
+  const deciding = !answered || editing;
+
+  const startEditing = () => {
+    if (lockedTotal > 0) setAmount(String(lockedTotal));
+    else if (pack.suggestedAud !== null) setAmount(String(pack.suggestedAud));
+    setEditing(true);
+  };
 
   const lock = async () => {
     const total = Math.round(Number(amount));
@@ -1374,13 +1400,14 @@ function AllowancePackageCard({
     setBusy(true);
     try {
       const parts = splitPackageAmount(pack.key, pack.itemIds, total);
-      await onResolveMany(
+      const ok = await onResolveMany(
         parts.map((part) => ({
           itemId: part.itemId,
           resolution: "allowance" as const,
           amountAud: part.amountAud,
         })),
       );
+      if (ok) setEditing(false);
     } finally {
       setBusy(false);
     }
@@ -1389,12 +1416,13 @@ function AllowancePackageCard({
   const leaveToBuilders = async () => {
     setBusy(true);
     try {
-      await onResolveMany(
+      const ok = await onResolveMany(
         pack.itemIds.map((itemId) => ({
           itemId,
           resolution: "builder_priced" as const,
         })),
       );
+      if (ok) setEditing(false);
     } finally {
       setBusy(false);
     }
@@ -1417,16 +1445,28 @@ function AllowancePackageCard({
           </p>
         </div>
         {answered ? (
-          <span className="shrink-0 inline-flex items-center gap-1.5 text-[11.5px] font-ui font-semibold text-[#0a7d73]">
-            <Check className="size-3.5" />
-            {allBuilders
-              ? "Builders will price these"
-              : `Allowance locked: $${lockedTotal.toLocaleString("en-AU")}`}
+          <span className="shrink-0 inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11.5px] font-ui font-semibold text-[#0a7d73]">
+              <Check className="size-3.5" />
+              {allBuilders
+                ? "Builders will price these"
+                : `Allowance locked: $${lockedTotal.toLocaleString("en-AU")}`}
+            </span>
+            {!readOnly && !editing ? (
+              <button
+                type="button"
+                onClick={startEditing}
+                className="inline-flex items-center gap-1 text-[11px] text-text-dim hover:text-text transition-colors"
+              >
+                <Pencil className="size-3" />
+                Change
+              </button>
+            ) : null}
           </span>
         ) : null}
       </div>
 
-      {!answered ? (
+      {deciding ? (
         <p className="mt-2.5 text-[12.5px] leading-[1.65] text-text-muted max-w-[64ch]">
           No schedule for {pack.title.toLowerCase()} was found in your
           documents.{" "}
@@ -1446,7 +1486,7 @@ function AllowancePackageCard({
         </p>
       ) : null}
 
-      {!readOnly && !answered ? (
+      {!readOnly && deciding ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-dim">
@@ -1486,6 +1526,16 @@ function AllowancePackageCard({
             <Hammer className="size-3.5" />
             Builders price these
           </button>
+          {editing ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setEditing(false)}
+              className="inline-flex items-center h-10 px-2.5 text-[11.5px] text-text-dim hover:text-text transition-colors disabled:opacity-50"
+            >
+              Keep as it is
+            </button>
+          ) : null}
         </div>
       ) : null}
 

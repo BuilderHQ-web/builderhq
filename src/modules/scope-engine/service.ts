@@ -28,6 +28,7 @@ import {
   SCOPE_STANDARD_VERSION,
   ownerAllowanceEligible,
   isOwnerAskableGap,
+  isOwnerDocGap,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
@@ -904,15 +905,50 @@ async function autoResolveBuilderWork(runId: string): Promise<number> {
   const builderWork = gaps
     .map((g) => g.itemId)
     .filter((id) => !isOwnerAskableGap(id));
+  // A documents-to-come answer only means something on a document the
+  // client can supply. Today's interface offers it nowhere else, but
+  // packs answered under the earlier interface may still hold one on
+  // builders' ordinary work; its honest meaning there is that the
+  // builders price the line.
+  const promises = await db
+    .select({
+      id: scopeGapResolutions.id,
+      itemId: scopeGapResolutions.itemId,
+    })
+    .from(scopeGapResolutions)
+    .where(
+      and(
+        eq(scopeGapResolutions.runId, runId),
+        eq(scopeGapResolutions.resolution, "upload_later"),
+      ),
+    );
+  const stale = promises.filter((r) => !isOwnerDocGap(r.itemId));
+  if (stale.length > 0) {
+    await db
+      .update(scopeGapResolutions)
+      .set({ resolution: "builder_priced", amountAud: null })
+      .where(
+        inArray(
+          scopeGapResolutions.id,
+          stale.map((r) => r.id),
+        ),
+      );
+  }
   if (builderWork.length === 0) return 0;
-  const rows = await db.execute(sql`
-    insert into scope_gap_resolutions (run_id, item_id, resolution, created_by)
-    select ${runId}, x.item_id, 'builder_priced', null
-    from unnest(${builderWork}::text[]) as x(item_id)
-    on conflict (run_id, item_id) do nothing
-    returning id
-  `);
-  return Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
+  // Query builder, not raw SQL: the sql template splats a JS array
+  // into a row tuple, which no ::text[] cast survives.
+  const inserted = await db
+    .insert(scopeGapResolutions)
+    .values(
+      builderWork.map((itemId) => ({
+        runId,
+        itemId,
+        resolution: "builder_priced",
+      })),
+    )
+    .onConflictDoNothing()
+    .returning({ id: scopeGapResolutions.id });
+  return inserted.length;
 }
 
 /** Copy still-relevant gap resolutions from the effective run. */
@@ -1365,15 +1401,28 @@ export async function completeOwnerReview(
   if (review.value.run.effectiveAt) {
     return fail("conflict", "This pack is already live for the round.");
   }
-  const resolutionByItem = new Map(
-    review.value.resolutions.map((r) => [r.itemId, r]),
-  );
+  // Safety net before judging: materialise builder-priced rows for
+  // every builders'-work gap and flip stale document promises. Runs
+  // approved before auto-resolve existed arrive here without either,
+  // and neither is the client's to fix. Idempotent, so the normal
+  // path pays one cheap no-op.
+  await autoResolveBuilderWork(review.value.run.id);
+  const healed = await db
+    .select({
+      itemId: scopeGapResolutions.itemId,
+      resolution: scopeGapResolutions.resolution,
+    })
+    .from(scopeGapResolutions)
+    .where(eq(scopeGapResolutions.runId, review.value.run.id));
+  const resolutionByItem = new Map(healed.map((r) => [r.itemId, r]));
   const gaps = review.value.items.filter((i) => i.status === "gap");
   const unresolved = gaps.filter((g) => !resolutionByItem.has(g.itemId));
   if (unresolved.length > 0) {
     return fail(
       "validation",
-      `${unresolved.length} gap(s) still need an answer before the pack can go out.`,
+      unresolved.length === 1
+        ? "1 answer is still needed before the pack can go out."
+        : `${unresolved.length} answers are still needed before the pack can go out.`,
     );
   }
   const waitingOnDocs = gaps.filter(
@@ -1382,7 +1431,9 @@ export async function completeOwnerReview(
   if (waitingOnDocs.length > 0) {
     return fail(
       "validation",
-      `${waitingOnDocs.length} gap(s) are marked as documents to come. Add the documents and request a re-read, or resolve them another way.`,
+      waitingOnDocs.length === 1
+        ? "1 answer promises documents. Add them and request a re-read, or answer it another way."
+        : `${waitingOnDocs.length} answers promise documents. Add them and request a re-read, or answer them another way.`,
     );
   }
 
