@@ -1637,6 +1637,7 @@ const STATE_TONE: Record<string, { text: string; bg: string }> = {
   Allowance: { text: TONE.warn.text, bg: TONE.warn.bg },
   Excluded: { text: TONE.risk.text, bg: TONE.risk.bg },
   "N/A": { text: "rgba(24,34,44,0.45)", bg: "rgba(24,34,44,0.04)" },
+  "Not applicable": { text: "rgba(24,34,44,0.45)", bg: "rgba(24,34,44,0.04)" },
 };
 
 function Disagreements({

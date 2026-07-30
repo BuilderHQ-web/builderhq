@@ -27,6 +27,7 @@ import {
   scheduleTallies,
   deriveAllowanceRows,
   deriveScheduleExclusions,
+  deriveNotApplicable,
   ownerExcludedItems,
   readScheduleAnswer,
   SCHEDULE_STATE_LABEL,
@@ -511,6 +512,10 @@ function scheduleBlocks(
                 ? "Allowance, client's figure"
                 : "Allowance, builder's figure";
           }
+        } else if (e.s === "documented" && typeof e.p === "number") {
+          // A disclosed line price prints exactly as given — the
+          // builder chose to show the working.
+          amount = formatAud(e.p);
         }
       }
       return [item.label, state, amount];
@@ -541,6 +546,17 @@ function scheduleBlocks(
           : "0",
       ],
       ["Excluded from this price", String(t.excluded)],
+      ...(t.notApplicable > 0
+        ? [["Set aside as not applicable", String(t.notApplicable)]]
+        : []),
+      ...(t.disclosedCount > 0
+        ? [
+            [
+              "Line prices disclosed",
+              `${t.disclosedCount} (${formatAud(t.disclosedTotal)})`,
+            ],
+          ]
+        : []),
     ],
   });
 
@@ -614,6 +630,21 @@ function scheduleExclusionBlocks(
       tone: all.length > 0 ? "danger" : "plain",
     },
   ];
+  const na = deriveNotApplicable(schedule, answers["scope.schedule"]);
+  if (na.length > 0) {
+    blocks.push({
+      kind: "table",
+      ref: "",
+      title: "Lines held not applicable to this project",
+      columns: ["Line", "Division", "Reason stated"],
+      align: ["l", "l", "l"],
+      rows: na.map((r) => [
+        r.label,
+        r.divisionLabel,
+        r.note ?? "No reason stated",
+      ]),
+    });
+  }
   const clientOut = ownerExcludedItems(schedule).map(
     (i) => `${i.label} (${i.divisionLabel})`,
   );

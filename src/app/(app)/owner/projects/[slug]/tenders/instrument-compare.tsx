@@ -793,7 +793,9 @@ function ScheduleAlignment({
                     />
                     {e.s === "allowance" && typeof e.a === "number"
                       ? formatAud(e.a)
-                      : SCHED_META[e.s].label}
+                      : e.s === "documented" && typeof e.p === "number"
+                        ? `${formatAud(e.p)} firm`
+                        : SCHED_META[e.s].label}
                   </span>
                 ) : (
                   <span className="text-[11px] text-text-dim/60">
