@@ -2339,6 +2339,73 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "tt-architecture",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Architecture and interiors",
+    name: "TT Architecture",
+    monogram: "TT",
+    logo: "/partners/tt-architecture/logo.png",
+    principal: "Tony Trobe",
+    suburb: "Canberra",
+    state: "ACT",
+    tagline:
+      "A Canberra practice designing architecture and interiors since 1990, with more than a hundred industry awards and a long-held reputation for leading the field in sustainable design.",
+    disciplines: ["Architecture and interiors", "Sustainable and energy efficient", "Homes and public buildings"],
+    institution: {
+      name: "Australian Institute of Architects",
+      role: "Registered architect",
+      note: "Director Tony Trobe",
+    },
+    google: { rating: 5, reviews: 24 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "24 reviews" },
+      { label: "Industry awards", value: "100+", sub: "and counting" },
+      { label: "In practice since", value: "1990", sub: "Canberra" },
+    ],
+    awards: [
+      { label: "MBA House of the Year", sub: "Master Builders ACT, 2019" },
+      { label: "GreenSmart National Building of the Year", sub: "Housing Industry Association" },
+      { label: "Residential Building Designer of the Year", sub: "HIA, 2005" },
+    ],
+    why: "TT Architecture is Canberra architecture at its most established. Founded in 1990 by Tony Trobe, a registered architect of thirty five years who has practised in the city since 1984, it has gathered more than a hundred industry awards along the way, among them a national reputation as one of the country’s early leaders in sustainable, energy efficient design. What we value beyond the trophies is the conviction behind them. Tony talks about a design dividend, the idea that good architecture makes a real and lasting difference to how people live, and he has spent a career arguing for it, both in his own work and in the public conversation about how Canberra is built. For an owner who wants a home shaped by that depth of experience and that seriousness about design and sustainability, few practices in the region carry more weight.",
+    aboutLabel: "About the practice",
+    about:
+      "TT Architecture is a boutique Canberra studio working across architecture and interior design, led by its founder and director Tony Trobe. Its work is grounded in two commitments held from the outset: a regionally minded architecture that responds to Canberra’s climate and setting, and a rigorous approach to environmentally sustainable design. The studio designs new homes, renovations and public buildings, and carries each project from concept through to the interior detail. Its recognition spans the major industry bodies, the Australian Institute of Architects, the Housing Industry Association and Master Builders, a breadth of standing few practices sustain across three decades.",
+    facts: {
+      established: "1990",
+      basedIn: "Canberra, ACT",
+      serves: "Canberra and the region",
+      focus: "Architecture, interiors and sustainable design",
+    },
+    website: "https://ttarchitecture.com.au/",
+    instagram: "https://www.instagram.com/ttarchitecture/",
+    facebook: "https://www.facebook.com/ttarchitecture/",
+    linkedin: "https://www.linkedin.com/in/tt-tony-trobe-trobe-1985b414/",
+    galleryUrl: "https://ttarchitecture.com.au/",
+    work: [
+      {
+        title: "Drake Brockman House",
+        suburb: "Canberra",
+        type: "New home",
+        image: "/partners/tt-architecture/drake-brockman-house.jpg",
+      },
+      {
+        title: "North-West Canberra",
+        suburb: "Canberra",
+        type: "New home",
+        image: "/partners/tt-architecture/north-west-canberra.jpg",
+      },
+      {
+        title: "McKenzie Beach House",
+        suburb: "NSW South Coast",
+        type: "Beach house",
+        image: "/partners/tt-architecture/mckenzie-beach-house.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
