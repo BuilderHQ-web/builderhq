@@ -202,6 +202,9 @@ export default async function ScopeMetricsPage() {
                     <td className="px-4 py-2.5 text-[11px] text-text-dim">
                       {r.analysis
                         ? [
+                            r.analysis.reusedExtractions
+                              ? `${r.analysis.reusedExtractions} extractions reused`
+                              : null,
                             r.analysis.citationHardDropped
                               ? `${r.analysis.citationHardDropped} citations dropped`
                               : null,
@@ -210,6 +213,15 @@ export default async function ScopeMetricsPage() {
                               : null,
                             r.analysis.demotedToResidual
                               ? `${r.analysis.demotedToResidual} demoted`
+                              : null,
+                            r.analysis.conflictCitationsDropped
+                              ? `${r.analysis.conflictCitationsDropped} conflict citations dropped`
+                              : null,
+                            r.analysis.conflictsDropped
+                              ? `${r.analysis.conflictsDropped} conflicts dropped`
+                              : null,
+                            r.analysis.schemaSalvaged
+                              ? `${r.analysis.schemaSalvaged} elements salvaged`
                               : null,
                             r.analysis.residualDefaulted
                               ? `${r.analysis.residualDefaulted} residuals defaulted`

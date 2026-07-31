@@ -101,6 +101,51 @@ export function enforceCitationConsistency(
   return { items: out, demoted, hardDropped, softFlagged };
 }
 
+type SynthesisConflict = SynthesisResult["conflicts"][number];
+
+export interface ConflictEnforcement {
+  conflicts: SynthesisConflict[];
+  /** Citations naming pages the extract stage never saw — fabricated. */
+  droppedCitations: number;
+  /** Conflicts that lost every citation; "no citation, no claim"
+   *  applies to conflicts exactly as it does to evidence. */
+  droppedConflicts: number;
+}
+
+/**
+ * The item rule, extended to conflicts: a conflict citation must name
+ * a (document, page) the extract stage actually produced findings
+ * for. Extraction emits an entry for EVERY page, so a page outside a
+ * document's findings does not exist in that document — the citation
+ * is fabricated and drops. A conflict with no surviving citations is
+ * an uncited claim and drops with it.
+ */
+export function enforceConflictIntegrity(
+  conflicts: SynthesisConflict[],
+  documents: SynthesisDocumentInput[],
+): ConflictEnforcement {
+  const pagesByDoc = new Map<string, Set<number>>();
+  for (const d of documents) {
+    pagesByDoc.set(d.documentId, new Set(d.findings.pages.map((p) => p.page)));
+  }
+  const out: SynthesisConflict[] = [];
+  let droppedCitations = 0;
+  let droppedConflicts = 0;
+  for (const c of conflicts) {
+    const kept = c.citations.filter((x) => {
+      const ok = pagesByDoc.get(x.documentId)?.has(x.page) ?? false;
+      if (!ok) droppedCitations += 1;
+      return ok;
+    });
+    if (kept.length === 0) {
+      droppedConflicts += 1;
+      continue;
+    }
+    out.push({ ...c, citations: kept });
+  }
+  return { conflicts: out, droppedCitations, droppedConflicts };
+}
+
 /** The type's pool minus everything the synthesis accounted for. */
 export function residualPool(
   projectType: ScopeProjectType,

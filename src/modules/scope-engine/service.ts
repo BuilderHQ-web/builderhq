@@ -36,6 +36,7 @@ import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
 import {
   enforceCitationConsistency,
+  enforceConflictIntegrity,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -71,6 +72,7 @@ import {
   classifyResidualItems,
   estimateCostUsd,
   MAX_PDF_BYTES,
+  SCOPE_PIPELINE_VERSION,
   type DocumentFindings,
   type StageUsage,
   type SynthesisDocumentInput,
@@ -82,6 +84,22 @@ type ScopeProjectType =
   | "multi_dwelling"
   | "renovation"
   | "extension";
+
+/** More PDFs than any real residential pack carries — a run this size
+ *  is a mistake (bulk upload, duplicates) and must not start unseen. */
+export const MAX_RUN_DOCUMENTS = 30;
+
+/** Extraction page budget per run. A genuine pack sits far below it;
+ *  over it, the run stops BEFORE the spend and ops decides. */
+export const MAX_RUN_PAGES = 800;
+
+/** The shape stored beside extraction findings so later runs can
+ *  prove the work is reusable: same pipeline version, same bytes. */
+interface FindingsMeta {
+  v: number;
+  objectKey: string;
+  salvaged?: number;
+}
 
 // ── starting a run ──────────────────────────────────────────────────────
 
@@ -100,7 +118,11 @@ export async function startRun(
   if (!project) return fail("not_found", "Project not found.");
 
   const docs = await db
-    .select({ id: documents.id, contentType: documents.contentType })
+    .select({
+      id: documents.id,
+      contentType: documents.contentType,
+      objectKey: documents.objectKey,
+    })
     .from(documents)
     .where(
       and(
@@ -110,11 +132,16 @@ export async function startRun(
         sql`${documents.deletedAt} is null`,
       ),
     );
-  const pdfIds = docs
-    .filter((d) => d.contentType.toLowerCase().includes("pdf"))
-    .map((d) => d.id);
+  const pdfs = docs.filter((d) => d.contentType.toLowerCase().includes("pdf"));
+  const pdfIds = pdfs.map((d) => d.id);
   if (pdfIds.length === 0) {
     return fail("validation", "This project has no active PDF documents to read.");
+  }
+  if (pdfIds.length > MAX_RUN_DOCUMENTS) {
+    return fail(
+      "validation",
+      `This project has ${pdfIds.length} active PDFs; a run reads at most ${MAX_RUN_DOCUMENTS}. Remove duplicates or merge sets, then start again.`,
+    );
   }
 
   // Later runs supersede earlier ones still in flight or in review.
@@ -149,8 +176,82 @@ export async function startRun(
     .insert(scopeRunDocuments)
     .values(pdfIds.map((documentId) => ({ runId: run.id, documentId })));
 
+  // ── extraction reuse ──────────────────────────────────────────────
+  // Documents are immutable by id (a re-upload mints a new row), so a
+  // prior run's extraction of the same document is the same work. An
+  // addendum re-read of a 12-document pack used to pay the full
+  // extraction bill again for one changed drawing; now unchanged
+  // documents carry their findings forward and only new work is
+  // bought. Reuse demands an exact match on pipeline version AND
+  // objectKey — a prompt change or replaced bytes re-extracts.
+  const keyByDoc = new Map(pdfs.map((d) => [d.id, d.objectKey]));
+  const prior = await db
+    .select({ doc: scopeRunDocuments })
+    .from(scopeRunDocuments)
+    .innerJoin(scopeRuns, eq(scopeRuns.id, scopeRunDocuments.runId))
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        ne(scopeRuns.id, run.id),
+        inArray(scopeRunDocuments.documentId, pdfIds),
+        eq(scopeRunDocuments.status, "extracted"),
+      ),
+    )
+    .orderBy(desc(scopeRunDocuments.updatedAt));
+  let reused = 0;
+  const satisfied = new Set<string>();
+  for (const { doc } of prior) {
+    if (satisfied.has(doc.documentId)) continue;
+    const findings = doc.findings as
+      | ({ pages?: unknown[] } & { meta?: FindingsMeta })
+      | null;
+    const meta = findings?.meta;
+    if (
+      !meta ||
+      meta.v !== SCOPE_PIPELINE_VERSION ||
+      meta.objectKey !== keyByDoc.get(doc.documentId) ||
+      !Array.isArray(findings?.pages)
+    ) {
+      continue;
+    }
+    await db
+      .update(scopeRunDocuments)
+      .set({
+        status: "extracted",
+        kind: doc.kind,
+        revision: doc.revision,
+        docTitle: doc.docTitle,
+        pageCount: doc.pageCount,
+        findings: doc.findings,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(scopeRunDocuments.runId, run.id),
+          eq(scopeRunDocuments.documentId, doc.documentId),
+        ),
+      );
+    satisfied.add(doc.documentId);
+    reused += 1;
+  }
+  if (reused > 0) {
+    await db
+      .update(scopeRuns)
+      .set({
+        usage: { analysis: { reusedExtractions: reused } },
+        updatedAt: new Date(),
+      })
+      .where(eq(scopeRuns.id, run.id));
+  }
+
   logger.info(
-    { event: "scope.run.started", runId: run.id, projectId, documents: pdfIds.length },
+    {
+      event: "scope.run.started",
+      runId: run.id,
+      projectId,
+      documents: pdfIds.length,
+      reusedExtractions: reused,
+    },
     "scope extraction run started",
   );
   return ok(run);
@@ -161,6 +262,7 @@ export async function startRun(
 async function loadDocBytes(documentId: string): Promise<{
   bytes: Uint8Array;
   filename: string;
+  objectKey: string;
 } | null> {
   const [doc] = await db
     .select({ objectKey: documents.objectKey, filename: documents.filename })
@@ -172,7 +274,7 @@ async function loadDocBytes(documentId: string): Promise<{
   if (!bytes || bytes.byteLength === 0 || bytes.byteLength > MAX_PDF_BYTES) {
     return null;
   }
-  return { bytes, filename: doc.filename };
+  return { bytes, filename: doc.filename, objectKey: doc.objectKey };
 }
 
 function addUsage(
@@ -251,6 +353,34 @@ export async function processRunTick(
 
     // Stage 2 — extract every classified document.
     {
+      // The page budget, checked BEFORE the spend: extraction is the
+      // expensive stage, and a run carrying a freak page count (bulk
+      // scans, wrong uploads) must stop while stopping is still free.
+      // Reused extractions are already paid for and sit outside it.
+      const [budget] = await db
+        .select({
+          pages: sql<number>`coalesce(sum(${scopeRunDocuments.pageCount}), 0)`.mapWith(Number),
+        })
+        .from(scopeRunDocuments)
+        .where(
+          and(
+            eq(scopeRunDocuments.runId, runId),
+            eq(scopeRunDocuments.status, "classified"),
+          ),
+        );
+      if ((budget?.pages ?? 0) > MAX_RUN_PAGES) {
+        await db
+          .update(scopeRuns)
+          .set({
+            status: "failed",
+            error: `This pack carries ${budget?.pages} pages to extract; the run budget is ${MAX_RUN_PAGES}. Remove or merge documents on the project, then start a fresh run.`,
+            usage,
+            updatedAt: new Date(),
+          })
+          .where(eq(scopeRuns.id, runId));
+        await dispatchScopeRunOps(runId, "failed").catch(() => undefined);
+        return ok({ status: "failed", moreWork: false });
+      }
       for (;;) {
         if (timeLeft() < 60_000) return ok({ status: "extracting", moreWork: true });
         const [next] = await db
@@ -323,7 +453,11 @@ export async function processRunTick(
       return ok({ status: "failed", moreWork: false });
     }
 
-    const { synthesis, usage: synthUsage } = await synthesiseRun({
+    const {
+      synthesis,
+      usage: synthUsage,
+      salvaged: synthesisSalvaged,
+    } = await synthesiseRun({
       projectType,
       documents: extracted,
     });
@@ -331,8 +465,14 @@ export async function processRunTick(
 
     // ── the deterministic half of accuracy ──────────────────────────
     // Citations checked against the extract stage's own findings;
-    // demoted items rejoin the residual pool.
+    // demoted items rejoin the residual pool. Conflicts obey the same
+    // law: a fabricated page drops the citation, an uncited conflict
+    // drops entirely.
     const enforced = enforceCitationConsistency(synthesis.items, extracted);
+    const conflictsEnforced = enforceConflictIntegrity(
+      synthesis.conflicts,
+      extracted,
+    );
     // The complement is arithmetic: every relevant item the synthesis
     // did not account for goes to the closed-choice classifier. A
     // synthesis can no longer forget to sweep for gaps.
@@ -375,10 +515,26 @@ export async function processRunTick(
         "synthesis coverage invariant violated",
       );
     }
+    // Counters seeded at startRun (extraction reuse) merge with the
+    // tick's own; per-document salvage sums off the stored meta.
+    const seededAnalysis =
+      (usage as Record<string, unknown>).analysis &&
+      typeof (usage as Record<string, unknown>).analysis === "object"
+        ? ((usage as Record<string, unknown>).analysis as Record<string, number>)
+        : {};
+    const extractSalvaged = docRows.reduce((n, d) => {
+      const meta = (d.row.findings as { meta?: { salvaged?: number } } | null)
+        ?.meta;
+      return n + (meta?.salvaged ?? 0);
+    }, 0);
     const analysis = {
+      ...seededAnalysis,
       citationHardDropped: enforced.hardDropped,
       citationSoftFlagged: enforced.softFlagged,
       demotedToResidual: enforced.demoted.length,
+      conflictCitationsDropped: conflictsEnforced.droppedCitations,
+      conflictsDropped: conflictsEnforced.droppedConflicts,
+      schemaSalvaged: extractSalvaged + synthesisSalvaged,
       residualClassified: residualVerdicts.size,
       residualDefaulted: residual.length - residualVerdicts.size,
       registerDeduped: deduped.duplicates.length,
@@ -409,9 +565,9 @@ export async function processRunTick(
         })),
       );
     }
-    if (synthesis.conflicts.length > 0) {
+    if (conflictsEnforced.conflicts.length > 0) {
       await db.insert(scopeRunConflicts).values(
-        synthesis.conflicts.map((c) => ({
+        conflictsEnforced.conflicts.map((c) => ({
           runId,
           summary: c.summary,
           citations: c.citations.map((x) => ({
@@ -440,7 +596,7 @@ export async function processRunTick(
         runId,
         items: finalItems.length,
         analysis,
-        conflicts: synthesis.conflicts.length,
+        conflicts: conflictsEnforced.conflicts.length,
         estimatedCostUsd: cost,
       },
       "scope run synthesised and ready for ops review",
@@ -613,15 +769,28 @@ async function extractOne(
         .where(eq(scopeRunDocuments.id, docRow.id));
       return;
     }
-    const { findings, usage: u } = await extractDocument({
-      ...loaded,
+    const { findings, usage: u, salvaged } = await extractDocument({
+      bytes: loaded.bytes,
+      filename: loaded.filename,
       kind: docRow.kind ?? "other",
       projectType,
     });
     setUsage(addUsage(usage, "extract", u));
+    // The meta rides beside the pages: it is what proves, on a later
+    // run, that this extraction covers the same bytes under the same
+    // pipeline and can carry forward instead of being bought again.
+    const meta: FindingsMeta = {
+      v: SCOPE_PIPELINE_VERSION,
+      objectKey: loaded.objectKey,
+      ...(salvaged > 0 ? { salvaged } : {}),
+    };
     await db
       .update(scopeRunDocuments)
-      .set({ status: "extracted", findings: findings as object, updatedAt: new Date() })
+      .set({
+        status: "extracted",
+        findings: { ...findings, meta } as object,
+        updatedAt: new Date(),
+      })
       .where(eq(scopeRunDocuments.id, docRow.id));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1785,6 +1954,69 @@ export async function requestReread(
   const access = await getProjectAccess(projectId, runnerId);
   if (access?.kind !== "runner") {
     return fail("forbidden", "Only the project runner can request a re-read.");
+  }
+  // Idempotent under impatience: a run already reading this project is
+  // THE re-read. Starting another would supersede it mid-flight and
+  // buy the same work twice.
+  const [inFlight] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        inArray(scopeRuns.status, [
+          "pending",
+          "classifying",
+          "extracting",
+          "synthesising",
+        ]),
+      ),
+    )
+    .limit(1);
+  if (inFlight) return ok({ runId: inFlight.id });
+  // Nothing changed, nothing to read: the same documents under the
+  // same pipeline produce the same pack. Refuse the spend and say why.
+  const [latest] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        inArray(scopeRuns.status, ["review", "approved"]),
+      ),
+    )
+    .orderBy(desc(scopeRuns.createdAt))
+    .limit(1);
+  if (latest) {
+    const [current, prior] = await Promise.all([
+      db
+        .select({ id: documents.id })
+        .from(documents)
+        .where(
+          and(
+            eq(documents.projectId, projectId),
+            sql`${documents.tenderId} is null`,
+            eq(documents.status, "active"),
+            sql`${documents.deletedAt} is null`,
+            sql`lower(${documents.contentType}) like '%pdf%'`,
+          ),
+        ),
+      db
+        .select({ documentId: scopeRunDocuments.documentId })
+        .from(scopeRunDocuments)
+        .where(eq(scopeRunDocuments.runId, latest.id)),
+    ]);
+    const currentIds = new Set(current.map((d) => d.id));
+    const priorIds = new Set(prior.map((d) => d.documentId));
+    const unchanged =
+      currentIds.size === priorIds.size &&
+      [...currentIds].every((id) => priorIds.has(id));
+    if (unchanged) {
+      return fail(
+        "conflict",
+        "The current read already covers these exact documents. Add or replace a document, then request the re-read.",
+      );
+    }
   }
   const run = await startRun(projectId, runnerId);
   if (!run.ok) return run;

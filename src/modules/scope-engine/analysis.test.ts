@@ -13,6 +13,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   enforceCitationConsistency,
+  enforceConflictIntegrity,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -21,8 +22,16 @@ import {
 } from "./analysis";
 import { itemsFor } from "@/modules/scope";
 import {
+  CHUNK_PAGES,
+  ConflictSchema,
   OVERVIEW_MAX_CHARS,
+  PageFindingSchema,
+  ResidualVerdictSchema,
+  SelectionEntrySchema,
   SynthesisSchemaForTest,
+  planChunks,
+  salvageArray,
+  salvageIsFailure,
   type SynthesisDocumentInput,
 } from "./pipeline";
 
@@ -265,5 +274,156 @@ describe("overview resilience", () => {
     expect(parsed.success).toBe(true);
     expect(parsed.success && parsed.data.overview).toBeNull();
     expect(parsed.success && parsed.data.items).toHaveLength(1);
+  });
+});
+
+/* ── conflicts obey the same law as evidence ────────────────────────── */
+
+describe("enforceConflictIntegrity", () => {
+  const conflict = (
+    citations: Array<{ documentId: string; page: number }>,
+    severity: "attention" | "high" = "high",
+  ) => ({
+    summary: "The plan and the schedule disagree; confirm which governs.",
+    citations,
+    severity,
+  });
+
+  test("a conflict citing real pages passes untouched", () => {
+    const r = enforceConflictIntegrity(
+      [conflict([{ documentId: "doc-a", page: 1 }, { documentId: "doc-a", page: 2 }])],
+      DOCS,
+    );
+    expect(r.conflicts).toHaveLength(1);
+    expect(r.conflicts[0]!.citations).toHaveLength(2);
+    expect(r.droppedCitations).toBe(0);
+    expect(r.droppedConflicts).toBe(0);
+  });
+
+  test("a fabricated page drops the citation, the rest survive", () => {
+    // Extraction emits an entry for EVERY page, so page 40 of a
+    // two-page document does not exist anywhere in its findings.
+    const r = enforceConflictIntegrity(
+      [conflict([{ documentId: "doc-a", page: 40 }, { documentId: "doc-a", page: 2 }])],
+      DOCS,
+    );
+    expect(r.conflicts).toHaveLength(1);
+    expect(r.conflicts[0]!.citations).toEqual([{ documentId: "doc-a", page: 2 }]);
+    expect(r.droppedCitations).toBe(1);
+  });
+
+  test("a conflict that loses every citation drops entirely", () => {
+    const r = enforceConflictIntegrity(
+      [conflict([{ documentId: "doc-a", page: 40 }, { documentId: "ghost", page: 1 }])],
+      DOCS,
+    );
+    expect(r.conflicts).toHaveLength(0);
+    expect(r.droppedCitations).toBe(2);
+    expect(r.droppedConflicts).toBe(1);
+  });
+
+  test("an uncited conflict is an uncited claim and drops", () => {
+    const r = enforceConflictIntegrity([conflict([])], DOCS);
+    expect(r.conflicts).toHaveLength(0);
+    expect(r.droppedConflicts).toBe(1);
+  });
+});
+
+/* ── schema salvage: the overview lesson, generalised ───────────────── */
+
+describe("schema salvage", () => {
+  test("one malformed element drops with a count; the rest parse", () => {
+    const raw = [
+      { itemId: "a", status: "evidenced", citations: [], note: null, confidence: 0.9 },
+      { itemId: "b", status: "no_such_status", citations: [], note: null, confidence: 0.9 },
+      { itemId: "c", status: "gap", citations: [], note: null, confidence: 0.9 },
+    ];
+    const r = salvageArray(raw, SelectionEntrySchema, 400);
+    expect(r.values.map((v) => v.itemId)).toEqual(["a", "c"]);
+    expect(r.salvaged).toBe(1);
+  });
+
+  test("a conflict summary over the ceiling clips at a sentence, never rejects", () => {
+    // The overview bug's sibling: before this rule, one long conflict
+    // summary discarded the entire synthesis.
+    const long = "The stormwater layout disagrees with the civil design. ".repeat(20);
+    const p = ConflictSchema.safeParse({
+      summary: long,
+      citations: [{ documentId: "d", page: 1 }],
+      severity: "high",
+    });
+    expect(p.success).toBe(true);
+    if (p.success) {
+      expect(p.data.summary.length).toBeLessThanOrEqual(400);
+      expect(p.data.summary.endsWith(".")).toBe(true);
+    }
+  });
+
+  test("long notes and oversized arrays clip and slice, never reject", () => {
+    const p = PageFindingSchema.safeParse({
+      page: 3,
+      itemIds: Array.from({ length: 80 }, (_, i) => `id-${i}`),
+      statedFigures: [{ label: "x".repeat(500), value: "y".repeat(500), itemId: null }],
+      note: "n".repeat(2000),
+    });
+    expect(p.success).toBe(true);
+    if (p.success) {
+      expect(p.data.itemIds).toHaveLength(60);
+      expect(p.data.statedFigures[0]!.label.length).toBe(200);
+      expect(p.data.note!.length).toBe(600);
+    }
+  });
+
+  test("a residual verdict with a long note clips and keeps the verdict", () => {
+    const p = ResidualVerdictSchema.safeParse({
+      itemId: "painting.internal",
+      verdict: "gap",
+      note: "z".repeat(900),
+    });
+    expect(p.success).toBe(true);
+    if (p.success) expect(p.data.note!.length).toBe(300);
+  });
+
+  test("majority-malformed is a failure, a stray element is not", () => {
+    expect(salvageIsFailure(199, 1)).toBe(false);
+    expect(salvageIsFailure(10, 2)).toBe(false);
+    expect(salvageIsFailure(2, 40)).toBe(true);
+    // Tiny arrays never fail on counts alone.
+    expect(salvageIsFailure(1, 2)).toBe(false);
+  });
+
+  test("non-array input salvages to empty", () => {
+    expect(salvageArray("garbage", SelectionEntrySchema, 10)).toEqual({
+      values: [],
+      salvaged: 1,
+    });
+    expect(salvageArray(undefined, SelectionEntrySchema, 10)).toEqual({
+      values: [],
+      salvaged: 0,
+    });
+  });
+});
+
+/* ── chunk plan: long documents extract in ranges ───────────────────── */
+
+describe("planChunks", () => {
+  test("a document inside the limit is one whole-document call", () => {
+    expect(planChunks(50)).toEqual([{ from: 1, to: 50 }]);
+    expect(planChunks(CHUNK_PAGES)).toEqual([{ from: 1, to: CHUNK_PAGES }]);
+  });
+
+  test("a long specification splits into covering, non-overlapping ranges", () => {
+    const ranges = planChunks(190);
+    expect(ranges).toEqual([
+      { from: 1, to: 80 },
+      { from: 81, to: 160 },
+      { from: 161, to: 190 },
+    ]);
+    // Every page covered exactly once.
+    const pages = ranges.flatMap((r) =>
+      Array.from({ length: r.to - r.from + 1 }, (_, i) => r.from + i),
+    );
+    expect(pages).toHaveLength(190);
+    expect(new Set(pages).size).toBe(190);
   });
 });

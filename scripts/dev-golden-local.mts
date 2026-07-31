@@ -37,11 +37,13 @@ import {
   classifyResidualItems,
   estimateCostUsd,
   MAX_PDF_BYTES,
+  SCOPE_PIPELINE_VERSION,
   type SynthesisDocumentInput,
   type StageUsage,
 } from "@/modules/scope-engine/pipeline";
 import {
   enforceCitationConsistency,
+  enforceConflictIntegrity,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -68,12 +70,21 @@ const classifyOnly = process.argv.includes("--classify-only");
 const cachePath = arg("cache");
 type CacheShape = Record<
   string,
-  { rec: DocRecord; findings: SynthesisDocumentInput["findings"] }
+  { rec: DocRecord; findings: SynthesisDocumentInput["findings"]; v?: number }
 >;
 let cache: CacheShape = {};
 if (cachePath && existsSync(cachePath)) {
-  cache = JSON.parse(readFileSync(cachePath, "utf8")) as CacheShape;
-  console.error(`cache: ${Object.keys(cache).length} documents already extracted`);
+  const loaded = JSON.parse(readFileSync(cachePath, "utf8")) as CacheShape;
+  // Version-keyed exactly like production reuse: findings from an
+  // older pipeline are re-extracted, never silently mixed.
+  cache = Object.fromEntries(
+    Object.entries(loaded).filter(([, v]) => v.v === SCOPE_PIPELINE_VERSION),
+  );
+  const stale = Object.keys(loaded).length - Object.keys(cache).length;
+  console.error(
+    `cache: ${Object.keys(cache).length} documents reusable` +
+      (stale > 0 ? ` (${stale} stale under pipeline v${SCOPE_PIPELINE_VERSION})` : ""),
+  );
 }
 if (!dir) {
   console.error("Usage: --dir=<folder> [--type=...] [--out=...] [--classify-only]");
@@ -101,6 +112,8 @@ const add = (stage: string, u: StageUsage) => {
     [stage]: {
       inputTokens: cur.inputTokens + u.inputTokens,
       outputTokens: cur.outputTokens + u.outputTokens,
+      cacheWriteTokens: (cur.cacheWriteTokens ?? 0) + (u.cacheWriteTokens ?? 0),
+      cacheReadTokens: (cur.cacheReadTokens ?? 0) + (u.cacheReadTokens ?? 0),
     },
   };
 };
@@ -189,7 +202,7 @@ for (const [i, file] of files.entries()) {
       findings,
     });
     if (cachePath) {
-      cache[filename] = { rec, findings };
+      cache[filename] = { rec, findings, v: SCOPE_PIPELINE_VERSION };
       writeFileSync(cachePath, JSON.stringify(cache));
     }
   }
@@ -214,13 +227,18 @@ const keptIds = new Set(deduped.keep.map((k) => k.documentId));
 const forSynthesis = inputs.filter((i) => keptIds.has(i.documentId));
 
 console.error(`\nsynthesising over ${forSynthesis.length} documents...`);
-const { synthesis, usage: su } = await synthesiseRun({
+const { synthesis, usage: su, salvaged } = await synthesiseRun({
   projectType: type,
   documents: forSynthesis,
 });
 add("synthesis", su);
 
 const enforced = enforceCitationConsistency(synthesis.items, forSynthesis);
+// Conflicts obey the same law as evidence, exactly as production runs it.
+const conflictsEnforced = enforceConflictIntegrity(
+  synthesis.conflicts,
+  forSynthesis,
+);
 const residual = residualPool(type, enforced.items);
 console.error(`residual pool: ${residual.length} items to classify...`);
 const { verdicts, usage: ru } = await classifyResidualItems({
@@ -282,11 +300,14 @@ const result = {
   docs,
   registerDuplicates: deduped.duplicates.map((d) => d.documentId),
   overview: synthesis.overview,
-  conflicts: synthesis.conflicts,
+  conflicts: conflictsEnforced.conflicts,
   guards: {
     citationHardDropped: enforced.hardDropped,
     citationSoftFlagged: enforced.softFlagged,
     demoted: enforced.demoted,
+    conflictCitationsDropped: conflictsEnforced.droppedCitations,
+    conflictsDropped: conflictsEnforced.droppedConflicts,
+    schemaSalvaged: salvaged,
     residualSize: residual.length,
     residualAnswered: verdicts.size,
     residualDefaulted: residual.length - verdicts.size,
