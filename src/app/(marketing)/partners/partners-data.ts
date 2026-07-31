@@ -2337,8 +2337,7 @@ export const PARTNERS: Partner[] = [
   {
     slug: "studio-lira",
     kind: "architect",
-    draft: true,
-    roleLabel: "Architecture and interiors",
+    roleLabel: "Architecture | Interiors",
     name: "Studio LIRA",
     monogram: "LI",
     logo: "/partners/studio-lira/logo.png",
@@ -2346,7 +2345,7 @@ export const PARTNERS: Partner[] = [
     state: "NSW",
     tagline:
       "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
-    disciplines: ["New homes", "Interiors and furniture", "Commercial fit-outs"],
+    disciplines: ["New homes and additions", "Heritage properties", "Interiors and commercial"],
     institution: {
       name: "NSW Architects Registration Board",
       role: "Registered architects",
@@ -2362,9 +2361,9 @@ export const PARTNERS: Partner[] = [
       sub: "2017, 2023, 2024 and 2025",
       tag: "4× winner",
     },
-    why: "Studio LIRA is the kind of practice we are always looking for and rarely find: two architects who trained and qualified in Italy, registered here in New South Wales as well as in Rome, who carry a European sense of scale and restraint into everything they draw. They describe their own instinct as reaching the essence of things, no shortcuts, and it shows in work that feels considered and built to last rather than styled for the moment. Just as telling is how they work, listening first, so the architecture answers the client’s story rather than a house style. For an owner who wants genuine design intent and the rigour of registered architects behind a build, an introduction to LIRA is one we make with real confidence.",
+    why: "Studio LIRA is the kind of practice we look for and rarely find. The range is genuine, taking in new homes, alterations and additions, heritage properties and commercial work, and the method holds steady across all of it: start with the people, the place and whatever is already standing, and let one clear concept emerge from that. What follows is architecture with a reason behind every decision, which is why the work reads as deliberate rather than styled.\n\nThe rarer quality is what happens after the concept is settled. Their documentation is written to anticipate problems rather than discover them, which eases the approval path and hands a builder information that can actually be built from. They then stay close through construction, so what was designed is what gets delivered. For an owner who wants considered architecture, technical confidence and the same team from first sketch to completion, this is a practice we recommend without hesitation.",
     about:
-      "Studio LIRA is a Newtown based architecture and interiors studio founded by two Italian architects, after two decades in the profession between them, the last ten years spent in Sydney. Known until recently as RGAD, the studio works across new homes, alterations and additions, and commercial and retail fit-outs, and carries projects from the first conversation through to interiors and the furniture that finishes a room. Its sensibility comes from an Italian grounding in heritage, harmony and proportion, expressed through calm, timeless spaces and materials chosen to age with honesty.",
+      "Studio LIRA is a Sydney architecture and interiors practice based at Newtown, founded by two architects who trained and qualified in Italy and are registered here. Its work reaches well beyond the city, with projects completed across Australia and overseas. The studio holds that architecture is only ever realised through collaboration, and invests accordingly in long relationships with the clients, consultants, builders and craftspeople who take genuine pride in what they make. Careful detailing and quality execution are treated as the substance of the work rather than its finish, since they are what turn a strong design into a building that lasts, and that attention runs from the overall spatial composition down to the smallest material detail.",
     facts: {
       basedIn: "Newtown, NSW",
       serves: "Sydney",
