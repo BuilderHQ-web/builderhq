@@ -258,7 +258,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "quorum-studios",
     kind: "architect",
-    draft: true,
     roleLabel: "Residential architecture studio",
     name: "Quorum Studios",
     monogram: "QS",
