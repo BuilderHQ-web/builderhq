@@ -2355,13 +2355,14 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
     disciplines: ["New homes and additions", "Heritage properties", "Interiors and commercial"],
+    google: { rating: 5.0, reviews: 7 },
     institution: {
       name: "NSW Architects Registration Board",
       role: "Registered architects",
       note: "NSW licence 13292",
     },
     stats: [
-      { label: "Client rating", value: "5.0", star: true, sub: "on Houzz" },
+      { label: "Google rating", value: "5.0", star: true, sub: "7 reviews" },
       { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
       { label: "Registered architects", value: "2", sub: "NSW and Rome" },
     ],
