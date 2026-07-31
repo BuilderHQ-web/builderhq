@@ -4253,6 +4253,9 @@ export const PARTNERS: Partner[] = [
 export const ARCHITECT_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "architect" && !p.draft,
 );
+export const BUILDER_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "builder" && !p.draft,
+);
 export const FINANCE_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "finance" && !p.draft,
 );
@@ -4297,14 +4300,20 @@ export function partnerNavTypes(): PartnerNavType[] {
       href: "/partners/architects",
     },
     {
+      label: "Builder partners",
+      sub: "Builders whose work we know first hand",
+      count: BUILDER_PARTNERS.length,
+      href: "/partners/builders",
+    },
+    {
       label: "Finance partners",
       sub: "Brokers who know construction lending",
       count: FINANCE_PARTNERS.length,
       href: "/partners/finance-brokers",
     },
-    // Builders, engineers, lawyers and consultants join here as the
-    // register widens. Empty disciplines are filtered out below, so a
-    // type can be added before its first partner goes live.
+    // Engineers, lawyers and consultants join here as the register
+    // widens. Empty disciplines are filtered out below, so a type can
+    // be added before its first partner goes live.
   ].filter((t) => t.count > 0);
 }
 
