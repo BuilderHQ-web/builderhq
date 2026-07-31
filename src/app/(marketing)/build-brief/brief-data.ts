@@ -1609,9 +1609,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       deck: "Construction as the continuation of architecture.",
       principal: "Fletcher Thompson",
       principalRole: "Founder and Director",
-      // Portrait supplied separately; the practice mark carries the
-      // media column until it lands, and the two render side by side
-      // the moment it does.
+      portrait: "/build-brief/issue-004/fletcher-thompson.jpg",
       portraitCaption: "Fletcher Thompson, Founder and Director",
       showLogo: true,
       stats: [
