@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, Hammer, House, Loader2 } from "lucide-react";
+import { ArrowRight, DraftingCompass, Hammer, House, Loader2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ import {
 
 import { signupAction, type SignupActionState } from "./actions";
 
-type Role = "project_owner" | "builder";
+type Role = "project_owner" | "builder" | "architect";
 
 const initialState: SignupActionState = {};
 
@@ -70,7 +70,7 @@ export function SignupForm({
         {/* Role picker — segmented control. */}
         <div className="flex flex-col gap-1.5 text-left">
           <Label className={AUTH_LABEL_CLS}>I&apos;m signing up as</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <RoleOption
               value="project_owner"
               current={role}
@@ -84,6 +84,13 @@ export function SignupForm({
               onSelect={setRole}
               icon={<Hammer className="size-3.5" />}
               label="Builder"
+            />
+            <RoleOption
+              value="architect"
+              current={role}
+              onSelect={setRole}
+              icon={<DraftingCompass className="size-3.5" />}
+              label="Architect"
             />
           </div>
           <input type="hidden" name="role" value={role} />

@@ -77,7 +77,7 @@ export type AdminDashboardData = {
     id: string;
     name: string | null;
     email: string;
-    role: "project_owner" | "builder" | "admin" | null;
+    role: "project_owner" | "builder" | "admin" | "architect" | null;
     status: "pending_verification" | "active" | "suspended" | "banned";
     createdAt: Date;
   }>;
@@ -111,7 +111,7 @@ export type AdminUserListItem = {
   id: string;
   email: string;
   name: string | null;
-  role: "project_owner" | "builder" | "admin" | null;
+  role: "project_owner" | "builder" | "admin" | "architect" | null;
   status: "pending_verification" | "active" | "suspended" | "banned";
   createdAt: Date;
   lastSeenAt: Date | null;
@@ -438,7 +438,7 @@ async function fetchAwardedCountsBatch(
 // ── users list ─────────────────────────────────────────────────────────
 
 export type UserListFilters = {
-  role?: "all" | "project_owner" | "builder" | "admin";
+  role?: "all" | "project_owner" | "builder" | "admin" | "architect";
   status?: "all" | "pending_verification" | "active" | "suspended" | "banned";
   search?: string;
   limit?: number;

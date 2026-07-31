@@ -13,7 +13,7 @@ import type { DocumentRow } from "./schema";
 
 export type ActorContext = {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 };
 
 /**

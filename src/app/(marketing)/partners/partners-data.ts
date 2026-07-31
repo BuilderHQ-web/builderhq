@@ -2339,6 +2339,66 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "composite-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and drafting",
+    name: "Composite Design & Drafting",
+    monogram: "CD",
+    logo: "/partners/composite-design/logo.png",
+    principal: "Steven Colakidis",
+    suburb: "Keilor East",
+    state: "VIC",
+    tagline:
+      "A boutique Keilor East studio where the designer draws every project himself, from new homes and extensions to dual occupancy developments, with council approval in mind from the first line.",
+    disciplines: ["New homes", "Extensions and renovations", "Dual occupancy and developments"],
+    institution: {
+      name: "Design Matters National",
+      role: "Member",
+      note: "Building designer Steven Colakidis",
+    },
+    google: { rating: 5, reviews: 18 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "18 reviews" },
+      { label: "In building design", value: "15+ yrs", sub: "close to two decades" },
+      { label: "On every project", value: "Steven", sub: "concept to council approval" },
+    ],
+    why: "Steven Colakidis started Composite as a deliberately small studio, so the person who designs your home is the same person who answers the phone, draws the plans and sees them through council. He came to it after close to twenty years in building design, and it shows in the balance he strikes: homes that are genuinely enjoyable to live in, drawn with enough planning nous that they hold up when the council assessor opens the file. Clients single out how clear his drawings are and how calmly he works through the awkward parts of a site. For an owner about to take a design to tender, a considered home matched with documentation that will actually move through approvals is exactly what keeps a build on track, and it is why we wanted him in the network.",
+    about:
+      "Composite Design & Drafting is a boutique building design studio based in Keilor East, in Melbourne’s north west, led by building designer Steven Colakidis and a member of Design Matters National. The studio designs new homes, extensions and renovations, and dual occupancy and development projects, and advises on the planning and council applications that sit around them, along with pre purchase and pre planning guidance for owners weighing up a site. Its aim is a simple one: to design quality spaces that make the most of a property while comfortably meeting the planning rules that govern it.",
+    facts: {
+      basedIn: "Keilor East, VIC",
+      serves: "Melbourne",
+      focus: "New homes, extensions and developments",
+    },
+    website: "https://www.composite-design.com.au/",
+    instagram: "https://www.instagram.com/compositedesigndrafting/",
+    facebook: "https://www.facebook.com/compositedesigndrafting/",
+    linkedin: "https://www.linkedin.com/in/steven-colakidis-40655a54/",
+    galleryUrl: "https://www.composite-design.com.au/",
+    work: [
+      {
+        title: "Altona North Residences",
+        suburb: "Altona North",
+        type: "Dual occupancy",
+        image: "/partners/composite-design/altona-north.jpg",
+      },
+      {
+        title: "New Dwelling",
+        suburb: "Melbourne",
+        type: "New home",
+        image: "/partners/composite-design/new-dwelling.jpg",
+      },
+      {
+        title: "Templestowe Extension",
+        suburb: "Templestowe",
+        type: "Extension",
+        image: "/partners/composite-design/templestowe-extension.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we

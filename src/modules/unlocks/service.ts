@@ -247,19 +247,26 @@ async function insertUnlockWithCap(
 ): Promise<Result<UnlockRow>> {
   let inserted: UnlockRow | null = null;
   let atCap = false;
+  let capForMessage: number = UNLOCK_CAP;
 
   try {
     await db.transaction(async (tx) => {
       // Row-level lock on the project. Any other unlock for this same
       // project waits here until our transaction commits/rolls back.
-      // Doesn't affect reads, doesn't affect other projects.
-      await tx.execute(
-        sql`SELECT 1 FROM ${projects} WHERE ${projects.id} = ${projectId} FOR UPDATE`,
+      // Doesn't affect reads, doesn't affect other projects. The same
+      // locked read carries the project's own spot count: per-project
+      // tender_spots (2–5) with the platform default as fallback.
+      const locked = await tx.execute(
+        sql`SELECT tender_spots FROM ${projects} WHERE ${projects.id} = ${projectId} FOR UPDATE`,
       );
+      const spotsRaw = (locked.rows?.[0] as { tender_spots: number | null } | undefined)
+        ?.tender_spots;
+      const cap = spotsRaw ?? UNLOCK_CAP;
 
       const current = await tx.$count(unlocks, eq(unlocks.projectId, projectId));
-      if (current >= UNLOCK_CAP) {
+      if (current >= cap) {
         atCap = true;
+        capForMessage = cap;
         return;
       }
 
@@ -281,7 +288,7 @@ async function insertUnlockWithCap(
   if (atCap) {
     return fail(
       "rate_limited",
-      `This project is full — ${UNLOCK_CAP} builders already have access.`,
+      `This project is full — ${capForMessage} builders already have access.`,
       { reason: "project_full" },
     );
   }

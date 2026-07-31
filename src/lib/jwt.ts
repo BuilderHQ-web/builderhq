@@ -36,7 +36,7 @@ export interface MobileAccessClaims extends JWTPayload {
   /** User id (also encoded as `sub`). */
   sub: string;
   /** Role at token-issue time. Stale role = next refresh corrects it. */
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
 }
 
 /**

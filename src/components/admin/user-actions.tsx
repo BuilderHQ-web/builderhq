@@ -37,7 +37,7 @@ import {
 } from "@/app/(app)/_actions/admin";
 
 type UserStatus = "pending_verification" | "active" | "suspended" | "banned";
-type Role = "project_owner" | "builder" | "admin" | null;
+type Role = "project_owner" | "builder" | "admin" | "architect" | null;
 type Mode = null | "suspend" | "ban" | "delete";
 
 interface Props {

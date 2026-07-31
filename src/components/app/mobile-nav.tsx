@@ -46,7 +46,7 @@ import { Logo } from "@/components/brand/logo";
 import { countMyUnreadMessagesAction } from "@/app/(app)/_actions/messaging";
 import { signOutAction } from "@/app/(app)/_actions/sign-out";
 
-type Role = "project_owner" | "builder" | "admin";
+type Role = "project_owner" | "builder" | "admin" | "architect";
 
 interface NavItem {
   href: string;
@@ -97,6 +97,19 @@ const builderNav: NavSection[] = [
     items: [{ href: "/settings", label: "Settings", icon: Settings }],
   },
 ];
+const architectNav: NavSection[] = [
+  {
+    items: [
+      { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/architect/projects", label: "Tenders", icon: Folders },
+    ],
+  },
+  {
+    title: "Account",
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
+  },
+];
+
 const adminNav: NavSection[] = [
   {
     items: [
@@ -120,6 +133,7 @@ const adminNav: NavSection[] = [
 const navByRole: Record<Role, NavSection[]> = {
   project_owner: ownerNav,
   builder: builderNav,
+  architect: architectNav,
   admin: adminNav,
 };
 
