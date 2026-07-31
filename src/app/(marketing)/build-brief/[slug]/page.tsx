@@ -924,11 +924,14 @@ export default async function BriefIssuePage({
 
               <div
                 className={`mt-8 grid grid-cols-1 gap-8 lg:gap-12 items-start ${
-                  pc.portrait ? "lg:grid-cols-[220px_minmax(0,1fr)]" : ""
+                  pc.portrait || (pc.showLogo && partner?.logo)
+                    ? "lg:grid-cols-[220px_minmax(0,1fr)]"
+                    : ""
                 }`}
               >
-                {pc.portrait ? (
+                {pc.portrait || (pc.showLogo && partner?.logo) ? (
                   <figure className="max-w-[220px]">
+                    {pc.portrait ? (
                     <div className="overflow-hidden rounded-xl ring-1 ring-[#101820]/[0.08]">
                       <Image
                         src={pc.portrait}
@@ -938,6 +941,8 @@ export default async function BriefIssuePage({
                         className="w-full h-auto"
                       />
                     </div>
+                    ) : null}
+                    {pc.portrait ? (
                     <figcaption className="mt-3">
                       <p className="text-[13.5px] font-ui font-semibold text-text">
                         {pc.portraitCaption ?? pc.principal}
@@ -953,10 +958,19 @@ export default async function BriefIssuePage({
                         </p>
                       ) : null}
                     </figcaption>
+                    ) : null}
                     {/* The practice's mark, given the same column and
-                        the same weight as the person who founded it. */}
+                        the same weight as the person who founded it.
+                        Either may stand alone; neither depends on the
+                        other being supplied. */}
                     {pc.showLogo && partner?.logo ? (
-                      <div className="mt-5 border-t border-[#101820]/[0.12] pt-5">
+                      <div
+                        className={
+                          pc.portrait
+                            ? "mt-5 border-t border-[#101820]/[0.12] pt-5"
+                            : ""
+                        }
+                      >
                         <Image
                           src={partner.logo}
                           alt={`${partner.name} logo`}

@@ -1305,7 +1305,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "builderhq procurement standard",
       "comparing builder quotes australia",
     ],
-    ogImage: "/build-brief/og-issue-004.jpg",
+    // The generic masthead card until a bespoke Issue 004 card is
+    // made; a missing file would break every social preview.
+    ogImage: "/build-brief/og.jpg",
     note: {
       eyebrow: "This week from the BuilderHQ team",
       heading:
@@ -1594,7 +1596,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       deck: "Construction as the continuation of architecture.",
       principal: "Fletcher Thompson",
       principalRole: "Founder and Director",
-      portrait: "/build-brief/issue-004/fletcher-thompson.jpg",
+      // Portrait supplied separately; the practice mark carries the
+      // media column until it lands, and the two render side by side
+      // the moment it does.
       portraitCaption: "Fletcher Thompson, Founder and Director",
       showLogo: true,
       stats: [
