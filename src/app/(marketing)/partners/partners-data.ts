@@ -126,6 +126,10 @@ export interface Partner {
   /** Industry recognition, rendered as a gold plaque strip under the
    *  identity band. Lead with the biggest honour; keep to three. */
   awards?: { label: string; sub?: string }[];
+  /** A quieter recognition, shown on a compact dark strip rather than the
+   *  gold honours board — for a platform or service accolade (e.g. Best of
+   *  Houzz) that is not a formal design or industry award. */
+  accolade?: { label: string; sub?: string; tag?: string };
   website?: string;
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
@@ -2335,6 +2339,66 @@ export const PARTNERS: Partner[] = [
         suburb: "Sydney",
         type: "Deck and landscaping",
         image: "/partners/banksia-building-design/terrace.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "studio-lira",
+    kind: "architect",
+    roleLabel: "Architecture | Interiors",
+    name: "Studio LIRA",
+    monogram: "LI",
+    logo: "/partners/studio-lira/logo.png",
+    suburb: "Newtown",
+    state: "NSW",
+    tagline:
+      "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
+    disciplines: ["New homes and additions", "Heritage properties", "Interiors and commercial"],
+    institution: {
+      name: "NSW Architects Registration Board",
+      role: "Registered architects",
+      note: "NSW licence 13292",
+    },
+    stats: [
+      { label: "Client rating", value: "5.0", star: true, sub: "on Houzz" },
+      { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
+      { label: "Registered architects", value: "2", sub: "NSW and Rome" },
+    ],
+    accolade: {
+      label: "Best of Houzz for Service",
+      sub: "2017, 2023, 2024 and 2025",
+      tag: "4× winner",
+    },
+    why: "Studio LIRA is the kind of practice we look for and rarely find. The range is genuine, taking in new homes, alterations and additions, heritage properties and commercial work, and the method holds steady across all of it: start with the people, the place and whatever is already standing, and let one clear concept emerge from that. What follows is architecture with a reason behind every decision, which is why the work reads as deliberate rather than styled.\n\nThe rarer quality is what happens after the concept is settled. Their documentation is written to anticipate problems rather than discover them, which eases the approval path and hands a builder information that can actually be built from. They then stay close through construction, so what was designed is what gets delivered. For an owner who wants considered architecture, technical confidence and the same team from first sketch to completion, this is a practice we recommend without hesitation.",
+    about:
+      "Studio LIRA is a Sydney architecture and interiors practice based at Newtown, founded by two architects who trained and qualified in Italy and are registered here. Its work reaches well beyond the city, with projects completed across Australia and overseas. The studio holds that architecture is only ever realised through collaboration, and invests accordingly in long relationships with the clients, consultants, builders and craftspeople who take genuine pride in what they make. Careful detailing and quality execution are treated as the substance of the work rather than its finish, since they are what turn a strong design into a building that lasts, and that attention runs from the overall spatial composition down to the smallest material detail.",
+    facts: {
+      basedIn: "Newtown, NSW",
+      serves: "Sydney",
+      focus: "New homes, interiors and fit-outs",
+    },
+    website: "https://studiolira.com.au/",
+    instagram: "https://www.instagram.com/studioliraarchitects/",
+    galleryUrl: "https://studiolira.com.au/",
+    work: [
+      {
+        title: "Castle Hill Residence",
+        suburb: "Castle Hill",
+        type: "New home",
+        image: "/partners/studio-lira/castle-hill-exterior.jpg",
+      },
+      {
+        title: "Castle Hill Interior",
+        suburb: "Castle Hill",
+        type: "Interior",
+        image: "/partners/studio-lira/castle-hill-interior.jpg",
+      },
+      {
+        title: "Double Bay Apartments",
+        suburb: "Double Bay",
+        type: "Multi residential",
+        image: "/partners/studio-lira/double-bay-apartments.jpg",
       },
     ],
     joined: "2026",
