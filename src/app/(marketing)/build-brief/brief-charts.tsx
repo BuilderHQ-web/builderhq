@@ -50,6 +50,18 @@ export interface BriefSlopeSpec {
   reference: { value: number; display: string; label: string };
   /** Y-domain padding around the data, in value units. */
   domain: [number, number];
+  /**
+   * A second, muted series on the same axes. Used where the story is
+   * the divergence between two measures rather than one line's
+   * movement: the accent line is the headline, this one the measure
+   * that did not follow it.
+   */
+  second?: {
+    label: string;
+    points: [BriefBarDatum, BriefBarDatum];
+  };
+  /** Shaded horizontal band, e.g. a target range. */
+  band?: { from: number; to: number; label: string };
 }
 
 export interface BriefStripStage {
@@ -164,6 +176,7 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
   /** Value → vertical position, % from the top of the plot box. */
   const y = (v: number) => ((hi - v) / (hi - lo)) * 100;
   const [a, b] = spec.points;
+  const second = spec.second;
   // Endpoints sit inset from the edges so the dots and labels breathe.
   const X_A = 10;
   const X_B = 90;
@@ -178,6 +191,29 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
           >
+            {spec.band ? (
+              <rect
+                x="0"
+                width="100"
+                y={y(spec.band.to)}
+                height={Math.abs(y(spec.band.from) - y(spec.band.to))}
+                fill={CONTEXT_FILL}
+                fillOpacity="0.08"
+              />
+            ) : null}
+            {second ? (
+              <line
+                x1={X_A}
+                x2={X_B}
+                y1={y(second.points[0].value)}
+                y2={y(second.points[1].value)}
+                stroke={CONTEXT_FILL}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null}
             <line
               x1="0"
               x2="100"
@@ -242,6 +278,39 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             </span>
           ))}
 
+          {second
+            ? (
+                [
+                  [X_A, second.points[0]],
+                  [X_B, second.points[1]],
+                ] as const
+              ).map(([x, p]) => (
+                <span
+                  key={`s-${p.label}`}
+                  className="absolute size-[9px] rounded-full ring-[2.5px] ring-white"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y(p.value)}%`,
+                    transform: "translate(-50%, -50%)",
+                    background: CONTEXT_FILL,
+                  }}
+                />
+              ))
+            : null}
+          {second ? (
+            <span
+              className="absolute text-[12px] font-semibold text-text-dim tabular-nums"
+              style={{
+                ...MONO,
+                left: `${X_B}%`,
+                top: `${y(second.points[1].value)}%`,
+                transform: "translate(-50%, 12px)",
+              }}
+            >
+              {second.points[1].display}
+            </span>
+          ) : null}
+
           {/* reference label — on the left, under the dashed line,
               clear of the high start of the data line */}
           <span
@@ -265,6 +334,24 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             {b.label}
           </span>
         </div>
+        {second ? (
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[10.5px] text-text-dim" style={MONO}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-[2.5px] w-4 rounded-full" style={{ background: ACCENT_FILL }} />
+              {spec.valueHeading}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full" style={{ background: CONTEXT_FILL }} />
+              {second.label}
+            </span>
+            {spec.band ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-[9px] w-4 rounded-[2px]" style={{ background: CONTEXT_FILL, opacity: 0.16 }} />
+                {spec.band.label}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <SrTable

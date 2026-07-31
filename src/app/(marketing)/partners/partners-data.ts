@@ -2819,7 +2819,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "de-lune-construction",
     kind: "builder",
-    draft: true,
     roleLabel: "Architectural builder",
     name: "de Lune Construction",
     monogram: "DL",

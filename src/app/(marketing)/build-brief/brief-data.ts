@@ -100,6 +100,8 @@ export interface BriefIssue {
     /** Newspaper fact box beside the article — key figures pulled
      *  from the copy, never new claims. */
     factBox?: { title: string; rows: Array<{ k: string; v: string }> };
+    /** One line lifted from the article, set large. */
+    pullQuote?: string;
     quoteDoc?: {
       docTitle: string;
       docSubtitle: string;
@@ -133,13 +135,35 @@ export interface BriefIssue {
     source?: string;
     takes: BriefTakes;
   };
-  voices: {
+  /** Absent = the section does not render for that edition. */
+  voices?: {
     kicker: string;
     headline: string;
     quote: string;
     attribution: string;
     role: string;
     body: string[];
+    source?: string;
+    takes?: BriefTakes;
+  };
+  /**
+   * The BuilderHQ Procurement Standard. An editorial section on the
+   * problem the Standard addresses, written to inform rather than to
+   * sell: the practice it describes is industry-wide and the fix is
+   * named, not pitched.
+   */
+  bps?: {
+    kicker: string;
+    headline: string;
+    headlineAccent?: string;
+    /** Italic serif deck under the headline. */
+    standfirst?: string;
+    paragraphs: string[];
+    /** The problem stated as discrete, checkable propositions. */
+    principles?: Array<{ n: string; title: string; body: string }>;
+    /** Closing block: what the Standard is, plainly. */
+    definition?: { heading: string; paragraphs: string[] };
+    pullQuote?: string;
     source?: string;
     takes?: BriefTakes;
   };
@@ -155,6 +179,15 @@ export interface BriefIssue {
      *  for them. */
     principalQuote?: string;
     portrait?: string;
+    /**
+     * Show the practice's mark beside the principal's portrait. The
+     * person and the practice carry equal billing where a founder is
+     * introduced alongside the business they built.
+     */
+    showLogo?: boolean;
+    /** Caption under the portrait when person and practice share the
+     *  frame, e.g. "Fletcher Thompson, Director". */
+    portraitCaption?: string;
     /** Editorial deck — one statement line above the copy. */
     deck?: string;
     /** Compact stat row from the register record. */
@@ -1238,6 +1271,466 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "Metricon",
       "the New South Wales Government",
       "CommBank Newsroom",
+    ],
+  },
+  {
+    slug: "issue-004",
+    number: 4,
+    date: "2026-07-31",
+    displayDate: "Friday, 31 July 2026",
+    title:
+      "The average new house is declared at $517,430 before land, and the industry raises its own bar.",
+    standfirst:
+      "The average new Australian house was declared at $517,430 of building work at permit stage last financial year, before land. Inflation eased enough to take an August rate rise off the table. And the scaffolding industry set a standard above the legal floor.",
+    seoTitle:
+      "The Build Brief 004: What a New House Costs Before It Is Built | BuilderHQ",
+    seoDescription:
+      "The average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0%, before land. Inflation eased to 3.8% and an August rate rise moved off the table. The scaffolding industry recommended fortnightly inspections against a 30-day legal minimum. Plus the Productivity Commission on housing regulation.",
+    keywords: [
+      "cost to build a house australia 2026",
+      "average build cost new house australia",
+      "average house approval value australia",
+      "how much does it cost to build a house in australia",
+      "cpi june 2026 australia",
+      "rba august 2026 rate decision",
+      "trimmed mean inflation australia",
+      "new dwelling prices australia",
+      "scaffolding inspection requirements australia",
+      "scaffold inspection 14 days",
+      "scaffolding association australia guidelines",
+      "productivity commission housing supply regulation",
+      "upzoning australia",
+      "building approvals 2025-26",
+      "housing approvals australia financial year",
+      "builderhq procurement standard",
+      "comparing builder quotes australia",
+    ],
+    ogImage: "/build-brief/og-issue-004.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading:
+        "The industry raised its own bar. A federal review asked government to lower theirs.",
+      paragraphs: [
+        "Three numbers landed this week. Between them they describe what it now costs to build a house, what money costs while you do it, and the standard the industry has decided to hold itself to.",
+        "The Australian Bureau of Statistics closed out the financial year on Thursday. The average new house was declared at $517,430 of building work at permit stage, before land, up 5.0% on the year. On Wednesday, inflation eased enough that a rate rise on 11 August moved close to off the table. And the scaffolding industry published national guidance recommending inspections every fourteen days, against a legal minimum of thirty.",
+        "Set that last one beside Monday's news. The Productivity Commission released its interim report on housing supply regulation and found that regulation has become a handbrake on new homes.",
+        "Both things are true at once, and the pairing is worth noticing. An industry association tightened a standard on itself, voluntarily, because a scaffold is a temporary structure that changes as trades and weather move around it. In the same week, a federal review argued that the rules governing where and what you can build are slowing homes from being built at all.",
+        "Good regulation and too much regulation are not the same conversation. This edition covers both. If The Build Brief is new to you, [last week's edition](/build-brief/issue-003) covered the construction cost restart and the turn in insolvencies.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "Cost Pulse",
+        headline: "The average new house is declared at half a million dollars",
+        headlineAccent: "before land.",
+        stat: {
+          value: "$517,430",
+          label:
+            "average declared build cost of a new private house, 2025-26",
+          sub: "up 5.0% on the year",
+        },
+        chart: {
+          kind: "bars",
+          title: "Average declared build cost of a new private house",
+          desc: "The average approval value for a new private house rose from $492,931 in 2024-25 to $517,430 in 2025-26, an increase of 5.0%. Both figures are declared building work at permit stage and exclude land.",
+          valueHeading: "Average declared value",
+          bars: [
+            { label: "2024-25", value: 492931, display: "$492,931" },
+            {
+              label: "2025-26",
+              value: 517430,
+              display: "$517,430",
+              accent: true,
+            },
+          ],
+        },
+        body: [
+          "Inside Thursday's approvals release sits a figure that rarely makes headlines and tells you more than most. Across 2025-26, the average approval value for a new private house was $517,430, up 5.0% on the $492,931 average the year before. June alone averaged $529,790.",
+          "It helps to know exactly what that number is. When a building permit is issued, the cost of the building work is declared, and the ABS collects that declaration from every permit in the country. So this is the cost of construction at the point of approval. It excludes land. It is not an index and not a forecast.",
+          "Two qualifications matter. Declared values at permit stage tend to sit low, because variations, upgrades and site costs land later, so the real average is almost certainly higher. And because the method does not change from year to year, the 5.0% movement is the more reliable signal.",
+          "Wednesday's inflation data points the same way from a different direction. New dwelling prices rose 5.8% over the year to June, up from 5.6% to May, with the ABS noting that project home builders have been passing through higher labour and materials costs. Two independent measures, both near 5%, both edging up.",
+        ],
+        source:
+          "ABS Building Approvals, Australia, June 2026 (released 30 July 2026); ABS Consumer Price Index, June 2026",
+        takes: {
+          owners:
+            "Build cost, land and finance move separately. Ask which of the three your estimate actually covers, and [get a current estimate](/estimate_request_landing_page) before you commit to a budget.",
+          designers:
+            "Cost advice given at concept needs a review date attached. Five per cent a year compounds across a long documentation phase.",
+          builders:
+            "Two national measures now sit near 5%. Useful context when you explain a price movement to a client who last saw a figure in January.",
+          brokers:
+            "Construction cost assumptions set twelve months ago are roughly 5% light before anything site-specific is considered.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Market Mood",
+        headline: "The headline rate came down. The measure the Reserve Bank watches",
+        headlineAccent: "did not.",
+        stat: {
+          value: "3.8%",
+          label: "annual CPI inflation, 12 months to June 2026",
+          sub: "trimmed mean held at 3.6%",
+        },
+        chart: {
+          kind: "slope",
+          title: "Annual inflation, headline against underlying",
+          desc: "Headline CPI eased from 4.0% in the year to May to 3.8% in the year to June. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and stayed above the 2 to 3 per cent target band.",
+          valueHeading: "Headline CPI",
+          points: [
+            { label: "Year to May", value: 4.0, display: "4.0%" },
+            { label: "Year to June", value: 3.8, display: "3.8%", accent: true },
+          ],
+          second: {
+            label: "Trimmed mean",
+            points: [
+              { label: "Year to May", value: 3.6, display: "3.6%" },
+              { label: "Year to June", value: 3.6, display: "3.6%" },
+            ],
+          },
+          band: { from: 2.0, to: 3.0, label: "RBA target band" },
+          reference: { value: 3.0, display: "3.0%", label: "Top of target band" },
+          domain: [1.6, 4.4],
+        },
+        body: [
+          "Annual inflation eased to 3.8% in the year to June, down from 4.0% to May. The CPI fell 0.1% in the month itself, helped by automotive fuel dropping 10.9% as oil markets steadied.",
+          "The market moved immediately. Financial markets cut the probability of a rise at the 10 to 11 August meeting to close to zero, and Westpac shifted to a hold, leaving all four major banks expecting no change. The cash rate stays at 4.35%.",
+          "The caution sits in the second line on the chart. The trimmed mean, the measure the Reserve Bank watches most closely, held at 3.6% and remains above the 2 to 3 per cent target band. Underlying price pressure has not eased in the way the headline suggests.",
+          "Housing was again the largest contributor to annual inflation at 6.8%, driven mainly by electricity, up 22.4% after Commonwealth and state rebates expired. For anyone building or holding a construction facility, a hold is welcome. It is not the same as relief.",
+        ],
+        source:
+          "ABS Consumer Price Index, Australia, June 2026 (released 29 July 2026); The Conversation; Canstar",
+        takes: {
+          owners:
+            "Near-term rate risk has eased. Confirm how long your finance approval and your builder's price each hold, because the two rarely expire together.",
+          designers:
+            "Client confidence should improve into spring. Feasibility conversations get easier when the rate outlook is stable.",
+          builders:
+            "A hold is not a cut. Borrowing costs stay where they are, and so does the pressure on client budgets.",
+          brokers:
+            "Underlying inflation above the target band means the next move is still unsettled. Buffers keep earning their place.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "Site Standard",
+        headline: "An industry set its own bar above",
+        headlineAccent: "the legal floor.",
+        stat: {
+          value: "14 days",
+          label: "recommended interval between scaffold inspections",
+          sub: "legal minimum is 30 days",
+        },
+        chart: {
+          kind: "strip",
+          title: "The scaffold lifecycle under the new guidance",
+          desc: "The guidance covers scaffolding from planning and design through erection, handover, use and dismantling. Inspections are recommended at least every fourteen days, and again after any alteration or severe weather, against a legal minimum of thirty days for scaffolds with a fall risk over four metres.",
+          stages: [
+            { label: "Plan" },
+            { label: "Design" },
+            { label: "Erect" },
+            { label: "Handover" },
+            { label: "Inspect every 14 days", accent: true },
+            { label: "Reinspect after alteration or weather", accent: true },
+            { label: "Dismantle" },
+          ],
+          callout: {
+            from: 4,
+            to: 5,
+            label: "Recommended: every 14 days",
+            sub: "Legal minimum: every 30 days",
+          },
+          legend: {
+            accent: "Inspection points",
+            context: "Lifecycle stages",
+          },
+        },
+        body: [
+          "The Scaffolding Association Australia has released national best practice guidance covering the full lifecycle of scaffolding work, from planning and design through erection, use, inspection, alteration and dismantling. It is offered as a common reference for scaffold contractors, builders, principal contractors, engineers, designers, supervisors and safety professionals, and it is free to download.",
+          "The most practical change is the inspection interval. Current requirements generally call for scaffolds with a fall risk of more than four metres to be inspected at least every thirty days. The new guidance recommends at least every fourteen days, in addition to inspections before first use, after any alteration, and after severe weather or any other event capable of affecting structural integrity.",
+          "The guidance also expands on scaffold design and documentation, an area the industry has long flagged as needing clearer national direction, covering design responsibilities, engineering requirements and design risk categories. It is the first stage of a wider technical programme.",
+          "One point to be clear about. This is not law. The guidelines complement work health and safety legislation, codes of practice and Australian Standards rather than replacing them, and model WHS laws are adopted jurisdiction by jurisdiction, so requirements vary. What has happened is that an industry body has voluntarily set a bar above the legal floor, for a temporary structure that changes as trades, materials and weather move around it.",
+        ],
+        source:
+          "Scaffolding Association Australia, Australian Best Practice Guidelines for Scaffolding, reported by Build Australia, 30 July 2026; Safe Work Australia, Guide to Scaffold Inspection and Maintenance",
+        takes: {
+          owners:
+            "Ask who accepted the scaffold at handover, who controls alterations, and where the inspection records are kept.",
+          designers:
+            "Facade geometry, boundary conditions, roof form and access decisions all affect the complexity and price of temporary works.",
+          builders:
+            "A useful prompt to review the scaffold register, the alteration procedure and the post-weather inspection process, so a scaffold never quietly becomes a shared structure nobody manages.",
+          brokers:
+            "Safety incidents, shutdowns and access problems become programme problems, and programme problems become drawdown problems.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "The deposit now takes eleven years. The rules are part of",
+      headlineAccent: "the price.",
+      standfirst:
+        "The Productivity Commission released its interim report on housing supply regulation this week. Its finding is that regulation has become a handbrake on new homes. Submissions are open until the end of September.",
+      paragraphs: [
+        "The Productivity Commission released the interim report of its housing supply regulation inquiry on Monday, and its central finding is direct: regulation has become a handbrake on new housing supply.",
+        "The framing deserves care, because the Commission is not arguing against regulation. It accepts that rules are necessary for the safety, quality and liveability of new housing. Its argument is that too much regulation, or poorly designed regulation, stops homes being built, makes projects slower and more expensive, and narrows the range of housing available.",
+        "The affordability figure sets the context. It now takes the average household around eleven years to save a 20% deposit on a typical home, up from eight years in 2005.",
+      ],
+      sections: [
+        {
+          heading: "Four principles",
+          paragraphs: [
+            "The report proposes four principles for a better housing regulatory system: adopt a build mindset, regulate only where necessary, coordinate housing with infrastructure, and keep the process simple.",
+          ],
+        },
+        {
+          heading: "Where reform would do the most",
+          paragraphs: [
+            "**Land-use controls.** The Commission finds that relaxing these would have the greatest effect on housing supply of any reform direction it examined. It raises broad-based upzoning in cities, including allowing three-storey development on most residential land, reducing minimum lot sizes, enabling more mixed residential and commercial areas, and allowing more mid-rise and high-rise apartments in high-demand, well-serviced locations. Commissioner Alison Roberts put the everyday version plainly: the rules that stop someone adding a granny flat in the garden, or replacing a single home with townhouses, sit at the core of the problem.",
+            "**Infrastructure coordination.** Roads, utilities and sewerage connections are usually needed before homes can be built, particularly in greenfield areas. Where housing plans and infrastructure plans are not aligned, land that has been rezoned for housing can sit unused for years. The report calls for infrastructure plans to show how they will be funded and sequenced alongside land release, and for greater consistency between levels of government, councils and utility providers.",
+            "**Approval processes.** Approvals often involve multiple decision-makers across different levels of government, referral agencies and infrastructure providers, and poor coordination between them can add months or years to a project. The Commission heard from one developer that preparing reports and waiting for approvals had added more than three years to the timeline of a 1,600 lot development in Melbourne's growth corridor. The report points to fast-track pathways for simple developments, state-led assessment where appropriate, coordination bodies with power to resolve disputes, better technology, and transparent reporting of approval outcomes.",
+          ],
+        },
+        {
+          heading: "What it is, and what it is not",
+          paragraphs: [
+            "This is an interim report and it makes no recommendations. It sets out reform directions and asks for evidence. Submissions are open until Wednesday 30 September 2026, and the final report is due to government in March 2027.",
+            "The Housing Industry Association has welcomed it, noting that planning systems, approval delays and infrastructure constraints are among the most significant barriers to increasing housing supply across Australia.",
+            "Read it beside this week's other numbers and a pattern appears. Thursday's approvals release closed out the financial year at 205,249 dwellings, up 9.2% and the highest total since 2020-21, with multi-unit approvals at their strongest since 2017-18. On Master Builders Australia's assessment, the country still finished 47,750 homes short of what was needed, a second consecutive year behind the National Housing Accord pace.",
+            "So permission is running at a five-year high and delivery is still behind. Building costs rose 5% over the year, underlying inflation sits above target, and the path from approval to completed home is where the system loses years.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The figures",
+        rows: [
+          { k: "Years to save a 20% deposit", v: "About 11, from 8 in 2005" },
+          { k: "Dwellings approved, 2025-26", v: "205,249, up 9.2%" },
+          { k: "Shortfall against the Accord", v: "47,750 homes" },
+          { k: "Approval delay, one Melbourne project", v: "More than 3 years" },
+          { k: "Submissions close", v: "30 September 2026" },
+          { k: "Final report due", v: "March 2027" },
+        ],
+      },
+      pullQuote: "Land that has been rezoned for housing can sit unused for years.",
+      source:
+        "Productivity Commission, Housing supply regulation interim report (released 27 July 2026); ABS Building Approvals, June 2026; Master Builders Australia; Housing Industry Association",
+      takes: {
+        owners:
+          "If you have been through a slow approval, the Commission is taking submissions until 30 September.",
+        designers:
+          "The upzoning directions point toward more medium-density work. Practices positioned for townhouses and mid-rise stand to benefit.",
+        builders:
+          "Nothing changes today. The final report lands in March 2027, and state governments decide what follows it.",
+        brokers:
+          "Approval delay is a funding cost. Three years added to a rezoned site is carried by someone.",
+      },
+    },
+    bps: {
+      kicker: "The BuilderHQ Procurement Standard",
+      headline: "Cost is the part everyone talks about. Scope is where the money",
+      headlineAccent: "quietly moves.",
+      standfirst:
+        "The Feature is about the years lost between approval and completion. This is about the weeks lost between drawings and a signed contract, and why three quotes for the same house are so hard to compare.",
+      paragraphs: [
+        "Every week this publication reports what building costs. It is the number owners ask about first and the one the market measures most carefully. But a national average cannot tell an owner whether the three quotes on their kitchen table describe the same house.",
+        "Usually they do not. One carries an allowance for joinery, one prices it firm, one is silent. One excludes the driveway in a line on page nine. One assumes a soil classification the report does not support. Each quote is honest. None of them is comparable, and the differences are not visible until they surface later as a variation.",
+        "That is not a failure of builders. It is a failure of format. Australian residential tendering has no common structure, so every builder is asked to invent one, and the person least equipped to reconcile them is the homeowner reading them.",
+        "We wanted to know how wide the problem really is, so we measured it. We put real Australian document sets through our analysis, packages from actual projects, spanning everything from a single architectural set to twelve documents including structural, civil, geotechnical, energy, survey and joinery. We then checked which parts of a build the documents actually settle.",
+        "The pattern was consistent, and it was not about how many documents a project had. In every package we tested, the same areas were left open: site preliminaries, painting, landscaping, and the connection of services. These are not exotic items. They are ordinary trades on every job, and they are the ones most often absent from the drawings a builder is asked to price from.",
+        "That is the gap a builder fills with judgement, and judgement is exactly what an owner cannot compare across three quotes.",
+      ],
+      principles: [
+        {
+          n: "01",
+          title: "One scope, read from the documents",
+          body: "Before a project goes to builders, the documents are read against a fixed schedule of the work a home requires. Every line is either evidenced in the drawings, with the page it came from, or recorded as a gap. Nothing is assumed and nothing is measured off a drawing.",
+        },
+        {
+          n: "02",
+          title: "The gaps are settled before pricing, not after",
+          body: "Where the documents are silent, the question is asked once, of the client, before the round opens. An allowance is set and every builder carries the same figure. The alternative is that each builder guesses privately and the difference appears as a variation.",
+        },
+        {
+          n: "03",
+          title: "Every tender answers the same lines",
+          body: "Builders price against the same schedule, stating for each line whether it is included as documented, carried as an allowance at a stated figure, excluded, or not applicable to the project. A quote stops being a document to interpret and becomes a set of answers to the same questions.",
+        },
+        {
+          n: "04",
+          title: "The comparison shows its working",
+          body: "Where builders disagree on a line, that disagreement is visible rather than buried. Every figure in the analysis carries the disclosure it came from, so an owner or architect can defend any part of it, and a builder can read their own evaluation without being ambushed by it.",
+        },
+      ],
+      definition: {
+        heading: "What the Standard is",
+        paragraphs: [
+          "The BuilderHQ Procurement Standard is a common format for residential tendering: one scope of works read from the project's own documents, one set of questions every builder answers, and one comparison that shows its working.",
+          "It is built to be fair in both directions. A builder who prices carefully and discloses honestly should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference.",
+          "We are building it now, tested against real Australian project documents. It has not been released. We will say more in the coming weeks, and [our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
+        ],
+      },
+      pullQuote:
+        "A national average cannot tell an owner whether three quotes describe the same house.",
+      takes: {
+        owners:
+          "When you next receive quotes, put them side by side and look for the lines that appear in one and not the others. That difference is usually the whole story.",
+        designers:
+          "A documented allowance is worth more than a silent assumption. Where a schedule cannot be finalised, naming the gap is more useful to the tender than leaving it out.",
+        builders:
+          "A common format protects careful pricing. When every tender answers the same lines, a well-disclosed quote stops being punished for the things it was honest about.",
+        brokers:
+          "Scope certainty at contract signing is the best predictor of whether a facility draws down to plan.",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "de-lune-construction",
+      headline:
+        "Meet Fletcher Thompson and de Lune Construction, where the drawing is protected all the way to handover.",
+      deck: "Construction as the continuation of architecture.",
+      principal: "Fletcher Thompson",
+      principalRole: "Founder and Director",
+      portrait: "/build-brief/issue-004/fletcher-thompson.jpg",
+      portraitCaption: "Fletcher Thompson, Founder and Director",
+      showLogo: true,
+      stats: [
+        { value: "5.0", label: "Google rating", star: true },
+        { value: "15 yrs", label: "Complex architectural builds" },
+        { value: "Dual", label: "Residential and commercial registration" },
+      ],
+      why: "Fletcher Thompson sits between two worlds, and that is exactly why we introduce him. A degree in architecture on one side, registration as both a residential and a commercial builder on the other: design vision and precise execution in the same pair of hands. His practice runs on the belief that construction is the continuation of architecture, protecting the architect's intent through rigorous on-site delivery, with fifteen years behind it. The current book says plenty, from the completed Malvern Residence to commercial work for Programa and Curve Cycling Melbourne. For an owner taking on an architecturally ambitious home, this is a builder who speaks the architect's language fluently and builds it faithfully.",
+      practice:
+        "de Lune Construction is a Hawthorn based building company founded and led by Fletcher Thompson. The team specialises in complex architectural builds across Melbourne, working closely with clients, architects and consultants from concept to completion, with an approach built on clear communication, detailed planning and inventive problem solving. Its portfolio spans residential projects including the Malvern and Nicholson residences alongside commercial work such as Programa HQ and Curve Cycling Melbourne.",
+      welcome:
+        "We are glad to have de Lune Construction in the BuilderHQ network. A builder who reads drawings the way an architect wrote them is exactly the kind of practice this platform exists to put in front of the right projects.",
+    },
+    faq: [
+      {
+        q: "How much does it cost to build a house in Australia in 2026?",
+        a: "Across the 2025-26 financial year the average approval value for a new private house in Australia was $517,430, up 5.0% on the $492,931 average in 2024-25. The June 2026 figure alone was $529,790. This is the cost of building work declared when a building permit is issued and it excludes land. Declared values at permit stage tend to sit low, because variations, upgrades and site costs land later, so the real average is almost certainly higher.",
+      },
+      {
+        q: "Did Australian inflation fall in June 2026?",
+        a: "Yes. Annual CPI inflation eased to 3.8% in the twelve months to June 2026, down from 4.0% in the year to May, and the CPI fell 0.1% in the month itself. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and remains above the 2 to 3 per cent target band.",
+      },
+      {
+        q: "Will the RBA raise rates in August 2026?",
+        a: "Financial markets cut the probability of a rise at the 10 to 11 August 2026 meeting to close to zero after the June quarter inflation figures, and all four major banks expect no change. The cash rate stands at 4.35%. Underlying inflation above the target band means the direction of the next move is still unsettled.",
+      },
+      {
+        q: "How often should scaffolding be inspected in Australia?",
+        a: "Current requirements generally call for scaffolds with a fall risk of more than four metres to be inspected at least every thirty days. In July 2026 the Scaffolding Association Australia published national best practice guidance recommending inspections at least every fourteen days, in addition to inspections before first use, after any alteration, and after severe weather. The guidance is industry best practice rather than law, and it complements work health and safety legislation, codes of practice and Australian Standards rather than replacing them.",
+      },
+      {
+        q: "What did the Productivity Commission say about housing regulation?",
+        a: "In its interim report released on 27 July 2026, the Productivity Commission found that regulation has become a handbrake on new housing supply. It accepts that rules are necessary for safety, quality and liveability, but argues that too much or poorly designed regulation slows and narrows housing. It identifies land-use controls as the reform with the greatest potential effect on supply. The report is an interim report and makes no recommendations. Submissions close on 30 September 2026 and the final report is due in March 2027.",
+      },
+      {
+        q: "How many homes were approved in Australia in 2025-26?",
+        a: "205,249 dwellings were approved across the 2025-26 financial year, up 9.2% and the highest total since 2020-21, with multi-unit approvals at their strongest level since 2017-18. On Master Builders Australia's assessment, the country still finished 47,750 homes short of what was needed, a second consecutive year behind the National Housing Accord pace.",
+      },
+      {
+        q: "Why are builder quotes so hard to compare?",
+        a: "Because there is no common format. One quote may carry an allowance for an item, another may price it firm, and a third may be silent on it, so three honest quotes can describe three different scopes of work. When BuilderHQ tested real Australian project document sets, the same areas were left unsettled in every package regardless of how many documents the project had: site preliminaries, painting, landscaping and the connection of services. Those are the gaps each builder fills with private judgement, and they are the differences an owner cannot see until they surface later as a variation.",
+      },
+    ],
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    share:
+      "The average new Australian house was declared at $517,430 before land last financial year, and the scaffolding industry set a standard above the law. This week's Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    sourceGroups: [
+      {
+        heading: "Build cost and approvals",
+        links: [
+          {
+            label: "ABS, Building Approvals, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia/latest-release",
+          },
+          {
+            label: "ABS media release, Dwelling approvals rise in June",
+            href: "https://www.abs.gov.au/media-centre/media-releases/dwelling-approvals-rise-june-0",
+          },
+        ],
+      },
+      {
+        heading: "Inflation and rates",
+        links: [
+          {
+            label: "ABS, Consumer Price Index, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release",
+          },
+          {
+            label: "ABS media release, CPI rose 3.8% in the year to June 2026",
+            href: "https://www.abs.gov.au/media-centre/media-releases/cpi-rose-38-year-june-2026",
+          },
+          {
+            label:
+              "The Conversation, Australian inflation has eased a little, an August interest rate rise now looks unlikely",
+            href: "https://theconversation.com/australian-inflation-has-eased-a-little-an-august-interest-rate-rise-now-looks-unlikely-288399",
+          },
+          {
+            label: "Canstar, Will inflation dip be enough to stop an RBA hike?",
+            href: "https://www.canstar.com.au/news/will-inflation-dip-be-enough-to-stop-rba-hike/",
+          },
+        ],
+      },
+      {
+        heading: "Scaffolding standards",
+        links: [
+          {
+            label:
+              "Build Australia, Australian Best Practice Guidelines for Scaffolding now available",
+            href: "https://www.buildaustralia.com.au/news_article/australian-best-practice-guidelines-for-scaffolding-now-available/",
+          },
+          {
+            label: "Scaffolding Association Australia",
+            href: "https://scaffolding-association.au/",
+          },
+          {
+            label: "Safe Work Australia, Guide to Scaffold Inspection and Maintenance",
+            href: "https://www.safeworkaustralia.gov.au/system/files/documents/1703/guide-scaffold-inspection-maintenance.pdf",
+          },
+          {
+            label: "WorkSafe Victoria, Scaffolding industry standard",
+            href: "https://www.worksafe.vic.gov.au/resources/scaffolding-industry-standard",
+          },
+        ],
+      },
+      {
+        heading: "Housing supply regulation",
+        links: [
+          {
+            label: "Productivity Commission, Housing supply regulation interim report",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/interim/",
+          },
+          {
+            label: "Make a submission, closes 30 September 2026",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/make-submission/",
+          },
+          {
+            label: "HIA, Productivity Commission push for bold housing reform",
+            href: "https://hia.com.au/our-industry/newsroom/planning-and-environment/2026/07/productivity-commission-push-for-bold-housing-reform",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Australian Bureau of Statistics, the Productivity Commission, the Scaffolding Association Australia, Safe Work Australia, Master Builders Australia, the Housing Industry Association and Build Australia. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Australian Bureau of Statistics",
+      "the Productivity Commission",
+      "the Scaffolding Association Australia",
+      "Safe Work Australia",
+      "Master Builders Australia",
+      "the Housing Industry Association",
+      "Build Australia",
     ],
   },
 ];
