@@ -2339,6 +2339,75 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "designer-planning",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design and planning practice",
+    name: "Designer Planning",
+    monogram: "DP",
+    logo: "/partners/designer-planning/logo.png",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A Brisbane building design practice fluent in South East Queensland’s councils, drawing new homes, extensions and house raises shaped to win approval and get built.",
+    disciplines: ["New homes and extensions", "House raising and build under", "Council approvals"],
+    google: { rating: 4.9, reviews: 11 },
+    awards: [
+      {
+        label: "Designed a national award winner",
+        sub: "Master Builders Australia National Excellence Awards, 2021",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "4.9", star: true, sub: "11 reviews" },
+      {
+        label: "Plan sets drawn",
+        value: "1,500+",
+        sub: "residential and commercial",
+      },
+      {
+        label: "Council checks",
+        value: "Upfront",
+        sub: "overlays, zoning and flood",
+      },
+    ],
+    why: "In Queensland the hardest part of a home project is often not the drawing but the approval. Overlays, flood levels, character protections and the rules governing a pre-war house can quietly reshape or sink a design months after an owner has fallen for it. Designer Planning has built its practice around that problem, searching the zoning, overlay and flood record at the outset so what goes on the page is something a council can actually say yes to. Fifteen hundred sets of plans across South East Queensland is a great deal of accumulated fluency in how each council reads a proposal. The design itself is no afterthought either: a house they drew went on to win Master Builders Australia’s national excellence award in 2021, about as strong an endorsement as a set of plans can earn. For an owner facing a character home, a flood overlay or a build under, this is a practice that treats approval as part of the design rather than a hurdle to clear afterwards.",
+    about:
+      "Designer Planning is a building design and drafting practice working from Brisbane across South East Queensland, taking in the Gold Coast, the Sunshine Coast and the Moreton Bay region. The team draws new homes, extensions and renovations, granny flats, decks, pools and carports, house raising and build under projects, and commercial work, with designers including Ken Daly, the longest-serving of them since 2012, alongside Chris Seymour and Alana Dein. Projects are quoted as fixed-price packages and run through four stages, beginning with a property consultation and site measure, then concept drawings with revisions, detailed working drawings, and a final construction set checked against engineering and certification requirements. Surveyors, engineers and private building certifiers are coordinated alongside the practice’s own drafting, and its work runs from waterfront homes at Bribie Island to interiors at Morningside and Queenslanders in Paddington.",
+    facts: {
+      experience: "15+ yrs",
+      basedIn: "Brisbane, QLD",
+      serves: "South East Queensland",
+      focus: "Plans, approvals and house raising",
+    },
+    website: "https://www.designerplanning.com.au",
+    instagram: "https://www.instagram.com/designerplanning/",
+    facebook: "https://www.facebook.com/designerplanning/",
+    linkedin: "https://www.linkedin.com/company/designer-planning/",
+    galleryUrl: "https://www.designerplanning.com.au",
+    work: [
+      {
+        title: "Waterfront home",
+        suburb: "Bribie Island",
+        type: "New build",
+        image: "/partners/designer-planning/bribie-island.jpg",
+      },
+      {
+        title: "Sculptural stair",
+        suburb: "Morningside",
+        type: "Interior",
+        image: "/partners/designer-planning/morningside.jpg",
+      },
+      {
+        title: "Queenslander and pool",
+        suburb: "Paddington",
+        type: "Renovation",
+        image: "/partners/designer-planning/paddington.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
