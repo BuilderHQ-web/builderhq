@@ -223,10 +223,9 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
           ) : null}
         </div>
 
-        {signal.chart ? (
-          <BriefChart spec={signal.chart} />
-        ) : signal.rows?.length ? (
-          <div>
+        {signal.chart ? <BriefChart spec={signal.chart} /> : null}
+        {signal.rows?.length ? (
+          <div className={signal.chart ? "mt-6" : undefined}>
             {signal.rowsTitle ? (
               <p className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold mb-3">
                 {signal.rowsTitle}

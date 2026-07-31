@@ -1279,13 +1279,13 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     date: "2026-07-31",
     displayDate: "Friday, 31 July 2026",
     title:
-      "The average new house is declared at $517,430 before land, and the industry raises its own bar.",
+      "The average new house is declared at $517,430 before land, and Victoria resets its workmanship benchmark.",
     standfirst:
-      "The average new Australian house was declared at $517,430 of building work at permit stage last financial year, before land. Inflation eased enough to take an August rate rise off the table. And the scaffolding industry set a standard above the legal floor.",
+      "The average new Australian house was declared at $517,430 of building work at permit stage last financial year, before land. Inflation eased enough to take an August rate rise off the table. And from 1 August, Victoria’s revised Guide to Standards and Tolerances sets the benchmark for judging workmanship.",
     seoTitle:
       "The Build Brief 004: What a New House Costs Before It Is Built | BuilderHQ",
     seoDescription:
-      "The average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0%, before land. Inflation eased to 3.8% and an August rate rise moved off the table. The scaffolding industry recommended fortnightly inspections against a 30-day legal minimum. Plus the Productivity Commission on housing regulation.",
+      "The average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0%, before land. Inflation eased to 3.8% and an August rate rise moved off the table. Victoria’s Guide to Standards and Tolerances 2026 edition applies from 1 August and is not retrospective. Plus the Productivity Commission on housing regulation.",
     keywords: [
       "cost to build a house australia 2026",
       "average build cost new house australia",
@@ -1295,9 +1295,12 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "rba august 2026 rate decision",
       "trimmed mean inflation australia",
       "new dwelling prices australia",
-      "scaffolding inspection requirements australia",
-      "scaffold inspection 14 days",
-      "scaffolding association australia guidelines",
+      "guide to standards and tolerances 2026",
+      "guide to standards and tolerances victoria",
+      "building and plumbing commission victoria",
+      "domestic building workmanship standards victoria",
+      "building tolerances australia",
+      "domestic building disputes victoria",
       "productivity commission housing supply regulation",
       "upzoning australia",
       "building approvals 2025-26",
@@ -1314,10 +1317,10 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "The industry raised its own bar. A federal review asked government to lower theirs.",
       paragraphs: [
         "Three numbers landed this week. Between them they describe what it now costs to build a house, what money costs while you do it, and the standard the industry has decided to hold itself to.",
-        "The Australian Bureau of Statistics closed out the financial year on Thursday. The average new house was declared at $517,430 of building work at permit stage, before land, up 5.0% on the year. On Wednesday, inflation eased enough that a rate rise on 11 August moved close to off the table. And the scaffolding industry published national guidance recommending inspections every fourteen days, against a legal minimum of thirty.",
+        "The Australian Bureau of Statistics closed out the financial year on Thursday. The average new house was declared at $517,430 of building work at permit stage, before land, up 5.0% on the year. On Wednesday, inflation eased enough that a rate rise on 11 August moved close to off the table. And Victoria’s Building and Plumbing Commission issued a revised Guide to Standards and Tolerances, which applies from tomorrow and is not retrospective.",
         "Set that last one beside Monday's news. The Productivity Commission released its interim report on housing supply regulation and found that regulation has become a handbrake on new homes.",
-        "Both things are true at once, and the pairing is worth noticing. An industry association tightened a standard on itself, voluntarily, because a scaffold is a temporary structure that changes as trades and weather move around it. In the same week, a federal review argued that the rules governing where and what you can build are slowing homes from being built at all.",
-        "Good regulation and too much regulation are not the same conversation. This edition covers both. If The Build Brief is new to you, [last week's edition](/build-brief/issue-003) covered the construction cost restart and the turn in insolvencies.",
+        "Both are worth reading together. One arm of the system settled the benchmark for judging whether work was done well. Another argued that the rules deciding what can be built at all are slowing supply.",
+        "Clear standards and too many rules are not the same conversation. This edition covers both. If The Build Brief is new to you, [last week's edition](/build-brief/issue-003) covered the construction cost restart and the turn in insolvencies.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -1419,55 +1422,65 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         n: "03",
-        kicker: "Site Standard",
-        headline: "An industry set its own bar above",
-        headlineAccent: "the legal floor.",
+        kicker: "The Rulebook",
+        headline: "From tomorrow, two editions exist. Your contract date decides",
+        headlineAccent: "which one governs.",
         stat: {
-          value: "14 days",
-          label: "recommended interval between scaffold inspections",
-          sub: "legal minimum is 30 days",
+          value: "1 August",
+          label:
+            "the Guide to Standards and Tolerances 2026 edition applies from",
+          sub: "not retrospective",
         },
+        rowsTitle: "Which edition applies to your job",
+        rows: [
+          {
+            label: "Contract and work commenced before 1 August 2026",
+            value: "Previous edition",
+          },
+          {
+            label: "Contract and work commenced on or after 1 August 2026",
+            value: "2026 edition",
+            accent: true,
+          },
+        ],
         chart: {
           kind: "strip",
-          title: "The scaffold lifecycle under the new guidance",
-          desc: "The guidance covers scaffolding from planning and design through erection, handover, use and dismantling. Inspections are recommended at least every fourteen days, and again after any alteration or severe weather, against a legal minimum of thirty days for scaffolds with a fall risk over four metres.",
+          title: "Where the Guide sits, and what outranks it",
+          desc: "Legislation, regulations, the National Construction Code and Australian Standards prescribe requirements and take precedence. The Guide is a reference tool for assessing workmanship where recognised tolerances are relevant. It is not legislation and not technical advice.",
           stages: [
-            { label: "Plan" },
-            { label: "Design" },
-            { label: "Erect" },
-            { label: "Handover" },
-            { label: "Inspect every 14 days", accent: true },
-            { label: "Reinspect after alteration or weather", accent: true },
-            { label: "Dismantle" },
+            { label: "Legislation and regulations" },
+            { label: "National Construction Code" },
+            { label: "Australian Standards" },
+            { label: "The Guide", accent: true },
           ],
           callout: {
-            from: 4,
-            to: 5,
-            label: "Recommended: every 14 days",
-            sub: "Legal minimum: every 30 days",
+            from: 3,
+            to: 3,
+            label: "A reference tool, not law",
+            sub: "Everything above it takes precedence",
           },
           legend: {
-            accent: "Inspection points",
-            context: "Lifecycle stages",
+            accent: "Recognised benchmarks",
+            context: "Prescribed requirements",
           },
         },
         body: [
-          "The Scaffolding Association Australia has released national best practice guidance covering the full lifecycle of scaffolding work, from planning and design through erection, use, inspection, alteration and dismantling. It is offered as a common reference for scaffold contractors, builders, principal contractors, engineers, designers, supervisors and safety professionals, and it is free to download.",
-          "The most practical change is the inspection interval. Current requirements generally call for scaffolds with a fall risk of more than four metres to be inspected at least every thirty days. The new guidance recommends at least every fourteen days, in addition to inspections before first use, after any alteration, and after severe weather or any other event capable of affecting structural integrity.",
-          "The guidance also expands on scaffold design and documentation, an area the industry has long flagged as needing clearer national direction, covering design responsibilities, engineering requirements and design risk categories. It is the first stage of a wider technical programme.",
-          "One point to be clear about. This is not law. The guidelines complement work health and safety legislation, codes of practice and Australian Standards rather than replacing them, and model WHS laws are adopted jurisdiction by jurisdiction, so requirements vary. What has happened is that an industry body has voluntarily set a bar above the legal floor, for a temporary structure that changes as trades, materials and weather move around it.",
+          "Victoria's Building and Plumbing Commission has issued a revised edition of the Guide to Standards and Tolerances. It applies to contracts entered into and building work commenced on or after 1 August 2026, and it does not apply retrospectively. Earlier contracts and earlier work continue under the previous edition.",
+          "The Guide sets recognised benchmarks for assessing the quality of domestic building work: what is generally considered acceptable workmanship, and the tolerances that apply when a common concern is assessed. The BPC uses it as a recognised reference when it responds to enquiries and supports the resolution of domestic building disputes.",
+          "Its standing is worth stating precisely. The Guide is a reference tool. It is not legislation and it is not technical advice. Where legislation, regulations, the National Construction Code or Australian Standards prescribe a requirement, that requirement takes precedence. The Guide assists in assessing workmanship where recognised tolerances are relevant, alongside the circumstances of the work and the contract documents.",
+          "The 2026 edition carries updates for clarity, readability and consistency, with refreshed references and guidance. An Applicability of the Guide section within the document sets out exactly when this edition applies.",
         ],
         source:
-          "Scaffolding Association Australia, Australian Best Practice Guidelines for Scaffolding, reported by Build Australia, 30 July 2026; Safe Work Australia, Guide to Scaffold Inspection and Maintenance",
+          "Building and Plumbing Commission, Guide to Standards and Tolerances 2026 edition (applies from 1 August 2026)",
         takes: {
           owners:
-            "Ask who accepted the scaffold at handover, who controls alterations, and where the inspection records are kept.",
+            "If your contract is signed before 1 August, the previous edition governs how workmanship on your build is assessed. Worth knowing which one applies before a question arises.",
           designers:
-            "Facade geometry, boundary conditions, roof form and access decisions all affect the complexity and price of temporary works.",
+            "The Guide assesses workmanship, not design intent. Where a finish matters more than the recognised tolerance allows, the specification is the place to say so.",
           builders:
-            "A useful prompt to review the scaffold register, the alteration procedure and the post-weather inspection process, so a scaffold never quietly becomes a shared structure nobody manages.",
+            "A settled reference cuts both ways: it is the benchmark a client is measured against as much as you are. Knowing which edition applies to each contract is the practical step.",
           brokers:
-            "Safety incidents, shutdowns and access problems become programme problems, and programme problems become drawdown problems.",
+            "Disputes over workmanship stall progress claims. A clear, current benchmark shortens the argument.",
         },
       },
     ],
@@ -1626,8 +1639,12 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         a: "Financial markets cut the probability of a rise at the 10 to 11 August 2026 meeting to close to zero after the June quarter inflation figures, and all four major banks expect no change. The cash rate stands at 4.35%. Underlying inflation above the target band means the direction of the next move is still unsettled.",
       },
       {
-        q: "How often should scaffolding be inspected in Australia?",
-        a: "Current requirements generally call for scaffolds with a fall risk of more than four metres to be inspected at least every thirty days. In July 2026 the Scaffolding Association Australia published national best practice guidance recommending inspections at least every fourteen days, in addition to inspections before first use, after any alteration, and after severe weather. The guidance is industry best practice rather than law, and it complements work health and safety legislation, codes of practice and Australian Standards rather than replacing them.",
+        q: "When does the Guide to Standards and Tolerances 2026 edition apply?",
+        a: "The 2026 edition applies to contracts entered into and building work commenced on or after 1 August 2026. It does not apply retrospectively, so contracts entered into or work commenced before that date continue under the previous edition. An Applicability of the Guide section within the document sets out when this edition applies.",
+      },
+      {
+        q: "Is the Guide to Standards and Tolerances legislation?",
+        a: "No. The Guide is a reference tool and is neither legislation nor technical advice. Where legislation, regulations, the National Construction Code or Australian Standards prescribe specific requirements, those requirements take precedence. The Guide provides recognised benchmarks for assessing the quality of domestic building work and should be considered together with the circumstances of the work, the contract documents and any applicable legislative requirements. Victoria's Building and Plumbing Commission uses it as a recognised reference when responding to enquiries and supporting the resolution of domestic building disputes.",
       },
       {
         q: "What did the Productivity Commission say about housing regulation?",
@@ -1647,7 +1664,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
     },
     share:
-      "The average new Australian house was declared at $517,430 before land last financial year, and the scaffolding industry set a standard above the law. This week's Build Brief.",
+      "The average new Australian house was declared at $517,430 before land last financial year, and Victoria’s revised workmanship benchmark applies from 1 August. This week's Build Brief.",
     subscribeLine: "Five minutes, every Friday.",
     sourceGroups: [
       {
@@ -1686,24 +1703,16 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         ],
       },
       {
-        heading: "Scaffolding standards",
+        heading: "Workmanship standards",
         links: [
           {
             label:
-              "Build Australia, Australian Best Practice Guidelines for Scaffolding now available",
-            href: "https://www.buildaustralia.com.au/news_article/australian-best-practice-guidelines-for-scaffolding-now-available/",
+              "Building and Plumbing Commission, Guide to Standards and Tolerances 2026",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2026",
           },
           {
-            label: "Scaffolding Association Australia",
-            href: "https://scaffolding-association.au/",
-          },
-          {
-            label: "Safe Work Australia, Guide to Scaffold Inspection and Maintenance",
-            href: "https://www.safeworkaustralia.gov.au/system/files/documents/1703/guide-scaffold-inspection-maintenance.pdf",
-          },
-          {
-            label: "WorkSafe Victoria, Scaffolding industry standard",
-            href: "https://www.worksafe.vic.gov.au/resources/scaffolding-industry-standard",
+            label: "Building and Plumbing Commission, the previous edition",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2015-under-review-2024",
           },
         ],
       },
@@ -1726,15 +1735,13 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
     ],
     creditLine:
-      "This edition used data and reporting from the Australian Bureau of Statistics, the Productivity Commission, the Scaffolding Association Australia, Safe Work Australia, Master Builders Australia, the Housing Industry Association and Build Australia. The Build Brief is compiled by BuilderHQ, Melbourne.",
+      "This edition used data and reporting from the Australian Bureau of Statistics, the Productivity Commission, Victoria's Building and Plumbing Commission, Master Builders Australia and the Housing Industry Association. The Build Brief is compiled by BuilderHQ, Melbourne.",
     sources: [
       "the Australian Bureau of Statistics",
       "the Productivity Commission",
-      "the Scaffolding Association Australia",
-      "Safe Work Australia",
+      "the Building and Plumbing Commission",
       "Master Builders Australia",
       "the Housing Industry Association",
-      "Build Australia",
     ],
   },
 ];
