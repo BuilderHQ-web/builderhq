@@ -975,7 +975,7 @@ export default async function BriefIssuePage({
                           alt={`${partner.name} logo`}
                           width={320}
                           height={120}
-                          className="h-11 w-auto object-contain object-left"
+                          className="h-16 w-auto object-contain object-left"
                         />
                         <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
                           {partner.roleLabel} · {partner.suburb}, {partner.state}

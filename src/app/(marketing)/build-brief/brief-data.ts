@@ -1316,11 +1316,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       heading:
         "The industry raised its own bar. A federal review asked government to lower theirs.",
       paragraphs: [
-        "Three numbers landed this week. Between them they describe what it now costs to build a house, what money costs while you do it, and the standard the industry has decided to hold itself to.",
-        "The Australian Bureau of Statistics closed out the financial year on Thursday. The average new house was declared at $517,430 of building work at permit stage, before land, up 5.0% on the year. On Wednesday, inflation eased enough that a rate rise on 11 August moved close to off the table. And Victoria’s Building and Plumbing Commission issued a revised Guide to Standards and Tolerances, which applies from tomorrow and is not retrospective.",
-        "Set that last one beside Monday's news. The Productivity Commission released its interim report on housing supply regulation and found that regulation has become a handbrake on new homes.",
-        "Both are worth reading together. One arm of the system settled the benchmark for judging whether work was done well. Another argued that the rules deciding what can be built at all are slowing supply.",
-        "Clear standards and too many rules are not the same conversation. This edition covers both. If The Build Brief is new to you, [last week's edition](/build-brief/issue-003) covered the construction cost restart and the turn in insolvencies.",
+        "Three numbers this week. What a house costs to build, what money costs while you build it, and the benchmark your workmanship is now judged against.",
+        "The average new house was declared at $517,430 of building work before land, up 5.0%. Inflation eased enough to take an August rate rise off the table. And Victoria's revised Guide to Standards and Tolerances applies from tomorrow.",
+        "Set that beside Monday, when the Productivity Commission found that regulation has become a handbrake on new homes. One arm of the system settled how we judge work done well. Another said the rules on what can be built at all are slowing supply. Both are in here.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -1353,10 +1351,9 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           ],
         },
         body: [
-          "Inside Thursday's approvals release sits a figure that rarely makes headlines and tells you more than most. Across 2025-26, the average approval value for a new private house was $517,430, up 5.0% on the $492,931 average the year before. June alone averaged $529,790.",
-          "It helps to know exactly what that number is. When a building permit is issued, the cost of the building work is declared, and the ABS collects that declaration from every permit in the country. So this is the cost of construction at the point of approval. It excludes land. It is not an index and not a forecast.",
-          "Two qualifications matter. Declared values at permit stage tend to sit low, because variations, upgrades and site costs land later, so the real average is almost certainly higher. And because the method does not change from year to year, the 5.0% movement is the more reliable signal.",
-          "Wednesday's inflation data points the same way from a different direction. New dwelling prices rose 5.8% over the year to June, up from 5.6% to May, with the ABS noting that project home builders have been passing through higher labour and materials costs. Two independent measures, both near 5%, both edging up.",
+          "Across 2025-26 the average approval value for a new private house was $517,430, up 5.0% on last year's $492,931. June alone averaged $529,790.",
+          "Know what it is. When a permit is issued the cost of the work is declared, and the ABS collects every one. Construction at the point of approval, excluding land. Not an index, not a forecast. Declared values sit low too, since variations and site costs land later, so the 5.0% movement is the truer signal.",
+          "Wednesday's inflation data agrees from a different direction: new dwelling prices rose 5.8% over the year, up from 5.6%. Two independent measures, both near 5%, both edging up.",
         ],
         source:
           "ABS Building Approvals, Australia, June 2026 (released 30 July 2026); ABS Consumer Price Index, June 2026",
@@ -1402,10 +1399,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           domain: [1.6, 4.4],
         },
         body: [
-          "Annual inflation eased to 3.8% in the year to June, down from 4.0% to May. The CPI fell 0.1% in the month itself, helped by automotive fuel dropping 10.9% as oil markets steadied.",
-          "The market moved immediately. Financial markets cut the probability of a rise at the 10 to 11 August meeting to close to zero, and Westpac shifted to a hold, leaving all four major banks expecting no change. The cash rate stays at 4.35%.",
-          "The caution sits in the second line on the chart. The trimmed mean, the measure the Reserve Bank watches most closely, held at 3.6% and remains above the 2 to 3 per cent target band. Underlying price pressure has not eased in the way the headline suggests.",
-          "Housing was again the largest contributor to annual inflation at 6.8%, driven mainly by electricity, up 22.4% after Commonwealth and state rebates expired. For anyone building or holding a construction facility, a hold is welcome. It is not the same as relief.",
+          "Annual inflation eased to 3.8% in the year to June, from 4.0%. Fuel fell 10.9% as oil markets steadied. Markets cut the odds of an 11 August rise to near zero, Westpac moved to a hold, and all four majors now expect no change. The cash rate stays at 4.35%.",
+          "The caution is the second line on the chart. The trimmed mean, the measure the Reserve Bank watches, held flat at 3.6% and stays above the target band. Housing was again the largest contributor at 6.8%, driven by electricity up 22.4% after rebates expired. A hold is welcome. It is not relief.",
         ],
         source:
           "ABS Consumer Price Index, Australia, June 2026 (released 29 July 2026); The Conversation; Canstar",
@@ -1423,30 +1418,25 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       {
         n: "03",
         kicker: "The Rulebook",
-        headline: "From tomorrow, two editions exist. Your contract date decides",
-        headlineAccent: "which one governs.",
+        headline: "Your finishes are judged from 1.5 metres away.",
+        headlineAccent: "Now it is written down.",
         stat: {
-          value: "1 August",
-          label:
-            "the Guide to Standards and Tolerances 2026 edition applies from",
-          sub: "not retrospective",
+          value: "1.5 m",
+          label: "the distance a wall, ceiling or floor finish is assessed from",
+          sub: "600 mm for fixtures · 3 m for glass",
         },
-        rowsTitle: "Which edition applies to your job",
+        rowsTitle: "What the Guide calls outside tolerance",
         rows: [
-          {
-            label: "Contract and work commenced before 1 August 2026",
-            value: "Previous edition",
-          },
-          {
-            label: "Contract and work commenced on or after 1 August 2026",
-            value: "2026 edition",
-            accent: true,
-          },
+          { label: "Floor level, any room", value: "10 mm" },
+          { label: "Floor level, any 2 m length", value: "4 mm", accent: true },
+          { label: "Floor level, across the whole footprint", value: "20 mm" },
+          { label: "Crack in a slab on ground", value: "2 mm wide" },
+          { label: "Crack in a masonry wall", value: "5 mm wide" },
         ],
         chart: {
           kind: "strip",
           title: "Where the Guide sits, and what outranks it",
-          desc: "Legislation, regulations, the National Construction Code and Australian Standards prescribe requirements and take precedence. The Guide is a reference tool for assessing workmanship where recognised tolerances are relevant. It is not legislation and not technical advice.",
+          desc: "Legislation, regulations, the National Construction Code and Australian Standards prescribe requirements and take precedence. The Guide is informative only.",
           stages: [
             { label: "Legislation and regulations" },
             { label: "National Construction Code" },
@@ -1456,31 +1446,26 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           callout: {
             from: 3,
             to: 3,
-            label: "A reference tool, not law",
+            label: "Informative only",
             sub: "Everything above it takes precedence",
           },
-          legend: {
-            accent: "Recognised benchmarks",
-            context: "Prescribed requirements",
-          },
+          legend: { accent: "Recognised benchmarks", context: "Prescribed requirements" },
         },
         body: [
-          "Victoria's Building and Plumbing Commission has issued a revised edition of the Guide to Standards and Tolerances. It applies to contracts entered into and building work commenced on or after 1 August 2026, and it does not apply retrospectively. Earlier contracts and earlier work continue under the previous edition.",
-          "The Guide sets recognised benchmarks for assessing the quality of domestic building work: what is generally considered acceptable workmanship, and the tolerances that apply when a common concern is assessed. The BPC uses it as a recognised reference when it responds to enquiries and supports the resolution of domestic building disputes.",
-          "Its standing is worth stating precisely. The Guide is a reference tool. It is not legislation and it is not technical advice. Where legislation, regulations, the National Construction Code or Australian Standards prescribe a requirement, that requirement takes precedence. The Guide assists in assessing workmanship where recognised tolerances are relevant, alongside the circumstances of the work and the contract documents.",
-          "The 2026 edition carries updates for clarity, readability and consistency, with refreshed references and guidance. An Applicability of the Guide section within the document sets out exactly when this edition applies.",
+          "Victoria's Building and Plumbing Commission has issued the 2026 edition of the Guide to Standards and Tolerances. It applies to contracts entered into and work commenced on or after 1 August 2026, and it is not retrospective. Earlier jobs stay on the previous edition.",
+          "Two rules do most of the work. Finishes are assessed from a normal viewing position, 1.5 metres back in ordinary light, so a mark you have to hunt for is generally within tolerance. And tolerances never scale down: 4 mm over 2 metres means 4 mm over 1 metre and 4 mm over 500 mm, not a proportion of it.",
         ],
         source:
-          "Building and Plumbing Commission, Guide to Standards and Tolerances 2026 edition (applies from 1 August 2026)",
+          "Building and Plumbing Commission, Guide to Standards and Tolerances 2026 (dated 14 July 2026, applies from 1 August 2026)",
         takes: {
           owners:
-            "If your contract is signed before 1 August, the previous edition governs how workmanship on your build is assessed. Worth knowing which one applies before a question arises.",
+            "Before raising a concern, look at it from 1.5 metres in normal light. That is the test the Guide applies.",
           designers:
-            "The Guide assesses workmanship, not design intent. Where a finish matters more than the recognised tolerance allows, the specification is the place to say so.",
+            "Where a finish needs to beat the recognised tolerance, the specification is the only place to say so.",
           builders:
-            "A settled reference cuts both ways: it is the benchmark a client is measured against as much as you are. Knowing which edition applies to each contract is the practical step.",
+            "A written benchmark cuts both ways. It is the standard a client is held to as much as you are.",
           brokers:
-            "Disputes over workmanship stall progress claims. A clear, current benchmark shortens the argument.",
+            "Workmanship disputes stall progress claims. A settled benchmark shortens the argument.",
         },
       },
     ],
@@ -1491,9 +1476,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       standfirst:
         "The Productivity Commission released its interim report on housing supply regulation this week. Its finding is that regulation has become a handbrake on new homes. Submissions are open until the end of September.",
       paragraphs: [
-        "The Productivity Commission released the interim report of its housing supply regulation inquiry on Monday, and its central finding is direct: regulation has become a handbrake on new housing supply.",
-        "The framing deserves care, because the Commission is not arguing against regulation. It accepts that rules are necessary for the safety, quality and liveability of new housing. Its argument is that too much regulation, or poorly designed regulation, stops homes being built, makes projects slower and more expensive, and narrows the range of housing available.",
-        "The affordability figure sets the context. It now takes the average household around eleven years to save a 20% deposit on a typical home, up from eight years in 2005.",
+        "The Productivity Commission's interim report landed Monday with a direct finding: regulation has become a handbrake on new housing supply.",
+        "The framing deserves care. The Commission is not against regulation, and accepts rules are needed for safety, quality and liveability. Its argument is that too much of it stops homes being built. The context: a 20% deposit now takes about eleven years to save, up from eight in 2005.",
       ],
       sections: [
         {
@@ -1505,18 +1489,16 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         {
           heading: "Where reform would do the most",
           paragraphs: [
-            "**Land-use controls.** The Commission finds that relaxing these would have the greatest effect on housing supply of any reform direction it examined. It raises broad-based upzoning in cities, including allowing three-storey development on most residential land, reducing minimum lot sizes, enabling more mixed residential and commercial areas, and allowing more mid-rise and high-rise apartments in high-demand, well-serviced locations. Commissioner Alison Roberts put the everyday version plainly: the rules that stop someone adding a granny flat in the garden, or replacing a single home with townhouses, sit at the core of the problem.",
-            "**Infrastructure coordination.** Roads, utilities and sewerage connections are usually needed before homes can be built, particularly in greenfield areas. Where housing plans and infrastructure plans are not aligned, land that has been rezoned for housing can sit unused for years. The report calls for infrastructure plans to show how they will be funded and sequenced alongside land release, and for greater consistency between levels of government, councils and utility providers.",
-            "**Approval processes.** Approvals often involve multiple decision-makers across different levels of government, referral agencies and infrastructure providers, and poor coordination between them can add months or years to a project. The Commission heard from one developer that preparing reports and waiting for approvals had added more than three years to the timeline of a 1,600 lot development in Melbourne's growth corridor. The report points to fast-track pathways for simple developments, state-led assessment where appropriate, coordination bodies with power to resolve disputes, better technology, and transparent reporting of approval outcomes.",
+            "**Land-use controls.** The single biggest lever the Commission examined. It raises broad-based upzoning: three-storey development on most residential land, smaller minimum lot sizes, more mixed use, and more mid-rise in well-serviced areas. Commissioner Alison Roberts put it plainly: the rules that stop someone adding a granny flat, or replacing a house with townhouses, sit at the core of the problem.",
+            "**Infrastructure coordination.** Roads, utilities and sewerage usually come before homes, especially in greenfield areas. Where housing and infrastructure plans are not aligned, rezoned land can sit unused for years. The report wants infrastructure plans funded and sequenced alongside land release.",
+            "**Approval processes.** Approvals cross multiple decision-makers, and poor coordination adds months or years. One developer told the Commission that approvals added more than three years to a 1,600 lot development in Melbourne's growth corridor. Proposed fixes: fast-track pathways, state-led assessment, coordination bodies that can resolve disputes.",
           ],
         },
         {
           heading: "What it is, and what it is not",
           paragraphs: [
-            "This is an interim report and it makes no recommendations. It sets out reform directions and asks for evidence. Submissions are open until Wednesday 30 September 2026, and the final report is due to government in March 2027.",
-            "The Housing Industry Association has welcomed it, noting that planning systems, approval delays and infrastructure constraints are among the most significant barriers to increasing housing supply across Australia.",
-            "Read it beside this week's other numbers and a pattern appears. Thursday's approvals release closed out the financial year at 205,249 dwellings, up 9.2% and the highest total since 2020-21, with multi-unit approvals at their strongest since 2017-18. On Master Builders Australia's assessment, the country still finished 47,750 homes short of what was needed, a second consecutive year behind the National Housing Accord pace.",
-            "So permission is running at a five-year high and delivery is still behind. Building costs rose 5% over the year, underlying inflation sits above target, and the path from approval to completed home is where the system loses years.",
+            "This is an interim report. It makes no recommendations, sets out reform directions and asks for evidence. Submissions close 30 September 2026; the final report is due March 2027. The Housing Industry Association has welcomed it.",
+            "Read it beside this week's other numbers. Approvals closed the year at 205,249 dwellings, up 9.2% and the highest since 2020-21. Master Builders still puts the country 47,750 homes short. Permission is at a five-year high and delivery is behind. The path from approval to completed home is where the years go.",
           ],
         },
       ],
@@ -1552,41 +1534,38 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       standfirst:
         "The Feature is about the years lost between approval and completion. This is about the weeks lost between drawings and a signed contract, and why three quotes for the same house are so hard to compare.",
       paragraphs: [
-        "Every week this publication reports what building costs. It is the number owners ask about first and the one the market measures most carefully. But a national average cannot tell an owner whether the three quotes on their kitchen table describe the same house.",
-        "Usually they do not. One carries an allowance for joinery, one prices it firm, one is silent. One excludes the driveway in a line on page nine. One assumes a soil classification the report does not support. Each quote is honest. None of them is comparable, and the differences are not visible until they surface later as a variation.",
-        "That is not a failure of builders. It is a failure of format. Australian residential tendering has no common structure, so every builder is asked to invent one, and the person least equipped to reconcile them is the homeowner reading them.",
-        "We wanted to know how wide the problem really is, so we measured it. We put real Australian document sets through our analysis, packages from actual projects, spanning everything from a single architectural set to twelve documents including structural, civil, geotechnical, energy, survey and joinery. We then checked which parts of a build the documents actually settle.",
-        "The pattern was consistent, and it was not about how many documents a project had. In every package we tested, the same areas were left open: site preliminaries, painting, landscaping, and the connection of services. These are not exotic items. They are ordinary trades on every job, and they are the ones most often absent from the drawings a builder is asked to price from.",
-        "That is the gap a builder fills with judgement, and judgement is exactly what an owner cannot compare across three quotes.",
+        "A national average cannot tell an owner whether the three quotes on their kitchen table describe the same house. Usually they do not. One carries an allowance for joinery, one prices it firm, one is silent. Each quote is honest. None is comparable, and the difference only surfaces later as a variation.",
+        "That is not a failure of builders. It is a failure of format. Australian residential tendering has no common structure, so every builder invents one, and the person least equipped to reconcile them is the homeowner.",
+        "We measured it. We ran real Australian document sets through our analysis, from one architectural set to twelve documents deep, then checked what they actually settle. The pattern held regardless of thickness. In every package the same areas were left open: site preliminaries, painting, landscaping, services connections. Ordinary trades on every job. That is the gap a builder fills with judgement, and judgement is what an owner cannot compare.",
       ],
       principles: [
         {
           n: "01",
           title: "One scope, read from the documents",
-          body: "Before a project goes to builders, the documents are read against a fixed schedule of the work a home requires. Every line is either evidenced in the drawings, with the page it came from, or recorded as a gap. Nothing is assumed and nothing is measured off a drawing.",
+          body: "The documents are read against a fixed schedule of the work a home requires. Every line is either evidenced, with the page it came from, or recorded as a gap. Nothing is assumed.",
         },
         {
           n: "02",
           title: "The gaps are settled before pricing, not after",
-          body: "Where the documents are silent, the question is asked once, of the client, before the round opens. An allowance is set and every builder carries the same figure. The alternative is that each builder guesses privately and the difference appears as a variation.",
+          body: "Where the documents are silent, the question is asked once, of the client, before the round opens. Every builder then carries the same figure. Otherwise each guesses privately and the difference appears later as a variation.",
         },
         {
           n: "03",
           title: "Every tender answers the same lines",
-          body: "Builders price against the same schedule, stating for each line whether it is included as documented, carried as an allowance at a stated figure, excluded, or not applicable to the project. A quote stops being a document to interpret and becomes a set of answers to the same questions.",
+          body: "For each line a builder states one of four things: included as documented, carried as an allowance at a stated figure, excluded, or not applicable. A quote stops being a document to interpret.",
         },
         {
           n: "04",
           title: "The comparison shows its working",
-          body: "Where builders disagree on a line, that disagreement is visible rather than buried. Every figure in the analysis carries the disclosure it came from, so an owner or architect can defend any part of it, and a builder can read their own evaluation without being ambushed by it.",
+          body: "Where builders disagree on a line, it is visible rather than buried. Every figure carries the disclosure it came from, so an owner can defend it and a builder is never ambushed by it.",
         },
       ],
       definition: {
         heading: "What the Standard is",
         paragraphs: [
-          "The BuilderHQ Procurement Standard is a common format for residential tendering: one scope of works read from the project's own documents, one set of questions every builder answers, and one comparison that shows its working.",
-          "It is built to be fair in both directions. A builder who prices carefully and discloses honestly should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference.",
-          "We are building it now, tested against real Australian project documents. It has not been released. We will say more in the coming weeks, and [our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
+          "A common format for residential tendering: one scope read from the project's own documents, one set of questions every builder answers, one comparison that shows its working.",
+          "Fair in both directions. A builder who prices carefully should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference.",
+          "Being built now, tested against real Australian project documents. Not yet released. [Our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
         ],
       },
       pullQuote:
@@ -1617,11 +1596,11 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         { value: "15 yrs", label: "Complex architectural builds" },
         { value: "Dual", label: "Residential and commercial registration" },
       ],
-      why: "Fletcher Thompson sits between two worlds, and that is exactly why we introduce him. A degree in architecture on one side, registration as both a residential and a commercial builder on the other: design vision and precise execution in the same pair of hands. His practice runs on the belief that construction is the continuation of architecture, protecting the architect's intent through rigorous on-site delivery, with fifteen years behind it. The current book says plenty, from the completed Malvern Residence to commercial work for Programa and Curve Cycling Melbourne. For an owner taking on an architecturally ambitious home, this is a builder who speaks the architect's language fluently and builds it faithfully.",
+      why: "Fletcher Thompson sits between two worlds, and that is why we introduce him. A degree in architecture on one side, registration as both a residential and commercial builder on the other. His practice runs on the belief that construction is the continuation of architecture, with fifteen years behind it. For an owner taking on an architecturally ambitious home, this is a builder who speaks the architect's language fluently and builds it faithfully.",
       practice:
-        "de Lune Construction is a Hawthorn based building company founded and led by Fletcher Thompson. The team specialises in complex architectural builds across Melbourne, working closely with clients, architects and consultants from concept to completion, with an approach built on clear communication, detailed planning and inventive problem solving. Its portfolio spans residential projects including the Malvern and Nicholson residences alongside commercial work such as Programa HQ and Curve Cycling Melbourne.",
+        "A Hawthorn building company specialising in complex architectural builds across Melbourne, working with clients, architects and consultants from concept to completion. Its portfolio spans the Malvern and Nicholson residences alongside commercial work including Programa HQ and Curve Cycling Melbourne.",
       welcome:
-        "We are glad to have de Lune Construction in the BuilderHQ network. A builder who reads drawings the way an architect wrote them is exactly the kind of practice this platform exists to put in front of the right projects.",
+        "A builder who reads drawings the way an architect wrote them is exactly the practice this platform exists to put in front of the right projects.",
     },
     faq: [
       {
