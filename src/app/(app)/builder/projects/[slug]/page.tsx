@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
@@ -12,6 +11,13 @@ import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
+import { packSummary, tenderableItems } from "@/modules/tenders/schedule";
+import { groupPackDivisions } from "@/modules/scope/groups";
+import {
+  getProjectSchedule,
+  listAddenda,
+  getRoundContextForBuilders,
+} from "@/modules/scope-engine";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
@@ -35,14 +41,37 @@ export default async function BuilderProjectPage({
   if (!session?.user) redirect(`/login?next=/builder/projects/${slug}`);
   const userId = session.user.id!;
 
-  const previewR = await getMarketplacePreview(slug);
+  // Private rounds never resolve via the marketplace path — fall back
+  // for invited builders, who must hold an unlock to see anything.
+  let previewR = await getMarketplacePreview(slug);
+  if (!previewR.ok) {
+    previewR = await getMarketplacePreview(slug, { includePrivate: true });
+    if (previewR.ok && !(await isUnlocked(userId, previewR.value.id))) {
+      notFound();
+    }
+  }
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
-  const [unlocked, saved] = await Promise.all([
+  const [unlocked, saved, schedule, addenda, roundContext] = await Promise.all([
     isUnlocked(userId, preview.id),
     isSaved(userId, preview.id),
+    getProjectSchedule(preview.id),
+    listAddenda(preview.id),
+    getRoundContextForBuilders(preview.id),
   ]);
+  // The pack, shaped for browsing. Counts travel to everyone; the
+  // highlights quote the documents and stay behind the unlock.
+  const pack = schedule ? packSummary(schedule) : null;
+  // The pack's priceable lines folded into build chapters — division
+  // names are already public in the pack panel, so this is safe for
+  // every viewer.
+  const scopeGroups = schedule
+    ? groupPackDivisions(tenderableItems(schedule))
+    : [];
+  const latestAddendum = addenda[0]
+    ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
+    : null;
 
   // If unlocked, fetch the full row + docs for download + owner contact.
   const fullR = unlocked ? await getFullForUnlockedBuilder(slug) : null;
@@ -105,6 +134,13 @@ export default async function BuilderProjectPage({
       viewerMode={viewerMode}
       myUserId={userId}
       initialConversations={conversations}
+      pack={pack}
+      latestAddendum={latestAddendum}
+      clientBrief={roundContext.brief}
+      overview={unlocked ? roundContext.overview : null}
+      advisories={unlocked ? roundContext.advisories : []}
+      schedule={unlocked ? schedule : null}
+      scopeGroups={scopeGroups}
     />
   );
 }

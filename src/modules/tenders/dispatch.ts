@@ -28,21 +28,27 @@
  */
 
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-import { tenders } from "./schema";
-import { projects } from "@/modules/projects/schema";
+import { tenders, tenderBuilderInvites } from "./schema";
+import { projects, projectParticipants } from "@/modules/projects/schema";
+import { recordProjectEvent } from "@/modules/projects";
 import { users } from "@/modules/users/schema";
-import { builderProfiles, projectOwnerProfiles } from "@/modules/profiles/schema";
+import {
+  builderProfiles,
+  projectOwnerProfiles,
+  architectProfiles,
+} from "@/modules/profiles/schema";
 
 import { create as createNotification } from "@/modules/notifications";
 import { sendToUser as sendPushToUser } from "@/modules/push";
 import {
+  sendBuilderTenderInvitationEmail,
   sendTenderSubmittedEmail,
   sendTenderSubmittedBuilderEmail,
   sendTenderSubmittedOpsEmail,
@@ -50,6 +56,7 @@ import {
   sendTenderAwardedEmail,
   sendTenderRejectedEmail,
   sendTenderWithdrawnEmail,
+  sendRoundAwardedNoticeEmail,
 } from "@/modules/email";
 
 export type TenderDispatchKind =
@@ -80,6 +87,72 @@ interface DispatchContext {
     firstName: string | null;
     company: string;
   };
+}
+
+/** A person on the owner side of a round: the runner or a joined
+ *  seat. Tender events fan out to all of them — never the actor. */
+interface OwnerSideRecipient {
+  id: string;
+  email: string;
+  firstName: string | null;
+  isRunner: boolean;
+}
+
+/**
+ * The owner side of a round: the runner plus every joined seat.
+ * `excludeUserId` drops the actor — nobody is told about their own
+ * click.
+ */
+async function resolveOwnerSide(
+  ctx: DispatchContext,
+  excludeUserId?: string,
+): Promise<OwnerSideRecipient[]> {
+  const seats = await db
+    .select({
+      userId: projectParticipants.userId,
+      email: users.email,
+      firstName: users.firstName,
+    })
+    .from(projectParticipants)
+    .innerJoin(users, eq(users.id, projectParticipants.userId))
+    .where(
+      and(
+        eq(projectParticipants.projectId, ctx.project.id),
+        eq(projectParticipants.status, "joined"),
+      ),
+    );
+  const all: OwnerSideRecipient[] = [
+    {
+      id: ctx.owner.id,
+      email: ctx.owner.email,
+      firstName: ctx.owner.firstName,
+      isRunner: true,
+    },
+    ...seats
+      .filter((s): s is typeof s & { userId: string } => s.userId != null)
+      .map((s) => ({
+        id: s.userId,
+        email: s.email,
+        firstName: s.firstName,
+        isRunner: false,
+      })),
+  ];
+  return all.filter((r) => r.id !== excludeUserId);
+}
+
+/** Display name for the person who made a decision — practice name
+ *  for architect runners, otherwise their own name. */
+async function resolveActorName(
+  actorId: string | undefined,
+): Promise<string> {
+  if (!actorId) return "The project runner";
+  const [row] = await db
+    .select({ name: users.name, practice: architectProfiles.practiceName })
+    .from(users)
+    .leftJoin(architectProfiles, eq(architectProfiles.userId, users.id))
+    .where(eq(users.id, actorId))
+    .limit(1);
+  return row?.practice ?? row?.name ?? "The project runner";
 }
 
 /**
@@ -182,6 +255,12 @@ const formatAud = (n: number) =>
 export async function dispatchTenderEvent(
   kind: TenderDispatchKind,
   tenderId: string,
+  opts: {
+    /** Who performed the transition (decisions only). Rides into the
+     *  owner-side fan-out ("by Studio North") and keeps the actor out
+     *  of their own notifications. */
+    actorId?: string;
+  } = {},
 ): Promise<void> {
   try {
     const ctx = await gatherContext(tenderId);
@@ -258,6 +337,43 @@ export async function dispatchTenderEvent(
             validityDays: ctx.tender.validityDays,
             submittedAt: new Date(),
           }),
+          // Seats — every joined participant hears what the runner
+          // hears (the runner was notified above; actor is the
+          // builder, never on the owner side).
+          resolveOwnerSide(ctx).then((ownerSide) =>
+            Promise.allSettled(
+              ownerSide
+                .filter((r) => !r.isRunner)
+                .flatMap((r) => [
+                  createNotification({
+                    userId: r.id,
+                    kind: "tender_submitted",
+                    title: `${ctx.builder.company} sent a tender`,
+                    body: `${ctx.project.title} · ${priceLabel}`,
+                    actionUrl: reviewUrl,
+                    projectId: ctx.project.id,
+                    tenderId: ctx.tender.id,
+                  }),
+                  sendTenderSubmittedEmail({
+                    to: r.email,
+                    ownerFirstName: r.firstName,
+                    builderCompany: ctx.builder.company,
+                    projectTitle: ctx.project.title,
+                    totalPriceAud: ctx.tender.totalPriceAud ?? 0,
+                    durationWeeks: ctx.tender.durationWeeks ?? 0,
+                    validityDays: ctx.tender.validityDays ?? 0,
+                    reviewUrl,
+                  }),
+                ]),
+            ),
+          ),
+          recordProjectEvent({
+            projectId: ctx.project.id,
+            actorId: ctx.builder.id,
+            kind: "tender.submitted",
+            subjectId: ctx.tender.id,
+            summary: `${ctx.builder.company} submitted a tender (${priceLabel}).`,
+          }),
         ]);
         break;
       }
@@ -288,6 +404,37 @@ export async function dispatchTenderEvent(
             builderCompany: ctx.builder.company,
             projectTitle: ctx.project.title,
             reviewUrl,
+          }),
+          resolveOwnerSide(ctx).then((ownerSide) =>
+            Promise.allSettled(
+              ownerSide
+                .filter((r) => !r.isRunner)
+                .flatMap((r) => [
+                  createNotification({
+                    userId: r.id,
+                    kind: "tender_withdrawn",
+                    title: `${ctx.builder.company} withdrew their tender`,
+                    body: ctx.project.title,
+                    actionUrl: reviewUrl,
+                    projectId: ctx.project.id,
+                    tenderId: ctx.tender.id,
+                  }),
+                  sendTenderWithdrawnEmail({
+                    to: r.email,
+                    ownerFirstName: r.firstName,
+                    builderCompany: ctx.builder.company,
+                    projectTitle: ctx.project.title,
+                    reviewUrl,
+                  }),
+                ]),
+            ),
+          ),
+          recordProjectEvent({
+            projectId: ctx.project.id,
+            actorId: ctx.builder.id,
+            kind: "tender.withdrawn",
+            subjectId: ctx.tender.id,
+            summary: `${ctx.builder.company} withdrew their tender.`,
           }),
         ]);
         break;
@@ -320,6 +467,35 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             tenderUrl,
           }),
+          // Owner side minus the actor — a decider's shortlist tells
+          // the runner and the other seats. Bell only: decisions move
+          // often, the inbox is reserved for submit + award.
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.map((r) =>
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_shortlisted",
+                  title: `${ctx.builder.company} was shortlisted`,
+                  body: `By ${actorName} · ${ctx.project.title}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+              ),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.shortlisted",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} shortlisted the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }
@@ -353,6 +529,42 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             tenderUrl,
           }),
+          // The award is the round's verdict — everyone on the owner
+          // side hears it, bell AND letter, except whoever clicked it.
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.flatMap((r) => [
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_awarded",
+                  title: `${ctx.project.title} has been awarded`,
+                  body: `${ctx.builder.company} · by ${actorName}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+                sendRoundAwardedNoticeEmail({
+                  to: r.email,
+                  recipientFirstName: r.firstName,
+                  actorName,
+                  builderCompany: ctx.builder.company,
+                  projectTitle: ctx.project.title,
+                  reviewUrl,
+                }),
+              ]),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.awarded",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} awarded the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }
@@ -383,6 +595,32 @@ export async function dispatchTenderEvent(
             projectTitle: ctx.project.title,
             browseUrl,
           }),
+          (async () => {
+            const [ownerSide, actorName] = await Promise.all([
+              resolveOwnerSide(ctx, opts.actorId),
+              resolveActorName(opts.actorId),
+            ]);
+            await Promise.allSettled(
+              ownerSide.map((r) =>
+                createNotification({
+                  userId: r.id,
+                  kind: "tender_rejected",
+                  title: `${ctx.builder.company}'s tender was declined`,
+                  body: `By ${actorName} · ${ctx.project.title}`,
+                  actionUrl: reviewUrl,
+                  projectId: ctx.project.id,
+                  tenderId: ctx.tender.id,
+                }),
+              ),
+            );
+            await recordProjectEvent({
+              projectId: ctx.project.id,
+              actorId: opts.actorId ?? null,
+              kind: "tender.declined",
+              subjectId: ctx.tender.id,
+              summary: `${actorName} declined the tender from ${ctx.builder.company}.`,
+            });
+          })(),
         ]);
         break;
       }
@@ -398,5 +636,156 @@ export async function dispatchTenderEvent(
       { event: "tender.dispatch.failed", tenderId, kind, msg },
       "tender dispatch failed — continuing",
     );
+  }
+}
+
+/**
+ * Invitation fan-out for builder invites (any round mode). Fired by
+ * createBuilderInvite after the row lands. Same contract as
+ * dispatchTenderEvent: internally try/catch'd, never blocks or rolls
+ * back the invite the runner just created.
+ *
+ * Off-platform invitees get the email only (there is no user row to
+ * notify). On-platform builders also get a bell notification; no
+ * mobile push, because the mobile app has no invite redemption route
+ * yet — the email link handles the full journey on web.
+ */
+/**
+ * Collapse runner-controlled text to one clean line before it enters
+ * an email subject or body: strips control characters, collapses
+ * whitespace, caps length. Defence in depth — the values are already
+ * validated at entry, but an email to an off-platform stranger is the
+ * one surface where a crafted string does real reputational damage.
+ */
+function cleanLine(s: string, max: number): string {
+  return s
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+export async function dispatchBuilderInvite(
+  inviteId: string,
+): Promise<{ emailed: boolean }> {
+  try {
+    const inviterUsers = alias(users, "inviter_users");
+    const inviteeUsers = alias(users, "invitee_users");
+    const [row] = await db
+      .select({
+        // invite
+        email: tenderBuilderInvites.email,
+        contactName: tenderBuilderInvites.contactName,
+        builderUserId: tenderBuilderInvites.builderUserId,
+        inviteToken: tenderBuilderInvites.inviteToken,
+        // project
+        projectId: projects.id,
+        projectTitle: projects.title,
+        projectSuburb: projects.suburb,
+        projectState: projects.state,
+        // inviter (the runner) — practice name preferred for architects
+        inviterName: inviterUsers.name,
+        inviterPractice: architectProfiles.practiceName,
+        // on-platform invitee
+        inviteeEmail: inviteeUsers.email,
+        inviteeName: inviteeUsers.name,
+      })
+      .from(tenderBuilderInvites)
+      .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+      .innerJoin(
+        inviterUsers,
+        eq(inviterUsers.id, tenderBuilderInvites.invitedBy),
+      )
+      .leftJoin(
+        architectProfiles,
+        eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+      )
+      .leftJoin(
+        inviteeUsers,
+        eq(inviteeUsers.id, tenderBuilderInvites.builderUserId),
+      )
+      .where(eq(tenderBuilderInvites.id, inviteId))
+      .limit(1);
+    if (!row) {
+      logger.warn(
+        { event: "tender_invite.dispatch.no_context", inviteId },
+        "tender invite dispatch — no context found",
+      );
+      return { emailed: false };
+    }
+
+    const onPlatform = !!row.builderUserId;
+    const to = onPlatform ? row.inviteeEmail : row.email;
+    if (!to) {
+      logger.warn(
+        { event: "tender_invite.dispatch.no_recipient", inviteId },
+        "tender invite dispatch — no recipient email",
+      );
+      return { emailed: false };
+    }
+
+    const firstFromName = (n: string | null) =>
+      n ? (n.split(" ")[0] ?? null) : null;
+    const inviterName = cleanLine(
+      row.inviterPractice ?? row.inviterName ?? "The project team",
+      80,
+    );
+    const projectTitle = cleanLine(row.projectTitle, 120);
+    const projectLocation = row.projectSuburb
+      ? cleanLine(
+          `${row.projectSuburb}, ${row.projectState ?? ""}`.replace(/, $/, ""),
+          80,
+        )
+      : null;
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const inviteUrl = `${base}/invite/b/${row.inviteToken}`;
+
+    const [emailResult] = await Promise.allSettled([
+      sendBuilderTenderInvitationEmail({
+        to,
+        contactFirstName: onPlatform
+          ? firstFromName(row.inviteeName)
+          : firstFromName(row.contactName),
+        inviterName,
+        projectTitle,
+        projectLocation,
+        inviteUrl,
+        onPlatform,
+      }),
+      ...(onPlatform
+        ? [
+            createNotification({
+              userId: row.builderUserId!,
+              kind: "tender_invited",
+              title: `Invited to tender on ${projectTitle}`,
+              body: `${inviterName} has invited you. Invited builders take part at no cost.`,
+              actionUrl: inviteUrl,
+              projectId: row.projectId,
+            }),
+          ]
+        : []),
+    ]);
+
+    const emailed =
+      emailResult.status === "fulfilled" && emailResult.value.ok;
+    if (emailed) {
+      logger.info(
+        { event: "tender_invite.dispatch.ok", inviteId, onPlatform },
+        "tender invite dispatch completed",
+      );
+    } else {
+      logger.warn(
+        { event: "tender_invite.dispatch.email_failed", inviteId, onPlatform },
+        "tender invite created but the email did not send",
+      );
+    }
+    return { emailed };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "tender_invite.dispatch.failed", inviteId, msg },
+      "tender invite dispatch failed — continuing",
+    );
+    return { emailed: false };
   }
 }

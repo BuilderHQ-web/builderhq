@@ -14,5 +14,16 @@
 export function dashboardForRole(role: string | null | undefined): string {
   if (role === "admin") return "/admin";
   if (role === "builder") return "/builder";
+  if (role === "architect") return "/architect";
   return "/owner";
+}
+
+/**
+ * Where a runner's project surfaces live, by role. Architects run the
+ * exact same project pages as owners (one component set, a second
+ * mount point under /architect), so shared pages and components derive
+ * their link base from this instead of hardcoding /owner.
+ */
+export function projectsBase(role: string | null | undefined): string {
+  return role === "architect" ? "/architect" : "/owner";
 }

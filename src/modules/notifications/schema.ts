@@ -45,9 +45,16 @@ export const notificationKindEnum = pgEnum("notification_kind", [
   "tender_shortlisted", // → builder
   "tender_awarded", // → builder
   "tender_rejected", // → builder
+  "tender_invited", // → builder (hand-picked for a tender round)
   // Project events
   "project_published", // → builders (bulk fan-out, gated by marketing flag)
   "project_unlocked", // → owner (a builder unlocked their project)
+  // The seat + the clock
+  "participant_joined", // → runner (an invited seat was claimed)
+  "tender_validity_expiring", // → owner side (a priced tender's validity is closing)
+  // The scope engine
+  "scope_ready", // → runner (ops approved the tender pack; review awaits)
+  "scope_addendum", // → builders on the round (the pack was re-issued)
 ]);
 
 export const notifications = pgTable(

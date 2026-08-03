@@ -22,6 +22,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { withInvitationsTab } from "./sidebar";
 import {
   LayoutDashboard,
   Folders,
@@ -29,9 +31,11 @@ import {
   MessageSquare,
   Settings,
   Compass,
+  Mail,
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
+  ScanSearch,
   Sparkles,
   Hammer,
   House,
@@ -46,14 +50,14 @@ import { Logo } from "@/components/brand/logo";
 import { countMyUnreadMessagesAction } from "@/app/(app)/_actions/messaging";
 import { signOutAction } from "@/app/(app)/_actions/sign-out";
 
-type Role = "project_owner" | "builder" | "admin";
+type Role = "project_owner" | "builder" | "admin" | "architect";
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
   soon?: string;
-  badgeKey?: "messages";
+  badgeKey?: "messages" | "invitations";
 }
 interface NavSection {
   title?: string;
@@ -97,6 +101,19 @@ const builderNav: NavSection[] = [
     items: [{ href: "/settings", label: "Settings", icon: Settings }],
   },
 ];
+const architectNav: NavSection[] = [
+  {
+    items: [
+      { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/architect/projects", label: "Tenders", icon: Folders },
+    ],
+  },
+  {
+    title: "Account",
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
+  },
+];
+
 const adminNav: NavSection[] = [
   {
     items: [
@@ -107,6 +124,7 @@ const adminNav: NavSection[] = [
       { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Later" },
       { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Later" },
       { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Later" },
+      { href: "/admin/scope", label: "Scope engine", icon: ScanSearch },
     ],
   },
   {
@@ -120,10 +138,13 @@ const adminNav: NavSection[] = [
 const navByRole: Record<Role, NavSection[]> = {
   project_owner: ownerNav,
   builder: builderNav,
+  architect: architectNav,
   admin: adminNav,
 };
 
 interface MobileNavProps {
+  /** Builder invitation tallies — same contract as the sidebar's. */
+  invitations?: { total: number; pending: number };
   role: Role;
   initialUnreadMessages?: number;
 }
@@ -138,9 +159,13 @@ export function openMobileNav() {
 
 const POLL_MS = 30_000;
 
-export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
+export function MobileNav({
+  role,
+  initialUnreadMessages = 0,
+  invitations = { total: 0, pending: 0 },
+}: MobileNavProps) {
   const pathname = usePathname();
-  const sections = navByRole[role];
+  const sections = withInvitationsTab(navByRole[role], role, invitations.total);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(initialUnreadMessages);
 
@@ -191,7 +216,7 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const badges = { messages: unread };
+  const badges = { messages: unread, invitations: invitations.pending };
 
   return (
     <>
@@ -324,7 +349,7 @@ function DrawerLink({
       <Icon
         className={cn(
           "size-[18px] shrink-0 transition-colors",
-          active ? "text-accent" : "text-text-faint",
+          active ? "text-accent-light" : "text-text-faint",
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>
@@ -345,7 +370,12 @@ function DrawerLink({
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === "/owner" || href === "/builder" || href === "/admin") {
+  if (
+    href === "/owner" ||
+    href === "/builder" ||
+    href === "/admin" ||
+    href === "/architect"
+  ) {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(href + "/");

@@ -90,6 +90,24 @@ const SECTIONS = [
           and verification vendors (e.g., the Australian Business Register
           and state-register lookups).
         </P>
+        <P>
+          <Strong>Information you provide about others.</Strong> Project
+          runners can invite people to a tender round: builders they wish to
+          tender, and clients or collaborators they share the project with.
+          When you enter someone&apos;s name and email address for an
+          invitation, we use those details only to deliver that invitation
+          (and, if it goes unanswered, up to one reminder), to show you the
+          invitation&apos;s status, and to keep the round&apos;s record of
+          who was invited and who accepted. Invitation links are personal,
+          expire, and can be withdrawn by the person who sent them. Actions
+          taken on a shared round (for example, shortlisting or awarding a
+          tender) are recorded with the name of the person who took them, and
+          that record is visible to the others on the round. By entering
+          someone&apos;s details, you confirm you are entitled to share them
+          with us for this purpose. If we hold your details from an
+          invitation and you would like them removed, contact us at{" "}
+          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>.
+        </P>
       </>
     ),
   },

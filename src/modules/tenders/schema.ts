@@ -27,6 +27,8 @@ import {
   uuid,
   text,
   integer,
+  boolean,
+  jsonb,
   timestamp,
   uniqueIndex,
   index,
@@ -140,6 +142,13 @@ export const tenders = pgTable(
     withdrawnAt: timestamp({ mode: "date", withTimezone: true }),
     decidedAt: timestamp({ mode: "date", withTimezone: true }),
     deletedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    /**
+     * Version of the structured submission instrument this tender's
+     * responses were answered against (see instrument.ts). NULL =
+     * pre-instrument tender (headline fields + cost lines only).
+     */
+    instrumentVersion: integer("instrument_version"),
   },
   (t) => [
     // A builder may have at most one *active* (non-withdrawn, non-
@@ -185,7 +194,130 @@ export const tenderCostLines = pgTable(
   ],
 );
 
+// ── tender_builder_invites ───────────────────────────────────────────────
+
+export const builderInviteStatusEnum = pgEnum("builder_invite_status", [
+  "invited",
+  "joined",
+  "declined",
+  "revoked",
+]);
+
+/**
+ * A builder hand-picked for a tender round — any mode. On a private
+ * round the invite list IS the round; on an open round invited
+ * builders join free alongside the network spots. Two
+ * shapes share the table:
+ *
+ *   on-platform  — builderUserId set (picked from the directory)
+ *   off-platform — email/company set; the invite link carries the
+ *                  builder through a fast-lane onboarding that lands
+ *                  them inside this tender, attaching builderUserId
+ *
+ * Invited builders never pay: acceptance grants an unlock with
+ * source "invited" (free), which still occupies one of the project's
+ * tender spots inside the same capped transaction as paid unlocks.
+ */
+export const tenderBuilderInvites = pgTable(
+  "tender_builder_invites",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+
+    /** Who sent the invite (the project runner). */
+    invitedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    /** On-platform pick; also set when an off-platform invite joins. */
+    builderUserId: uuid().references(() => users.id, {
+      onDelete: "cascade",
+    }),
+
+    /** Off-platform invitee details as entered by the runner. */
+    email: text(),
+    contactName: text(),
+    company: text(),
+
+    status: builderInviteStatusEnum().notNull().default("invited"),
+
+    /** Invited builders quote for free (decision: open spots pay). */
+    freeAccess: boolean("free_access").notNull().default(true),
+
+    /** Single-use redemption token carried by the invite link. */
+    inviteToken: text("invite_token").notNull(),
+
+    invitedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    respondedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** When the one nudge for a pending invitation went out — the
+     *  daily cron sends exactly one per invitation. */
+    remindedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("tender_builder_invites_token_idx").on(t.inviteToken),
+    index("tender_builder_invites_project_idx").on(t.projectId, t.status),
+    index("tender_builder_invites_builder_idx").on(t.builderUserId),
+  ],
+);
+
+// ── tender_responses ─────────────────────────────────────────────────────
+
+/**
+ * Structured submission answers — one row per (tender, question). The
+ * question set lives in code (instrument.ts, versioned via
+ * tenders.instrumentVersion); answers are typed jsonb payloads shaped
+ * by the question type. Row-per-answer (not one blob) so comparison
+ * can join across builders per question.
+ */
+export const tenderResponses = pgTable(
+  "tender_responses",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+
+    tenderId: uuid()
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+
+    /** Stable question id from the instrument, e.g. "price.fixed". */
+    qid: text().notNull(),
+
+    /**
+     * Typed answer payload, shaped by the question type:
+     *   bool     {"v": true}
+     *   select   {"v": "hia_contract"}
+     *   multi    {"v": ["materials","labour"]}
+     *   number   {"v": 26}            currency {"v": 480000}  (whole AUD)
+     *   percent  {"v": 5}             text     {"v": "..."}
+     *   month    {"v": "2026-10"}
+     *   items    {"v": [{...row}, ...]}
+     *   matrix   {"v": {"rowId": "included" | "excluded" | ...}}
+     */
+    value: jsonb().notNull(),
+
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("tender_responses_tender_qid_idx").on(t.tenderId, t.qid),
+  ],
+);
+
 export type TenderRow = typeof tenders.$inferSelect;
 export type TenderInsert = typeof tenders.$inferInsert;
 export type TenderCostLineRow = typeof tenderCostLines.$inferSelect;
 export type TenderCostLineInsert = typeof tenderCostLines.$inferInsert;
+export type TenderBuilderInviteRow = typeof tenderBuilderInvites.$inferSelect;
+export type TenderResponseRow = typeof tenderResponses.$inferSelect;

@@ -2,11 +2,13 @@ import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForOwner } from "@/modules/projects";
+import { UNLOCK_CAP } from "@/modules/unlocks/constants";
+import { projectsBase } from "@/lib/dashboard-route";
 
 import { PublishedCelebration } from "./published-celebration";
 
 export const metadata = {
-  title: "You're live — BuilderHQ",
+  title: "You're live · BuilderHQ",
   robots: { index: false, follow: false },
 };
 
@@ -28,6 +30,8 @@ export default async function PublishedPage({
     redirect(`/login?next=/owner/projects/${slug}/published`);
   }
 
+  const basePath = projectsBase(session.user.role);
+
   const r = await getBySlugForOwner(session.user.id!, slug);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
@@ -37,7 +41,7 @@ export default async function PublishedPage({
 
   // Nothing to celebrate on a draft — send them back to finish it.
   if (project.status === "draft") {
-    redirect(`/owner/projects/${slug}/edit`);
+    redirect(`${basePath}/projects/${slug}/edit`);
   }
 
   return (
@@ -45,6 +49,9 @@ export default async function PublishedPage({
       title={project.title}
       slug={project.slug}
       state={project.state}
+      basePath={basePath}
+      cap={project.tenderSpots ?? UNLOCK_CAP}
+      tenderMode={project.tenderMode}
     />
   );
 }

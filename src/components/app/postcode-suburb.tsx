@@ -273,7 +273,7 @@ function SuburbChip({ suburb, state }: { suburb: string; state: State }) {
         "flex items-center gap-2 px-3.5",
       )}
     >
-      <MapPin className="size-3.5 text-accent shrink-0" />
+      <MapPin className="size-3.5 text-accent-light shrink-0" />
       <span className="text-[13px] text-text">{suburb}</span>
       <span className="ml-auto text-[10px] tracking-[0.18em] uppercase text-accent-light font-mono">
         {state}

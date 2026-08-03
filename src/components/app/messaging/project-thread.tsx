@@ -45,6 +45,7 @@ import {
   Building2,
   CheckCheck,
   Hammer,
+  UserRound,
   Inbox,
   Loader2,
   MessageSquare,
@@ -61,6 +62,7 @@ import {
   listProjectConversationsAction,
   markConversationReadAction,
   postMessageAction,
+  startProjectConversationAction,
 } from "@/app/(app)/_actions/messaging";
 import type {
   ConversationListItem,
@@ -92,6 +94,13 @@ interface Props {
    *  message scroll height. Used when the panel sits inside an
    *  existing card column (builder detail right rail). */
   compact?: boolean;
+  /**
+   * Builders on the round the viewer has NO thread with yet — the
+   * start affordance. The runner's threads pre-exist from unlocks, so
+   * this mostly serves Deciding seats opening their own parallel
+   * threads. Owner scope only.
+   */
+  startable?: Array<{ builderId: string; label: string; initials: string }>;
 }
 
 export function ProjectMessagingPanel({
@@ -101,10 +110,41 @@ export function ProjectMessagingPanel({
   initialConversations,
   inboxHref,
   compact = false,
+  startable = [],
 }: Props) {
   const [convs, setConvs] = useState(initialConversations);
   const [activeId, setActiveId] = useState<string | null>(
     initialConversations[0]?.id ?? null,
+  );
+  const [starting, setStarting] = useState<string | null>(null);
+
+  // Builders still without a thread for THIS viewer — live, so a chip
+  // disappears the moment its thread exists.
+  const remainingStartable = startable.filter(
+    (b) => !convs.some((c) => c.other.id === b.builderId),
+  );
+
+  const startThread = useCallback(
+    async (builderId: string) => {
+      setStarting(builderId);
+      try {
+        const r = await startProjectConversationAction(projectId, builderId);
+        if (r.ok) {
+          setConvs((prev) =>
+            prev.some((c) => c.id === r.value.id) ? prev : [r.value, ...prev],
+          );
+          setActiveId(r.value.id);
+        } else {
+          toast.error(
+            "Could not open the conversation",
+            r.error?.message ?? "Please try again.",
+          );
+        }
+      } finally {
+        setStarting(null);
+      }
+    },
+    [projectId],
   );
 
   // Poll the per-project conversation list every 25s so unread badges
@@ -131,17 +171,21 @@ export function ProjectMessagingPanel({
     return () => clearInterval(id);
   }, [refreshList]);
 
-  if (convs.length === 0) {
+  if (convs.length === 0 && remainingStartable.length === 0) {
     return <EmptyPanel scope={scope} inboxHref={inboxHref} compact={compact} />;
   }
 
   return (
     <PanelShell compact={compact}>
-      {scope === "owner" && convs.length > 1 ? (
+      {scope === "owner" &&
+      (convs.length > 1 || remainingStartable.length > 0) ? (
         <BuilderPicker
           conversations={convs}
           activeId={activeId}
           onSelect={setActiveId}
+          startable={remainingStartable}
+          starting={starting}
+          onStart={startThread}
         />
       ) : null}
       {activeId ? (
@@ -154,7 +198,14 @@ export function ProjectMessagingPanel({
           inboxHref={inboxHref}
           compact={compact}
         />
-      ) : null}
+      ) : (
+        <div className="flex-1 flex items-center justify-center px-6 py-14">
+          <p className="max-w-[40ch] text-center text-[13px] leading-[1.65] text-text-muted">
+            Pick a builder above to open your own thread with them. The
+            builders see exactly who they are talking to.
+          </p>
+        </div>
+      )}
     </PanelShell>
   );
 }
@@ -188,10 +239,16 @@ function BuilderPicker({
   conversations,
   activeId,
   onSelect,
+  startable = [],
+  starting = null,
+  onStart,
 }: {
   conversations: ConversationListItem[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  startable?: Array<{ builderId: string; label: string; initials: string }>;
+  starting?: string | null;
+  onStart?: (builderId: string) => void;
 }) {
   return (
     <div className="px-4 py-3 border-b border-border-subtle/60 overflow-x-auto">
@@ -228,6 +285,29 @@ function BuilderPicker({
                 {c.unreadCount > 99 ? "99+" : c.unreadCount}
               </span>
             ) : null}
+          </button>
+        ))}
+        {/* Builders without a thread yet — dashed ghost chips; one
+            click opens the viewer's own thread. */}
+        {startable.map((b) => (
+          <button
+            key={b.builderId}
+            type="button"
+            disabled={starting != null}
+            onClick={() => onStart?.(b.builderId)}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full border border-dashed transition-colors duration-[140ms]",
+              "border-border-subtle text-text-dim hover:text-text hover:border-border disabled:opacity-60",
+            )}
+          >
+            <span className="size-6 rounded-full flex items-center justify-center text-[9.5px] font-bold border border-border-subtle text-text-dim bg-[rgba(24,34,44,0.04)]">
+              {starting === b.builderId ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                b.initials
+              )}
+            </span>
+            <span className="text-[12px] truncate max-w-[160px]">{b.label}</span>
           </button>
         ))}
       </div>
@@ -417,6 +497,11 @@ function ThreadHeader({
       <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
         <Hammer className="size-3" />
         Builder
+      </span>
+    ) : conv.other.role === "decider" ? (
+      <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
+        <UserRound className="size-3" />
+        Client on the round
       </span>
     ) : (
       <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
@@ -820,7 +905,7 @@ function EmptyPanel({
         </p>
         <Link
           href={inboxHref}
-          className="mt-5 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light hover:text-accent transition-colors"
+          className="mt-5 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light hover:text-accent-deep transition-colors"
         >
           Open full inbox
           <ArrowUpRight className="size-3" />

@@ -61,7 +61,7 @@ export function Eyebrow({
     <span
       className={cn(
         "inline-block font-ui font-medium",
-        "text-[11px] tracking-[0.18em] uppercase text-accent",
+        "text-[11px] tracking-[0.18em] uppercase text-accent-light",
         className,
       )}
     >

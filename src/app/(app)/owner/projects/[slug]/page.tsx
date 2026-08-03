@@ -5,6 +5,7 @@ import {
   MapPin,
   DollarSign,
   Calendar,
+  Eye,
   FileText,
   ArrowUpRight,
   Home,
@@ -15,8 +16,12 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
-import { getBySlugForOwner, type Project } from "@/modules/projects";
-import { listForProject } from "@/modules/documents";
+import {
+  getBySlugForViewer,
+  PARTICIPANT_ROLE_LABEL,
+  type Project,
+} from "@/modules/projects";
+import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
 import { listForUserOnProject } from "@/modules/messaging";
 import { listUnlocksForProject, UNLOCK_CAP } from "@/modules/unlocks";
@@ -25,6 +30,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
 import { ProjectMessagingPanel } from "@/components/app/messaging/project-thread";
 import { ProjectActivity } from "./activity";
+import { ParticipantsPanel } from "./participants-panel";
+import { projectsBase } from "@/lib/dashboard-route";
 
 export async function generateMetadata({
   params,
@@ -42,66 +49,84 @@ const TYPE_META: Record<Project["type"], { label: string; icon: React.ReactNode 
   extension: { label: "Extension", icon: <Layers className="size-4" /> },
 };
 
+const STATUS_LABEL: Record<Project["status"], string> = {
+  draft: "Draft",
+  published: "Live",
+  tendering: "Tendering",
+  awarded: "Awarded",
+  archived: "Archived",
+};
+
 const BUDGET_LABEL: Record<NonNullable<Project["budgetBand"]>, string> = {
   under_500k: "Under $500k",
-  "500k_1m": "$500k – $1M",
-  "1m_1_5m": "$1M – $1.5M",
-  "1_5m_2m": "$1.5M – $2M",
-  "2m_3m": "$2M – $3M",
-  "3m_5m": "$3M – $5M",
-  over_5m: "Over $5M",
+  "500k_1m": "$500k to $1m",
+  "1m_1_5m": "$1m to $1.5m",
+  "1_5m_2m": "$1.5m to $2m",
+  "2m_3m": "$2m to $3m",
+  "3m_5m": "$3m to $5m",
+  over_5m: "Over $5m",
 };
 
 const RENO_LABEL: Record<NonNullable<Project["renovationScope"]>, string> = {
   kitchen: "Kitchen",
   bathroom: "Bathroom",
-  kitchen_and_bathroom: "Kitchen + bathroom",
+  kitchen_and_bathroom: "Kitchen and bathroom",
   full_internal: "Full internal",
-  full_internal_and_external: "Internal + external",
+  full_internal_and_external: "Internal and external",
   structural: "Structural",
 };
 
 const EXT_LABEL: Record<NonNullable<Project["extensionType"]>, string> = {
   ground_floor: "Ground floor",
   first_floor: "First floor",
-  ground_and_first: "Ground + first",
+  ground_and_first: "Ground and first",
   rear: "Rear",
   side: "Side",
 };
 
 const LAND_LABEL: Record<NonNullable<Project["landSizeBand"]>, string> = {
   under_200: "Under 200 m²",
-  "200_400": "200 – 400 m²",
-  "400_600": "400 – 600 m²",
-  "600_800": "600 – 800 m²",
-  "800_1000": "800 – 1000 m²",
-  over_1000: "1000 m²+",
+  "200_400": "200 to 400 m²",
+  "400_600": "400 to 600 m²",
+  "600_800": "600 to 800 m²",
+  "800_1000": "800 to 1,000 m²",
+  over_1000: "Over 1,000 m²",
 };
 const BUILD_LBL: Record<NonNullable<Project["buildSizeBand"]>, string> = {
   under_100: "Under 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  "300_400": "300 – 400 m²",
-  over_400: "400 m²+",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  "300_400": "300 to 400 m²",
+  over_400: "Over 400 m²",
 };
 const EXT_SIZE_LBL: Record<NonNullable<Project["extensionSizeBand"]>, string> = {
   under_50: "Under 50 m²",
-  "50_100": "50 – 100 m²",
-  "100_150": "100 – 150 m²",
-  "150_200": "150 – 200 m²",
-  "200_250": "200 – 250 m²",
-  "250_300": "250 – 300 m²",
-  over_300: "300 m²+",
+  "50_100": "50 to 100 m²",
+  "100_150": "100 to 150 m²",
+  "150_200": "150 to 200 m²",
+  "200_250": "200 to 250 m²",
+  "250_300": "250 to 300 m²",
+  over_300: "Over 300 m²",
 };
 const AGE_LBL: Record<NonNullable<Project["existingAgeBand"]>, string> = {
-  under_10: "Under 10 yrs",
-  "10_25": "10 – 25 yrs",
-  "25_50": "25 – 50 yrs",
-  "50_75": "50 – 75 yrs",
-  over_75: "Over 75 yrs",
+  under_10: "Under 10 years",
+  "10_25": "10 to 25 years",
+  "25_50": "25 to 50 years",
+  "50_75": "50 to 75 years",
+  over_75: "Over 75 years",
 };
+
+/** "2026-11" (the stored month format) → "November 2026". */
+function formatMonth(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const [y, m] = s.split("-");
+  if (!y || !m) return s;
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+}
 
 export default async function ProjectDetailPage({
   params,
@@ -112,27 +137,62 @@ export default async function ProjectDetailPage({
   const session = await auth();
   if (!session?.user) redirect(`/login?next=/owner/projects/${slug}`);
 
-  const r = await getBySlugForOwner(session.user.id!, slug);
+  const base = projectsBase(session.user.role);
+
+  const r = await getBySlugForViewer(session.user.id!, slug);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
     throw new Error(r.error.message);
   }
-  const project = r.value;
+  const { project, access, sharedBy } = r.value;
+  const isRunner = access.kind === "runner";
+  // Messaging follows the decision: the runner and Deciding seats hold
+  // their own threads with the round's builders; Following seats stay
+  // out of the threads by decree.
+  const canMessage =
+    isRunner || (access.kind === "participant" && access.role === "decider");
+  const sharedByName = sharedBy
+    ? (sharedBy.practiceName ?? sharedBy.name ?? "the project runner")
+    : null;
 
-  // Drafts always go to the wizard.
-  if (project.status === "draft") {
-    redirect(`/owner/projects/${slug}/edit`);
+  // Drafts go to the wizard for the runner — unless the project is in
+  // preparation under the scope gate, in which case the tender pack
+  // page is the draft's home. A participant's seat shows whatever
+  // exists either way.
+  if (project.status === "draft" && isRunner) {
+    redirect(
+      project.publishRequestedAt
+        ? `${base}/projects/${slug}/scope`
+        : `${base}/projects/${slug}/edit`,
+    );
   }
 
   // Independent reads — fan out in parallel. `builders` is the unlock
-  // list (≤ UNLOCK_CAP), which drives the "who's interested" panel; one
-  // conversation per unlocked builder powers the inline messaging panel.
+  // list (≤ UNLOCK_CAP), which drives the "who's interested" panel and
+  // the messaging panel's builder chips. Conversations are the
+  // VIEWER'S own threads — the runner's pre-exist from unlocks, a
+  // Deciding seat's are opened from the panel.
   const [docs, tenderCount, conversations, builders] = await Promise.all([
-    listForProject(session.user.id!, project.id),
+    listActiveForProjectUnchecked(project.id),
     countTendersForProject(project.id),
-    listForUserOnProject(session.user.id!, project.id),
+    canMessage
+      ? listForUserOnProject(session.user.id!, project.id)
+      : Promise.resolve([]),
     listUnlocksForProject(project.id),
   ]);
+
+  // Builders the viewer has no thread with yet — the panel's start
+  // affordance. Empty for runners in practice (unlock auto-creates
+  // their threads); the working set for Deciding seats.
+  const startableBuilders = canMessage
+    ? builders
+        .filter((b) => !conversations.some((c) => c.other.id === b.builderId))
+        .map((b) => ({
+          builderId: b.builderId,
+          label: b.companyName ?? b.name ?? "Builder",
+          initials: b.initials,
+        }))
+    : [];
   // Inline the unread tally here — totalUnread() lives in a "use client"
   // module, so calling it from this server component throws an RSC
   // boundary error. The math is a trivial reduce.
@@ -147,12 +207,19 @@ export default async function ProjectDetailPage({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60">·</span>
-              <span className="px-1.5 py-0.5 border border-border-accent rounded-sm text-[8.5px] tracking-[0.16em] uppercase text-accent">
-                {project.status}
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.16em] uppercase font-semibold",
+                  project.status === "archived"
+                    ? "border-border-subtle text-text-dim"
+                    : "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[#0a7d73]",
+                )}
+              >
+                {STATUS_LABEL[project.status]}
               </span>
             </span>
             <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[52px] leading-[0.92] text-text break-words">
@@ -164,13 +231,23 @@ export default async function ProjectDetailPage({
               </p>
             ) : null}
           </div>
-          <Link
-            href={`/owner/projects/${project.slug}/edit`}
-            className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
-          >
-            <Pencil className="size-3.5" />
-            <span className="hidden sm:inline">Edit</span>
-          </Link>
+          {isRunner ? (
+            <Link
+              href={`${base}/projects/${project.slug}/edit`}
+              className={cn(buttonVariants({ variant: "outline", size: "md" }), "gap-2 shrink-0")}
+            >
+              <Pencil className="size-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </Link>
+          ) : (
+            <span className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-md border border-border-subtle bg-surface-1 text-[11px] text-text-muted">
+              <Eye className="size-3.5 text-accent-light" />
+              <span>
+                Shared by <span className="text-text font-medium">{sharedByName}</span>
+                <span className="text-text-dim"> · {PARTICIPANT_ROLE_LABEL[access.role]}</span>
+              </span>
+            </span>
+          )}
         </div>
 
         {/* Activity — the owner's "what's happening / who's interested /
@@ -180,12 +257,15 @@ export default async function ProjectDetailPage({
             to the tender comparison once tenders arrive. */}
         <Reveal immediate>
           <ProjectActivity
+            basePath={base}
             slug={project.slug}
             state={project.state}
             unlockCount={builders.length}
             tenderCount={tenderCount}
-            cap={UNLOCK_CAP}
+            cap={project.tenderSpots ?? UNLOCK_CAP}
             builders={builders}
+            tenderMode={project.tenderMode}
+            canMessage={canMessage}
           />
         </Reveal>
 
@@ -248,14 +328,17 @@ export default async function ProjectDetailPage({
             </Reveal>
 
             <Reveal immediate delay={0.10}>
-              <Card title="Budget & timeline" icon={<DollarSign className="size-4" />}>
+              <Card title="Budget and timeline" icon={<DollarSign className="size-4" />}>
                 <KvGrid>
                   <Kv
                     label="Budget"
                     value={project.budgetBand ? BUDGET_LABEL[project.budgetBand] : null}
                   />
-                  <Kv label="Target start" value={project.targetStartMonth} />
-                  <Kv label="Target completion" value={project.targetCompletionMonth} />
+                  <Kv label="Target start" value={formatMonth(project.targetStartMonth)} />
+                  <Kv
+                    label="Target completion"
+                    value={formatMonth(project.targetCompletionMonth)}
+                  />
                 </KvGrid>
               </Card>
             </Reveal>
@@ -290,25 +373,30 @@ export default async function ProjectDetailPage({
               ) : (
                 <ul className="flex flex-col gap-2">
                   {docs.slice(0, 8).map((d) => (
-                    <li key={d.id} className="text-[12.5px] text-text-muted truncate">
-                      <span className="text-text-dim mr-1">📄</span>
-                      {d.filename}
+                    <li
+                      key={d.id}
+                      className="flex items-center gap-2 text-[12.5px] text-text-muted min-w-0"
+                    >
+                      <FileText className="size-3.5 text-text-dim shrink-0" />
+                      <span className="truncate">{d.filename}</span>
                     </li>
                   ))}
                   {docs.length > 8 ? (
                     <li className="text-[11px] text-text-dim">
-                      …and {docs.length - 8} more
+                      and {docs.length - 8} more
                     </li>
                   ) : null}
                 </ul>
               )}
-              <Link
-                href={`/owner/projects/${project.slug}/edit`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
-              >
-                Manage documents
-                <ArrowUpRight className="size-3" />
-              </Link>
+              {isRunner ? (
+                <Link
+                  href={`${base}/projects/${project.slug}/edit`}
+                  className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
+                >
+                  Manage documents
+                  <ArrowUpRight className="size-3" />
+                </Link>
+              ) : null}
             </Card>
             </Reveal>
 
@@ -316,24 +404,33 @@ export default async function ProjectDetailPage({
             <Card title={`Tenders · ${tenderCount}`} icon={<FileText className="size-4" />}>
               {tenderCount === 0 ? (
                 <p className="text-[12.5px] text-text-dim">
-                  No tenders yet. Builders who unlock this project can submit
-                  tenders, which appear side-by-side here for comparison.
+                  No tenders yet. Builders who take a spot on your round submit
+                  tenders here, laid out side by side for comparison.
                 </p>
               ) : (
                 <p className="text-[12.5px] text-text-muted">
                   {tenderCount} tender{tenderCount === 1 ? "" : "s"} received.
-                  Compare side-by-side and decide.
+                  Compare them side by side and decide.
                 </p>
               )}
               <Link
-                href={`/owner/projects/${project.slug}/tenders`}
-                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent transition-colors"
+                href={`${base}/projects/${project.slug}/tenders`}
+                className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
               >
                 {tenderCount > 0 ? "Compare tenders" : "View tender stream"}
                 <ArrowUpRight className="size-3" />
               </Link>
             </Card>
             </Reveal>
+
+            {/* Sharing — the runner hands seats to the people who
+                should watch (or help decide) without running the
+                round. Flagship case: the architect's client. */}
+            {isRunner ? (
+              <Reveal immediate delay={0.21}>
+                <ParticipantsPanel projectId={project.id} />
+              </Reveal>
+            ) : null}
 
             <Reveal immediate delay={0.24}>
             <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
@@ -364,15 +461,15 @@ export default async function ProjectDetailPage({
           </div>
         </div>
 
-        {/* Inline messaging — one conversation per builder who's
-              unlocked this project. The panel surfaces an empty state
-              until the first unlock; afterwards each unlocked builder
-              appears in the picker. */}
+        {/* Inline messaging — the viewer's own threads with the
+              round's builders. Runner + Deciding seats; a Following
+              seat stays out of the threads by decree. */}
+        {canMessage ? (
         <section id="messaging" className="mt-8 scroll-mt-24">
           <Reveal immediate delay={0.30}>
             <div className="flex items-baseline justify-between gap-3 mb-3">
               <div>
-                <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+                <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
                   <MessageSquare className="size-3" />
                   Project messaging
                   {messagingUnread > 0 ? (
@@ -383,7 +480,7 @@ export default async function ProjectDetailPage({
                 </span>
                 <h2 className="mt-1.5 font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
                   {conversations.length === 0
-                    ? "Message builders the moment they unlock"
+                    ? "Message builders as they join your round"
                     : `Talk to ${conversations.length} builder${conversations.length === 1 ? "" : "s"}`}
                 </h2>
               </div>
@@ -393,10 +490,12 @@ export default async function ProjectDetailPage({
               scope="owner"
               meId={session.user.id!}
               initialConversations={conversations}
-              inboxHref="/owner/messages"
+              inboxHref={`${base}/messages`}
+              startable={startableBuilders}
             />
           </Reveal>
         </section>
+        ) : null}
       </div>
     </div>
   );
@@ -412,12 +511,12 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle bg-surface-1/40 overflow-hidden">
-      <header className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center gap-2.5">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center">
-          {icon}
-        </span>
-        <h3 className="font-ui font-semibold text-[13px] text-text">{title}</h3>
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <header className="px-5 py-3 border-b border-border-subtle/60 flex items-center gap-2">
+        <span className="text-accent-light [&_svg]:size-3">{icon}</span>
+        <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+          {title}
+        </h3>
       </header>
       <div className="p-5">{children}</div>
     </section>

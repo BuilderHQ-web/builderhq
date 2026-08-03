@@ -91,7 +91,7 @@ export function EmptyState({
           <span
             className={cn(
               "inline-flex items-center justify-center",
-              tone === "primary" ? "text-accent" : "text-accent-light",
+              tone === "primary" ? "text-accent-light" : "text-accent-light",
             )}
           >
             {icon}

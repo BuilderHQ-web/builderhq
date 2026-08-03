@@ -141,7 +141,7 @@ export function OwnerSettingsForm({ defaults }: { defaults: Defaults }) {
                   className={cn(
                     "size-4 mt-0.5 shrink-0",
                     entityType === opt.value
-                      ? "text-accent"
+                      ? "text-accent-light"
                       : "text-text-faint group-hover:text-text-muted",
                   )}
                 />
@@ -212,7 +212,7 @@ export function OwnerSettingsForm({ defaults }: { defaults: Defaults }) {
                   className={cn(
                     "size-4 mt-0.5 shrink-0",
                     contactPref === opt.value
-                      ? "text-accent"
+                      ? "text-accent-light"
                       : "text-text-faint group-hover:text-text-muted",
                   )}
                 />

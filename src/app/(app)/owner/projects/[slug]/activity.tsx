@@ -34,46 +34,58 @@ type Stage = "live" | "unlocked" | "tendering";
 
 export function ProjectActivity({
   slug,
+  basePath,
   state,
   unlockCount,
   tenderCount,
   cap,
   builders,
+  tenderMode = "open",
+  canMessage = true,
 }: {
+  /** False on a participant seat — the messaging panel is the
+   *  runner's, so the Message CTAs hide with it. */
+  canMessage?: boolean;
   slug: string;
+  /** "/owner" or "/architect" — where this project's pages live. */
+  basePath: string;
   state: string | null;
   unlockCount: number;
   tenderCount: number;
   cap: number;
   builders: ProjectUnlockBuilder[];
+  tenderMode?: "open" | "private" | "hybrid";
 }) {
   const stage: Stage =
     tenderCount > 0 ? "tendering" : unlockCount > 0 ? "unlocked" : "live";
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-1/40 overflow-hidden">
+    <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
       <StatusBanner
+        canMessage={canMessage}
         stage={stage}
         unlockCount={unlockCount}
         tenderCount={tenderCount}
         state={state}
         slug={slug}
+        basePath={basePath}
+        tenderMode={tenderMode}
       />
 
       {builders.length > 0 ? (
         <div className="px-5 sm:px-6 pt-5 sm:pt-6">
           <div className="flex items-baseline justify-between gap-3 mb-3">
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
               <Sparkles className="size-3" />
-              Builders interested
+              Builders on your round
             </span>
             <span className="text-[10.5px] text-text-dim tabular-nums">
-              {unlockCount} of {cap} spots taken
+              {Math.min(unlockCount, cap)} of {cap} spots taken
             </span>
           </div>
           <ul className="flex flex-col gap-2.5">
             {builders.map((b) => (
-              <BuilderRow key={b.builderId} b={b} />
+              <BuilderRow key={b.builderId} b={b} canMessage={canMessage} />
             ))}
           </ul>
         </div>
@@ -85,6 +97,8 @@ export function ProjectActivity({
           What happens next
         </span>
         <WhatsNextSteps
+          cap={cap}
+          mode={tenderMode}
           current={
             stage === "live"
               ? "notified"
@@ -104,50 +118,56 @@ function StatusBanner({
   tenderCount,
   state,
   slug,
+  basePath,
+  tenderMode,
+  canMessage,
 }: {
   stage: Stage;
   unlockCount: number;
   tenderCount: number;
   state: string | null;
   slug: string;
+  basePath: string;
+  tenderMode: "open" | "private" | "hybrid";
+  canMessage: boolean;
 }) {
-  const whereLabel = state ? `across ${state}` : "in your area";
+  const whereLabel = state ? `across ${state}` : "on the register";
+  // A private round never announces itself to the network — the dispatch
+  // fan-out is skipped and builders arrive by invitation only.
+  const liveBody =
+    tenderMode === "private"
+      ? "Your invited builders have been notified with a private link. Priced tenders usually follow within 3 to 7 days of a builder joining."
+      : `Verified builders ${whereLabel} have been notified. The first builders usually join within a few days, and priced tenders follow within 3 to 7 days.`;
   const cfg = {
     live: {
       kicker: "Live · awaiting builders",
       title: "Your project is live",
-      body: `Verified builders ${whereLabel} are being notified right now. First unlocks usually land within a few days, and priced tenders within 3–7.`,
+      body: liveBody,
       cta: null as { label: string; href: string } | null,
     },
     unlocked: {
-      kicker: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} interested`,
-      title: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} unlocked your project`,
-      body: "They have your plans and contact details and can message you. Answer their questions to help them price it — tenders usually follow within days.",
-      cta: { label: "Message builders", href: "#messaging" },
+      kicker: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} on your round`,
+      title: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} joined your round`,
+      body: "They have your plans and contact details and can message you. Answer their questions to help them price it. Tenders usually follow within days.",
+      cta: canMessage
+        ? { label: "Message builders", href: "#messaging" }
+        : null,
     },
     tendering: {
       kicker: `${tenderCount} tender${tenderCount === 1 ? "" : "s"} in`,
       title: `You have ${tenderCount} tender${tenderCount === 1 ? "" : "s"} to compare`,
-      body: "Compare them side-by-side — price, timeline, inclusions — and award the builder you trust. You can keep messaging them first.",
+      body: "Read them side by side, across price, timeline, and inclusions, then award the builder you trust. You can keep messaging them first.",
       cta: {
         label: "Compare tenders",
-        href: `/owner/projects/${slug}/tenders`,
+        href: `${basePath}/projects/${slug}/tenders`,
       },
     },
   }[stage];
 
   return (
     <div className="relative p-5 sm:p-6 overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 -right-10 size-52 rounded-full blur-3xl opacity-50"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
-        }}
-      />
       <div className="relative">
-        <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+        <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold inline-flex items-center gap-2">
           <span className="relative flex size-1.5">
             <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />
             <span className="relative inline-flex size-1.5 rounded-full bg-accent" />
@@ -177,17 +197,17 @@ function StatusBanner({
   );
 }
 
-function BuilderRow({ b }: { b: ProjectUnlockBuilder }) {
+function BuilderRow({
+  b,
+  canMessage,
+}: {
+  b: ProjectUnlockBuilder;
+  canMessage: boolean;
+}) {
   const displayName = b.companyName ?? b.name ?? "Verified builder";
   return (
     <li className="flex items-center gap-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.025)] p-3 sm:p-3.5">
-      <span
-        className="size-11 rounded-full flex items-center justify-center text-[12px] font-bold border border-border-accent text-accent-light shrink-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(0,212,200,0.30), rgba(26,95,212,0.30))",
-        }}
-      >
+      <span className="size-11 rounded-full flex items-center justify-center text-[12px] font-semibold border border-border-subtle bg-[rgba(24,34,44,0.04)] text-text shrink-0">
         {b.initials}
       </span>
       <div className="min-w-0 flex-1">
@@ -233,13 +253,15 @@ function BuilderRow({ b }: { b: ProjectUnlockBuilder }) {
             Profile
           </Link>
         ) : null}
-        <Link
-          href="#messaging"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
-        >
-          <MessageSquare className="size-3" />
-          Message
-        </Link>
+        {canMessage ? (
+          <Link
+            href="#messaging"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+          >
+            <MessageSquare className="size-3" />
+            Message
+          </Link>
+        ) : null}
       </div>
     </li>
   );

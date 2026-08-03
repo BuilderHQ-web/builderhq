@@ -31,7 +31,10 @@ import { readAdsFunnelCookie } from "@/lib/ads-funnel-cookie";
 
 export interface ActorContext {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
+  /** Session email — null on soft-auth (draft) actors. Used by flows
+   *  that bind an artifact to a mailbox (participant claims). */
+  email: string | null;
   /** "session" = Auth.js JWT (verified user).
    *  "draft"   = ads-funnel soft-auth cookie (unverified, single
    *              project scope). */
@@ -45,7 +48,7 @@ export async function requireActor(): Promise<Result<ActorContext>> {
   if (!u?.id || !u.role) {
     return fail("forbidden", "Sign in required.");
   }
-  return ok({ id: u.id, role: u.role, mode: "session" });
+  return ok({ id: u.id, role: u.role, email: u.email ?? null, mode: "session" });
 }
 
 /**
@@ -63,13 +66,14 @@ export async function requireActorForProject(
   const session = await auth();
   const u = session?.user;
   if (u?.id && u.role) {
-    return ok({ id: u.id, role: u.role, mode: "session" });
+    return ok({ id: u.id, role: u.role, email: u.email ?? null, mode: "session" });
   }
   const cookie = await readAdsFunnelCookie();
   if (cookie.ok && cookie.value.projectId === projectId) {
     return ok({
       id: cookie.value.userId,
       role: "project_owner",
+      email: null,
       mode: "draft",
     });
   }

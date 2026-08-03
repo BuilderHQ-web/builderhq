@@ -35,9 +35,9 @@ const toneStyles: Record<
   { text: string; dot: string; iconClass: string }
 > = {
   accent: {
-    text: "text-accent",
+    text: "text-accent-light",
     dot: "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]",
-    iconClass: "text-accent",
+    iconClass: "text-accent-light",
   },
   muted: {
     text: "text-text-dim",

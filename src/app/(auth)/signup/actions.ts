@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signUp, signUpSchema } from "@/modules/auth";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
+import { safeInternalPath } from "../_lib/next-path";
 
 /** Form-state shape consumed by useFormState / useActionState on the client. */
 export interface SignupActionState {
@@ -53,7 +54,12 @@ export async function signupAction(
     return { fieldErrors };
   }
 
-  const result = await signUp(parsed.data);
+  // Continuation path (e.g. an invitation the user was following) —
+  // sanitised to internal paths, threaded through the verification
+  // email so the journey survives the round-trip.
+  const next = safeInternalPath(String(formData.get("next") ?? ""));
+
+  const result = await signUp(parsed.data, next ? { next } : {});
   if (!result.ok) {
     if (result.error.code === "conflict") {
       return { fieldErrors: { email: result.error.message } };
@@ -63,5 +69,9 @@ export async function signupAction(
 
   // Success — redirect to the verify-email page. We pass the email as a
   // query param so the next page can show "we sent a link to <email>".
-  redirect(`/verify-email?email=${encodeURIComponent(result.value.email)}`);
+  redirect(
+    `/verify-email?email=${encodeURIComponent(result.value.email)}${
+      next ? `&next=${encodeURIComponent(next)}` : ""
+    }`,
+  );
 }

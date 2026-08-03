@@ -29,7 +29,7 @@ export function PageHeader({
       <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-10 py-9 lg:py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div className="flex flex-col gap-3 min-w-0">
           {eyebrow ? (
-            <span className="text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium">
+            <span className="text-[11px] tracking-[0.18em] uppercase text-accent-light font-ui font-medium">
               {eyebrow}
             </span>
           ) : null}

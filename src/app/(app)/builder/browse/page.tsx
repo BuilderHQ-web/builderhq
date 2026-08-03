@@ -5,6 +5,7 @@ import { Compass, Filter, X } from "lucide-react";
 import { auth } from "@/modules/auth";
 import {
   listForMarketplace,
+  listPrivateRoundStubs,
   type MarketplacePreview,
 } from "@/modules/projects";
 import {
@@ -14,9 +15,9 @@ import {
   countMySaved,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
-import { ProjectCard } from "@/components/builder/project-card";
+import { packStatsForProjects } from "@/modules/scope-engine";
+import { ProjectCard, PrivateRoundStubCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
-import { FbaQuotaPill } from "@/components/builder/fba-quota-pill";
 import { EmptyState } from "@/components/app/empty-state";
 import { Reveal } from "@/components/app/reveal";
 import { Input, Select } from "@/components/ui/input";
@@ -61,7 +62,10 @@ export default async function BrowsePage({
   if (!session?.user) redirect("/login?next=/builder/browse");
 
   const filters = parseFilters(params);
-  const projects = await listForMarketplace(filters);
+  const [projects, privateStubs] = await Promise.all([
+    listForMarketplace(filters),
+    listPrivateRoundStubs(filters),
+  ]);
 
   const userId = session.user.id!;
   const [unlockedIds, savedIds, unlockedCount, savedCount, fbaStatus] =
@@ -74,7 +78,13 @@ export default async function BrowsePage({
     ]);
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  // The trust line: which of these rounds carry an analysed pack.
+  const packStats = await packStatsForProjects(projects.map((p) => p.id));
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
+
+  // A builder who already holds a spot on a private round sees it in
+  // full under Unlocked — the anonymous stub would be a duplicate.
+  const stubs = privateStubs.filter((s) => !unlockedSet.has(s.id));
 
   const activeFilterCount =
     [filters.q, filters.type, filters.state, filters.postcode, filters.budgets?.[0]].filter(
@@ -87,15 +97,18 @@ export default async function BrowsePage({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <Compass className="size-3.5" />
               Browse
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[44px] leading-[0.95] text-text">
-              Find tender-ready work
+              Open tender rounds
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
               {projects.length} project{projects.length === 1 ? "" : "s"} live across Australia.
+              {stubs.length > 0
+                ? ` ${stubs.length} more running privately.`
+                : ""}
               {activeFilterCount > 0 ? ` ${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} applied.` : ""}
             </p>
           </div>
@@ -106,7 +119,6 @@ export default async function BrowsePage({
           <BuilderSectionTabs
             counts={{ saved: savedCount, unlocked: unlockedCount }}
           />
-          <FbaQuotaPill status={fbaStatus} />
         </div>
 
         {/* Filter bar — server form, GET-style */}
@@ -123,24 +135,44 @@ export default async function BrowsePage({
             />
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
+          <div className="mt-8 flex flex-col gap-3">
             {projects.map((p, i) => (
-              <Reveal
-                key={p.id}
-                immediate
-                delay={Math.min(i * 0.04, 0.24)}
-                className="h-full"
-              >
+              <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.24)}>
                 <ProjectCard
                   project={p}
                   isSaved={savedSet.has(p.id)}
                   isUnlocked={unlockedSet.has(p.id)}
                   fbaActive={fbaActive}
+                  packStats={packStats[p.id] ?? null}
                 />
               </Reveal>
             ))}
           </div>
         )}
+
+        {/* Private rounds — visible as market depth, nothing more.
+            Stub cards carry type + locality only and never link. */}
+        {stubs.length > 0 ? (
+          <div className="mt-10">
+            <div className="flex items-baseline justify-between gap-4 border-t border-border-subtle/70 pt-6">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-text-muted font-ui font-semibold">
+                Also on BuilderHQ, by invitation
+              </h2>
+              <p className="text-[12px] text-text-dim">
+                {stubs.length} private round{stubs.length === 1 ? "" : "s"} in progress
+              </p>
+            </div>
+            <div className="mt-4 flex flex-col gap-2.5">
+              {stubs.map((s) => (
+                <PrivateRoundStubCard key={s.id} stub={s} />
+              ))}
+            </div>
+            <p className="mt-3 text-[12px] text-text-dim">
+              Owners and architects can run rounds visible only to the builders they invite.
+              If you have been invited to one, the invitation email is your way in.
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -171,14 +203,14 @@ function FilterBar({ params }: { params: SearchParams }) {
   return (
     <form
       method="get"
-      className="rounded-md border border-border-subtle bg-surface-1 card-elev p-3 sm:p-4 lg:p-5"
+      className="border-y border-border-subtle/70 py-3 sm:py-4"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_140px_120px_140px_180px_auto] gap-2.5">
         <Input
           type="text"
           name="q"
           defaultValue={params.q ?? ""}
-          placeholder="Search by title…"
+          placeholder="Search by title"
           className="sm:col-span-2 lg:col-span-1"
         />
         <Select name="type" defaultValue={params.type ?? ""}>

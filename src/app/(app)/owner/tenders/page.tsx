@@ -39,7 +39,7 @@ export default async function OwnerTendersIndex() {
       <div className="mx-auto max-w-[1320px]">
         <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <FileSpreadsheet className="size-3.5" />
               Tenders
             </span>

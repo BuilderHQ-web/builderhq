@@ -297,7 +297,7 @@ const TONES = {
     icon: Check,
     surface:
       "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(255,255,255,0.92))]",
-    border: "border-accent/35",
+    border: "border-border-accent-strong",
     iconWrap: "bg-accent text-accent-contrast",
     iconColor: "text-accent-contrast",
     title: "text-text",

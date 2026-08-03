@@ -20,7 +20,7 @@
  */
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FileUp, ShieldCheck, ArrowLeft, RotateCcw, PencilLine } from "lucide-react";
 
 import {
@@ -122,6 +122,9 @@ export function PlanAutofill({
   onBack: () => void;
 }) {
   const router = useRouter();
+  // Mounted under both /owner and /architect — stay on the same base.
+  const pathname = usePathname();
+  const base = pathname.startsWith("/architect") ? "/architect" : "/owner";
   const [phase, setPhase] = useState<Phase>("upload");
   const [dragOver, setDragOver] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
@@ -220,7 +223,7 @@ export function PlanAutofill({
 
     // 4 - into the normal wizard, pre-filled, with the review banner.
     router.push(
-      `/owner/projects/${slug}/edit?from=autofill&filled=${count}`,
+      `${base}/projects/${slug}/edit?from=autofill&filled=${count}`,
     );
   }
 
@@ -289,7 +292,7 @@ export function PlanAutofill({
       </button>
 
       <div className="mb-7">
-        <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium">
           AI auto-fill from plans
         </span>
         <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[30px] sm:text-[40px] leading-[0.92] text-text">
@@ -355,7 +358,7 @@ export function PlanAutofill({
       ) : null}
 
       <div className="mt-5 flex items-start gap-2.5 text-text-dim">
-        <ShieldCheck className="size-4 shrink-0 mt-0.5 text-accent/70" />
+        <ShieldCheck className="size-4 shrink-0 mt-0.5 text-accent-light" />
         <p className="text-[12px] leading-[1.6] max-w-[58ch]">
           Your plans are read securely to fill the form. Nothing is published
           until you say so. You review and edit every detail first.

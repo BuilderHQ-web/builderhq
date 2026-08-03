@@ -48,7 +48,7 @@ function Choice({ onAi, onManual }: { onAi: () => void; onManual: () => void }) 
   return (
     <div>
       <div className="mb-8 sm:mb-10" style={rise(0)}>
-        <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium">
           Upload a project
         </span>
         <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[44px] leading-[0.92] text-text">
@@ -156,7 +156,7 @@ function ManualStart({ onBack }: { onBack: () => void }) {
       </button>
 
       <div className="mb-8 sm:mb-10">
-        <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium">
+        <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium">
           Enter details · Step 1 of 2
         </span>
         <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[44px] leading-[0.92] text-text">

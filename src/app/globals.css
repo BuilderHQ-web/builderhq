@@ -29,15 +29,18 @@
      The canvas is deliberately a touch deeper than the cards so white
      surfaces + card-elev read as sitting ABOVE the page, not flush with
      it. Landing + marketing self-paint #f4f1ea, so this is app-only. */
-  --color-bg: #ece7dd;
-  --color-bg-deep: #e3ddd0;
-  --color-bg-raised: #ffffff;
-  --color-bg-elev: #fbfaf6;
+  --color-bg: #f4f1ea;
+  --color-bg-deep: #ebe7dd;
+  --color-bg-raised: #fbf9f4;
+  --color-bg-elev: #f7f4ed;
   --color-bg-overlay: rgba(12, 18, 24, 0.5);
 
-  --color-surface-1: #ffffff;
-  --color-surface-2: #faf8f3;
-  --color-surface-3: #f1ede4;
+  /* Cards are warm PAPER, not stark white — a soft half-step above the
+     canvas. Hairline borders + card-elev shadows carry the separation;
+     the fill stays smooth (2026-07-21, "less striking white"). */
+  --color-surface-1: #fbf9f4;
+  --color-surface-2: #f6f3ec;
+  --color-surface-3: #efeae0;
   --color-surface-hover: #ece7dc;
 
   /* Borders — ink-alpha hairlines on light ground */
@@ -271,9 +274,9 @@
 }
 
 html, body {
-  /* App canvas — warm greige. Landing + marketing self-paint their own
-     #f4f1ea fixed layer on top, so this only shows through the app shell. */
-  background-color: #ece7dd;
+  /* App canvas — the landing's warm off-white, one surface everywhere
+     (2026-07-21: app canvas now matches the marketing canvas). */
+  background-color: #f4f1ea;
 }
 
 html {

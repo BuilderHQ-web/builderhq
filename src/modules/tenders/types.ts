@@ -121,9 +121,17 @@ export type CostLineInput = {
  * Submission validation report. The form renders this live so the
  * builder sees what's missing without having to click submit.
  */
+export type ChecklistProgress = {
+  /** Instrument version the tender is answering. */
+  version: number;
+  required: number;
+  answered: number;
+  complete: boolean;
+};
+
 export type SubmissionReadiness = {
   canSubmit: boolean;
-  missing: Array<"total_price" | "duration" | "validity">;
+  missing: Array<"total_price" | "duration" | "validity" | "checklist">;
   /** Variance between cost-breakdown sum and tender total, in AUD.
    *  Zero or null = balanced or breakdown empty. Positive = breakdown
    *  exceeds total, negative = breakdown is short. */

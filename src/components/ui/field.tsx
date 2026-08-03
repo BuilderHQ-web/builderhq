@@ -102,7 +102,7 @@ export function Field({
           >
             {label}
             {required ? (
-              <span className="text-accent ml-1" aria-hidden>
+              <span className="text-accent-light ml-1" aria-hidden>
                 *
               </span>
             ) : null}

@@ -28,7 +28,7 @@ interface TopbarProps {
     name: string | null;
     email: string | null | undefined;
     image: string | null | undefined;
-    role: "project_owner" | "builder" | "admin" | null;
+    role: "project_owner" | "builder" | "admin" | "architect" | null;
   };
   /** True when the builder has an active Founding Builder Access grant. */
   isFounding?: boolean;
@@ -41,6 +41,7 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
   project_owner: "Owner",
   builder: "Builder",
   admin: "Admin",
+  architect: "Architect",
 };
 
 export function Topbar({
@@ -217,6 +218,7 @@ function Breadcrumbs({ crumbs }: { crumbs: { label: string; href: string }[] }) 
 
 const labelMap: Record<string, string> = {
   owner: "Owner",
+  architect: "Studio",
   builder: "Builder",
   admin: "Admin",
   projects: "Projects",
@@ -234,14 +236,23 @@ const labelMap: Record<string, string> = {
   audit: "Audit log",
 };
 
+/**
+ * Architects call their project list "Tenders" (architectNav wording),
+ * so crumbs under /architect relabel the shared segments to match.
+ */
+const architectLabelOverrides: Record<string, string> = {
+  projects: "Tenders",
+};
+
 function pathToCrumbs(pathname: string): { label: string; href: string }[] {
   const segs = pathname.split("/").filter(Boolean);
   if (segs.length === 0) return [];
+  const overrides = segs[0] === "architect" ? architectLabelOverrides : {};
   const out: { label: string; href: string }[] = [];
   let acc = "";
   for (const s of segs) {
     acc += "/" + s;
-    out.push({ label: labelMap[s] ?? humanise(s), href: acc });
+    out.push({ label: overrides[s] ?? labelMap[s] ?? humanise(s), href: acc });
   }
   return out;
 }

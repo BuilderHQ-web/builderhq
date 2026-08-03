@@ -1,25 +1,31 @@
 "use client";
 
 /**
- * PublicBuilderProfile — `/b/[slug]` cinematic public profile.
+ * PublicBuilderProfile — `/b/[slug]`, the builder's public register entry.
  *
- * Read-only consumer of everything the builder edits at /builder/profile.
- * Designed as a portfolio-grade landing for the company:
+ * Set in the Preferred Partner letterhead language (the layout owners
+ * already meet at /partners/[slug]): an open-canvas hero with a glowing
+ * kicker, sentence-case Geist name and tracked-caps meta line; the
+ * avatar beside three headline figures; then eyebrow-labelled sections
+ * ruled with hairlines. The honest mapping — builders have no Google
+ * rating, portrait or awards, so the figures come from the register
+ * itself (years, licences, service areas) and verification chips play
+ * the trust role a star rating plays for partners. Claims render only
+ * where earned.
  *
- *   ┌─ HERO ──────────────────────────────────────────────┐
- *   │  logo        BUILDER · APPROVED · FOUNDING MEMBER   │
- *   │  (200px)    COMPANY NAME (Bebas, hero scale)        │
- *   │              tagline · location · years             │
- *   │              [Website] [LinkedIn] [Instagram]       │
- *   └─────────────────────────────────────────────────────┘
- *
- *   ┌─ STATS STRIP ───────────────────────────────────────┐
- *
- *   ┌─ ABOUT ────────────────────────────┐
- *   ┌─ WHAT WE BUILD ─ categories grid ──┐
- *   ┌─ WHERE WE WORK ─ areas grouped ────┐
- *   ┌─ LICENCES ──────────────────────────┐
- *   ┌─ CTA ───────────────────────────────┐
+ *   register rule bar
+ *   HERO   · Builder Register · Approved builder
+ *          Company Name (Geist, hero scale)
+ *          SUBURB, STATE · ON THE REGISTER SINCE 2026
+ *          [Website] [LinkedIn] [Instagram]
+ *   [avatar]  YEARS · LICENCES · SERVICE AREAS
+ *   registered-entity strip (legal name · ABN · verified chip)
+ *   ABOUT THE COMPANY ────────────────
+ *   WHAT THEY BUILD ──────────────────
+ *   WHERE THEY WORK ──────────────────
+ *   LICENCES AND VERIFICATION ────────
+ *   HOW TENDERING WORKS ──────────────
+ *   CTA
  *
  * No auth required to view (handled by the server entry — this
  * component just receives data + renders).
@@ -28,19 +34,16 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Award,
   Building2,
-  Calendar,
   CheckCircle2,
-  ExternalLink,
   Eye,
+  ExternalLink,
   Globe,
-  Hammer,
   House,
+  Landmark,
   Layers,
   MapPin,
   ShieldCheck,
-  Sparkles,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -89,7 +92,6 @@ const Instagram: LucideIcon = (({ className, ...props }) => (
 
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/app/reveal";
-import { FoundingBadge } from "@/components/builder/fba-card";
 
 // ── types ───────────────────────────────────────────────────────────────
 
@@ -119,7 +121,6 @@ interface PublicProfile {
   businessState: AustralianState | null;
   approvalStatus: ApprovalStatus;
   logoUrl: string | null;
-  isFounding: boolean;
   memberSince: Date;
   /** True when ABN has been verified by ABR (and hasn't been changed since). */
   abnVerified: boolean;
@@ -140,7 +141,7 @@ interface Licence {
   issuedAt: Date | null;
   expiresAt: Date | null;
   /** True when this licence has been verified against the relevant
-   *  state register. Drives the green "Verified · VBA" chip. */
+   *  state register. Drives the "Verified" chip. */
   verified: boolean;
 }
 
@@ -163,252 +164,90 @@ export function PublicBuilderProfile({
   isOwnProfile,
   viewerSignedIn,
 }: Props) {
+  const displayName =
+    profile.tradingName && profile.tradingName.trim().length > 0
+      ? profile.tradingName
+      : profile.companyName;
+
   return (
-    <div className="relative min-h-dvh bg-bg">
+    <div className="relative min-h-dvh bg-bg overflow-x-clip">
+      {/* letterhead canvas — teal bloom + drafting grid, top of page only */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[560px]">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(0,212,200,0.10), transparent 62%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.5]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(24,34,44,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(24,34,44,0.045) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+            maskImage:
+              "radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 85%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 85%)",
+          }}
+        />
+      </div>
+
       {isOwnProfile && profile.approvalStatus !== "approved" ? (
         <PreviewBanner status={profile.approvalStatus} />
       ) : null}
 
-      <Hero profile={profile} />
-
-      <main className="relative px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] flex flex-col gap-12 lg:gap-16 py-10 sm:py-12 lg:py-16">
-        <Reveal immediate delay={0.06}>
-          <StatsStrip
-            profile={profile}
-            categories={categories}
-            serviceAreas={serviceAreas}
-            licences={licences}
-          />
-        </Reveal>
-
-        {profile.bio ? (
-          <Reveal>
-            <AboutSection bio={profile.bio} />
-          </Reveal>
-        ) : null}
-
-        {categories.length > 0 ? (
-          <Reveal>
-            <CategoriesSection categories={categories} />
-          </Reveal>
-        ) : null}
-
-        {serviceAreas.length > 0 ? (
-          <Reveal>
-            <ServiceAreasSection areas={serviceAreas} />
-          </Reveal>
-        ) : null}
-
-        {licences.length > 0 ? (
-          <Reveal>
-            <LicencesSection licences={licences} />
-          </Reveal>
-        ) : null}
-
-        <Reveal>
-          <CallToAction
-            companyName={profile.companyName}
-            viewerSignedIn={viewerSignedIn}
-          />
-        </Reveal>
-      </main>
-
-      <Footer />
-    </div>
-  );
-}
-
-// ── Preview banner (for owners viewing their own pre-approval) ──────────
-
-function PreviewBanner({ status }: { status: ApprovalStatus }) {
-  const meta = APPROVAL_META[status];
-  return (
-    <div
-      className={cn(
-        "border-b text-[12px]",
-        status === "rejected" || status === "suspended"
-          ? "border-danger/35 bg-[rgba(255,80,80,0.06)] text-danger"
-          : "border-warning/35 bg-[rgba(255,181,71,0.06)] text-warning",
-      )}
-    >
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-          <span className="inline-flex items-center gap-2">
-            <Eye className="size-3.5" />
-            <strong className="font-medium">Preview mode</strong>
-          </span>
-          <span className="opacity-80">
-            · This profile is {meta.label.toLowerCase()} — only visible to you.
-          </span>
-        </span>
-        <Link
-          href="/builder/profile"
-          className="text-[11.5px] tracking-[0.04em] underline-offset-4 hover:underline shrink-0"
-        >
-          Edit profile
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// ── Hero ────────────────────────────────────────────────────────────────
-
-function Hero({ profile }: { profile: PublicProfile }) {
-  const initials = initialsOf(profile.companyName);
-  const tagline = composeTagline(profile);
-  return (
-    <section className="relative overflow-hidden border-b border-border-subtle">
-      {/* Ambient gradient + grid */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,200,0.14), transparent 60%), radial-gradient(ellipse 50% 40% at 80% 0%, rgba(26,95,212,0.10), transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-50 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(142,252,244,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.04) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 80%)",
-        }}
-      />
-      {/* Light sweep on mount */}
-      <motion.span
-        aria-hidden
-        initial={{ x: "-30%", opacity: 0 }}
-        animate={{ x: "120%", opacity: [0, 0.4, 0.4, 0] }}
-        transition={{
-          duration: 1.8,
-          ease: [0.22, 1, 0.36, 1],
-          delay: 0.25,
-          times: [0, 0.15, 0.85, 1],
-        }}
-        className="pointer-events-none absolute inset-y-0 w-[35%] rounded-full"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(10,125,115,0.18), transparent)",
-          filter: "blur(40px)",
-        }}
-      />
-
-      <div className="relative px-4 sm:px-6 lg:px-10 pt-12 sm:pt-14 lg:pt-20 pb-10 sm:pb-12 lg:pb-16 mx-auto max-w-[1100px]">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase text-accent font-ui font-medium mb-7 hover:opacity-80 transition-opacity"
-        >
-          <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-          BuilderHQ
-        </Link>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.2, 0.65, 0.3, 0.9] }}
-          className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-7 sm:gap-10 items-start"
-        >
-          {/* Logo */}
-          <div className="relative">
-            <div
-              className={cn(
-                "relative size-[148px] sm:size-[200px] rounded-md overflow-hidden border border-border-accent/40",
-                "bg-[linear-gradient(180deg,rgba(0,212,200,0.10),rgba(250,248,243,0.78))]",
-                "shadow-[0_24px_60px_-24px_rgba(0,212,200,0.40),0_0_0_1px_rgba(0,212,200,0.18)]",
-                "flex items-center justify-center",
-              )}
+      {/* register rule */}
+      <div className="relative border-b border-border-subtle/70">
+        <div className="mx-auto max-w-[860px] px-5 md:px-8 py-3 flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="text-[10px] tracking-[0.24em] uppercase text-text-dim font-ui font-semibold hover:text-text transition-colors"
+          >
+            BuilderHQ · Builder register
+          </Link>
+          {isOwnProfile ? (
+            <Link
+              href="/builder/profile"
+              className="text-[10px] tracking-[0.16em] uppercase text-text-dim hover:text-text transition-colors"
             >
-              {profile.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.logoUrl}
-                  alt={`${profile.companyName} logo`}
-                  className="size-full object-contain p-3"
-                />
-              ) : (
-                <span className="font-display text-[54px] sm:text-[68px] tracking-[0.04em] text-accent-light/85 leading-none">
-                  {initials}
-                </span>
-              )}
-            </div>
-            {profile.isFounding ? (
-              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2">
-                <FoundingBadge size="sm" />
-              </div>
-            ) : null}
-          </div>
+              Edit profile
+            </Link>
+          ) : null}
+        </div>
+      </div>
 
-          {/* Identity block */}
-          <div className="min-w-0 flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <ApprovalChip status={profile.approvalStatus} />
-              {profile.businessState ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
-                  <MapPin className="size-3" />
-                  {profile.businessSuburb
-                    ? `${profile.businessSuburb}, ${profile.businessState}`
-                    : profile.businessState}
-                </span>
-              ) : null}
-              {profile.yearsInOperation != null ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[10px] tracking-[0.16em] uppercase text-text-muted">
-                  <Calendar className="size-3" />
-                  {profile.yearsInOperation}{" "}
-                  {profile.yearsInOperation === 1 ? "year" : "years"}
-                </span>
-              ) : null}
-            </div>
+      <main className="relative mx-auto max-w-[860px] px-5 md:px-8 pt-14 sm:pt-18 lg:pt-20 pb-20">
+        {/* ── hero ───────────────────────────────────────────────── */}
+        <motion.header
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.2, 0.65, 0.3, 0.9] }}
+          className="mb-10 lg:mb-12"
+        >
+          <span className="inline-flex items-center gap-2.5 text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">
+            <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.7)]" />
+            Builder Register · {STATUS_KICKER[profile.approvalStatus]}
+          </span>
+          <h1 className="mt-5 font-ui font-semibold tracking-[-0.04em] leading-[1.04] text-[clamp(2.3rem,4.2vw+1rem,4.2rem)] text-text break-words">
+            {displayName}
+          </h1>
+          <p className="mt-5 text-[11px] tracking-[0.18em] uppercase text-text-dim">
+            {[
+              profile.businessSuburb && profile.businessState
+                ? `${profile.businessSuburb}, ${profile.businessState}`
+                : (profile.businessState ?? null),
+              profile.approvalStatus === "approved"
+                ? `On the register since ${profile.memberSince.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
 
-            <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.2rem,5.5vw+1rem,5.5rem)] leading-[0.92] text-text break-words">
-              {profile.tradingName && profile.tradingName.trim().length > 0
-                ? profile.tradingName
-                : profile.companyName}
-            </h1>
-
-            {/* Legal name + verified-ABN chip — only render if there's
-                actually a separate legal name to show, OR if it's verified
-                (in which case the trust chip earns its keep). */}
-            {(profile.tradingName &&
-              profile.tradingName.trim().toLowerCase() !==
-                profile.companyName.trim().toLowerCase()) ||
-            profile.abnVerified ? (
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                {profile.tradingName &&
-                profile.tradingName.trim().toLowerCase() !==
-                  profile.companyName.trim().toLowerCase() ? (
-                  <span className="text-[12px] tracking-[0.04em] text-text-dim">
-                    Trading as{" "}
-                    <span className="text-text-muted font-medium">
-                      {profile.companyName}
-                    </span>
-                  </span>
-                ) : null}
-                {profile.abnVerified ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-[10px] tracking-[0.16em] uppercase text-accent font-medium">
-                    <ShieldCheck className="size-3" />
-                    ABN verified
-                  </span>
-                ) : null}
-                {profile.abn ? (
-                  <span className="font-mono tabular-nums text-[10.5px] text-text-faint">
-                    ABN {formatAbn(profile.abn)}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-
-            {tagline ? (
-              <p className="text-[14.5px] leading-[1.7] text-text-muted max-w-[58ch]">
-                {tagline}
-              </p>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-2 mt-1">
+          {profile.website || profile.linkedinUrl || profile.instagramUrl ? (
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               {profile.website ? (
                 <ExternalLinkButton
                   href={profile.website}
@@ -432,56 +271,310 @@ function Hero({ profile }: { profile: PublicProfile }) {
                 />
               ) : null}
             </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
+          ) : null}
+        </motion.header>
+
+        {/* ── identity figures — avatar beside the headline numbers ── */}
+        <Reveal immediate delay={0.06}>
+          <IdentityBand
+            profile={profile}
+            displayName={displayName}
+            serviceAreas={serviceAreas}
+            licences={licences}
+          />
+        </Reveal>
+
+        {/* ── registered entity — the legal line as a credential strip ── */}
+        {profile.abn || legalDiffers(profile) ? (
+          <Reveal>
+            <section className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-border-subtle bg-surface-1 card-elev px-6 sm:px-7 py-5">
+              <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
+                <Landmark className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+                  Registered entity
+                </p>
+                <p className="mt-0.5 text-[14px] font-ui font-semibold text-text break-words">
+                  {profile.companyName}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                {profile.abn ? (
+                  <span className="font-mono tabular-nums text-[11px] text-text-dim">
+                    ABN {formatAbn(profile.abn)}
+                  </span>
+                ) : null}
+                {profile.abnVerified ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 h-6 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[9.5px] tracking-[0.16em] uppercase text-[#0a7d73] font-semibold">
+                    <ShieldCheck className="size-3" />
+                    ABN verified
+                  </span>
+                ) : null}
+              </div>
+            </section>
+          </Reveal>
+        ) : null}
+
+        <div className="mt-14 lg:mt-16 flex flex-col gap-14 lg:gap-16">
+          {profile.bio ? (
+            <Reveal>
+              <section>
+                <SectionLabel>About the company</SectionLabel>
+                <div className="mt-5 max-w-[62ch] space-y-4">
+                  {profile.bio.split(/\n\n+/).map((para, i) => (
+                    <p
+                      key={i}
+                      className="text-[15px] leading-[1.8] text-text-subtle whitespace-pre-line"
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            </Reveal>
+          ) : null}
+
+          {categories.length > 0 ? (
+            <Reveal>
+              <section>
+                <SectionLabel>What they build</SectionLabel>
+                <ul className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {categories.map((c) => {
+                    const meta = CATEGORY_META[c];
+                    return (
+                      <li
+                        key={c}
+                        className="flex items-start gap-3 rounded-xl border border-border-subtle bg-surface-1 card-elev px-5 py-4"
+                      >
+                        <span className="mt-0.5 size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
+                          <meta.icon className="size-3.5" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
+                            {meta.label}
+                          </span>
+                          <span className="block mt-0.5 text-[12px] leading-[1.55] text-text-muted">
+                            {meta.description}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </Reveal>
+          ) : null}
+
+          {serviceAreas.length > 0 ? (
+            <Reveal>
+              <ServiceAreasSection areas={serviceAreas} />
+            </Reveal>
+          ) : null}
+
+          {licences.length > 0 ? (
+            <Reveal>
+              <LicencesSection licences={licences} />
+            </Reveal>
+          ) : null}
+
+          <Reveal>
+            <section>
+              <SectionLabel>How tendering works</SectionLabel>
+              <ol className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-6">
+                <IntroStep n="01" title="Post your project">
+                  Upload your drawings, scope and timing once. Two minutes to
+                  start, no obligation.
+                </IntroStep>
+                <IntroStep n="02" title="Builders take their spots">
+                  A limited number of builders take spots on your round and
+                  price the same scope. {displayName} can be one of them.
+                </IntroStep>
+                <IntroStep n="03" title="Compare and decide">
+                  Read every tender side by side and award on the facts. The
+                  decision is always yours.
+                </IntroStep>
+              </ol>
+            </section>
+          </Reveal>
+
+          <Reveal>
+            <CallToAction
+              companyName={displayName}
+              viewerSignedIn={viewerSignedIn}
+            />
+          </Reveal>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
   );
 }
 
-const APPROVAL_META: Record<
-  ApprovalStatus,
-  { label: string; cls: string; icon: LucideIcon }
-> = {
-  incomplete: {
-    label: "Draft",
-    cls: "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]",
-    icon: Eye,
-  },
-  pending_review: {
-    label: "Pending review",
-    cls: "border-warning/35 text-warning bg-[rgba(255,181,71,0.06)]",
-    icon: Eye,
-  },
-  approved: {
-    label: "Approved builder",
-    cls: "border-border-accent/45 text-accent bg-[rgba(0,212,200,0.08)]",
-    icon: CheckCircle2,
-  },
-  rejected: {
-    label: "Rejected",
-    cls: "border-danger/35 text-danger bg-[rgba(255,80,80,0.06)]",
-    icon: Eye,
-  },
-  suspended: {
-    label: "Suspended",
-    cls: "border-danger/35 text-danger bg-[rgba(255,80,80,0.06)]",
-    icon: Eye,
-  },
+// ── Preview banner (for owners viewing their own pre-approval) ──────────
+
+const APPROVAL_LABEL: Record<ApprovalStatus, string> = {
+  incomplete: "a draft",
+  pending_review: "pending review",
+  approved: "live",
+  rejected: "not approved",
+  suspended: "suspended",
 };
 
-function ApprovalChip({ status }: { status: ApprovalStatus }) {
-  const meta = APPROVAL_META[status];
+const STATUS_KICKER: Record<ApprovalStatus, string> = {
+  incomplete: "Profile in progress",
+  pending_review: "Registration under review",
+  approved: "Approved builder",
+  rejected: "Registration declined",
+  suspended: "Registration suspended",
+};
+
+function PreviewBanner({ status }: { status: ApprovalStatus }) {
   return (
-    <span
+    <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-sm border text-[10px] tracking-[0.16em] uppercase font-medium",
-        meta.cls,
+        "relative border-b text-[12px]",
+        status === "rejected" || status === "suspended"
+          ? "border-danger/35 bg-[rgba(194,85,80,0.06)] text-[#a8433e]"
+          : "border-warning/35 bg-[rgba(201,148,34,0.06)] text-[#8a6414]",
       )}
     >
-      <meta.icon className="size-3" />
-      {meta.label}
-    </span>
+      <div className="max-w-[860px] mx-auto px-5 md:px-8 py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+          <span className="inline-flex items-center gap-2">
+            <Eye className="size-3.5" />
+            <strong className="font-medium">Preview</strong>
+          </span>
+          <span className="opacity-80">
+            · This profile is {APPROVAL_LABEL[status]}. Only you can see it.
+          </span>
+        </span>
+        <Link
+          href="/builder/profile"
+          className="text-[11.5px] tracking-[0.04em] underline-offset-4 hover:underline shrink-0"
+        >
+          Edit profile
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ── Identity band — avatar + headline figures ───────────────────────────
+
+function IdentityBand({
+  profile,
+  displayName,
+  serviceAreas,
+  licences,
+}: {
+  profile: PublicProfile;
+  displayName: string;
+  serviceAreas: ServiceArea[];
+  licences: Licence[];
+}) {
+  const stateCount = new Set(serviceAreas.map((a) => a.state)).size;
+  const verifiedLicences = licences.filter((l) => l.verified).length;
+
+  // Three headline figures max, from the register's own facts — never
+  // invented. The band reads as a considered set, like the partner
+  // pages, with the honesty subs the register requires.
+  const figures: Array<{ label: string; value: string; sub: string }> = [];
+  if (profile.yearsInOperation != null) {
+    figures.push({
+      label: "Years in operation",
+      value: `${profile.yearsInOperation}`,
+      sub: "as stated by the builder",
+    });
+  }
+  if (licences.length > 0) {
+    figures.push({
+      label: "Licences on file",
+      value: String(licences.length),
+      sub:
+        verifiedLicences > 0
+          ? `${verifiedLicences} verified`
+          : "verification pending",
+    });
+  }
+  if (serviceAreas.length > 0) {
+    figures.push({
+      label: "Service areas",
+      value: String(serviceAreas.length),
+      sub: `across ${stateCount} ${stateCount === 1 ? "state" : "states"}`,
+    });
+  }
+
+  return (
+    <section className="flex flex-col items-center gap-10 sm:flex-row sm:items-center sm:gap-12 lg:gap-16">
+      <div className="relative shrink-0">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -inset-8"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(0,212,200,0.14), transparent 72%)",
+          }}
+        />
+        <div className="relative size-[168px] rounded-2xl overflow-hidden border border-border-subtle bg-surface-1 card-elev flex items-center justify-center">
+          {profile.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.logoUrl}
+              alt={`${displayName} logo`}
+              className="size-full object-contain p-4"
+            />
+          ) : (
+            <span className="font-ui font-semibold text-[52px] tracking-[-0.02em] text-text-dim leading-none">
+              {initialsOf(displayName)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {figures.length > 0 ? (
+        <dl
+          className="grid w-full gap-x-6 sm:w-auto sm:flex-1"
+          style={{
+            gridTemplateColumns: `repeat(${figures.length}, minmax(0, 1fr))`,
+            gridTemplateRows: "auto auto auto",
+          }}
+        >
+          {figures.map((f, i) => (
+            <dt
+              key={`label-${f.label}`}
+              className="text-[10.5px] tracking-[0.16em] uppercase text-text-dim font-medium text-center self-end"
+              style={{ gridColumn: i + 1, gridRow: 1 }}
+            >
+              {f.label}
+            </dt>
+          ))}
+          {figures.map((f, i) => (
+            <dd
+              key={`value-${f.label}`}
+              className="mt-2.5 font-ui font-semibold tracking-[-0.02em] leading-none text-text tabular-nums text-[clamp(2.1rem,1.6vw+1.4rem,2.9rem)] text-center"
+              style={{ gridColumn: i + 1, gridRow: 2 }}
+            >
+              {f.value}
+            </dd>
+          ))}
+          {figures.map((f, i) => (
+            <p
+              key={`sub-${f.label}`}
+              className="mt-2 text-[11px] leading-none text-text-dim text-center"
+              style={{ gridColumn: i + 1, gridRow: 3 }}
+            >
+              {f.sub}
+            </p>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-[13px] leading-[1.7] text-text-muted max-w-[46ch]">
+          {displayName} is listed on the BuilderHQ builder register.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -506,8 +599,8 @@ function ExternalLinkButton({
         "text-[12px] font-medium tracking-[0.04em] transition-colors duration-[140ms]",
         "active:scale-[0.985] active:duration-[80ms]",
         primary
-          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_6px_18px_-8px_rgba(0,212,200,0.45)]"
-          : "border border-border-subtle text-text-muted hover:bg-surface-1 hover:text-text",
+          ? "bg-accent text-accent-contrast hover:bg-accent-hover shadow-[0_8px_18px_-12px_rgba(15,23,32,0.4)]"
+          : "border border-border-subtle bg-white/60 text-text-muted hover:bg-surface-2 hover:text-text",
       )}
     >
       <Icon className="size-3.5" />
@@ -517,114 +610,7 @@ function ExternalLinkButton({
   );
 }
 
-// ── Stats strip ─────────────────────────────────────────────────────────
-
-function StatsStrip({
-  profile,
-  categories,
-  serviceAreas,
-  licences,
-}: {
-  profile: PublicProfile;
-  categories: ProjectType[];
-  serviceAreas: ServiceArea[];
-  licences: Licence[];
-}) {
-  const stateCount = new Set(serviceAreas.map((a) => a.state)).size;
-  const memberSince = profile.memberSince.toLocaleDateString("en-AU", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const items: Array<{
-    label: string;
-    value: string;
-    sub?: string;
-    icon: LucideIcon;
-  }> = [
-    {
-      label: "Years in operation",
-      value:
-        profile.yearsInOperation != null ? String(profile.yearsInOperation) : "—",
-      sub: "since founding",
-      icon: Calendar,
-    },
-    {
-      label: "Project types",
-      value: String(categories.length),
-      sub: categories.length === 1 ? "specialty" : "covered",
-      icon: Layers,
-    },
-    {
-      label: "States covered",
-      value: String(stateCount),
-      sub: serviceAreas.length === 1 ? "service area" : "service areas",
-      icon: MapPin,
-    },
-    {
-      label: "Active licences",
-      value: String(licences.length),
-      sub: profile.isFounding ? "+ founding member" : `member since ${memberSince}`,
-      icon: ShieldCheck,
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-      {items.map((it) => (
-        <StatCard key={it.label} {...it} />
-      ))}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  icon: LucideIcon;
-}) {
-  return (
-    <div className="rounded-md border border-border-subtle bg-surface-2 p-4 sm:p-5">
-      <div className="flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-text-dim">
-        <Icon className="size-3 text-accent-light shrink-0" />
-        <span className="truncate">{label}</span>
-      </div>
-      <div className="mt-3 font-display tabular-nums leading-none text-text text-[32px] sm:text-[38px]">
-        {value}
-      </div>
-      {sub ? (
-        <div className="mt-2 text-[11px] text-text-dim leading-[1.45]">{sub}</div>
-      ) : null}
-    </div>
-  );
-}
-
-// ── About ───────────────────────────────────────────────────────────────
-
-function AboutSection({ bio }: { bio: string }) {
-  return (
-    <section>
-      <Header
-        kicker="About"
-        icon={Sparkles}
-        title="The story so far"
-      />
-      <div className="mt-6 max-w-[68ch]">
-        <p className="text-[16px] leading-[1.75] text-text-muted whitespace-pre-line">
-          {bio}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-// ── Categories ──────────────────────────────────────────────────────────
+// ── Categories meta ─────────────────────────────────────────────────────
 
 const CATEGORY_META: Record<
   ProjectType,
@@ -632,60 +618,25 @@ const CATEGORY_META: Record<
 > = {
   single_dwelling: {
     label: "Single dwelling",
-    description: "New homes, knock-down rebuilds.",
+    description: "New homes and knock-down rebuilds.",
     icon: House,
   },
   multi_dwelling: {
-    label: "Multi-dwelling",
+    label: "Multi dwelling",
     description: "Townhouses, dual occupancy, multi-units.",
     icon: Building2,
   },
   renovation: {
     label: "Renovation",
-    description: "Internal + external scope.",
+    description: "Internal and external scope.",
     icon: Wrench,
   },
   extension: {
     label: "Extension",
-    description: "Ground or first-floor adds.",
+    description: "Ground and first floor additions.",
     icon: Layers,
   },
 };
-
-function CategoriesSection({ categories }: { categories: ProjectType[] }) {
-  return (
-    <section>
-      <Header kicker="What we build" icon={Hammer} title="Project types" />
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-        {categories.map((c) => {
-          const meta = CATEGORY_META[c];
-          return (
-            <div
-              key={c}
-              className={cn(
-                "group relative rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-surface-1 card-elev",
-                "transition-[border-color,box-shadow,transform] duration-[220ms] ease-[cubic-bezier(0.2,0.65,0.3,0.9)]",
-                "hover:border-border-accent/55 hover:-translate-y-0.5",
-                "hover:shadow-[0_18px_44px_-18px_rgba(0,212,200,0.30)]",
-              )}
-            >
-              <span className="inline-flex size-9 rounded-md items-center justify-center mb-3 border border-border-subtle bg-[rgba(0,212,200,0.06)] text-accent-light group-hover:border-accent/40 group-hover:text-accent transition-colors duration-[140ms]">
-                <meta.icon className="size-4" />
-              </span>
-              <h3 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-                {meta.label}
-              </h3>
-              <p className="mt-1 text-[12px] leading-[1.55] text-text-muted">
-                {meta.description}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
 
 // ── Service areas ───────────────────────────────────────────────────────
 
@@ -703,60 +654,50 @@ function ServiceAreasSection({ areas }: { areas: ServiceArea[] }) {
 
   return (
     <section>
-      <Header
-        kicker="Where we work"
-        icon={MapPin}
-        title="Service areas"
-        sub={`${areas.length} ${areas.length === 1 ? "area" : "areas"} across ${ordered.length} ${ordered.length === 1 ? "state" : "states"}`}
-      />
-      <div className="mt-6 flex flex-col gap-3">
-        {ordered.map((state) => {
-          const inState = byState.get(state)!;
-          const stateOnly = inState.find((a) => !a.suburb);
-          const suburbs = inState.filter((a) => a.suburb);
-          return (
-            <div
-              key={state}
-              className={cn(
-                "rounded-md border border-border-subtle p-4 sm:p-5",
-                "bg-surface-2",
-              )}
-            >
-              <div className="flex items-baseline gap-3 mb-3">
-                <span className="font-display text-[24px] tracking-[0.04em] text-text leading-none">
-                  {state}
-                </span>
-                {stateOnly ? (
-                  <span className="text-[10.5px] tracking-[0.18em] uppercase text-accent">
-                    Statewide coverage
+      <SectionLabel>Where they work</SectionLabel>
+      <div className="mt-5 rounded-xl border border-border-subtle overflow-hidden card-elev">
+        <div className="flex flex-col gap-px bg-border-subtle">
+          {ordered.map((state) => {
+            const inState = byState.get(state)!;
+            const stateOnly = inState.find((a) => !a.suburb);
+            const suburbs = inState.filter((a) => a.suburb);
+            return (
+              <div key={state} className="bg-surface-1 p-4 sm:p-5">
+                <div className="flex items-baseline gap-3 mb-2.5">
+                  <span className="font-ui font-semibold text-[17px] tracking-[-0.01em] text-text leading-none">
+                    {state}
                   </span>
-                ) : (
-                  <span className="text-[11px] text-text-dim">
-                    {suburbs.length} {suburbs.length === 1 ? "suburb" : "suburbs"}
-                  </span>
-                )}
-              </div>
-              {suburbs.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {suburbs.map((a, i) => (
-                    <span
-                      key={`${a.suburb}-${a.postcode ?? "x"}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.035)] text-[12px] text-text-muted"
-                    >
-                      <MapPin className="size-3 text-text-faint" />
-                      {a.suburb}
-                      {a.postcode ? (
-                        <span className="font-mono tabular-nums text-text-dim ml-0.5">
-                          {a.postcode}
-                        </span>
-                      ) : null}
+                  {stateOnly ? (
+                    <span className="text-[10px] tracking-[0.18em] uppercase text-[#0a7d73] font-semibold">
+                      Statewide coverage
                     </span>
-                  ))}
+                  ) : (
+                    <span className="text-[11px] text-text-dim tabular-nums">
+                      {suburbs.length} {suburbs.length === 1 ? "suburb" : "suburbs"}
+                    </span>
+                  )}
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
+                {suburbs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {suburbs.map((a, i) => (
+                      <span
+                        key={`${a.suburb}-${a.postcode ?? "x"}-${i}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] text-[12px] text-text-muted"
+                      >
+                        {a.suburb}
+                        {a.postcode ? (
+                          <span className="font-mono tabular-nums text-[10.5px] text-text-dim">
+                            {a.postcode}
+                          </span>
+                        ) : null}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -775,66 +716,57 @@ function LicencesSection({ licences }: { licences: Licence[] }) {
       : null;
   return (
     <section>
-      <Header
-        kicker="Licences"
-        icon={Award}
-        title="Credentials"
-        sub="Active builder licences across registered states."
-      />
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {licences.map((l) => (
-          <div
-            key={l.id}
-            className={cn(
-              "rounded-md border border-border-subtle p-4 sm:p-5",
-              "bg-surface-1 card-elev",
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <span className="size-9 rounded-md border border-border-accent/35 bg-[rgba(0,212,200,0.08)] text-accent-light flex items-center justify-center shrink-0">
-                <ShieldCheck className="size-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-ui font-semibold text-[14px] text-text">
-                    {l.licenceType}
-                  </span>
-                  <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border border-border-subtle text-text-dim">
-                    {l.state}
-                  </span>
-                  {l.verified ? (
-                    <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center gap-1 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.08)] text-accent font-medium">
-                      <CheckCircle2 className="size-2.5" />
-                      Verified · {l.state === "VIC" ? "VBA" : "register"}
+      <SectionLabel>Licences and verification</SectionLabel>
+      <div className="mt-5 rounded-xl border border-border-subtle overflow-hidden card-elev">
+        <div className="flex flex-col gap-px bg-border-subtle">
+          {licences.map((l) => (
+            <div key={l.id} className="bg-surface-1 p-4 sm:p-5">
+              <div className="flex items-start gap-3.5">
+                <span className="size-9 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.03)] text-accent-light flex items-center justify-center shrink-0">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-ui font-semibold text-[14px] text-text">
+                      {l.licenceType}
                     </span>
-                  ) : null}
-                </div>
-                <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums break-all">
-                  #{l.licenceNumber}
-                </div>
-                {l.licenceHolderName ? (
-                  <div className="mt-0.5 text-[12px] text-text-dim break-words">
-                    Held by {l.licenceHolderName}
+                    <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center rounded-sm border border-border-subtle text-text-dim">
+                      {l.state}
+                    </span>
+                    {l.verified ? (
+                      <span className="text-[9.5px] tracking-[0.16em] uppercase px-1.5 h-5 inline-flex items-center gap-1 rounded-sm border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[#0a7d73] font-semibold">
+                        <CheckCircle2 className="size-2.5" />
+                        Verified · {l.state === "VIC" ? "VBA" : "BuilderHQ review"}
+                      </span>
+                    ) : null}
                   </div>
-                ) : null}
-                <div className="mt-3 flex items-center gap-3 text-[10.5px] tracking-[0.04em] text-text-dim">
-                  {fmt(l.issuedAt) ? (
-                    <span>
-                      <span className="text-text-faint mr-1">Issued</span>
-                      {fmt(l.issuedAt)}
-                    </span>
+                  <div className="mt-1 text-[12px] text-text-muted font-mono tabular-nums break-all">
+                    {l.licenceNumber}
+                  </div>
+                  {l.licenceHolderName ? (
+                    <div className="mt-0.5 text-[12px] text-text-dim break-words">
+                      Held by {l.licenceHolderName}
+                    </div>
                   ) : null}
-                  {fmt(l.expiresAt) ? (
-                    <span>
-                      <span className="text-text-faint mr-1">Expires</span>
-                      {fmt(l.expiresAt)}
-                    </span>
-                  ) : null}
+                  <div className="mt-2.5 flex items-center gap-3 text-[10.5px] tracking-[0.04em] text-text-dim">
+                    {fmt(l.issuedAt) ? (
+                      <span>
+                        <span className="text-text-faint mr-1">Issued</span>
+                        {fmt(l.issuedAt)}
+                      </span>
+                    ) : null}
+                    {fmt(l.expiresAt) ? (
+                      <span>
+                        <span className="text-text-faint mr-1">Expires</span>
+                        {fmt(l.expiresAt)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -850,33 +782,19 @@ function CallToAction({
   viewerSignedIn: boolean;
 }) {
   return (
-    <section
-      className={cn(
-        "relative overflow-hidden rounded-md border border-border-accent/35",
-        "bg-[linear-gradient(140deg,rgba(0,212,200,0.10)_0%,rgba(26,95,212,0.08)_55%,rgba(250,248,243,0.6)_100%)]",
-      )}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 80% at 0% 50%, rgba(0,212,200,0.10), transparent 70%), radial-gradient(ellipse 60% 80% at 100% 50%, rgba(26,95,212,0.10), transparent 70%)",
-        }}
-      />
-      <div className="relative px-5 sm:px-7 lg:px-10 py-9 sm:py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
+    <section className="rounded-2xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <div className="px-6 sm:px-8 lg:px-10 py-8 sm:py-9 grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6">
         <div>
-          <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
-            <Sparkles className="size-3" />
-            Have a project?
+          <span className="text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">
+            Work with {companyName}
           </span>
-          <h3 className="mt-2 font-display uppercase tracking-[-0.012em] text-[26px] sm:text-[28px] leading-[1.05] text-text break-words">
-            Tender it to {companyName}
+          <h3 className="mt-2.5 font-ui font-semibold tracking-[-0.03em] text-[24px] sm:text-[28px] leading-[1.1] text-text break-words">
+            Put your project to tender.
           </h3>
-          <p className="mt-2 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
-            Upload your project once on BuilderHQ — drawings, scope, timing.
-            Suitable builders unlock and tender. {companyName} sees it the
-            moment it lands in their feed.
+          <p className="mt-2.5 text-[13.5px] leading-[1.7] text-text-muted max-w-[56ch]">
+            Upload your drawings, scope and timing once on BuilderHQ. Verified
+            builders take a spot on your round and tender, and {companyName}{" "}
+            can be one of them.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center gap-2 shrink-0">
@@ -887,16 +805,16 @@ function CallToAction({
               "bg-accent text-accent-contrast text-[12.5px] font-semibold tracking-[0.04em]",
               "hover:bg-accent-hover transition-colors duration-[140ms]",
               "active:scale-[0.985] active:duration-[80ms]",
-              "shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_8px_24px_-8px_rgba(0,212,200,0.5)]",
+              "shadow-[0_10px_24px_-14px_rgba(15,23,32,0.4)]",
               "max-sm:w-full",
             )}
           >
-            {viewerSignedIn ? "Upload a project" : "Get started — free"}
+            {viewerSignedIn ? "Upload a project" : "Get started"}
             <ExternalLink className="size-3.5" />
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-1 transition-colors max-sm:w-full"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-subtle text-[12.5px] tracking-[0.04em] text-text-muted hover:text-text hover:bg-surface-2 transition-colors max-sm:w-full"
           >
             How BuilderHQ works
           </Link>
@@ -910,15 +828,12 @@ function CallToAction({
 
 function Footer() {
   return (
-    <footer className="border-t border-border-subtle bg-bg-deep/40 mt-8">
-      <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1100px] py-8 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
-        <span className="inline-flex items-center gap-2">
-          <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
-          BuilderHQ · Australia&apos;s residential tender platform
-        </span>
+    <footer className="relative border-t border-border-subtle bg-surface-1">
+      <div className="px-5 md:px-8 mx-auto max-w-[860px] py-7 flex flex-wrap items-center justify-between gap-4 text-[11px] tracking-[0.04em] text-text-dim">
+        <span>BuilderHQ · Australia&apos;s residential tender platform</span>
         <Link
           href="/"
-          className="hover:text-accent-light transition-colors inline-flex items-center gap-1"
+          className="hover:text-text transition-colors inline-flex items-center gap-1"
         >
           builderhq.com.au
           <ExternalLink className="size-3" />
@@ -928,36 +843,40 @@ function Footer() {
   );
 }
 
-// ── shared header ─────────────────────────────────────────────────────────
+// ── section label — the partner letterhead's eyebrow + hairline ─────────
 
-function Header({
-  kicker,
-  icon: Icon,
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-4">
+      <h2 className="text-[12px] tracking-[0.22em] uppercase font-ui font-semibold shrink-0 text-accent-light">
+        {children}
+      </h2>
+      <span aria-hidden className="h-px flex-1 bg-[rgba(24,34,44,0.10)]" />
+    </div>
+  );
+}
+
+function IntroStep({
+  n,
   title,
-  sub,
+  children,
 }: {
-  kicker: string;
-  icon: LucideIcon;
+  n: string;
   title: string;
-  sub?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <header className="flex items-end justify-between gap-3">
-      <div>
-        <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium text-accent">
-          <Icon className="size-3.5" />
-          {kicker}
+    <li className="flex flex-col gap-1.5">
+      <p className="flex items-baseline gap-2.5">
+        <span className="font-mono text-[12px] tabular-nums text-text-dim">
+          {n}
         </span>
-        <h2 className="mt-2 font-display uppercase tracking-[-0.012em] text-[clamp(1.6rem,2vw+0.8rem,2.2rem)] leading-[1.0] text-text">
-          {title}
-        </h2>
-        {sub ? (
-          <p className="mt-2 text-[12.5px] text-text-dim leading-[1.6] max-w-[58ch]">
-            {sub}
-          </p>
-        ) : null}
-      </div>
-    </header>
+        <span className="text-[14px] font-semibold text-text">{title}</span>
+      </p>
+      <p className="text-[13px] leading-[1.6] text-text-muted pl-[30px]">
+        {children}
+      </p>
+    </li>
   );
 }
 
@@ -975,20 +894,12 @@ function initialsOf(name: string): string {
   );
 }
 
-function composeTagline(p: PublicProfile): string | null {
-  const parts: string[] = [];
-  if (p.yearsInOperation && p.yearsInOperation > 0) {
-    parts.push(`${p.yearsInOperation}-year-old residential builder`);
-  } else {
-    parts.push("Residential builder");
-  }
-  if (p.businessSuburb && p.businessState) {
-    parts.push(`based in ${p.businessSuburb}, ${p.businessState}`);
-  } else if (p.businessState) {
-    parts.push(`based in ${p.businessState}`);
-  }
-  if (p.isFounding) parts.push("Founding member of BuilderHQ");
-  return parts.length > 0 ? parts.join(" · ") : null;
+function legalDiffers(p: PublicProfile): boolean {
+  return (
+    !!p.tradingName &&
+    p.tradingName.trim().length > 0 &&
+    p.tradingName.trim().toLowerCase() !== p.companyName.trim().toLowerCase()
+  );
 }
 
 /** Format ABN with the canonical AU spacing: 00 000 000 000. */

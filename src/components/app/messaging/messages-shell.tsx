@@ -43,6 +43,7 @@ import {
   CheckCheck,
   ExternalLink,
   Hammer,
+  UserRound,
   Inbox,
   Loader2,
   MessageSquare,
@@ -93,6 +94,12 @@ interface Props {
     | null;
   /** The signed-in user's id — needed to decide bubble alignment. */
   meId: string;
+  /**
+   * Where "view project" links live for this mount. Architects mount
+   * the owner-scope shell at /architect/messages, so the base cannot
+   * be derived from scope alone. Defaults per scope.
+   */
+  projectBase?: string;
 }
 
 export function MessagesShell({
@@ -101,6 +108,7 @@ export function MessagesShell({
   initialActiveId,
   initialActiveThread,
   meId,
+  projectBase,
 }: Props) {
   const router = useRouter();
   const search = useSearchParams();
@@ -284,6 +292,7 @@ export function MessagesShell({
       />
       <ThreadPane
         scope={scope}
+        projectBase={projectBase}
         meId={meId}
         thread={thread}
         loading={threadLoading}
@@ -336,7 +345,7 @@ function ListPane({
       <div className="px-5 pt-6 pb-4 border-b border-border-subtle">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <span className="text-[10px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <span className="size-1 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.6)]" />
               Inbox
             </span>
@@ -441,7 +450,7 @@ function ListItem({
           <span
             className={cn(
               "shrink-0 text-[10.5px] tracking-[0.04em]",
-              unread ? "text-accent" : "text-text-faint",
+              unread ? "text-accent-light" : "text-text-faint",
             )}
           >
             {previewLabel(item.lastMessageAt)}
@@ -519,6 +528,7 @@ function ListEmpty({
 
 function ThreadPane({
   scope,
+  projectBase,
   meId,
   thread,
   loading,
@@ -530,6 +540,7 @@ function ThreadPane({
   className,
 }: {
   scope: RoleScope;
+  projectBase?: string;
   meId: string;
   thread:
     | { conversation: ConversationListItem; messages: Message[] }
@@ -553,6 +564,7 @@ function ThreadPane({
           <ThreadHeader
             conv={thread.conversation}
             scope={scope}
+            projectBase={projectBase}
             onBack={onBack}
           />
           <MessageScroll messages={thread.messages} meId={meId} />
@@ -585,7 +597,7 @@ function ThreadEmpty({
     >
       <div className="text-center px-6 max-w-[420px]">
         <div className="mx-auto size-14 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.03)] flex items-center justify-center mb-5">
-          <MessageSquare className="size-6 text-accent" />
+          <MessageSquare className="size-6 text-accent-light" />
         </div>
         <h2 className="font-display uppercase tracking-[-0.012em] text-[24px] leading-[1.05] text-text">
           Pick a conversation
@@ -603,10 +615,12 @@ function ThreadEmpty({
 function ThreadHeader({
   conv,
   scope,
+  projectBase,
   onBack,
 }: {
   conv: ConversationListItem;
   scope: RoleScope;
+  projectBase?: string;
   onBack: () => void;
 }) {
   // Owner viewing the thread → "Builder · Synergy"; builder viewing → "Owner · …"
@@ -616,16 +630,19 @@ function ThreadHeader({
         <Hammer className="size-3" />
         Builder
       </span>
+    ) : conv.other.role === "decider" ? (
+      <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
+        <UserRound className="size-3" />
+        Client on the round
+      </span>
     ) : (
       <span className="inline-flex items-center gap-1 text-[10.5px] tracking-[0.16em] uppercase text-text-dim">
         <Building2 className="size-3" />
         Project owner
       </span>
     );
-  const projectHref =
-    scope === "builder"
-      ? `/builder/projects/${conv.projectSlug}`
-      : `/owner/projects/${conv.projectSlug}`;
+  const base = projectBase ?? (scope === "builder" ? "/builder" : "/owner");
+  const projectHref = `${base}/projects/${conv.projectSlug}`;
 
   return (
     <header className="flex items-center gap-3 px-5 py-3.5 border-b border-border-subtle bg-surface-2">
@@ -690,7 +707,7 @@ function SoundToggle() {
         "shrink-0 size-8 rounded-md flex items-center justify-center",
         "transition-[background-color,color] duration-[140ms]",
         enabled
-          ? "text-accent hover:bg-[rgba(0,212,200,0.10)]"
+          ? "text-accent-light hover:bg-[rgba(0,212,200,0.10)]"
           : "text-text-faint hover:text-text-muted hover:bg-surface-1",
       )}
     >

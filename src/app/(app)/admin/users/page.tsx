@@ -191,7 +191,7 @@ export default async function AdminUsersPage(props: {
                     {u.role === "builder" ? (
                       <Link
                         href={`/admin/builders/${u.id}`}
-                        className="font-ui text-[13.5px] text-text truncate hover:text-accent transition-colors"
+                        className="font-ui text-[13.5px] text-text truncate hover:text-accent-light transition-colors"
                       >
                         {u.name ?? u.email}
                       </Link>

@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The Tender Document route renders PDFs with react-pdf, which reads
+  // the brand TTFs and the logo off disk at runtime — trace them into
+  // the serverless bundle or the route works locally and breaks deployed.
+  outputFileTracingIncludes: {
+    "/builder/projects/[slug]/tender/document": ["./src/assets/**"],
+  },
 };
 
 /**

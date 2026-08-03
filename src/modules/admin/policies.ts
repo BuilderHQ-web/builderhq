@@ -18,7 +18,7 @@
 
 export type AdminActor = {
   id: string;
-  role: "project_owner" | "builder" | "admin" | null | undefined;
+  role: "project_owner" | "builder" | "admin" | "architect" | null | undefined;
 };
 
 export function canAccessAdmin(actor: AdminActor): boolean {

@@ -33,6 +33,7 @@ import {
   text,
   boolean,
   integer,
+  jsonb,
   timestamp,
   uniqueIndex,
   index,
@@ -149,6 +150,49 @@ export const existingAgeBandEnum = pgEnum("existing_age_band", [
   "over_75",
 ]);
 
+/**
+ * How the tender round is run. Invitations exist on EVERY round — the
+ * mode only decides marketplace visibility.
+ *   open    — discoverable in the marketplace (2-5 network spots), and
+ *             the runner can still invite builders they trust.
+ *   private — the marketplace shows only an anonymous stub (type +
+ *             locality); the invite list IS the round, and one invited
+ *             builder is a valid round.
+ *   hybrid  — RETIRED (2026-07). Kept in the enum for legacy rows,
+ *             which read and behave as open everywhere.
+ */
+export const tenderModeEnum = pgEnum("tender_mode", [
+  "open",
+  "private",
+  "hybrid",
+]);
+
+/**
+ * Homeowner (client) participation on an architect-run project. The
+ * architect is the project's runner (ownerId); the client joins by
+ * invite, at whatever stage the architect chooses, and sees the full
+ * project from the moment they accept.
+ */
+export const participantStatusEnum = pgEnum("participant_status", [
+  "invited",
+  "joined",
+  "revoked",
+]);
+
+/**
+ * What a participant's seat lets them do. Two roles, deliberately few:
+ *   viewer  — sees the project and the evaluation (worn as "Following")
+ *   decider — a viewer who can also shortlist, decline and award
+ *             (worn as "Deciding")
+ * Neither role edits the project or manages the round — that stays
+ * with the runner (ownerId). Code keeps the cold names; the UI wears
+ * the warm labels.
+ */
+export const participantRoleEnum = pgEnum("participant_role", [
+  "viewer",
+  "decider",
+]);
+
 // ── table ────────────────────────────────────────────────────────────────
 
 export const projects = pgTable(
@@ -217,10 +261,25 @@ export const projects = pgTable(
     targetStartMonth: text(),
     targetCompletionMonth: text(),
 
+    /**
+     * The client's pre-tender brief: click-based answers to what
+     * builders ask before pricing (funding, timing, occupancy...).
+     * Shape belongs to owner-brief.ts; written by the runner only.
+     */
+    ownerBrief: jsonb("owner_brief"),
+    ownerBriefAt: timestamp("owner_brief_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+
     // Free-form scope description.
     description: text(),
 
     // Lifecycle.
+    /** Set when the runner submits for preparation under the scope
+     *  publish gate. Status stays 'draft' until the owner completes
+     *  their review and the real publish flips it. */
+    publishRequestedAt: timestamp({ mode: "date", withTimezone: true }),
     publishedAt: timestamp({ mode: "date", withTimezone: true }),
     tenderClosesAt: timestamp({ mode: "date", withTimezone: true }),
 
@@ -262,6 +321,17 @@ export const projects = pgTable(
      * ads_funnel drafts get the 30-day prune).
      */
     acquisitionSource: text("acquisition_source"),
+
+    // ── tender round settings ──────────────────────────────────────────
+    /** How this tender round is run. Existing projects stay "open". */
+    tenderMode: tenderModeEnum("tender_mode").notNull().default("open"),
+    /**
+     * Builder spots for this round (2–5, validated at the service
+     * layer). NULL = platform default (UNLOCK_CAP, 3) — the pattern
+     * unlocks/constants.ts documents. The unlock cap transaction reads
+     * this per project.
+     */
+    tenderSpots: integer("tender_spots"),
   },
   (t) => [
     uniqueIndex("projects_slug_idx").on(t.slug),
@@ -274,3 +344,101 @@ export const projects = pgTable(
 
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
+
+// ── project_participants ─────────────────────────────────────────────────
+
+/**
+ * The homeowner's seat at an architect-run project. One row per invited
+ * client. The architect can invite before upload, mid-tender, or after
+ * quotes land; on acceptance the client's userId is attached (existing
+ * account or one created on redemption) and they see the whole file.
+ */
+export const projectParticipants = pgTable(
+  "project_participants",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+
+    /** Who sent the invite (the project runner). */
+    invitedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    /** Invitee identity as entered by the architect. */
+    email: text().notNull(),
+    name: text(),
+
+    /** Set when the invite is redeemed by a signed-in account. */
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+
+    status: participantStatusEnum().notNull().default("invited"),
+
+    /** What the seat lets them do — see `participantRoleEnum`. */
+    role: participantRoleEnum().notNull().default("viewer"),
+
+    /** Single-use redemption token carried by the invite link. */
+    inviteToken: text("invite_token").notNull(),
+
+    invitedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    joinedAt: timestamp({ mode: "date", withTimezone: true }),
+    revokedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** When the one nudge for a pending invitation went out — the
+     *  daily cron sends exactly one per invitation. Reset on resend
+     *  (a fresh link earns a fresh nudge window). */
+    remindedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("project_participants_token_idx").on(t.inviteToken),
+    index("project_participants_project_idx").on(t.projectId, t.status),
+    index("project_participants_user_idx").on(t.userId),
+  ],
+);
+
+export type ProjectParticipantRow = typeof projectParticipants.$inferSelect;
+
+// ── project_audit_events ─────────────────────────────────────────────────
+
+/**
+ * The round's durable record: who did what, written at the service
+ * layer the moment it happens. Exists because seats act — when a
+ * decider awards a tender, "who awarded this?" must have an answer
+ * that outlives sessions and notifications.
+ *
+ * `kind` is a dotted verb ('tender.awarded', 'seat.invited',
+ * 'invite.joined') kept as TEXT — audit vocabularies grow too fast to
+ * migrate an enum for every new verb. `summary` is the human line,
+ * composed at write time so the feed never needs joins to read.
+ * `actorId` NULL means the platform itself (cron, system transition).
+ */
+export const projectAuditEvents = pgTable(
+  "project_audit_events",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    actorId: uuid().references(() => users.id, { onDelete: "set null" }),
+    kind: text().notNull(),
+    subjectId: uuid(),
+    summary: text().notNull(),
+    meta: jsonb().notNull().default({}),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("project_audit_events_project_idx").on(t.projectId, t.createdAt)],
+);
+
+export type ProjectAuditEventRow = typeof projectAuditEvents.$inferSelect;

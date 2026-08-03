@@ -42,6 +42,22 @@ export type CreateProjectInput = {
 };
 
 /**
+ * A private round, reduced to the only thing the marketplace is allowed
+ * to say about it: that it exists. Type + locality, nothing else — no
+ * title, no slug, no brief, no budget, no documents, nothing that could
+ * identify the client or the site. Rendered on browse as non-clickable
+ * evidence of market depth; the round itself is reachable only through
+ * its invitations.
+ */
+export type PrivateRoundStub = {
+  id: string;
+  type: ProjectRow["type"];
+  suburb: string | null;
+  state: ProjectRow["state"];
+  publishedAt: Date | null;
+};
+
+/**
  * What the marketplace shows BEFORE a builder unlocks. Strips the
  * private bits (exact street address, owner contact, document
  * downloads). Suburb + state + postcode are visible in preview so
@@ -80,11 +96,15 @@ export type MarketplacePreview = {
   documentCount: number;
   /**
    * Number of builders who have unlocked this project. Bounded
-   * [0, UNLOCK_CAP] under normal operation. Drives the "X / 3 spots"
+   * [0, tender spots] under normal operation. Drives the "X / N spots"
    * marketplace indicator + the "FULL" disabled state on the unlock
-   * CTA. Imported from @/modules/unlocks for the actual cap.
+   * CTA.
    */
   unlockedCount: number;
+  /** How this round is run. Private rounds never reach the marketplace. */
+  tenderMode: ProjectRow["tenderMode"];
+  /** Builder spots for this round. NULL = platform default (3). */
+  tenderSpots: number | null;
   publishedAt: Date | null;
   createdAt: Date;
 };
@@ -126,6 +146,10 @@ export type MarketplaceFilters = {
 /** Patch for a project — every field optional. Service validates the
  *  patch at runtime against the project's type. */
 export type UpdateProjectInput = Partial<{
+  /** How the round runs. Locked once the project is published. */
+  tenderMode: ProjectRow["tenderMode"];
+  /** Builder spots 2–5. NULL = platform default (3). Locked once published. */
+  tenderSpots: number | null;
   title: string;
   type: ProjectRow["type"];
   addressLine1: string | null;
