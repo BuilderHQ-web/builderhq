@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Award, CalendarDays, Check, Globe, Landmark, Star } from "lucide-react";
 
-import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { cn } from "@/lib/utils";
 
 import { PARTNERS, partnerStates, type Partner } from "./partners-data";
@@ -283,6 +282,41 @@ export function PartnerProfileSections({
         </section>
       ) : null}
 
+      {/* A quieter recognition — a platform or service accolade on a compact
+          dark strip, distinct from the gold honours board above. */}
+      {partner.accolade ? (
+        <section
+          className="relative mt-5 flex items-center gap-4 overflow-hidden rounded-2xl border px-6 sm:px-7 py-4 card-elev"
+          style={{
+            background: "linear-gradient(180deg, #1b232d 0%, #141a22 100%)",
+            borderColor: "rgba(255,255,255,0.09)",
+          }}
+        >
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: "rgba(224,178,92,0.12)", color: "#e0b25c" }}
+          >
+            <Star className="size-4" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-ui font-semibold text-[14px] tracking-[-0.01em] text-white">
+              {partner.accolade.label}
+            </p>
+            {partner.accolade.sub ? (
+              <p className="mt-0.5 text-[12px] text-white/55">{partner.accolade.sub}</p>
+            ) : null}
+          </div>
+          {partner.accolade.tag ? (
+            <span
+              className="hidden sm:inline-flex shrink-0 items-center rounded-full border px-3 h-7 text-[10.5px] font-semibold tracking-[0.08em] uppercase text-white/70"
+              style={{ borderColor: "rgba(255,255,255,0.16)" }}
+            >
+              {partner.accolade.tag}
+            </span>
+          ) : null}
+        </section>
+      ) : null}
+
       {/* Why we introduce them — the curatorial note. */}
       <section className="relative mt-5 rounded-2xl border border-border-subtle bg-white card-elev px-7 sm:px-9 py-8 sm:py-9 overflow-hidden">
         <span
@@ -296,9 +330,16 @@ export function PartnerProfileSections({
         >
           Why we introduce them
         </p>
-        <p className="mt-5 max-w-[62ch] font-ui text-[17px] sm:text-[18px] leading-[1.75] text-text">
-          {partner.why}
-        </p>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          {partner.why.split(/\n\n+/).map((para, i) => (
+            <p
+              key={i}
+              className="font-ui text-[17px] sm:text-[18px] leading-[1.75] text-text"
+            >
+              {para}
+            </p>
+          ))}
+        </div>
         <p className="mt-6 text-[12px] text-text-dim">
           Chosen and introduced by the BuilderHQ team.
         </p>
@@ -309,9 +350,13 @@ export function PartnerProfileSections({
         <SectionLabel hue={h.accent}>
           {partner.aboutLabel ?? (partner.kind === "architect" ? "The practice" : "The business")}
         </SectionLabel>
-        <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.8] text-text-subtle">
-          {partner.about}
-        </p>
+        <div className="mt-4 max-w-[62ch] space-y-4">
+          {partner.about.split(/\n\n+/).map((para, i) => (
+            <p key={i} className="text-[15px] leading-[1.8] text-text-subtle">
+              {para}
+            </p>
+          ))}
+        </div>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           {partner.principal ? (
             <p className="text-[13px] text-text-muted">
@@ -544,7 +589,6 @@ export function PartnerProfileSections({
         </section>
       ) : null}
 
-      <PartnerForm />
     </>
   );
 }

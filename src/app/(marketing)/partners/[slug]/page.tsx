@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
+import { JsonLd } from "@/components/seo/json-ld";
+import { partnerGraph } from "@/lib/seo";
 
 import { PARTNERS, getPartner } from "../partners-data";
 import { PartnerProfileSections, partnerHeaderProps } from "../partner-profile";
@@ -26,10 +28,29 @@ export async function generateMetadata({
   const { slug } = await params;
   const partner = getPartner(slug);
   if (!partner || partner.draft) return {};
+
+  const title = `${partner.name} · Preferred Partner`;
+  const url = `/partners/${slug}`;
+
+  // Note: the share image comes from the sibling opengraph-image.tsx
+  // (a branded card with name, role, location and rating). We do not
+  // set openGraph.images here, because an explicit value would override
+  // that generated card.
   return {
-    title: `${partner.name} · Preferred Partner`,
+    title,
     description: partner.tagline,
-    alternates: { canonical: `/partners/${slug}` },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "profile",
+      title,
+      description: partner.tagline,
+      url,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: partner.tagline,
+    },
   };
 }
 
@@ -44,6 +65,7 @@ export default async function PartnerProfilePage({
 
   return (
     <MarketingPageShell {...partnerHeaderProps(partner)}>
+      <JsonLd data={partnerGraph(partner)} />
       <PartnerProfileSections partner={partner} />
     </MarketingPageShell>
   );

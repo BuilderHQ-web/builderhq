@@ -2,7 +2,9 @@
 
 /**
  * /partner-interest — server action behind the landing "Join the network"
- * CTAs for architects and finance brokers.
+ * CTA. One form, every discipline: the practitioner picks their role
+ * (design practice, builder, finance broker, and whatever the register
+ * adds next).
  *
  * Not a page: there is no /partner-interest route. This module exists only
  * to host the server action that the landing's <PartnerForm> modal calls.
@@ -10,8 +12,9 @@
  * /architect-tender): validate, rate-limit, persist a `leads` row, fan out
  * two emails (ops notify + applicant confirmation), stamp the result.
  *
- * Firm name lands in `practice_name`; network / state / website ride in the
- * `meta` jsonb. No project is attached (these are practitioners).
+ * Firm name lands in `practice_name`; role / state / website ride in the
+ * `meta` jsonb, so widening the register needs no migration. No project
+ * is attached (these are practitioners).
  */
 
 import { headers } from "next/headers";
@@ -22,6 +25,8 @@ import {
   markLeadDelivered,
   markLeadDeliveryFailed,
   markLeadOpsNotified,
+  INTRO_NEED_VALUES,
+  PARTNER_ROLE_VALUES,
 } from "@/modules/leads";
 import {
   sendPartnerInterestOpsEmail,
@@ -37,7 +42,7 @@ import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 const AU_STATES = ["VIC", "NSW", "QLD", "ACT", "SA", "WA", "TAS", "NT"] as const;
 
 const inputSchema = z.object({
-  network: z.enum(["architect", "finance"]),
+  role: z.enum(PARTNER_ROLE_VALUES),
   fullName: z.string().trim().min(1, "Your name is required.").max(120),
   firmName: z
     .string()
@@ -47,7 +52,11 @@ const inputSchema = z.object({
   email: z.email("That email looks off, please double-check.").max(160),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   state: z.enum(AU_STATES),
-  website: z.string().trim().max(200).optional().or(z.literal("")),
+  website: z
+    .string()
+    .trim()
+    .min(1, "Please add your website.")
+    .max(200),
   /** Honeypot — checked before validation; kept here for typing only. */
   hp: z.string().optional(),
 });
@@ -93,21 +102,16 @@ export async function submitPartnerInterestAction(
   const lastName = parts.length > 1 ? parts.slice(1).join(" ") : null;
 
   // Normalise the website to an absolute URL so the ops-email link works.
-  const websiteRaw = (v.website ?? "").trim();
-  const website = websiteRaw
-    ? /^https?:\/\//i.test(websiteRaw)
-      ? websiteRaw
-      : `https://${websiteRaw}`
-    : null;
+  const websiteRaw = v.website.trim();
+  const website = /^https?:\/\//i.test(websiteRaw)
+    ? websiteRaw
+    : `https://${websiteRaw}`;
 
-  const kind =
-    v.network === "architect"
-      ? "partner_architect_interest"
-      : "partner_finance_interest";
-  const source = `landing_partner_${v.network}`;
+  const source = `landing_partner_${v.role}`;
 
   const leadResult = await createLead({
-    kind,
+    // One kind for every discipline; the role rides in meta.
+    kind: "partner_network_interest",
     firstName,
     lastName,
     email: v.email.trim().toLowerCase(),
@@ -116,7 +120,7 @@ export async function submitPartnerInterestAction(
     source,
     ip,
     userAgent,
-    meta: { network: v.network, state: v.state, website },
+    meta: { role: v.role, state: v.state, website },
   });
 
   if (!leadResult.ok) return leadResult;
@@ -132,7 +136,7 @@ export async function submitPartnerInterestAction(
       email: lead.email,
       phone: lead.phone,
       firmName: v.firmName,
-      network: v.network,
+      network: v.role,
       state: v.state,
       website,
       source: lead.source,
@@ -142,7 +146,7 @@ export async function submitPartnerInterestAction(
       to: lead.email,
       firstName,
       firmName: v.firmName,
-      network: v.network,
+      network: v.role,
     }),
   ]);
 
@@ -183,10 +187,13 @@ export async function submitPartnerInterestAction(
    the ops notify + a holding confirmation. */
 
 const introSchema = z.object({
-  need: z.enum(["architect", "finance", "both"]),
+  needs: z
+    .array(z.enum(INTRO_NEED_VALUES))
+    .min(1, "Tell us who you would like to meet.")
+    .max(INTRO_NEED_VALUES.length),
   fullName: z.string().trim().min(1, "Your name is required.").max(120),
   email: z.email("That email looks off, please double-check.").max(160),
-  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  phone: z.string().trim().min(1, "A phone number is required.").max(40),
   state: z.enum(AU_STATES),
   /** Honeypot — checked before validation; kept here for typing only. */
   hp: z.string().optional(),
@@ -232,11 +239,11 @@ export async function submitIntroRequestAction(
     firstName,
     lastName,
     email: v.email.trim().toLowerCase(),
-    phone: v.phone && v.phone.length > 0 ? v.phone : null,
+    phone: v.phone,
     source: "landing_intro_request",
     ip,
     userAgent,
-    meta: { need: v.need, state: v.state },
+    meta: { needs: v.needs, state: v.state },
   });
 
   if (!leadResult.ok) return leadResult;
@@ -249,7 +256,7 @@ export async function submitIntroRequestAction(
       lastName,
       email: lead.email,
       phone: lead.phone,
-      need: v.need,
+      needs: v.needs,
       state: v.state,
       source: lead.source,
       createdAt: lead.createdAt,
@@ -257,7 +264,7 @@ export async function submitIntroRequestAction(
     sendPartnerIntroConfirmationEmail({
       to: lead.email,
       firstName,
-      need: v.need,
+      needs: v.needs,
     }),
   ]);
 

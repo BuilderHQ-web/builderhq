@@ -11,7 +11,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { partnerNavGroups } from "@/app/(marketing)/partners/partners-data";
+import { partnerNavTypes } from "@/app/(marketing)/partners/partners-data";
+import { PartnerForm } from "@/components/landing/v2/partner-form";
 import { RoleProvider } from "@/components/landing/v2/role";
 import { LandingNav } from "@/components/landing/v2/nav";
 import { Footer } from "@/components/landing/v2/footer";
@@ -42,12 +43,33 @@ export function InlineText({
     ? "font-ui font-medium text-white underline decoration-white/35 underline-offset-[3px] hover:decoration-white transition-colors"
     : "font-ui font-medium text-text underline decoration-[#0a7d73]/40 underline-offset-[3px] hover:text-accent-light hover:decoration-[#0a7d73] transition-colors";
 
+  /** Split a plain run on **bold** and emit real <strong> elements. */
+  const withBold = (run: string, keyBase: string): React.ReactNode[] => {
+    const out: React.ReactNode[] = [];
+    const bold = /\*\*([^*]+)\*\*/g;
+    let at = 0;
+    let b: RegExpExecArray | null;
+    while ((b = bold.exec(run)) !== null) {
+      if (b.index > at) out.push(run.slice(at, b.index));
+      out.push(
+        <strong key={`${keyBase}-b${b.index}`} className="font-ui font-semibold text-text">
+          {b[1]}
+        </strong>,
+      );
+      at = b.index + b[0].length;
+    }
+    if (at < run.length) out.push(run.slice(at));
+    return out;
+  };
+
   const nodes: React.ReactNode[] = [];
   let last = 0;
   const re = new RegExp(INLINE_LINK);
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m.index > last) {
+      nodes.push(...withBold(text.slice(last, m.index), `p${last}`));
+    }
     const label = m[1] ?? "";
     const href = m[2] ?? "";
     if (/^https?:\/\//.test(href)) {
@@ -65,7 +87,7 @@ export function InlineText({
     }
     last = m.index + m[0].length;
   }
-  if (last < text.length) nodes.push(text.slice(last));
+  if (last < text.length) nodes.push(...withBold(text.slice(last), `p${last}`));
   return <>{nodes}</>;
 }
 
@@ -102,11 +124,14 @@ export function BriefShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <RoleProvider>
-        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavGroups()} />
+        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavTypes()} />
         <main className="relative z-10 pt-28 lg:pt-36 pb-20 lg:pb-28 px-5 md:px-10">
           {children}
         </main>
         <Footer homeAnchors />
+        {/* Capture modal for the nav's "Join the network" sentinel.
+            Renders nothing until a sentinel CTA is clicked. */}
+        <PartnerForm />
       </RoleProvider>
     </div>
   );

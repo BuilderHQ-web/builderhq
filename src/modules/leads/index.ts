@@ -24,3 +24,18 @@ export {
   markLeadOpsNotified,
   type CreateLeadInput,
 } from "./service";
+
+/** The Preferred Partner disciplines — client-safe, shared by the
+ *  landing form, the actions and the emails. */
+export {
+  PARTNER_ROLES,
+  PARTNER_ROLE_VALUES,
+  partnerRole,
+  partnerRoleLabel,
+  INTRO_NEEDS,
+  INTRO_NEED_VALUES,
+  introNeedsSentence,
+  introNeedsLabel,
+  type PartnerRole,
+  type IntroNeed,
+} from "./partner-roles";

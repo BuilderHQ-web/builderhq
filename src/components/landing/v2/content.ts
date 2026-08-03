@@ -217,9 +217,9 @@ export const LENS: Record<Role, LensCopy> = {
         "No anonymous bids. No pay-to-appear. Just builders who cleared the gate.",
     },
     network: {
-      h2a: "Need a designer",
-      h2b: "or a broker?",
-      body: "Our Preferred Partner networks connect you with building designers and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
+      h2a: "Need a designer,",
+      h2b: "builder or broker?",
+      body: "Our Preferred Partner networks connect you with building designers, builders and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
       cta: { label: "Request an introduction", href: REQUEST_INTRO_HREF },
     },
     faq: [

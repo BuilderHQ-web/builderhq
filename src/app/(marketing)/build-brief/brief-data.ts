@@ -100,6 +100,8 @@ export interface BriefIssue {
     /** Newspaper fact box beside the article — key figures pulled
      *  from the copy, never new claims. */
     factBox?: { title: string; rows: Array<{ k: string; v: string }> };
+    /** One line lifted from the article, set large. */
+    pullQuote?: string;
     quoteDoc?: {
       docTitle: string;
       docSubtitle: string;
@@ -133,13 +135,35 @@ export interface BriefIssue {
     source?: string;
     takes: BriefTakes;
   };
-  voices: {
+  /** Absent = the section does not render for that edition. */
+  voices?: {
     kicker: string;
     headline: string;
     quote: string;
     attribution: string;
     role: string;
     body: string[];
+    source?: string;
+    takes?: BriefTakes;
+  };
+  /**
+   * The BuilderHQ Procurement Standard. An editorial section on the
+   * problem the Standard addresses, written to inform rather than to
+   * sell: the practice it describes is industry-wide and the fix is
+   * named, not pitched.
+   */
+  bps?: {
+    kicker: string;
+    headline: string;
+    headlineAccent?: string;
+    /** Italic serif deck under the headline. */
+    standfirst?: string;
+    paragraphs: string[];
+    /** The problem stated as discrete, checkable propositions. */
+    principles?: Array<{ n: string; title: string; body: string }>;
+    /** Closing block: what the Standard is, plainly. */
+    definition?: { heading: string; paragraphs: string[] };
+    pullQuote?: string;
     source?: string;
     takes?: BriefTakes;
   };
@@ -155,6 +179,15 @@ export interface BriefIssue {
      *  for them. */
     principalQuote?: string;
     portrait?: string;
+    /**
+     * Show the practice's mark beside the principal's portrait. The
+     * person and the practice carry equal billing where a founder is
+     * introduced alongside the business they built.
+     */
+    showLogo?: boolean;
+    /** Caption under the portrait when person and practice share the
+     *  frame, e.g. "Fletcher Thompson, Director". */
+    portraitCaption?: string;
     /** Editorial deck — one statement line above the copy. */
     deck?: string;
     /** Compact stat row from the register record. */
@@ -167,6 +200,13 @@ export interface BriefIssue {
     question: string;
     body: string;
   };
+  /**
+   * Questions this edition answers — rendered as a visible block near
+   * the foot AND mirrored as FAQPage structured data (Issue 003
+   * onward). Answers must restate figures already sourced above;
+   * never new claims.
+   */
+  faq?: Array<{ q: string; a: string }>;
   /** End-of-page blocks (Issue 002 onward). */
   share?: string;
   subscribeLine?: string;
@@ -807,6 +847,880 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "Maddocks",
     ],
   },
+  {
+    slug: "issue-003",
+    number: 3,
+    date: "2026-07-24",
+    displayDate: "Friday, 24 July 2026",
+    title:
+      "The cost base restarts, the failure rate turns, and a 20-day house.",
+    standfirst:
+      "Construction costs picked up again in the June quarter. Construction insolvencies fell for the first time in five years. And a Melbourne pilot went from slab to practical completion in 20 business days.",
+    seoTitle:
+      "The Build Brief 003: Construction Costs Rise, Insolvencies Turn | BuilderHQ",
+    seoDescription:
+      "Construction costs rose 1.0% in the June quarter as the March lull ended. Construction insolvencies fell for the first time in five years. A Melbourne prefab pilot went slab to completion in 20 business days. And the BuilderHQ Procurement Standard goes to Master Builders Australia.",
+    keywords: [
+      "construction costs australia june quarter 2026",
+      "cordell construction cost index",
+      "construction cost increase 2026",
+      "construction insolvency australia",
+      "asic insolvency statistics construction",
+      "construction insolvencies falling",
+      "prefab homes australia",
+      "modular housing victoria",
+      "metricon prefab pilot",
+      "how long does a prefab home take to build",
+      "rba august 2026 rate decision building",
+      "cpi june quarter 2026 new dwelling costs",
+      "builderhq procurement standard",
+      "construction procurement standard",
+      "comparing builder quotes australia",
+      "provisional sums and prime cost items",
+      "price validity period building contract",
+    ],
+    ogImage: "/build-brief/og-issue-003.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading: "The cost base restarted, and the failure rate turned.",
+      paragraphs: [
+        "Two numbers landed this week that point in opposite directions, and both are worth your attention.",
+        "Construction costs grew 1.0% in the June quarter, up from just 0.2% in March. The lull did not last. At the same time, construction company failures fell for the first time in five years, even though construction remains the largest single category of business failure in Australia by a wide margin.",
+        "Read together, they describe an industry that is busier and more stable than it was, and getting more expensive again. That is not a contradiction. It is what a recovery under cost pressure looks like.",
+        "The third item this week is a Melbourne estate where two houses went from slab to practical completion in twenty business days. Worth understanding properly, including what that number does and does not include.",
+        "One date to circle. The June quarter inflation figure lands on Wednesday 29 July, and the Reserve Bank decides on 11 August. New dwelling costs carry the largest single weight in the CPI basket, so this week's cost index reaches well beyond building. Voices sets out why. And if The Build Brief is new to you, [last week's edition](/build-brief/issue-002) covered Victoria's new building rules in full.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "Cost Pulse",
+        headline: "Construction costs are moving again. The March lull",
+        headlineAccent: "did not last.",
+        stat: {
+          value: "+1.0%",
+          label: "national construction cost growth, June quarter 2026",
+          sub: "annual growth 2.8%",
+        },
+        chart: {
+          kind: "bars",
+          title: "Quarterly construction cost growth, 2026",
+          desc: "The Cordell Construction Cost Index rose 1.0% in the June quarter after 0.2% in March. Annual growth lifted from 2.3% to 2.8%.",
+          valueHeading: "Quarterly growth",
+          bars: [
+            { label: "March quarter 2026", value: 0.2, display: "0.2%" },
+            {
+              label: "June quarter 2026",
+              value: 1.0,
+              display: "1.0%",
+              accent: true,
+            },
+          ],
+        },
+        body: [
+          "Cotality's Cordell Construction Cost Index rose 1.0% nationally over the June quarter, up sharply from 0.2% in the March quarter. Annual growth lifted from 2.3% to 2.8%.",
+          "The context matters as much as the number. After the disruption to shipping through the Strait of Hormuz earlier this year, analysts forecast severe increases in material and fuel costs. Those increases have not arrived at the scale predicted. Annual growth of 2.8% remains below the 2.9% recorded in both the March and June quarters of 2025, so the cost base is accelerating from a low point rather than spiking.",
+          "Where the pressure is showing up is more useful than the headline. Cotality points to PVC and PEX pipe products, heavy plant and crane hire, fuel levies, and freight and logistics charges. These are the line items that rarely appear in a quote comparison and often appear later as a surcharge.",
+          "The practical consequence is that estimates are ageing faster than they were three months ago.",
+        ],
+        source:
+          "Cotality Cordell Construction Cost Index, June quarter 2026 (released 22 July 2026)",
+        takes: {
+          owners:
+            "An estimate prepared three months ago may no longer hold. Ask when it was priced, and [get a current estimate](/estimate_request_landing_page) before you commit.",
+          designers:
+            "Cost advice given during design needs a review date attached to it.",
+          builders:
+            "The movement is in freight, plant and logistics rather than headline materials. Worth naming in your quote so it does not read as a margin grab later.",
+          brokers:
+            "Contingency assumptions set early in the year are looking thinner than they did.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "The Number",
+        headline: "A busy builder is not automatically a",
+        headlineAccent: "safe builder.",
+        stat: {
+          value: "24.4%",
+          label:
+            "construction's share of all company administrations, 1 July 2025 to 31 May 2026",
+          sub: "construction failures down 4.5% on last year",
+        },
+        chart: {
+          kind: "bars",
+          title: "Share of company administrations by industry",
+          desc: "Construction's share of external administrations, 1 July 2025 to 31 May 2026, against the next largest industries.",
+          valueHeading: "Share of administrations",
+          max: 30,
+          bars: [
+            { label: "Construction", value: 24.4, display: "24.4%", accent: true },
+            {
+              label: "Accommodation & food services",
+              value: 14.9,
+              display: "14.9%",
+            },
+            {
+              label: "Other & non-described services",
+              value: 9.8,
+              display: "9.8%",
+            },
+            { label: "Retail trade", value: 7.2, display: "7.2%" },
+            {
+              label: "Professional & technical services",
+              value: 6.8,
+              display: "6.8%",
+            },
+          ],
+        },
+        body: [
+          "ASIC's June Corporate Insolvency Update shows 12,819 companies entered external administration in the first eleven months of the financial year, down 4.6% on the same period a year earlier. Construction was the largest category at 24.4% of appointments, well ahead of accommodation and food services at 14.9%.",
+          "There is a second, more encouraging number underneath it. Analysis of ASIC's insolvency statistics published on 13 July found 3,435 construction companies entered external administration for the first time in 2025-26, down from 3,596 the year before. That is a fall of 4.5%, and the first annual decline since the post-COVID insolvency wave began.",
+          "Both things are true at once. The failure rate has turned, and construction is still the single largest source of company failure in Australia, as it has been every year since 2021-22.",
+          "Worth keeping in proportion. Construction has the highest count partly because Australia has more construction businesses than almost any other industry. The figure is a reason to do due diligence, not a reason for alarm. It is also the reason [every builder on BuilderHQ is verified](/#trust) against the ABN register and state licence registers before an owner ever compares a price.",
+        ],
+        source:
+          "ASIC Corporate Insolvency Update, Issue 40, June 2026; ASIC Insolvency Statistics Series 1, published 13 July 2026",
+        takes: {
+          owners:
+            "Ask about licensing, insurance and current workload before you talk about price.",
+          designers:
+            "A builder's financial standing belongs in the recommendation, alongside their portfolio.",
+          builders:
+            "The trend is improving. Being able to show financial standing is becoming a competitive advantage.",
+          brokers:
+            "Builder due diligence protects the loan as much as the borrower.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "Method",
+        headline: "Factory-built housing is no longer a",
+        headlineAccent: "conference topic.",
+        stat: {
+          value: "20",
+          label:
+            "business days from slab to practical completion, Metricon prefab pilot",
+          sub: "around 90% built off-site",
+        },
+        chart: {
+          kind: "strip",
+          title: "The prefabricated build sequence",
+          desc: "Six stages from factory to completion. Factory manufacture and transport happen off-site; the pilot's 20 business days cover slab to practical completion on site.",
+          stages: [
+            { label: "Factory manufacture", accent: true },
+            { label: "Transport", accent: true },
+            { label: "Slab & site preparation" },
+            { label: "Crane & install" },
+            { label: "Services connection" },
+            { label: "Practical completion" },
+          ],
+          callout: {
+            from: 2,
+            to: 5,
+            label: "20 business days",
+            sub: "slab to practical completion",
+          },
+          legend: { accent: "Off-site", context: "On site" },
+        },
+        body: [
+          "Metricon has completed a prefabricated homes pilot with SIGNEX Group and Stockland at Mt Atkinson Estate in Truganina. Around 90% of each home was manufactured off-site, then transported and installed, with both homes moving from slab to practical completion in twenty business days.",
+          "The number needs one qualification to be useful. Twenty business days covers slab to practical completion. It does not include planning, approvals, site preparation or the slab itself. The saving is real, and it sits in the construction phase rather than across the whole project.",
+          "This is not an isolated experiment. New South Wales has legislated formal recognition of prefabricated buildings, funded a certification framework, and opened a program to expand local manufacturing capacity for modular housing. One clarification, because the term covers two different things: volumetric modular, whole room boxes built in a factory, suits repeatable designs such as estates, social housing and mid-rise apartments. Panelised prefabrication, wall and floor cassettes, frames and trusses, is already standard on many custom homes. The more repeatable the design, the larger the time saving.",
+          "The part that matters for anyone comparing quotes is that prefabrication moves work rather than removing it. The payment schedule is front-loaded, inclusions sit in different places, site works may or may not be inside the number, and responsibility for defects is shared across more parties. Ask both builders to price the same scope boundaries, and [compare the tenders side by side](/#how) so what sits outside each number is visible. Most people compare totals. The difference is almost always in what sits outside the number.",
+        ],
+        source:
+          "Metricon, with SIGNEX Group and Stockland; NSW Government Modern Methods of Construction Industry Expansion Program",
+        takes: {
+          owners:
+            "Ask what the quoted timeline includes, and who is responsible if a module is damaged in transit.",
+          designers:
+            "Repeatable design elements convert into programme savings more directly than they used to.",
+          builders:
+            "The install, services, fit-out and warranty still sit with a builder of record. Prefabrication changes the sequence, not the accountability.",
+          brokers:
+            "Progress-payment structures built around on-site stages do not fit neatly when most of the value is manufactured off-site.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "Australian construction does not have a building problem. It has a",
+      headlineAccent: "procurement problem.",
+      standfirst:
+        "We published a Perspective this week arguing that the one stage of a residential project without a common standard is the stage that decides everything else. Here is the short version, and where it goes next.",
+      paragraphs: [
+        "Australia has standards for design, engineering, compliance, safety and construction. A builder cannot pour a slab, frame a wall or connect a service without meeting a defined benchmark. Procurement, the stage that governs the largest commitment an owner makes, has no equivalent. The argument is set out in full in [the Perspective](/build-brief/perspectives/construction-procurement-standard); what follows is the working version.",
+        "The consequence is familiar to anyone who has run a tender. Builders present proposals in different formats, carry different allowances, make different assumptions, and disclose commercial terms in different ways. Owners and their architects end up comparing documents that were never designed to line up, rather than comparing the builders behind them.",
+        "Two builders can quote the same project and mean entirely different things. The price looks comparable. The offer behind it rarely is.",
+      ],
+      sections: [
+        {
+          heading: "The proposal",
+          paragraphs: [
+            "The BuilderHQ Procurement Standard, or BPS, is a structured framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build. Under BPS, a builder completes a structured submission covering the same ground, in the same order, every time.",
+            "Eligibility and capability. Licensing, insurance and the capacity to take the project on, established before price enters the conversation.",
+            "Commercial disclosures. The price, its basis, how long it holds and the terms that shape it, stated plainly rather than left to interpretation.",
+            "Inclusions and exclusions. A clear schedule of what the price covers and what it does not, so scope gaps surface before contract rather than during construction.",
+            "Allowances. Provisional sums and prime cost items itemised, so an owner can see how much of a price is firm and how much can still move.",
+            "Programme. Start date, build duration and the commitments behind them, so ready in March is never confused with on site in March.",
+            "Documentation and commentary. The builder's own context, recommendations and evidence, presented alongside the numbers rather than lost around them.",
+          ],
+        },
+        {
+          heading: "What it is not",
+          paragraphs: [
+            "BPS is not a replacement for HIA or Master Builders contracts, and it is not a new layer of regulation. It sits before contract execution, complementing the standards the industry already relies on by improving the quality and transparency of what is disclosed during procurement.",
+            "A better-presented tender does not remove the need for professional judgement. It gives that judgement something consistent to work with.",
+          ],
+        },
+        {
+          heading: "The standard is already taking shape",
+          paragraphs: [
+            "This is not a framework waiting for software. BuilderHQ has built BPS into its own tender process: a structured submission that walks a builder through the same six disclosures, in the same order, before a tender can be sealed, and gives the owner and their architect a like-for-like evaluation on the other side. It is in final testing on the platform now, and the first structured tender rounds open soon. We will have more to say about that shortly.",
+          ],
+        },
+        {
+          heading: "Where it goes next",
+          paragraphs: [
+            "The proposed framework has been submitted to Master Builders Australia for consideration, and BuilderHQ is seeking input from the Housing Industry Association, state building authorities, lenders, insurers and consumer advocates.",
+            "It is offered as the start of an industry conversation rather than a finished standard. Builders, architects, designers, lenders and insurers interested in shaping future versions are invited to [register their interest](mailto:info@builderhq.com.au?subject=BPS%20%C2%B7%20Register%20interest).",
+            "Better information at the start of a project is the cheapest risk reduction available to anyone building a home.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The standard at a glance",
+        rows: [
+          { k: "Six", v: "disclosures, eligibility to commentary" },
+          { k: "Before contract", v: "complements HIA and Master Builders forms" },
+          { k: "In practice", v: "built into BuilderHQ’s tender process" },
+          {
+            k: "With MBA",
+            v: "submitted to Master Builders Australia for consideration",
+          },
+        ],
+      },
+      source:
+        'BuilderHQ Perspective, "Australian construction doesn\'t have a building problem. It has a procurement problem.", 23 July 2026',
+      takes: {
+        owners:
+          "Ask every builder to set out inclusions, exclusions and allowances in the same structure. The comparison gets easier immediately.",
+        designers:
+          "A consistent submission format makes a recommendation defensible rather than subjective.",
+        builders:
+          "Structured disclosure makes diligence visible. The builder who documents properly currently gets no credit for it.",
+        brokers:
+          "Consistent allowances and programme commitments make a construction facility easier to size correctly.",
+      },
+    },
+    voices: {
+      kicker: "Voices · From the Frontline",
+      headline: "Costs are rising from a low base, and the base is broadening.",
+      quote:
+        "The annual growth rate of 2.8% remained below the 2.9% growth recorded in the March and June quarters of 2025",
+      attribution: "John Bennett",
+      role: "Cordell Costings Estimation Manager, Cotality",
+      body: [
+        "Bennett's point is the one most likely to be missed this week. The quarterly figure jumped fivefold, from 0.2% to 1.0%, which reads alarming in isolation. The annual rate tells the calmer story: cost growth is still running below where it sat a year ago, and the severe increases forecast after the disruption to Middle East shipping have not materialised at the scale predicted.",
+        "What has changed is the composition. Pressure has moved out of headline materials and into freight, fuel levies, heavy plant, crane hire and logistics. Those costs are harder to see in a quote and harder to challenge after the fact.",
+        "The June quarter inflation figure lands on Wednesday 29 July, and the Reserve Bank decides on 11 August. New dwelling costs carry the largest single weight in the CPI calculation, which is why this index is worth watching well beyond the building industry. If a build is on your horizon, [post your project](/signup?role=owner) while estimates are still ageing slowly.",
+      ],
+      source:
+        "Cotality, reported by CommBank Newsroom, 22 July 2026; ABS release calendar; Reserve Bank of Australia",
+    },
+    partnerCorner: {
+      partnerSlug: "bianca-dacic",
+      headline: "Meet Bianca Dacic.",
+      principal: "Bianca Dacic",
+      principalRole: "Founder and director, Loan Savvy",
+      portrait: "/partners/bianca-dacic/portrait.jpg",
+      deck: "The Loan Savvy broker who gets first home buyers in, even without the deposit.",
+      stats: [
+        { value: "5.0", label: "93 Google reviews", star: true },
+        { value: "2018", label: "Loan Savvy, her own brokerage" },
+        { value: "10+ yrs", label: "in lending, software to broking" },
+      ],
+      why: "Bianca has quietly become one of the more trusted brokers in Melbourne's north west, and the proof is in the people who keep coming back: more than ninety Google reviews, every one of them five star. What they single out is that she gets them in. She is a specialist in buying with little or no deposit, guiding first home buyers through the part of lending most find daunting, with a patience that turns a stressful process into a manageable one. For an owner financing a build, especially one working hard to pull a deposit together, a broker this trusted, and this good at the hard part of getting finance approved, is exactly who we want beside them.",
+      practice:
+        "Loan Savvy is the Niddrie brokerage Bianca founded in 2018, after years on the industry's other side in mortgage software and broker training with firms such as Rubik and Temenos. The practice works across home, commercial, and car and asset lending, including construction loans and progress payments, and adds the practical coaching many brokers leave out: reading bank statements and credit reports, and helping clients set and reach a savings goal on the way to a purchase. Bianca is a credit representative (510930) of Mortgage Specialists Pty Ltd under Australian Credit Licence 387025.",
+      welcome:
+        "Featured from our Preferred Partner register. We are glad to put our name behind Bianca, and to introduce her to owners financing a build across Melbourne.",
+    },
+    faq: [
+      {
+        q: "How much did construction costs rise in the June 2026 quarter?",
+        a: "The Cordell Construction Cost Index rose 1.0% nationally in the June quarter 2026, up from 0.2% in the March quarter. Annual growth lifted from 2.3% to 2.8%, still below the 2.9% recorded in the March and June quarters of 2025.",
+      },
+      {
+        q: "Are construction insolvencies falling in Australia?",
+        a: "Yes, for the first time in five years. 3,435 construction companies entered external administration in 2025-26, down from 3,596 the year before, a fall of 4.5%. Construction remains the largest single category of company failure, at 24.4% of appointments in the eleven months to 31 May 2026.",
+      },
+      {
+        q: "How fast can a prefabricated home be built in Australia?",
+        a: "A Melbourne pilot by Metricon, SIGNEX Group and Stockland took two homes from slab to practical completion in 20 business days, with around 90% of each home manufactured off-site. The figure excludes planning, approvals, site preparation and the slab itself.",
+      },
+      {
+        q: "What is the BuilderHQ Procurement Standard (BPS)?",
+        a: "BPS is a proposed framework that standardises how builders present tenders: eligibility, commercial disclosures, inclusions and exclusions, allowances, programme and commentary, in the same order every time. It sits before contract, complements HIA and Master Builders contracts, and has been submitted to Master Builders Australia for consideration.",
+      },
+    ],
+    overToYou: {
+      question:
+        "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    share:
+      "Forward The Build Brief to someone planning, designing, financing or building a home.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      {
+        label: "Read the full Perspective on the procurement problem",
+        href: "/build-brief/perspectives/construction-procurement-standard",
+      },
+      { label: "Read Issue 002", href: "/build-brief/issue-002" },
+      { label: "Read Issue 001", href: "/build-brief/issue-001" },
+    ],
+    sourceGroups: [
+      {
+        heading: "Market Watch 01 · +1.0%",
+        links: [
+          {
+            label:
+              "Cotality, Cordell Construction Cost Index, June quarter 2026 (released 22 July 2026)",
+            href: "https://www.cotality.com/au/resources/downloads/cordell-construction-cost-index-ccci",
+          },
+          {
+            label:
+              'CommBank Newsroom, "Home-building costs rise, but not as much as feared", 22 July 2026',
+            href: "https://www.commbank.com.au/articles/newsroom/2026/July/home-building-costs-rise-but-not-as-much-as-feared.html",
+          },
+        ],
+      },
+      {
+        heading: "Market Watch 02 · 24.4%",
+        links: [
+          {
+            label: "ASIC Corporate Insolvency Update, Issue 40, June 2026",
+            href: "https://www.asic.gov.au/about-asic/corporate-publications/newsletters/asic-corporate-insolvency-update/asic-corporate-insolvency-update-issue-40-june-2026/",
+          },
+          {
+            label: "ASIC Insolvency Statistics, Series 1",
+            href: "https://www.asic.gov.au/about-asic/corporate-publications/statistics/insolvency-statistics/",
+          },
+          {
+            label:
+              'The Good Builder, "Construction insolvencies just fell for the first time in five years", 13 July 2026',
+            href: "https://thegoodbuilder.com.au/construction-insolvencies-just-fell-for-the-first-time-in-five-years/",
+          },
+        ],
+      },
+      {
+        heading: "Market Watch 03 · 20 days",
+        links: [
+          {
+            label:
+              'The Urban Developer, "Slab to Home in 20 Days: Metricon\'s Mainstream Modular Materialises"',
+            href: "https://www.theurbandeveloper.com/articles/metricon-modular-pilot-success-truganina-vic",
+          },
+          {
+            label:
+              'NSW Government, "Expressions of Interest open for the future of housing construction in NSW"',
+            href: "https://www.nsw.gov.au/ministerial-releases/expressions-of-interest-open-for-future-of-housing-construction-nsw",
+          },
+          {
+            label:
+              'Built Offsite, "NSW seeks global manufacturing partners to expand modular housing production"',
+            href: "https://builtoffsite.com.au/news/nsw-seeks-global-manufacturing-partners-to-expand-modular-housing-production/",
+          },
+        ],
+      },
+      {
+        heading: "The Feature · BPS",
+        links: [
+          {
+            label:
+              'BuilderHQ Perspective, "Australian construction doesn\'t have a building problem. It has a procurement problem."',
+            href: "https://builderhq.com.au/build-brief/perspectives/construction-procurement-standard",
+          },
+        ],
+      },
+      {
+        heading: "Voices",
+        links: [
+          {
+            label: "CommBank Newsroom, 22 July 2026 (as above)",
+            href: "https://www.commbank.com.au/articles/newsroom/2026/July/home-building-costs-rise-but-not-as-much-as-feared.html",
+          },
+          {
+            label: "ABS release calendar, July 2026",
+            href: "https://www.abs.gov.au/release-calendar/future-releases-calendar/202607/rcc_economy",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from Cotality, the Australian Securities and Investments Commission, the Australian Bureau of Statistics, the Reserve Bank of Australia, Metricon, the New South Wales Government and CommBank Newsroom. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "Cotality",
+      "the Australian Securities and Investments Commission",
+      "the Australian Bureau of Statistics",
+      "the Reserve Bank of Australia",
+      "Metricon",
+      "the New South Wales Government",
+      "CommBank Newsroom",
+    ],
+  },
+  {
+    slug: "issue-004",
+    number: 4,
+    date: "2026-07-31",
+    displayDate: "Friday, 31 July 2026",
+    title:
+      "The average new house is declared at $517,430 before land, and Victoria resets its workmanship benchmark.",
+    standfirst:
+      "The average new Australian house was declared at $517,430 of building work at permit stage last financial year, before land. Inflation eased enough to take an August rate rise off the table. And from 1 August, Victoria’s revised Guide to Standards and Tolerances sets the benchmark for judging workmanship.",
+    seoTitle:
+      "The Build Brief 004: What a New House Costs Before It Is Built | BuilderHQ",
+    seoDescription:
+      "The average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0%, before land. Inflation eased to 3.8% and an August rate rise moved off the table. Victoria’s Guide to Standards and Tolerances 2026 edition applies from 1 August and is not retrospective. Plus the Productivity Commission on housing regulation.",
+    keywords: [
+      "cost to build a house australia 2026",
+      "average build cost new house australia",
+      "average house approval value australia",
+      "how much does it cost to build a house in australia",
+      "cpi june 2026 australia",
+      "rba august 2026 rate decision",
+      "trimmed mean inflation australia",
+      "new dwelling prices australia",
+      "guide to standards and tolerances 2026",
+      "guide to standards and tolerances victoria",
+      "building and plumbing commission victoria",
+      "domestic building workmanship standards victoria",
+      "building tolerances australia",
+      "domestic building disputes victoria",
+      "productivity commission housing supply regulation",
+      "upzoning australia",
+      "building approvals 2025-26",
+      "housing approvals australia financial year",
+      "builderhq procurement standard",
+      "comparing builder quotes australia",
+    ],
+    // The generic masthead card until a bespoke Issue 004 card is
+    // made; a missing file would break every social preview.
+    ogImage: "/build-brief/og.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading:
+        "The industry raised its own bar. A federal review asked government to lower theirs.",
+      paragraphs: [
+        "Three numbers this week. What a house costs to build, what money costs while you build it, and the benchmark your workmanship is now judged against.",
+        "The average new house was declared at $517,430 of building work before land, up 5.0%. Inflation eased enough to take an August rate rise off the table. And Victoria's revised Guide to Standards and Tolerances applies from tomorrow.",
+        "Set that beside Monday, when the Productivity Commission found that regulation has become a handbrake on new homes. One arm of the system settled how we judge work done well. Another said the rules on what can be built at all are slowing supply. Both are in here.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "Cost Pulse",
+        headline: "The average new house is declared at half a million dollars",
+        headlineAccent: "before land.",
+        stat: {
+          value: "$517,430",
+          label:
+            "average declared build cost of a new private house, 2025-26",
+          sub: "up 5.0% on the year",
+        },
+        chart: {
+          kind: "bars",
+          title: "Average declared build cost of a new private house",
+          desc: "The average approval value for a new private house rose from $492,931 in 2024-25 to $517,430 in 2025-26, an increase of 5.0%. Both figures are declared building work at permit stage and exclude land.",
+          valueHeading: "Average declared value",
+          bars: [
+            { label: "2024-25", value: 492931, display: "$492,931" },
+            {
+              label: "2025-26",
+              value: 517430,
+              display: "$517,430",
+              accent: true,
+            },
+          ],
+        },
+        body: [
+          "Across 2025-26 the average approval value for a new private house was $517,430, up 5.0% on last year's $492,931. June alone averaged $529,790.",
+          "Know what it is. When a permit is issued the cost of the work is declared, and the ABS collects every one. Construction at the point of approval, excluding land. Not an index, not a forecast. Declared values sit low too, since variations and site costs land later, so the 5.0% movement is the truer signal.",
+          "Wednesday's inflation data agrees from a different direction: new dwelling prices rose 5.8% over the year, up from 5.6%. Two independent measures, both near 5%, both edging up.",
+        ],
+        source:
+          "ABS Building Approvals, Australia, June 2026 (released 30 July 2026); ABS Consumer Price Index, June 2026",
+        takes: {
+          owners:
+            "Build cost, land and finance move separately. Ask which of the three your estimate actually covers, and [get a current estimate](/estimate_request_landing_page) before you commit to a budget.",
+          designers:
+            "Cost advice given at concept needs a review date attached. Five per cent a year compounds across a long documentation phase.",
+          builders:
+            "Two national measures now sit near 5%. Useful context when you explain a price movement to a client who last saw a figure in January.",
+          brokers:
+            "Construction cost assumptions set twelve months ago are roughly 5% light before anything site-specific is considered.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Market Mood",
+        headline: "The headline rate came down. The measure the Reserve Bank watches",
+        headlineAccent: "did not.",
+        stat: {
+          value: "3.8%",
+          label: "annual CPI inflation, 12 months to June 2026",
+          sub: "trimmed mean held at 3.6%",
+        },
+        chart: {
+          kind: "slope",
+          title: "Annual inflation, headline against underlying",
+          desc: "Headline CPI eased from 4.0% in the year to May to 3.8% in the year to June. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and stayed above the 2 to 3 per cent target band.",
+          valueHeading: "Headline CPI",
+          points: [
+            { label: "Year to May", value: 4.0, display: "4.0%" },
+            { label: "Year to June", value: 3.8, display: "3.8%", accent: true },
+          ],
+          second: {
+            label: "Trimmed mean",
+            points: [
+              { label: "Year to May", value: 3.6, display: "3.6%" },
+              { label: "Year to June", value: 3.6, display: "3.6%" },
+            ],
+          },
+          band: { from: 2.0, to: 3.0, label: "RBA target band" },
+          reference: { value: 3.0, display: "3.0%", label: "Top of target band" },
+          domain: [1.6, 4.4],
+        },
+        body: [
+          "Annual inflation eased to 3.8% in the year to June, from 4.0%. Fuel fell 10.9% as oil markets steadied. Markets cut the odds of an 11 August rise to near zero, Westpac moved to a hold, and all four majors now expect no change. The cash rate stays at 4.35%.",
+          "The caution is the second line on the chart. The trimmed mean, the measure the Reserve Bank watches, held flat at 3.6% and stays above the target band. Housing was again the largest contributor at 6.8%, driven by electricity up 22.4% after rebates expired. A hold is welcome. It is not relief.",
+        ],
+        source:
+          "ABS Consumer Price Index, Australia, June 2026 (released 29 July 2026); The Conversation; Canstar",
+        takes: {
+          owners:
+            "Near-term rate risk has eased. Confirm how long your finance approval and your builder's price each hold, because the two rarely expire together.",
+          designers:
+            "Client confidence should improve into spring. Feasibility conversations get easier when the rate outlook is stable.",
+          builders:
+            "A hold is not a cut. Borrowing costs stay where they are, and so does the pressure on client budgets.",
+          brokers:
+            "Underlying inflation above the target band means the next move is still unsettled. Buffers keep earning their place.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "The Rulebook",
+        headline: "Your finishes are judged from 1.5 metres away.",
+        headlineAccent: "Now it is written down.",
+        stat: {
+          value: "1.5 m",
+          label: "the distance a wall, ceiling or floor finish is assessed from",
+          sub: "600 mm for fixtures · 3 m for glass",
+        },
+        rowsTitle: "What the Guide calls outside tolerance",
+        rows: [
+          { label: "Floor level, any room", value: "10 mm" },
+          { label: "Floor level, any 2 m length", value: "4 mm", accent: true },
+          { label: "Floor level, across the whole footprint", value: "20 mm" },
+          { label: "Crack in a slab on ground", value: "2 mm wide" },
+          { label: "Crack in a masonry wall", value: "5 mm wide" },
+        ],
+        chart: {
+          kind: "strip",
+          title: "Where the Guide sits, and what outranks it",
+          desc: "Legislation, regulations, the National Construction Code and Australian Standards prescribe requirements and take precedence. The Guide is informative only.",
+          stages: [
+            { label: "Legislation and regulations" },
+            { label: "National Construction Code" },
+            { label: "Australian Standards" },
+            { label: "The Guide", accent: true },
+          ],
+          callout: {
+            from: 3,
+            to: 3,
+            label: "Informative only",
+            sub: "Everything above it takes precedence",
+          },
+          legend: { accent: "Recognised benchmarks", context: "Prescribed requirements" },
+        },
+        body: [
+          "Victoria's Building and Plumbing Commission has issued the 2026 edition of the Guide to Standards and Tolerances. It applies to contracts entered into and work commenced on or after 1 August 2026, and it is not retrospective. Earlier jobs stay on the previous edition.",
+          "Two rules do most of the work. Finishes are assessed from a normal viewing position, 1.5 metres back in ordinary light, so a mark you have to hunt for is generally within tolerance. And tolerances never scale down: 4 mm over 2 metres means 4 mm over 1 metre and 4 mm over 500 mm, not a proportion of it.",
+        ],
+        source:
+          "Building and Plumbing Commission, Guide to Standards and Tolerances 2026 (dated 14 July 2026, applies from 1 August 2026)",
+        takes: {
+          owners:
+            "Before raising a concern, look at it from 1.5 metres in normal light. That is the test the Guide applies.",
+          designers:
+            "Where a finish needs to beat the recognised tolerance, the specification is the only place to say so.",
+          builders:
+            "A written benchmark cuts both ways. It is the standard a client is held to as much as you are.",
+          brokers:
+            "Workmanship disputes stall progress claims. A settled benchmark shortens the argument.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "The deposit now takes eleven years. The rules are part of",
+      headlineAccent: "the price.",
+      standfirst:
+        "The Productivity Commission released its interim report on housing supply regulation this week. Its finding is that regulation has become a handbrake on new homes. Submissions are open until the end of September.",
+      paragraphs: [
+        "The Productivity Commission's interim report landed Monday with a direct finding: regulation has become a handbrake on new housing supply.",
+        "The framing deserves care. The Commission is not against regulation, and accepts rules are needed for safety, quality and liveability. Its argument is that too much of it stops homes being built. The context: a 20% deposit now takes about eleven years to save, up from eight in 2005.",
+      ],
+      sections: [
+        {
+          heading: "Four principles",
+          paragraphs: [
+            "The report proposes four principles for a better housing regulatory system: adopt a build mindset, regulate only where necessary, coordinate housing with infrastructure, and keep the process simple.",
+          ],
+        },
+        {
+          heading: "Where reform would do the most",
+          paragraphs: [
+            "**Land-use controls.** The single biggest lever the Commission examined. It raises broad-based upzoning: three-storey development on most residential land, smaller minimum lot sizes, more mixed use, and more mid-rise in well-serviced areas. Commissioner Alison Roberts put it plainly: the rules that stop someone adding a granny flat, or replacing a house with townhouses, sit at the core of the problem.",
+            "**Infrastructure coordination.** Roads, utilities and sewerage usually come before homes, especially in greenfield areas. Where housing and infrastructure plans are not aligned, rezoned land can sit unused for years. The report wants infrastructure plans funded and sequenced alongside land release.",
+            "**Approval processes.** Approvals cross multiple decision-makers, and poor coordination adds months or years. One developer told the Commission that approvals added more than three years to a 1,600 lot development in Melbourne's growth corridor. Proposed fixes: fast-track pathways, state-led assessment, coordination bodies that can resolve disputes.",
+          ],
+        },
+        {
+          heading: "What it is, and what it is not",
+          paragraphs: [
+            "This is an interim report. It makes no recommendations, sets out reform directions and asks for evidence. Submissions close 30 September 2026; the final report is due March 2027. The Housing Industry Association has welcomed it.",
+            "Read it beside this week's other numbers. Approvals closed the year at 205,249 dwellings, up 9.2% and the highest since 2020-21. Master Builders still puts the country 47,750 homes short. Permission is at a five-year high and delivery is behind. The path from approval to completed home is where the years go.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The figures",
+        rows: [
+          { k: "Years to save a 20% deposit", v: "About 11, from 8 in 2005" },
+          { k: "Dwellings approved, 2025-26", v: "205,249, up 9.2%" },
+          { k: "Shortfall against the Accord", v: "47,750 homes" },
+          { k: "Approval delay, one Melbourne project", v: "More than 3 years" },
+          { k: "Submissions close", v: "30 September 2026" },
+          { k: "Final report due", v: "March 2027" },
+        ],
+      },
+      pullQuote: "Land that has been rezoned for housing can sit unused for years.",
+      source:
+        "Productivity Commission, Housing supply regulation interim report (released 27 July 2026); ABS Building Approvals, June 2026; Master Builders Australia; Housing Industry Association",
+      takes: {
+        owners:
+          "If you have been through a slow approval, the Commission is taking submissions until 30 September.",
+        designers:
+          "The upzoning directions point toward more medium-density work. Practices positioned for townhouses and mid-rise stand to benefit.",
+        builders:
+          "Nothing changes today. The final report lands in March 2027, and state governments decide what follows it.",
+        brokers:
+          "Approval delay is a funding cost. Three years added to a rezoned site is carried by someone.",
+      },
+    },
+    bps: {
+      kicker: "The BuilderHQ Procurement Standard",
+      headline: "Cost is the part everyone talks about. Scope is where the money",
+      headlineAccent: "quietly moves.",
+      standfirst:
+        "The Feature is about the years lost between approval and completion. This is about the weeks lost between drawings and a signed contract, and why three quotes for the same house are so hard to compare.",
+      paragraphs: [
+        "A national average cannot tell an owner whether the three quotes on their kitchen table describe the same house. Usually they do not. One carries an allowance for joinery, one prices it firm, one is silent. Each quote is honest. None is comparable, and the difference only surfaces later as a variation.",
+        "That is not a failure of builders. It is a failure of format. Australian residential tendering has no common structure, so every builder invents one, and the person least equipped to reconcile them is the homeowner.",
+        "We measured it. We ran real Australian document sets through our analysis, from one architectural set to twelve documents deep, then checked what they actually settle. The pattern held regardless of thickness. In every package the same areas were left open: site preliminaries, painting, landscaping, services connections. Ordinary trades on every job. That is the gap a builder fills with judgement, and judgement is what an owner cannot compare.",
+      ],
+      principles: [
+        {
+          n: "01",
+          title: "One scope, read from the documents",
+          body: "The documents are read against a fixed schedule of the work a home requires. Every line is either evidenced, with the page it came from, or recorded as a gap. Nothing is assumed.",
+        },
+        {
+          n: "02",
+          title: "The gaps are settled before pricing, not after",
+          body: "Where the documents are silent, the question is asked once, of the client, before the round opens. Every builder then carries the same figure. Otherwise each guesses privately and the difference appears later as a variation.",
+        },
+        {
+          n: "03",
+          title: "Every tender answers the same lines",
+          body: "For each line a builder states one of four things: included as documented, carried as an allowance at a stated figure, excluded, or not applicable. A quote stops being a document to interpret.",
+        },
+        {
+          n: "04",
+          title: "The comparison shows its working",
+          body: "Where builders disagree on a line, it is visible rather than buried. Every figure carries the disclosure it came from, so an owner can defend it and a builder is never ambushed by it.",
+        },
+      ],
+      definition: {
+        heading: "What the Standard is",
+        paragraphs: [
+          "A common format for residential tendering: one scope read from the project's own documents, one set of questions every builder answers, one comparison that shows its working.",
+          "Fair in both directions. A builder who prices carefully should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference.",
+          "Being built now, tested against real Australian project documents. Not yet released. [Our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
+        ],
+      },
+      pullQuote:
+        "A national average cannot tell an owner whether three quotes describe the same house.",
+      takes: {
+        owners:
+          "When you next receive quotes, put them side by side and look for the lines that appear in one and not the others. That difference is usually the whole story.",
+        designers:
+          "A documented allowance is worth more than a silent assumption. Where a schedule cannot be finalised, naming the gap is more useful to the tender than leaving it out.",
+        builders:
+          "A common format protects careful pricing. When every tender answers the same lines, a well-disclosed quote stops being punished for the things it was honest about.",
+        brokers:
+          "Scope certainty at contract signing is the best predictor of whether a facility draws down to plan.",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "de-lune-construction",
+      headline:
+        "Meet Fletcher Thompson and de Lune Construction, where the drawing is protected all the way to handover.",
+      deck: "Construction as the continuation of architecture.",
+      principal: "Fletcher Thompson",
+      principalRole: "Founder and Director",
+      portrait: "/build-brief/issue-004/fletcher-thompson.jpg",
+      portraitCaption: "Fletcher Thompson, Founder and Director",
+      showLogo: true,
+      stats: [
+        { value: "5.0", label: "Google rating", star: true },
+        { value: "15 yrs", label: "Complex architectural builds" },
+        { value: "Dual", label: "Residential and commercial registration" },
+      ],
+      why: "Fletcher Thompson sits between two worlds, and that is why we introduce him. A degree in architecture on one side, registration as both a residential and commercial builder on the other. His practice runs on the belief that construction is the continuation of architecture, with fifteen years behind it. For an owner taking on an architecturally ambitious home, this is a builder who speaks the architect's language fluently and builds it faithfully.",
+      practice:
+        "A Hawthorn building company specialising in complex architectural builds across Melbourne, working with clients, architects and consultants from concept to completion. Its portfolio spans the Malvern and Nicholson residences alongside commercial work including Programa HQ and Curve Cycling Melbourne.",
+      welcome:
+        "A builder who reads drawings the way an architect wrote them is exactly the practice this platform exists to put in front of the right projects.",
+    },
+    faq: [
+      {
+        q: "How much does it cost to build a house in Australia in 2026?",
+        a: "Across the 2025-26 financial year the average approval value for a new private house in Australia was $517,430, up 5.0% on the $492,931 average in 2024-25. The June 2026 figure alone was $529,790. This is the cost of building work declared when a building permit is issued and it excludes land. Declared values at permit stage tend to sit low, because variations, upgrades and site costs land later, so the real average is almost certainly higher.",
+      },
+      {
+        q: "Did Australian inflation fall in June 2026?",
+        a: "Yes. Annual CPI inflation eased to 3.8% in the twelve months to June 2026, down from 4.0% in the year to May, and the CPI fell 0.1% in the month itself. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and remains above the 2 to 3 per cent target band.",
+      },
+      {
+        q: "Will the RBA raise rates in August 2026?",
+        a: "Financial markets cut the probability of a rise at the 10 to 11 August 2026 meeting to close to zero after the June quarter inflation figures, and all four major banks expect no change. The cash rate stands at 4.35%. Underlying inflation above the target band means the direction of the next move is still unsettled.",
+      },
+      {
+        q: "When does the Guide to Standards and Tolerances 2026 edition apply?",
+        a: "The 2026 edition applies to contracts entered into and building work commenced on or after 1 August 2026. It does not apply retrospectively, so contracts entered into or work commenced before that date continue under the previous edition. An Applicability of the Guide section within the document sets out when this edition applies.",
+      },
+      {
+        q: "Is the Guide to Standards and Tolerances legislation?",
+        a: "No. The Guide is a reference tool and is neither legislation nor technical advice. Where legislation, regulations, the National Construction Code or Australian Standards prescribe specific requirements, those requirements take precedence. The Guide provides recognised benchmarks for assessing the quality of domestic building work and should be considered together with the circumstances of the work, the contract documents and any applicable legislative requirements. Victoria's Building and Plumbing Commission uses it as a recognised reference when responding to enquiries and supporting the resolution of domestic building disputes.",
+      },
+      {
+        q: "What did the Productivity Commission say about housing regulation?",
+        a: "In its interim report released on 27 July 2026, the Productivity Commission found that regulation has become a handbrake on new housing supply. It accepts that rules are necessary for safety, quality and liveability, but argues that too much or poorly designed regulation slows and narrows housing. It identifies land-use controls as the reform with the greatest potential effect on supply. The report is an interim report and makes no recommendations. Submissions close on 30 September 2026 and the final report is due in March 2027.",
+      },
+      {
+        q: "How many homes were approved in Australia in 2025-26?",
+        a: "205,249 dwellings were approved across the 2025-26 financial year, up 9.2% and the highest total since 2020-21, with multi-unit approvals at their strongest level since 2017-18. On Master Builders Australia's assessment, the country still finished 47,750 homes short of what was needed, a second consecutive year behind the National Housing Accord pace.",
+      },
+      {
+        q: "Why are builder quotes so hard to compare?",
+        a: "Because there is no common format. One quote may carry an allowance for an item, another may price it firm, and a third may be silent on it, so three honest quotes can describe three different scopes of work. When BuilderHQ tested real Australian project document sets, the same areas were left unsettled in every package regardless of how many documents the project had: site preliminaries, painting, landscaping and the connection of services. Those are the gaps each builder fills with private judgement, and they are the differences an owner cannot see until they surface later as a variation.",
+      },
+    ],
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    share:
+      "The average new Australian house was declared at $517,430 before land last financial year, and Victoria’s revised workmanship benchmark applies from 1 August. This week's Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    sourceGroups: [
+      {
+        heading: "Build cost and approvals",
+        links: [
+          {
+            label: "ABS, Building Approvals, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia/latest-release",
+          },
+          {
+            label: "ABS media release, Dwelling approvals rise in June",
+            href: "https://www.abs.gov.au/media-centre/media-releases/dwelling-approvals-rise-june-0",
+          },
+        ],
+      },
+      {
+        heading: "Inflation and rates",
+        links: [
+          {
+            label: "ABS, Consumer Price Index, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release",
+          },
+          {
+            label: "ABS media release, CPI rose 3.8% in the year to June 2026",
+            href: "https://www.abs.gov.au/media-centre/media-releases/cpi-rose-38-year-june-2026",
+          },
+          {
+            label:
+              "The Conversation, Australian inflation has eased a little, an August interest rate rise now looks unlikely",
+            href: "https://theconversation.com/australian-inflation-has-eased-a-little-an-august-interest-rate-rise-now-looks-unlikely-288399",
+          },
+          {
+            label: "Canstar, Will inflation dip be enough to stop an RBA hike?",
+            href: "https://www.canstar.com.au/news/will-inflation-dip-be-enough-to-stop-rba-hike/",
+          },
+        ],
+      },
+      {
+        heading: "Workmanship standards",
+        links: [
+          {
+            label:
+              "Building and Plumbing Commission, Guide to Standards and Tolerances 2026",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2026",
+          },
+          {
+            label: "Building and Plumbing Commission, the previous edition",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2015-under-review-2024",
+          },
+        ],
+      },
+      {
+        heading: "Housing supply regulation",
+        links: [
+          {
+            label: "Productivity Commission, Housing supply regulation interim report",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/interim/",
+          },
+          {
+            label: "Make a submission, closes 30 September 2026",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/make-submission/",
+          },
+          {
+            label: "HIA, Productivity Commission push for bold housing reform",
+            href: "https://hia.com.au/our-industry/newsroom/planning-and-environment/2026/07/productivity-commission-push-for-bold-housing-reform",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Australian Bureau of Statistics, the Productivity Commission, Victoria's Building and Plumbing Commission, Master Builders Australia and the Housing Industry Association. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Australian Bureau of Statistics",
+      "the Productivity Commission",
+      "the Building and Plumbing Commission",
+      "Master Builders Australia",
+      "the Housing Industry Association",
+    ],
+  },
 ];
 
 /** Issues newest-first for the hub and feeds. */
@@ -861,6 +1775,9 @@ export type BriefPerspective = {
   slug: string;
   /** Small caps tag row, e.g. "Opinion · Residential construction". */
   tag: string;
+  /** The eyebrow above the masthead and on the hub card. Defaults to
+   *  "A Founder Perspective"; editorial pieces set their own. */
+  kicker?: string;
   /** Headline, minus the accent tail. */
   title: string;
   /** Trailing words of the headline, rendered in the accent colour. */
@@ -869,15 +1786,166 @@ export type BriefPerspective = {
   standfirst: string;
   /** The bold lede paragraph. */
   lede: string;
-  author: { name: string; role: string; portrait?: string };
+  author: {
+    name: string;
+    role: string;
+    portrait?: string;
+    /** schema.org author type — a named person, or the masthead itself
+     *  for editorial pieces. Defaults to Person. */
+    schemaType?: "Person" | "Organization";
+    /** jobTitle for a Person author (e.g. "Founder"). */
+    jobTitle?: string;
+  };
   dateISO: string;
   displayDate: string;
   readingMins: number;
   blocks: PerspectiveBlock[];
+  /** Label on the closing aside; defaults to "About the author". */
+  aboutLabel?: string;
   aboutAuthor: string;
+  /** Per-piece search keywords (SEO/AEO/GEO). Falls back to a general
+   *  set when omitted. */
+  keywords?: string[];
 };
 
 export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
+  {
+    slug: "construction-procurement-standard",
+    tag: "Opinion · Construction procurement",
+    kicker: "A BuilderHQ Perspective",
+    title: "Australian construction doesn't have a building problem.",
+    titleAccent: "It has a procurement problem.",
+    standfirst:
+      "Design, engineering and delivery have all been modernised. The way Australians choose, compare and appoint a builder has not.",
+    lede: "Australia's residential construction industry has spent decades improving how homes are designed and built. Architectural standards have risen, construction methods have advanced, and digital tools now touch almost every stage of a project. Yet the moment that decides who builds your home, and on what terms, has barely changed.",
+    author: {
+      name: "The BuilderHQ Editorial Team",
+      role: "Opinion, BuilderHQ",
+      schemaType: "Organization",
+    },
+    dateISO: "2026-07-23",
+    displayDate: "23 July 2026",
+    readingMins: 5,
+    blocks: [
+      {
+        kind: "p",
+        text: "Every year, Australians commit billions of dollars to building and renovating homes. For most people it is the single largest financial decision they will ever make. And still, there is no common framework for how a residential building tender is prepared, disclosed and compared.",
+      },
+      {
+        kind: "p",
+        text: "Builders present proposals in different formats. They make different assumptions, carry different allowances, and disclose their commercial terms in different ways. Owners and their architects are then left to compare documents that were never designed to line up, rather than to compare the builders behind them.",
+      },
+      { kind: "h2", text: "Procurement is more than getting a price" },
+      {
+        kind: "p",
+        text: "It is easy to treat procurement as a quote-collection exercise. It is not. Procurement is how you identify risk, test assumptions and assess capability before signing a contract that is difficult and expensive to unwind.",
+      },
+      {
+        kind: "p",
+        text: "Programme commitments, exclusions, provisional sums, prime cost items and commercial qualifications all shape what a build actually costs and how it actually runs. These are the details that decide whether a project finishes on budget. Yet they are the details most often buried, inconsistent or missing at the very moment quotes are compared side by side.",
+      },
+      {
+        kind: "quote",
+        text: "Two builders can quote the same project and mean entirely different things. The price looks comparable. The offer behind it rarely is.",
+      },
+      { kind: "h2", text: "Australia has standardised everything except procurement" },
+      {
+        kind: "p",
+        text: "We have well-established standards for design, engineering, compliance, safety and construction. A builder cannot pour a slab, frame a wall or connect a service without meeting a defined benchmark. Procurement, the stage that governs the largest commitment an owner makes, has no equivalent.",
+      },
+      {
+        kind: "p",
+        text: "The absence of a common procurement language is not a small inconvenience. It is why objective comparison is harder than it should be, why the lowest headline number so often wins attention it has not earned, and why disputes so frequently begin with the same four words: I thought that was included.",
+      },
+      {
+        kind: "h2",
+        text: "A standard for how tenders are presented, not how builders price",
+      },
+      {
+        kind: "p",
+        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is an open framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
+      },
+      {
+        kind: "p",
+        text: "Under BPS, a builder completes a structured submission that covers the same ground, in the same order, every time:",
+      },
+      {
+        kind: "table",
+        head: ["The submission covers", "Why it matters"],
+        rows: [
+          {
+            term: "Eligibility and capability",
+            body: "Licensing, insurance and the capacity to take the project on, established before price enters the conversation.",
+          },
+          {
+            term: "Commercial disclosures",
+            body: "The price, its basis, how long it holds and the terms that shape it, stated plainly rather than left to interpretation.",
+          },
+          {
+            term: "Inclusions and exclusions",
+            body: "A clear schedule of what the price covers and what it does not, so scope gaps surface before contract rather than during construction.",
+          },
+          {
+            term: "Allowances",
+            body: "Provisional sums and prime cost items itemised, so an owner can see how much of a price is firm and how much can still move.",
+          },
+          {
+            term: "Programme",
+            body: "Start date, build duration and the commitments behind them, so 'ready in March' is never confused with 'on site in March'.",
+          },
+          {
+            term: "Documentation and commentary",
+            body: "The builder's own context, recommendations and evidence, presented alongside the numbers rather than lost around them.",
+          },
+        ],
+      },
+      {
+        kind: "p",
+        text: "The result is a set of tenders an owner, architect or lender can read on a genuine like-for-like basis, and a builder whose diligence is finally visible instead of buried in a PDF.",
+      },
+      { kind: "h2", text: "Not another contract, and not another regulator" },
+      {
+        kind: "p",
+        text: "BPS is not a replacement for HIA or Master Builders contracts, and it is not a new layer of regulation. It sits before contract execution, complementing the standards the industry already relies on by improving the quality and transparency of what is disclosed during procurement.",
+      },
+      {
+        kind: "p",
+        text: "A better-presented tender does not remove the need for professional judgement. It gives that judgement something consistent to work with.",
+      },
+      {
+        kind: "quote",
+        text: "Better information at the start of a project is the cheapest risk reduction available to anyone building a home.",
+      },
+      { kind: "h2", text: "An invitation, not a finished answer" },
+      {
+        kind: "p",
+        text: "Meaningful reform is collaborative. BuilderHQ welcomes input from builders, architects, designers, lenders, insurers and consumer advocates, and from industry bodies including the Housing Industry Association, Master Builders Australia and state building authorities.",
+      },
+      {
+        kind: "p",
+        text: "Residential construction has continually evolved to raise quality, safety and professionalism. Procurement should evolve with it. The BuilderHQ Procurement Standard is offered not as a finished standard, but as the start of an industry conversation about how better procurement leads to better outcomes, for owners and builders alike.",
+      },
+    ],
+    aboutLabel: "Editorial note",
+    aboutAuthor:
+      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as an open framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
+    keywords: [
+      "construction procurement",
+      "residential construction procurement",
+      "construction procurement Australia",
+      "how to compare builder quotes",
+      "comparing builder quotes",
+      "building tender process",
+      "builder tender comparison",
+      "provisional sums and prime cost items",
+      "fixed price building contract",
+      "HIA and MBA contracts",
+      "BuilderHQ Procurement Standard",
+      "building procurement standard",
+      "how to choose a builder australia",
+      "builderhq",
+    ],
+  },
   {
     slug: "choosing-a-builder-word-of-mouth",
     tag: "Opinion · Residential construction",
@@ -889,6 +1957,8 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
     author: {
       name: "Moe Akbulut",
       role: "Founder, BuilderHQ",
+      schemaType: "Person",
+      jobTitle: "Founder",
     },
     dateISO: "2026-07-14",
     displayDate: "14 July 2026",

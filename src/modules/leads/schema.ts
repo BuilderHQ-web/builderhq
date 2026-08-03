@@ -49,6 +49,12 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // (architect, finance broker, or both) via the landing network CTA.
   // The need + state ride in the `meta` jsonb.
   "partner_intro_request",
+  // Preferred Partner register interest, all disciplines. Supersedes
+  // the two kinds above (retained for historic rows): the discipline
+  // rides in `meta.role`, so widening the register to engineers,
+  // lawyers or consultants needs no migration. Firm name lands in
+  // practice_name; state + website ride in `meta`.
+  "partner_network_interest",
 ]);
 
 export const leads = pgTable(

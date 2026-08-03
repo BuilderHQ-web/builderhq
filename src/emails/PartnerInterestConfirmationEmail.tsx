@@ -1,7 +1,8 @@
 /**
- * PartnerInterestConfirmationEmail — holding receipt sent to an architect
- * or finance broker after they register interest in a Preferred Partner
- * network via the landing "Join the network" CTA.
+ * PartnerInterestConfirmationEmail — holding receipt sent to a
+ * practitioner (design practice, builder, finance broker, and whatever
+ * the register adds next) after they register interest via the landing
+ * "Join the network" CTA.
  *
  * Tone is deliberately restrained and institutional (see the brand-voice
  * mandate): confirm receipt, set the "we'll be in touch" expectation, and
@@ -9,14 +10,13 @@
  * handled by the team by hand, not by this email.
  */
 
+import { partnerRole, type PartnerRole } from "@/modules/leads/partner-roles";
+
 import { BodyText, EmailShell, InlineLink, Strong } from "./_shell";
 
-export type PartnerNetwork = "architect" | "finance";
-
-const NETWORK_LABEL: Record<PartnerNetwork, string> = {
-  architect: "Preferred Architect Network",
-  finance: "Preferred Finance Partner network",
-};
+/** The discipline the applicant registered under. Widening the
+ *  register means adding to PARTNER_ROLES, not touching this file. */
+export type PartnerNetwork = PartnerRole;
 
 interface PartnerInterestConfirmationEmailProps {
   firstName: string;
@@ -30,7 +30,7 @@ export function PartnerInterestConfirmationEmail({
   network,
 }: PartnerInterestConfirmationEmailProps) {
   const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
-  const label = NETWORK_LABEL[network];
+  const label = partnerRole(network).network;
 
   return (
     <EmailShell

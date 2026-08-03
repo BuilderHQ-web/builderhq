@@ -18,12 +18,9 @@ import {
   MetaRow,
   Strong,
 } from "./_shell";
-import type { PartnerNetwork } from "./PartnerInterestConfirmationEmail";
+import { partnerRole } from "@/modules/leads/partner-roles";
 
-const NETWORK_LABEL: Record<PartnerNetwork, string> = {
-  architect: "Preferred Architect Network",
-  finance: "Preferred Finance Partner network",
-};
+import type { PartnerNetwork } from "./PartnerInterestConfirmationEmail";
 
 interface PartnerInterestOpsEmailProps {
   leadId: string;
@@ -54,7 +51,7 @@ export function PartnerInterestOpsEmail({
 }: PartnerInterestOpsEmailProps) {
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ").trim() || "(no name)";
-  const label = NETWORK_LABEL[network];
+  const label = partnerRole(network).network;
   const formattedDate = createdAt.toLocaleString("en-AU", {
     dateStyle: "medium",
     timeStyle: "short",

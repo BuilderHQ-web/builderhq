@@ -1,10 +1,13 @@
 "use client";
 
 /**
- * PartnerForm — the landing's capture modal, in three modes:
+ * PartnerForm — the landing's capture modal, in two modes:
  *
- *   architect · finance — "Join the network" for practices and brokers.
- *   intro               — a homeowner asking us to introduce a partner.
+ *   join  — one form for every discipline. The practitioner picks their
+ *           role (design practice, builder, finance broker, ...); the
+ *           legacy #join-architect / #join-finance sentinels simply
+ *           preselect it, so existing CTAs keep working.
+ *   intro — a homeowner asking us to introduce a partner.
  *
  * Mounted once inside the landing's `.lp-light` tree. Rather than rewire
  * the many CTA render sites (hero, deck, network section, close, nav), it
@@ -23,6 +26,14 @@ import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 
+import {
+  INTRO_NEEDS,
+  PARTNER_ROLES,
+  partnerRole,
+  type IntroNeed,
+  type PartnerRole,
+} from "@/modules/leads/partner-roles";
+
 import { ROLE_PALETTE, type Role } from "./content";
 import {
   submitPartnerInterestAction,
@@ -30,109 +41,88 @@ import {
 } from "@/app/(marketing)/partner-interest/actions";
 import { track } from "@/lib/analytics";
 
-type ModalMode = "architect" | "finance" | "intro";
-type IntroNeed = "architect" | "finance" | "both";
+type ModalMode = "join" | "intro";
 
-/** Sentinel hrefs the landing CTAs carry (set in content.ts). */
-const SENTINELS: Record<string, ModalMode> = {
-  "#join-architect": "architect",
-  "#join-finance": "finance",
-  "#request-intro": "intro",
+/** Sentinel hrefs the landing CTAs carry (set in content.ts). Each
+ *  opens the modal and, for the join form, preselects a role. */
+const SENTINELS: Record<
+  string,
+  { mode: ModalMode; role?: PartnerRole }
+> = {
+  "#join-network": { mode: "join" },
+  "#join-architect": { mode: "join", role: "architect" },
+  "#join-builder": { mode: "join", role: "builder" },
+  "#join-finance": { mode: "join", role: "finance" },
+  "#request-intro": { mode: "intro" },
 };
 
-/** Which lens hue colours the modal in each mode. */
-const MODE_ROLE: Record<ModalMode, Role> = {
+/** Which lens hue colours the modal. The join form follows the chosen
+ *  role so the modal still feels part of that lens. */
+const ROLE_HUE: Record<PartnerRole, Role> = {
   architect: "architect",
+  builder: "builder",
   finance: "finance",
-  intro: "homeowner",
 };
 
 const AU_STATES = ["VIC", "NSW", "QLD", "ACT", "SA", "WA", "TAS", "NT"] as const;
 type AuState = (typeof AU_STATES)[number];
 
-const NEED_OPTIONS: Array<{ value: IntroNeed; label: string }> = [
-  { value: "architect", label: "A designer" },
-  { value: "finance", label: "A broker" },
-  { value: "both", label: "Both" },
-];
-
-const COPY: Record<
-  ModalMode,
-  {
-    kicker: string;
-    heading: string;
-    sub: string;
-    firmLabel?: string;
-    firmPlaceholder?: string;
-    emailPlaceholder: string;
-    submitLabel: string;
-    footnote: string;
-  }
-> = {
-  architect: {
-    kicker: "Preferred Design Partner Network",
+const COPY = {
+  join: {
+    kicker: "The Preferred Partner register",
     heading: "Join the network",
-    sub: "Register your practice to be introduced to homeowners and builders already planning to build. No fees, no obligation.",
-    firmLabel: "Practice name",
-    firmPlaceholder: "Studio or practice name",
-    emailPlaceholder: "you@practice.com.au",
-    submitLabel: "Register interest",
-    footnote:
-      "We will only use these details to talk to you about the network. No obligation.",
-  },
-  finance: {
-    kicker: "Preferred Finance Partner Network",
-    heading: "Join the network",
-    sub: "Register your business to be the broker we introduce when homeowners ask who to talk to about finance. No fees, no exclusivity.",
-    firmLabel: "Business name",
-    firmPlaceholder: "Brokerage or business name",
-    emailPlaceholder: "you@practice.com.au",
+    sub: "Register your business to be introduced to homeowners and builders already planning to build. No fees, no contracts, and leaving takes one email.",
     submitLabel: "Register interest",
     footnote:
       "We will only use these details to talk to you about the network. No obligation.",
   },
   intro: {
-    kicker: "Preferred Partner Introductions",
+    kicker: "Preferred Partner introductions",
     heading: "Request an introduction",
-    sub: "Tell us what your build needs and we introduce a building designer or finance broker we know and trust. No charge, no obligation.",
-    emailPlaceholder: "you@email.com",
+    sub: "Tell us what your build needs and we introduce the partners we know and trust. No charge, no obligation.",
     submitLabel: "Request introduction",
     footnote:
       "We will only use these details to arrange your introduction. No charge, no obligation.",
   },
-};
+} as const;
+
 
 export function PartnerForm() {
-  const [net, setNet] = React.useState<ModalMode | null>(null);
+  const [mode, setMode] = React.useState<ModalMode | null>(null);
+  const [role, setRole] = React.useState<PartnerRole | "">("");
   const [fullName, setFullName] = React.useState("");
   const [firmName, setFirmName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [stateVal, setStateVal] = React.useState<AuState | "">("");
   const [website, setWebsite] = React.useState("");
-  const [need, setNeed] = React.useState<IntroNeed | "">("");
+  const [needs, setNeeds] = React.useState<IntroNeed[]>([]);
   const [hp, setHp] = React.useState(""); // honeypot
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
 
-  const open = React.useCallback((mode: ModalMode) => {
-    setFullName("");
-    setFirmName("");
-    setEmail("");
-    setPhone("");
-    setStateVal("");
-    setWebsite("");
-    setNeed("");
-    setHp("");
-    setError(null);
-    setDone(false);
-    setSubmitting(false);
-    setNet(mode);
-    track("partner_modal_opened", { mode });
-  }, []);
+  const open = React.useCallback(
+    (next: ModalMode, preselect?: PartnerRole) => {
+      setRole(preselect ?? "");
+      setFullName("");
+      setFirmName("");
+      setEmail("");
+      setPhone("");
+      setStateVal("");
+      setWebsite("");
+      setNeeds([]);
+      setHp("");
+      setError(null);
+      setDone(false);
+      setSubmitting(false);
+      setMode(next);
+      track("partner_modal_opened", { mode: next, role: preselect ?? null });
+    },
+    [],
+  );
 
-  const close = React.useCallback(() => setNet(null), []);
+  const close = React.useCallback(() => setMode(null), []);
 
   // Capture-phase interceptor for the sentinel CTAs. Capture + stop beats
   // Next <Link>, so we don't have to touch any CTA render site.
@@ -142,11 +132,11 @@ export function PartnerForm() {
       const anchor = target?.closest?.("a");
       if (!anchor) return;
       const href = anchor.getAttribute("href");
-      const mode = href ? SENTINELS[href] : undefined;
-      if (!mode) return;
+      const hit = href ? SENTINELS[href] : undefined;
+      if (!hit) return;
       e.preventDefault();
       e.stopPropagation();
-      open(mode);
+      open(hit.mode, hit.role);
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
@@ -154,7 +144,7 @@ export function PartnerForm() {
 
   // Esc to close + scroll lock while open.
   React.useEffect(() => {
-    if (!net) return;
+    if (!mode) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
@@ -165,24 +155,39 @@ export function PartnerForm() {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [net, close]);
+  }, [mode, close]);
 
-  const pal = net ? ROLE_PALETTE[MODE_ROLE[net]] : null;
-  const copy = net ? COPY[net] : null;
+  const copy = mode ? COPY[mode] : null;
+  // The join form takes the hue of the chosen role; before a role is
+  // picked it sits on the homeowner (house) hue, as does the intro form.
+  const pal =
+    ROLE_PALETTE[mode === "join" && role ? ROLE_HUE[role] : "homeowner"];
+  const spec = role ? partnerRole(role) : null;
+
+  const toggleNeed = (value: IntroNeed) =>
+    setNeeds((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting || !net) return;
+    if (submitting || !mode) return;
     setError(null);
 
-    if (net === "intro") {
-      if (!fullName.trim() || !email.trim() || !stateVal || !need) {
+    if (mode === "intro") {
+      if (
+        !fullName.trim() ||
+        !email.trim() ||
+        !phone.trim() ||
+        !stateVal ||
+        needs.length === 0
+      ) {
         setError("Please complete the required fields.");
         return;
       }
       setSubmitting(true);
       const res = await submitIntroRequestAction({
-        need,
+        needs,
         fullName,
         email,
         phone,
@@ -195,13 +200,20 @@ export function PartnerForm() {
         return;
       }
     } else {
-      if (!fullName.trim() || !firmName.trim() || !email.trim() || !stateVal) {
+      if (
+        !role ||
+        !fullName.trim() ||
+        !firmName.trim() ||
+        !email.trim() ||
+        !stateVal ||
+        !website.trim()
+      ) {
         setError("Please complete the required fields.");
         return;
       }
       setSubmitting(true);
       const res = await submitPartnerInterestAction({
-        network: net,
+        role,
         fullName,
         firmName,
         email,
@@ -217,17 +229,19 @@ export function PartnerForm() {
       }
     }
 
-    track("partner_modal_submitted", { mode: net });
+    track("partner_modal_submitted", { mode, role: role || null });
     setDone(true);
   };
 
   const inputCls =
     "w-full h-11 rounded-lg border border-[rgba(24,34,44,0.16)] bg-white px-3.5 text-[14.5px] text-[#161c22] placeholder:text-[#9aa4ad] outline-none transition-[border-color,box-shadow] duration-150 focus:border-[var(--pf-accent)] focus:shadow-[0_0_0_3px_var(--pf-ring)]";
   const labelCls = "block text-[12.5px] font-medium text-[#46515c] mb-1.5";
+  const selectCls = (filled: boolean) =>
+    `${inputCls} appearance-none pr-9 ${filled ? "" : "text-[#9aa4ad]"}`;
 
   return (
     <AnimatePresence>
-      {net && pal && copy ? (
+      {mode && copy ? (
         <motion.div
           className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto"
           style={
@@ -281,7 +295,7 @@ export function PartnerForm() {
                   Thank you, we have it.
                 </h2>
                 <p className="mx-auto mt-2 max-w-[34ch] text-[14px] leading-[1.55] text-[#525d67]">
-                  {net === "intro"
+                  {mode === "intro"
                     ? "We will come back to you shortly with the right introduction for your build. A confirmation is on its way to your inbox."
                     : `We will review ${firmName.trim() || "your details"} and be in touch shortly. A confirmation is on its way to your inbox.`}
                 </p>
@@ -322,6 +336,40 @@ export function PartnerForm() {
                     className="absolute -left-[9999px] h-px w-px opacity-0"
                   />
 
+                  {/* The role selector — the one form serves every
+                      discipline the register carries. */}
+                  {mode === "join" ? (
+                    <div>
+                      <label htmlFor="pf-role" className={labelCls}>
+                        I am a
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="pf-role"
+                          className={selectCls(!!role)}
+                          value={role}
+                          onChange={(e) =>
+                            setRole(e.target.value as PartnerRole | "")
+                          }
+                        >
+                          <option value="" disabled>
+                            Select your role
+                          </option>
+                          {PARTNER_ROLES.map((r) => (
+                            <option
+                              key={r.value}
+                              value={r.value}
+                              className="text-[#161c22]"
+                            >
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#8b949d]" />
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div>
                     <label htmlFor="pf-name" className={labelCls}>
                       Full name
@@ -336,10 +384,10 @@ export function PartnerForm() {
                     />
                   </div>
 
-                  {copy.firmLabel ? (
+                  {mode === "join" ? (
                     <div>
                       <label htmlFor="pf-firm" className={labelCls}>
-                        {copy.firmLabel}
+                        {spec ? spec.firmLabel : "Business name"}
                       </label>
                       <input
                         id="pf-firm"
@@ -347,28 +395,30 @@ export function PartnerForm() {
                         value={firmName}
                         onChange={(e) => setFirmName(e.target.value)}
                         autoComplete="organization"
-                        placeholder={copy.firmPlaceholder}
+                        placeholder={
+                          spec ? spec.firmPlaceholder : "Your business name"
+                        }
                       />
                     </div>
                   ) : null}
 
-                  {net === "intro" ? (
+                  {mode === "intro" ? (
                     <div>
-                      <span className={labelCls}>Looking for</span>
-                      <div
-                        role="radiogroup"
-                        aria-label="Looking for"
-                        className="grid grid-cols-3 gap-2"
-                      >
-                        {NEED_OPTIONS.map((opt) => {
-                          const active = need === opt.value;
+                      <span className={labelCls}>
+                        Looking for{" "}
+                        <span className="font-normal text-[#9aa4ad]">
+                          (choose any)
+                        </span>
+                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {INTRO_NEEDS.map((opt) => {
+                          const active = needs.includes(opt.value);
                           return (
                             <button
                               key={opt.value}
                               type="button"
-                              role="radio"
-                              aria-checked={active}
-                              onClick={() => setNeed(opt.value)}
+                              aria-pressed={active}
+                              onClick={() => toggleNeed(opt.value)}
                               className={`h-10 rounded-lg border px-2 text-[12.5px] font-medium transition-[border-color,background,color] duration-150 ${
                                 active
                                   ? "border-[var(--pf-accent)] text-[#12181f]"
@@ -399,17 +449,22 @@ export function PartnerForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       autoComplete="email"
-                      placeholder={copy.emailPlaceholder}
+                      placeholder={
+                        mode === "intro" ? "you@email.com" : "you@business.com.au"
+                      }
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="pf-phone" className={labelCls}>
-                        Phone{" "}
-                        <span className="font-normal text-[#9aa4ad]">
-                          (optional)
-                        </span>
+                        Phone
+                        {mode === "join" ? (
+                          <span className="font-normal text-[#9aa4ad]">
+                            {" "}
+                            (optional)
+                          </span>
+                        ) : null}
                       </label>
                       <input
                         id="pf-phone"
@@ -428,7 +483,7 @@ export function PartnerForm() {
                       <div className="relative">
                         <select
                           id="pf-state"
-                          className={`${inputCls} appearance-none pr-9 ${stateVal ? "" : "text-[#9aa4ad]"}`}
+                          className={selectCls(!!stateVal)}
                           value={stateVal}
                           onChange={(e) =>
                             setStateVal(e.target.value as AuState | "")
@@ -448,13 +503,10 @@ export function PartnerForm() {
                     </div>
                   </div>
 
-                  {net !== "intro" ? (
+                  {mode === "join" ? (
                     <div>
                       <label htmlFor="pf-website" className={labelCls}>
-                        Website{" "}
-                        <span className="font-normal text-[#9aa4ad]">
-                          (optional)
-                        </span>
+                        Website
                       </label>
                       <input
                         id="pf-website"
@@ -464,7 +516,7 @@ export function PartnerForm() {
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
                         autoComplete="url"
-                        placeholder="yourpractice.com.au"
+                        placeholder="yourbusiness.com.au"
                       />
                     </div>
                   ) : null}

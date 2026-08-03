@@ -50,9 +50,40 @@ export interface BriefSlopeSpec {
   reference: { value: number; display: string; label: string };
   /** Y-domain padding around the data, in value units. */
   domain: [number, number];
+  /**
+   * A second, muted series on the same axes. Used where the story is
+   * the divergence between two measures rather than one line's
+   * movement: the accent line is the headline, this one the measure
+   * that did not follow it.
+   */
+  second?: {
+    label: string;
+    points: [BriefBarDatum, BriefBarDatum];
+  };
+  /** Shaded horizontal band, e.g. a target range. */
+  band?: { from: number; to: number; label: string };
 }
 
-export type BriefChartSpec = BriefBarsSpec | BriefSlopeSpec;
+export interface BriefStripStage {
+  label: string;
+  /** Accent stages carry the teal treatment (e.g. off-site work). */
+  accent?: boolean;
+}
+
+/** Process strip — an ordered sequence of stages, not a data chart.
+ *  Issue 003 onward (prefabrication build sequence). */
+export interface BriefStripSpec {
+  kind: "strip";
+  title: string;
+  desc: string;
+  stages: BriefStripStage[];
+  /** Bracket under a contiguous run of stages, 0-based inclusive. */
+  callout?: { from: number; to: number; label: string; sub?: string };
+  /** What the two colours mean, e.g. off-site vs on site. */
+  legend?: { accent: string; context: string };
+}
+
+export type BriefChartSpec = BriefBarsSpec | BriefSlopeSpec | BriefStripSpec;
 
 const MONO: CSSProperties = { fontFamily: "var(--font-jetbrains-mono)" };
 
@@ -145,6 +176,7 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
   /** Value → vertical position, % from the top of the plot box. */
   const y = (v: number) => ((hi - v) / (hi - lo)) * 100;
   const [a, b] = spec.points;
+  const second = spec.second;
   // Endpoints sit inset from the edges so the dots and labels breathe.
   const X_A = 10;
   const X_B = 90;
@@ -159,6 +191,29 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
           >
+            {spec.band ? (
+              <rect
+                x="0"
+                width="100"
+                y={y(spec.band.to)}
+                height={Math.abs(y(spec.band.from) - y(spec.band.to))}
+                fill={CONTEXT_FILL}
+                fillOpacity="0.08"
+              />
+            ) : null}
+            {second ? (
+              <line
+                x1={X_A}
+                x2={X_B}
+                y1={y(second.points[0].value)}
+                y2={y(second.points[1].value)}
+                stroke={CONTEXT_FILL}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null}
             <line
               x1="0"
               x2="100"
@@ -223,6 +278,39 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             </span>
           ))}
 
+          {second
+            ? (
+                [
+                  [X_A, second.points[0]],
+                  [X_B, second.points[1]],
+                ] as const
+              ).map(([x, p]) => (
+                <span
+                  key={`s-${p.label}`}
+                  className="absolute size-[9px] rounded-full ring-[2.5px] ring-white"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y(p.value)}%`,
+                    transform: "translate(-50%, -50%)",
+                    background: CONTEXT_FILL,
+                  }}
+                />
+              ))
+            : null}
+          {second ? (
+            <span
+              className="absolute text-[12px] font-semibold text-text-dim tabular-nums"
+              style={{
+                ...MONO,
+                left: `${X_B}%`,
+                top: `${y(second.points[1].value)}%`,
+                transform: "translate(-50%, 12px)",
+              }}
+            >
+              {second.points[1].display}
+            </span>
+          ) : null}
+
           {/* reference label — on the left, under the dashed line,
               clear of the high start of the data line */}
           <span
@@ -246,6 +334,24 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
             {b.label}
           </span>
         </div>
+        {second ? (
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[10.5px] text-text-dim" style={MONO}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-[2.5px] w-4 rounded-full" style={{ background: ACCENT_FILL }} />
+              {spec.valueHeading}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-[2px] w-4 rounded-full" style={{ background: CONTEXT_FILL }} />
+              {second.label}
+            </span>
+            {spec.band ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-[9px] w-4 rounded-[2px]" style={{ background: CONTEXT_FILL, opacity: 0.16 }} />
+                {spec.band.label}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <SrTable
@@ -257,10 +363,89 @@ export function BriefSlope({ spec }: { spec: BriefSlopeSpec }) {
   );
 }
 
-export function BriefChart({ spec }: { spec: BriefChartSpec }) {
-  return spec.kind === "bars" ? (
-    <BriefBars spec={spec} />
-  ) : (
-    <BriefSlope spec={spec} />
+/* ── process strip ───────────────────────────────────────────────────── */
+
+function BriefStrip({ spec }: { spec: BriefStripSpec }) {
+  const callout = spec.callout;
+  const inBand = (i: number) =>
+    !!callout && i >= callout.from && i <= callout.to;
+  return (
+    <figure aria-label={`${spec.title}. ${spec.desc}`}>
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
+        <span className="text-[12.5px] font-ui font-semibold text-text">
+          {spec.title}
+        </span>
+        {spec.legend ? (
+          <span
+            className="flex items-center gap-4 text-[10.5px] tracking-[0.06em] text-text-dim"
+            style={MONO}
+          >
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block size-2 rounded-full"
+                style={{ background: ACCENT_FILL }}
+              />
+              {spec.legend.accent}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block size-2 rounded-full"
+                style={{ background: CONTEXT_FILL, opacity: 0.55 }}
+              />
+              {spec.legend.context}
+            </span>
+          </span>
+        ) : null}
+      </figcaption>
+
+      {/* One stage per row — the strip is a sequence, and the chart
+          slot is a narrow rail, so it reads top to bottom. The
+          callout range carries a soft band so the on-site portion is
+          visible at a glance. */}
+      <ol className="mt-4">
+        {spec.stages.map((s, i) => (
+          <li
+            key={s.label}
+            className={`flex items-center gap-3 px-3 py-[8px] ${
+              inBand(i) ? "bg-[#101820]/[0.035]" : ""
+            } ${callout && i === callout.from ? "rounded-t-lg" : ""} ${
+              callout && i === callout.to ? "rounded-b-lg" : ""
+            }`}
+          >
+            <span
+              aria-hidden
+              className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold text-white"
+              style={{
+                ...MONO,
+                background: s.accent ? ACCENT_FILL : CONTEXT_FILL,
+                opacity: s.accent ? 1 : 0.75,
+              }}
+            >
+              {i + 1}
+            </span>
+            <span className="min-w-0 text-[12.5px] leading-[1.4] text-text-muted">
+              {s.label}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {callout ? (
+        <p className="mt-3.5 border-t border-[#101820]/[0.08] pt-3 text-[12px] leading-[1.5] text-text-muted">
+          <span className="font-semibold text-accent-light" style={MONO}>
+            {callout.label}
+          </span>
+          {callout.sub ? <> · {callout.sub}</> : null}
+        </p>
+      ) : null}
+    </figure>
   );
+}
+
+export function BriefChart({ spec }: { spec: BriefChartSpec }) {
+  if (spec.kind === "bars") return <BriefBars spec={spec} />;
+  if (spec.kind === "slope") return <BriefSlope spec={spec} />;
+  return <BriefStrip spec={spec} />;
 }

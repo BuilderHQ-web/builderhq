@@ -2,10 +2,10 @@
 
 /**
  * PartnerMarquee — the trust strip between the hero and the role
- * selector: every live Preferred Partner's mark in one slow, seamless
- * loop. Logos come from the live register (livePartnerLogos, passed in
- * by the server layout), so a partner going live appears here
- * automatically.
+ * selector: the curated Preferred Partner marks in one slow, seamless
+ * loop. Logos come from the hand-curated MARQUEE_LOGOS list (passed in
+ * by the server layout via livePartnerLogos) — a partner going live
+ * does NOT appear here automatically; the list is edited deliberately.
  *
  * Motion is a requestAnimationFrame integrator, not a CSS keyframe:
  * position advances by dt and wraps with a modulo against the first
@@ -137,13 +137,18 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
                     key={`${copy}-${i}-${l.slug}`}
                     href={`/partners/${l.slug}`}
                     tabIndex={copy === 1 ? -1 : undefined}
-                    className="mx-6 sm:mx-9 flex h-14 shrink-0 items-center justify-center transition-transform duration-300 hover:-translate-y-0.5"
+                    className="mx-6 sm:mx-9 flex h-16 shrink-0 items-center justify-center transition-transform duration-300 hover:-translate-y-0.5"
                   >
                     <Image
                       src={l.src}
                       alt={copy === 0 ? `${l.name} logo` : ""}
                       width={230}
                       height={52}
+                      // A curated `scale` bumps individual marks whose
+                      // artwork reads optically small at the row height.
+                      style={
+                        l.scale ? { height: Math.round(52 * l.scale) } : undefined
+                      }
                       className={`h-12 sm:h-[52px] w-auto max-w-[200px] sm:max-w-[228px] object-contain ${
                         l.norm
                           ? ""

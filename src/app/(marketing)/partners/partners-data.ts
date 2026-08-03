@@ -126,6 +126,10 @@ export interface Partner {
   /** Industry recognition, rendered as a gold plaque strip under the
    *  identity band. Lead with the biggest honour; keep to three. */
   awards?: { label: string; sub?: string }[];
+  /** A quieter recognition, shown on a compact dark strip rather than the
+   *  gold honours board — for a platform or service accolade (e.g. Best of
+   *  Houzz) that is not a formal design or industry award. */
+  accolade?: { label: string; sub?: string; tag?: string };
   website?: string;
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
@@ -251,6 +255,68 @@ export const PARTNERS: Partner[] = [
         suburb: "Kensington",
         type: "Townhouse development",
         image: "/partners/summerhill-building-designers/kensington.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "quorum-studios",
+    kind: "architect",
+    roleLabel: "Residential architecture studio",
+    name: "Quorum Studios",
+    monogram: "QS",
+    logo: "/partners/quorum-studios/logo.png",
+    principal: "Manny and Vanessa Pedro",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A deliberately small Brisbane residential studio, pairing a registered architect who has judged Queensland’s HIA awards with a director trained in psychology and people development.",
+    disciplines: ["Luxury new homes", "Character dwellings", "Pre-designed house plans"],
+    google: { rating: 5.0, reviews: 18 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "18 reviews" },
+      {
+        label: "HIA awards panel",
+        value: "Judge",
+        sub: "Queensland House, Kitchen and Bathroom",
+      },
+      {
+        label: "In practice",
+        value: "10+ yrs",
+        sub: "across two continents",
+      },
+    ],
+    why: "In a register full of practices that enter design awards, Manny Pedro has been asked to judge them. He sat on the panel for Queensland’s HIA House, Kitchen and Bathroom of the Year, which is a different order of recognition from a shortlisting, because the industry does not hand you the scorecard unless it already trusts your eye. More than a decade in practice across two continents sits behind that, worked to a plain discipline he states simply as less is more, which shows up in the buildings as intuitive solutions rather than gestures.\n\nThe other half of this studio is the part most practices never think to build. Vanessa Pedro holds an honours degree in psychology and spent years in human resources and people development before taking on the client side of an architecture business. Building a house is the most emotionally exposed purchase most people ever make, and having someone whose actual training is in people running that relationship is rare and genuinely useful. The studio has stayed small on purpose, declining to trade intimacy for scale, and all eighteen of its reviewers have given it five stars. For an owner who wants a considered home and a calm process, that is an unusually well matched pair.",
+    about:
+      "Quorum Studios was founded in 2023 by Manny and Vanessa Pedro and works from Brisbane on residential architecture, from luxury new homes through to traditional character dwellings. Manny holds registration 6279 with the Board of Architects Queensland and leads the design; Vanessa directs business support and marketing and brings the interiors eye that runs alongside it. Every project opens with a single question about how a client wants to live, and the studio stays with it from the first sketch to the final site visit rather than stepping away once documentation is issued. Beside its bespoke commissions it offers a range of pre-designed house plans, which puts the same thinking within reach at a lower entry point. Recent work includes a home at Coorparoo, the Villa Palma residence and a pavilion on the Gold Coast.",
+    facts: {
+      established: "2023",
+      basedIn: "Brisbane, QLD",
+      serves: "Brisbane and South East Queensland",
+      focus: "Luxury homes and character dwellings",
+    },
+    website: "https://www.qstudio.au",
+    instagram: "https://www.instagram.com/quorum_studio_qld/",
+    facebook: "https://www.facebook.com/people/Quorum-Studios/100080181046794/",
+    galleryUrl: "https://www.qstudio.au",
+    work: [
+      {
+        title: "Coorparoo",
+        suburb: "Coorparoo",
+        type: "New home",
+        image: "/partners/quorum-studios/coorparoo.jpg",
+      },
+      {
+        title: "Villa Palma",
+        suburb: "Queensland",
+        type: "New home",
+        image: "/partners/quorum-studios/villa-palma.jpg",
+      },
+      {
+        title: "Coastal pavilion",
+        suburb: "Gold Coast",
+        type: "New home",
+        image: "/partners/quorum-studios/pavilion.jpg",
       },
     ],
     joined: "2026",
@@ -828,7 +894,8 @@ export const PARTNERS: Partner[] = [
         sub: "HIA-CSR Victorian Housing and Kitchen & Bathroom Awards · Doreen, with builder Aviva Homes · 2024",
       },
     ],
-    why: "Metro Building Designers has drawn more than five hundred extensions and renovations for Melbourne families, and in 2024 that record stood up at the industry’s own judging: category wins for a Malvern renovation and a Doreen project home at the HIA-CSR Victorian Housing and Kitchen & Bathroom Awards, both built with Aviva Homes. Director Glenn Nielsen, a registered building practitioner with twenty years of experience, keeps the practice deliberately focused on small to medium residential projects, so every client works with their own design consultant from first sketch to permit. Proof at award level with attention at household scale is exactly the combination we look for.",
+    why:
+      "Metro Building Designers has drawn more than five hundred extensions and renovations across Melbourne, and in 2024 it stood up at the industry’s own judging: category wins for a Malvern renovation and a Doreen project home at the HIA-CSR Victorian Housing and Kitchen & Bathroom Awards, both built with Aviva Homes.\n\nDirector Glenn Nielsen, a registered building practitioner of twenty years, keeps the practice focused on small to medium residential projects, so every client keeps their own design consultant from sketch to permit. Award level proof with household scale attention is the combination we look for.",
     about:
       "Metro Building Designers is a Reservoir practice led by director Glenn Nielsen, a building practitioner registered with the Victorian Building Authority who brings twenty years of residential design experience. The studio works on extensions, renovations, new homes and unit developments, deliberately held at small to medium scale so each client deals directly with their own design consultant, and counts more than five hundred extensions and renovations designed across Melbourne. Design, town planning and building permit applications are handled in house on fixed fees, and in 2024 two of the practice’s projects, a Doreen home and a Malvern renovation built with Aviva Homes, won their categories at the HIA-CSR Victorian Housing and Kitchen & Bathroom Awards.",
     facts: {
@@ -1045,7 +1112,8 @@ export const PARTNERS: Partner[] = [
         sub: "ServiceSeeking.com.au · 2024",
       },
     ],
-    why: "Praeditos is a Canberra building design and drafting practice led by Jacob Woods, and it has built an unusually strong record for a young studio: a 4.7 Google rating across nineteen reviews, and four ServiceSeeking Top 10 awards across two years, named among the top ten building designers and draftsmen in Canberra and regional New South Wales. Jacob has worked in building design since qualifying in 2018, and runs each project himself from first concept through to the detailed working drawings a build needs for approval and construction, with all drafting kept in house. For an owner heading into council in the ACT, that combination of design and documentation under one roof is exactly what keeps a project moving.",
+    why:
+      "Praeditos is a Canberra building design and drafting practice led by Jacob Woods, and it has built a strong record for a young studio: a 4.7 Google rating across nineteen reviews, and four ServiceSeeking Top 10 awards across two years, named among the top ten building designers and draftsmen in Canberra and regional New South Wales.\n\nJacob has worked in building design since qualifying in 2018, and runs each project himself from concept through to the working drawings a build needs for approval and construction, with all drafting in house. For an owner heading into council in the ACT, design and documentation under one roof is what keeps a project moving.",
     about:
       "Praeditos Designs & Drafting is a Canberra building design and drafting practice led by its director, Jacob Woods. Jacob completed a Diploma in Building Design in 2018 and has spent the years since designing and documenting homes, extensions and alterations across the ACT and surrounding New South Wales, working alongside a range of design and building companies before establishing his own practice. Praeditos focuses on residential and small commercial work, and carries each project through the full process, from initial concept and design advice to the detailed working drawings required for quoting, approval and construction. All drafting is completed in house, and the practice serves Canberra, Queanbeyan, Yass and the surrounding region, as well as remotely across Australia.",
     facts: {
@@ -1331,7 +1399,8 @@ export const PARTNERS: Partner[] = [
         sub: "Levan Design, Eltham",
       },
     ],
-    why: "Levan Design is the register's boutique in the truest sense: one designer, Natasha Levan, who has drawn buildings for more than thirty years and has run her own residential practice since 2003. The record behind that is unusually complete, commercial and institutional work, multi-storey apartments and interiors before five years inside Englehart Homes, one of Melbourne's established custom builders, where she learned how houses actually get priced and built. Every client gets a five star experience by the numbers, a perfect rating across thirteen reviews, and gets Natasha herself from first sketch to final documentation. She is a registered building practitioner with the Victorian Building Authority and a member of Design Matters National. For owners in Melbourne's north east who want one considered pair of hands on their home, this is the introduction.",
+    why:
+      "Levan Design is the register’s boutique in the truest sense: one designer, Natasha Levan, who has drawn buildings for more than thirty years and has run her own residential practice since 2003. Behind that sits commercial and institutional work, multi-storey apartments and interiors, and five years inside Englehart Homes, one of Melbourne’s established custom builders, where she learned how houses actually get priced and built.\n\nEvery client gets Natasha herself, from first sketch to final documentation, with a perfect rating across thirteen reviews behind her. She is a registered building practitioner with the Victorian Building Authority and a member of Design Matters National. For owners in Melbourne’s north east who want one pair of hands on their home, this is it.",
     about:
       "Levan Design is a residential building design practice in Eltham, run by its principal, Natasha Levan, since 2003. Natasha has worked in building design since 1994, beginning with a South Melbourne architectural firm and building a portfolio that spans commercial and institutional projects, multi-storey apartments and interiors, before five years with Englehart Homes drew her to residential design for good. The practice is deliberately small and personal: new homes, renovations, extensions and interiors, designed and documented by the same hand throughout, with an eye shaped by a lifelong interest in art and architecture. Natasha holds an Associate Diploma in Architectural Drafting, is a registered building practitioner with the Victorian Building Authority, and is a member of Design Matters National.",
     facts: {
@@ -1607,7 +1676,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "neighbourhood-architecture",
     kind: "architect",
-    draft: true,
     name: "Neighbourhood Architecture",
     monogram: "NA",
     logo: "/partners/neighbourhood-architecture/logo.png",
@@ -1615,8 +1683,8 @@ export const PARTNERS: Partner[] = [
     suburb: "Kingston",
     state: "ACT",
     tagline:
-      "Registered architects at the Kingston Foreshore designing solar passive, energy efficient homes, with every design's energy rating modelled from the first sketch.",
-    disciplines: ["New homes", "Renovations and extensions", "Solar passive design"],
+      "Canberra’s high-performance home specialists, designing new homes, renovations and extensions with energy performance tested from the first concept.",
+    disciplines: ["New homes", "Renovations and extensions", "Energy performance modelling"],
     google: { rating: 5.0, reviews: 13 },
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "13 reviews" },
@@ -1626,9 +1694,9 @@ export const PARTNERS: Partner[] = [
         sub: "including three wins, 2022 to 2025",
       },
       {
-        label: "Registered architect",
-        value: "ACT + NSW",
-        sub: "registrations 2618 and 11914",
+        label: "Architect registrations",
+        value: "2",
+        sub: "ACT and New South Wales",
       },
     ],
     awards: [
@@ -1641,18 +1709,18 @@ export const PARTNERS: Partner[] = [
         sub: "Master Builders ACT · 2022 · Flow House",
       },
       {
-        label: "People's Choice Award, winner",
+        label: "People’s Choice Award, winner",
         sub: "Master Builders ACT · 2022 · Flow House",
       },
     ],
-    why: "Neighbourhood Architecture pairs a registered architect with an energy efficiency specialist, and the results have come fast: sixteen Master Builders and HIA honours since 2022, including the Master Builders ACT award for Sustainable Residential Project in 2025, and a perfect 5.0 Google rating. Director Chris Clode is a registered architect in the ACT and New South Wales; co director Brendan McGregor is an accredited HIA GreenSmart Professional who led design at an energy performance focused Canberra studio before co founding the practice. Every home is modelled in NatHERS approved energy rating software from the first sketch, so comfort and running costs are designed in rather than assessed at the end. In Canberra's climate, that discipline pays for itself every winter.",
+    why: "Most homes are designed first and assessed for energy performance afterwards, which is the wrong order: by the time a rating comes back, orientation, glazing and shading are already settled. Neighbourhood Architecture inverts that. NatHERS approved modelling runs from the start, so those decisions, along with insulation and thermal performance, are tested while they are still easy to change.\n\nBehind it sits an uncommon pairing. Chris Clode is a registered architect; Brendan McGregor is an HIA GreenSmart Professional who led design at Light House Architecture and Science before the two founded the practice. One small team therefore covers both the architecture and the energy expertise, and can carry a project from concept and approvals through documentation, builder tendering and support on site. Sixteen Master Builders and HIA honours since 2022 say the industry agrees, most recently the 2025 Master Builders ACT award for Sustainable Residential Project. For an owner who wants a home that is beautiful, buildable and cheap to run through a Canberra winter, that is a rare combination.",
     about:
-      "Neighbourhood Architecture is a registered architecture practice at the Kingston Foreshore in Canberra, established in 2021 by directors Chris Clode and Brendan McGregor. The practice designs new homes, renovations and extensions across Canberra and southern New South Wales, built around solar passive design: orientation, natural light, ventilation and thermal mass doing the work before any heating or cooling is switched on. Every design is modelled in NatHERS approved energy rating software from the first sketch rather than assessed for efficiency at the end, and the approach has earned sixteen Master Builders and HIA honours since 2022, including three wins. Chris is a registered architect in the ACT and New South Wales with a Masters in Architecture from the University of Canberra; Brendan is an accredited HIA GreenSmart Professional with a Certificate IV in Home Energy Efficiency and Sustainability. Together they lead a small team that stays with each home from concept design through approvals to completion.",
+      "Neighbourhood Architecture is a Canberra architecture practice established in 2021 by directors Chris Clode and Brendan McGregor, working from the Kingston Foreshore. Chris holds architect registration in the ACT and New South Wales, numbers 2618 and 11914, alongside a Masters in Architecture from the University of Canberra. Brendan is the practice’s lead designer and holds a Certificate IV in Home Energy Efficiency and Sustainability. The team designs bespoke new homes, renovations and extensions throughout Canberra and southern New South Wales, combining passive solar principles with site-specific architecture and close attention to natural light, comfort and buildability, and to how a house contributes to the street it stands in. Recent work runs from the Tocumwal Revival heritage renovation at O’Connor to the Plant House and Flow House at Denman Prospect.",
     facts: {
       established: "2021",
       basedIn: "Kingston, ACT",
       serves: "Canberra and southern NSW",
-      focus: "Solar passive, energy efficient homes",
+      focus: "High-performance homes and renovations",
     },
     website: "https://neighbourhoodarchitecture.com.au",
     instagram: "https://www.instagram.com/neighbourhood_architecture/",
@@ -1660,22 +1728,25 @@ export const PARTNERS: Partner[] = [
     galleryUrl: "https://neighbourhoodarchitecture.com.au/projects/",
     work: [
       {
-        title: "Denman Prospect house",
+        title: "Tocumwal Revival",
+        suburb: "O’Connor",
+        type: "Heritage renovation and rear addition",
+        image: "/partners/neighbourhood-architecture/tocumwal-revival.jpg",
+        href: "https://neighbourhoodarchitecture.com.au/project/tocumwal-revival/",
+      },
+      {
+        title: "Plant House",
         suburb: "Denman Prospect",
-        type: "New home",
-        image: "/partners/neighbourhood-architecture/denman-prospect.jpg",
+        type: "8.1 star solar passive new home",
+        image: "/partners/neighbourhood-architecture/plant-house.jpg",
+        href: "https://neighbourhoodarchitecture.com.au/project/plant-house/",
       },
       {
-        title: "Hawker house",
-        suburb: "Hawker",
-        type: "New home and pool",
-        image: "/partners/neighbourhood-architecture/hawker.jpg",
-      },
-      {
-        title: "Hawker ensuite",
-        suburb: "Hawker",
-        type: "Interior detail",
-        image: "/partners/neighbourhood-architecture/hawker-ensuite.jpg",
+        title: "Flow House",
+        suburb: "Denman Prospect",
+        type: "Solar passive new home on a sloping site",
+        image: "/partners/neighbourhood-architecture/flow-house.jpg",
+        href: "https://neighbourhoodarchitecture.com.au/project/flow-house/",
       },
     ],
     joined: "2026",
@@ -1721,7 +1792,8 @@ export const PARTNERS: Partner[] = [
         sub: "Master Builders Australia · 2021",
       },
     ],
-    why: "DNA Architects is the largest design practice on our register, and the awards case is hard to match: more than fifty MBA, HIA and AIA honours, House of the Year from both HIA and Master Builders in 2022, and HIA Australia's national Townhouse Villa Development of the Year twice. Established in 2001 by Glen Dowse and Ross Norwood, the Braddon studio now runs more than twenty architects and designers under five directors, four of them registered architects, including a Fellow of the Australian Institute of Architects. Director AJ Bala, a registered architect, leads client work with the collaborative, people focused approach the practice was built on. A studio this decorated that still draws most of its work from repeat clients and referrals is exactly the kind of partner we want beside an owner.",
+    why:
+      "DNA Architects is the largest design practice on our register, and the awards case is hard to match: more than fifty MBA, HIA and AIA honours, House of the Year from both HIA and Master Builders in 2022, and HIA Australia’s national Townhouse Villa Development of the Year twice.\n\nEstablished in 2001 by Glen Dowse and Ross Norwood, the Braddon studio now runs more than twenty architects and designers under five directors, four of them registered architects, including a Fellow of the Australian Institute of Architects. Director AJ Bala, a registered architect, leads client work with the people focused approach it was built on. A studio this decorated that still runs on repeat clients and referrals is the partner we want beside an owner.",
     about:
       "DNA Architects, Dowse Norwood and Associates, is a registered architecture practice in Braddon, established in 2001 by Glen Dowse and Ross Norwood and grown to a studio of more than twenty architects and designers under five directors, among them AJ Bala, a registered architect. The practice designs new homes, renovations and multi-residential projects across Canberra and southern New South Wales, alongside commercial and interior work, and its record spans more than fifty industry honours, including House of the Year from both HIA and Master Builders in 2022, HIA Australia's national Townhouse Villa Development of the Year in 2020 and 2021, and a national medium density award from Master Builders Australia. The studio listens first and designs to the site and the client rather than to a house style, an approach that keeps most of its work arriving through repeat clients and referrals.",
     facts: {
@@ -1886,7 +1958,8 @@ export const PARTNERS: Partner[] = [
         sub: "2016 · Warragul Extension",
       },
     ],
-    why: "Dawes Design has the numbers of a big practice and the manner of a small one: 2,740 completed projects, 1,100 new homes moved into, and a director who still works with every client one on one. Troy Dawes has designed Victorian homes since 1996 and has held Victorian Building Authority registration since 1997, and his projects have taken first place at the Master Builders Victoria awards in both 2015 and 2021, with an HIA category win for the Warragul Extension in 2016. A 5.0 Google rating across 21 reviews says the process still feels personal at that scale. For owners, this is a studio that has already solved whatever a site can throw at a project, and documents it so the permits move.",
+    why:
+      "Dawes Design has the numbers of a big practice and the manner of a small one: 2,740 completed projects, 1,100 new homes moved into, and a director who still works with every client one on one.\n\nTroy Dawes has designed Victorian homes since 1996, with Victorian Building Authority registration since 1997, and his projects took first place at the Master Builders Victoria awards in 2015 and 2021, with an HIA category win for the Warragul Extension in 2016. A 5.0 Google rating across 21 reviews says it still feels personal at that scale. This is a studio that has met whatever a site can throw at a project, and documents it so the permits move.",
     about:
       "Dawes Design & Drafting Group is a building design practice headquartered in Narre Warren, with offices in Scoresby and Warragul, serving Melbourne, the Mornington Peninsula and Gippsland. Director Troy Dawes has designed for Victoria since 1996 and has been a registered building practitioner with the Victorian Building Authority since 1997; the current practice was established in 2007 as a rebranding of Troy Dawes Design, founded in 1997. The studio designs new homes, extensions and renovations, dual occupancies and multi unit developments, and works deliberately as a small practice, with Troy developing each project alongside the client from first concept to approved drawings, supported by a settled network of town planners, engineers, surveyors and thermal assessors. Accurate, detailed documentation is the house discipline, drawn so town planning and building permits move without drama, and the record now stands at 2,740 completed projects and 1,100 new homes.",
     facts: {
@@ -2098,7 +2171,8 @@ export const PARTNERS: Partner[] = [
         sub: "Local Business Awards · 2022 · Abdul Moussa",
       },
     ],
-    why: "Elite Building Design works at a pace most studios never see, about seventy homes a year across Sydney, the Illawarra and Newcastle, and it shows in how buildable the drawings are. Director Abdul Moussa brings more than a decade across both building design and construction, so designs arrive practical and priced before they ever reach a builder's estimator: duplexes and dual occupancies that fit their sites, and luxury homes with the detail owners actually asked for. The practice took the Liverpool City Local Business Award in 2022, with national Small Business Champion finalist recognition the same year. For owners in Sydney's south west and beyond, this is design that respects the budget and survives the build.",
+    why:
+      "Elite Building Design works at a pace most studios never see, about seventy homes a year across Sydney, the Illawarra and Newcastle, and it shows in how buildable the drawings are.\n\nDirector Abdul Moussa brings more than a decade across building design and construction, so designs arrive priced before they reach a builder’s estimator: duplexes and dual occupancies, and luxury homes with the detail owners asked for. The practice took the Liverpool City Local Business Award in 2022, with national Small Business Champion finalist recognition the same year. For owners in Sydney’s south west, this is design that respects the budget and survives the build.",
     about:
       "Elite Building Design is a Belmore based building design practice established in 2018 and led by director Abdul Moussa, a building designer with more than ten years across the design and construction industry. The studio designs new homes, duplexes and dual occupancies, renovations and extensions, and carries clients from the first design consultation through council approval to completion, drawing on construction knowledge that keeps designs practical, priced and approvable. Working across Sydney, the Illawarra and Newcastle at around seventy homes a year, the practice pairs volume with a luxury standard of finish. It was named Liverpool City's Local Business Award winner in 2022, a year that also brought finalist honours at the Australian Small Business Champion Awards and a personal finalist listing for Abdul as Outstanding Business Person of the Year.",
     facts: {
@@ -2162,7 +2236,8 @@ export const PARTNERS: Partner[] = [
         sub: "via parent company Drawable, since 2007",
       },
     ],
-    why: "Design Plus Drafting holds one of the deepest review bases of any design practice on our register, a 4.9 rating across 62 reviews, and it comes from doing the unglamorous parts well: development applications, complying development, council coordination and consultant management, handled for clients rather than handed to them. Director Scott Nicholson leads a Leichhardt team whose working knowledge of Sydney's councils means potential issues are caught in the drawings, not in the assessment queue. Behind the studio sits Drawable, a drafting operation that has completed more than ten thousand projects since 2007, so documentation depth is the house strength. From attic conversions to full knockdown rebuilds, this is the Inner West's steady hand.",
+    why:
+      "Design Plus Drafting holds one of the deepest review bases of any design practice we list, a 4.9 rating across 62 reviews, and it comes from doing the unglamorous parts well: development applications, complying development, council coordination and consultant management, handled for clients rather than handed to them.\n\nDirector Scott Nicholson leads a Leichhardt team whose knowledge of Sydney’s councils means issues are caught in the drawings, not in the assessment queue. Behind the studio sits Drawable, a drafting operation that has completed more than ten thousand projects since 2007. From attic conversions to knockdown rebuilds, this is the Inner West’s steady hand.",
     about:
       "Design Plus Drafting is a building design and drafting studio in Leichhardt, in Sydney's Inner West, led by director Scott Nicholson and tracing its design arc back to 1994. The team works across residential, commercial and corporate projects: home extensions and additions, attic conversions, new homes and full knockdown rebuilds, with every design developed to be achievable and compliant with the relevant codes. The studio prepares high quality drawings and full documentation for development applications and complying development, coordinates the required consultants directly, and applies years of experience with Sydney councils to give each application its best chance of a smooth approval. The practice is the building design division of Drawable, a drafting company that has completed more than ten thousand projects for trade businesses across Australia and the Pacific Rim since 2007, and it serves clients in any style and location across New South Wales.",
     facts: {
@@ -2391,6 +2466,67 @@ export const PARTNERS: Partner[] = [
         suburb: "Sans Souci",
         type: "New home",
         image: "/partners/niche-home-designs/sans-souci.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "studio-lira",
+    kind: "architect",
+    roleLabel: "Architecture | Interiors",
+    name: "Studio LIRA",
+    monogram: "LI",
+    logo: "/partners/studio-lira/logo.png",
+    suburb: "Newtown",
+    state: "NSW",
+    tagline:
+      "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
+    disciplines: ["New homes and additions", "Heritage properties", "Interiors and commercial"],
+    google: { rating: 5.0, reviews: 7 },
+    institution: {
+      name: "NSW Architects Registration Board",
+      role: "Registered architects",
+      note: "NSW licence 13292",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "7 reviews" },
+      { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
+      { label: "Registered architects", value: "2", sub: "NSW and Rome" },
+    ],
+    accolade: {
+      label: "Best of Houzz for Service",
+      sub: "2017, 2023, 2024 and 2025",
+      tag: "4× winner",
+    },
+    why: "Studio LIRA is the kind of practice we are always looking for and rarely find: built on genuine experience across new homes, alterations and additions, heritage properties and commercial projects, with a rigorous approach from the earliest ideas to the final built outcome. Every project begins by understanding the people, the place and what already exists, allowing a clear concept to emerge. The result feels thoughtful, enduring and built to last.\n\nThat same care continues into delivery. Their documentation anticipates challenges, supports a smoother approval pathway and provides builders with clear, buildable information. They stay closely involved during construction, so the original vision is realised with the same care and precision.\n\nFor owners who value considered architecture, technical confidence and the continuity of one team from first sketch to completion, Studio LIRA is a practice we recommend with genuine confidence.",
+    about:
+      "Studio LIRA is a Sydney based architecture and interiors practice with experience delivering projects across Australia and overseas. For Studio LIRA, every project is driven by a central idea that gives the architecture its identity. That idea informs every decision, from the overall spatial composition to the smallest material detail, creating work that feels coherent and enduring. Every design is shaped by its own story, context and purpose.\n\nThey believe that good architecture is realised through collaboration and a shared commitment to quality, and they value long-term relationships with clients, consultants, builders and craftspeople who take genuine pride in their work, recognising that careful detailing, quality craftsmanship and thoughtful execution are what ultimately transform a strong idea into lasting architecture.",
+    facts: {
+      basedIn: "Newtown, NSW",
+      serves: "Sydney",
+      focus: "New homes, interiors and fit-outs",
+    },
+    website: "https://studiolira.com.au/",
+    instagram: "https://www.instagram.com/studioliraarchitects/",
+    galleryUrl: "https://studiolira.com.au/",
+    work: [
+      {
+        title: "Castle Hill Residence",
+        suburb: "Castle Hill",
+        type: "New home",
+        image: "/partners/studio-lira/castle-hill-exterior.jpg",
+      },
+      {
+        title: "Castle Hill Interior",
+        suburb: "Castle Hill",
+        type: "Interior",
+        image: "/partners/studio-lira/castle-hill-interior.jpg",
+      },
+      {
+        title: "Double Bay Apartments",
+        suburb: "Double Bay",
+        type: "Multi residential",
+        image: "/partners/studio-lira/double-bay-apartments.jpg",
       },
     ],
     joined: "2026",
@@ -2875,7 +3011,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "de-lune-construction",
     kind: "builder",
-    draft: true,
     roleLabel: "Architectural builder",
     name: "de Lune Construction",
     monogram: "DL",
@@ -3170,7 +3305,8 @@ export const PARTNERS: Partner[] = [
         sub: "Dip. Finance and Mortgage Broking",
       },
     ],
-    why: "Ed spent ten years inside Commonwealth Bank, moving from mortgage lending through premier banking to senior relationship management, before crossing to broking. That history means he reads a lender's decision the way an insider does, and now he puts it to work for the client across a panel of more than thirty banks. He structures loans around the build ahead, pre-approvals that hold and progress payments that arrive on time. That blend of insider knowledge and client-side independence is exactly what we want beside an owner financing a build.",
+    why:
+      "Ed spent ten years inside Commonwealth Bank, from mortgage lending through premier banking to senior relationship management, before crossing to broking.\n\nThat history means he reads a lender’s decision the way an insider does, and now works a panel of more than thirty banks for the client, structuring loans around the build ahead so pre-approvals hold and progress payments arrive on time. That mix of insider knowledge and client-side independence is what we want beside an owner building.",
     aboutLabel: "About Ed",
     about:
       "Ed Akgun is a mortgage adviser with RateOne, a full service broking firm named a Top 25 Brokerage by The Adviser six years running, with more than ten thousand clients across its Melbourne offices. Ed holds a Diploma of Finance and Mortgage Broking and is an MFAA accredited credit adviser. He came to broking after a decade with Commonwealth Bank, and works across purchases, refinancing and construction lending for clients throughout Melbourne, with RateOne's financial planning arm alongside when it is needed.",
@@ -3218,7 +3354,8 @@ export const PARTNERS: Partner[] = [
       { label: "Founded Cloud Financial", value: "2020" },
       { label: "Home to development lending", value: "Covered" },
     ],
-    why: "Billy has seen lending from every seat that matters: broking from 2007, home finance at Westpac, then senior credit analysis at La Trobe Financial, where he was the person an application had to convince. He founded Cloud Financial Group in 2020 to put that whole picture to work for clients, from home loans through construction and development finance. He also develops property himself, so he has carried a construction loan from the borrower's side, and it shows in how he structures one: pre-approvals that hold, drawdowns that land on time, and no surprises at valuation.",
+    why:
+      "Billy has seen lending from every seat: broking from 2007, home finance at Westpac, then senior credit analysis at La Trobe Financial, where he was the person an application had to convince.\n\nHe founded Cloud Financial Group in 2020 to put that picture to work for clients, across home loans, construction and development finance. He develops property himself, so he has carried a construction loan from the borrower’s side, which shows in how he structures one: pre-approvals that hold, drawdowns on time, no surprises at valuation.",
     aboutLabel: "About Billy",
     about:
       "Billy is the founder of Cloud Financial Group, a Melbourne based advisory arranging residential, commercial and development finance, with insurance alongside, for clients across Australia. His path to broking ran through both sides of the industry: home lending with Westpac, then senior credit analysis with La Trobe Financial, one of Australia's largest non bank lenders. That credit background shapes how the firm works, with applications built the way an assessor reads them, whether the project is a first build, a knockdown rebuild or a multi unit development.",
@@ -3384,7 +3521,8 @@ export const PARTNERS: Partner[] = [
       { label: "In finance broking", value: "10+ yrs" },
       { label: "Lenders on the panel", value: "45+", sub: "via Loan Market Group" },
     ],
-    why: "Maninder lives what she advises. A property investor and business owner herself, she has spent a decade in broking making difficult files work: self employed income, first homes, imperfect credit histories and construction lending among them. Clients get a problem solver who leaves no stone unturned, with a panel of more than forty five lenders behind her, and she works hand in hand with the agents, accountants and planners around a purchase, which is exactly how we like a broker to operate inside a build team.",
+    why:
+      "Maninder lives what she advises. A property investor and business owner herself, she has spent a decade in broking making difficult files work: self employed income, first homes, imperfect credit histories and construction lending.\n\nClients get a problem solver with a panel of more than forty five lenders behind her, who works hand in hand with the agents, accountants and planners around a purchase. That is how a broker should operate inside a build team.",
     aboutLabel: "About Maninder",
     about:
       "Maninder Kaur is the founder and principal broker of Evergrow Finance, a Campbellfield brokerage she opened in 2023 after seven years running a Loan Market business in Craigieburn. A member of the FBAA and AFCA, she works across home, investment, construction, commercial and asset lending through the Loan Market Group panel, with particular depth in self employed borrowers and complex approvals. An active supporter of her local community, she puts her intent simply: to be her clients' trusted broker for life.",
@@ -3576,7 +3714,8 @@ export const PARTNERS: Partner[] = [
       },
       { label: "Serves", value: "Local", sub: "Fitzroy to Craigieburn" },
     ],
-    why: "Tim came to mortgage broking after more than fifteen years leading commercial and operations teams across the Asia Pacific, including a period at REA Group, the company behind Mortgage Choice itself. That background shows in how he works: a clear strategy set at the start, then hard, informed negotiation with the banks to land the right deal. Add a five star rating across every review and a genuine focus on making the process easy, and he is the kind of broker we are glad to put in front of an owner planning a build.",
+    why:
+      "Tim came to broking after more than fifteen years leading commercial and operations teams across the Asia Pacific, including a period at REA Group, the company behind Mortgage Choice itself.\n\nThat background shows in how he works: a clear strategy at the start, then hard, informed negotiation to land the right deal. Add a five star rating across every review and a focus on keeping it easy, and he is a broker we are glad to put in front of an owner planning a build.",
     aboutLabel: "About Tim",
     about:
       "Tim Murphy is a Melbourne mortgage broker with Mortgage Choice, serving clients from Fitzroy through to Craigieburn. Before broking he spent more than fifteen years in senior commercial and operations roles across the Asia Pacific, in business strategy, negotiation and partnerships, including several years at REA Group, the property group that owns Mortgage Choice. He brings that same strategic, deal focused approach to home lending: build a clear plan for first home buyers, investors and those refinancing, then advocate with the lenders to secure a strong outcome, all with the exceptional, straightforward service his clients consistently rate five stars.",
@@ -3631,7 +3770,8 @@ export const PARTNERS: Partner[] = [
       { label: "Broking since", value: "2021", sub: "business partner since 2024" },
       { label: "Property investor", value: "Himself", sub: "invests alongside his clients" },
     ],
-    why: "Rhys came to broking from an unusual place: five years teaching at a private school on the Mornington Peninsula, before buying his own first home in 2020 set him on a change of career. That teacher’s instinct to explain things clearly still defines how he works, and it is why first home buyers seek him out. He has guided many young clients through their first purchase from start to finish, invests in property himself, and became a business partner at the five star rated Mortgage Choice Cheltenham practice in 2024. With the team’s genuine depth in construction lending, he is a natural fit beside an owner financing a build.",
+    why:
+      "Rhys came to broking from an unusual place: five years teaching at a private school on the Mornington Peninsula, until buying his own first home in 2020 changed his career.\n\nThat teacher’s instinct to explain things clearly still defines how he works, and it is why first home buyers seek him out. He has guided many through a first purchase start to finish, invests in property himself, and became a business partner at the five star Mortgage Choice Cheltenham practice in 2024. With the team’s depth in construction lending, he is a natural fit beside an owner building.",
     aboutLabel: "About Rhys",
     about:
       "Rhys Elmi is a Cheltenham mortgage broker who joined Mortgage Choice in 2021 and became a business partner at the firm’s Cheltenham practice in July 2024. He came to lending after five years teaching at a private school on the Mornington Peninsula, a change prompted by buying his own first home in 2020 and studying through the pandemic to make the move. An active property investor himself, he specialises in first home buyers, helping them understand the preparation a strong loan application needs, and works across investment, construction and refinancing through the Mortgage Choice network. Clients rate the Cheltenham practice five stars across 147 reviews.",
@@ -3813,11 +3953,373 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "julie-judge",
+    kind: "finance",
+    roleLabel: "Finance broker",
+    name: "Julie Judge",
+    monogram: "JJ",
+    portrait: "/partners/julie-judge/portrait.jpg",
+    logoFloat: "/partners/julie-judge/logo-float-v2.png",
+    suburb: "Sydney",
+    state: "NSW",
+    tagline:
+      "A Sydney finance broker at her best with the applications others find hard, structuring lending for self-employed clients and business owners, including those running construction and engineering firms.",
+    disciplines: ["Self-employed lending", "Business and commercial", "Complex income structures"],
+    google: { rating: 5.0, reviews: 46 },
+    institution: {
+      name: "Mortgage Pass",
+      role: "Founder and finance broker",
+      note: "MFAA member",
+      logo: "/partners/julie-judge/mortgage-pass.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "46 reviews" },
+      {
+        label: "In finance broking",
+        value: "5+ yrs",
+        sub: "founder of Mortgage Pass",
+      },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    why:
+      "Julie came to broking after years in business, working alongside self-employed owners across many industries, and it shapes the work she takes on. Where many brokers prefer a straightforward salaried application, she is at her best with the ones that are not: project based income, layered business structures, the tradies and the construction and engineering operators whose financials never fit a template.\n\nShe knows what a lender needs to see, and how to position a business’s real strength so it is recognised. Her clients return the trust, with a five star rating across more than forty reviews, and for an owner financing a build, many of whom are self-employed, she is the broker we want beside them.",
+    aboutLabel: "About Julie",
+    about:
+      "Julie Judge is the founder of Mortgage Pass, a Sydney brokerage that spans both mortgage and business finance, working from offices in the Sydney CBD and Merrylands. On the residential side she helps clients buy a first home, purchase an investment property or refinance to ease cash flow; on the business side she arranges commercial and industrial property lending, cash flow funding and asset finance. She works across a panel of more than thirty five lenders, holds a Diploma of Finance and Mortgage Broking Management, and is a member of the Mortgage and Finance Association of Australia, operating as a credit representative under Australian Credit Licence 387025. Clients tend to describe the same things: plain English, a calm and personal process, and approvals secured where other brokers could not.",
+    facts: {
+      basedIn: "Sydney, NSW",
+      serves: "Sydney and across Australia",
+      focus: "Home, business and commercial lending",
+    },
+    website: "https://mortgagepass.com.au/finance-broker-julie-judge/",
+    instagram: "https://www.instagram.com/mortgage_pass/",
+    linkedin: "https://www.linkedin.com/in/julie-judge-2b6274b7/",
+    servicesLabel: "Where Julie helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Self-employed and business owner lending",
+      "Home purchase, investment and refinance",
+      "Commercial, industrial and retail property",
+      "Business cash flow and asset finance",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "luke-brodie",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Luke Brodie",
+    monogram: "LB",
+    portrait: "/partners/luke-brodie/portrait.jpg",
+    logoFloat: "/partners/luke-brodie/logo-float-v2.png",
+    suburb: "Sutherland Shire",
+    state: "NSW",
+    tagline:
+      "A boutique broker from Sydney’s Sutherland Shire who takes complex lending scenarios in his stride, specialising in construction and development finance, trust and self-employed lending.",
+    disciplines: ["Construction and development", "Trust and SMSF", "Self-employed"],
+    google: { rating: 5.0, reviews: 6 },
+    institution: {
+      name: "BetterLend",
+      role: "Founder and mortgage broker",
+      note: "Backed by Partnership Finance Group",
+      logo: "/partners/luke-brodie/betterlend.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "6 reviews" },
+      {
+        label: "In mortgage broking",
+        value: "5+ yrs",
+        sub: "founder of BetterLend",
+      },
+      { label: "Lenders on the panel", value: "30+", sub: "100+ loan products" },
+    ],
+    why: "Luke has built a reputation for solving lending scenarios that require more than simply comparing interest rates. He has extensive experience working with self-employed clients and those purchasing through company and trust structures, tailoring lending solutions to suit more complex financial circumstances.\n\nEvery client deals directly with Luke from the initial strategy discussion through to settlement, with every stage of the lending process personally managed by him. This provides a consistent one-on-one experience built on clear communication, accountability and exceptional client outcomes.",
+    aboutLabel: "About Luke",
+    about:
+      "Luke Brodie heads up BetterLend, a boutique mortgage brokerage from Sydney’s Sutherland Shire, providing tailored lending solutions across residential, construction and development finance, commercial lending and SMSF borrowing. Taking the time to understand each client’s goals, Luke focuses on delivering lending strategies that support both their immediate needs and long-term objectives.\n\nBacked by access to more than 30 lenders and specialist funding solutions through Partnership Finance Group, Luke is known for navigating complex lending scenarios with clear advice, careful structuring and a proactive approach. His focus is on delivering the right lending solution for each client while building long-term relationships that continue well beyond settlement.",
+    facts: {
+      basedIn: "Sutherland Shire, Sydney",
+      serves: "Sydney and New South Wales",
+      focus: "Construction, development and complex lending",
+    },
+    website: "https://betterlend.com.au/luke-brodie/",
+    linkedin: "https://www.linkedin.com/in/luke-brodie/",
+    servicesLabel: "Where Luke helps",
+    services: [
+      "Construction loans and progress payments",
+      "Development finance",
+      "Bridging loans",
+      "Pre-approval before you go to tender",
+      "Trust and company structures",
+      "Self-employed and complex applications",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "alex-burley",
+    kind: "finance",
+    roleLabel: "Mortgage adviser",
+    name: "Alex Burley",
+    monogram: "AB",
+    portrait: "/partners/alex-burley/portrait.jpg",
+    suburb: "Beacon Hill",
+    state: "NSW",
+    tagline:
+      "A Northern Beaches adviser who came up through financial advice, sourcing home loans that fit the bigger picture and answer to you, not the banks.",
+    disciplines: ["First home buyers", "Investment lending", "Refinancing"],
+    google: { rating: 4.8, reviews: 6 },
+    institution: {
+      name: "Mortgage Choice",
+      role: "Franchise owner and adviser",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/alex-burley/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "6 reviews" },
+      {
+        label: "In finance and banking",
+        value: "14+ yrs",
+        sub: "financial advice background",
+      },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    why:
+      "Alex spent years in financial advice before broking, much of it in advice remediation with Deloitte, NAB and OCG, reviewing where past advice had fallen short and putting it right.\n\nHe came away knowing what good advice looks like, and it shapes how he lends: start from what a client is really trying to achieve, then find a loan that fits the wider financial picture rather than tick a box on a single transaction. For an owner financing a build, where structure can matter as much as the rate, that planning minded instinct earns him a place in the network.",
+    aboutLabel: "About Alex",
+    about:
+      "Alex Burley owns the Mortgage Choice franchise on Sydney’s Northern Beaches, based in Beacon Hill where he lives and works. A former financial adviser, he helps first home buyers, investors and homeowners navigate everything from refinancing and construction loans to more complex lending scenarios. Alex compares a panel of more than 35 lenders on each client’s behalf, taking the time to understand their goals before recommending the solution that’s the best fit for their circumstances. He believes great mortgage advice is built on trust, transparency and tailoring finance to each client’s goals, not just finding the lowest interest rate. For most residential home loans, Alex’s services come at no direct cost to the client, as the lender pays him a commission once the loan settles.",
+    facts: {
+      basedIn: "Beacon Hill, NSW",
+      serves: "Sydney’s Northern Beaches",
+      focus: "Home, investment and refinance lending",
+    },
+    website: "https://www.mortgagechoice.com.au/alex.burley/",
+    instagram: "https://www.instagram.com/mortgagechoice_alexburley/",
+    facebook: "https://www.facebook.com/MortgageChoiceAlexBurley/",
+    linkedin: "https://www.linkedin.com/in/alex-burley-a1632022/",
+    servicesLabel: "Where Alex helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment property finance",
+      "Renovation finance and equity release",
+      "Lending that fits your bigger financial picture",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "nathan-newlan",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Nathan Newlan",
+    monogram: "NN",
+    portrait: "/partners/nathan-newlan/portrait.jpg",
+    suburb: "Bendigo",
+    state: "VIC",
+    tagline:
+      "An award winning Bendigo broker who owns his Mortgage Choice business, as invested in the local community as he is in getting clients across the country the right result.",
+    disciplines: ["First home buyers", "Investment lending", "Refinancing"],
+    google: { rating: 5, reviews: 86 },
+    institution: {
+      name: "Mortgage Choice - Nathan Newlan",
+      role: "Owner and director",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/nathan-newlan/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "86 reviews" },
+      { label: "In finance and banking", value: "10+ yrs", sub: "began in Bendigo banking" },
+      { label: "Lenders on the panel", value: "35+" },
+    ],
+    awards: [
+      { label: "Editor’s Choice Award, winner", sub: "The Adviser Better Business Awards · VIC/TAS 2026" },
+      { label: "Best New Broker, winner", sub: "The Adviser Better Business Awards · VIC/TAS 2024" },
+      { label: "Best Regional Broker, finalist", sub: "The Adviser · VIC/TAS 2025 and 2026" },
+    ],
+    why:
+      "Nathan is Bendigo through and through, and the recognition has come quickly. Within a few years of going out on his own he was named Best New Broker for Victoria and Tasmania, and in 2026 he took the Editor’s Choice award at the Better Business Awards, with regional broker finalist places at both The Adviser and the MFAA alongside.\n\nBeneath the trophies is a genuinely local practice: more than eighty five five star reviews from a community he is part of, on the field with North Bendigo Football Club and at Barkers Creek Cricket Club as much as across a desk. For an owner financing a build, in the region or anywhere in the country, a broker this trusted and this close to his clients is one we stand behind.",
+    aboutLabel: "About Nathan",
+    about:
+      "Nathan Newlan is the owner and director of the Mortgage Choice franchise in Bendigo. He came to broking after around a decade in finance and banking, starting out at a major bank’s Bendigo branch before moving into broking in 2021 and opening his own Mortgage Choice business in 2025. He works with clients across Bendigo and Australia wide, drawing on a panel of more than thirty five lenders to compare options. For most residential home loans his service comes at no direct cost to the client, as the lender pays him a commission once the loan settles. First home buyers, investors and those refinancing all sit within his work, handled with the patient, straightforward support he has built his name on.",
+    facts: {
+      basedIn: "Bendigo, VIC",
+      serves: "Bendigo and Australia wide",
+      focus: "Home, investment and refinance lending",
+    },
+    website: "https://www.mortgagechoice.com.au/n.newlan/",
+    instagram: "https://www.instagram.com/nathan.newlan_mortgagechoice/",
+    linkedin: "https://au.linkedin.com/in/nathan-newlan-546340143",
+    servicesLabel: "Where Nathan helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment property finance",
+      "Refinancing to a better deal",
+      "Local knowledge, with lending Australia wide",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "bianca-dacic",
+    kind: "finance",
+    roleLabel: "Finance broker",
+    name: "Bianca Dacic",
+    monogram: "BD",
+    portrait: "/partners/bianca-dacic/portrait.jpg",
+    suburb: "Niddrie",
+    state: "VIC",
+    tagline:
+      "A Niddrie broker known for getting first home buyers into a place of their own, even with little or no deposit, and for the calm guidance that gets them there.",
+    disciplines: ["Low deposit home loans", "First home buyers", "Commercial and asset finance"],
+    google: { rating: 5, reviews: 93 },
+    institution: {
+      name: "Loan Savvy",
+      role: "Founder and director",
+      note: "Boutique Melbourne brokerage",
+      logo: "/partners/bianca-dacic/loan-savvy.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "93 reviews" },
+      { label: "Loan Savvy since", value: "2018", sub: "her own brokerage" },
+      { label: "In the industry", value: "10+ yrs", sub: "software to broking" },
+    ],
+    why:
+      "Bianca has quietly become one of the more trusted brokers in Melbourne’s north west, and the proof is in the people who keep coming back: more than ninety reviews, every one of them five star. What they single out is that she gets them in.\n\nShe is a genuine specialist in buying with little or no deposit, guiding first home buyers through the part of lending most find daunting, with a patience that makes a stressful process manageable. For an owner financing a build, especially one working hard to pull a deposit together, a broker this good at the hard part of getting finance approved is exactly who we want beside them.",
+    aboutLabel: "About Bianca",
+    about:
+      "Bianca Dacic is the founder and director of Loan Savvy, a Niddrie based brokerage she started in 2018. She came to broking from the industry’s other side, having spent years in mortgage software and broker training with firms such as Rubik and Temenos before advising clients directly. Loan Savvy works across home, commercial, and car and asset lending, and adds the practical coaching many brokers leave out, from reading bank statements and credit reports to helping clients set and reach a savings goal on the way to a purchase. Bianca is a credit representative (510930) of Mortgage Specialists Pty Ltd under Australian Credit Licence 387025, and she frames the work the way her clients do: a long term partnership rather than a single transaction.",
+    facts: {
+      basedIn: "Niddrie, VIC",
+      serves: "Melbourne",
+      focus: "Home, commercial and asset lending",
+    },
+    website: "https://www.loan-savvy.com.au/",
+    instagram: "https://www.instagram.com/loan_savvy/",
+    facebook: "https://www.facebook.com/loansavvyy/",
+    linkedin: "https://au.linkedin.com/in/bianca-dacic-802ab279",
+    servicesLabel: "Where Bianca helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Buying with little or no deposit",
+      "First home buyers",
+      "Commercial, car and asset finance",
+      "Refinancing, plus credit and savings coaching",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "matthew-hayes",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Matthew Hayes",
+    monogram: "MH",
+    portrait: "/partners/matthew-hayes/portrait.jpg",
+    suburb: "Manuka",
+    state: "ACT",
+    tagline:
+      "A born and raised Canberra broker with a thousand loans behind him, who structures finance around long term wealth rather than just the day’s interest rate.",
+    disciplines: ["First home buyers", "Investment and wealth creation", "Refinancing"],
+    google: { rating: 5, reviews: 125 },
+    institution: {
+      name: "Mortgage Choice - Matthew Hayes",
+      role: "Owner and director",
+      note: "One of Australia’s largest broker networks",
+      logo: "/partners/matthew-hayes/mortgage-choice.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "125 reviews" },
+      { label: "Loans signed", value: "1,000+", sub: "and counting" },
+      { label: "In the industry", value: "10+ yrs", sub: "a lifelong Canberran" },
+    ],
+    why:
+      "Matthew has been a Canberran his whole life, and has built one of the busier broking practices in the city on it: more than a thousand loans signed, over a hundred and twenty five five star reviews, and the local knowledge you only get from knowing the streets and suburbs first hand.\n\nWhat sets him apart is how he thinks. He looks past the day’s interest rate to structure finance around where a client is trying to get to, whether that is a first home or a third investment property, so the loan supports a long term plan, not one purchase. For an owner financing a build, in Canberra or well beyond it, a broker with that local depth and strategic sense is who we want alongside them.",
+    aboutLabel: "About Matthew",
+    about:
+      "Matthew Hayes owns and operates Mortgage Choice Manuka, the Canberra practice he runs under his own Hayes Financial Group. Over more than ten years in finance, he and his team have worked with Canberra families and investors across first home buyers, refinancing, guarantor and low deposit lending, and investment finance. His approach starts with listening: understanding a client’s life and goals, not just their numbers, then drawing on a panel of more than sixty lenders to match the right solution. Based in Manuka, he serves clients across Canberra with a particular focus on his local community, and is equipped to help anywhere in Australia. Matthew is a credit representative (481447) of Mortgage Choice under Australian Credit Licence 382869.",
+    facts: {
+      basedIn: "Manuka, ACT",
+      serves: "Canberra and Australia wide",
+      focus: "Home, investment and wealth creation lending",
+    },
+    website: "https://hayesfinancialgroup.com.au/",
+    instagram: "https://www.instagram.com/mhayes.mh/",
+    facebook: "https://www.facebook.com/MatthewHayesFinance/",
+    linkedin: "https://www.linkedin.com/in/matthew-hayes-a927808b/",
+    servicesLabel: "Where Matthew helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Guarantor and low deposit loans",
+      "Investment and portfolio finance",
+      "Refinancing and loan structuring",
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "william-kiln",
+    kind: "finance",
+    roleLabel: "Finance broker",
+    name: "William Kiln",
+    monogram: "WK",
+    portrait: "/partners/william-kiln/portrait.jpg",
+    suburb: "Lower North Shore",
+    state: "NSW",
+    tagline:
+      "A broker who spent fifteen years building and pricing the major banks’ own mortgage products, now using that inside knowledge to structure lending on the client’s side.",
+    disciplines: ["Loan structuring", "Investment lending", "Commercial and development"],
+    google: { rating: 5.0, reviews: 10 },
+    institution: {
+      name: "Cumulus Capital",
+      role: "Managing director",
+      note: "MFAA and AFCA member",
+      logo: "/partners/william-kiln/cumulus-capital.png",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
+      {
+        label: "In banking and finance",
+        value: "15+ yrs",
+        sub: "product and pricing side",
+      },
+      { label: "Lenders on the panel", value: "40+" },
+    ],
+    why:
+      "Will spent more than fifteen years on the inside of Australian lending, in product and pricing roles at Commonwealth Bank, Westpac and Macquarie, and as Head of Mortgages at ING, where the job was to build the lending products and set the pricing that brokers and borrowers later work with. He went on to co-found a lending fintech before opening his own brokerage.\n\nFew brokers understand as precisely how a lender weighs risk, structures credit and arrives at a yes, because he helped design those systems from the inside. On a development or construction facility, where far more sits at the credit officer’s discretion, that reading is worth more still. Whether it is an owner financing a build or a developer funding a site, how the deal is structured often decides what gets approved, and having sat on the bank’s side of the table is a genuine advantage.",
+    aboutLabel: "About Will",
+    about:
+      "William Kiln is the managing director of Cumulus Capital, a finance brokerage on Sydney’s Lower North Shore that he built around a straightforward idea: that lending should be clear, well structured and made to hold up over time, rather than rushed toward whatever product is quickest to place. The practice runs on two sides. Its mortgage broking works with homeowners, property investors and business owners, from a first purchase through to refinancing and portfolio lending, across a bank-agnostic panel of more than forty lenders; Will weighs the trade-offs as carefully as arranging the loan, reviews each client’s position every six months so the structure still fits as circumstances change, and, as an MFAA approved broker paid by the lender on settlement, offers that advice at no cost to the client. Its other side is debt structuring for builders and developers, on the two facilities that shape a project, the land and the build: funding pre-DA and DA-approved sites and testing their feasibility, then arranging construction debt across senior, stretch-senior and mezzanine positions, with presale cover and QS-certified drawdowns set up to carry a project through to completion rather than refinance it mid-build. Having set credit policy and pricing on the lender’s side, Will knows where a deal will be tested before it gets there. Commercial and development finance may involve a fee, agreed upfront; Cumulus holds credit authorisation under Australian Credit Licence 389328.",
+    facts: {
+      basedIn: "Lower North Shore, Sydney",
+      serves: "Sydney and nationwide",
+      focus: "Home, investment and commercial lending",
+    },
+    website: "https://www.cumuluscapital.com.au/",
+    linkedin: "https://www.linkedin.com/in/willkiln/",
+    servicesLabel: "Where Will helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "Home loans, first purchase to refinance",
+      "Investment and portfolio lending",
+      "Development site and construction debt",
+      "Senior, stretch-senior and mezzanine facilities",
+    ],
+    joined: "2026",
+  },
 ];
 
 // Public listings exclude drafts (partners still under review).
 export const ARCHITECT_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "architect" && !p.draft,
+);
+export const BUILDER_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "builder" && !p.draft,
 );
 export const FINANCE_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "finance" && !p.draft,
@@ -3832,27 +4334,52 @@ export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);
 }
 
-/** Items for the header "Our Partners" dropdown. Computed on the server
- *  (pages pass the result down as a prop) so the client bundle never
- *  carries the full register content — the nav imports only this type. */
-export type PartnerNavGroup = {
+/**
+ * Types for the header "Our Partners" dropdown.
+ *
+ * The menu lists DISCIPLINES, never individual partners: a nav is
+ * wayfinding, and the register (with its state map and filters) is the
+ * place to find a person. That also keeps the panel a fixed size as the
+ * network grows, and keeps inclusion out of the menu as a status
+ * signal. Counts are the proof; names are one click away.
+ *
+ * Computed on the server (pages pass the result down as a prop) so the
+ * client bundle never carries the register content.
+ */
+export type PartnerNavType = {
+  /** Plural discipline name, e.g. "Design partners". */
   label: string;
-  items: Array<{ label: string; sub: string; href: string }>;
+  /** One line on who they are. */
+  sub: string;
+  /** Live partners in this discipline. */
+  count: number;
+  href: string;
 };
 
-export function partnerNavGroups(): PartnerNavGroup[] {
-  const item = (p: Partner) => ({
-    label: p.name,
-    sub:
-      p.kind === "finance" && p.institution
-        ? p.institution.name
-        : `${p.suburb}, ${p.state}`,
-    href: `/partners/${p.slug}`,
-  });
+export function partnerNavTypes(): PartnerNavType[] {
   return [
-    { label: "Design partners", items: ARCHITECT_PARTNERS.map(item) },
-    { label: "Finance partners", items: FINANCE_PARTNERS.map(item) },
-  ].filter((g) => g.items.length > 0);
+    {
+      label: "Design partners",
+      sub: "Architects and building designers",
+      count: ARCHITECT_PARTNERS.length,
+      href: "/partners/architects",
+    },
+    {
+      label: "Builder partners",
+      sub: "Builders whose work we know first hand",
+      count: BUILDER_PARTNERS.length,
+      href: "/partners/builders",
+    },
+    {
+      label: "Finance partners",
+      sub: "Brokers who know construction lending",
+      count: FINANCE_PARTNERS.length,
+      href: "/partners/finance-brokers",
+    },
+    // Engineers, lawyers and consultants join here as the register
+    // widens. Empty disciplines are filtered out below, so a type can
+    // be added before its first partner goes live.
+  ].filter((t) => t.count > 0);
 }
 
 export type PartnerLogo = {
@@ -3864,33 +4391,147 @@ export type PartnerLogo = {
   norm: boolean;
   /** Fallback only: light-on-dark source mark, invert before floating. */
   dark: boolean;
+  /** Optional per-mark size multiplier for optical balance in the
+   *  marquee (1 = standard row height). */
+  scale?: number;
 };
 
 /**
- * Every LIVE partner's mark, for the landing trust strip. Prefers the
- * normalised logo-float-v2.png silhouette (generated when a partner goes
- * live); falls back to the raw logo — design practices carry their
- * own, finance partners their firm's. Derived from the register, so a
- * partner going live appears on the landing page automatically.
+ * The homepage trust strip is HAND-CURATED (2026-07-21 decision): a
+ * partner going live does NOT add their mark to the marquee any more.
+ * Curate deliberately — one mark per brand, the array order is the
+ * display order, `scale` balances optical weight. Slugs still link to
+ * each partner's public profile. Full-colour lockups prepared for the
+ * marquee live in /public/marquee; single-ink floats stay in each
+ * partner's asset dir. This list affects ONLY the homepage marquee —
+ * partner profiles render their own logos independently.
  */
+export const MARQUEE_LOGOS: PartnerLogo[] = [
+  {
+    slug: "house-design-solutions",
+    name: "House Design Solutions",
+    src: "/partners/house-design-solutions/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "luke-brodie",
+    name: "BetterLend",
+    src: "/marquee/betterlend.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "evoka-studio",
+    name: "Evoka Studio",
+    src: "/partners/evoka-studio/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "maninder-kaur",
+    name: "Evergrow Finance",
+    src: "/partners/maninder-kaur/logo-float-v2.png",
+    norm: true,
+    dark: false,
+    scale: 1.15,
+  },
+  {
+    slug: "metro-building-designers",
+    name: "Metro Building Designers",
+    src: "/partners/metro-building-designers/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "julie-judge",
+    name: "Mortgage Pass",
+    src: "/marquee/mortgage-pass.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "levan-design",
+    name: "Levan Design",
+    src: "/partners/levan-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "ed-akgun",
+    name: "RateOne",
+    src: "/partners/ed-akgun/logo-float-v2.png",
+    norm: true,
+    dark: false,
+    scale: 1.15,
+  },
+  {
+    slug: "dna-architects",
+    name: "DNA Architects",
+    src: "/marquee/dna-architects.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "summerhill-building-designers",
+    name: "Summerhill Building Designers",
+    src: "/partners/summerhill-building-designers/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "tim-murphy",
+    name: "Mortgage Choice",
+    src: "/partners/tim-murphy/logo-float-v4.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "silverpoint-design-and-planning",
+    name: "SilverPoint Design and Planning",
+    src: "/partners/silverpoint-design-and-planning/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "billy-chok",
+    name: "Cloud Financial Group",
+    src: "/partners/billy-chok/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "praeditos-designs",
+    name: "Praeditos Designs",
+    src: "/partners/praeditos-designs/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "dawes-design",
+    name: "Dawes Design",
+    src: "/partners/dawes-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "elite-building-design",
+    name: "Elite Building Design",
+    src: "/partners/elite-building-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "design-plus-drafting",
+    name: "Design Plus Drafting",
+    src: "/partners/design-plus-drafting/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+];
+
+/** The curated homepage marquee set (see MARQUEE_LOGOS). Kept as a
+ *  function so existing consumers stay untouched. */
 export function livePartnerLogos(): PartnerLogo[] {
-  // Several partners can share one brand mark (e.g. Mortgage Choice
-  // brokers) — the marquee shows each mark once.
-  const seen = new Set<string>();
-  return PARTNERS.filter((p) => !p.draft).flatMap((p) => {
-    const src = p.logoFloat ?? p.logo ?? p.institution?.logo;
-    if (!src || seen.has(src)) return [];
-    seen.add(src);
-    return [
-      {
-        slug: p.slug,
-        // The ink file inherits its owner: the practice's own mark, or
-        // the finance partner's firm mark (institution).
-        name: p.logo ? p.name : (p.institution?.name ?? p.name),
-        src,
-        norm: p.logoFloat != null,
-        dark: p.logoDark === true,
-      },
-    ];
-  });
+  return MARQUEE_LOGOS;
 }

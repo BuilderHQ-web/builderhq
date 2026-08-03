@@ -21,7 +21,7 @@ import { ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
-import type { PartnerNavGroup } from "@/app/(marketing)/partners/partners-data";
+import type { PartnerNavType } from "@/app/(marketing)/partners/partners-data";
 import { LENS, ROLE_META, ROLE_ORDER, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
 
@@ -42,9 +42,10 @@ export function LandingNav({
   authedHref: string | null;
   /** On non-landing pages, hash links resolve back to the home page. */
   homeAnchors?: boolean;
-  /** Live partners for the "Our Partners" dropdown (server-computed).
-   *  Absent or empty → the item stays a plain link to /partners. */
-  partnerNav?: PartnerNavGroup[];
+  /** Disciplines + live counts for the "Our Partners" dropdown
+   *  (server-computed). Absent or empty → the item stays a plain link
+   *  to /partners. */
+  partnerNav?: PartnerNavType[];
 }) {
   const { role, docked, flight, setRole } = useRole();
   const [scrolled, setScrolled] = React.useState(false);
@@ -180,7 +181,7 @@ export function LandingNav({
           <ul className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             {LINKS.map((l) =>
               l.label === "Our Partners" && partnerNav?.length ? (
-                <PartnersDropdown key={l.href} groups={partnerNav} />
+                <PartnersDropdown key={l.href} types={partnerNav} />
               ) : (
                 <li key={l.href}>
                   <a
@@ -324,13 +325,17 @@ export function LandingNav({
 }
 
 /**
- * PartnersDropdown — the "Our Partners" nav item once real partners are
- * live. Hover or click opens a two-column card of the live register
- * (design practices | finance partners), each entry linking straight to
- * its profile, with the full register a hairline below. Data arrives as
- * a server-computed prop, so this stays a lightweight client component.
+ * PartnersDropdown — the "Our Partners" menu.
+ *
+ * A front door, not an index: it lists the DISCIPLINES in the register
+ * with a live count each, then the two things a visitor actually wants
+ * next (explore the register, or join it). Deliberately never lists
+ * individual partners — the panel stays one fixed size whether the
+ * network holds twenty practices or five hundred, the register's map
+ * and filters do the finding, and being "in the menu" never becomes a
+ * status signal between partners.
  */
-function PartnersDropdown({ groups }: { groups: PartnerNavGroup[] }) {
+function PartnersDropdown({ types }: { types: PartnerNavType[] }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLLIElement>(null);
   const closeTimer = React.useRef<number | null>(null);
@@ -349,7 +354,17 @@ function PartnersDropdown({ groups }: { groups: PartnerNavGroup[] }) {
       if (e.key === "Escape") setOpen(false);
     };
     const onDown = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as HTMLElement | null;
+      if (!ref.current?.contains(target as Node)) {
+        setOpen(false);
+        return;
+      }
+      // A sentinel CTA inside the panel (Join the network) opens the
+      // capture modal instead of navigating. Close behind it, or the
+      // menu sits open under the modal. This runs on the native
+      // mousedown rather than a React onClick because <PartnerForm>'s
+      // interceptor stops click propagation in the capture phase.
+      if (target?.closest?.('a[href^="#join-"]')) setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onDown);
@@ -385,46 +400,54 @@ function PartnersDropdown({ groups }: { groups: PartnerNavGroup[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[520px] rounded-2xl border border-border-subtle bg-white shadow-[0_24px_64px_-16px_rgba(24,34,44,0.30)] p-2.5 z-50"
+            className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[352px] rounded-2xl border border-border-subtle bg-white shadow-[0_24px_64px_-16px_rgba(24,34,44,0.30)] p-2 z-50"
           >
-            <div className="grid grid-cols-2 gap-1.5">
-              {groups.map((g) => (
-                <div key={g.label} className="min-w-0">
-                  <p className="px-3 pt-2 pb-1.5 text-[10px] font-medium tracking-[0.18em] uppercase text-text-dim">
-                    {g.label}
-                  </p>
-                  <ul>
-                    {g.items.map((it) => (
-                      <li key={it.href}>
-                        <Link
-                          href={it.href}
-                          onClick={() => setOpen(false)}
-                          className="block px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
-                        >
-                          <span className="block text-[13.5px] font-medium text-text leading-tight truncate">
-                            {it.label}
-                          </span>
-                          <span className="mt-0.5 block text-[11.5px] text-text-muted leading-tight truncate">
-                            {it.sub}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 pt-2 border-t border-border-subtle/70">
+            <p className="px-3 pt-2.5 pb-1.5 text-[9.5px] font-medium tracking-[0.22em] uppercase text-text-dim">
+              The Preferred Partner register
+            </p>
+
+            {/* One row per discipline, the name leading. No tally: the
+                register is a matter of who is on it, not how many. A list
+                rather than tiles: it stays even as the register widens,
+                and never grows a scrollbar. */}
+            {types.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                onClick={() => setOpen(false)}
+                className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-[140ms] hover:bg-[rgba(24,34,44,0.04)]"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-medium leading-none text-text">
+                    {t.label}
+                  </span>
+                  <span className="mt-1.5 block text-[11.5px] leading-[1.4] text-text-muted">
+                    {t.sub}
+                  </span>
+                </span>
+              </Link>
+            ))}
+
+            <div className="mt-1.5 pt-1.5 border-t border-border-subtle/70">
               <Link
                 href="/partners"
                 onClick={() => setOpen(false)}
-                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.045)] transition-colors duration-[140ms]"
+                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.04)] transition-colors duration-[140ms]"
               >
-                <span className="text-[13px] font-medium text-text">
-                  Explore the Preferred Partner register
+                <span className="text-[12.5px] font-medium text-text">
+                  Explore the register
                 </span>
                 <ArrowUpRight className="size-3.5 text-text-dim transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
+              <a
+                href="#join-network"
+                className="group flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[rgba(24,34,44,0.04)] transition-colors duration-[140ms]"
+              >
+                <span className="text-[12.5px] text-text-muted group-hover:text-text transition-colors">
+                  Join the network
+                </span>
+                <ArrowUpRight className="size-3.5 text-text-dim transition-transform duration-[160ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
             </div>
           </motion.div>
         ) : null}

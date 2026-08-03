@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 import {
   ARCHITECT_PARTNERS,
+  BUILDER_PARTNERS,
   FINANCE_PARTNERS,
   partnerStates,
   type Partner,
@@ -25,11 +25,12 @@ import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-u
  * rows read as editorial entries rather than list items.
  */
 
-type Active = "all" | "architect" | "finance";
+type Active = "all" | "architect" | "builder" | "finance";
 
 const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
   { key: "all", label: "All partners", href: "/partners" },
   { key: "architect", label: "Design partners", href: "/partners/architects" },
+  { key: "builder", label: "Builder partners", href: "/partners/builders" },
   { key: "finance", label: "Finance partners", href: "/partners/finance-brokers" },
 ];
 
@@ -37,9 +38,11 @@ export function PartnersRegister({ active }: { active: Active }) {
   const activePartners =
     active === "architect"
       ? ARCHITECT_PARTNERS
-      : active === "finance"
-        ? FINANCE_PARTNERS
-        : [...ARCHITECT_PARTNERS, ...FINANCE_PARTNERS];
+      : active === "builder"
+        ? BUILDER_PARTNERS
+        : active === "finance"
+          ? FINANCE_PARTNERS
+          : [...ARCHITECT_PARTNERS, ...BUILDER_PARTNERS, ...FINANCE_PARTNERS];
   const stateCounts: Record<string, number> = {};
   for (const p of activePartners) {
     for (const s of partnerStates(p)) {
@@ -85,6 +88,14 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="design partners"
           />
         )}
+        {(active === "all" || active === "builder") && (
+          <PartnerSection
+            label="Builder partners"
+            intro="Builders we have met, whose recent work we have looked at, and who we are glad to put in front of an owner."
+            partners={BUILDER_PARTNERS}
+            emptyLabel="builder partners"
+          />
+        )}
         {(active === "all" || active === "finance") && (
           <PartnerSection
             label="Finance partners"
@@ -98,8 +109,14 @@ export function PartnersRegister({ active }: { active: Active }) {
       {/* Cross-link on the single-type views, so neither side is a dead end. */}
       {active === "architect" ? (
         <CrossLink
-          href="/partners/finance-brokers"
-          text="Planning the finance too? Meet our finance partners"
+          href="/partners/builders"
+          text="Ready to build it? Meet our builder partners"
+        />
+      ) : null}
+      {active === "builder" ? (
+        <CrossLink
+          href="/partners/architects"
+          text="Still need it designed? Meet our design partners"
         />
       ) : null}
       {active === "finance" ? (
@@ -120,12 +137,16 @@ export function PartnersRegister({ active }: { active: Active }) {
               Doing work like this?
             </h3>
             <p className="mt-2.5 text-[14px] leading-[1.65] text-text-muted max-w-[42ch]">
-              Introduce yourself and we will take a proper look at your work.
-              No fees, no contracts, and leaving takes one email.
+              Building designers, builders and finance brokers. Introduce
+              yourself and we will take a proper look at your work. No fees,
+              no contracts, and leaving takes one email.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              <JoinButton href="#join-architect" kind="architect" label="Join as a building designer" />
-              <JoinButton href="#join-finance" kind="finance" label="Join as a finance broker" />
+            <div className="mt-6">
+              <JoinButton
+                href="#join-network"
+                kind="architect"
+                label="Join the network"
+              />
             </div>
           </div>
 
@@ -154,7 +175,6 @@ export function PartnersRegister({ active }: { active: Active }) {
       </section>
 
       {/* Sentinel-driven modal (joins + introduction requests). */}
-      <PartnerForm />
     </StateFilterProvider>
   );
 }
