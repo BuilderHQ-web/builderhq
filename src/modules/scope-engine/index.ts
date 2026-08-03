@@ -39,11 +39,18 @@ export {
   getRunForReview,
   reviewItem,
   addItem,
+  promoteCapture,
+  dismissCapture,
   reviewConflict,
   approveRun,
   type ItemVerdictInput,
   type OpsAddendumRow,
 } from "./service";
+export {
+  packReadiness,
+  type PackReadiness,
+  type NamedMissingRef,
+} from "./analysis";
 export {
   classifyDocument,
   extractDocument,
@@ -64,5 +71,6 @@ export type {
   ScopeRunDocumentRow,
   ScopeRunItemRow,
   ScopeRunConflictRow,
+  ScopeRunCaptureRow,
   ScopeReviewEventRow,
 } from "./schema";

@@ -139,6 +139,7 @@ export function PackReview({
   brief = {},
   briefComplete: briefCompleteInitial = false,
   documentNames,
+  namedMissing = [],
   register,
   facts,
   standardVersion,
@@ -159,6 +160,8 @@ export function PackReview({
   brief?: Record<string, string>;
   briefComplete?: boolean;
   documentNames: Record<string, string>;
+  /** Documents the pack itself names but does not contain. */
+  namedMissing?: Array<{ ref: string; sources: string[] }>;
   register: RegisterRow[];
   facts: PackFacts;
   standardVersion: string;
@@ -478,6 +481,7 @@ export function PackReview({
             projectId={projectId}
             docGaps={docGaps}
             advisories={advisories}
+            namedMissing={namedMissing}
             register={register}
             resolved={resolved}
             readOnly={readOnly}
@@ -1127,6 +1131,7 @@ function ChapterDocuments({
   projectId,
   docGaps,
   advisories,
+  namedMissing = [],
   register,
   resolved,
   readOnly,
@@ -1138,6 +1143,7 @@ function ChapterDocuments({
   projectId: string;
   docGaps: PackItem[];
   advisories: DocumentAdvice[];
+  namedMissing?: Array<{ ref: string; sources: string[] }>;
   register: RegisterRow[];
   resolved: Map<string, PackResolution>;
   readOnly: boolean;
@@ -1219,6 +1225,33 @@ function ChapterDocuments({
                   </li>
                 ))}
               </ul>
+              {namedMissing.length > 0 ? (
+                <div className="mt-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4 py-3.5">
+                  <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                    Your documents mention these
+                  </p>
+                  <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[64ch]">
+                    Your own documents refer to the items below, and they are
+                    not in the pack yet. If you have them, adding them gives
+                    builders the full picture; if a consultant holds them, it
+                    is worth asking.
+                  </p>
+                  <ul className="mt-2.5 flex flex-col gap-1.5">
+                    {namedMissing.map((m) => (
+                      <li
+                        key={m.ref}
+                        className="text-[12px] leading-[1.55] text-text-muted"
+                      >
+                        <span className="text-text">&ldquo;{m.ref}&rdquo;</span>
+                        <span className="text-text-dim">
+                          {" "}
+                          — mentioned in {m.sources.join(", ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {!readOnly ? (
                 <div className="mt-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4 py-3.5">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">

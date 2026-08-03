@@ -41,6 +41,12 @@ import {
   foldResiduals,
   coverageReport,
   dedupeRegister,
+  baselineFindings,
+  namedMissingDocuments,
+  captureHygiene,
+  packReadiness,
+  type NamedMissingRef,
+  type PackReadiness,
 } from "./analysis";
 import { users } from "@/modules/users";
 import { unlocks } from "@/modules/unlocks";
@@ -59,11 +65,13 @@ import {
   scopeRunDocuments,
   scopeRunItems,
   scopeRunConflicts,
+  scopeRunCaptures,
   scopeReviewEvents,
   type ScopeRunRow,
   type ScopeRunDocumentRow,
   type ScopeRunItemRow,
   type ScopeRunConflictRow,
+  type ScopeRunCaptureRow,
 } from "./schema";
 import {
   classifyDocument,
@@ -498,10 +506,86 @@ export async function processRunTick(
       residualVerdicts = verdicts;
       usage = addUsage(usage, "residual", residualUsage);
     }
+    // Capture hygiene: a capture whose label the Standard already
+    // names is a mapping failure, not new vocabulary — mapped away in
+    // code and logged, never stored.
+    const hygiene = captureHygiene(synthesis.captures);
+    if (hygiene.mappedAway.length > 0) {
+      logger.warn(
+        {
+          event: "scope.captures.mapped_away",
+          runId,
+          mapped: hygiene.mappedAway.slice(0, 10),
+        },
+        "captures matching existing Standard items dropped",
+      );
+    }
+
+    // Custom lines carry forward: a promoted capture is a project
+    // decision, and a re-read must not silently un-make it. Copy
+    // custom items from the project's latest approved run, unless
+    // this run already has them.
+    const [priorApproved] = await db
+      .select({ id: scopeRuns.id })
+      .from(scopeRuns)
+      .where(
+        and(
+          eq(scopeRuns.projectId, run.projectId),
+          eq(scopeRuns.status, "approved"),
+          ne(scopeRuns.id, runId),
+        ),
+      )
+      .orderBy(desc(scopeRuns.createdAt))
+      .limit(1);
+    const carriedCustom: Array<{
+      itemId: string;
+      status: string;
+      citations: unknown;
+      note: string | null;
+      label: string | null;
+      confidence: number | null;
+    }> = [];
+    if (priorApproved) {
+      const priorCustom = await db
+        .select()
+        .from(scopeRunItems)
+        .where(
+          and(
+            eq(scopeRunItems.runId, priorApproved.id),
+            sql`${scopeRunItems.itemId} like 'custom.%'`,
+            ne(scopeRunItems.opsStatus, "removed"),
+          ),
+        );
+      for (const c of priorCustom) {
+        carriedCustom.push({
+          itemId: c.itemId,
+          status: c.status,
+          citations: c.citations,
+          note: c.note,
+          label: c.label,
+          confidence: c.confidence,
+        });
+      }
+    }
+
     const finalItems = [
       ...enforced.items,
       ...foldResiduals(residual, residualVerdicts),
     ];
+
+    // The deterministic baseline check: dates and title-block names
+    // cross-examined in code. Findings land beside the model's
+    // conflicts, marked by source so the desk can tell judgement
+    // from arithmetic.
+    const baseline = baselineFindings(
+      docRows.map((d) => ({
+        documentId: d.row.documentId,
+        kind: d.row.kind,
+        docTitle: d.row.docTitle,
+        issueDate: d.row.issueDate,
+        clientName: d.row.clientName,
+      })),
+    );
     // The invariant this rework exists for, checked every run.
     const coverage = coverageReport(projectType, finalItems);
     if (coverage.missing.length > 0 || coverage.strays.length > 0) {
@@ -538,6 +622,10 @@ export async function processRunTick(
       residualClassified: residualVerdicts.size,
       residualDefaulted: residual.length - residualVerdicts.size,
       registerDeduped: deduped.duplicates.length,
+      capturesProposed: hygiene.kept.length,
+      capturesMappedAway: hygiene.mappedAway.length,
+      baselineFindings: baseline.length,
+      customCarried: carriedCustom.length,
       poolSize: coverage.poolSize,
       covered: coverage.covered,
     };
@@ -549,6 +637,7 @@ export async function processRunTick(
     );
     await db.delete(scopeRunItems).where(eq(scopeRunItems.runId, runId));
     await db.delete(scopeRunConflicts).where(eq(scopeRunConflicts.runId, runId));
+    await db.delete(scopeRunCaptures).where(eq(scopeRunCaptures.runId, runId));
     if (finalItems.length > 0) {
       await db.insert(scopeRunItems).values(
         finalItems.map((i) => ({
@@ -561,23 +650,68 @@ export async function processRunTick(
             revision: revisionByDoc.get(c.documentId) ?? null,
           })),
           note: i.note,
+          depth: i.depth,
+          remaining: i.remaining,
           confidence: i.confidence,
         })),
       );
     }
-    if (conflictsEnforced.conflicts.length > 0) {
-      await db.insert(scopeRunConflicts).values(
-        conflictsEnforced.conflicts.map((c) => ({
+    if (carriedCustom.length > 0) {
+      await db.insert(scopeRunItems).values(
+        carriedCustom.map((c) => ({
           runId,
-          summary: c.summary,
+          itemId: c.itemId,
+          status: c.status,
+          citations: c.citations as object[],
+          note: c.note,
+          label: c.label,
+          confidence: c.confidence,
+          opsStatus: "confirmed",
+        })),
+      );
+    }
+    if (hygiene.kept.length > 0) {
+      await db.insert(scopeRunCaptures).values(
+        hygiene.kept.map((c) => ({
+          runId,
+          label: c.label,
+          divisionId: c.divisionId,
           citations: c.citations.map((x) => ({
             documentId: x.documentId,
             page: x.page,
             revision: revisionByDoc.get(x.documentId) ?? null,
           })),
-          severity: c.severity,
+          note: c.note,
+          confidence: c.confidence,
         })),
       );
+    }
+    const conflictRows = [
+      ...conflictsEnforced.conflicts.map((c) => ({
+        runId,
+        summary: c.summary,
+        citations: c.citations.map((x) => ({
+          documentId: x.documentId,
+          page: x.page,
+          revision: revisionByDoc.get(x.documentId) ?? null,
+        })),
+        severity: c.severity,
+        source: "model",
+      })),
+      ...baseline.map((b) => ({
+        runId,
+        summary: b.summary,
+        citations: b.citations.map((x) => ({
+          documentId: x.documentId,
+          page: x.page,
+          revision: revisionByDoc.get(x.documentId) ?? null,
+        })),
+        severity: b.severity,
+        source: "baseline",
+      })),
+    ];
+    if (conflictRows.length > 0) {
+      await db.insert(scopeRunConflicts).values(conflictRows);
     }
 
     const cost = estimateCostUsd(usage);
@@ -742,6 +876,8 @@ async function classifyOne(
         revision: classification.revision,
         docTitle: classification.title,
         pageCount: classification.pageCount,
+        issueDate: classification.issueDate,
+        clientName: classification.clientName,
         updatedAt: new Date(),
       })
       .where(eq(scopeRunDocuments.id, docRow.id));
@@ -892,6 +1028,11 @@ export async function getRunForReview(runId: string): Promise<Result<{
   register: Array<ScopeRunDocumentRow & { filename: string }>;
   items: ScopeRunItemRow[];
   conflicts: ScopeRunConflictRow[];
+  captures: ScopeRunCaptureRow[];
+  /** Documents the pack names that the pack does not contain. */
+  namedMissing: NamedMissingRef[];
+  /** The pack-level readiness call, derived from the counts above. */
+  readiness: PackReadiness;
 }>> {
   const [row] = await db
     .select({
@@ -907,7 +1048,7 @@ export async function getRunForReview(runId: string): Promise<Result<{
     .limit(1);
   if (!row) return fail("not_found", "Run not found.");
 
-  const [register, items, conflicts] = await Promise.all([
+  const [register, items, conflicts, captures] = await Promise.all([
     db
       .select({ doc: scopeRunDocuments, filename: documents.filename })
       .from(scopeRunDocuments)
@@ -921,7 +1062,33 @@ export async function getRunForReview(runId: string): Promise<Result<{
       .select()
       .from(scopeRunConflicts)
       .where(eq(scopeRunConflicts.runId, runId)),
+    db
+      .select()
+      .from(scopeRunCaptures)
+      .where(eq(scopeRunCaptures.runId, runId)),
   ]);
+  const namedMissing = namedMissingDocuments(
+    register
+      .filter((r) => r.doc.findings)
+      .map((r) => ({
+        documentId: r.doc.documentId,
+        filename: r.filename,
+        docTitle: r.doc.docTitle,
+        kind: r.doc.kind,
+        findings: r.doc.findings as DocumentFindings,
+      })),
+  );
+  const readiness = packReadiness({
+    items: items.map((i) => ({ status: i.status, depth: i.depth })),
+    conflicts: conflicts
+      .filter((c) => c.opsStatus !== "dismissed")
+      .map((c) => ({ severity: c.severity })),
+    namedMissingCount: namedMissing.length,
+    registerKinds: [
+      ...new Set(register.map((r) => r.doc.kind).filter((k): k is string => !!k)),
+    ],
+    projectType: row.projectType as ScopeProjectType,
+  });
   return ok({
     run: row.run,
     project: {
@@ -933,6 +1100,9 @@ export async function getRunForReview(runId: string): Promise<Result<{
     register: register.map((r) => ({ ...r.doc, filename: r.filename })),
     items,
     conflicts,
+    captures,
+    namedMissing,
+    readiness,
   });
 }
 
@@ -1041,6 +1211,96 @@ export async function addItem(
     note: input.note,
   });
   return ok(row);
+}
+
+/**
+ * Promote an off-standard capture into the run's selection as a
+ * project-scoped custom line. The line's id is
+ * "custom.<divisionId>.<slug>" — self-describing, stable across
+ * re-reads (the carry-forward copies it), and priced by builders like
+ * any other schedule line. Every promotion is also a vote: the
+ * metrics desk ranks recurring capture labels as candidates for the
+ * next Standard release.
+ */
+export async function promoteCapture(
+  actorId: string,
+  captureId: string,
+): Promise<Result<ScopeRunItemRow>> {
+  const [capture] = await db
+    .select()
+    .from(scopeRunCaptures)
+    .where(eq(scopeRunCaptures.id, captureId))
+    .limit(1);
+  if (!capture) return fail("not_found", "Capture not found.");
+  if (capture.opsStatus !== "pending") {
+    return fail("conflict", "This capture has already been decided.");
+  }
+
+  const division = capture.divisionId ?? "external-works";
+  const slug =
+    capture.label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "line";
+  let itemId = `custom.${division}.${slug}`;
+  const [taken] = await db
+    .select({ id: scopeRunItems.id })
+    .from(scopeRunItems)
+    .where(
+      and(eq(scopeRunItems.runId, capture.runId), eq(scopeRunItems.itemId, itemId)),
+    )
+    .limit(1);
+  if (taken) itemId = `${itemId}-2`;
+
+  const [row] = await db
+    .insert(scopeRunItems)
+    .values({
+      runId: capture.runId,
+      itemId,
+      status: "evidenced",
+      citations: capture.citations as object[],
+      note: capture.note,
+      label: capture.label,
+      confidence: capture.confidence,
+      opsStatus: "added",
+      editedBy: actorId,
+      editedAt: new Date(),
+    })
+    .returning();
+  if (!row) return fail("internal", "Could not promote the capture.");
+  await db
+    .update(scopeRunCaptures)
+    .set({ opsStatus: "promoted", promotedItemId: itemId, updatedAt: new Date() })
+    .where(eq(scopeRunCaptures.id, captureId));
+  await recordReview(capture.runId, itemId, "capture.promoted", actorId, null, {
+    label: capture.label,
+    divisionId: capture.divisionId,
+  });
+  return ok(row);
+}
+
+/** Dismiss a capture: not real work, or not worth a line. The verdict
+ *  is still a label — dismissals teach the capture lane restraint. */
+export async function dismissCapture(
+  actorId: string,
+  captureId: string,
+): Promise<Result<{ ok: true }>> {
+  const [capture] = await db
+    .select()
+    .from(scopeRunCaptures)
+    .where(eq(scopeRunCaptures.id, captureId))
+    .limit(1);
+  if (!capture) return fail("not_found", "Capture not found.");
+  if (capture.opsStatus !== "pending") {
+    return fail("conflict", "This capture has already been decided.");
+  }
+  await db
+    .update(scopeRunCaptures)
+    .set({ opsStatus: "dismissed", updatedAt: new Date() })
+    .where(eq(scopeRunCaptures.id, captureId));
+  await recordReview(capture.runId, capture.label, "capture.dismissed", actorId, null, null);
+  return ok({ ok: true });
 }
 
 export async function reviewConflict(
@@ -1307,6 +1567,15 @@ export interface ModelReport {
     removalRate: number;
   }>;
   totals: { runs: number; costUsd: number; verdicts: number };
+  /** The Standard's growth votes: recurring off-standard capture
+   *  labels across runs, promoted counts alongside. The strongest
+   *  become the next Standard release's items. */
+  captureVotes: Array<{
+    label: string;
+    runs: number;
+    promoted: number;
+    dismissed: number;
+  }>;
 }
 
 /**
@@ -1425,6 +1694,20 @@ export async function scopeModelReport(): Promise<ModelReport> {
     };
   });
 
+  // The Standard's growth votes: every off-standard capture, grouped
+  // by normalised label across all runs.
+  const voteRows = await db
+    .select({
+      label: sql<string>`min(${scopeRunCaptures.label})`,
+      runs: sql<number>`count(distinct ${scopeRunCaptures.runId})::int`,
+      promoted: sql<number>`count(*) filter (where ${scopeRunCaptures.opsStatus} = 'promoted')::int`,
+      dismissed: sql<number>`count(*) filter (where ${scopeRunCaptures.opsStatus} = 'dismissed')::int`,
+    })
+    .from(scopeRunCaptures)
+    .groupBy(sql`lower(${scopeRunCaptures.label})`)
+    .orderBy(sql`count(distinct ${scopeRunCaptures.runId}) desc`)
+    .limit(30);
+
   return {
     runs,
     calibration,
@@ -1439,6 +1722,7 @@ export async function scopeModelReport(): Promise<ModelReport> {
         .filter((b) => b.opsStatus !== "pending")
         .reduce((n, b) => n + b.n, 0),
     },
+    captureVotes: voteRows,
   };
 }
 
@@ -1733,6 +2017,11 @@ export interface OwnerScopeReview {
   mode: "publish" | "addendum" | "record";
   /** The round's addendum register, newest first. */
   addenda: ScopeAddendumRow[];
+  /** Documents the pack names that it does not contain — the pack's
+   *  own missing-document register. Ready phase only. */
+  namedMissing?: NamedMissingRef[];
+  /** The pack-level readiness call. Ready phase only. */
+  readiness?: PackReadiness | null;
 }
 
 /**
@@ -1819,29 +2108,71 @@ export async function getOwnerReview(
       addenda,
     });
   }
-  const [items, resolutions, register] = await Promise.all([
-    db
-      .select()
-      .from(scopeRunItems)
-      .where(
-        and(eq(scopeRunItems.runId, run.id), ne(scopeRunItems.opsStatus, "removed")),
-      ),
-    db
-      .select()
-      .from(scopeGapResolutions)
-      .where(eq(scopeGapResolutions.runId, run.id)),
-    db
-      .select({
-        documentId: scopeRunDocuments.documentId,
-        filename: documents.filename,
-        docTitle: scopeRunDocuments.docTitle,
-        kind: scopeRunDocuments.kind,
-        pageCount: scopeRunDocuments.pageCount,
-      })
-      .from(scopeRunDocuments)
-      .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
-      .where(eq(scopeRunDocuments.runId, run.id)),
-  ]);
+  const [items, resolutions, register, fullRegister, conflicts] =
+    await Promise.all([
+      db
+        .select()
+        .from(scopeRunItems)
+        .where(
+          and(eq(scopeRunItems.runId, run.id), ne(scopeRunItems.opsStatus, "removed")),
+        ),
+      db
+        .select()
+        .from(scopeGapResolutions)
+        .where(eq(scopeGapResolutions.runId, run.id)),
+      db
+        .select({
+          documentId: scopeRunDocuments.documentId,
+          filename: documents.filename,
+          docTitle: scopeRunDocuments.docTitle,
+          kind: scopeRunDocuments.kind,
+          pageCount: scopeRunDocuments.pageCount,
+        })
+        .from(scopeRunDocuments)
+        .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+        .where(eq(scopeRunDocuments.runId, run.id)),
+      db
+        .select({
+          documentId: scopeRunDocuments.documentId,
+          filename: documents.filename,
+          docTitle: scopeRunDocuments.docTitle,
+          findings: scopeRunDocuments.findings,
+        })
+        .from(scopeRunDocuments)
+        .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+        .where(eq(scopeRunDocuments.runId, run.id)),
+      db
+        .select({ severity: scopeRunConflicts.severity, opsStatus: scopeRunConflicts.opsStatus })
+        .from(scopeRunConflicts)
+        .where(eq(scopeRunConflicts.runId, run.id)),
+    ]);
+  const namedMissing = namedMissingDocuments(
+    fullRegister
+      .filter((r) => r.findings)
+      .map((r) => ({
+        documentId: r.documentId,
+        filename: r.filename,
+        docTitle: r.docTitle,
+        kind: register.find((x) => x.documentId === r.documentId)?.kind ?? null,
+        findings: r.findings as DocumentFindings,
+      })),
+  );
+  const readiness = packReadiness({
+    items: items.map((i) => ({ status: i.status, depth: i.depth })),
+    conflicts: conflicts
+      .filter((c) => c.opsStatus !== "dismissed")
+      .map((c) => ({ severity: c.severity })),
+    namedMissingCount: namedMissing.length,
+    registerKinds: [
+      ...new Set(register.map((r) => r.kind).filter((k): k is string => !!k)),
+    ],
+    projectType: (await db
+      .select({ type: projects.type })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1)
+      .then((r) => r[0]?.type ?? "single_dwelling")) as ScopeProjectType,
+  });
   return ok({
     phase: "ready",
     run,
@@ -1852,6 +2183,8 @@ export async function getOwnerReview(
     canResolve: access.kind === "runner",
     mode,
     addenda,
+    namedMissing,
+    readiness,
   });
 }
 
@@ -2445,6 +2778,9 @@ async function scheduleForRun(
       ownerAmountAud,
       citations,
       note: row.note ?? null,
+      label: row.label ?? null,
+      depth: (row.depth as "full" | "partial" | null) ?? null,
+      remaining: row.remaining ?? null,
     });
     if (item) out.push(item);
   }

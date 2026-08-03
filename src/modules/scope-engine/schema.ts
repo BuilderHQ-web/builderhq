@@ -1,7 +1,7 @@
 /**
- * scope-engine · drizzle schema (migration 0039).
+ * scope-engine · drizzle schema (migrations 0039–0043).
  *
- * The extraction run and its artefacts. See the migration header for
+ * The extraction run and its artefacts. See the migration headers for
  * the table-by-table story. Statuses are TEXT, service-enforced.
  */
 
@@ -12,6 +12,7 @@ import {
   integer,
   real,
   jsonb,
+  date,
   timestamp,
   index,
   uniqueIndex,
@@ -72,6 +73,12 @@ export const scopeRunDocuments = pgTable(
     revision: text(),
     docTitle: text("doc_title"),
     pageCount: integer(),
+    /** The date printed in the title block — the baseline check's raw
+     *  material. Read at classification; null when none is printed. */
+    issueDate: date("issue_date"),
+    /** The client/project name in the title block, for the
+     *  cross-document entity consistency check. */
+    clientName: text("client_name"),
     findings: jsonb(),
     error: text(),
     createdAt: timestamp({ mode: "date", withTimezone: true })
@@ -97,6 +104,15 @@ export const scopeRunItems = pgTable(
     status: text().notNull(),
     citations: jsonb().notNull().default([]),
     note: text(),
+    /** Display label for custom lines (itemId "custom.*") promoted
+     *  from off-standard captures. NULL for Standard items. */
+    label: text(),
+    /** The Partial grade on evidenced lines: 'full' when a builder
+     *  can price without assumption, 'partial' when the work is shown
+     *  but incompletely specified. NULL on gaps and not_expected. */
+    depth: text(),
+    /** What is still needed, when depth is 'partial'. */
+    remaining: text(),
     figures: jsonb().notNull().default([]),
     confidence: real(),
     opsStatus: text().notNull().default("pending"),
@@ -121,6 +137,9 @@ export const scopeRunConflicts = pgTable("scope_run_conflicts", {
   summary: text().notNull(),
   citations: jsonb().notNull().default([]),
   severity: text().notNull().default("attention"),
+  /** 'model' (synthesis judgement) or 'baseline' (the deterministic
+   *  date/entity cross-examination). */
+  source: text().notNull().default("model"),
   opsStatus: text().notNull().default("pending"),
   opsNote: text(),
   createdAt: timestamp({ mode: "date", withTimezone: true })
@@ -175,6 +194,41 @@ export const scopeGapResolutions = pgTable(
 );
 
 export type ScopeGapResolutionRow = typeof scopeGapResolutions.$inferSelect;
+
+/**
+ * Off-standard captures — work the model saw that no Standard item
+ * names. The end of the silent drop: each carries a proposed label,
+ * suggested division, citations and note. Ops promotes a capture into
+ * the selection as a project-scoped custom line, or dismisses it.
+ * Recurring captures are the Standard's growth votes.
+ */
+export const scopeRunCaptures = pgTable(
+  "scope_run_captures",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    runId: uuid()
+      .notNull()
+      .references(() => scopeRuns.id, { onDelete: "cascade" }),
+    label: text().notNull(),
+    divisionId: text("division_id"),
+    citations: jsonb().notNull().default([]),
+    note: text(),
+    confidence: real(),
+    /** pending → promoted | dismissed */
+    opsStatus: text().notNull().default("pending"),
+    /** The custom item id this capture became, when promoted. */
+    promotedItemId: text("promoted_item_id"),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("scope_run_captures_run_idx").on(t.runId)],
+);
+
+export type ScopeRunCaptureRow = typeof scopeRunCaptures.$inferSelect;
 
 export type ScopeRunRow = typeof scopeRuns.$inferSelect;
 export type ScopeRunDocumentRow = typeof scopeRunDocuments.$inferSelect;

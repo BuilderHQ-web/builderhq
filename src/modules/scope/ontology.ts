@@ -24,7 +24,7 @@ import type { ScopeDivision, ScopeItem } from "./types";
 
 /** Semantic version of the library. Projects pin the version they
  *  were prepared under. */
-export const SCOPE_STANDARD_VERSION = "1.0.0";
+export const SCOPE_STANDARD_VERSION = "1.1.0";
 
 // ── divisions — the build in reading order ──────────────────────────────
 
@@ -49,7 +49,6 @@ export const SCOPE_DIVISIONS: ScopeDivision[] = [
     order: 3,
     plain:
       "Taking down or gutting existing structures and clearing what the new work replaces.",
-    appliesTo: ["renovation", "extension", "multi_dwelling"],
   },
   {
     id: "alterations",
@@ -462,6 +461,43 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     appliesTo: ["multi_dwelling"],
     aliases: ["acoustic report", "sound insulation", "acoustic certification"],
   },
+  {
+    id: "approvals.authority-consents",
+    division: "approvals",
+    label: "Authority consents and easements",
+    plain:
+      "Permissions the build needs beyond the main permits: building over an easement, the legal point of discharge, crossover and road permits, asset protection.",
+    trade: "preliminaries",
+    aliases: [
+      "build over easement",
+      "building over easement",
+      "legal point of discharge",
+      "lpod",
+      "section 173",
+      "road opening permit",
+      "asset protection permit",
+      "crossover permit",
+      "report and consent",
+      "regulation 130",
+    ],
+  },
+  {
+    id: "approvals.protection-works",
+    division: "approvals",
+    label: "Protection works for adjoining properties",
+    plain:
+      "The statutory process and physical measures that protect the neighbours' land and buildings when work happens near a boundary, including notices, agreements and condition surveys.",
+    trade: "preliminaries",
+    aliases: [
+      "protection work notice",
+      "form 7",
+      "form 8",
+      "adjoining owner",
+      "dilapidation survey",
+      "condition survey",
+      "party wall",
+    ],
+  },
 
   // ── 3 · demolition ────────────────────────────────────────────────
   {
@@ -471,8 +507,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Taking the existing building down entirely and clearing the block, including the demolition permit.",
     trade: "demolition",
-    appliesTo: ["multi_dwelling", "renovation", "extension"],
-    aliases: ["demolish existing dwelling", "knock down", "kdr"],
+    aliases: ["demolish existing dwelling", "knock down", "kdr", "remove existing dwelling"],
   },
   {
     id: "demolition.partial-strip-out",
@@ -487,13 +522,21 @@ export const SCOPE_ITEMS: ScopeItem[] = [
   {
     id: "demolition.asbestos-removal",
     division: "demolition",
-    label: "Asbestos removal",
+    label: "Asbestos and hazardous materials",
     plain:
-      "Licensed removal and disposal of asbestos sheeting or lagging, priced as an allowance until the extent is proven.",
+      "A hazardous-materials survey of anything being demolished, then licensed removal and disposal of asbestos or other hazards, priced as an allowance until the extent is proven.",
     trade: "demolition",
-    appliesTo: ["renovation", "extension", "multi_dwelling"],
     allowance: "ps",
-    aliases: ["asbestos", "acm removal", "friable", "fibro removal", "clearance certificate"],
+    aliases: [
+      "asbestos",
+      "acm removal",
+      "friable",
+      "fibro removal",
+      "clearance certificate",
+      "hazardous materials survey",
+      "hazmat",
+      "division 5 audit",
+    ],
   },
   {
     id: "demolition.tree-removal",
@@ -511,7 +554,6 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Safely cutting off power, gas, water and sewer to the old structure before demolition.",
     trade: "demolition",
-    appliesTo: ["multi_dwelling", "renovation", "extension"],
     aliases: ["disconnection", "abolishment", "meter removal"],
   },
   {
@@ -891,7 +933,18 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     trade: "ground_works",
     appliesTo: ["multi_dwelling", "single_dwelling"],
     allowance: "ps",
-    aliases: ["shoring", "soldier piles", "shotcrete", "batter"],
+    aliases: [
+      "shoring",
+      "soldier piles",
+      "shotcrete",
+      "batter",
+      "temporary works",
+      "temporary bracing",
+      "propping",
+      "back-propping",
+      "needle propping",
+      "temporary retention",
+    ],
   },
 
   // ── 9 · structural steel ──────────────────────────────────────────
@@ -1604,6 +1657,25 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     trade: "metalwork",
     allowance: "pc",
     aliases: ["batten screen", "stair screen", "slatted screen"],
+  },
+  {
+    id: "stairs.residential-lift",
+    division: "stairs",
+    label: "Residential lift",
+    plain:
+      "A home lift between floors: the shaft and pit the structure provides, and the lift unit itself with its power, doors, commissioning and certification.",
+    trade: "special_provisions",
+    allowance: "ps",
+    aliases: [
+      "lift",
+      "elevator",
+      "home lift",
+      "platform lift",
+      "lift shaft",
+      "lift pit",
+      "lift overrun",
+      "dumbwaiter",
+    ],
   },
 
   // ── 20 · joinery ──────────────────────────────────────────────────
@@ -2445,6 +2517,44 @@ export const SCOPE_ITEMS: ScopeItem[] = [
       "The compliant barrier around any pool, glass or aluminium, certified before water goes in.",
     trade: "external_works",
     aliases: ["glass pool fence", "pool barrier", "pool certificate"],
+  },
+  {
+    id: "landscaping.pool-plant",
+    division: "landscaping",
+    label: "Pool plant, filtration and heating",
+    plain:
+      "The machinery that runs the pool: filtration, pumps, sanitation, heating, controls and the electrical bonding that makes it safe, with its plant space and commissioning.",
+    trade: "external_works",
+    allowance: "ps",
+    aliases: [
+      "pool filtration",
+      "pool pump",
+      "pool heating",
+      "pool equipment",
+      "pool plant room",
+      "chlorinator",
+      "pool bonding",
+      "skimmer",
+      "backwash",
+    ],
+  },
+  {
+    id: "landscaping.tree-protection",
+    division: "landscaping",
+    label: "Tree protection and arborist controls",
+    plain:
+      "Protecting the trees that stay: arborist reports, protection-zone fencing, root-sensitive digging near them and the supervision the council's permit requires.",
+    trade: "external_works",
+    aliases: [
+      "tree protection zone",
+      "tpz",
+      "srz",
+      "tree protection management plan",
+      "tpmp",
+      "arborist report",
+      "arborist supervision",
+      "root barrier",
+    ],
   },
   {
     id: "landscaping.water-features",

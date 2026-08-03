@@ -75,6 +75,8 @@ interface HarnessResult {
     kind: string;
     title: string | null;
     revision: string | null;
+    issueDate?: string | null;
+    clientName?: string | null;
     pageCount: number | null;
   }>;
   registerDuplicates: string[];
@@ -84,6 +86,18 @@ interface HarnessResult {
     citations: Array<{ documentId: string; page: number }>;
     severity: string;
   }>;
+  baseline?: Array<{
+    summary: string;
+    citations: Array<{ documentId: string; page: number }>;
+    severity: string;
+  }>;
+  captures?: Array<{
+    label: string;
+    divisionId: string | null;
+    citations: Array<{ documentId: string; page: number }>;
+    note: string | null;
+    confidence: number | null;
+  }>;
   guards: Record<string, number | string[]>;
   coverage: { poolSize: number; covered: number };
   items: Array<{
@@ -91,6 +105,8 @@ interface HarnessResult {
     status: string;
     confidence: number | null;
     note: string | null;
+    depth?: string | null;
+    remaining?: string | null;
     citations: Array<{ doc: string; page: number }>;
   }>;
   usage: Record<string, { inputTokens: number; outputTokens: number }>;
@@ -269,9 +285,9 @@ try {
         },
       };
       await client.query(
-        `INSERT INTO scope_run_documents (run_id, document_id, status, kind, revision, doc_title, page_count, findings)
-         VALUES ($1,$2,'extracted',$3,$4,$5,$6,$7)`,
-        [runId, docId, rec.kind, rec.revision, rec.title, rec.pageCount, JSON.stringify(findings)],
+        `INSERT INTO scope_run_documents (run_id, document_id, status, kind, revision, doc_title, page_count, issue_date, client_name, findings)
+         VALUES ($1,$2,'extracted',$3,$4,$5,$6,$7,$8,$9)`,
+        [runId, docId, rec.kind, rec.revision, rec.title, rec.pageCount, rec.issueDate ?? null, rec.clientName ?? null, JSON.stringify(findings)],
       );
     }
 
@@ -283,24 +299,42 @@ try {
         return [{ documentId: docId, page: c.page, revision: revisionByIndex[idx] ?? null }];
       });
       await client.query(
-        `INSERT INTO scope_run_items (run_id, item_id, status, citations, note, confidence)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
-        [runId, item.itemId, item.status, JSON.stringify(citations), item.note, item.confidence],
+        `INSERT INTO scope_run_items (run_id, item_id, status, citations, note, depth, remaining, confidence)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [runId, item.itemId, item.status, JSON.stringify(citations), item.note, item.depth ?? null, item.remaining ?? null, item.confidence],
       );
     }
 
-    for (const c of result.conflicts) {
-      const citations = c.citations.flatMap((x) => {
+    const mapDocCitations = (
+      citations: Array<{ documentId: string; page: number }>,
+    ) =>
+      citations.flatMap((x) => {
         const m = /^doc-(\d+)$/.exec(x.documentId);
         const idx = m ? Number(m[1]) : -1;
         const docId = docIdByIndex[idx];
         if (!docId) return [];
         return [{ documentId: docId, page: x.page, revision: revisionByIndex[idx] ?? null }];
       });
+
+    for (const c of result.conflicts) {
       await client.query(
-        `INSERT INTO scope_run_conflicts (run_id, summary, citations, severity)
-         VALUES ($1,$2,$3,$4)`,
-        [runId, c.summary, JSON.stringify(citations), c.severity],
+        `INSERT INTO scope_run_conflicts (run_id, summary, citations, severity, source)
+         VALUES ($1,$2,$3,$4,'model')`,
+        [runId, c.summary, JSON.stringify(mapDocCitations(c.citations)), c.severity],
+      );
+    }
+    for (const b of result.baseline ?? []) {
+      await client.query(
+        `INSERT INTO scope_run_conflicts (run_id, summary, citations, severity, source)
+         VALUES ($1,$2,$3,$4,'baseline')`,
+        [runId, b.summary, JSON.stringify(mapDocCitations(b.citations)), b.severity],
+      );
+    }
+    for (const cap of result.captures ?? []) {
+      await client.query(
+        `INSERT INTO scope_run_captures (run_id, label, division_id, citations, note, confidence)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [runId, cap.label, cap.divisionId, JSON.stringify(mapDocCitations(cap.citations)), cap.note, cap.confidence],
       );
     }
 

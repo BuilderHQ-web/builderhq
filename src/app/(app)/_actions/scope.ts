@@ -15,6 +15,8 @@ import {
   processRunTick,
   reviewItem,
   addItem,
+  promoteCapture,
+  dismissCapture,
   reviewConflict,
   approveRun,
   bulkConfirmPending,
@@ -72,6 +74,24 @@ export async function addScopeItemAction(
   const a = await requireAdmin();
   if (!a.ok) return a;
   return addItem(a.value, runId, input);
+}
+
+export async function promoteCaptureAction(
+  captureId: string,
+): Promise<Result<{ itemId: string }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  const r = await promoteCapture(a.value, captureId);
+  if (!r.ok) return r;
+  return { ok: true, value: { itemId: r.value.itemId } };
+}
+
+export async function dismissCaptureAction(
+  captureId: string,
+): Promise<Result<{ ok: true }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return dismissCapture(a.value, captureId);
 }
 
 export async function reviewScopeConflictAction(

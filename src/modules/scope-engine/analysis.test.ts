@@ -18,6 +18,10 @@ import {
   foldResiduals,
   coverageReport,
   dedupeRegister,
+  baselineFindings,
+  namedMissingDocuments,
+  captureHygiene,
+  packReadiness,
   SOFT_CITATION_PENALTY,
 } from "./analysis";
 import { itemsFor } from "@/modules/scope";
@@ -47,12 +51,16 @@ const DOCS: SynthesisDocumentInput[] = [
           page: 1,
           itemIds: ["framing.wall-frames", "roofing.tile-roof"],
           statedFigures: [],
+          offStandard: [],
+          docRefs: [],
           note: null,
         },
         {
           page: 2,
           itemIds: ["tiling.floor-tiles-supply"],
           statedFigures: [],
+          offStandard: [],
+          docRefs: [],
           note: null,
         },
       ],
@@ -69,6 +77,8 @@ const entry = (
   status: "evidenced" as const,
   citations,
   note: null,
+  depth: null,
+  remaining: null,
   confidence,
 });
 
@@ -128,6 +138,8 @@ describe("enforceCitationConsistency", () => {
       status: "gap" as const,
       citations: [],
       note: "No appliance schedule.",
+      depth: null,
+      remaining: null,
       confidence: 0.8,
     };
     const r = enforceCitationConsistency([gap], DOCS);
@@ -194,6 +206,8 @@ describe("coverageReport — the invariant", () => {
       status: "evidenced" as const,
       citations: [{ documentId: "doc-a", page: 1 }],
       note: null,
+      depth: null,
+      remaining: null,
       confidence: 0.9,
     }));
     const enforced = enforceCitationConsistency(modelItems, DOCS);
@@ -425,5 +439,255 @@ describe("planChunks", () => {
     );
     expect(pages).toHaveLength(190);
     expect(new Set(pages).size).toBe(190);
+  });
+});
+
+/* ── the baseline check: dates and names, cross-examined in code ────── */
+
+describe("baselineFindings", () => {
+  const doc = (
+    documentId: string,
+    kind: string,
+    issueDate: string | null,
+    clientName: string | null = null,
+  ) => ({ documentId, kind, docTitle: `${kind} set`, issueDate, clientName });
+
+  test("the Wheeler pattern: stale reports, ancient survey, permit question", () => {
+    const findings = baselineFindings([
+      doc("l", "survey", "2018-09-24"),
+      doc("g", "soil", "2022-08-20"),
+      doc("e", "energy", "2022-09-27"),
+      doc("a", "architectural", "2023-06-01"),
+      doc("s", "structural", "2025-10-29"),
+    ]);
+    // Soil and energy pre-date the latest design by years; the survey
+    // is ancient; structural post-dates architectural by >12 months.
+    expect(findings.filter((f) => f.severity === "attention").length).toBeGreaterThanOrEqual(3);
+    const permit = findings.find((f) => f.severity === "high");
+    expect(permit?.summary).toContain("post-dates the architectural set");
+    expect(permit?.summary).toContain("building permit");
+  });
+
+  test("a coordinated pack raises nothing", () => {
+    const findings = baselineFindings([
+      doc("a", "architectural", "2026-03-01"),
+      doc("s", "structural", "2026-04-15"),
+      doc("g", "soil", "2026-01-10"),
+      doc("e", "energy", "2026-02-20"),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
+  test("no dates, no findings — conservative by construction", () => {
+    expect(
+      baselineFindings([doc("a", "architectural", null), doc("s", "structural", null)]),
+    ).toEqual([]);
+  });
+
+  test("different client names across title blocks are flagged once", () => {
+    const findings = baselineFindings([
+      doc("a", "architectural", null, "Billy Residence"),
+      doc("s", "structural", null, "Chok & Co Pty Ltd"),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]!.summary).toContain("Billy Residence");
+    expect(findings[0]!.summary).toContain("Chok & Co Pty Ltd");
+  });
+});
+
+/* ── the pack's own missing-document register ───────────────────────── */
+
+describe("namedMissingDocuments", () => {
+  const withRefs = (documentId: string, filename: string, refs: string[][]) => ({
+    documentId,
+    filename,
+    docTitle: null,
+    findings: {
+      pages: refs.map((r, i) => ({
+        page: i + 1,
+        itemIds: [],
+        statedFigures: [],
+        offStandard: [],
+        docRefs: r,
+        note: null,
+      })),
+    } as never,
+  });
+
+  test("references to absent documents surface; supplied ones resolve", () => {
+    const out = namedMissingDocuments([
+      withRefs("c", "civil-drainage.pdf", [
+        ["Sheet 2 of 5", "refer plan 11637S-2"],
+      ]),
+      withRefs("l", "land-survey-11637S-1.pdf", [[]]),
+    ]);
+    const refs = out.map((r) => r.ref);
+    expect(refs).toContain("Sheet 2 of 5");
+    expect(refs).toContain("refer plan 11637S-2");
+  });
+
+  test("a reference matching a supplied filename does not surface", () => {
+    const out = namedMissingDocuments([
+      withRefs("g", "geotech.pdf", [["refer to civil-drainage layout"]]),
+      withRefs("c", "civil-drainage.pdf", [[]]),
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  test("the same reference from two pages merges with both citations", () => {
+    const out = namedMissingDocuments([
+      withRefs("g", "geotech.pdf", [["Soil Test 01876"], ["Soil Test 01876"]]),
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.citations).toHaveLength(2);
+  });
+});
+
+/* ── capture hygiene: the lane cannot duplicate the Standard ────────── */
+
+describe("captureHygiene", () => {
+  const capture = (label: string) => ({
+    label,
+    divisionId: null,
+    citations: [],
+    note: null,
+    confidence: 0.8,
+  });
+
+  test("genuinely unnamed work is kept", () => {
+    const r = captureHygiene([capture("Wine cellar conditioning plant")]);
+    expect(r.kept).toHaveLength(1);
+    expect(r.mappedAway).toEqual([]);
+  });
+
+  test("a label the Standard already names maps away", () => {
+    const r = captureHygiene([capture("Residential lift")]);
+    expect(r.kept).toEqual([]);
+    expect(r.mappedAway[0]!.matchedItemId).toBe("stairs.residential-lift");
+  });
+
+  test("alias matches map away too", () => {
+    const r = captureHygiene([capture("Pool heating")]);
+    expect(r.kept).toEqual([]);
+    expect(r.mappedAway[0]!.matchedItemId).toBe("landscaping.pool-plant");
+  });
+});
+
+/* ── the readiness verdict ──────────────────────────────────────────── */
+
+describe("packReadiness", () => {
+  const ev = (depth: "full" | "partial" | null = "full") => ({
+    status: "evidenced",
+    depth,
+  });
+
+  test("a clean pack is fixed-price ready", () => {
+    const r = packReadiness({
+      items: [ev(), ev(), ev()],
+      conflicts: [{ severity: "attention" }],
+      namedMissingCount: 1,
+      registerKinds: ["architectural", "structural"],
+      projectType: "single_dwelling",
+    });
+    expect(r.verdict).toBe("fixed_price");
+  });
+
+  test("a high conflict alone forces budget-only", () => {
+    const r = packReadiness({
+      items: [ev()],
+      conflicts: [{ severity: "high" }],
+      namedMissingCount: 0,
+      registerKinds: ["architectural", "structural"],
+      projectType: "single_dwelling",
+    });
+    expect(r.verdict).toBe("budget_only");
+    expect(r.factors).toHaveLength(1);
+  });
+
+  test("a new build without structural engineering is never fixed-price", () => {
+    const r = packReadiness({
+      items: [ev()],
+      conflicts: [],
+      namedMissingCount: 0,
+      registerKinds: ["architectural"],
+      projectType: "single_dwelling",
+    });
+    expect(r.verdict).toBe("budget_only");
+  });
+
+  test("a renovation without structural is not penalised for it", () => {
+    const r = packReadiness({
+      items: [ev()],
+      conflicts: [],
+      namedMissingCount: 0,
+      registerKinds: ["architectural"],
+      projectType: "renovation",
+    });
+    expect(r.verdict).toBe("fixed_price");
+  });
+
+  test("heavy partial share plus missing refs tips the verdict", () => {
+    const r = packReadiness({
+      items: [ev("partial"), ev("partial"), ev(), ev()],
+      conflicts: [],
+      namedMissingCount: 5,
+      registerKinds: ["architectural", "structural"],
+      projectType: "single_dwelling",
+    });
+    expect(r.verdict).toBe("budget_only");
+    expect(r.factors).toHaveLength(2);
+  });
+});
+
+describe("namedMissingDocuments — noise filters", () => {
+  const doc = (
+    documentId: string,
+    filename: string,
+    kind: string,
+    refs: string[],
+  ) => ({
+    documentId,
+    filename,
+    docTitle: null,
+    kind,
+    findings: {
+      pages: [
+        {
+          page: 1,
+          itemIds: [],
+          statedFigures: [],
+          offStandard: [],
+          docRefs: refs,
+          note: null,
+        },
+      ],
+    } as never,
+  });
+
+  test("generic kind names resolve against supplied kinds", () => {
+    const out = namedMissingDocuments([
+      doc("g", "geo.pdf", "soil", [
+        "STRUCTURAL ENGINEERING DRAWINGS",
+        "ARCHITECTURAL PLANS",
+        "LANDSCAPING PLANS",
+      ]),
+      doc("s", "1341-struct-c4.pdf", "structural", []),
+      doc("a", "wheeler-arch.pdf", "architectural", []),
+    ]);
+    // Structural and architectural are supplied; landscaping is not.
+    expect(out.map((r) => r.ref)).toEqual(["LANDSCAPING PLANS"]);
+  });
+
+  test("internal sheet cross-references never surface", () => {
+    const out = namedMissingDocuments([
+      doc("s", "struct.pdf", "structural", [
+        "REFER TO DETAIL PAGE S27",
+        "E1 / S02",
+        "SHEET S14",
+        "1341-S2 BASEMENT DRAINAGE PLAN",
+      ]),
+    ]);
+    // The named sheet with a real title survives; bare codes do not.
+    expect(out.map((r) => r.ref)).toEqual(["1341-S2 BASEMENT DRAINAGE PLAN"]);
   });
 });

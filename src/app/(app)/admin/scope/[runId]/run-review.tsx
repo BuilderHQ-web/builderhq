@@ -27,6 +27,8 @@ import {
   addScopeItemAction,
   approveScopeRunAction,
   bulkConfirmScopeAction,
+  dismissCaptureAction,
+  promoteCaptureAction,
   reviewScopeConflictAction,
   reviewScopeItemAction,
   tickScopeRunAction,
@@ -57,6 +59,9 @@ interface ItemRow {
   status: string;
   citations: Array<{ documentId: string; page: number; revision: string | null }>;
   note: string | null;
+  label: string | null;
+  depth: "full" | "partial" | null;
+  remaining: string | null;
   confidence: number | null;
   opsStatus: string;
   opsNote: string | null;
@@ -65,8 +70,27 @@ interface ConflictRow {
   id: string;
   summary: string;
   severity: string;
+  source: string;
   opsStatus: string;
   citations: Array<{ documentId: string; page: number; revision: string | null }>;
+}
+interface CaptureRow {
+  id: string;
+  label: string;
+  divisionId: string | null;
+  note: string | null;
+  confidence: number | null;
+  opsStatus: string;
+  promotedItemId: string | null;
+  citations: Array<{ documentId: string; page: number; revision: string | null }>;
+}
+interface NamedMissingRow {
+  ref: string;
+  citations: Array<{ documentId: string; page: number }>;
+}
+interface ReadinessProp {
+  verdict: "fixed_price" | "budget_only";
+  factors: string[];
 }
 
 const PROCESSING = ["pending", "classifying", "extracting", "synthesising"];
@@ -77,12 +101,18 @@ export function RunReview({
   register,
   items,
   conflicts,
+  captures,
+  namedMissing,
+  readiness,
 }: {
   runId: string;
   initialStatus: string;
   register: RegisterRow[];
   items: ItemRow[];
   conflicts: ConflictRow[];
+  captures: CaptureRow[];
+  namedMissing: NamedMissingRow[];
+  readiness: ReadinessProp;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
@@ -151,11 +181,205 @@ export function RunReview({
 
   return (
     <div className="flex flex-col gap-8">
+      <ReadinessBanner readiness={readiness} />
       <RegisterTable register={register} docName={docName} />
+      <NamedMissing refs={namedMissing} docName={docName} />
+      <Captures captures={captures} docName={docName} status={status} />
       <Selection runId={runId} items={items} docName={docName} status={status} />
       <Conflicts conflicts={conflicts} docName={docName} status={status} />
       {status === "review" ? <ApproveBar runId={runId} items={items} /> : null}
     </div>
+  );
+}
+
+/* ── the readiness verdict ──────────────────────────────────────────── */
+
+function ReadinessBanner({ readiness }: { readiness: ReadinessProp }) {
+  const budget = readiness.verdict === "budget_only";
+  return (
+    <section
+      className={cn(
+        "rounded-lg border px-4.5 py-4 card-elev",
+        budget
+          ? "border-amber-600/30 bg-amber-500/5"
+          : "border-emerald-600/25 bg-emerald-500/5",
+      )}
+    >
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        Tender readiness
+      </p>
+      <p className="mt-1 text-[13.5px] font-ui font-semibold text-text">
+        {budget
+          ? "Budget pricing only until the factors below are closed."
+          : "Ready for fixed-price tender."}
+      </p>
+      {readiness.factors.length > 0 ? (
+        <ul className="mt-2 flex flex-col gap-1">
+          {readiness.factors.map((f) => (
+            <li key={f} className="text-[12px] leading-[1.6] text-text-muted">
+              · {f}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+/* ── the pack's own missing-document register ───────────────────────── */
+
+function NamedMissing({
+  refs,
+  docName,
+}: {
+  refs: NamedMissingRow[];
+  docName: Map<string, string>;
+}) {
+  if (refs.length === 0) return null;
+  return (
+    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
+      <h2 className="text-[13px] font-ui font-semibold text-text">
+        Documents the pack names but does not contain
+      </h2>
+      <p className="mt-0.5 text-[11.5px] text-text-dim">
+        Read from the documents&rsquo; own references. Not proof a document
+        does not exist, only that it is not in this pack.
+      </p>
+      <ul className="mt-2.5 flex flex-col gap-1.5">
+        {refs.map((r) => (
+          <li key={r.ref} className="text-[12px] leading-[1.55] text-text-muted">
+            <span className="text-text">&ldquo;{r.ref}&rdquo;</span>
+            <span className="text-text-dim">
+              {" "}
+              — named on{" "}
+              {r.citations
+                .map((c) => `${docName.get(c.documentId) ?? "a document"} p.${c.page}`)
+                .join(", ")}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ── off-standard captures ──────────────────────────────────────────── */
+
+function Captures({
+  captures,
+  docName,
+  status,
+}: {
+  captures: CaptureRow[];
+  docName: Map<string, string>;
+  status: string;
+}) {
+  const router = useRouter();
+  const [decided, setDecided] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  if (captures.length === 0) return null;
+  const readOnly = status !== "review";
+
+  const decide = async (id: string, verdict: "promote" | "dismiss") => {
+    setBusy(id);
+    try {
+      const r =
+        verdict === "promote"
+          ? await promoteCaptureAction(id)
+          : await dismissCaptureAction(id);
+      if (!r.ok) {
+        toast.error("Could not decide the capture", r.error.message);
+        return;
+      }
+      setDecided((d) => ({ ...d, [id]: verdict === "promote" ? "promoted" : "dismissed" }));
+      if (verdict === "promote") router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-accent/25 bg-surface-1 card-elev px-4.5 py-4">
+      <h2 className="text-[13px] font-ui font-semibold text-text">
+        Work outside the Standard
+      </h2>
+      <p className="mt-0.5 text-[11.5px] text-text-dim">
+        The documents show this work, and no Scope Standard item names it.
+        Promote a capture to add it to the schedule as a project-specific
+        line; every promotion is a vote for the next Standard release.
+      </p>
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {captures.map((c) => {
+          const state = decided[c.id] ?? c.opsStatus;
+          return (
+            <li
+              key={c.id}
+              className="rounded-md border border-border-subtle px-3.5 py-3 flex flex-col gap-1.5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12.5px] font-ui font-semibold text-text">
+                    {c.label}
+                    {c.divisionId ? (
+                      <span className="ml-2 text-[10.5px] font-normal text-text-dim">
+                        {SCOPE_DIVISIONS.find((d) => d.id === c.divisionId)?.label ??
+                          c.divisionId}
+                      </span>
+                    ) : null}
+                  </p>
+                  {c.note ? (
+                    <p className="mt-0.5 text-[12px] leading-[1.55] text-text-muted">
+                      {c.note}
+                    </p>
+                  ) : null}
+                  {c.citations.length > 0 ? (
+                    <p className="mt-0.5 text-[11px] text-text-dim">
+                      {c.citations
+                        .map(
+                          (x) =>
+                            `${docName.get(x.documentId) ?? "document"} p.${x.page}`,
+                        )
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+                {state === "pending" && !readOnly ? (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      disabled={busy === c.id}
+                      onClick={() => decide(c.id, "promote")}
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-accent text-accent-contrast text-[11.5px] font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60"
+                    >
+                      <Plus className="size-3.5" />
+                      Add to schedule
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy === c.id}
+                      onClick={() => decide(c.id, "dismiss")}
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-full border border-border text-[11.5px] text-text-muted hover:text-text transition-colors disabled:opacity-60"
+                    >
+                      <X className="size-3.5" />
+                      Dismiss
+                    </button>
+                  </div>
+                ) : state !== "pending" ? (
+                  <span
+                    className={cn(
+                      "shrink-0 text-[10.5px] font-ui font-semibold uppercase tracking-[0.08em]",
+                      state === "promoted" ? "text-accent-light" : "text-text-dim",
+                    )}
+                  >
+                    {state === "promoted" ? "On the schedule" : "Dismissed"}
+                  </span>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -248,7 +472,11 @@ function Selection({
     const m = new Map<string, ItemRow[]>();
     for (const r of rows) {
       const item = getScopeItem(r.itemId);
-      const div = item?.division ?? "unknown";
+      // Custom lines are "custom.<divisionId>.<slug>" — they file
+      // under their real division beside the Standard's items.
+      const div =
+        item?.division ??
+        (r.itemId.startsWith("custom.") ? r.itemId.split(".")[1] ?? "unknown" : "unknown");
       const arr = m.get(div) ?? [];
       arr.push(r);
       m.set(div, arr);
@@ -445,7 +673,7 @@ function ItemLine({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-ui font-medium text-text">
-            {item?.label ?? row.itemId}
+            {item?.label ?? row.label ?? row.itemId}
             <span className="ml-2 font-mono text-[10px] text-text-faint">
               {row.itemId}
             </span>
@@ -458,6 +686,14 @@ function ItemLine({
                 Low confidence
               </span>
             ) : null}
+            {row.depth === "partial" ? (
+              <span
+                className="ml-2 shrink-0 rounded-full bg-[rgba(201,148,34,0.14)] text-[#8a6414] px-2 py-[2px] text-[9.5px] tracking-[0.08em] uppercase font-ui font-semibold"
+                title={row.remaining ?? "Shown in the documents, but not fully specified"}
+              >
+                In part
+              </span>
+            ) : null}
             {row.confidence != null ? (
               <span className="ml-2 text-[10.5px] tabular-nums text-text-dim">
                 {(row.confidence * 100).toFixed(0)}%
@@ -467,6 +703,11 @@ function ItemLine({
           {row.note ? (
             <p className="mt-0.5 text-[12px] leading-[1.5] text-text-muted">
               {row.note}
+            </p>
+          ) : null}
+          {row.depth === "partial" && row.remaining ? (
+            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414]">
+              Still needed: {row.remaining}
             </p>
           ) : null}
           {row.citations.length > 0 ? (
@@ -628,6 +869,9 @@ function AddItem({
         status: r.value.status,
         citations: [],
         note: r.value.note,
+        label: null,
+        depth: null,
+        remaining: null,
         confidence: null,
         opsStatus: "added",
         opsNote: null,
@@ -741,6 +985,14 @@ function Conflicts({
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[12.5px] leading-[1.55] text-text">
+                  {c.source === "baseline" ? (
+                    <span
+                      className="mr-2 align-middle inline-block rounded-sm bg-[rgba(24,34,44,0.07)] text-text-muted px-1.5 py-[1px] text-[9px] tracking-[0.12em] uppercase font-ui font-semibold"
+                      title="Found by the deterministic date and title-block cross-examination, not model judgement"
+                    >
+                      Baseline
+                    </span>
+                  ) : null}
                   {c.summary}
                 </p>
                 {c.citations.length > 0 ? (

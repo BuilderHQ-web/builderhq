@@ -249,10 +249,26 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
         <div className="min-w-0">
           <p className="text-[12.5px] font-ui font-medium text-text">
             {item.label}
+            {item.depth === "partial" ? (
+              <span
+                className="ml-2 align-middle inline-block rounded-full bg-[rgba(201,148,34,0.14)] text-[#8a6414] px-2 py-[1px] text-[9.5px] tracking-[0.08em] uppercase font-ui font-semibold"
+                title={
+                  item.remaining ??
+                  "Shown in the documents, but not fully specified"
+                }
+              >
+                Documented in part
+              </span>
+            ) : null}
           </p>
           {item.note ? (
             <p className="mt-0.5 text-[12px] leading-[1.55] text-text-muted">
               {item.note}
+            </p>
+          ) : null}
+          {item.depth === "partial" && item.remaining ? (
+            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414]">
+              Still to be settled: {item.remaining}
             </p>
           ) : null}
           {cite ? (

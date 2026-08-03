@@ -48,6 +48,10 @@ import {
   foldResiduals,
   coverageReport,
   dedupeRegister,
+  baselineFindings,
+  namedMissingDocuments,
+  captureHygiene,
+  packReadiness,
 } from "@/modules/scope-engine/analysis";
 import {
   adviseMissingDocuments,
@@ -124,10 +128,14 @@ interface DocRecord {
   kind: string;
   title: string | null;
   revision: string | null;
+  issueDate: string | null;
+  clientName: string | null;
   pageCount: number | null;
   pagesWithContent: number;
   itemsProposed: string[];
   statedFigures: number;
+  offStandard: number;
+  docRefs: number;
   /** Ids the model reached for that the Standard does not define. */
   unknownIds: string[];
 }
@@ -161,14 +169,18 @@ for (const [i, file] of files.entries()) {
     kind: classification.kind ?? "other",
     title: classification.title ?? null,
     revision: classification.revision ?? null,
+    issueDate: classification.issueDate ?? null,
+    clientName: classification.clientName ?? null,
     pageCount: classification.pageCount ?? null,
     pagesWithContent: 0,
     itemsProposed: [],
     statedFigures: 0,
+    offStandard: 0,
+    docRefs: 0,
     unknownIds: [],
   };
   console.error(
-    `      → ${rec.kind}${rec.revision ? ` rev ${rec.revision}` : ""} · ${rec.pageCount ?? "?"}pp · ${rec.title ?? "(untitled)"}`,
+    `      → ${rec.kind}${rec.revision ? ` rev ${rec.revision}` : ""} · ${rec.pageCount ?? "?"}pp${rec.issueDate ? ` · issued ${rec.issueDate}` : ""} · ${rec.title ?? "(untitled)"}`,
   );
   if (!classifyOnly) {
     const { findings, usage: eu, unknownIds } = await extractDocument({
@@ -180,18 +192,31 @@ for (const [i, file] of files.entries()) {
     add("extract", eu);
     const ids = new Set<string>();
     let figures = 0;
+    let offStd = 0;
+    let refs = 0;
     for (const p of findings.pages) {
       for (const id of p.itemIds) ids.add(id);
       figures += p.statedFigures.length;
+      offStd += p.offStandard?.length ?? 0;
+      refs += p.docRefs?.length ?? 0;
     }
     rec.pagesWithContent = findings.pages.filter(
-      (p) => p.itemIds.length > 0 || p.statedFigures.length > 0 || p.note,
+      (p) =>
+        p.itemIds.length > 0 ||
+        p.statedFigures.length > 0 ||
+        (p.offStandard?.length ?? 0) > 0 ||
+        (p.docRefs?.length ?? 0) > 0 ||
+        p.note,
     ).length;
     rec.itemsProposed = [...ids];
     rec.statedFigures = figures;
+    rec.offStandard = offStd;
+    rec.docRefs = refs;
     rec.unknownIds = unknownIds;
     console.error(
       `      → ${rec.pagesWithContent} pages with content · ${ids.size} items · ${figures} figures` +
+        (offStd > 0 ? ` · ${offStd} off-standard` : "") +
+        (refs > 0 ? ` · ${refs} doc refs` : "") +
         (unknownIds.length > 0 ? ` · UNKNOWN: ${unknownIds.join(", ")}` : ""),
     );
     inputs.push({
@@ -238,6 +263,28 @@ const enforced = enforceCitationConsistency(synthesis.items, forSynthesis);
 const conflictsEnforced = enforceConflictIntegrity(
   synthesis.conflicts,
   forSynthesis,
+);
+// The open capture lane, its hygiene, the deterministic baseline
+// check and the pack's own missing-document register — production's
+// exact sequence.
+const hygiene = captureHygiene(synthesis.captures);
+const baseline = baselineFindings(
+  docs.map((d, i) => ({
+    documentId: `doc-${i}`,
+    kind: d.kind,
+    docTitle: d.title,
+    issueDate: d.issueDate,
+    clientName: d.clientName,
+  })),
+);
+const namedMissing = namedMissingDocuments(
+  forSynthesis.map((d) => ({
+    documentId: d.documentId,
+    filename: d.filename,
+    docTitle: docs.find((_, i) => `doc-${i}` === d.documentId)?.title ?? null,
+    kind: d.kind,
+    findings: d.findings,
+  })),
 );
 const residual = residualPool(type, enforced.items);
 console.error(`residual pool: ${residual.length} items to classify...`);
@@ -294,6 +341,17 @@ for (const item of finalItems) {
   byDivision[div]![item.status as "evidenced" | "gap" | "not_expected"] += 1;
 }
 
+const readiness = packReadiness({
+  items: finalItems.map((i) => ({ status: i.status, depth: i.depth })),
+  conflicts: [
+    ...conflictsEnforced.conflicts.map((c) => ({ severity: c.severity })),
+    ...baseline.map((b) => ({ severity: b.severity })),
+  ],
+  namedMissingCount: namedMissing.length,
+  registerKinds: [...new Set(forSynthesis.map((d) => d.kind))],
+  projectType: type,
+});
+
 const result = {
   dir,
   type,
@@ -301,6 +359,11 @@ const result = {
   registerDuplicates: deduped.duplicates.map((d) => d.documentId),
   overview: synthesis.overview,
   conflicts: conflictsEnforced.conflicts,
+  baseline,
+  captures: hygiene.kept,
+  capturesMappedAway: hygiene.mappedAway,
+  namedMissing,
+  readiness,
   guards: {
     citationHardDropped: enforced.hardDropped,
     citationSoftFlagged: enforced.softFlagged,
@@ -325,6 +388,8 @@ const result = {
     status: i.status,
     confidence: i.confidence,
     note: i.note,
+    depth: i.depth,
+    remaining: i.remaining,
     citations: i.citations.map((c) => ({
       doc: forSynthesis.find((d) => d.documentId === c.documentId)?.filename ?? c.documentId,
       page: c.page,
@@ -334,11 +399,17 @@ const result = {
   estimatedCostUsd: Math.round(estimateCostUsd(usage) * 100) / 100,
 };
 
+const partialCount = finalItems.filter((i) => i.depth === "partial").length;
 console.error(
-  `\nevidenced ${result.totals.evidenced} · gaps ${result.totals.gap} · not_expected ${result.totals.not_expected}` +
+  `\nevidenced ${result.totals.evidenced} (${partialCount} in part) · gaps ${result.totals.gap} · not_expected ${result.totals.not_expected}` +
     ` · coverage ${coverage.covered}/${coverage.poolSize}` +
     ` · $${result.estimatedCostUsd}`,
 );
+console.error(
+  `captures: ${hygiene.kept.map((c) => c.label).join(" · ") || "none"}` +
+    (hygiene.mappedAway.length ? ` (mapped away: ${hygiene.mappedAway.length})` : ""),
+);
+console.error(`baseline findings: ${baseline.length} · named missing: ${namedMissing.length} · readiness: ${readiness.verdict}`);
 console.error(`advisories: ${advisories.map((a) => a.key).join(", ") || "none"}`);
 
 const json = JSON.stringify(result, null, 1);

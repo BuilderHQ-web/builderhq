@@ -55,7 +55,9 @@ export interface TenderScheduleCitation {
 }
 
 export interface TenderScheduleItem {
-  /** Scope Standard id, "division.slug". Permanent. */
+  /** Scope Standard id ("division.slug"), or a project-scoped custom
+   *  line ("custom.division.slug") promoted from an off-standard
+   *  capture. Permanent either way. */
   itemId: string;
   divisionId: string;
   divisionLabel: string;
@@ -69,6 +71,12 @@ export interface TenderScheduleItem {
   citations: TenderScheduleCitation[];
   /** The reader's line about what was found or missing, when kept. */
   note: string | null;
+  /** The Partial grade: 'full' = priceable from the documents without
+   *  assumption; 'partial' = shown but incompletely specified;
+   *  null/absent = ungraded (runs before the grade existed). */
+  depth?: "full" | "partial" | null;
+  /** What is still needed, when depth is partial. */
+  remaining?: string | null;
 }
 
 export interface TenderSchedule {
@@ -482,9 +490,34 @@ export function toScheduleItem(row: {
   ownerAmountAud: number | null;
   citations: TenderScheduleCitation[];
   note: string | null;
+  /** Display label for custom lines; ignored for Standard items. */
+  label?: string | null;
+  depth?: "full" | "partial" | null;
+  remaining?: string | null;
 }): TenderScheduleItem | null {
   const def = getScopeItem(row.itemId);
-  if (!def) return null;
+  if (!def) {
+    // A project-scoped custom line, promoted from an off-standard
+    // capture: "custom.<divisionId>.<slug>". Its label rides on the
+    // row because the Standard, by definition, does not name it.
+    const m = /^custom\.([a-z0-9-]+)\.[a-z0-9-]+$/.exec(row.itemId);
+    if (!m || !row.label) return null;
+    const division = getScopeDivision(m[1]!);
+    return {
+      itemId: row.itemId,
+      divisionId: division?.id ?? m[1]!,
+      divisionLabel: division?.label ?? "Project-specific work",
+      label: row.label,
+      plain:
+        "A scope line specific to this project, added from its own documents.",
+      kind: row.kind,
+      ownerAmountAud: row.ownerAmountAud,
+      citations: row.citations,
+      note: row.note,
+      depth: row.depth ?? null,
+      remaining: row.remaining ?? null,
+    };
+  }
   const division = getScopeDivision(def.division);
   return {
     itemId: row.itemId,
@@ -496,6 +529,8 @@ export function toScheduleItem(row: {
     ownerAmountAud: row.ownerAmountAud,
     citations: row.citations,
     note: row.note,
+    depth: row.depth ?? null,
+    remaining: row.remaining ?? null,
   };
 }
 

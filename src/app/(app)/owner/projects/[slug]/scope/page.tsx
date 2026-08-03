@@ -67,6 +67,7 @@ export default async function ScopeReviewPage({
     canResolve,
     mode,
     addenda,
+    namedMissing,
   } = review.value;
   const addendaForClient = addenda.map((a) => ({
     number: a.number,
@@ -176,6 +177,13 @@ export default async function ScopeReviewPage({
             brief={brief}
             briefComplete={briefComplete}
             documentNames={documentNames}
+            namedMissing={(namedMissing ?? []).map((m) => ({
+              ref: m.ref,
+              sources: m.citations.map(
+                (c) =>
+                  `${documentNames[c.documentId] ?? "a document"} p.${c.page}`,
+              ),
+            }))}
             register={register.map((r) => ({
               title: r.docTitle ?? r.filename,
               filename: r.filename,

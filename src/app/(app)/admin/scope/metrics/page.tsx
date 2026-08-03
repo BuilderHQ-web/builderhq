@@ -153,6 +153,45 @@ export default async function ScopeMetricsPage() {
           )}
         </section>
 
+        {/* the Standard's growth votes */}
+        <section className="mt-8">
+          <h2 className="text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+            Vocabulary votes · work outside the Standard
+          </h2>
+          <p className="mt-1 text-[12px] text-text-dim max-w-[70ch]">
+            Off-standard captures grouped across runs. A label that keeps
+            recurring is real Australian residential work the Standard does
+            not yet name; the strongest votes become the next release&rsquo;s
+            items.
+          </p>
+          {report.captureVotes.length === 0 ? (
+            <p className="mt-3 text-[12.5px] text-text-dim">
+              No captures recorded yet.
+            </p>
+          ) : (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {report.captureVotes.map((v) => (
+                <span
+                  key={v.label}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-ui",
+                    v.runs >= 3
+                      ? "border-accent/40 text-[#0a7d73]"
+                      : "border-border-subtle text-text-muted",
+                  )}
+                >
+                  {v.label}
+                  <span className="tabular-nums text-text-dim">
+                    {v.runs} {v.runs === 1 ? "run" : "runs"}
+                    {v.promoted > 0 ? ` · ${v.promoted} promoted` : ""}
+                    {v.dismissed > 0 ? ` · ${v.dismissed} dismissed` : ""}
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* runs */}
         <section className="mt-8">
           <h2 className="text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">

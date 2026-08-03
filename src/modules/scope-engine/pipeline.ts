@@ -54,8 +54,13 @@ export const SYNTHESIS_MODEL = "claude-opus-4-8";
  * makes older stage outputs incomparable. Extraction reuse across
  * runs keys on this: findings from a prior version are re-extracted,
  * never silently mixed.
+ *
+ * v3 — the open capture lane (off-standard work recorded, never
+ * silently dropped), issue dates and client names read at
+ * classification, document references mined per page, and the
+ * Partial depth grade on evidenced items.
  */
-export const SCOPE_PIPELINE_VERSION = 2;
+export const SCOPE_PIPELINE_VERSION = 3;
 
 /** 28 MB — the same ceiling the plan auto-fill extractor uses. */
 export const MAX_PDF_BYTES = 28 * 1024 * 1024;
@@ -238,6 +243,24 @@ const ClassificationSchema = z.object({
     .string()
     .nullish()
     .transform((v) => (v ? v.trim().slice(0, 20) : null)),
+  /** The latest issue date printed in the title block or revision
+   *  table, ISO formatted. The baseline check's raw material. */
+  issueDate: z
+    .string()
+    .nullish()
+    .transform((v) => {
+      if (!v) return null;
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim());
+      if (!m) return null;
+      const year = Number(m[1]);
+      return year >= 1980 && year <= 2035 ? v.trim() : null;
+    }),
+  /** The client or project name in the title block, for the entity
+   *  consistency check. */
+  clientName: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 120) : null)),
   pageCount: z
     .number()
     .int()
@@ -261,9 +284,19 @@ const CLASSIFY_TOOL: Anthropic.Tool = {
         description:
           "The revision printed in the title block (e.g. 'C', 'Rev B', '03'). Null if none is printed.",
       },
+      issueDate: {
+        type: ["string", "null"],
+        description:
+          "The LATEST issue/revision date printed in the title block or revision table, as YYYY-MM-DD. Null when no date is printed. Never guess.",
+      },
+      clientName: {
+        type: ["string", "null"],
+        description:
+          "The client, project or company name the title block carries (e.g. 'Billy Residence', 'Chok & Co Pty Ltd'). Null when none is printed.",
+      },
       pageCount: { type: "integer", description: "Total pages in this PDF." },
     },
-    required: ["kind", "title", "revision", "pageCount"],
+    required: ["kind", "title", "revision", "issueDate", "clientName", "pageCount"],
   },
 };
 
@@ -358,6 +391,27 @@ export const PageFindingSchema = z.object({
     )
     .default([])
     .transform((a) => a.slice(0, 60)),
+  /** Work visibly present that NO Standard item names — the open
+   *  capture lane. The end of the silent drop. */
+  offStandard: z
+    .array(
+      z.object({
+        label: clipped(120),
+        note: z
+          .string()
+          .nullish()
+          .transform((v) => (v ? v.trim().slice(0, 300) : null)),
+      }),
+    )
+    .default([])
+    .transform((a) => a.slice(0, 10)),
+  /** Other documents this page NAMES: sheets in a set, report
+   *  numbers, plans referred to. The pack's own missing-document
+   *  register writes itself from these. */
+  docRefs: z
+    .array(clipped(160))
+    .default([])
+    .transform((a) => a.slice(0, 12)),
   note: z
     .string()
     .nullish()
@@ -401,12 +455,37 @@ const EXTRACT_TOOL: Anthropic.Tool = {
                 required: ["label", "value", "itemId"],
               },
             },
+            offStandard: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  label: {
+                    type: "string",
+                    description: "Short professional name for the work, as a scope of works would print it (e.g. 'Residential lift').",
+                  },
+                  note: {
+                    type: ["string", "null"],
+                    description: "One line: what this page shows of it.",
+                  },
+                },
+                required: ["label", "note"],
+              },
+              description:
+                "Work VISIBLY present on this page that no Scope Standard item covers. Empty array when everything maps. Never use this for variations of existing items.",
+            },
+            docRefs: {
+              type: "array",
+              items: { type: "string" },
+              description:
+                "Other documents this page NAMES: 'Sheet 2 of 5', 'refer plan 11637S-2', a soil report number, a referenced schedule. As printed, one entry each. Empty array when none.",
+            },
             note: {
               type: ["string", "null"],
               description: "One short line only when something on the page needs a human's eye.",
             },
           },
-          required: ["page", "itemIds", "statedFigures", "note"],
+          required: ["page", "itemIds", "statedFigures", "offStandard", "docRefs", "note"],
         },
       },
     },
@@ -419,9 +498,11 @@ const EXTRACT_RULES = `You are reading one document from an Australian residenti
 THE RULES — these are absolute:
 1. STATED FIGURES ONLY. Record numbers exactly as the document prints them (with units). NEVER measure off a drawing, NEVER scale, NEVER compute or estimate a quantity. If a figure is not printed, it does not exist.
 2. EVIDENCE, NOT INFERENCE. An item id belongs on a page only when the page genuinely shows or specifies that work. A kitchen on a floor plan evidences kitchen cabinetry; it does not evidence appliances unless appliances are shown or scheduled.
-3. THE VOCABULARY IS CLOSED. Use only ids from the Scope Standard. If work appears that has no matching item, mention it in the page note instead.
+3. THE VOCABULARY IS CLOSED, BUT NOTHING IS DROPPED. Use only ids from the Scope Standard for itemIds. When the page visibly shows work that NO Standard item covers — a whole piece of work a builder must price, not a variation of an existing item — record it under offStandard with a short professional label and what the page shows. Off-standard capture is for genuinely unnamed work; check the Standard honestly first.
 4. Every page gets an entry, even if empty, so coverage is auditable.
-5. VISIBLE CONTENT ONLY. Consultants build reports on templates from earlier jobs, and a PDF's text layer often carries invisible residue: white or hidden text, content buried under images, another project's details surviving beneath the printed page. Evidence is what the RENDERED page visibly shows a person holding the printout. If the text layer offers content that does not appear on the visible page — a different address, another report number, a second client or title block — treat it as template residue and ignore it entirely: no item, no figure, no note, no citation may rest on it. Text that IS visibly printed on the page is always in scope, even when it looks like an error; errors a reader can see are exactly what notes are for.`;
+5. VISIBLE CONTENT ONLY. Consultants build reports on templates from earlier jobs, and a PDF's text layer often carries invisible residue: white or hidden text, content buried under images, another project's details surviving beneath the printed page. Evidence is what the RENDERED page visibly shows a person holding the printout. If the text layer offers content that does not appear on the visible page — a different address, another report number, a second client or title block — treat it as template residue and ignore it entirely: no item, no figure, no note, no citation may rest on it. Text that IS visibly printed on the page is always in scope, even when it looks like an error; errors a reader can see are exactly what notes are for.
+6. THE PACK NAMES ITS OWN GAPS. When a page refers to another document — a sheet number in a set ('Sheet 2 of 5'), a report number, 'refer to plan X', a schedule or specification it depends on — record the reference under docRefs exactly as printed. These references are how a missing-document register writes itself.
+7. RESPONSIBILITY DISCLAIMERS NEED EYES. When a page assigns work to others or excludes it ('waterproofing by others', 'pool overflow by others', 'NIC'), say so in the page note, quoting the disclaimer. Unassigned responsibility is a risk a human must see.`;
 
 /** One extraction call over one PDF (whole document or a page range). */
 async function extractCall(args: {
@@ -611,8 +692,43 @@ export const SelectionEntrySchema = z.object({
     .string()
     .nullish()
     .transform((v) => (v ? v.trim().slice(0, 600) : null)),
+  /** The Partial grade: full = a builder can price this from the
+   *  documents without assumption; partial = shown but quantities,
+   *  specification or performance incomplete. Evidenced items only. */
+  depth: z
+    .enum(["full", "partial"])
+    .nullish()
+    .transform((v) => v ?? null),
+  /** What is still needed, when depth is partial. */
+  remaining: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 300) : null)),
   confidence: z.number().min(0).max(1).nullish().transform((v) => v ?? 0.5),
 });
+
+/** An off-standard capture: work no Standard item names, proposed by
+ *  the synthesis with citations. The end of the silent drop. */
+export const CaptureSchema = z.object({
+  label: z
+    .string()
+    .min(3)
+    .transform((v) => v.trim().slice(0, 120)),
+  divisionId: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? null),
+  citations: z
+    .array(z.object({ documentId: z.string(), page: z.number().int().min(1) }))
+    .default([])
+    .transform((a) => a.slice(0, 10)),
+  note: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 300) : null)),
+  confidence: z.number().min(0).max(1).nullish().transform((v) => v ?? 0.5),
+});
+export type SynthesisCapture = z.infer<typeof CaptureSchema>;
 /** The published ceiling for overview prose. */
 export const OVERVIEW_MAX_CHARS = 900;
 
@@ -678,6 +794,7 @@ export interface SynthesisResult {
   overview: z.infer<typeof OverviewSchema>;
   items: Array<z.infer<typeof SelectionEntrySchema>>;
   conflicts: Array<z.infer<typeof ConflictSchema>>;
+  captures: SynthesisCapture[];
 }
 
 /** Exposed so the overview's resilience rules can be pinned directly. */
@@ -685,6 +802,7 @@ export const SynthesisSchemaForTest = z.object({
   overview: OverviewSchema,
   items: z.array(SelectionEntrySchema),
   conflicts: z.array(ConflictSchema),
+  captures: z.array(CaptureSchema).default([]),
 });
 
 const SYNTHESIS_TOOL: Anthropic.Tool = {
@@ -741,10 +859,56 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
               description:
                 "One line: for evidenced, what the documents say; for gap, why it is expected; for not_expected, why absence is fine.",
             },
+            depth: {
+              type: ["string", "null"],
+              enum: ["full", "partial", null],
+              description:
+                "Evidenced items only. 'full' = a builder can price this work from the documents without assumption. 'partial' = the work is shown or implied but quantities, specification, performance or interfaces are incomplete. Null otherwise.",
+            },
+            remaining: {
+              type: ["string", "null"],
+              description:
+                "When depth is 'partial': one line naming what is still needed ('shown on plans; no written specification or product schedule').",
+            },
             confidence: { type: "number", description: "0 to 1." },
           },
-          required: ["itemId", "status", "citations", "note", "confidence"],
+          required: ["itemId", "status", "citations", "note", "depth", "remaining", "confidence"],
         },
+      },
+      captures: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: {
+              type: "string",
+              description: "Short professional name for the work, as a scope of works would print it.",
+            },
+            divisionId: {
+              type: ["string", "null"],
+              description: "The Scope Standard division this work belongs to, when clear.",
+            },
+            citations: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  documentId: { type: "string" },
+                  page: { type: "integer" },
+                },
+                required: ["documentId", "page"],
+              },
+            },
+            note: {
+              type: ["string", "null"],
+              description: "One line: what the documents show of this work.",
+            },
+            confidence: { type: "number", description: "0 to 1." },
+          },
+          required: ["label", "divisionId", "citations", "note", "confidence"],
+        },
+        description:
+          "Work the findings' offStandard entries name that NO Scope Standard item covers — one entry per distinct piece of work, citations merged. Empty array when everything maps.",
       },
       conflicts: {
         type: "array",
@@ -769,7 +933,7 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
         },
       },
     },
-    required: ["overview", "items", "conflicts"],
+    required: ["overview", "items", "conflicts", "captures"],
   },
 };
 
@@ -777,7 +941,8 @@ const SYNTHESIS_RULES = `You are synthesising an Australian residential tender p
 
 Your job, in order:
 0. THE OVERVIEW. Describe the project as the documents describe it: two to four sentences a homeowner would be proud to publish (form, storeys, construction, notable systems and finishes), plus the countable facts (dwellings, total bedrooms, total bathrooms, storeys) ONLY where the documents state or clearly show them; omit a count rather than guess it. NEVER include the street address, lot or plan numbers, or any person's name: the overview is published to builders before they unlock the address.
-1. THE SELECTION. For every item id that any document evidences, emit ONE entry with status "evidenced", merged citations (the strongest pages across documents, up to 5) and a one-line note in the documents' own terms. No citation, no claim: an evidenced entry without citations will be discarded.
+1. THE SELECTION. For every item id that any document evidences, emit ONE entry with status "evidenced", merged citations (the strongest pages across documents, up to 5) and a one-line note in the documents' own terms. No citation, no claim: an evidenced entry without citations will be discarded. For every evidenced item also judge DEPTH: "full" when the documents give a builder enough to price the work without assumption; "partial" when the work is shown or implied but quantities, specification, performance or interfaces are incomplete — and say in "remaining", in one line, what is still needed. Documented is not the same as priceable, and the difference is exactly what a builder needs to know.
+1b. THE CAPTURES. The findings' offStandard entries name work no Standard item covers. Merge them into run-level captures: one entry per distinct piece of work, with a short professional label, the division it belongs to, merged citations and a one-line note. First check honestly whether a Standard item DOES cover the work — then it belongs in the selection, not the captures. Never capture variations, brands or attributes of existing items.
 2. THE GAPS YOU CAN GROUND. Emit "gap" for items where the DOCUMENTS THEMSELVES make the silence pointed, with a one-line reason a homeowner could understand ("The drawings show a kitchen but no appliance schedule names the appliances"). Use "not_expected" where absence is clearly legitimate for this project (no pool shown anywhere means pool items are not_expected). Do NOT attempt an exhaustive sweep: every Standard item you do not mention is classified downstream in a dedicated pass, so completeness is not your burden here — precision and grounded notes are. When unsure between gap and not_expected, choose gap.
 3. THE CONFLICTS. Where documents contradict each other (different figures for the same thing, plan vs specification mismatches, stale revisions disagreeing), record the conflict. Conflict discipline:
    - VISIBLE PRINT ONLY. A conflict may rest only on what pages visibly print. Where a finding's note reports hidden or template residue in a document's text layer (another project's details that the printed page does not show), that is document hygiene, not a conflict: never raise it, alone or merged into another conflict. A visible error on a printed page (a wrong address in a report's own introduction, say) IS a conflict; invisible residue never is.
@@ -785,6 +950,7 @@ Your job, in order:
    - BOTH SIDES CITED. Cite the page for EACH side of the disagreement — both documents, or both pages of one document. A conflict without citations is dropped in post-processing.
    - NAME THE RESOLUTION. End every summary with what settles it: which document governs, what the owner must select, or what a consultant must confirm.
    - SEVERITY IS EARNED. "high" is for unresolved contradictions that move price, design or compliance. Anything the pack itself already answers, and anything cosmetic, is at most "attention".
+   - UNASSIGNED RESPONSIBILITY. Where the findings' notes show documents assigning a work package to others or excluding it without naming who carries it ("waterproofing by others", "NIC"), record an attention conflict quoting the disclaimer and naming what must be confirmed: who designs it, who warrants it, whose price carries it.
 
 Discipline: cite only (documentId, page) pairs that exist in the findings you were given. Never invent evidence. When unsure between gap and not_expected, choose gap: a false gap costs a question, a false not_expected hides a hole in the tender.`;
 
@@ -799,7 +965,12 @@ export async function synthesiseRun(args: {
       kind: d.kind,
       revision: d.revision,
       pages: d.findings.pages.filter(
-        (p) => p.itemIds.length > 0 || p.statedFigures.length > 0 || p.note,
+        (p) =>
+          p.itemIds.length > 0 ||
+          p.statedFigures.length > 0 ||
+          (p.offStandard?.length ?? 0) > 0 ||
+          (p.docRefs?.length ?? 0) > 0 ||
+          p.note,
       ),
     })),
   );
@@ -845,10 +1016,11 @@ export async function synthesiseRun(args: {
   // the residual pool and the classifier answers it. Majority-malformed
   // still fails loudly.
   const rawInput = toolUse?.input as
-    | { overview?: unknown; items?: unknown; conflicts?: unknown }
+    | { overview?: unknown; items?: unknown; conflicts?: unknown; captures?: unknown }
     | undefined;
   const itemsSalvage = salvageArray(rawInput?.items, SelectionEntrySchema, 400);
   const conflictsSalvage = salvageArray(rawInput?.conflicts, ConflictSchema, 40);
+  const capturesSalvage = salvageArray(rawInput?.captures, CaptureSchema, 20);
   if (
     salvageIsFailure(itemsSalvage.values.length, itemsSalvage.salvaged) ||
     (itemsSalvage.values.length === 0 && rawInput?.items != null)
@@ -859,10 +1031,11 @@ export async function synthesiseRun(args: {
     );
     throw new Error(`synthesis invalid (stop: ${message.stop_reason})`);
   }
-  const salvagedCount = itemsSalvage.salvaged + conflictsSalvage.salvaged;
+  const salvagedCount =
+    itemsSalvage.salvaged + conflictsSalvage.salvaged + capturesSalvage.salvaged;
   if (salvagedCount > 0) {
     logger.warn(
-      { event: "scope.synthesis.salvaged", items: itemsSalvage.salvaged, conflicts: conflictsSalvage.salvaged },
+      { event: "scope.synthesis.salvaged", items: itemsSalvage.salvaged, conflicts: conflictsSalvage.salvaged, captures: capturesSalvage.salvaged },
       "malformed synthesis elements dropped, synthesis kept",
     );
   }
@@ -890,10 +1063,29 @@ export async function synthesiseRun(args: {
       droppedUncited += 1;
       continue;
     }
-    items.push({ ...entry, citations: entry.status === "evidenced" ? citations : [] });
+    // Depth is an evidenced-only annotation; remaining rides only on
+    // partial. Anything else is stripped so the grade stays honest.
+    const depth = entry.status === "evidenced" ? entry.depth : null;
+    items.push({
+      ...entry,
+      citations: entry.status === "evidenced" ? citations : [],
+      depth,
+      remaining: depth === "partial" ? entry.remaining : null,
+    });
   }
   const conflicts = conflictsSalvage.values.map((c) => ({
     ...c,
+    citations: c.citations.filter((x) => validDocIds.has(x.documentId)),
+  }));
+  // Captures: real documents only, and a division id the Standard
+  // actually defines (or none). Standard-overlap hygiene runs in the
+  // analysis layer where it is unit-testable.
+  const captures = capturesSalvage.values.map((c) => ({
+    ...c,
+    divisionId:
+      c.divisionId && SCOPE_DIVISIONS.some((d) => d.id === c.divisionId)
+        ? c.divisionId
+        : null,
     citations: c.citations.filter((x) => validDocIds.has(x.documentId)),
   }));
   if (droppedUnknown > 0 || droppedUncited > 0) {
@@ -913,7 +1105,7 @@ export async function synthesiseRun(args: {
     overview = null;
   }
   return {
-    synthesis: { overview, items, conflicts },
+    synthesis: { overview, items, conflicts, captures },
     usage: usageOf(message),
     salvaged: salvagedCount,
   };

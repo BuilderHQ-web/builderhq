@@ -31,7 +31,8 @@ export default async function ScopeRunPage({
   const { runId } = await params;
   const r = await getRunForReview(runId);
   if (!r.ok) notFound();
-  const { run, project, register, items, conflicts } = r.value;
+  const { run, project, register, items, conflicts, captures, namedMissing, readiness } =
+    r.value;
 
   const usage = (run.usage ?? {}) as Record<string, unknown>;
   const cost =
@@ -124,6 +125,9 @@ export default async function ScopeRunPage({
               revision: string | null;
             }>,
             note: i.note,
+            label: i.label,
+            depth: (i.depth as "full" | "partial" | null) ?? null,
+            remaining: i.remaining,
             confidence: i.confidence,
             opsStatus: i.opsStatus,
             opsNote: i.opsNote,
@@ -132,6 +136,7 @@ export default async function ScopeRunPage({
             id: c.id,
             summary: c.summary,
             severity: c.severity,
+            source: c.source,
             opsStatus: c.opsStatus,
             citations: (c.citations ?? []) as Array<{
               documentId: string;
@@ -139,6 +144,25 @@ export default async function ScopeRunPage({
               revision: string | null;
             }>,
           }))}
+          captures={captures.map((c) => ({
+            id: c.id,
+            label: c.label,
+            divisionId: c.divisionId,
+            note: c.note,
+            confidence: c.confidence,
+            opsStatus: c.opsStatus,
+            promotedItemId: c.promotedItemId,
+            citations: (c.citations ?? []) as Array<{
+              documentId: string;
+              page: number;
+              revision: string | null;
+            }>,
+          }))}
+          namedMissing={namedMissing.map((m) => ({
+            ref: m.ref,
+            citations: m.citations,
+          }))}
+          readiness={readiness}
         />
       </div>
     </div>
