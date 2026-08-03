@@ -30,6 +30,10 @@ export const userRoleEnum = pgEnum("user_role", [
   "project_owner",
   "builder",
   "admin",
+  // Architects and building designers who run tenders on behalf of
+  // clients. Appended last: pg ALTER TYPE ADD VALUE appends safely,
+  // reordering an existing enum is a table rewrite.
+  "architect",
 ]);
 
 export const userStatusEnum = pgEnum("user_status", [

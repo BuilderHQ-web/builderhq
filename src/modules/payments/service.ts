@@ -84,8 +84,9 @@ export async function createUnlockCheckout(args: {
 
   // Cheap pre-check on the cap. The authoritative check is the row-locked
   // one in unlockProject at capture time — this just avoids sending a
-  // builder to Stripe for a project that's visibly full.
-  if (project.unlockedCount >= UNLOCK_CAP) {
+  // builder to Stripe for a project that's visibly full. Spots are
+  // per-project (2–5) with the platform default as fallback.
+  if (project.unlockedCount >= (project.tenderSpots ?? UNLOCK_CAP)) {
     return fail("rate_limited", "This project is full — all spots are taken.", {
       reason: "project_full",
     });

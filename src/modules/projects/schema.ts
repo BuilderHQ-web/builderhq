@@ -149,6 +149,32 @@ export const existingAgeBandEnum = pgEnum("existing_age_band", [
   "over_75",
 ]);
 
+/**
+ * How the tender round is run.
+ *   open    — discoverable in the marketplace; network builders unlock.
+ *   private — invisible to the marketplace; only builders the runner
+ *             invited (on- or off-platform) can access and quote.
+ *   hybrid  — the runner's invited builders take spots AND the project
+ *             is discoverable so the network can fill the rest.
+ */
+export const tenderModeEnum = pgEnum("tender_mode", [
+  "open",
+  "private",
+  "hybrid",
+]);
+
+/**
+ * Homeowner (client) participation on an architect-run project. The
+ * architect is the project's runner (ownerId); the client joins by
+ * invite, at whatever stage the architect chooses, and sees the full
+ * project from the moment they accept.
+ */
+export const participantStatusEnum = pgEnum("participant_status", [
+  "invited",
+  "joined",
+  "revoked",
+]);
+
 // ── table ────────────────────────────────────────────────────────────────
 
 export const projects = pgTable(
@@ -262,6 +288,17 @@ export const projects = pgTable(
      * ads_funnel drafts get the 30-day prune).
      */
     acquisitionSource: text("acquisition_source"),
+
+    // ── tender round settings ──────────────────────────────────────────
+    /** How this tender round is run. Existing projects stay "open". */
+    tenderMode: tenderModeEnum("tender_mode").notNull().default("open"),
+    /**
+     * Builder spots for this round (2–5, validated at the service
+     * layer). NULL = platform default (UNLOCK_CAP, 3) — the pattern
+     * unlocks/constants.ts documents. The unlock cap transaction reads
+     * this per project.
+     */
+    tenderSpots: integer("tender_spots"),
   },
   (t) => [
     uniqueIndex("projects_slug_idx").on(t.slug),
@@ -274,3 +311,59 @@ export const projects = pgTable(
 
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
+
+// ── project_participants ─────────────────────────────────────────────────
+
+/**
+ * The homeowner's seat at an architect-run project. One row per invited
+ * client. The architect can invite before upload, mid-tender, or after
+ * quotes land; on acceptance the client's userId is attached (existing
+ * account or one created on redemption) and they see the whole file.
+ */
+export const projectParticipants = pgTable(
+  "project_participants",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+
+    /** Who sent the invite (the project runner). */
+    invitedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    /** Invitee identity as entered by the architect. */
+    email: text().notNull(),
+    name: text(),
+
+    /** Set when the invite is redeemed by a signed-in account. */
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+
+    status: participantStatusEnum().notNull().default("invited"),
+
+    /** Single-use redemption token carried by the invite link. */
+    inviteToken: text("invite_token").notNull(),
+
+    invitedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    joinedAt: timestamp({ mode: "date", withTimezone: true }),
+    revokedAt: timestamp({ mode: "date", withTimezone: true }),
+
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("project_participants_token_idx").on(t.inviteToken),
+    index("project_participants_project_idx").on(t.projectId, t.status),
+    index("project_participants_user_idx").on(t.userId),
+  ],
+);
+
+export type ProjectParticipantRow = typeof projectParticipants.$inferSelect;

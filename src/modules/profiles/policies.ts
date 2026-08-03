@@ -10,7 +10,7 @@
 
 interface SessionUser {
   id: string;
-  role: "project_owner" | "builder" | "admin" | null;
+  role: "project_owner" | "builder" | "admin" | "architect" | null;
   status: "pending_verification" | "active" | "suspended" | "banned";
 }
 
