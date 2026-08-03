@@ -2333,7 +2333,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "niche-home-designs",
     kind: "architect",
-    draft: true,
     roleLabel: "Building design practice",
     name: "Niche Home Designs",
     monogram: "NH",
@@ -2362,11 +2361,11 @@ export const PARTNERS: Partner[] = [
     ],
     why: "Niche Home Designs has been designing bespoke Sydney homes since 1994, and the record is hard to argue with: around 1,400 completed projects and eighteen industry awards, among them state wins with the Building Designers Association and the HIA and finalist places at national level. What we value as much as the trophies is that this is still a hands on studio: director Nick Nikolaidis works on each home himself, and the practice has spent three decades learning exactly how to carry a design through a development application and council. For an owner heading to tender, that is the combination that matters, a home designed to an award standard, drawn by people who know how to get it approved and built.",
     about:
-      "Niche Home Designs is a multi award winning building design studio founded in Sydney in 1994 and led by its director, Nick Nikolaidis, an accredited building designer and member of the Building Designers Association of Australia. The studio designs new homes, alterations and additions, multi residential projects and sustainable homes, working for the most part across southern Sydney’s St George area. Its process is deliberately hands on: a site visit and detailed brief, concept sketches, then the development application and council approval, followed by the documentation needed for a construction certificate. Years of working with councils and building authorities, alongside a settled network of industry consultants, sit behind that, and the studio pairs its signature modern look with whatever style a client has in mind.",
+      "Niche Home Designs is a multi award winning building design studio founded in Sydney in 1994 and led by its director, Nick Nikolaidis, an accredited building designer and member of the Building Designers Association of Australia. The studio designs new homes, alterations and additions, multi residential projects and sustainable homes, working for the most part across southern Sydney’s St George and Sutherland Shire areas, and taking projects across the rest of Sydney and New South Wales. Its process is deliberately hands on: a site visit and detailed brief, concept sketches, then the development application and council approval, followed by the documentation needed for a construction certificate. Years of working with councils and building authorities, alongside a settled network of industry consultants, sit behind that, and the studio pairs its signature modern look with whatever style a client has in mind.",
     facts: {
       established: "1994",
       basedIn: "Sydney, NSW",
-      serves: "Sydney",
+      serves: "Sydney and NSW",
       focus: "New homes, additions and multi residential",
     },
     website: "https://nichehomedesigns.com.au/",
