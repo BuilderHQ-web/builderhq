@@ -1810,6 +1810,146 @@ export type BriefPerspective = {
 
 export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
   {
+    slug: "architects-procurement-advisers",
+    tag: "Opinion · Architects and procurement",
+    title: "Home building has a trust vacancy.",
+    titleAccent: "Architects are filling it.",
+    standfirst:
+      "A decade of insolvency and price escalation changed what owners are afraid of. The profession best placed to answer that fear has been beside them all along.",
+    lede: "Australians have learned a hard lesson about building over the past five years. The quality of a home depends on the strength of the appointment behind it. Choosing the builder, and the terms of that engagement, now carries more financial risk than any other decision in a project, and it is the decision most owners still make alone.",
+    author: {
+      name: "Moe Akbulut",
+      role: "Founder, BuilderHQ",
+      schemaType: "Person",
+      jobTitle: "Founder",
+    },
+    dateISO: "2026-08-03",
+    displayDate: "3 August 2026",
+    readingMins: 5,
+    blocks: [
+      { kind: "h2", text: "The decade that broke the handshake" },
+      {
+        kind: "p",
+        text: "For most of living memory, appointing a builder was treated as a formality at the end of design. The market has ended that innocence. Construction has accounted for roughly one in four Australian company insolvencies in recent years, with more than 3,400 building firms entering external administration in a single financial year. The first annual decline in five years arrived only in 2025-26, and from a base nobody should be comfortable with.",
+      },
+      {
+        kind: "p",
+        text: "Behind the numbers sits a simple mechanism. Building costs rose more than 40 per cent between 2020 and 2024, and fixed prices signed in one market had to be delivered in another. When Porter Davis collapsed in 2023 it left around 1,700 homes unfinished, and 560 families then learned their deposits had never been insured at all.",
+      },
+      {
+        kind: "p",
+        text: "The lesson owners took from those years was not that builders are bad. Most are careful operators who carried real cost pain to honour their contracts. The lesson was sharper than that.",
+      },
+      {
+        kind: "quote",
+        text: "The riskiest part of a home build is no longer how it is built. It is who you appoint, and on what terms.",
+      },
+      { kind: "h2", text: "A vacancy nobody was appointed to fill" },
+      {
+        kind: "p",
+        text: "Owners have responded the way markets respond: by shopping for trust. When Equifax and YouGov surveyed Australian property buyers, 90 per cent wanted access to a register of independently rated construction companies, and 63 per cent said they would pay a premium for verified credentials. People are not asking for cheaper. They are asking for accountable.",
+      },
+      {
+        kind: "p",
+        text: "Yet the professionals owners most often meet on the way to a build are not placed to carry that weight. The Governance Institute's 2025 Ethics Index ranked real estate agents last of the ten professions it measures. And a rating, however rigorous, can only vet a counterparty. It cannot run an appointment: assemble the documents, hold every price to the same shape, test what is included and what is quietly not, and stand behind a recommendation.",
+      },
+      {
+        kind: "p",
+        text: "That is a role, not a rating. In Australian home building, the role has been vacant.",
+      },
+      { kind: "h2", text: "The adviser already at the table" },
+      {
+        kind: "p",
+        text: "When owners go looking for someone to steer the appointment, they discover something the market had overlooked. The right professional is usually already on the project. The architect sits on the client's side of the table, knows the documents because they wrote them, and is there before the first price arrives and still there when the invoices do. No other adviser holds that position.",
+      },
+      {
+        kind: "p",
+        text: "So the shift is happening quietly, without anyone announcing it. Clients are simply asking their architects for more. Run the tender for us. Tell us what this allowance means. Sit with us while we compare three numbers that refuse to line up. The profession is not chasing a new market. The market is coming to it.",
+      },
+      {
+        kind: "p",
+        text: "For many practices, none of this is new ground. Tender assessment and contract administration are established architectural services, set out in the profession's own practice notes and run under a national code of tendering, and the same is increasingly true of building designers who offer them.",
+      },
+      {
+        kind: "quote",
+        text: "The practices that have run tenders for their clients for years were not doing extra paperwork. They were early to where the market was heading.",
+      },
+      { kind: "h2", text: "What a procurement adviser actually does" },
+      {
+        kind: "p",
+        text: "Procurement advice sounds abstract until it is written down. In practice it is six concrete pieces of work, each of which retires a risk the owner would otherwise carry alone.",
+      },
+      {
+        kind: "table",
+        head: ["What the adviser does", "The risk it retires"],
+        rows: [
+          {
+            term: "Assembles a complete tender pack",
+            body: "Builders price documents rather than guesses, and scope gaps surface before contract instead of during construction.",
+          },
+          {
+            term: "Invites the right builders",
+            body: "Capability, capacity and licensing are tested before price enters the conversation.",
+          },
+          {
+            term: "Holds every tender to one shape",
+            body: "Offers arrive comparable, and the lowest headline number stops winning attention it has not earned.",
+          },
+          {
+            term: "Interrogates allowances and exclusions",
+            body: "The owner learns how much of a price is firm and how much can still move.",
+          },
+          {
+            term: "Recommends in writing, with reasons",
+            body: "The decision rests on evidence a lender, a lawyer or a family can read.",
+          },
+          {
+            term: "Administers the contract",
+            body: "Someone engaged on the client's side certifies what the money buys, all the way to the keys.",
+          },
+        ],
+      },
+      {
+        kind: "p",
+        text: "None of this is new work. What is new is how many owners are asking for it, because they have seen the cost of its absence.",
+      },
+      { kind: "h2", text: "The role has outgrown its tools" },
+      {
+        kind: "p",
+        text: "There is an honest problem inside the good news. The practices doing this work today run it on email chains, PDF sets and hand-built spreadsheets, comparing submissions that were never designed to line up. The role has outgrown its tools.",
+      },
+      {
+        kind: "p",
+        text: "That is the gap BuilderHQ is building for. We have argued before that Australian construction has standardised everything except procurement, and proposed the BuilderHQ Procurement Standard as an open framework for how tenders are presented and compared. A structured tender, run by a professional on the client's side, is the strongest procurement model residential construction has. The Standard exists so the person running it spends their judgement on the decision, not on the paperwork.",
+      },
+      { kind: "h2", text: "One question before the money moves" },
+      {
+        kind: "p",
+        text: "To architects and designers: clients are asking more of you, and it is the most valuable kind of more. Procurement advice is not an administrative favour tacked onto a design fee. It is risk work of the highest order, and it deserves to be scoped, offered and priced as the professional service it is.",
+      },
+      {
+        kind: "p",
+        text: "To owners: before you ask any builder for a price, ask one question of your own team. Who is running my tender? If the answer is nobody, that is the first gap in your project. Close it before the money moves.",
+      },
+    ],
+    aboutAuthor:
+      "Moe Akbulut is the founder of BuilderHQ, and a residential builder and developer. BuilderHQ is an Australian platform focused on improving how homeowners, architects, designers and builders connect and manage the early procurement process.",
+    keywords: [
+      "architect run tender",
+      "architect administered tender Australia",
+      "who should run a building tender",
+      "procurement adviser residential construction",
+      "architect tender process",
+      "contract administration architect",
+      "comparing builder tenders",
+      "how to appoint a builder Australia",
+      "architect procurement advice",
+      "building designer tender services",
+      "residential construction procurement",
+      "builderhq",
+    ],
+  },
+  {
     slug: "construction-procurement-standard",
     tag: "Opinion · Construction procurement",
     kicker: "A BuilderHQ Perspective",
