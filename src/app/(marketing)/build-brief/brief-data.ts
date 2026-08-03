@@ -1812,16 +1812,16 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
   {
     slug: "architects-procurement-advisers",
     tag: "Opinion · Architects and procurement",
+    kicker: "A BuilderHQ Perspective",
     title: "Home building has a trust vacancy.",
     titleAccent: "Architects are filling it.",
     standfirst:
       "A decade of insolvency and price escalation changed what owners are afraid of. The profession best placed to answer that fear has been beside them all along.",
     lede: "Australians have learned a hard lesson about building over the past five years. The quality of a home depends on the strength of the appointment behind it. Choosing the builder, and the terms of that engagement, now carries more financial risk than any other decision in a project, and it is the decision most owners still make alone.",
     author: {
-      name: "Moe Akbulut",
-      role: "Founder, BuilderHQ",
-      schemaType: "Person",
-      jobTitle: "Founder",
+      name: "The BuilderHQ Editorial Team",
+      role: "Opinion, BuilderHQ",
+      schemaType: "Organization",
     },
     dateISO: "2026-08-03",
     displayDate: "3 August 2026",
@@ -1932,8 +1932,9 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
         text: "To owners: before you ask any builder for a price, ask one question of your own team. Who is running my tender? If the answer is nobody, that is the first gap in your project. Close it before the money moves.",
       },
     ],
+    aboutLabel: "Editorial note",
     aboutAuthor:
-      "Moe Akbulut is the founder of BuilderHQ, and a residential builder and developer. BuilderHQ is an Australian platform focused on improving how homeowners, architects, designers and builders connect and manage the early procurement process.",
+      "BuilderHQ is an Australian platform focused on how homeowners, architects, designers and builders run the early procurement process. It is also developing the BuilderHQ Procurement Standard (BPS) as an open framework for industry consultation. Architects and designers offering tender and contract services, and builders who tender for their work, are invited to register their interest.",
     keywords: [
       "architect run tender",
       "architect administered tender Australia",
