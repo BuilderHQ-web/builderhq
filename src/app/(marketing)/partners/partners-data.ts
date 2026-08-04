@@ -4472,6 +4472,13 @@ export const MARQUEE_LOGOS: PartnerLogo[] = [
     dark: false,
   },
   {
+    slug: "de-lune-construction",
+    name: "de Lune Construction",
+    src: "/partners/de-lune-construction/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
     slug: "summerhill-building-designers",
     name: "Summerhill Building Designers",
     src: "/partners/summerhill-building-designers/logo-float-v2.png",
@@ -4510,6 +4517,13 @@ export const MARQUEE_LOGOS: PartnerLogo[] = [
     slug: "dawes-design",
     name: "Dawes Design",
     src: "/partners/dawes-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "jason-pogorelec",
+    name: "Inovayt",
+    src: "/partners/jason-pogorelec/logo-float-v2.png",
     norm: true,
     dark: false,
   },
