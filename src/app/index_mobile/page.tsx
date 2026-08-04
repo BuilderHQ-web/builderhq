@@ -25,6 +25,7 @@
 import type { Viewport } from "next";
 
 import { LaunchScreen } from "./launch-screen";
+import { MOBILE_LAUNCH_AT } from "./launch-date";
 
 export const metadata = {
   title: "BuilderHQ 2.0 — Coming Soon",
@@ -43,13 +44,5 @@ export const viewport: Viewport = {
 };
 
 export default function IndexMobilePage() {
-  // Launch target — 10 days from "today" (the moment this commit was
-  // authored). Edit this date as launch firms up; the countdown stays
-  // accurate because clients re-evaluate the diff each render.
-  //
-  // Time zone: AEST (UTC+10) so "DAYS" rolls over at midnight AU not
-  // midnight UTC.
-  const launchAt = "2026-06-03T10:00:00+10:00";
-
-  return <LaunchScreen launchAt={launchAt} />;
+  return <LaunchScreen launchAt={MOBILE_LAUNCH_AT} />;
 }
