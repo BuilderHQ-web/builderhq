@@ -3380,7 +3380,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "jason-pogorelec",
     kind: "finance",
-    draft: true,
     roleLabel: "Senior finance broker",
     name: "Jason Pogorelec",
     monogram: "JP",
