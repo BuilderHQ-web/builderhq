@@ -13,6 +13,7 @@
  */
 
 import { LaunchScreen } from "../launch-screen";
+import { MOBILE_LAUNCH_AT } from "../launch-date";
 
 export const metadata = {
   title: "BuilderHQ 2.0 — Coming Soon",
@@ -20,5 +21,5 @@ export const metadata = {
 };
 
 export default function IndexMobileCatchAll() {
-  return <LaunchScreen launchAt="2026-05-21T10:00:00+10:00" />;
+  return <LaunchScreen launchAt={MOBILE_LAUNCH_AT} />;
 }
