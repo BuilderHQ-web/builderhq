@@ -3389,6 +3389,7 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Finance broking for people building homes and portfolios, with strategy that looks past a single settlement.",
     disciplines: ["Construction loans", "Investment lending", "SMSF"],
+    google: { rating: 5.0, reviews: 998 },
     institution: {
       name: "Inovayt",
       role: "Senior Finance Broker",
