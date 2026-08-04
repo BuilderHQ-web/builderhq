@@ -4288,7 +4288,7 @@ export const PARTNERS: Partner[] = [
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "231 reviews, More Than Mortgages" },
       { label: "In finance", value: "15 yrs", sub: "five of them broking" },
-      { label: "On your file", value: "3 people", sub: "broker, partner, processor" },
+      { label: "On your file", value: "3", sub: "broker, partner, processor" },
     ],
     awards: [
       { label: "Regional Broker of the Year", sub: "finalist · Australian Broking Awards 2025" },
