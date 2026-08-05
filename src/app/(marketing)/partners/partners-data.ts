@@ -4278,12 +4278,12 @@ export const PARTNERS: Partner[] = [
     suburb: "Deakin",
     state: "ACT",
     tagline:
-      "A Canberra broker who spent a decade inside a bank teaching new lenders how to assess a loan, and now reads a file the way the assessor will.",
+      "With 15 years in finance and a decade inside banking, Tristina knows how to structure and present a loan application to give it the strongest possible chance.",
     disciplines: ["Construction loans", "First home buyers", "Complex and self-employed"],
     google: { rating: 5, reviews: 231 },
-    why: "Tristina came to broking the long way, and that is why we rate her. She spent a decade inside Bendigo Bank, not simply lending but coaching and accrediting the new managers and lenders coming through, which means she has spent years teaching other people how a bank reads a file. Fifteen years in finance sit behind that, and what it produces is a broker who can take circumstances that do not fit neatly on a payslip and set out a path through them rather than a list of obstacles. She is also the person the practice trusts with its hardest conversations, clients arranging finance in the middle of a separation.\n\nShe does not work alone either, which counts for more on a construction loan than on almost any other. Two colleagues carry each file with her, one of them owning the lender relationship from the moment an application is submitted, so when a progress payment needs chasing in month eight there is a named person whose job that is. The practice behind her was founded by Deanna Ezzy, one of the most decorated brokers in the ACT, who has since stepped back from writing loans to mentor the brokers coming up behind her. Tristina is the clearest evidence of what that produces.",
+    why: "Tristina is the kind of broker people want beside them when their situation is not straightforward. Her years at Bendigo Bank were not only spent lending: she coached and accredited the managers and lenders coming through, so she has taught other people how a lending decision gets made. That is an unusual vantage point for a broker to work from.\n\nIt shows most in the awkward cases: self-employed income, construction lending, a property decision made in the middle of a separation. She explains the process clearly, handles difficult conversations with discretion and looks for a practical way forward rather than listing the obstacles. The practice behind her was founded by Deanna Ezzy, one of the most decorated brokers in the ACT, who now mentors its brokers rather than writing loans herself.",
     about:
-      "Tristina Haines is a mortgage broker at More Than Mortgages in Deakin, three years with the practice and five in broking. She started out as a bank teller and loans officer, spent a period with the Australian Sports Foundation, and holds a Diploma in Finance and Broking. Working alongside her are Selena Yiap, a client partner of six years who is qualified in mortgage broking herself, and Gay Hernandez, a processor, between them handling paperwork and bank requests through to settlement. A file is never waiting on one person’s inbox.",
+      "Tristina Haines is a mortgage broker with More Than Mortgages in Deakin, three years with the practice. She started out as a bank teller and loans officer before moving into lending, and holds a Diploma in Finance and Broking. She was named among Specialist Finance Group’s Top 20 High Achievers across the ACT and New South Wales for 2025 and 2026. An experienced client partner and processing team work alongside her, carrying each application from preparation through to settlement.",
     aboutLabel: "About Tristina",
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "231 reviews, More Than Mortgages" },
@@ -4293,8 +4293,8 @@ export const PARTNERS: Partner[] = [
     awards: [
       { label: "Regional Broker of the Year", sub: "finalist · Australian Broking Awards 2025" },
       {
-        label: "Innovator of the Year, Regional Broker",
-        sub: "finalist · Broker Innovation Awards 2025",
+        label: "Innovator of the Year",
+        sub: "finalist · Broker Innovation Awards, 2025 and 2026",
       },
     ],
     accolade: {
