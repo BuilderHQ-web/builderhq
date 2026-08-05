@@ -450,7 +450,8 @@ describe("baselineFindings", () => {
     kind: string,
     issueDate: string | null,
     clientName: string | null = null,
-  ) => ({ documentId, kind, docTitle: `${kind} set`, issueDate, clientName });
+    revision: string | null = null,
+  ) => ({ documentId, kind, docTitle: `${kind} set`, revision, issueDate, clientName });
 
   test("the Wheeler pattern: stale reports, ancient survey, permit question", () => {
     const findings = baselineFindings([
@@ -684,10 +685,125 @@ describe("namedMissingDocuments — noise filters", () => {
         "REFER TO DETAIL PAGE S27",
         "E1 / S02",
         "SHEET S14",
+        // Carries an S-code whose discipline the pack supplies, so it
+        // resolves rather than flagging — the "Sheet 2/5" count is
+        // what signals the incomplete set, without false alarms.
         "1341-S2 BASEMENT DRAINAGE PLAN",
       ]),
     ]);
-    // The named sheet with a real title survives; bare codes do not.
-    expect(out.map((r) => r.ref)).toEqual(["1341-S2 BASEMENT DRAINAGE PLAN"]);
+    expect(out).toEqual([]);
+  });
+
+  test("the Wheeler screenshot: every internal ref dies, the real ones live", () => {
+    // The exact reference list Aryan flagged, run against the exact
+    // register: structural, architectural, civil, soil supplied.
+    const out = namedMissingDocuments([
+      doc("s", "1341 Struct Rev_C4.pdf", "structural", [
+        "REFER CIVIL PLANS FOR SPECIFICATION",
+        "REFER ON SHEET S16",
+        "REFER ON SHEET S18",
+        "REFER TO SUSPENDED SLAB PLAN ON S31",
+        "REFER FOOTING PLAN ON S10",
+        "REFER POOL PLAN ON S08",
+        "REFER TO S29 FOR SPECIFICATIONS",
+        "REFER TO FIRST FLOOR FRAMING PLAN ON SHEET NO. S10",
+        "REFER TO PILING PLAN",
+        "G.04 / S22",
+        "E1 / S02",
+        "010477",
+      ]),
+      doc("c", "1341 Civil Rev_C1.pdf", "civil", [
+        "Sheet 2/5",
+        "LANDSCAPING PLANS",
+        "MORELAND CITY COUNCIL STANDARDS AND REQUIREMENTS",
+      ]),
+      doc("a", "34 Wheeler Arch.pdf", "architectural", [
+        "Refer to Architectural Working Drawings",
+        "STRUCTURAL ENGINEERING DRAWINGS",
+      ]),
+      doc("g", "geo.pdf", "soil", ["Soil Test Melbourne"]),
+    ]);
+    expect(out.map((r) => r.ref).sort()).toEqual([
+      "010477",
+      "LANDSCAPING PLANS",
+      "Sheet 2/5",
+      "Soil Test Melbourne",
+    ]);
+  });
+
+  test("a sheet code for a discipline the pack lacks still surfaces", () => {
+    const out = namedMissingDocuments([
+      doc("a", "arch.pdf", "architectural", ["L01 LANDSCAPE PLAN"]),
+    ]);
+    expect(out.map((r) => r.ref)).toEqual(["L01 LANDSCAPE PLAN"]);
+  });
+});
+
+/* ── baseline: preliminary issues and duplicate sets ────────────────── */
+
+describe("baselineFindings — preliminary and duplicate sets", () => {
+  const doc = (
+    documentId: string,
+    kind: string,
+    docTitle: string,
+    revision: string | null = null,
+    issueDate: string | null = null,
+  ) => ({ documentId, kind, docTitle, revision, issueDate, clientName: null });
+
+  test("a P-revision civil sheet is a high finding", () => {
+    const findings = baselineFindings([
+      doc("c", "civil", "Drainage plan layout", "P2"),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]!.severity).toBe("high");
+    expect(findings[0]!.summary).toContain("revision P2");
+  });
+
+  test("a design development title is caught even with a clean revision", () => {
+    const findings = baselineFindings([
+      doc("a", "architectural", "REV C-E DESIGN DEVELOPMENT WHEELER ST", "E"),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]!.severity).toBe("high");
+  });
+
+  test("two architectural sets raise the which-governs question", () => {
+    const findings = baselineFindings([
+      doc("a1", "architectural", "Stamped construction set", "1", "2023-06-01"),
+      doc("a2", "architectural", "Design set", "C", "2022-11-01"),
+    ]);
+    const dup = findings.find((f) => f.summary.includes("architectural sets"));
+    expect(dup).toBeTruthy();
+    expect(dup!.citations).toHaveLength(2);
+  });
+
+  test("a construction-issue pack raises neither", () => {
+    const findings = baselineFindings([
+      doc("a", "architectural", "Working drawings", "4", "2026-03-01"),
+      doc("s", "structural", "Structural set", "C4", "2026-04-01"),
+    ]);
+    expect(findings).toEqual([]);
+  });
+});
+
+/* ── capture hygiene matches whole words, never substrings ──────────── */
+
+describe("captureHygiene — word boundaries", () => {
+  const capture = (label: string) => ({
+    label,
+    divisionId: null,
+    citations: [],
+    note: null,
+    confidence: 0.8,
+  });
+
+  test("'spa' the alias cannot eat 'spatial' the word", () => {
+    const r = captureHygiene([capture("Spatial audio cinema package")]);
+    expect(r.kept).toHaveLength(1);
+  });
+
+  test("whole-word alias phrases still map away", () => {
+    const r = captureHygiene([capture("Concrete lap pool and spa")]);
+    expect(r.kept).toEqual([]);
   });
 });

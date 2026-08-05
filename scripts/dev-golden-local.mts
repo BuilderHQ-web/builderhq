@@ -273,6 +273,7 @@ const baseline = baselineFindings(
     documentId: `doc-${i}`,
     kind: d.kind,
     docTitle: d.title,
+    revision: d.revision,
     issueDate: d.issueDate,
     clientName: d.clientName,
   })),

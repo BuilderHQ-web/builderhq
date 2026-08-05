@@ -236,29 +236,43 @@ function NamedMissing({
   docName: Map<string, string>;
 }) {
   if (refs.length === 0) return null;
+  // Named documents and report numbers first; vaguer references after.
+  const sorted = [...refs].sort(
+    (a, b) => Number(/\d/.test(b.ref)) - Number(/\d/.test(a.ref)),
+  );
+  const VISIBLE = 10;
+  const head = sorted.slice(0, VISIBLE);
+  const rest = sorted.slice(VISIBLE);
+  const line = (r: NamedMissingRow) => (
+    <li key={r.ref} className="text-[12px] leading-[1.55] text-text-muted">
+      <span className="text-text">&ldquo;{r.ref}&rdquo;</span>
+      <span className="text-text-dim">
+        {" "}
+        — named on{" "}
+        {r.citations
+          .map((c) => `${docName.get(c.documentId) ?? "a document"} p.${c.page}`)
+          .join(", ")}
+      </span>
+    </li>
+  );
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
       <h2 className="text-[13px] font-ui font-semibold text-text">
-        Documents the pack names but does not contain
+        Documents the pack names but does not contain · {refs.length}
       </h2>
       <p className="mt-0.5 text-[11.5px] text-text-dim">
         Read from the documents&rsquo; own references. Not proof a document
         does not exist, only that it is not in this pack.
       </p>
-      <ul className="mt-2.5 flex flex-col gap-1.5">
-        {refs.map((r) => (
-          <li key={r.ref} className="text-[12px] leading-[1.55] text-text-muted">
-            <span className="text-text">&ldquo;{r.ref}&rdquo;</span>
-            <span className="text-text-dim">
-              {" "}
-              — named on{" "}
-              {r.citations
-                .map((c) => `${docName.get(c.documentId) ?? "a document"} p.${c.page}`)
-                .join(", ")}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <ul className="mt-2.5 flex flex-col gap-1.5">{head.map(line)}</ul>
+      {rest.length > 0 ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[11.5px] text-text-dim hover:text-text transition-colors">
+            {rest.length} more
+          </summary>
+          <ul className="mt-1.5 flex flex-col gap-1.5">{rest.map(line)}</ul>
+        </details>
+      ) : null}
     </section>
   );
 }
@@ -385,6 +399,17 @@ function Captures({
 
 /* ── the register ───────────────────────────────────────────────────── */
 
+/** A document whose revision or title marks it as anything other than
+ *  a construction issue. */
+function isPrelimDoc(d: RegisterRow): boolean {
+  const PRELIM =
+    /\b(preliminary|prelim|design development|not for construction|for information only)\b/i;
+  return Boolean(
+    (d.revision && (/^p\d+$/i.test(d.revision.trim()) || PRELIM.test(d.revision))) ||
+      (d.docTitle && PRELIM.test(d.docTitle)),
+  );
+}
+
 function RegisterTable({
   register,
   docName,
@@ -420,8 +445,25 @@ function RegisterTable({
               </span>
             ) : null}
             {d.revision ? (
-              <span className="shrink-0 px-2 py-0.5 rounded-sm border border-border-accent/40 bg-[rgba(0,212,200,0.06)] text-[10px] uppercase tracking-[0.1em] text-[#0a7d73]">
+              <span
+                className={cn(
+                  "shrink-0 px-2 py-0.5 rounded-sm border text-[10px] uppercase tracking-[0.1em]",
+                  isPrelimDoc(d)
+                    ? "border-[rgba(201,148,34,0.4)] bg-[rgba(201,148,34,0.08)] text-[#8a6414]"
+                    : "border-border-accent/40 bg-[rgba(0,212,200,0.06)] text-[#0a7d73]",
+                )}
+                title={
+                  isPrelimDoc(d)
+                    ? "Marked preliminary: not a construction issue"
+                    : undefined
+                }
+              >
                 Rev {d.revision}
+              </span>
+            ) : null}
+            {isPrelimDoc(d) ? (
+              <span className="shrink-0 px-2 py-0.5 rounded-sm bg-[rgba(201,148,34,0.14)] text-[#8a6414] text-[9.5px] uppercase tracking-[0.1em] font-ui font-semibold">
+                Preliminary
               </span>
             ) : null}
             <span

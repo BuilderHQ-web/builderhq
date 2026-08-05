@@ -233,6 +233,7 @@ export interface BaselineDocument {
   documentId: string;
   kind: string | null;
   docTitle: string | null;
+  revision: string | null;
   /** ISO date string from the title block, or null. */
   issueDate: string | null;
   clientName: string | null;
@@ -341,6 +342,47 @@ export function baselineFindings(docs: BaselineDocument[]): BaselineFinding[] {
       severity: "attention",
     });
   }
+
+  // Documents marked preliminary, design development or not-for-
+  // construction: pricing off them is the quiet start of every
+  // variation dispute. High severity on the drawing sets a builder
+  // prices from; attention elsewhere.
+  const PRELIM =
+    /\b(preliminary|prelim|design development|not for construction|for information only)\b/i;
+  const DRAWING_KINDS = new Set(["architectural", "structural", "civil"]);
+  for (const d of docs) {
+    const marked =
+      (d.revision && (/^p\d+$/i.test(d.revision.trim()) || PRELIM.test(d.revision))) ||
+      (d.docTitle && PRELIM.test(d.docTitle));
+    if (marked) {
+      const mark = d.revision && /^p\d+$/i.test(d.revision.trim())
+        ? `revision ${d.revision.trim()}`
+        : "preliminary";
+      findings.push({
+        summary: `${displayName(d)} is marked ${mark} (${
+          d.docTitle && PRELIM.test(d.docTitle) ? "its title says so" : "per its revision"
+        }). It is not a construction issue: builders pricing from it carry the risk of change, and a final issued set should replace it before a fixed price is signed.`,
+        citations: [{ documentId: d.documentId, page: 1 }],
+        severity: DRAWING_KINDS.has(d.kind ?? "") ? "high" : "attention",
+      });
+    }
+  }
+
+  // Two sets of the same drawing kind: which one governs? A design
+  // development set beside the stamped construction set is exactly
+  // how a builder prices the wrong drawings.
+  for (const kind of DRAWING_KINDS) {
+    const ofKind = docs.filter((d) => d.kind === kind);
+    if (ofKind.length > 1) {
+      findings.push({
+        summary: `The pack carries ${ofKind.length} ${kind} sets: ${ofKind
+          .map((d) => `${displayName(d)}${d.issueDate ? ` (${d.issueDate})` : ""}`)
+          .join(" and ")}. Builders must be told which set governs, and superseded issues should leave the pack before tender.`,
+        citations: ofKind.map((d) => ({ documentId: d.documentId, page: 1 })),
+        severity: "attention",
+      });
+    }
+  }
   return findings;
 }
 
@@ -363,29 +405,143 @@ const KIND_REF_SYNONYMS: Record<string, string[]> = {
     "architectural plans",
     "architectural drawings",
     "architectural working drawings",
+    "architectural set",
     "working drawings",
+    "architect drawings",
   ],
   structural: [
     "structural engineering drawings",
     "structural drawings",
     "structural plans",
+    "structural set",
     "engineering drawings",
+    "engineers drawings",
+    "structural details",
   ],
-  civil: ["civil drawings", "civil design", "drainage plans", "drainage layout"],
-  soil: ["soil report", "geotechnical report", "soil test"],
-  energy: ["energy report", "energy assessment", "nathers certificate"],
-  survey: ["feature survey", "land survey", "survey plan"],
-  specification: ["specification", "specifications"],
+  civil: [
+    "civil drawings",
+    "civil plans",
+    "civil design",
+    "civil engineering drawings",
+    "drainage plans",
+    "drainage layout",
+    "drainage design",
+    "stormwater plans",
+    "stormwater design",
+  ],
+  soil: ["soil report", "geotechnical report", "soil test report", "geotech report"],
+  energy: ["energy report", "energy assessment", "nathers certificate", "energy rating"],
+  survey: ["feature survey", "land survey", "survey plan", "site survey"],
+  specification: ["specification", "specifications", "spec"],
 };
 
-/** An internal sheet cross-reference ("E1 / S02", "refer to detail
- *  page S27") points inside the set, not at another document. */
-function isSheetCrossRef(ref: string): boolean {
+/**
+ * CONTENT a supplied kind carries inside it. "Refer to piling plan"
+ * from a pack whose structural set contains the piling plan is the
+ * set talking about itself, not a missing document.
+ */
+const KIND_CONTENT_NOUNS: Record<string, string[]> = {
+  architectural: [
+    "floor plan",
+    "floor plans",
+    "site plan",
+    "roof plan",
+    "elevation",
+    "elevations",
+    "section",
+    "sections",
+    "window schedule",
+    "door schedule",
+    "finishes schedule",
+    "reflected ceiling plan",
+    "internal elevations",
+    "joinery details",
+    "details",
+  ],
+  structural: [
+    "piling plan",
+    "footing plan",
+    "framing plan",
+    "slab plan",
+    "bracing plan",
+    "roof framing plan",
+    "retaining wall details",
+    "beam schedule",
+    "column schedule",
+    "steel details",
+    "connection details",
+  ],
+  civil: [
+    "drainage plan",
+    "stormwater plan",
+    "crossover details",
+    "driveway profile",
+  ],
+  soil: ["borehole logs", "bore logs", "site classification"],
+  survey: ["contours", "feature levels"],
+};
+
+/** Discipline prefixes AU sheet numbers carry: S10 is a structural
+ *  sheet, A101 architectural, C2 civil, L01 landscape... */
+const SHEET_PREFIX_KIND: Record<string, string> = {
+  a: "architectural",
+  s: "structural",
+  c: "civil",
+  l: "landscape",
+  h: "hydraulic",
+  e: "electrical",
+  m: "mechanical",
+};
+
+/** Every discipline sheet-code a reference carries ("S31", "1341-S2",
+ *  "SHEET NO. S10", "E1 / S02" → e1, s02). */
+function sheetCodesIn(ref: string): string[] {
+  const codes: string[] = [];
+  const re = /\b([a-z]{1,2})[.\-]?(\d{1,3})[a-z]?\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(ref)) !== null) {
+    const prefix = m[1]!.toLowerCase();
+    if (SHEET_PREFIX_KIND[prefix]) codes.push(prefix);
+  }
+  return codes;
+}
+
+/** Public standards and authority requirements are references, not
+ *  missing documents: nobody appends the NCC to a tender pack. */
+function isAuthorityStandardRef(ref: string): boolean {
+  return /\b(council|australian standard|as\s?\d{3,4}|as\/nzs|ncc|bca|building code|standards and requirements)\b/i.test(
+    ref,
+  );
+}
+
+/** An internal sheet cross-reference points inside a drawing set the
+ *  pack already contains. "REFER TO SUSPENDED SLAB PLAN ON S31" from
+ *  a pack with the structural set is navigation, not absence. */
+function isInternalCrossRef(ref: string, suppliedKinds: Set<string>): boolean {
   const key = normalise(ref);
-  if (/^(referto)?(detail)?(page|sheet)?[a-z]{1,3}\d{1,3}[a-z]?$/.test(key)) return true;
-  // "E1 / S02" shapes: two short sheet codes.
-  if (/^[a-z]{1,3}\d{1,3}[a-z]?[a-z]{1,3}\d{1,3}[a-z]?$/.test(key) && key.length <= 10) {
+  // Bare marker shapes: "E1 / S02", "G.04 / S22", "S27".
+  if (/^[a-z]{1,3}\d{1,3}[a-z]?([a-z]{1,3}\d{1,3}[a-z]?)?$/.test(key) && key.length <= 12) {
     return true;
+  }
+  // Any contained discipline code whose discipline the pack supplies.
+  const codes = sheetCodesIn(ref);
+  if (codes.some((prefix) => suppliedKinds.has(SHEET_PREFIX_KIND[prefix]!))) {
+    return true;
+  }
+  // "Refer/see/as per ..." phrases naming content a supplied kind
+  // carries ("refer to piling plan", "see elevations").
+  if (/\b(refer|see|as per|shown on)\b/i.test(ref)) {
+    const lower = ref.toLowerCase();
+    for (const kind of suppliedKinds) {
+      for (const noun of KIND_CONTENT_NOUNS[kind] ?? []) {
+        if (lower.includes(noun)) return true;
+      }
+    }
+    // "refer ... sheet/page/detail/drawing <anything>" with no
+    // resolvable target is still set navigation, never a document.
+    if (/\b(sheet|page|dwg|detail|drawing)\b\s*(no\.?)?\s*[a-z]{0,2}\d/i.test(ref)) {
+      return true;
+    }
   }
   return false;
 }
@@ -413,7 +569,9 @@ export function namedMissingDocuments(
       .map(normalise)
       .filter((k) => k.length >= 6),
   );
+  const suppliedKinds = new Set<string>();
   for (const d of documents) {
+    if (d.kind) suppliedKinds.add(d.kind);
     if (d.kind && KIND_REF_SYNONYMS[d.kind]) {
       suppliedKeys.push(...KIND_REF_SYNONYMS[d.kind]!.map(normalise));
     }
@@ -427,7 +585,9 @@ export function namedMissingDocuments(
         const key = normalise(ref);
         if (key.length < 4) continue;
         // The set talking to itself is not a missing document.
-        if (isSheetCrossRef(ref)) continue;
+        if (isInternalCrossRef(ref, suppliedKinds)) continue;
+        // Public standards are references, not missing documents.
+        if (isAuthorityStandardRef(ref)) continue;
         // Self-references and references to supplied documents resolve.
         if (suppliedKeys.some((s) => s.includes(key) || key.includes(s))) continue;
         const existing = byRef.get(key);
@@ -461,22 +621,32 @@ export interface CaptureHygiene {
   mappedAway: Array<{ label: string; matchedItemId: string }>;
 }
 
+/** Lowercased, punctuation collapsed to single spaces, padded — so
+ *  phrase containment means WHOLE WORDS, never substrings. "spa"
+ *  matches "pool and spa", never "spatial". */
+const paddedWords = (s: string) =>
+  ` ${s.toLowerCase().replace(/[^a-z0-9]+/gi, " ").trim()} `;
+
 /**
  * A capture is only a capture if the Standard genuinely lacks the
- * work. Labels that match an existing item's label or alias are
- * mapped away here, in code, so the capture lane cannot become a
- * duplicate vocabulary.
+ * work. Labels containing an existing item's label or alias as a
+ * whole-word phrase are mapped away here, in code, so the capture
+ * lane cannot become a duplicate vocabulary.
  */
 export function captureHygiene(captures: SynthesisCapture[]): CaptureHygiene {
   const kept: SynthesisCapture[] = [];
   const mappedAway: CaptureHygiene["mappedAway"] = [];
   for (const c of captures) {
-    const key = normalise(c.label);
-    if (key.length < 3) continue;
+    const label = paddedWords(c.label);
+    if (label.trim().length < 3) continue;
     const match = SCOPE_ITEMS.find((i) => {
-      const candidates = [i.label, ...(i.aliases ?? [])].map(normalise);
+      const candidates = [i.label, ...(i.aliases ?? [])].map(paddedWords);
+      // Whole-word containment makes short aliases safe: " spa " can
+      // match "pool and spa" but never "spatial".
       return candidates.some(
-        (a) => a.length >= 4 && (a.includes(key) || key.includes(a)),
+        (a) =>
+          (a.trim().length >= 3 && label.includes(a)) ||
+          (label.trim().length >= 6 && a.includes(label)),
       );
     });
     if (match) mappedAway.push({ label: c.label, matchedItemId: match.id });

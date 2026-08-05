@@ -582,6 +582,7 @@ export async function processRunTick(
         documentId: d.row.documentId,
         kind: d.row.kind,
         docTitle: d.row.docTitle,
+        revision: d.row.revision,
         issueDate: d.row.issueDate,
         clientName: d.row.clientName,
       })),
@@ -611,6 +612,13 @@ export async function processRunTick(
         ?.meta;
       return n + (meta?.salvaged ?? 0);
     }, 0);
+    // The capture funnel's top: how much off-standard work extraction
+    // saw, so a quiet capture list can be told apart from a quiet
+    // extraction.
+    const offStandardSeen = docRows.reduce((n, d) => {
+      const pages = (d.row.findings as DocumentFindings | null)?.pages ?? [];
+      return n + pages.reduce((m, p) => m + (p.offStandard?.length ?? 0), 0);
+    }, 0);
     const analysis = {
       ...seededAnalysis,
       citationHardDropped: enforced.hardDropped,
@@ -622,6 +630,7 @@ export async function processRunTick(
       residualClassified: residualVerdicts.size,
       residualDefaulted: residual.length - residualVerdicts.size,
       registerDeduped: deduped.duplicates.length,
+      offStandardSeen,
       capturesProposed: hygiene.kept.length,
       capturesMappedAway: hygiene.mappedAway.length,
       baselineFindings: baseline.length,
