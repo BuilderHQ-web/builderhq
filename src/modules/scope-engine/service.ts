@@ -690,7 +690,11 @@ export async function processRunTick(
             page: x.page,
             revision: revisionByDoc.get(x.documentId) ?? null,
           })),
-          note: c.note,
+          note: c.nearestItemId
+            ? `${c.note ? `${c.note} · ` : ""}Nearest Standard item: ${
+                getScopeItem(c.nearestItemId)?.label ?? c.nearestItemId
+              }`
+            : c.note,
           confidence: c.confidence,
         })),
       );

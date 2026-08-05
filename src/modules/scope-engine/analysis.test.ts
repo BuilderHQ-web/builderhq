@@ -800,10 +800,112 @@ describe("captureHygiene — word boundaries", () => {
   test("'spa' the alias cannot eat 'spatial' the word", () => {
     const r = captureHygiene([capture("Spatial audio cinema package")]);
     expect(r.kept).toHaveLength(1);
+    expect(r.kept[0]!.nearestItemId).toBeUndefined();
   });
 
-  test("whole-word alias phrases still map away", () => {
-    const r = captureHygiene([capture("Concrete lap pool and spa")]);
+  test("a multi-word alias phrase still maps away", () => {
+    const r = captureHygiene([capture("Fibreglass pool installation")]);
     expect(r.kept).toEqual([]);
+    expect(r.mappedAway[0]!.matchedItemId).toBe("landscaping.pool");
+  });
+
+  test("a single word brushing a long label annotates, never drops", () => {
+    // "island" must not eat an outdoor kitchen: the capture survives
+    // carrying the nearest Standard item as a reviewer's hint.
+    const r = captureHygiene([
+      capture("Outdoor kitchen island and alfresco furniture"),
+    ]);
+    expect(r.mappedAway).toEqual([]);
+    expect(r.kept).toHaveLength(1);
+    expect(r.kept[0]!.nearestItemId).toBeTruthy();
+  });
+});
+
+describe("namedMissingDocuments — index pages and bare markers", () => {
+  const doc = (
+    documentId: string,
+    filename: string,
+    kind: string,
+    pages: string[][],
+  ) => ({
+    documentId,
+    filename,
+    docTitle: null,
+    kind,
+    findings: {
+      pages: pages.map((refs, i) => ({
+        page: i + 1,
+        itemIds: [],
+        statedFigures: [],
+        offStandard: [],
+        docRefs: refs,
+        note: null,
+      })),
+    } as never,
+  });
+
+  test("a drawing set's own sheet index never flags its own sheets", () => {
+    const out = namedMissingDocuments([
+      doc("dd", "design-development.pdf", "other", [
+        [
+          "MB01 MOOD BOARD & MATERIALS",
+          "FP01 SURFACE & FINISHES PLAN",
+          "LP01 LANDSCAPE PLAN - BASEMENT FLOOR",
+          "LP02 LANDSCAPE PLAN - GROUND FLOOR",
+          "SE01 SECTIONS SHEET 1 OF 3",
+          "PP01 PLANTING PALETTE",
+          "Planning Permit MPS/2021/813",
+        ],
+      ]),
+    ]);
+    // Code-led index rows die; the genuinely external reference lives.
+    expect(out.map((r) => r.ref)).toEqual(["Planning Permit MPS/2021/813"]);
+  });
+
+  test("digit-led bare markers die like letter-led ones", () => {
+    const out = namedMissingDocuments([
+      doc("s", "struct.pdf", "structural", [["02 SE01", "09 SE03"]]),
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  test("a lone code-led ref off an index page still flags", () => {
+    const out = namedMissingDocuments([
+      doc("a", "arch.pdf", "architectural", [["L01 LANDSCAPE PLAN"]]),
+    ]);
+    expect(out.map((r) => r.ref)).toEqual(["L01 LANDSCAPE PLAN"]);
+  });
+
+  test("guides, practice notes and job-number restatements stay out", () => {
+    const out = namedMissingDocuments([
+      doc("g", "geo.pdf", "soil", [
+        [
+          "Cement and Concrete Association Note TN 61",
+          "Foundation & Footings Society Practice Note 5",
+          "Guide to home owners on foundation maintenance, BTF 18 (CSIRO)",
+          "Report - 21 Pages",
+          "JOB NUMBER: 01876",
+          "PROJECT NO.: 01876",
+        ],
+      ]),
+    ]);
+    expect(out.map((r) => r.ref)).toEqual(["JOB NUMBER: 01876"]);
+  });
+
+  test("abbreviated supplied-kind references resolve", () => {
+    const out = namedMissingDocuments([
+      doc("s", "struct.pdf", "structural", [
+        [
+          "Refer to Arch's drawing",
+          "Eng. Drawings",
+          "Roof Plan",
+          "Geotechnical Engineer's Report",
+          "External Finishes Schedule",
+        ],
+      ]),
+      doc("a", "arch.pdf", "architectural", [[]]),
+      doc("g", "geo.pdf", "soil", [[]]),
+    ]);
+    expect(out.map((r) => r.ref)).toEqual(["External Finishes Schedule"]);
   });
 });

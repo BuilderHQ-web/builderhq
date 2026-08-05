@@ -408,6 +408,17 @@ const KIND_REF_SYNONYMS: Record<string, string[]> = {
     "architectural set",
     "working drawings",
     "architect drawings",
+    "architects drawings",
+    "archs drawings",
+    "archs drawing",
+    "arch drawings",
+    "arch drawing",
+    "architect drawing",
+    "roof plan",
+    "roof plan notes",
+    "window schedule",
+    "windows schedule",
+    "architectural windows schedule",
   ],
   structural: [
     "structural engineering drawings",
@@ -417,6 +428,13 @@ const KIND_REF_SYNONYMS: Record<string, string[]> = {
     "engineering drawings",
     "engineers drawings",
     "structural details",
+    "eng drawings",
+    "engineers design",
+    "engineers details",
+    "engineers design details",
+    "engineering design",
+    "structure engineer drawings",
+    "structural engineer drawings",
   ],
   civil: [
     "civil drawings",
@@ -429,8 +447,23 @@ const KIND_REF_SYNONYMS: Record<string, string[]> = {
     "stormwater plans",
     "stormwater design",
   ],
-  soil: ["soil report", "geotechnical report", "soil test report", "geotech report"],
-  energy: ["energy report", "energy assessment", "nathers certificate", "energy rating"],
+  soil: [
+    "soil report",
+    "geotechnical report",
+    "soil test report",
+    "geotech report",
+    "geotechnical engineers report",
+    "geotech engineers report",
+  ],
+  energy: [
+    "energy report",
+    "energy assessment",
+    "nathers certificate",
+    "energy rating",
+    "first rate report",
+    "firstrate report",
+    "first rate",
+  ],
   survey: ["feature survey", "land survey", "survey plan", "site survey"],
   specification: ["specification", "specifications", "spec"],
 };
@@ -452,7 +485,6 @@ const KIND_CONTENT_NOUNS: Record<string, string[]> = {
     "sections",
     "window schedule",
     "door schedule",
-    "finishes schedule",
     "reflected ceiling plan",
     "internal elevations",
     "joinery details",
@@ -466,6 +498,12 @@ const KIND_CONTENT_NOUNS: Record<string, string[]> = {
     "bracing plan",
     "roof framing plan",
     "retaining wall details",
+    "retaining wall table",
+    "retaining wall schedule",
+    "blockwork retaining wall table",
+    "swimming pool plan",
+    "pool plan",
+    "lintel table",
     "beam schedule",
     "column schedule",
     "steel details",
@@ -506,12 +544,28 @@ function sheetCodesIn(ref: string): string[] {
   return codes;
 }
 
-/** Public standards and authority requirements are references, not
- *  missing documents: nobody appends the NCC to a tender pack. */
+/** Public standards, planning-scheme overlays, industry guides and
+ *  code figures are references, not missing documents: nobody appends
+ *  the NCC or a CSIRO guide to a tender pack. */
 function isAuthorityStandardRef(ref: string): boolean {
-  return /\b(council|australian standard|as\s?\d{3,4}|as\/nzs|ncc|bca|building code|standards and requirements)\b/i.test(
+  return /\b(council|australian standard|as\s?\d{3,4}|as\/nzs|ncc|bca|building code|standards and requirements|practice note|technical note|tn\s?\d+|btf\s?\d+|csiro|planning scheme|overlay|journal|handbook|guide to|vicmap|figure\s?\d)/i.test(
     ref,
   );
+}
+
+/** A document describing itself ("Report - 21 Pages") or a bare
+ *  job-number restatement is not a reference to anything absent. */
+function isSelfDescriptiveRef(ref: string): boolean {
+  return /^report\s*[-–—]?\s*\d+\s*pages?$/i.test(ref.trim());
+}
+
+/** "JOB NUMBER: 01876" and "PROJECT NO.: 01876" are the same
+ *  reference; key such shapes by the number so they merge. */
+function refMergeKey(ref: string): string | null {
+  const m = /^(?:job|project|report)\s*(?:no|number|ref)?\.?\s*[:#]?\s*([a-z]?\d{4,}[a-z]?)$/i.exec(
+    ref.trim(),
+  );
+  return m ? `num-${m[1]!.toLowerCase()}` : null;
 }
 
 /** An internal sheet cross-reference points inside a drawing set the
@@ -519,8 +573,11 @@ function isAuthorityStandardRef(ref: string): boolean {
  *  a pack with the structural set is navigation, not absence. */
 function isInternalCrossRef(ref: string, suppliedKinds: Set<string>): boolean {
   const key = normalise(ref);
-  // Bare marker shapes: "E1 / S02", "G.04 / S22", "S27".
-  if (/^[a-z]{1,3}\d{1,3}[a-z]?([a-z]{1,3}\d{1,3}[a-z]?)?$/.test(key) && key.length <= 12) {
+  // Bare marker shapes: "E1 / S02", "G.04 / S22", "S27", "02 SE01".
+  if (
+    /^\d{0,3}[a-z]{1,3}\d{1,3}[a-z]?([a-z]{1,3}\d{1,3}[a-z]?)?$/.test(key) &&
+    key.length <= 12
+  ) {
     return true;
   }
   // Any contained discipline code whose discipline the pack supplies.
@@ -575,11 +632,37 @@ export function namedMissingDocuments(
     if (d.kind && KIND_REF_SYNONYMS[d.kind]) {
       suppliedKeys.push(...KIND_REF_SYNONYMS[d.kind]!.map(normalise));
     }
+    // Multi-word content nouns resolve prefix-free too: "Roof Plan"
+    // named beside a supplied architectural set is that set's page,
+    // not a missing document. Single words stay out — "details" would
+    // swallow everything.
+    if (d.kind && KIND_CONTENT_NOUNS[d.kind]) {
+      suppliedKeys.push(
+        ...KIND_CONTENT_NOUNS[d.kind]!.filter((n) => n.includes(" ")).map(normalise),
+      );
+    }
   }
+  // A drawing set's own index page lists its own sheets: many
+  // code-led references from one page of one document. Those sheets
+  // are INSIDE the pack — the index proves it — so its code-led rows
+  // never surface as missing.
+  const indexPages = new Set<string>();
+  const codeLed = (r: string) => /^[a-z]{1,3}\d{1,3}[a-z]?\b/i.test(r.trim());
+  for (const d of documents) {
+    for (const p of d.findings.pages) {
+      const refs = p.docRefs ?? [];
+      if (refs.length >= 6 && refs.filter(codeLed).length / refs.length >= 0.7) {
+        indexPages.add(`${d.documentId}#${p.page}`);
+      }
+    }
+  }
+
   const byRef = new Map<string, NamedMissingRef>();
   for (const d of documents) {
     for (const p of d.findings.pages) {
+      const onIndexPage = indexPages.has(`${d.documentId}#${p.page}`);
       for (const raw of p.docRefs ?? []) {
+        if (onIndexPage && codeLed(raw.trim())) continue;
         const ref = raw.trim();
         if (ref.length < 4) continue;
         const key = normalise(ref);
@@ -588,9 +671,11 @@ export function namedMissingDocuments(
         if (isInternalCrossRef(ref, suppliedKinds)) continue;
         // Public standards are references, not missing documents.
         if (isAuthorityStandardRef(ref)) continue;
+        if (isSelfDescriptiveRef(ref)) continue;
         // Self-references and references to supplied documents resolve.
         if (suppliedKeys.some((s) => s.includes(key) || key.includes(s))) continue;
-        const existing = byRef.get(key);
+        const mapKey = refMergeKey(ref) ?? key;
+        const existing = byRef.get(mapKey);
         if (existing) {
           if (
             existing.citations.length < 5 &&
@@ -601,7 +686,7 @@ export function namedMissingDocuments(
             existing.citations.push({ documentId: d.documentId, page: p.page });
           }
         } else if (byRef.size < 30) {
-          byRef.set(key, {
+          byRef.set(mapKey, {
             ref,
             citations: [{ documentId: d.documentId, page: p.page }],
           });
@@ -615,7 +700,14 @@ export function namedMissingDocuments(
 /* ── capture hygiene ────────────────────────────────────────────────── */
 
 export interface CaptureHygiene {
-  kept: SynthesisCapture[];
+  kept: Array<
+    SynthesisCapture & {
+      /** Set when a SINGLE-WORD alias brushed the label — too weak to
+       *  map away ("island" must not eat an outdoor kitchen), strong
+       *  enough to hint the reviewer at the nearest Standard item. */
+      nearestItemId?: string;
+    }
+  >;
   /** Captures whose label already lives in the Standard — evidence the
    *  model should have mapped, not proposed. Logged, never stored. */
   mappedAway: Array<{ label: string; matchedItemId: string }>;
@@ -634,22 +726,38 @@ const paddedWords = (s: string) =>
  * lane cannot become a duplicate vocabulary.
  */
 export function captureHygiene(captures: SynthesisCapture[]): CaptureHygiene {
-  const kept: SynthesisCapture[] = [];
+  const kept: CaptureHygiene["kept"] = [];
   const mappedAway: CaptureHygiene["mappedAway"] = [];
   for (const c of captures) {
     const label = paddedWords(c.label);
     if (label.trim().length < 3) continue;
-    const match = SCOPE_ITEMS.find((i) => {
-      const candidates = [i.label, ...(i.aliases ?? [])].map(paddedWords);
-      // Whole-word containment makes short aliases safe: " spa " can
-      // match "pool and spa" but never "spatial".
-      return candidates.some(
-        (a) =>
-          (a.trim().length >= 3 && label.includes(a)) ||
-          (label.trim().length >= 6 && a.includes(label)),
-      );
-    });
-    if (match) mappedAway.push({ label: c.label, matchedItemId: match.id });
+    // Whole-word containment makes short aliases safe: " spa " can
+    // match "pool and spa" but never "spatial". A MULTI-WORD phrase
+    // match (or full-label containment) maps the capture away; a
+    // single word brushing a long label ("island" inside "outdoor
+    // kitchen island") only annotates — the reviewer decides.
+    let strong: string | null = null;
+    let weak: string | null = null;
+    for (const i of SCOPE_ITEMS) {
+      for (const raw of [i.label, ...(i.aliases ?? [])]) {
+        const a = paddedWords(raw);
+        const t = a.trim();
+        if (t.length < 3) continue;
+        if (label.includes(a)) {
+          if (t.includes(" ") || t.length >= label.trim().length - 2) {
+            strong = i.id;
+          } else {
+            weak = weak ?? i.id;
+          }
+        } else if (label.trim().length >= 6 && a.includes(label)) {
+          strong = i.id;
+        }
+        if (strong) break;
+      }
+      if (strong) break;
+    }
+    if (strong) mappedAway.push({ label: c.label, matchedItemId: strong });
+    else if (weak) kept.push({ ...c, nearestItemId: weak });
     else kept.push(c);
   }
   return { kept, mappedAway };
