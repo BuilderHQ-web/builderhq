@@ -4,6 +4,7 @@ import { auth } from "@/modules/auth";
 import {
   getBySlugForOwner,
   checkPublishability,
+  briefMemoryForRunner,
 } from "@/modules/projects";
 import { listForProject } from "@/modules/documents";
 import { ProjectWizard } from "./wizard";
@@ -45,12 +46,25 @@ export default async function EditProjectPage({
   const sp = (await searchParams) ?? {};
   const flagMissingRequired = sp.welcome === "finish";
 
+  // The brief: architects answer about their client and their role;
+  // homeowners answer about themselves. Stable answers carry over
+  // from the runner's last project so they are never asked twice.
+  const briefAudience =
+    session.user.role === "architect" ? ("architect" as const) : ("owner" as const);
+  const rememberedBrief = await briefMemoryForRunner(
+    session.user.id!,
+    project.id,
+    briefAudience,
+  );
+
   return (
     <ProjectWizard
       initialProject={project}
       initialDocs={docs}
       initialReport={report.ok ? report.value : null}
       flagMissingRequired={flagMissingRequired}
+      briefAudience={briefAudience}
+      rememberedBrief={rememberedBrief}
     />
   );
 }

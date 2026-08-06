@@ -18,6 +18,8 @@ import {
   isOwnerAskableGap,
   adviseMissingDocuments,
   buildAllowancePackages,
+  coveredSelectionPackages,
+  selectionPackageKey,
   splitPackageAmount,
   OWNER_DOC_ITEMS,
 } from "./advice";
@@ -334,5 +336,137 @@ describe("splitPackageAmount", () => {
     expect(splitPackageAmount("landscaping", ["landscaping.turf"], 7_500)).toEqual([
       { itemId: "landscaping.turf", amountAud: 7_500 },
     ]);
+  });
+});
+
+describe("coveredSelectionPackages", () => {
+  const doc = (title: string, kind: string | null = null) => ({ kind, title });
+
+  test("an appliance or FFE schedule covers appliances and bathroom fittings", () => {
+    for (const title of [
+      "Appliance Schedule",
+      "FFE Schedule",
+      "Fixtures and Fittings Schedule",
+      "Fixtures & Equipment",
+    ]) {
+      const covered = coveredSelectionPackages([doc(title)]);
+      expect(covered.has("appliances"), title).toBe(true);
+      expect(covered.has("plumbing-fixtures"), title).toBe(true);
+      expect(covered.has("landscaping"), title).toBe(false);
+    }
+  });
+
+  test("landscape documentation covers the garden and external features", () => {
+    const covered = coveredSelectionPackages([doc("Landscape Plans Rev B")]);
+    expect(covered.has("landscaping")).toBe(true);
+    expect(covered.has("external-features")).toBe(true);
+    expect(covered.has("joinery")).toBe(false);
+  });
+
+  // Only documentation a builder prices from suppresses the sum: a
+  // concept, sketch or quote never does.
+  test("landscape concepts and quotes cover nothing", () => {
+    for (const title of [
+      "Landscape Concept",
+      "Preliminary Landscape Sketch",
+      "Landscaping Quote",
+    ]) {
+      expect(coveredSelectionPackages([doc(title)]).size, title).toBe(0);
+    }
+  });
+
+  test("separator-named files match like their spaced twins", () => {
+    expect(
+      coveredSelectionPackages([doc("", null)].map(() => ({ kind: null, title: null, filename: "finishes-schedule.pdf" }))).has("flooring"),
+    ).toBe(true);
+    expect(
+      coveredSelectionPackages([{ kind: null, title: "Internal_Elevations_RevB", filename: null }]).has("joinery"),
+    ).toBe(true);
+  });
+
+  test("internal elevations or a joinery package cover joinery", () => {
+    expect(coveredSelectionPackages([doc("Internal Elevations")]).has("joinery")).toBe(true);
+    expect(coveredSelectionPackages([doc("Joinery Package")]).has("joinery")).toBe(true);
+    expect(coveredSelectionPackages([doc("Cabinetry Details")]).has("joinery")).toBe(true);
+  });
+
+  test("a finishes schedule covers flooring, tiling and feature finishes", () => {
+    const covered = coveredSelectionPackages([doc("Finishes Schedule")]);
+    expect(covered.has("flooring")).toBe(true);
+    expect(covered.has("tiling")).toBe(true);
+    expect(covered.has("feature-finishes")).toBe(true);
+  });
+
+  // The rule the mapping exists to respect: a title has to actually
+  // name the covering document. Ordinary sets never suppress anything.
+  test("an ordinary drawing set covers nothing", () => {
+    const covered = coveredSelectionPackages([
+      doc("Architectural Plans", "architectural"),
+      doc("Structural Engineering", "structural"),
+      doc("Geotechnical Report", "soil"),
+      doc("Project Specifications", "specification"),
+    ]);
+    expect(covered.size).toBe(0);
+  });
+
+  test("empty and untitled registers cover nothing", () => {
+    expect(coveredSelectionPackages([]).size).toBe(0);
+    expect(coveredSelectionPackages([doc("")]).size).toBe(0);
+  });
+
+  // Surfaces standardise display titles ("Project Specifications"),
+  // so the covering nature often lives only in the filename.
+  test("the filename carries the signal when the title is standardised", () => {
+    const covered = coveredSelectionPackages([
+      {
+        kind: "specification",
+        title: "Project Specifications",
+        filename: "FFE Schedule Pascoe Vale S Rev F.pdf",
+      },
+    ]);
+    expect(covered.has("appliances")).toBe(true);
+    expect(covered.has("plumbing-fixtures")).toBe(true);
+  });
+});
+
+describe("covered packages are consumed, never asked", () => {
+  test("a covered package emits no card", () => {
+    const packs = buildAllowancePackages(
+      ["appliances.oven", "landscaping.turf"],
+      "1m_1_5m",
+      null,
+      new Set(["appliances"]),
+    );
+    expect(packs.map((p) => p.key)).toEqual(["landscaping"]);
+  });
+
+  // The leak this API shape prevents: a suppressed package's items
+  // falling through to the feature-finishes catch-all and being asked
+  // about anyway under a different name.
+  test("a covered package's items never leak into the catch-all", () => {
+    const packs = buildAllowancePackages(
+      ["appliances.oven", "appliances.dishwasher"],
+      "1m_1_5m",
+      null,
+      new Set(["appliances"]),
+    );
+    expect(packs).toEqual([]);
+  });
+
+  test("no covered set keeps today's behaviour", () => {
+    const before = buildAllowancePackages(["appliances.oven"], "1m_1_5m");
+    expect(before.map((p) => p.key)).toEqual(["appliances"]);
+  });
+});
+
+describe("selectionPackageKey", () => {
+  test("maps a cosmetic gap to its package, first match wins", () => {
+    expect(selectionPackageKey("appliances.oven")).toBe("appliances");
+    expect(selectionPackageKey("landscaping.turf")).toBe("landscaping");
+    expect(selectionPackageKey("joinery.benchtops")).toBe("joinery");
+  });
+  test("non-cosmetic lines have no package", () => {
+    expect(selectionPackageKey("earthworks.rock-excavation")).toBeNull();
+    expect(selectionPackageKey("approvals.soil-geotech")).toBeNull();
   });
 });

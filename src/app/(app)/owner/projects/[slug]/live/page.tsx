@@ -82,7 +82,7 @@ export default async function RoundLivePage({
               { k: "Lines they price", v: String(pack.tenderable) },
               { k: "Divisions", v: String(pack.divisions.length) },
               {
-                k: "Your allowances",
+                k: "Your provisional sums",
                 v:
                   pack.ownerAllowances > 0
                     ? String(pack.ownerAllowances)
@@ -120,7 +120,7 @@ export default async function RoundLivePage({
               {
                 icon: <FileSignature className="size-4" />,
                 title: "They answer your schedule, line by line",
-                body: "Each builder states what their price does with every line: included as documented, carried as an allowance at a stated figure, excluded, or not applicable. No two quotes can drift apart on scope again.",
+                body: "Each builder states what their price does with every line: included as documented, carried as a provisional sum at a stated figure, excluded, or not applicable. No two quotes can drift apart on scope again.",
               },
               {
                 icon: <MessageSquare className="size-4" />,

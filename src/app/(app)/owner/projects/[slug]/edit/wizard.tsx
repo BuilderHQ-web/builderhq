@@ -36,6 +36,8 @@ import {
 } from "lucide-react";
 
 import { TenderRoundStep } from "./tender-round-step";
+import { OwnerBriefForm } from "../scope/owner-brief-form";
+import type { BriefAudience } from "@/modules/projects/owner-brief";
 
 import {
   updateProjectAction,
@@ -264,6 +266,8 @@ export function ProjectWizard({
   initialDocs,
   initialReport,
   flagMissingRequired = false,
+  briefAudience = "owner",
+  rememberedBrief,
 }: {
   initialProject: Project;
   initialDocs: Document[];
@@ -275,6 +279,10 @@ export function ProjectWizard({
    * to add. The flag clears as soon as they edit any field.
    */
   flagMissingRequired?: boolean;
+  /** Which brief the runner answers — homeowner or architect. */
+  briefAudience?: BriefAudience;
+  /** Stable answers carried from the runner's last project. */
+  rememberedBrief?: Record<string, string>;
 }) {
   const router = useRouter();
   // The wizard mounts at /owner/... and /architect/... — every internal
@@ -524,11 +532,34 @@ export function ProjectWizard({
               onRefresh={refreshDocs}
             />
           ) : (
-            <TenderRoundStep
-              project={project}
-              setField={setField}
-              disabled={isPublished}
-            />
+            <>
+              <TenderRoundStep
+                project={project}
+                setField={setField}
+                disabled={isPublished}
+              />
+              {/* The brief — answered here, at upload time, so the
+                  pack arrives with the builder-facing facts already
+                  in hand. Stable answers carry from the last project.
+                  Locked once the round is live: builders price
+                  against these answers, so mid-round changes go
+                  through the pack, not the wizard. onSaved keeps the
+                  wizard's own copy current so revisiting this step
+                  never shows (or saves) a stale brief. */}
+              <div className="mt-8 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-5">
+                <OwnerBriefForm
+                  projectId={project.id}
+                  projectType={project.type}
+                  audience={briefAudience}
+                  initial={(project.ownerBrief ?? {}) as Record<string, string>}
+                  remembered={rememberedBrief}
+                  readOnly={isPublished}
+                  onSaved={(answers) =>
+                    setProject((p) => ({ ...p, ownerBrief: answers }))
+                  }
+                />
+              </div>
+            </>
           )}
 
           {/* Step navigation */}

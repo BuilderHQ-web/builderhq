@@ -5,14 +5,15 @@
  * roll-up carries the base: projects split, tender stats, decisions
  * waiting with validity urgency, pulses. This module layers on what
  * makes a PRACTICE desk different from a homeowner's — many
- * concurrent rounds, a client seat on each, invitations in flight,
- * and the practice-wide record:
+ * concurrent rounds and a working book of builders:
  *
- *   - seats        — every client seat across every round (the
- *                    dashboard's client column + unclaimed-seat queue)
- *   - pendingInvites — builder invitations not yet answered on live
- *                    rounds (the "chase it" queue rows)
- *   - record       — the audit feed across the whole practice
+ *   - seats         — every client seat across every round (the
+ *                     project rows' client column)
+ *   - builders      — every builder the practice has ever invited,
+ *                     deduped: the "My builders" book
+ *   - packPhase     — for drafts in preparation, whether the pack is
+ *                     still being read or is ready for review; drives
+ *                     the projects list's honest sort order
  *
  * Pure read; one call from the page.
  */
@@ -21,30 +22,48 @@ import "server-only";
 
 import {
   listParticipantsForRunner,
-  listEventsForRunner,
+  type Project,
 } from "@/modules/projects";
-import { listBuilderInvitesForRunner } from "@/modules/tenders";
+import { listInvitedBuildersForRunner } from "@/modules/tenders";
+import { packPhaseForProjects } from "@/modules/scope-engine";
 
 import { getOwnerDashboardData, type OwnerDashboardData } from "./owner";
 
 export type ArchitectDashboardData = OwnerDashboardData & {
   /** Every client seat across the practice's rounds. */
   seats: Awaited<ReturnType<typeof listParticipantsForRunner>>;
-  /** Pending builder invitations on live rounds. */
-  pendingInvites: Awaited<ReturnType<typeof listBuilderInvitesForRunner>>;
-  /** The practice-wide record — newest audit events with project context. */
-  record: Awaited<ReturnType<typeof listEventsForRunner>>;
+  /** Every builder the practice has ever invited, deduped. */
+  builders: Awaited<ReturnType<typeof listInvitedBuildersForRunner>>;
+  /** Draft projects in preparation: reading vs ready for review. */
+  packPhase: Record<string, "analysing" | "review">;
 };
+
+/**
+ * For drafts submitted into preparation, the latest run decides the
+ * phase: approved means the pack sits on the runner's review; any
+ * earlier status (or no run yet) means the documents are being read.
+ */
+async function packPhaseForDrafts(
+  list: Project[],
+): Promise<Record<string, "analysing" | "review">> {
+  const draftIds = list
+    .filter((p) => p.status === "draft" && p.publishRequestedAt)
+    .map((p) => p.id);
+  if (draftIds.length === 0) return {};
+  const out = await packPhaseForProjects(draftIds);
+  for (const id of draftIds) out[id] ??= "analysing";
+  return out;
+}
 
 export async function getArchitectDashboardData(
   userId: string,
   firstName: string,
 ): Promise<ArchitectDashboardData> {
-  const [base, seats, pendingInvites, record] = await Promise.all([
+  const [base, seats, builders] = await Promise.all([
     getOwnerDashboardData(userId, firstName),
     listParticipantsForRunner(userId),
-    listBuilderInvitesForRunner(userId),
-    listEventsForRunner(userId, 12),
+    listInvitedBuildersForRunner(userId),
   ]);
-  return { ...base, seats, pendingInvites, record };
+  const packPhase = await packPhaseForDrafts(base.projects.list);
+  return { ...base, seats, builders, packPhase };
 }

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * The living heart of the waiting page: the analysis, visibly under
- * way. A slow orbiting arc over concentric rings (pure CSS, no
- * timers), and beneath it the four stages of the read with the
- * current one breathing. The page re-checks quietly in the
- * background, so the stage advances on its own and the moment ops
- * approval lands the whole page becomes the pack.
+ * The waiting page's quiet heart: three stages of the read, the
+ * current one breathing, over a single slow arc (pure CSS, no
+ * timers). The page re-checks in the background, so the stage
+ * advances on its own; once the machine is done a small line says a
+ * final check is under way, and the moment the pack is ready the
+ * whole page becomes it.
  */
 
 import { useEffect } from "react";
@@ -18,27 +18,23 @@ import { cn } from "@/lib/utils";
 const STAGES = [
   {
     key: "opening",
-    title: "Opening the set",
-    detail: "Each document is identified from its own title block.",
+    title: "Opening your documents",
+    detail: "Each file is identified.",
   },
   {
     key: "reading",
     title: "Reading every page",
-    detail: "Stated figures only, each tied to its page and revision.",
+    detail: "Only what your documents say.",
   },
   {
     key: "assembling",
-    title: "Assembling the pack",
-    detail: "Every finding cross-checked against the Scope Standard.",
-  },
-  {
-    key: "human",
-    title: "Checked by a person",
-    detail: "Our review team confirms every line before you see it.",
+    title: "Building your scope of works",
+    detail: "Every finding checked and organised.",
   },
 ] as const;
 
-/** run.status → how far along the four stages the read is. */
+/** run.status → progress through the three stages. Returns 3 when
+ *  the machine is done and the final check is under way. */
 function stageIndex(runStatus: string): number {
   switch (runStatus) {
     case "pending":
@@ -49,7 +45,6 @@ function stageIndex(runStatus: string): number {
     case "synthesising":
       return 2;
     default:
-      // review and beyond: the machine is done, a person is reading.
       return 3;
   }
 }
@@ -67,36 +62,24 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
 
   return (
     <div>
-      {/* the mark: rings + a slow orbiting arc + a breathing core */}
-      <div className="relative mx-auto size-28" aria-hidden>
+      {/* the mark: one thin ring, one slow arc, a soft centre */}
+      <div className="relative mx-auto size-20" aria-hidden>
         <span className="absolute inset-0 rounded-full border border-border-subtle" />
-        <span className="absolute inset-[14px] rounded-full border border-border-subtle/70" />
-        <span className="absolute inset-[28px] rounded-full border border-border-subtle/40" />
         <span
-          className="absolute inset-0 rounded-full animate-[spin_7s_linear_infinite]"
+          className="absolute inset-0 rounded-full animate-[spin_9s_linear_infinite]"
           style={{
             background:
-              "conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(0,166,155,0.85) 340deg, transparent 360deg)",
-            WebkitMask:
-              "radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px))",
-            mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px))",
-          }}
-        />
-        <span
-          className="absolute inset-[14px] rounded-full animate-[spin_11s_linear_infinite_reverse]"
-          style={{
-            background:
-              "conic-gradient(from 180deg, transparent 0deg, transparent 310deg, rgba(0,166,155,0.4) 350deg, transparent 360deg)",
+              "conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(0,166,155,0.7) 350deg, transparent 360deg)",
             WebkitMask:
               "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
             mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
           }}
         />
-        <span className="absolute inset-0 m-auto size-2.5 rounded-full bg-accent animate-pulse shadow-[0_0_14px_rgba(0,212,200,0.55)]" />
+        <span className="absolute inset-0 m-auto size-2 rounded-full bg-accent/80 animate-pulse" />
       </div>
 
-      {/* the four stages */}
-      <ol className="mt-8 mx-auto max-w-[420px] text-left">
+      {/* the three stages */}
+      <ol className="mt-8 mx-auto max-w-[380px] text-left">
         {STAGES.map((s, i) => {
           const done = i < current;
           const active = i === current;
@@ -135,13 +118,6 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
                   )}
                 >
                   {s.title}
-                  {active ? (
-                    <span className="ml-2 inline-flex items-baseline gap-[3px] text-accent-light">
-                      <Dot delay="0s" />
-                      <Dot delay="0.2s" />
-                      <Dot delay="0.4s" />
-                    </span>
-                  ) : null}
                 </p>
                 <p
                   className={cn(
@@ -156,15 +132,12 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
           );
         })}
       </ol>
-    </div>
-  );
-}
 
-function Dot({ delay }: { delay: string }) {
-  return (
-    <span
-      className="size-[3px] rounded-full bg-current animate-pulse"
-      style={{ animationDelay: delay }}
-    />
+      {current >= 3 ? (
+        <p className="mt-5 text-[11.5px] text-text-dim">
+          Reading done. A final check is under way.
+        </p>
+      ) : null}
+    </div>
   );
 }

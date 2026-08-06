@@ -12,7 +12,7 @@
 
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { and, asc, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
@@ -1802,6 +1802,81 @@ export async function listBuilderInvitesForRunner(runnerId: string): Promise<
     invitedAt: r.invitedAt,
     remindedAt: r.remindedAt,
   }));
+}
+
+/**
+ * Every builder this runner has ever invited, across every round —
+ * the practice's own contact book. Deduped by builder account (or by
+ * email when the invitation never matched one), newest first.
+ * Revoked invitations are the one exclusion: a withdrawn invitation
+ * is not a working relationship.
+ */
+export async function listInvitedBuildersForRunner(runnerId: string): Promise<
+  Array<{
+    name: string;
+    email: string | null;
+    abn: string | null;
+    invitedAt: Date;
+  }>
+> {
+  const rows = await db
+    .select({
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+      builderUserId: tenderBuilderInvites.builderUserId,
+      builderCompany: builderProfiles.companyName,
+      accountEmail: users.email,
+      abn: builderProfiles.abn,
+      invitedAt: tenderBuilderInvites.invitedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, tenderBuilderInvites.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .leftJoin(
+      builderProfiles,
+      eq(builderProfiles.userId, tenderBuilderInvites.builderUserId),
+    )
+    .leftJoin(users, eq(users.id, tenderBuilderInvites.builderUserId))
+    .where(ne(tenderBuilderInvites.status, "revoked"))
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  // One builder can appear under two identities: an email-only
+  // invitation on one round, a directory pick (account id, no email)
+  // on another. Dedupe on both keys so they collapse to one row.
+  const seen = new Set<string>();
+  const out: Array<{
+    name: string;
+    email: string | null;
+    abn: string | null;
+    invitedAt: Date;
+  }> = [];
+  for (const r of rows) {
+    const userKey = r.builderUserId ?? "";
+    const emailKey = (r.email ?? r.accountEmail ?? "").toLowerCase();
+    if (!userKey && !emailKey) continue;
+    if (
+      (userKey && seen.has(`u:${userKey}`)) ||
+      (emailKey && seen.has(`e:${emailKey}`))
+    ) {
+      continue;
+    }
+    if (userKey) seen.add(`u:${userKey}`);
+    if (emailKey) seen.add(`e:${emailKey}`);
+    out.push({
+      name:
+        r.builderCompany ?? r.company ?? r.contactName ?? r.email ?? "A builder",
+      email: r.email ?? r.accountEmail,
+      abn: r.abn,
+      invitedAt: r.invitedAt,
+    });
+  }
+  return out;
 }
 
 /**

@@ -114,16 +114,21 @@ export type { ProjectAuditEventRow } from "./schema";
 // corrections back onto the listing.
 export {
   OWNER_BRIEF_QUESTIONS,
+  ARCHITECT_BRIEF_QUESTIONS,
   OWNER_BRIEF_VERSION,
+  questionsForBrief,
   isOwnerBriefComplete,
   isOwnerBriefShape,
   briefLabel,
   briefForBuilders,
+  rememberedBriefAnswers,
+  type BriefAudience,
   type OwnerBrief,
   type OwnerBriefQuestion,
 } from "./owner-brief";
 export {
   saveOwnerBrief,
+  briefMemoryForRunner,
   applyPackCorrections,
   type PackCorrections,
 } from "./service";

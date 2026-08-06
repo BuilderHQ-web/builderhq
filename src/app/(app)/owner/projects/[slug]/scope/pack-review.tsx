@@ -36,6 +36,7 @@ import {
   FileText,
   FileUp,
   Hammer,
+  Info,
   Loader2,
   MinusCircle,
   Rocket,
@@ -60,13 +61,18 @@ import {
   isOwnerAskableGap,
   ownerAllowanceEligible,
   buildAllowancePackages,
+  coveredSelectionPackages,
+  selectionPackageKey,
   splitPackageAmount,
   type AllowancePackage,
   type DocumentAdvice,
 } from "@/modules/scope";
 import { applyPackCorrectionsAction } from "@/app/(app)/_actions/projects";
 import { OwnerBriefForm } from "./owner-brief-form";
-import { questionsForOwnerBrief } from "@/modules/projects/owner-brief";
+import {
+  questionsForBrief,
+  type BriefAudience,
+} from "@/modules/projects/owner-brief";
 import { AddDocuments } from "./add-documents";
 
 /* ── props ──────────────────────────────────────────────────────────── */
@@ -89,7 +95,10 @@ export interface PackAddendum {
   summary: string;
 }
 interface RegisterRow {
+  /** Standardised display title ("Architectural Plans"). */
   title: string;
+  /** The classifier's raw read of the cover page, when it has one. */
+  docTitle: string | null;
   filename: string;
   kind: string | null;
   pages: number | null;
@@ -137,6 +146,7 @@ export function PackReview({
   currentDescription = null,
   advisories = [],
   brief = {},
+  briefAudience = "owner",
   briefComplete: briefCompleteInitial = false,
   documentNames,
   namedMissing = [],
@@ -158,6 +168,8 @@ export function PackReview({
   currentDescription?: string | null;
   advisories?: DocumentAdvice[];
   brief?: Record<string, string>;
+  /** Which question set the runner answers — homeowner or architect. */
+  briefAudience?: BriefAudience;
   briefComplete?: boolean;
   documentNames: Record<string, string>;
   /** Documents the pack itself names but does not contain. */
@@ -221,20 +233,44 @@ export function PackReview({
     () => gaps.filter((g) => isDemolitionGap(g.itemId)),
     [gaps],
   );
+  // A provisional sum is only asked for when the register does not
+  // already carry the document that covers it: an appliance schedule
+  // on file means the builders price the appliances from it. Same
+  // pure rule, same RAW signals (classifier title + filename) the
+  // server reads at approval, so the two cannot disagree. One
+  // exception: a budget the runner has already set is a standing
+  // decision on the schedule, and its card stays visible whatever
+  // the register says.
+  const coveredPackages = useMemo(() => {
+    const covered = coveredSelectionPackages(
+      register.map((r) => ({
+        kind: r.kind,
+        title: r.docTitle,
+        filename: r.filename,
+      })),
+    );
+    for (const r of resolutions) {
+      if (r.resolution !== "allowance") continue;
+      const key = selectionPackageKey(r.itemId);
+      if (key) covered.delete(key);
+    }
+    return covered;
+  }, [register, resolutions]);
   const packages = useMemo(
     () =>
       buildAllowancePackages(
         gaps.map((g) => g.itemId),
         facts.budgetBand,
         facts.type,
+        coveredPackages,
       ),
-    [gaps, facts.budgetBand, facts.type],
+    [gaps, facts.budgetBand, facts.type, coveredPackages],
   );
   const gapByItemId = useMemo(
     () => new Map(gaps.map((g) => [g.itemId, g])),
     [gaps],
   );
-  const briefQuestionCount = questionsForOwnerBrief(facts.type).length;
+  const briefQuestionCount = questionsForBrief(facts.type, briefAudience).length;
   // Builder-priced lines (auto-resolved or answered) shown in the
   // scope of works, per division.
   const builderPriced = useMemo(
@@ -258,8 +294,17 @@ export function PackReview({
   // answer from the earlier interface. Neither state is the client's
   // to fix.
   const askable = useMemo(
-    () => gaps.filter((g) => isOwnerAskableGap(g.itemId)),
-    [gaps],
+    () =>
+      gaps.filter((g) => {
+        if (!isOwnerAskableGap(g.itemId)) return false;
+        // A covered selection is the builders' to price from the
+        // document. The server resolves it: at approval on new runs,
+        // or by the go-live safety net on runs approved before the
+        // rule existed. Either way it never gates the client.
+        const pkg = selectionPackageKey(g.itemId);
+        return !(pkg !== null && coveredPackages.has(pkg));
+      }),
+    [gaps, coveredPackages],
   );
   const answered = askable.filter((g) => resolved.has(g.itemId)).length;
   const waitingOnDocs = docGaps.filter(
@@ -394,12 +439,12 @@ export function PackReview({
     },
     {
       n: "04",
-      title: "Allowances",
+      title: "Provisional sums",
       badge: allowanceOpen > 0 ? String(allowanceOpen) : undefined,
     },
     {
       n: "05",
-      title: "About you",
+      title: briefAudience === "architect" ? "Your brief" : "About you",
       badge: briefComplete ? undefined : String(briefQuestionCount),
     },
   ];
@@ -511,6 +556,7 @@ export function PackReview({
           <ChapterAboutYou
             projectId={projectId}
             projectType={facts.type}
+            audience={briefAudience}
             brief={brief}
             briefComplete={briefComplete}
             readOnly={readOnly}
@@ -537,7 +583,7 @@ export function PackReview({
                   ? "1 answer promises documents. Add it and read again, or answer another way."
                   : `${waitingOnDocs} answers promise documents. Add them and read again, or answer another way.`
               ) : openCount > 0 ? (
-                `${openCount} answer${openCount === 1 ? "" : "s"} to go: allowances in 04${docOpen > 0 ? ", documents in 03" : ""}.`
+                `${openCount} answer${openCount === 1 ? "" : "s"} to go: provisional sums in 04${docOpen > 0 ? ", documents in 03" : ""}.`
               ) : (
                 "One last thing: your brief for the builders in chapter 05."
               )}
@@ -654,15 +700,6 @@ function ChapterPack({
   onContinue: () => void;
 }) {
   const place = [facts.suburb, facts.state].filter(Boolean).join(", ");
-  const shape = [
-    facts.dwellings && facts.dwellings > 1
-      ? `${facts.dwellings} dwellings`
-      : null,
-    facts.bedrooms ? `${facts.bedrooms} bedrooms` : null,
-    facts.bathrooms ? `${facts.bathrooms} bathrooms` : null,
-  ]
-    .filter(Boolean)
-    .join(", ");
 
   return (
     <div>
@@ -672,22 +709,20 @@ function ChapterPack({
           : "Your tender pack is ready"}
       </h2>
       <p className="mt-3 text-[13.5px] leading-[1.75] text-text-muted max-w-[68ch]">
-        We read {stats.documents === 1 ? "the document" : `all ${stats.documents} documents`}
-        {stats.pages > 0 ? ` and every one of their ${stats.pages} pages` : ""}{" "}
+        We read{" "}
+        {stats.documents === 1
+          ? "your document"
+          : `all ${stats.documents} documents`}
+        {stats.pages > 0 ? `, every one of their ${stats.pages} pages,` : ""}{" "}
         for your {facts.typeLabel.toLowerCase()}
-        {place ? ` in ${place}` : ""}
-        {shape ? ` (${shape.toLowerCase()})` : ""} against the BuilderHQ
-        Scope Standard v{standardVersion}, a 250 point framework covering
-        all 31 divisions of a residential build. Your documents evidence{" "}
-        <Strong>{stats.evidenced} scope lines</Strong> across{" "}
-        <Strong>{stats.divisions} divisions</Strong>, each one recorded in
-        plain language with the exact page it came from. Where the
-        documents are silent, we prepared{" "}
+        {place ? ` in ${place}` : ""}. The result is your scope of works:{" "}
+        <Strong>{stats.evidenced} lines</Strong> across{" "}
+        <Strong>{stats.divisions} divisions</Strong>, each tied to the page
+        it came from. Where your documents are silent, we prepared{" "}
         <Strong>
           {stats.questions} question{stats.questions === 1 ? "" : "s"}
         </Strong>{" "}
-        so nothing is discovered after builders have priced. A member of
-        our review team confirmed every line before this pack reached you.
+        so nothing surprises you after builders have priced.
       </p>
 
       {/* the numbers */}
@@ -723,7 +758,7 @@ function ChapterPack({
       {/* the register */}
       <div className="mt-6 rounded-lg border border-border-subtle bg-surface-1 card-elev">
         <p className="px-4.5 pt-4 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-          What we read
+          What we read · Scope Standard v{standardVersion}
         </p>
         <ul className="mt-1.5 px-4.5 pb-4 divide-y divide-border-subtle/50">
           {register.map((r, i) => (
@@ -958,16 +993,7 @@ function ChapterScopeOfWorks({
   builderPricedTotal: number;
   onContinue: () => void;
 }) {
-  const strongest = SCOPE_DIVISIONS.filter(
-    (d) => (evidencedByDivision.get(d.id)?.length ?? 0) > 0,
-  )
-    .sort(
-      (a, b) =>
-        (evidencedByDivision.get(b.id)?.length ?? 0) -
-        (evidencedByDivision.get(a.id)?.length ?? 0),
-    )
-    .slice(0, 3)
-    .map((d) => d.label.toLowerCase());
+  const grandTotal = total + builderPricedTotal;
 
   return (
     <div>
@@ -975,24 +1001,12 @@ function ChapterScopeOfWorks({
         Scope of works
       </h2>
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[68ch]">
-        The full scope of your build, assembled from your documents:{" "}
-        <Strong>{total} lines documented</Strong>, each in plain language
-        with the page it came from
-        {strongest.length > 0
-          ? `, strongest on ${strongest.join(", ")}`
-          : ""}
-        {builderPricedTotal > 0 ? (
-          <>
-            , plus{" "}
-            <Strong>
-              {builderPricedTotal} line{builderPricedTotal === 1 ? "" : "s"}
-            </Strong>{" "}
-            your documents were silent on that we have flagged for the
-            builders to price within their quotes
-          </>
-        ) : null}
-        . Nothing here needs an answer from you: every builder receives
-        this same schedule and prices it line by line.
+        <Strong>
+          {grandTotal} line{grandTotal === 1 ? "" : "s"} of work
+        </Strong>
+        , built from your documents. Every builder prices this same
+        list, line by line, so their quotes compare exactly. Nothing
+        here needs an answer from you.
       </p>
 
       <div className="mt-5">
@@ -1026,6 +1040,45 @@ function ChapterScopeOfWorks({
   );
 }
 
+/**
+ * A small (i) that opens one plain sentence on hover, focus or tap.
+ * Rendered inside the dropdown's group headings, where the model's
+ * two kinds of line earn a one-line explanation each.
+ */
+function InfoHint({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        aria-label="What this means"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        onBlur={() => setOpen(false)}
+        // Hover is a mouse behaviour only: on touch, the synthetic
+        // mouseenter before click would open-then-toggle-closed and
+        // the hint would need two taps.
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") setOpen(true);
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") setOpen(false);
+        }}
+        className="text-text-faint hover:text-text-muted transition-colors"
+      >
+        <Info className="size-3" />
+      </button>
+      {open ? (
+        <span className="absolute left-0 top-full z-20 mt-1.5 w-[240px] max-w-[72vw] rounded-md border border-border-subtle bg-surface-1 card-elev px-3 py-2 text-left text-[11px] leading-[1.55] normal-case tracking-normal font-normal text-text-muted">
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function ScopeDivisionBlock({
   label,
   items,
@@ -1038,6 +1091,7 @@ function ScopeDivisionBlock({
   documentNames: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
+  const count = items.length + flagged.length;
   return (
     <div className="mt-2.5 border border-border-subtle rounded-md bg-surface-1">
       <button
@@ -1048,16 +1102,9 @@ function ScopeDivisionBlock({
         <span className="min-w-0 flex-1 text-[12.5px] font-ui font-medium text-text truncate">
           {label}
         </span>
-        {items.length > 0 ? (
-          <span className="shrink-0 text-[11px] tabular-nums text-text-dim">
-            {items.length} documented
-          </span>
-        ) : null}
-        {flagged.length > 0 ? (
-          <span className="shrink-0 rounded-full bg-[rgba(26,95,212,0.07)] text-[#2a5cae] px-2 py-[2px] text-[10px] font-ui font-medium tabular-nums">
-            {flagged.length} for the builders
-          </span>
-        ) : null}
+        <span className="shrink-0 text-[11px] tabular-nums text-text-dim">
+          {count} line{count === 1 ? "" : "s"}
+        </span>
         <ChevronDown
           className={cn(
             "size-3.5 text-text-dim transition-transform",
@@ -1068,33 +1115,39 @@ function ScopeDivisionBlock({
       {open ? (
         <div className="border-t border-border-subtle/60 px-3.5 py-2.5">
           {items.length > 0 ? (
-            <ul className="flex flex-col gap-2.5">
-              {items.map((it) => {
-                const item = getScopeItem(it.itemId);
-                return (
-                  <li key={it.id}>
-                    <p className="text-[12.5px] font-ui font-medium text-text">
-                      {item?.label ?? it.itemId}
-                    </p>
-                    {it.note ? (
-                      <p className="mt-0.5 text-[11.5px] leading-[1.55] text-text-muted">
-                        {it.note}
+            <>
+              <p className="flex items-center gap-1.5 text-[10px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+                From your documents
+                <InfoHint text="Read directly from your documents. Each line shows the page it came from." />
+              </p>
+              <ul className="mt-1.5 flex flex-col gap-2.5">
+                {items.map((it) => {
+                  const item = getScopeItem(it.itemId);
+                  return (
+                    <li key={it.id}>
+                      <p className="text-[12.5px] font-ui font-medium text-text">
+                        {item?.label ?? it.itemId}
                       </p>
-                    ) : null}
-                    {it.citations.length > 0 ? (
-                      <p className="mt-0.5 text-[10px] text-text-dim">
-                        {it.citations
-                          .map(
-                            (c) =>
-                              `${documentNames[c.documentId] ?? "Document"} p.${c.page}${c.revision ? ` rev ${c.revision}` : ""}`,
-                          )
-                          .join(" · ")}
-                      </p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
+                      {it.note ? (
+                        <p className="mt-0.5 text-[11.5px] leading-[1.55] text-text-muted">
+                          {it.note}
+                        </p>
+                      ) : null}
+                      {it.citations.length > 0 ? (
+                        <p className="mt-0.5 text-[10px] text-text-dim">
+                          {it.citations
+                            .map(
+                              (c) =>
+                                `${documentNames[c.documentId] ?? "Document"} p.${c.page}${c.revision ? ` rev ${c.revision}` : ""}`,
+                            )
+                            .join(" · ")}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           ) : null}
           {flagged.length > 0 ? (
             <div
@@ -1103,8 +1156,9 @@ function ScopeDivisionBlock({
                   "mt-3 pt-3 border-t border-border-subtle/50",
               )}
             >
-              <p className="text-[10px] tracking-[0.14em] uppercase text-[#2a5cae] font-ui font-semibold">
-                Flagged for the builders to price
+              <p className="flex items-center gap-1.5 text-[10px] tracking-[0.14em] uppercase text-[#2a5cae] font-ui font-semibold">
+                Added for the builders to price
+                <InfoHint text="Work the build will need that your documents do not detail. We add these lines so every builder prices them now, not as a variation later." />
               </p>
               <ul className="mt-1.5 flex flex-col gap-1.5">
                 {flagged.map((it) => {
@@ -1338,20 +1392,19 @@ function ChapterAllowances({
   return (
     <div>
       <h2 className="font-display uppercase tracking-[-0.014em] text-[24px] sm:text-[30px] leading-[1] text-text">
-        Allowances
+        Provisional sums
       </h2>
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[68ch]">
         {nothing
-          ? "Your documents pin down every selection, so there is nothing to allow for. Builders price the lot exactly as documented."
-          : "Your documents leave a few selections open: the finishes and features that are yours to choose. Setting an allowance locks one budget that every builder carries identically, so the quotes stay comparable and your taste stays yours. We have suggested a figure for each from projects like this one; adjust it freely, or leave a package to the builders entirely."}
+          ? "Your documents cover every selection. Builders price everything exactly as documented."
+          : "A provisional sum is a budget for choices your documents do not detail yet. Every builder carries the same figure, so the quotes stay comparable. We have suggested a figure for each; adjust it, or leave it to the builders to price."}
       </p>
 
       {nothing ? (
         <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-6 flex items-center gap-3">
           <BadgeCheck className="size-5 text-[#0a7d73] shrink-0" />
           <p className="text-[13px] text-text-muted">
-            Every selection is documented. This is the strongest position a
-            tender can start from.
+            Every selection is documented. Nothing to decide here.
           </p>
         </div>
       ) : (
@@ -1499,7 +1552,7 @@ function AllowancePackageCard({
               <Check className="size-3.5" />
               {allBuilders
                 ? "Builders will price these"
-                : `Allowance locked: $${lockedTotal.toLocaleString("en-AU")}`}
+                : `Budget set: $${lockedTotal.toLocaleString("en-AU")}`}
             </span>
             {!readOnly && !editing ? (
               <button
@@ -1517,19 +1570,18 @@ function AllowancePackageCard({
 
       {deciding ? (
         <p className="mt-2.5 text-[12.5px] leading-[1.65] text-text-muted max-w-[64ch]">
-          No schedule for {pack.title.toLowerCase()} was found in your
-          documents.{" "}
+          Your documents do not include a schedule for this.{" "}
           {pack.suggestedAud !== null && pack.budgetLabel ? (
             <>
-              For a {typeLabel.toLowerCase()} {pack.budgetLabel}, clients
-              typically allow {pack.pctRange[0]} to {pack.pctRange[1]} percent
-              of the budget here. Suggested:{" "}
+              On a {typeLabel.toLowerCase()} {pack.budgetLabel}, this is
+              usually {pack.pctRange[0]} to {pack.pctRange[1]} percent of
+              the budget. Suggested:{" "}
               <Strong>${pack.suggestedAud.toLocaleString("en-AU")}</Strong>.
             </>
           ) : (
             <>
-              Projects of this kind typically allow {pack.pctRange[0]} to{" "}
-              {pack.pctRange[1]} percent of the build budget here.
+              This is usually {pack.pctRange[0]} to {pack.pctRange[1]}{" "}
+              percent of the build budget.
             </>
           )}
         </p>
@@ -1564,7 +1616,7 @@ function AllowancePackageCard({
             ) : (
               <CircleDollarSign className="size-3.5" />
             )}
-            Lock this allowance
+            Set budget
           </button>
           <button
             type="button"
@@ -1573,7 +1625,7 @@ function AllowancePackageCard({
             className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full border border-border-subtle text-[12px] text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-50"
           >
             <Hammer className="size-3.5" />
-            Builders price these
+            Leave to builders
           </button>
           {editing ? (
             <button
@@ -1722,13 +1774,14 @@ function DemolitionCard({
 /* ── chapter 05 · about you ─────────────────────────────────────────── */
 
 /**
- * The client's six answers, right where the round closes. Builders on
- * this round see the labels, never the address or any figure: who the
- * client is, whether the money is real, and what they value.
+ * The runner's brief, right where the round closes. Builders on this
+ * round see the labels, never the address or any figure. Usually
+ * already answered at upload time; this chapter is the catch-up.
  */
 function ChapterAboutYou({
   projectId,
   projectType,
+  audience,
   brief,
   briefComplete,
   readOnly,
@@ -1736,6 +1789,7 @@ function ChapterAboutYou({
 }: {
   projectId: string;
   projectType: string;
+  audience: BriefAudience;
   brief: Record<string, string>;
   briefComplete: boolean;
   readOnly: boolean;
@@ -1744,14 +1798,12 @@ function ChapterAboutYou({
   return (
     <div>
       <h2 className="font-display uppercase tracking-[-0.014em] text-[24px] sm:text-[30px] leading-[1] text-text">
-        About you
+        {audience === "architect" ? "Your brief" : "About you"}
       </h2>
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
-        Builders on your round answer seventy structured questions before
-        you read a word of their tender. These six are yours. They are
-        what any builder would ask at a pre-tender meeting, and answering
-        them here means every tender you receive was priced by someone
-        who took your round seriously.
+        {audience === "architect"
+          ? "Builders read these answers before they price. A few quick questions about the client and your role, one tap each."
+          : "Builders read these answers before they price. A few quick questions, one tap each."}
       </p>
 
       <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-4.5 max-w-[640px]">
@@ -1763,6 +1815,7 @@ function ChapterAboutYou({
             <OwnerBriefForm
               projectId={projectId}
               projectType={projectType}
+              audience={audience}
               initial={brief}
               readOnly={readOnly}
               onComplete={onComplete}
@@ -1825,7 +1878,7 @@ function QuestionCard({
 
   const verdict = resolution
     ? resolution.resolution === "allowance"
-      ? `Allowance locked: $${(resolution.amountAud ?? 0).toLocaleString("en-AU")}`
+      ? `Budget set: $${(resolution.amountAud ?? 0).toLocaleString("en-AU")}`
       : resolution.resolution === "builder_priced"
         ? "Builders will price this"
         : resolution.resolution === "excluded"
@@ -1900,7 +1953,7 @@ function QuestionCard({
                   onClick={() => setAmountOpen(true)}
                 >
                   <CircleDollarSign className="size-3.5" />
-                  Set an allowance
+                  Set a budget
                 </AnswerChip>
               ) : null}
               <AnswerChip
@@ -1939,7 +1992,7 @@ function QuestionCard({
             className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-accent text-accent-contrast text-[12px] font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
             {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            Lock the allowance
+            Set budget
           </button>
           <button
             type="button"

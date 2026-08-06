@@ -10,15 +10,22 @@ import { describe, expect, test } from "vitest";
 
 import {
   OWNER_BRIEF_QUESTIONS,
+  ARCHITECT_BRIEF_QUESTIONS,
   questionsForOwnerBrief,
+  questionsForBrief,
   isOwnerBriefComplete,
   isOwnerBriefShape,
   briefLabel,
   briefForBuilders,
+  rememberedBriefAnswers,
 } from "./owner-brief";
 
 const FULL = Object.fromEntries(
   OWNER_BRIEF_QUESTIONS.map((q) => [q.id, q.options[0]!.value]),
+);
+
+const FULL_ARCHITECT = Object.fromEntries(
+  ARCHITECT_BRIEF_QUESTIONS.map((q) => [q.id, q.options[0]!.value]),
 );
 
 describe("shape", () => {
@@ -78,6 +85,66 @@ describe("completeness", () => {
     const { occupancy: _dropped, ...withoutOccupancy } = FULL;
     expect(isOwnerBriefComplete(withoutOccupancy, "multi_dwelling")).toBe(true);
     expect(isOwnerBriefComplete(withoutOccupancy, "renovation")).toBe(false);
+  });
+});
+
+describe("architect audience", () => {
+  test("the architect set asks about the role; the owner set never does", () => {
+    expect(questionsForBrief("single_dwelling", "architect").map((q) => q.id)).toContain("role");
+    expect(questionsForBrief("single_dwelling", "owner").map((q) => q.id)).not.toContain("role");
+  });
+  test("occupancy scoping applies to the architect set too", () => {
+    const ids = (t: string) =>
+      questionsForBrief(t, "architect").map((q) => q.id);
+    expect(ids("renovation")).toContain("occupancy");
+    expect(ids("single_dwelling")).not.toContain("occupancy");
+  });
+  test("a full architect brief is complete", () => {
+    expect(isOwnerBriefComplete(FULL_ARCHITECT, "multi_dwelling")).toBe(true);
+  });
+  test("an architect brief missing the role is not complete", () => {
+    const { role: _dropped, ...withoutRole } = FULL_ARCHITECT;
+    // Without role it is judged as an owner brief — and passes only if
+    // it satisfies THAT set, which it does here (shared ids/values).
+    expect(isOwnerBriefComplete(withoutRole, "multi_dwelling")).toBe(true);
+    // But drop a shared answer too and neither set is satisfied.
+    const { funding: _also, ...neither } = withoutRole;
+    expect(isOwnerBriefComplete(neither, "multi_dwelling")).toBe(false);
+  });
+  test("architect answers are valid shape", () => {
+    expect(isOwnerBriefShape({ role: "contract_admin" })).toBe(true);
+    expect(isOwnerBriefShape({ role: "site dictator" })).toBe(false);
+  });
+  test("builders read an architect brief with architect labels and the role row", () => {
+    const rows = briefForBuilders({
+      role: "contract_admin",
+      selections: "decided",
+    });
+    expect(rows).toContainEqual({
+      k: "Architect during construction",
+      v: "Contract administration",
+    });
+    expect(rows).toContainEqual({
+      k: "Selections",
+      v: "Documented and decided",
+    });
+  });
+});
+
+describe("memory", () => {
+  test("remembered answers carry only remember-flagged questions", () => {
+    const carried = rememberedBriefAnswers(FULL, "owner");
+    expect(Object.keys(carried)).toEqual(["experience"]);
+  });
+  test("the architect set remembers the role", () => {
+    const carried = rememberedBriefAnswers(FULL_ARCHITECT, "architect");
+    expect(Object.keys(carried)).toEqual(["role"]);
+  });
+  test("a value the audience's question does not list is not carried", () => {
+    // "Our first build" exists for both audiences, so it carries; a
+    // junk value never does.
+    expect(rememberedBriefAnswers({ experience: "junk" }, "owner")).toEqual({});
+    expect(rememberedBriefAnswers(null, "owner")).toEqual({});
   });
 });
 

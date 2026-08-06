@@ -144,7 +144,7 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
     out.push({
       key: "specification",
       title: "Specifications and finishes schedule",
-      why: "A written specification pins the products and finishes the drawings cannot, and cuts the allowances builders must otherwise carry.",
+      why: "A written specification pins the products and finishes the drawings cannot, and cuts the provisional sums builders must otherwise carry.",
       severity: "worth_noting",
     });
   }
@@ -169,7 +169,7 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
     out.push({
       key: "joinery-package",
       title: "Joinery package",
-      why: "Your cabinetry appears only on the architectural drawings. A joinery package with elevations and finishes lets builders price it exactly rather than by allowance.",
+      why: "Your cabinetry appears only on the architectural drawings. A joinery package with elevations and finishes lets builders price it exactly rather than by provisional sum.",
       severity: "worth_noting",
     });
   }
@@ -372,6 +372,118 @@ export const ALLOWANCE_PACKAGES: AllowancePackageDef[] = [
   },
 ];
 
+/* ── documents that replace a provisional sum ───────────────────────── */
+
+/**
+ * A provisional sum exists because a document does not. When the
+ * register already carries the document that pins a selection — an
+ * appliance or FFE schedule, landscape plans, internal elevations —
+ * the builders price from it, and asking the client to set a budget
+ * for the same work would contradict their own pack.
+ *
+ * The mapping reads the register's titles AND filenames: surfaces
+ * often standardise the display title ("Project Specifications")
+ * while the covering nature lives in the classifier's title or the
+ * uploaded filename ("FFE Schedule Rev F.pdf"), so both are tested.
+ * Deliberately exact: something has to actually name the covering
+ * document. When in doubt the package stays, because a needless
+ * question is recoverable and a silently missing one is not.
+ */
+export interface RegisterDocSignal {
+  kind: string | null;
+  title: string | null;
+  /** The uploaded filename, when the caller has it. */
+  filename?: string | null;
+}
+
+const PACKAGE_COVERING_DOCS: Array<{ keys: string[]; pattern: RegExp }> = [
+  {
+    // FFE / appliance schedules pin the whitegoods and the fittings.
+    keys: ["appliances", "plumbing-fixtures"],
+    pattern:
+      /appliance|\bff&e\b|\bffe\b|\bf\.f\.&?e\.?\b|fixtures?\s*(?:and|&|\+|,)\s*(?:fittings?|finishes|equipment)/i,
+  },
+  {
+    // Landscape DOCUMENTATION covers the garden and, almost always,
+    // the fencing and external structures drawn on the same sheets.
+    // Plans, drawings, a package: something a builder prices from.
+    // A concept, sketch or quote is not, and never suppresses.
+    keys: ["landscaping", "external-features"],
+    pattern:
+      /landscap(?:e|ing)?\s+(?:plans?|drawings?|design|package|schedule|documentation)/i,
+  },
+  {
+    // Internal elevations or a joinery package are what a joiner
+    // actually prices from.
+    keys: ["joinery"],
+    pattern:
+      /(?:internal|interior)\s+elevation|joinery|cabinetry|millwork/i,
+  },
+  {
+    // A finishes or flooring schedule pins the coverings.
+    keys: ["flooring"],
+    pattern:
+      /floor(?:ing)?\s+(?:schedule|finishes|selections?)|finishes\s+(?:schedule|selections?)|floor\s+covering/i,
+  },
+  {
+    keys: ["tiling"],
+    pattern:
+      /(?:tile|tiling)\s+(?:schedule|selections?)|finishes\s+(?:schedule|selections?)/i,
+  },
+  {
+    keys: ["electrical-fittings"],
+    pattern:
+      /lighting\s+(?:schedule|plan|layout)|electrical\s+schedule|light\s+fittings?\s+schedule/i,
+  },
+  {
+    keys: ["doors-hardware"],
+    pattern: /door\s+(?:schedule|hardware)|hardware\s+schedule/i,
+  },
+  {
+    keys: ["stairs-features"],
+    pattern: /stair\s+(?:schedule|details?|drawings?)|balustrade/i,
+  },
+  {
+    keys: ["feature-finishes"],
+    pattern: /finishes\s+(?:schedule|selections?)/i,
+  },
+];
+
+/**
+ * Which packages the register already documents. Pure: the same rule
+ * runs at ops approval (auto-resolving the covered lines to
+ * builder-priced) and in the pack review (hiding the cards), so the
+ * two can never disagree.
+ */
+export function coveredSelectionPackages(
+  register: RegisterDocSignal[],
+): Set<string> {
+  // Separators normalise to spaces so "Finishes_Schedule.pdf" and
+  // "finishes-schedule" read the same as "Finishes Schedule" — on
+  // every surface that calls this, identically.
+  const signals = register
+    .map((r) =>
+      [r.title ?? "", r.filename ?? ""]
+        .map((s) => s.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim())
+        .filter((s) => s.length > 0)
+        .join(" · "),
+    )
+    .filter((t) => t.length > 0);
+  const covered = new Set<string>();
+  for (const rule of PACKAGE_COVERING_DOCS) {
+    if (signals.some((t) => rule.pattern.test(t))) {
+      for (const k of rule.keys) covered.add(k);
+    }
+  }
+  return covered;
+}
+
+/** The package a cosmetic gap folds into — first match wins. */
+export function selectionPackageKey(itemId: string): string | null {
+  if (!ownerAllowanceEligible(itemId)) return null;
+  return ALLOWANCE_PACKAGES.find((d) => d.match(itemId))?.key ?? null;
+}
+
 /** Midpoints of the wizard's budget bands, whole AUD. */
 export const BUDGET_BAND_MIDPOINT: Record<string, number> = {
   under_500k: 400_000,
@@ -427,6 +539,13 @@ export function buildAllowancePackages(
   gapItemIds: string[],
   budgetBand: string | null,
   projectType: string | null = null,
+  /**
+   * Packages the register already documents (coveredSelectionPackages).
+   * Their items are still consumed — so they never leak into a later
+   * catch-all package — but no card is emitted: the builders price
+   * from the document instead.
+   */
+  covered: Set<string> = new Set(),
 ): AllowancePackage[] {
   const factor = (projectType && TYPE_FACTOR[projectType]) || 1;
   const mid = budgetBand ? (BUDGET_BAND_MIDPOINT[budgetBand] ?? null) : null;
@@ -437,6 +556,7 @@ export function buildAllowancePackages(
     const itemIds = eligible.filter((id) => !taken.has(id) && def.match(id));
     if (itemIds.length === 0) continue;
     for (const id of itemIds) taken.add(id);
+    if (covered.has(def.key)) continue;
     const midPct = (def.pctRange[0] + def.pctRange[1]) / 2;
     out.push({
       key: def.key,

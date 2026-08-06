@@ -134,6 +134,8 @@ export {
   adviseMissingDocuments,
   buildAllowancePackages,
   splitPackageAmount,
+  coveredSelectionPackages,
+  selectionPackageKey,
   OWNER_DOC_ITEMS,
   ALLOWANCE_PACKAGES,
   BUDGET_BAND_MIDPOINT,
@@ -141,6 +143,7 @@ export {
   type AdviceInput,
   type AllowancePackage,
   type AllowancePackageDef,
+  type RegisterDocSignal,
 } from "./advice";
 
 export {

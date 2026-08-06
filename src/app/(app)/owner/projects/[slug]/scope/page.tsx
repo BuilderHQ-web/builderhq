@@ -4,9 +4,9 @@
  * The owner-facing half of the scope engine, in two acts.
  *
  * WHILE THE READ RUNS: not a spinner but a promise kept visibly — the
- * four stages of the analysis live on screen, and beneath them exactly
- * what the client will receive and why it is worth the wait. The page
- * refreshes itself; the moment ops approval lands it becomes the pack.
+ * three stages of the analysis live on screen, with the documents on
+ * file and a plain note of what arrives at the end. The page refreshes
+ * itself; the moment ops approval lands it becomes the pack.
  *
  * ONCE THE PACK IS READY: a guided, chaptered review — the pack first
  * as a deliverable (what was read, what it covers), then the few
@@ -34,7 +34,6 @@ import { summariseDiff, type ScheduleDiff } from "@/modules/tenders/schedule";
 import { projectsBase } from "@/lib/dashboard-route";
 import { PackReview } from "./pack-review";
 import { AnalysisTracker } from "./analysis-tracker";
-import { OwnerBriefForm } from "./owner-brief-form";
 
 export const metadata = { title: "Tender pack" };
 export const dynamic = "force-dynamic";
@@ -157,14 +156,6 @@ export default async function ScopeReviewPage({
             <ReadingState
               runStatus={run?.status ?? "pending"}
               register={register}
-              projectType={TYPE_LABEL[project.type] ?? project.type}
-              briefSlot={
-                canResolve && !briefComplete ? (
-                  <div className="rounded-lg border border-border-accent/40 bg-surface-1 card-elev px-4.5 py-4">
-                    <OwnerBriefForm projectId={project.id} projectType={project.type} initial={brief} />
-                  </div>
-                ) : null
-              }
             />
           )
         ) : (
@@ -179,6 +170,18 @@ export default async function ScopeReviewPage({
             currentDescription={project.description}
             advisories={advisories}
             brief={brief}
+            // The RUNNER answers the brief; a seat viewer reads it.
+            // For viewers the stored brief itself says which set was
+            // asked (the role key marks an architect's).
+            briefAudience={
+              canResolve
+                ? session.user.role === "architect"
+                  ? "architect"
+                  : "owner"
+                : typeof brief.role === "string"
+                  ? "architect"
+                  : "owner"
+            }
             briefComplete={briefComplete}
             documentNames={(() => {
               const std = resolveRegisterNames(register);
@@ -201,6 +204,9 @@ export default async function ScopeReviewPage({
                 )
                 .map((r) => ({
                   title: std.get(r.documentId) ?? r.docTitle ?? r.filename,
+                  // The raw signals, for rules that must agree with
+                  // the server (covered provisional sums).
+                  docTitle: r.docTitle,
                   filename: r.filename,
                   kind: r.kind,
                   pages: r.pageCount,
@@ -251,8 +257,6 @@ export default async function ScopeReviewPage({
 function ReadingState({
   runStatus,
   register,
-  projectType,
-  briefSlot,
 }: {
   runStatus: string;
   register: Array<{
@@ -262,42 +266,38 @@ function ReadingState({
     kind: string | null;
     pageCount: number | null;
   }>;
-  projectType: string;
-  briefSlot?: React.ReactNode;
 }) {
   const pages = register.reduce((n, r) => n + (r.pageCount ?? 0), 0);
+  const names = resolveRegisterNames(register);
+  const ordered = [...register].sort(
+    (a, b) => registerImportance(a.kind) - registerImportance(b.kind),
+  );
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_380px] items-start">
-      {/* left: the analysis, live */}
+    <div className="mx-auto max-w-[560px]">
       <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 sm:px-10 py-10 text-center">
         <AnalysisTracker runStatus={runStatus} />
         <h2 className="mt-8 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
           Your documents are being read
         </h2>
-        <p className="mt-2.5 mx-auto max-w-[52ch] text-[13px] leading-[1.7] text-text-muted">
-          Every page of your {projectType.toLowerCase()} set is being read
-          against the BuilderHQ Scope Standard, a 250 point framework
-          covering all 31 divisions of a residential build. Nothing is
-          estimated and nothing is measured off drawings: only what your
-          documents actually say, each finding tied to its page and
-          revision, and every line confirmed by a person before it reaches
-          you. This usually completes within one business day, and you
-          will be told the moment your pack is ready.
+        <p className="mt-2.5 mx-auto max-w-[46ch] text-[13px] leading-[1.7] text-text-muted">
+          Every page is read and turned into a clear scope of works, with
+          each line tied to the page it came from. This usually takes less
+          than a business day. We will tell you the moment it is ready.
         </p>
 
         {register.length > 0 ? (
-          <div className="mt-8 mx-auto max-w-[440px] text-left border-t border-border-subtle pt-4">
+          <div className="mt-8 mx-auto max-w-[420px] text-left border-t border-border-subtle pt-4">
             <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-              On the reading desk
+              Documents on file
             </p>
             <ul className="mt-2 space-y-1.5">
-              {register.map((r) => (
+              {ordered.map((r) => (
                 <li
                   key={r.documentId}
                   className="flex items-baseline justify-between gap-3 text-[12px]"
                 >
                   <span className="min-w-0 truncate text-text-muted">
-                    {r.docTitle ?? r.filename}
+                    {names.get(r.documentId) ?? r.docTitle ?? r.filename}
                   </span>
                   <span className="shrink-0 text-[10.5px] text-text-dim tabular-nums">
                     {r.pageCount ? `${r.pageCount} pages` : "…"}
@@ -313,55 +313,18 @@ function ReadingState({
             ) : null}
           </div>
         ) : null}
-      </div>
 
-      {/* right: the brief to answer, then what arrives at the end */}
-      <div className="lg:sticky lg:top-20 space-y-3">
-        {briefSlot}
-        <p className="text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold px-1">
-          What you will receive
-        </p>
-        <ExpectCard
-          n="01"
-          title="Your scope, in plain language"
-          body="Every part of the build your documents cover, written so you can read it without a construction dictionary, and each line cited to the exact page it came from."
-        />
-        <ExpectCard
-          n="02"
-          title="The questions worth asking now"
-          body="Where the documents are silent, we say so before builders price the work, not after the contract is signed. Each question takes one tap to answer, and most need nothing more from you."
-        />
-        <ExpectCard
-          n="03"
-          title="Quotes you can truly compare"
-          body="Every builder on your round answers the same schedule, line by line. When their tenders arrive, you compare exactly like for like, down to the individual inclusion."
-        />
-        <p className="px-1 text-[11px] leading-[1.6] text-text-dim">
-          This is the groundwork that makes the whole tender trustworthy.
-          It is prepared once, checked by a person, and every quote you
-          receive stands on it.
-        </p>
+        <div className="mt-8 mx-auto max-w-[420px] text-left border-t border-border-subtle pt-4">
+          <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+            What you will get
+          </p>
+          <ul className="mt-2 space-y-1.5 text-[12.5px] leading-[1.6] text-text-muted">
+            <li>· Your scope of works, in plain language</li>
+            <li>· Anything missing, flagged before builders price</li>
+            <li>· Quotes you can compare line by line</li>
+          </ul>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function ExpectCard({
-  n,
-  title,
-  body,
-}: {
-  n: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
-      <p className="text-[10px] font-mono text-accent-light">{n}</p>
-      <p className="mt-1 text-[13.5px] font-ui font-semibold text-text">
-        {title}
-      </p>
-      <p className="mt-1 text-[12px] leading-[1.65] text-text-muted">{body}</p>
     </div>
   );
 }

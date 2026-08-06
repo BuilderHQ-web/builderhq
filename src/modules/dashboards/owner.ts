@@ -60,6 +60,8 @@ export type OwnerDashboardData = {
     avgDaysToDecisionAwarded: number | null;
     /** Submitted + shortlisted but not yet decided — the active inbox. */
     awaitingDecision: number;
+    /** How many projects have at least one visible tender. */
+    projectsWithTenders: number;
   };
   /** Tenders awaiting an owner decision, sorted by urgency (validity
    *  expiring). Capped to 6 for the dashboard view. */
@@ -152,6 +154,7 @@ export async function getOwnerDashboardData(
         totalQuotedValueAud: 0,
         avgDaysToDecisionAwarded: null,
         awaitingDecision: 0,
+        projectsWithTenders: 0,
       },
       decisionsWaiting: [],
       pulses: [],
@@ -463,6 +466,13 @@ export async function getOwnerDashboardData(
       totalQuotedValueAud,
       avgDaysToDecisionAwarded,
       awaitingDecision,
+      // Withdrawn tenders are excluded from the visible total, so a
+      // project that only ever saw a withdrawal doesn't count either.
+      projectsWithTenders: new Set(
+        allTenderRows
+          .filter((r) => r.status !== "withdrawn")
+          .map((r) => r.projectId),
+      ).size,
     },
     decisionsWaiting,
     pulses,

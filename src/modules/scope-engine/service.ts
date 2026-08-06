@@ -31,6 +31,8 @@ import {
   ownerAllowanceEligible,
   isOwnerAskableGap,
   isOwnerDocGap,
+  coveredSelectionPackages,
+  selectionPackageKey,
   resolveRegisterNames,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
@@ -1695,9 +1697,13 @@ export async function approveRun(
 
 /**
  * Resolve every gap the client should never be asked about to
- * builder-priced. The predicate is the pure isOwnerAskableGap rule;
- * anything already resolved (carried forward, or answered by hand on
- * the desk's watch) is left untouched.
+ * builder-priced. Two rules, both pure: isOwnerAskableGap (structure,
+ * services, preliminaries are the builders' ordinary work), and
+ * coveredSelectionPackages (a provisional sum is never asked for work
+ * the register already documents — an appliance schedule on file
+ * means the builders price the appliances from it). Anything already
+ * resolved (carried forward, or answered by hand on the desk's watch)
+ * is left untouched.
  */
 async function autoResolveBuilderWork(runId: string): Promise<number> {
   const gaps = await db
@@ -1710,9 +1716,29 @@ async function autoResolveBuilderWork(runId: string): Promise<number> {
         ne(scopeRunItems.opsStatus, "removed"),
       ),
     );
+  const register = await db
+    .select({
+      kind: scopeRunDocuments.kind,
+      docTitle: scopeRunDocuments.docTitle,
+      filename: documents.filename,
+    })
+    .from(scopeRunDocuments)
+    .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+    .where(eq(scopeRunDocuments.runId, runId));
+  const covered = coveredSelectionPackages(
+    register.map((r) => ({
+      kind: r.kind,
+      title: r.docTitle,
+      filename: r.filename,
+    })),
+  );
   const builderWork = gaps
     .map((g) => g.itemId)
-    .filter((id) => !isOwnerAskableGap(id));
+    .filter((id) => {
+      if (!isOwnerAskableGap(id)) return true;
+      const pkg = selectionPackageKey(id);
+      return pkg !== null && covered.has(pkg);
+    });
   // A documents-to-come answer only means something on a document the
   // client can supply. Today's interface offers it nowhere else, but
   // packs answered under the earlier interface may still hold one on
@@ -1757,6 +1783,32 @@ async function autoResolveBuilderWork(runId: string): Promise<number> {
     .onConflictDoNothing()
     .returning({ id: scopeGapResolutions.id });
   return inserted.length;
+}
+
+/**
+ * For a set of projects, whether the latest run is still being read
+ * or sits approved awaiting the runner's review. Dashboard-weight:
+ * one query, newest run wins per project. Projects without a run
+ * simply have no entry.
+ */
+export async function packPhaseForProjects(
+  projectIds: string[],
+): Promise<Record<string, "analysing" | "review">> {
+  if (projectIds.length === 0) return {};
+  const runs = await db
+    .select({
+      projectId: scopeRuns.projectId,
+      status: scopeRuns.status,
+    })
+    .from(scopeRuns)
+    .where(inArray(scopeRuns.projectId, projectIds))
+    .orderBy(desc(scopeRuns.createdAt));
+  const out: Record<string, "analysing" | "review"> = {};
+  for (const r of runs) {
+    if (out[r.projectId]) continue; // newest run wins
+    out[r.projectId] = r.status === "approved" ? "review" : "analysing";
+  }
+  return out;
 }
 
 /**

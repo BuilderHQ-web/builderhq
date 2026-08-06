@@ -1,20 +1,13 @@
 /**
- * Owner dashboard — the desk, round 3: the hybrid.
+ * Owner dashboard — deliberately quiet.
  *
- * Same system as the builder reference screen. The greeting hero sits
- * centred on the canvas with the teal glow, one contextual sentence,
- * the big CTAs, and the ledger as a quiet hairline strip. Below it the
- * white section boxes are gone: sections sit directly on the canvas,
- * each announced by a tinted icon chip + kicker + display title +
- * plain sentence (the letterhead convention). Colour codes the
- * sections: teal = your projects, blue = tenders received from the
- * register, ink = the record and the book, amber = anything needing a
- * decision. Only the desk panel keeps a wash — teal, or amber when a
- * decision is running out of time. Content rows are individual white
- * cards, so white marks OBJECTS, never sections.
- *
- * Everything data-side is unchanged: the same queue (decisions →
- * drafts), safe() around every query, and the same route surface.
+ * The greeting hero sits centred with one contextual sentence, the
+ * CTAs, and three honest figures. Below it, three plain sections:
+ * "Your desk" (only tenders that have come in), "Your projects"
+ * (every project and where its round stands), and the shared-seat
+ * list when one exists. The rail holds messages, activity and the
+ * tender tallies. safe() wraps every query so a flaky aggregate
+ * never blanks the desk.
  */
 
 import Link from "next/link";
@@ -22,10 +15,8 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
-  ClipboardCheck,
   Eye,
   FileText,
-  Folder,
   Landmark,
   Mail,
   Plus,
@@ -115,6 +106,7 @@ const EMPTY_DATA = (firstName: string): OwnerDashboardData => ({
     totalQuotedValueAud: 0,
     avgDaysToDecisionAwarded: null,
     awaitingDecision: 0,
+    projectsWithTenders: 0,
   },
   decisionsWaiting: [],
   pulses: [],
@@ -147,12 +139,7 @@ export default async function OwnerDashboard({
   const welcome = (await searchParams)?.welcome;
   const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
 
-  const dateline = new Intl.DateTimeFormat("en-AU", {
-    weekday: "long", day: "numeric", month: "long",
-    timeZone: "Australia/Melbourne",
-  }).format(new Date());
-
-  // ── the desk queue ────────────────────────────────────────────────
+  // ── the desk queue — only tenders that have come in ───────────────
   type DeskTone = "warn" | "neutral" | "draft";
   type DeskRow = {
     key: string;
@@ -185,19 +172,6 @@ export default async function OwnerDashboard({
       metric: d.totalPriceAud !== null ? compactAud(d.totalPriceAud) : null,
     });
   }
-  for (const p of data.projects.list) {
-    if (p.status === "draft") {
-      queue.push({
-        key: `draft-${p.id}`,
-        href: `/owner/projects/${p.slug}/edit`,
-        tone: "draft",
-        chip: "Draft",
-        title: p.title,
-        line: "Draft project. Finish the details and publish to open the round.",
-        metric: null,
-      });
-    }
-  }
   const QUEUE_LIMIT = 7;
   const queueShown = queue.slice(0, QUEUE_LIMIT);
   // decisionsWaiting is capped server-side; count the truncated ones
@@ -209,14 +183,13 @@ export default async function OwnerDashboard({
   const queueOverflow =
     queue.length - queueShown.length + hiddenDecisions;
   const queueTotal = queue.length + hiddenDecisions;
-  const deskUrgent = queue.some((q) => q.tone === "warn");
 
   const heroLine = isFirstTime
     ? "Upload your plans, open a tender round, and compare verified builders like for like."
     : queueTotal > 0
-      ? `${queueTotal} item${queueTotal === 1 ? "" : "s"} ${queueTotal === 1 ? "is" : "are"} waiting on your desk.`
+      ? `${queueTotal} tender${queueTotal === 1 ? "" : "s"} waiting on your decision.`
       : data.projects.active > 0
-        ? `${data.projects.active} project${data.projects.active === 1 ? "" : "s"} live on the register. New tenders and decisions land here the moment they arrive.`
+        ? `${data.projects.active} project${data.projects.active === 1 ? "" : "s"} live. Tenders land here the moment they arrive.`
         : "Your projects, tenders and decisions live here. Upload a project to open a tender round.";
 
   return (
@@ -319,9 +292,6 @@ export default async function OwnerDashboard({
               </div>
             ) : null}
 
-            <p className="mt-8 text-[9.5px] tracking-[0.2em] uppercase text-text-dim font-ui font-medium">
-              Project owner · {dateline}
-            </p>
           </div>
         </div>
       </section>
@@ -343,126 +313,88 @@ export default async function OwnerDashboard({
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
               {/* left column — the work */}
               <div className="min-w-0 flex flex-col gap-10">
-                {/* on your desk — the one toned panel on the page */}
-                <section
-                  className={cn(
-                    "relative overflow-hidden rounded-xl border",
-                    deskUrgent
-                      ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.07),rgba(250,248,243,0.5)_65%)]"
-                      : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_65%)]",
-                  )}
-                >
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
-                    style={{
-                      background: deskUrgent
-                        ? "radial-gradient(circle, rgba(217,164,65,0.18), transparent 70%)"
-                        : "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
-                    }}
-                  />
-                  <div className="relative px-4 sm:px-6 py-5 sm:py-6">
-                    <SectionHead
-                      chip={
-                        <IconChip tone={deskUrgent ? "amber" : "teal"}>
-                          <ClipboardCheck className="size-4" />
-                        </IconChip>
-                      }
-                      kicker="On your desk"
-                      kickerTone={deskUrgent ? "amber" : "teal"}
-                      title={
-                        queueTotal === 0
-                          ? "A clear desk"
-                          : `${queueTotal} item${queueTotal === 1 ? "" : "s"} need${queueTotal === 1 ? "s" : ""} your attention`
-                      }
-                      sub={
-                        queueTotal === 0
-                          ? "Nothing needs you right now. New tenders and decisions appear here the moment they arrive."
-                          : "Decisions first, then drafts. A price only holds for its validity period."
-                      }
-                      right={
-                        <Link
-                          href="/owner/tenders"
-                          className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
-                        >
-                          All tenders
-                          <ArrowRight className="size-3" />
-                        </Link>
-                      }
-                    />
-
-                    {queueShown.length > 0 ? (
-                      <ul className="mt-5 flex flex-col gap-2">
-                        {queueShown.map((row) => (
-                          <li key={row.key}>
-                            <Link
-                              href={row.href}
-                              className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
-                            >
-                              <span
-                                aria-hidden
-                                className={cn(
-                                  "absolute left-0 top-0 bottom-0 w-[3px]",
-                                  row.tone === "warn" && "bg-[#c99422]",
-                                  row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
-                                  row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
-                                )}
-                              />
-                              <span className="min-w-0 flex-1">
-                                <span className="flex items-center gap-2 min-w-0">
-                                  <DeskChip tone={row.tone}>{row.chip}</DeskChip>
-                                  <span className="font-ui font-medium text-[13.5px] text-text truncate">
-                                    {row.title}
-                                  </span>
-                                </span>
-                                <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
-                                  {row.line}
-                                </span>
-                              </span>
-                              {row.metric ? (
-                                <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
-                                  {row.metric}
-                                </span>
-                              ) : null}
-                              <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                    {queueOverflow > 0 ? (
+                {/* your desk — tenders that have come in */}
+                <section>
+                  <PlainHead
+                    title="Your desk"
+                    sub={
+                      queueTotal === 0
+                        ? "No tenders waiting on you. New ones land here the moment they arrive."
+                        : "Tenders that have come in. A price only holds for its validity period."
+                    }
+                    right={
                       <Link
-                        href={hiddenDecisions > 0 ? "/owner/tenders" : "/owner/projects"}
-                        className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                        href="/owner/tenders"
+                        className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
                       >
-                        {queueOverflow} more{" "}
-                        {hiddenDecisions > 0 ? "across your tenders" : "in your project file"}
+                        All tenders
                         <ArrowRight className="size-3" />
                       </Link>
-                    ) : null}
-                  </div>
+                    }
+                  />
+
+                  {queueShown.length > 0 ? (
+                    <ul className="mt-5 flex flex-col gap-2">
+                      {queueShown.map((row) => (
+                        <li key={row.key}>
+                          <Link
+                            href={row.href}
+                            className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+                          >
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "absolute left-0 top-0 bottom-0 w-[3px]",
+                                row.tone === "warn" && "bg-[#c99422]",
+                                row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                                row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
+                              )}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2 min-w-0">
+                                <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                                <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                                  {row.title}
+                                </span>
+                              </span>
+                              <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
+                                {row.line}
+                              </span>
+                            </span>
+                            {row.metric ? (
+                              <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                                {row.metric}
+                              </span>
+                            ) : null}
+                            <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {queueOverflow > 0 ? (
+                    <Link
+                      href="/owner/tenders"
+                      className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                    >
+                      {queueOverflow} more across your tenders
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  ) : null}
                 </section>
 
-                {/* the project file — on the canvas */}
+                {/* your projects */}
                 <section>
-                  <SectionHead
-                    chip={
-                      <IconChip tone="teal">
-                        <Folder className="size-4" />
-                      </IconChip>
-                    }
-                    kicker="Your projects"
-                    kickerTone="teal"
-                    title="The project file"
-                    sub="Every project on your account and where its round stands."
-                    rule
+                  <PlainHead
+                    title="Your projects"
+                    sub="Every project and where its round stands."
                     right={
                       <span className="flex items-center gap-3 shrink-0">
                         <Link
                           href="/owner/projects"
                           className="text-[11.5px] text-text-muted hover:text-text transition-colors"
                         >
-                          All projects
+                          View all
                         </Link>
                         <Link
                           href="/owner/projects/new"
@@ -505,13 +437,13 @@ export default async function OwnerDashboard({
                 <section>
                   <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border-subtle">
                     <RailHead icon={<Mail className="size-3.5" />}>
-                      Correspondence
+                      Messages
                     </RailHead>
                     <Link
                       href="/owner/messages"
                       className="text-[11.5px] text-text-muted hover:text-text transition-colors"
                     >
-                      Messages
+                      Open
                     </Link>
                   </div>
                   {unreadThreads.length === 0 ? (
@@ -554,7 +486,7 @@ export default async function OwnerDashboard({
                   <section>
                     <div className="pb-2.5 border-b border-border-subtle">
                       <RailHead icon={<FileText className="size-3.5" />}>
-                        The record
+                        Activity
                       </RailHead>
                     </div>
                     <ul className="divide-y divide-border-subtle/50">
@@ -591,7 +523,7 @@ export default async function OwnerDashboard({
                   <section>
                     <div className="pb-2.5 border-b border-border-subtle">
                       <RailHead icon={<Landmark className="size-3.5" />}>
-                        The book
+                        Tenders
                       </RailHead>
                     </div>
                     <div className="mt-3 grid grid-cols-2 border-y border-border-subtle">
@@ -769,6 +701,29 @@ function SharedWithYou({
         ))}
       </ul>
     </section>
+  );
+}
+
+/** Section header — a title, a quiet line, nothing else. */
+function PlainHead({
+  title,
+  sub,
+  right,
+}: {
+  title: string;
+  sub?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <header className="flex items-end justify-between gap-4 pb-2.5 border-b border-border-subtle">
+      <div className="min-w-0">
+        <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+          {title}
+        </h2>
+        {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
+      </div>
+      {right ? <span className="shrink-0 pb-0.5">{right}</span> : null}
+    </header>
   );
 }
 
@@ -984,7 +939,7 @@ function FirstProjectPrimer() {
     {
       n: "03",
       title: "Compare and decide",
-      line: "Every tender arrives side by side: price, allowances, conditions and coverage, like for like.",
+      line: "Every tender arrives side by side: price, provisional sums, conditions and coverage, like for like.",
     },
   ];
   return (

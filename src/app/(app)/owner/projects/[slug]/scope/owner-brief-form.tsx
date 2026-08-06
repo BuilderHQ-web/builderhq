@@ -13,14 +13,15 @@
  * on the waiting page and in chapter 05, both reading the same store.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, BadgeCheck, Check, Pencil } from "lucide-react";
 
 import { saveOwnerBriefAction } from "@/app/(app)/_actions/projects";
 import {
-  questionsForOwnerBrief,
+  questionsForBrief,
   isOwnerBriefComplete,
   briefLabel,
+  type BriefAudience,
 } from "@/modules/projects/owner-brief";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -29,27 +30,65 @@ export function OwnerBriefForm({
   projectId,
   projectType,
   initial,
+  audience = "owner",
+  remembered,
   readOnly = false,
   onComplete,
+  onSaved,
 }: {
   projectId: string;
   projectType: string;
   initial: Record<string, string>;
+  /** Which question set to ask — homeowner or architect. */
+  audience?: BriefAudience;
+  /**
+   * MEMORY: stable answers carried from this runner's last project.
+   * Applied and saved once on mount so the question is never asked
+   * twice; the pencil still edits them.
+   */
+  remembered?: Record<string, string>;
   readOnly?: boolean;
   onComplete?: () => void;
+  /** Fires after every successful save with the answers saved, so a
+   *  host holding its own copy of the brief (the wizard) stays
+   *  current and a remount never sees a stale snapshot. */
+  onSaved?: (answers: Record<string, string>) => void;
 }) {
   const QUESTIONS = useMemo(
-    () => questionsForOwnerBrief(projectType),
-    [projectType],
+    () => questionsForBrief(projectType, audience),
+    [projectType, audience],
   );
-  const [answers, setAnswers] = useState<Record<string, string>>(initial);
+  // Remembered answers count as answered from the first paint; the
+  // saved store catches up in the mount effect below.
+  const starting = useMemo(
+    () => ({ ...(readOnly ? {} : remembered), ...initial }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const [answers, setAnswers] = useState<Record<string, string>>(starting);
   // Resume at the first unanswered question; land on the summary when
   // everything already carries an answer.
   const [step, setStep] = useState(() => {
-    const first = QUESTIONS.findIndex((q) => !initial[q.id]);
+    const first = QUESTIONS.findIndex((q) => !starting[q.id]);
     return first === -1 ? QUESTIONS.length : first;
   });
   const chain = useRef<Promise<unknown>>(Promise.resolve());
+
+  // Persist carried answers so completeness is judged on what is
+  // actually stored, not just what is on screen.
+  useEffect(() => {
+    if (readOnly) return;
+    const carried = Object.keys(starting).some((k) => !initial[k]);
+    if (!carried) return;
+    chain.current = chain.current.then(async () => {
+      const r = await saveOwnerBriefAction(projectId, starting);
+      if (r.ok) {
+        onSaved?.(starting);
+        if (r.value.complete) onComplete?.();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const complete = useMemo(
     () => isOwnerBriefComplete(answers, projectType),
@@ -68,6 +107,7 @@ export function OwnerBriefForm({
         toast.error("Could not save", r.error.message);
         return;
       }
+      onSaved?.(next);
       if (r.value.complete) onComplete?.();
     });
     // A short beat so the tick is seen, then the next question.
@@ -97,7 +137,7 @@ export function OwnerBriefForm({
               </span>
               <span className="flex items-center gap-1.5 shrink-0">
                 <span className="text-[12px] font-ui font-medium text-text">
-                  {briefLabel(question.id, answers[question.id]) ?? "Not answered"}
+                  {briefLabel(question.id, answers[question.id], audience) ?? "Not answered"}
                 </span>
                 {!readOnly ? (
                   <button
