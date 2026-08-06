@@ -4264,7 +4264,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "tristina-haines",
     kind: "finance",
-    draft: true,
     roleLabel: "Mortgage broker",
     name: "Tristina Haines",
     monogram: "TH",
