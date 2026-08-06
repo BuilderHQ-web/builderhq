@@ -1228,7 +1228,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "architects-ring-associates",
     kind: "architect",
-    draft: true,
     name: "Architects Ring & Associates",
     monogram: "AR",
     logo: "/partners/architects-ring-associates/logo.png",
@@ -1267,7 +1266,7 @@ export const PARTNERS: Partner[] = [
         sub: "Australian Institute of Architects · 2004",
       },
     ],
-    why: "Architects Ring & Associates is one of Canberra's most awarded architecture practices, and one of its most senior. Founded in 1991 by Terence Ring, who has designed in the capital since 1975, the studio has been named ACT House of the Year twelve times and MBA National House of the Year three times, among more than one hundred local and national awards. Terry himself holds the Australian Institute of Architects President's Award and the ACT Chapter Medallion for Architecture, and the practice's commissions range from luxury homes to an extension of the Governor-General's residence, alongside community and Indigenous housing work. Its architects are registered in the ACT and NSW, and few practices know Canberra's sites and planning rules as intimately. For an owner planning something of ambition in the capital, this is about as assured as an introduction gets.",
+    why: "Architects Ring & Associates is one of Canberra's most awarded architecture practices, and one of its most senior. Founded in 1991 by Terence Ring, who has designed in the capital since 1975, the studio has been named ACT House of the Year twelve times and MBA National House of the Year three times, among more than one hundred local and national awards.\n\nTerry himself holds the Australian Institute of Architects President's Award and the ACT Chapter Medallion for Architecture, and the practice's commissions range from luxury homes to an extension of the Governor-General's residence, alongside community and Indigenous housing work. Its architects are registered in the ACT and NSW, and few practices know Canberra's sites and planning rules as intimately. For an owner planning something of ambition in the capital, this is about as assured as an introduction gets.",
     about:
       "Architects Ring & Associates is a Kingston based architecture and interior design practice, founded in 1991 by its director Terence Ring, who has practised in Canberra since 1975 and taught architecture and interior design at the Canberra Institute of Technology. The firm began in a home studio in Griffith through one of Australia's worst recessions and grew into one of the capital's most established, now working from a multi-storey building it designed on Wentworth Avenue. ARAA designs across the luxury residential, commercial, multi-unit and heritage sectors, and gives back through Indigenous and community housing, places of worship and an annual schools mentoring program. Its work has won more than one hundred awards, including the ACT House of the Year twelve times and the MBA National House of the Year three times, and Terry holds the AIA President's Award and the ACT Chapter Medallion for Architecture. The practice designs around the idea of 'genius loci', a sense of place, and many of its homes are still owned by the clients who first commissioned them decades ago.",
     facts: {
