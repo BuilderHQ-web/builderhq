@@ -79,6 +79,13 @@ export const scopeRunDocuments = pgTable(
     /** The client/project name in the title block, for the
      *  cross-document entity consistency check. */
     clientName: text("client_name"),
+    /** Soil reports only: the AS 2870 site classification printed in
+     *  the report ("M", "H1", "P"). The tender deck shows it back to
+     *  builders as a confirmation instead of a question. */
+    siteClass: text("site_class"),
+    /** Energy reports only: the NatHERS star rating printed on the
+     *  certificate (6.2). Same confirmation treatment. */
+    energyStars: real("energy_stars"),
     findings: jsonb(),
     error: text(),
     createdAt: timestamp({ mode: "date", withTimezone: true })

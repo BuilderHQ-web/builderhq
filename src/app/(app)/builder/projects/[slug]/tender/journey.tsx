@@ -37,6 +37,7 @@ import {
   Check,
   ChevronDown,
   FileText,
+  Info,
   ListOrdered,
   Loader2,
   Paperclip,
@@ -55,9 +56,11 @@ import {
   gateAllows,
   questionInPlay,
   getQuestion,
+  type InPlayContext,
   type InstrumentQuestion,
   type InstrumentSection,
 } from "@/modules/tenders/instrument";
+import type { RoundPackFacts } from "@/modules/scope-engine";
 import {
   scheduleDivisions,
   readScheduleAnswer,
@@ -66,6 +69,7 @@ import {
   deriveNotApplicable,
   ownerExcludedItems,
   formatCitation,
+  SCHEDULE_NOTE_HINT,
   type ScheduleDivision,
   type ScheduleEntry,
   type ScheduleState,
@@ -141,12 +145,13 @@ const DOCS_MODULE: Extract<JourneyModule, { kind: "docs" }> = {
 
 export function buildModules(
   version: number | null | undefined,
-  hasSchedule = false,
+  ctx: InPlayContext = { hasSchedule: false },
 ): JourneyModule[] {
   const sections = sectionsFor(version);
-  // Audience-flagged questions filter here, at the single point every
-  // journey surface (deck, progress, contents, review, resume) builds
-  // from — so a schedule round can never show a legacy slide.
+  // Audience- and document-aware questions filter here, at the single
+  // point every journey surface (deck, progress, contents, review,
+  // resume) builds from — so a schedule round can never show a legacy
+  // slide, and a report on file can never show its question twin.
   const out: JourneyModule[] = sections.map((s) => ({
     kind: "questions",
     key: s.id,
@@ -155,7 +160,7 @@ export function buildModules(
     intro: s.intro,
     section: {
       ...s,
-      questions: s.questions.filter((q) => questionInPlay(q, hasSchedule)),
+      questions: s.questions.filter((q) => questionInPlay(q, ctx)),
     },
   }));
   // Documents before sign-off when the set ends with one; appended
@@ -195,7 +200,7 @@ export function summariseValue(
     const count = (s: string) => marked.filter((r) => m[r.id] === s).length;
     const parts = [
       `${count("included")} included`,
-      count("allowance") ? `${count("allowance")} allowance` : null,
+      count("allowance") ? `${count("allowance")} provisional sum${count("allowance") === 1 ? "" : "s"}` : null,
       count("excluded") ? `${count("excluded")} excluded` : null,
       count("not_applicable") ? `${count("not_applicable")} n/a` : null,
     ].filter(Boolean);
@@ -206,10 +211,10 @@ export function summariseValue(
     if (entries.length === 0) return null;
     const count = (s: string) => entries.filter((e) => e.s === s).length;
     const parts = [
-      `${count("documented")} as documented`,
-      count("allowance") ? `${count("allowance")} allowance` : null,
+      `${count("documented")} included`,
+      count("allowance") ? `${count("allowance")} provisional sum${count("allowance") === 1 ? "" : "s"}` : null,
       count("excluded") ? `${count("excluded")} excluded` : null,
-      count("na") ? `${count("na")} not applicable` : null,
+      count("na") ? `${count("na")} n/a` : null,
     ].filter(Boolean);
     return parts.join(" · ");
   }
@@ -232,6 +237,7 @@ export function TenderJourney({
   clientBrief = [],
   packAdvisories = [],
   projectState = null,
+  packFacts = null,
 }: {
   slug: string;
   projectId: string;
@@ -255,13 +261,24 @@ export function TenderJourney({
   packAdvisories?: Array<{ key: string; title: string; why: string }>;
   /** Project home state ("VIC") — drives the statutory deposit check. */
   projectState?: string | null;
+  /** Which key reports the round carries, with their read facts. */
+  packFacts?: RoundPackFacts | null;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const hasSchedule = schedule !== null && schedule.items.length > 0;
+  const inPlayCtx = useMemo<InPlayContext>(
+    () => ({
+      hasSchedule,
+      soilOnFile: packFacts?.soil.onFile,
+      structuralOnFile: packFacts?.structural.onFile,
+      energyOnFile: packFacts?.energy.onFile,
+    }),
+    [hasSchedule, packFacts],
+  );
   const MODULES = useMemo(
-    () => buildModules(instrumentVersion, hasSchedule),
-    [instrumentVersion, hasSchedule],
+    () => buildModules(instrumentVersion, inPlayCtx),
+    [instrumentVersion, inPlayCtx],
   );
   // The schedule's division walk — module 5's slides on a gate round.
   const SCHED_DIVISIONS = useMemo<ScheduleDivision[]>(
@@ -498,7 +515,12 @@ export function TenderJourney({
       ? scheduleDivisions(schedule!).filter((d) => d.items.length > 0)
       : [];
     let i = 0;
-    for (const m of buildModules(instrumentVersion, hasSchedule)) {
+    for (const m of buildModules(instrumentVersion, {
+      hasSchedule,
+      soilOnFile: packFacts?.soil.onFile,
+      structuralOnFile: packFacts?.structural.onFile,
+      energyOnFile: packFacts?.energy.onFile,
+    })) {
       if (m.kind === "docs") {
         i++;
         continue;
@@ -545,6 +567,12 @@ export function TenderJourney({
   const slide = deck[idx]!;
   const idxRef = useRef(idx);
   idxRef.current = idx;
+
+  // A long slide (a big division, the review) leaves the page
+  // scrolled; the next slide must always open at its top.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slide.key]);
 
   // ── stages: (intro) → opening → (bridge) → deck → sealed ─────────
   // A bridge HOLDS until the builder clicks or presses a key — module
@@ -830,6 +858,10 @@ export function TenderJourney({
           licence: letterhead?.licence ?? null,
         },
         schedule,
+        // The deck knows the round's register; the preview must
+        // resolve presence from the same facts as the slides, never
+        // from answers not yet given.
+        inPlayCtx,
         now: new Date(),
       }),
     [
@@ -840,6 +872,7 @@ export function TenderJourney({
       projectMeta,
       letterhead,
       schedule,
+      inPlayCtx,
     ],
   );
 
@@ -858,10 +891,17 @@ export function TenderJourney({
       }
       queue(q.id, (prev: unknown) => {
         const cur = { ...readScheduleAnswer(prev) };
-        cur[item.itemId] =
-          next.s === "allowance"
-            ? { s: next.s, a: next.a ?? null }
-            : { s: next.s };
+        // State-scoped fields null out when their state goes (leaving
+        // allowance clears the figure, na its reason, documented its
+        // price); the comment belongs to the line and rides on any
+        // state.
+        cur[item.itemId] = {
+          s: next.s,
+          a: next.s === "allowance" ? (next.a ?? null) : null,
+          p: next.s === "documented" ? (next.p ?? null) : null,
+          n: next.s === "na" ? (next.n ?? null) : null,
+          c: next.c ?? null,
+        };
         return cur;
       });
     },
@@ -1112,6 +1152,7 @@ export function TenderJourney({
                     model={docModel}
                     companyName={letterhead?.companyName ?? null}
                     projectState={projectState}
+                    instrumentVersion={instrumentVersion}
                     onPreview={() => setPreviewOpen(true)}
                     confirming={confirmingSubmit}
                     submitting={submitting}
@@ -1138,12 +1179,23 @@ export function TenderJourney({
                     total={SCHED_DIVISIONS.length}
                     marks={readScheduleAnswer(answers[slide.q.id])}
                     onMark={(item, entry) => {
+                      // A comment or price edit keeps the line's state;
+                      // only a genuine state change may arm the
+                      // auto-advance, or typing on a finished division
+                      // would slide the deck away mid-sentence.
+                      const prevState = readScheduleAnswer(
+                        liveAnswers.current[slide.q.id],
+                      )[item.itemId]?.s;
                       markScheduleItem(slide.q, item, entry);
                       // The last unmarked line completing the division
                       // advances the deck — unless the mark opens an
                       // input that must hold the slide: an allowance
                       // for its figure, not-applicable for its reason.
-                      if (entry.s !== "allowance" && entry.s !== "na") {
+                      if (
+                        entry.s !== "allowance" &&
+                        entry.s !== "na" &&
+                        prevState !== entry.s
+                      ) {
                         const after = {
                           ...readScheduleAnswer(
                             liveAnswers.current[slide.q.id],
@@ -1250,6 +1302,16 @@ export function TenderJourney({
                     ) : null}
                     {slide.q.id === "elig.authority" && letterhead ? (
                       <LetterheadCard letterhead={letterhead} />
+                    ) : null}
+                    {slide.q.id === "site.soil_class_confirm" ? (
+                      <SoilClassCard
+                        siteClass={packFacts?.soil.siteClass ?? null}
+                      />
+                    ) : null}
+                    {slide.q.id === "compliance.energy_confirm" ? (
+                      <EnergyRatingCard
+                        stars={packFacts?.energy.stars ?? null}
+                      />
                     ) : null}
                     {slide.q.id === "excl.derived_confirm" ? (
                       <DerivedExclusions
@@ -1447,22 +1509,22 @@ const INTRO_BEATS = [
   {
     key: "why",
     kicker: "Why this exists",
-    headline: "The care you take should be easy to see.",
-    body: "Owners often weigh quotes that look nothing alike, where a considered price reads much the same as a rushed one. This presents your tender clearly and consistently, so your work is judged on its merits rather than its formatting.",
+    headline: "Your quote, presented properly.",
+    body: "Owners usually compare quotes that all look different. Here, every tender follows the same clear format, so yours is judged on what matters: your price, your scope and your record.",
     cta: "Continue",
   },
   {
     key: "what",
     kicker: "How it works",
-    headline: "You answer the questions. We prepare the tender.",
-    body: "Twelve short sections cover your eligibility, the project, your credentials, your price and your terms. Your answers become a formal document on your letterhead, with schedules and a signature, ready to submit.",
+    headline: "You answer the questions. We build the document.",
+    body: "Short sections cover who you are, your price, what is included and your programme. Your answers become a complete tender document on your letterhead, ready to submit.",
     cta: "Continue",
   },
   {
     key: "cost",
     kicker: "What to expect",
-    headline: "About thirty minutes, and less each time after.",
-    body: "Most questions are a single tap, and everything saves as you go, so you can step away and return whenever suits. The details that describe your business carry across to your future tenders, and you can preview the finished document at any point.",
+    headline: "About 30 minutes. Faster next time.",
+    body: "Most questions are one tap, and everything saves as you go, so you can leave and come back. Answers about your business are kept for your next tender.",
     cta: "Begin",
   },
 ] as const;
@@ -2430,7 +2492,8 @@ function PackGapsHint({
         {openLineCount > 0 ? (
           <li>
             {openLineCount} schedule line{openLineCount === 1 ? "" : "s"} the
-            documents leave unpriced, already in module 5 for your marks.
+            documents leave open, already in your tender schedule in
+            module 5.
           </li>
         ) : null}
         {advisories.map((a) => (
@@ -2453,10 +2516,10 @@ const DIVISION_STATES: Array<{
   label: string;
   short: string;
 }> = [
-  { value: "documented", label: "Included as documented", short: "Documented" },
-  { value: "allowance", label: "Allowance", short: "Allowance" },
+  { value: "documented", label: "Included", short: "Included" },
+  { value: "allowance", label: "Provisional sum", short: "Provisional sum" },
   { value: "excluded", label: "Excluded", short: "Excluded" },
-  { value: "na", label: "Not applicable", short: "Not applicable" },
+  { value: "na", label: "N/A", short: "N/A" },
 ];
 
 /**
@@ -2513,8 +2576,8 @@ function DivisionSlide({
         </button>
         <p className="mt-1.5 text-[11px] text-text-dim">
           {unmarkedCarries.length > 0
-            ? `Documented lines as documented; ${unmarkedCarries.length === 1 ? "the client's allowance line carries its" : `${unmarkedCarries.length} client allowance lines carry their`} stated figure${unmarkedCarries.length === 1 ? "" : "s"}.`
-            : "Everything left goes in as documented."}
+            ? `Marks everything left as Included; the client's provisional sum${unmarkedCarries.length === 1 ? " line keeps its" : " lines keep their"} stated figure${unmarkedCarries.length === 1 ? "" : "s"}.`
+            : "Marks everything left as Included."}
         </p>
       </div>
     ) : null;
@@ -2565,7 +2628,8 @@ function DivisionSlide({
   );
 }
 
-/** One line of the schedule: the mark control and, for allowances, the figure. */
+/** One line of the schedule: the mark control and, for provisional
+ *  sums, the figure. A comment can ride on any mark. */
 function ScheduleItemRow({
   item,
   entry,
@@ -2579,10 +2643,16 @@ function ScheduleItemRow({
   const state = entry?.s;
   const cite = item.citations[0] ? formatCitation(item.citations[0]) : null;
   // Price disclosure stays open once used; opening it is a deliberate
-  // act, so it never flashes on a passing "documented" tap.
+  // act, so it never flashes on a passing "included" tap.
   const [priceOpen, setPriceOpen] = useState(false);
   const showPrice =
     state === "documented" && (priceOpen || typeof entry?.p === "number");
+  const [commentOpen, setCommentOpen] = useState(false);
+  const showComment =
+    !!state && (commentOpen || (typeof entry?.c === "string" && entry.c.length > 0));
+  // Every mark keeps the line's comment; states change, comments stay.
+  const mark = (next: ScheduleEntry) =>
+    onMark({ ...next, c: entry?.c ?? null });
   return (
     <li
       className={cn(
@@ -2604,7 +2674,11 @@ function ScheduleItemRow({
           </p>
           {item.note ? (
             <p className="mt-1.5 text-[11.5px] leading-[1.55] text-text-muted max-w-[56ch]">
-              <span className="text-accent-light">Documents:</span>{" "}
+              <span className="inline-flex items-center gap-1 text-accent-light">
+                Notes
+                <NoteHint />
+                :
+              </span>{" "}
               {item.note}
             </p>
           ) : null}
@@ -2615,8 +2689,8 @@ function ScheduleItemRow({
             </p>
           ) : item.kind === "owner_open" ? (
             <p className="mt-1.5 text-[11.5px] text-text-dim">
-              The documents are silent here. The client asks you to price
-              this line within your quote.
+              The documents do not cover this line. Price it in your
+              quote.
             </p>
           ) : cite ? (
             <p className="mt-1.5 text-[11px] text-text-dim">{cite}</p>
@@ -2629,7 +2703,7 @@ function ScheduleItemRow({
           <button
             type="button"
             onClick={() =>
-              onMark({ s: "allowance", a: item.ownerAmountAud })
+              mark({ s: "allowance", a: item.ownerAmountAud })
             }
             aria-pressed={
               state === "allowance" && entry?.a === item.ownerAmountAud
@@ -2645,8 +2719,8 @@ function ScheduleItemRow({
           </button>
         ) : null}
         {DIVISION_STATES.map((st) => {
-          // The carry chip owns the "allowance at the client's figure"
-          // case; the plain Allowance chip is the builder's own figure.
+          // The carry chip owns "the client's figure"; the plain
+          // Provisional sum chip is the builder's own figure.
           const on =
             state === st.value &&
             !(
@@ -2660,7 +2734,7 @@ function ScheduleItemRow({
               key={st.value}
               type="button"
               onClick={() =>
-                onMark(
+                mark(
                   st.value === "allowance"
                     ? {
                         s: "allowance",
@@ -2690,6 +2764,23 @@ function ScheduleItemRow({
             </button>
           );
         })}
+        <button
+          type="button"
+          disabled={!state}
+          onClick={() => setCommentOpen((o) => !o)}
+          aria-pressed={showComment}
+          title={state ? undefined : "Mark the line first"}
+          className={cn(
+            "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+            !state
+              ? "border-border-subtle text-text-faint cursor-default"
+              : showComment
+                ? "border-border-accent text-text"
+                : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
+          )}
+        >
+          Comment
+        </button>
       </div>
 
       {state === "allowance" ? (
@@ -2700,11 +2791,11 @@ function ScheduleItemRow({
           className="mt-3"
         >
           <p className="text-[11.5px] text-text-muted mb-1.5">
-            Allowance in your price for this line
+            Provisional sum in your price for this line
           </p>
           <CurrencyBox
             value={typeof entry?.a === "number" ? entry.a : null}
-            onChange={(v) => onMark({ s: "allowance", a: v })}
+            onChange={(v) => mark({ s: "allowance", a: v })}
           />
         </motion.div>
       ) : null}
@@ -2717,15 +2808,14 @@ function ScheduleItemRow({
           className="mt-3"
         >
           <p className="text-[11.5px] text-text-muted mb-1.5">
-            One line on why this does not apply. Optional, and it reads
-            far better to the client than a bare mark.
+            Optional. One line on why this does not apply.
           </p>
           <input
             type="text"
             maxLength={200}
             value={entry?.n ?? ""}
             onChange={(e) =>
-              onMark({ s: "na", n: e.target.value || null })
+              mark({ s: "na", n: e.target.value || null })
             }
             placeholder="Superseded by the addendum, not on this site plan..."
             className="h-11 w-full max-w-[420px] rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3 text-[13px] text-text outline-none focus:border-border-accent transition-colors"
@@ -2740,7 +2830,7 @@ function ScheduleItemRow({
           className="mt-2.5 inline-flex items-center gap-1 text-[11px] text-text-dim hover:text-text transition-colors"
         >
           <Plus className="size-3" />
-          Disclose this line&rsquo;s price
+          Show this line&rsquo;s price
         </button>
       ) : null}
       {showPrice ? (
@@ -2751,16 +2841,162 @@ function ScheduleItemRow({
           className="mt-3"
         >
           <p className="text-[11.5px] text-text-muted mb-1.5">
-            Optional. A disclosed line price reads as itemised working
-            and lifts how your preparation scores.
+            Optional. A shown line price scores higher for preparation.
           </p>
           <CurrencyBox
             value={typeof entry?.p === "number" ? entry.p : null}
-            onChange={(v) => onMark({ s: "documented", p: v })}
+            onChange={(v) => mark({ s: "documented", p: v })}
+          />
+        </motion.div>
+      ) : null}
+
+      {showComment && state ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Optional. Your comment prints beside this line on your
+            tender.
+          </p>
+          <input
+            type="text"
+            maxLength={280}
+            value={entry?.c ?? ""}
+            onChange={(e) =>
+              onMark({ ...entry!, c: e.target.value || null })
+            }
+            placeholder="Priced for the standard finish shown on the drawings..."
+            className="h-11 w-full max-w-[420px] rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3 text-[13px] text-text outline-none focus:border-border-accent transition-colors"
           />
         </motion.div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * The soil classification, read off the round's own report and shown
+ * back big: the builder confirms the class the price rests on, and
+ * never types what the platform already knows.
+ */
+function SoilClassCard({ siteClass }: { siteClass: string | null }) {
+  return (
+    <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 py-7 max-w-[420px] text-center">
+      <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+        From the soil report on file
+      </p>
+      {siteClass ? (
+        <>
+          <p className="mt-3 font-display text-[64px] leading-none text-text tabular-nums">
+            {siteClass}
+          </p>
+          <p className="mt-2 text-[12px] text-text-muted">
+            Site classification (AS 2870)
+          </p>
+        </>
+      ) : (
+        <p className="mt-3 text-[13px] leading-[1.65] text-text-muted">
+          The report sets the ground conditions for this site. Confirm
+          you have priced to it.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The NatHERS rating, drawn the way the certificate draws it: the
+ * star arc with the number in the centre.
+ */
+function EnergyRatingCard({ stars }: { stars: number | null }) {
+  if (stars === null) {
+    return (
+      <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 py-7 max-w-[420px] text-center">
+        <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+          From the energy report on file
+        </p>
+        <p className="mt-3 text-[13px] leading-[1.65] text-text-muted">
+          The report sets the thermal performance the build must meet.
+          Confirm you have priced to it.
+        </p>
+      </div>
+    );
+  }
+  // Ten stars on a half circle, filled to the rating.
+  const STARS = 10;
+  const R = 92;
+  return (
+    <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 pt-7 pb-6 max-w-[420px] text-center">
+      <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+        From the energy certificate on file
+      </p>
+      <div className="relative mx-auto mt-4 h-[120px] w-[240px]" aria-hidden>
+        {Array.from({ length: STARS }, (_, i) => {
+          // Left to right across the top half: 180° → 0°.
+          const angle = Math.PI - (i / (STARS - 1)) * Math.PI;
+          const x = 120 + R * Math.cos(angle);
+          const y = 108 - R * Math.sin(angle);
+          const filled = i < Math.round(stars);
+          return (
+            <svg
+              key={i}
+              viewBox="0 0 24 24"
+              className="absolute size-[22px] -translate-x-1/2 -translate-y-1/2"
+              style={{ left: x, top: y }}
+              fill={filled ? "#1a5fd4" : "none"}
+              stroke={filled ? "#1a5fd4" : "rgba(24,34,44,0.3)"}
+              strokeWidth="1.5"
+            >
+              <path d="M12 2l2.9 6.26 6.87.6-5.2 4.55 1.55 6.72L12 16.56 5.88 20.13l1.55-6.72-5.2-4.55 6.87-.6L12 2z" />
+            </svg>
+          );
+        })}
+        <p className="absolute inset-x-0 bottom-0 font-display text-[46px] leading-none text-text tabular-nums">
+          {stars % 1 === 0 ? stars.toFixed(0) : stars.toFixed(1)}
+        </p>
+      </div>
+      <p className="mt-2 text-[12px] text-text-muted">
+        NatHERS star rating
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The standard (i) beside every schedule line's notes. One text,
+ * shared with the schedule browser, so the explanation never drifts.
+ */
+function NoteHint() {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        aria-label="What these notes are"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        onBlur={() => setOpen(false)}
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") setOpen(true);
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") setOpen(false);
+        }}
+        className="text-text-faint hover:text-text-muted transition-colors"
+      >
+        <Info className="size-3" />
+      </button>
+      {open ? (
+        <span className="absolute left-0 top-full z-20 mt-1.5 w-[250px] max-w-[72vw] rounded-md border border-border-subtle bg-surface-1 card-elev px-3 py-2 text-left text-[11px] leading-[1.55] font-normal text-text-muted">
+          {SCHEDULE_NOTE_HINT}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -2781,8 +3017,8 @@ function DerivedAllowances({
     return (
       <div className="mt-6 border-y border-border-subtle py-4">
         <p className="text-[12.5px] text-text-muted">
-          No allowances. Every line in your price is marked included as
-          documented — the strongest schedule a tender can carry.
+          No provisional sums. Every line in your price is marked
+          Included, the strongest schedule a tender can carry.
         </p>
       </div>
     );
@@ -2805,7 +3041,7 @@ function DerivedAllowances({
                     r.amountAud === r.ownerAmountAud
                     ? "Client's schedule, carried at the stated figure"
                     : "Client's schedule, your figure"
-                  : "Your allowance"}
+                  : "Your provisional sum"}
               </p>
             </div>
             <span className="text-[13.5px] font-display tabular-nums text-text shrink-0">
@@ -2816,7 +3052,7 @@ function DerivedAllowances({
       </ul>
       <div className="py-3 border-t border-border-subtle flex items-baseline justify-between">
         <span className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
-          Total allowances
+          Total provisional sums
         </span>
         <span className="text-[15px] font-display tabular-nums text-text">
           {formatAud(total)}
@@ -2993,7 +3229,7 @@ function DerivedExclusions({
       {allowance.length > 0 ? (
         <div className="py-3.5">
           <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-            Carried as allowances
+            Carried as provisional sums
           </p>
           <p className="mt-1.5 text-[12.5px] text-text-muted">
             {allowance.map((r) => r.label).join(" · ")}
@@ -3343,6 +3579,7 @@ function ReviewSlide({
   model,
   companyName,
   projectState,
+  instrumentVersion,
   onPreview,
   confirming,
   submitting,
@@ -3361,6 +3598,9 @@ function ReviewSlide({
   model: TenderDocumentModel;
   companyName: string | null;
   projectState: string | null;
+  /** The version this draft answers — the scorecard must score it
+   *  under its own rubric, never the current one. */
+  instrumentVersion: number;
   onPreview: () => void;
   confirming: boolean;
   submitting: boolean;
@@ -3377,6 +3617,7 @@ function ReviewSlide({
     documentCount: docs.length,
     companyName,
     projectState,
+    instrumentVersion,
   });
 
   return (
@@ -3611,14 +3852,14 @@ export function MetricsPanel({
   if (m.schedule) {
     if (m.schedule.allowance > 0) {
       cells.push({
-        k: "Allowances",
+        k: "Provisional sums",
         v: formatAud(m.schedule.allowanceTotal),
         sub: `${m.schedule.allowance} line${m.schedule.allowance === 1 ? "" : "s"} of the schedule`,
       });
     }
   } else if (m.psCount + m.pcCount > 0) {
     cells.push({
-      k: "Allowances",
+      k: "Provisional sums",
       v: formatAud(m.allowanceExposure),
       sub: `${m.psCount} provisional · ${m.pcCount} prime cost`,
     });
@@ -3626,10 +3867,12 @@ export function MetricsPanel({
   if (m.schedule && m.schedule.total - m.schedule.unmarked > 0) {
     cells.push({
       k: "Scope coverage",
-      v: `${m.schedule.documented} of ${m.schedule.total} as documented`,
+      v: `${m.schedule.documented} of ${m.schedule.total} included`,
       sub:
         [
-          m.schedule.allowance ? `${m.schedule.allowance} allowance` : null,
+          m.schedule.allowance
+            ? `${m.schedule.allowance} provisional sum${m.schedule.allowance === 1 ? "" : "s"}`
+            : null,
           m.schedule.excluded ? `${m.schedule.excluded} excluded` : null,
         ]
           .filter(Boolean)
@@ -3645,7 +3888,9 @@ export function MetricsPanel({
       v: `${m.coverage.included} of ${MATRIX_ROWS.length} included`,
       sub:
         [
-          m.coverage.allowance ? `${m.coverage.allowance} allowance` : null,
+          m.coverage.allowance
+            ? `${m.coverage.allowance} provisional sum${m.coverage.allowance === 1 ? "" : "s"}`
+            : null,
           m.coverage.excluded ? `${m.coverage.excluded} excluded` : null,
           m.coverage.notApplicable ? `${m.coverage.notApplicable} n/a` : null,
         ]
@@ -3670,19 +3915,21 @@ export function MetricsPanel({
   return (
     <div className="mt-8">
       <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-        Key tender metrics
+        Your tender at a glance
       </p>
-      <dl className="mt-3 flex flex-wrap gap-x-12 gap-y-5 border-y border-border-subtle py-5">
+      <dl className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px rounded-lg overflow-hidden border border-border-subtle bg-border-subtle">
         {cells.map((c) => (
-          <div key={c.k} className="min-w-[120px]">
-            <dt className="text-[10px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+          <div key={c.k} className="bg-surface-1 px-4 py-3.5 min-w-0">
+            <dt className="text-[9.5px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold truncate">
               {c.k}
             </dt>
-            <dd className="mt-1 font-display text-[16px] sm:text-[17px] text-text tabular-nums leading-tight">
+            <dd className="mt-1.5 font-display text-[18px] text-text tabular-nums leading-tight truncate">
               {c.v}
             </dd>
             {c.sub ? (
-              <dd className="mt-0.5 text-[10.5px] text-text-dim">{c.sub}</dd>
+              <dd className="mt-0.5 text-[10.5px] text-text-dim truncate">
+                {c.sub}
+              </dd>
             ) : null}
           </div>
         ))}

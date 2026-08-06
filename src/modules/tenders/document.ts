@@ -19,6 +19,8 @@ import {
   computeTenderMetrics,
   gateAllows,
   questionInPlay,
+  inPlayContextFromAnswers,
+  type InPlayContext,
   type InstrumentQuestion,
 } from "./instrument";
 import { formatAnswer, formatAud } from "./comparison";
@@ -173,6 +175,14 @@ export function buildTenderDocument(args: {
    * the generic trade grid to the line-by-line confirmation.
    */
   schedule?: TenderSchedule | null;
+  /**
+   * The round's live presence context, when the caller holds it (the
+   * deck, the draft document route). Drafts prefer it so the preview
+   * shows the questions the deck actually asks; sealed tenders always
+   * derive presence from their own answers, because the register may
+   * have changed since they were priced.
+   */
+  inPlayCtx?: InPlayContext | null;
   /** Render moment, supplied by the caller (drafts date-stamp to it). */
   now: Date;
 }): TenderDocumentModel {
@@ -191,6 +201,13 @@ export function buildTenderDocument(args: {
   const schedule = args.schedule ?? null;
   const hasSchedule = schedule !== null && schedule.items.length > 0;
   const isDraft = status === "draft";
+  // Drafts follow the live register when the caller supplies it, so
+  // the preview asks what the deck asks; a sealed record renders what
+  // it was actually asked, from its own answers.
+  const inPlay: InPlayContext =
+    isDraft && args.inPlayCtx
+      ? args.inPlayCtx
+      : inPlayContextFromAnswers(answers, hasSchedule);
   const m = computeTenderMetrics(answers, hasSchedule ? schedule : null);
   const sections = sectionsFor(instrumentVersion);
   const rows = scopeMatrixRows();
@@ -237,7 +254,7 @@ export function buildTenderDocument(args: {
   if (m.schedule) {
     cells.push({
       k: "Scope coverage",
-      v: `${m.schedule.documented} of ${m.schedule.total} schedule lines as documented`,
+      v: `${m.schedule.documented} of ${m.schedule.total} schedule lines included`,
     });
   } else {
     cells.push({
@@ -302,7 +319,7 @@ export function buildTenderDocument(args: {
     for (const q of section.questions) {
       if (q.type === "amounts") continue;
       if (q.id === "scope.schedule_run") continue;
-      if (!questionInPlay(q, hasSchedule)) continue;
+      if (!questionInPlay(q, inPlay)) continue;
       if (!asked(q, answers)) continue;
 
       if (q.type === "schedule" && schedule) {
@@ -509,8 +526,8 @@ function scheduleBlocks(
           if (item.kind === "owner_allowance") {
             state =
               item.ownerAmountAud !== null && e.a === item.ownerAmountAud
-                ? "Allowance, client's figure"
-                : "Allowance, builder's figure";
+                ? "Provisional sum, client's figure"
+                : "Provisional sum, builder's figure";
           }
         } else if (e.s === "documented" && typeof e.p === "number") {
           // A disclosed line price prints exactly as given — the
@@ -518,7 +535,13 @@ function scheduleBlocks(
           amount = formatAud(e.p);
         }
       }
-      return [item.label, state, amount];
+      // The builder's own comment prints with the line, whatever the
+      // mark — it is part of the offer.
+      const label =
+        e && typeof e.c === "string" && e.c.length > 0
+          ? `${item.label} · ${e.c}`
+          : item.label;
+      return [label, state, amount];
     });
     blocks.push({
       kind: "table",
@@ -538,9 +561,9 @@ function scheduleBlocks(
     columns: ["", ""],
     align: ["l", "r"],
     rows: [
-      ["Included as documented", String(t.documented)],
+      ["Included", String(t.documented)],
       [
-        "Carried as allowances",
+        "Carried as provisional sums",
         t.allowance > 0
           ? `${t.allowance} (${formatAud(t.allowanceTotal)})`
           : "0",
@@ -574,8 +597,8 @@ function allowanceScheduleBlock(
     return {
       kind: "chips",
       ref: q.ref ?? "",
-      title: "Allowance schedule",
-      items: ["No allowances. Every schedule line in the price is priced as documented."],
+      title: "Provisional sum schedule",
+      items: ["No provisional sums. Every schedule line in the price is priced as documented."],
       tone: "plain",
     };
   }
@@ -583,8 +606,8 @@ function allowanceScheduleBlock(
   return {
     kind: "table",
     ref: q.ref,
-    title: "Allowance schedule",
-    columns: ["Allowance", "Source", "Amount ex GST"],
+    title: "Provisional sum schedule",
+    columns: ["Provisional sum", "Source", "Amount ex GST"],
     align: ["l", "l", "r"],
     rows: rows.map((r) => [
       `${r.label} (${r.divisionLabel})`,
@@ -595,7 +618,7 @@ function allowanceScheduleBlock(
         : "Builder",
       formatAud(r.amountAud),
     ]),
-    footer: [`${rows.length} allowance${rows.length === 1 ? "" : "s"}`, "", formatAud(total)],
+    footer: [`${rows.length} provisional sum${rows.length === 1 ? "" : "s"}`, "", formatAud(total)],
   };
 }
 

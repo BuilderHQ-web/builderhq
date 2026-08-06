@@ -26,6 +26,7 @@
 import {
   scopeMatrixRows,
   computeTenderMetrics,
+  INSTRUMENT_VERSION,
   type TenderMetrics,
 } from "./instrument";
 import { tradeLabel, type TradeId } from "./trades";
@@ -57,6 +58,13 @@ export interface EvaluationInput {
   answers: Answers;
   /** Project home state ("VIC") for statutory checks. */
   projectState?: string | null;
+  /**
+   * The instrument version the tender answered. v3 removed the
+   * clarifications and gaps questions and made soil document-aware,
+   * so the preparation rubric reads differently by version. Unknown
+   * resolves to the current version.
+   */
+  instrumentVersion?: number | null;
 }
 
 /* ── output model ───────────────────────────────────────────────────── */
@@ -929,6 +937,21 @@ export function evaluateTender(
     } else if (str(a["site.rock"]) === "included") {
       L.note("rock removal inside the price, held");
     }
+    // A deposit above the legal cap is not a preference, it is a
+    // compliance problem the owner would have to correct at contract.
+    if (money.depositAboveCap && input.projectState) {
+      const capPct = DEPOSIT_CAP[input.projectState.toUpperCase()];
+      L.add(
+        -12,
+        `deposit of ${money.depositPct}% sits above the ${capPct}% statutory cap in ${input.projectState.toUpperCase()}`,
+      );
+    } else if (
+      money.depositPct !== null &&
+      input.projectState &&
+      DEPOSIT_CAP[input.projectState.toUpperCase()] !== undefined
+    ) {
+      L.note("deposit within the statutory cap, held");
+    }
     dims.push(L.settle("firmness"));
   }
 
@@ -990,88 +1013,129 @@ export function evaluateTender(
 
   {
     // Preparation — the diligence visible in how this tender was
-    // priced. Weights total exactly 100:
-    //   inspection 22 · documents 16 · soil 14 · clarifications 10
-    //   gaps 6 · concerns 6 · itemisation 10 · attachments 6
-    //   commentary 10
+    // priced. Two rubrics, both totalling exactly 100:
+    //   v2 and earlier: inspection 22 · documents 16 · soil 14 ·
+    //     clarifications 10 · gaps 6 · concerns 6 · itemisation 10 ·
+    //     attachments 6 · commentary 10
+    //   v3 (clarifications and gaps questions retired; soil is
+    //     document-aware): inspection 26 · documents 20 · soil 16 ·
+    //     concerns 8 · itemisation 12 · attachments 8 · commentary 10
+    const isV3 = (input.instrumentVersion ?? INSTRUMENT_VERSION) >= 3;
+    const W = isV3
+      ? { insp: 26, docs: 20, soil: 16, concerns: 8, item: 12, attach: 8 }
+      : { insp: 22, docs: 16, soil: 14, concerns: 6, item: 10, attach: 6 };
     const L = ledger(0, null);
     const insp = str(a["elig.site_inspection"]);
     if (insp === "inspected") {
-      L.add(22, "inspected the site");
+      L.add(W.insp, "inspected the site");
     } else {
       if (insp === "not_inspected") {
         L.note("priced without a site inspection, acknowledged");
       }
-      L.miss(22, "walking the site earns these");
+      L.miss(W.insp, "walking the site earns these");
     }
     const docs = str(a["elig.docs_reviewed"]);
-    if (docs === "full_set") L.add(16, "reviewed the full document set");
+    if (docs === "full_set") L.add(W.docs, "reviewed the full document set");
     else if (docs === "partial") {
       L.add(5, "documents only partially reviewed");
-      L.miss(11, "reading the full set earns the balance");
+      L.miss(W.docs - 5, "reading the full set earns the balance");
     } else {
-      L.miss(16, "document review not recorded");
+      L.miss(W.docs, "document review not recorded");
     }
-    const soil = str(a["site.soil_report"]);
-    if (soil === "site_report") L.add(14, "priced from this site's soil report");
-    else {
-      if (soil === "assumed") L.note("soil classification assumed, not tested");
-      L.miss(14, "pricing from this site's soil report earns these");
-    }
-    const rfis = str(a["understand.rfis"]);
-    if (rfis === "answered") {
-      L.add(10, "raised and resolved clarifications while pricing");
-    } else if (rfis === "none_needed") {
-      L.add(6, "no clarifications needed");
-      L.miss(4, "raising and closing out questions earns the full weight");
-    } else {
-      if (rfis === "awaiting") {
-        L.note("still awaiting answers to clarifications");
+    if (isV3) {
+      // Document-aware soil: a report on file is confirmed; no report
+      // asks for the assumed basis instead.
+      const SOIL_LABEL: Record<string, string> = {
+        a: "A",
+        s: "S",
+        m: "M",
+        h: "H1/H2",
+        e: "E",
+        p: "P",
+      };
+      const basis = str(a["site.soil_class_basis"]);
+      if (a["site.soil_class_confirm"] === true) {
+        L.add(W.soil, "priced to the site's soil report");
+      } else if (basis && basis !== "not_stated") {
+        L.add(
+          10,
+          `assumed class ${SOIL_LABEL[basis] ?? basis.toUpperCase()} stated plainly, no report provided`,
+        );
+        L.miss(W.soil - 10, "a soil report for this site earns the full 16");
+      } else {
+        if (basis === "not_stated") {
+          L.note("no soil classification stated for the price");
+        }
+        L.miss(W.soil, "stating the soil basis of the price earns these");
       }
-      L.miss(10, "clarifications not raised or not closed out");
-    }
-    if (
-      a["understand.gaps"] === true &&
-      arr(a["understand.gap_items"]).length > 0
-    ) {
-      L.add(6, "documented the gaps they priced around");
     } else {
-      L.miss(6, "documenting the gaps priced around earns these");
+      const soil = str(a["site.soil_report"]);
+      if (soil === "site_report") {
+        L.add(W.soil, "priced from this site's soil report");
+      } else {
+        if (soil === "assumed") {
+          L.note("soil classification assumed, not tested");
+        }
+        L.miss(W.soil, "pricing from this site's soil report earns these");
+      }
+      const rfis = str(a["understand.rfis"]);
+      if (rfis === "answered") {
+        L.add(10, "raised and resolved clarifications while pricing");
+      } else if (rfis === "none_needed") {
+        L.add(6, "no clarifications needed");
+        L.miss(4, "raising and closing out questions earns the full weight");
+      } else {
+        if (rfis === "awaiting") {
+          L.note("still awaiting answers to clarifications");
+        }
+        L.miss(10, "clarifications not raised or not closed out");
+      }
+      if (
+        a["understand.gaps"] === true &&
+        arr(a["understand.gap_items"]).length > 0
+      ) {
+        L.add(6, "documented the gaps they priced around");
+      } else {
+        L.miss(6, "documenting the gaps priced around earns these");
+      }
     }
     if (
       a["understand.concerns"] === true &&
       arr(a["understand.concern_items"]).length > 0
     ) {
-      L.add(6, "flagged design or constructability concerns");
+      L.add(W.concerns, "flagged design or constructability concerns");
     } else {
-      L.miss(6, "flagging design or constructability concerns earns these");
+      L.miss(
+        W.concerns,
+        "flagging design or constructability concerns earns these",
+      );
     }
-    const itemPts = Math.min(10, metrics.itemisedCount);
+    const itemPts = Math.min(W.item, metrics.itemisedCount);
     if (itemPts > 0) {
       L.add(
         itemPts,
         metrics.schedule
-          ? `disclosed ${metrics.itemisedCount} line price${metrics.itemisedCount === 1 ? "" : "s"} on the schedule, to 10`
-          : `itemised ${metrics.itemisedCount} trade${metrics.itemisedCount === 1 ? "" : "s"} by amount, to 10`,
+          ? `disclosed ${metrics.itemisedCount} line price${metrics.itemisedCount === 1 ? "" : "s"} on the schedule, to ${W.item}`
+          : `itemised ${metrics.itemisedCount} trade${metrics.itemisedCount === 1 ? "" : "s"} by amount, to ${W.item}`,
       );
     }
-    if (itemPts < 10) {
+    if (itemPts < W.item) {
       L.miss(
-        10 - itemPts,
+        W.item - itemPts,
         metrics.schedule
-          ? "disclosing line prices earns up to the full 10"
-          : "itemising trades by amount earns up to the full 10",
+          ? `disclosing line prices earns up to the full ${W.item}`
+          : `itemising trades by amount earns up to the full ${W.item}`,
       );
     }
-    const docPts = Math.min(6, input.documentCount * 2);
+    const docPts = Math.min(W.attach, input.documentCount * 2);
     if (docPts > 0) {
       L.add(
         docPts,
-        `attached ${input.documentCount} supporting document${input.documentCount === 1 ? "" : "s"}, 2 each to 6`,
+        `attached ${input.documentCount} supporting document${input.documentCount === 1 ? "" : "s"}, 2 each to ${W.attach}`,
       );
     }
-    if (docPts < 6) {
-      L.miss(6 - docPts, "supporting documents earn 2 each, to 6");
+    if (docPts < W.attach) {
+      L.miss(W.attach - docPts, `supporting documents earn 2 each, to ${W.attach}`);
     }
     const commPts = commentary.present
       ? Math.min(
@@ -1122,7 +1186,7 @@ export function evaluateTender(
       exp ? (expPts[exp] ?? 0) : 0,
       20,
       exp ? `${EXPERIENCE[exp]?.toLowerCase()}` : null,
-      "full marks here: 50+ comparable projects",
+      "full marks need 50 or more comparable projects",
     );
     const largePts: Record<string, number> = {
       under_500k: 3,
@@ -1136,7 +1200,7 @@ export function evaluateTender(
       largest ? (largePts[largest] ?? 0) : 0,
       15,
       largest ? `${LARGEST[largest]?.toLowerCase()}` : null,
-      "full marks here: a largest contract over $5m",
+      "full marks need a largest contract over $5m",
     );
     const loadPts: Record<string, number> = { "1_2": 12, "3_5": 6, "6_plus": 0 };
     const load = str(a["team.supervisor_load"]);
@@ -1144,14 +1208,14 @@ export function evaluateTender(
       load ? (loadPts[load] ?? 0) : 0,
       12,
       load ? `site lead ${LOAD[load]}` : null,
-      "full marks here: a site lead carrying 1–2 jobs",
+      "full marks need a site lead carrying 1 to 2 jobs",
     );
     const concPts: Record<string, number> = { "0_2": 8, "3_5": 4, "6_plus": 0 };
     slot(
       concurrent ? (concPts[concurrent] ?? 0) : 0,
       8,
       concurrent ? `${CONCURRENT[concurrent]?.toLowerCase()}` : null,
-      "full marks here: at most 2 concurrent projects",
+      "full marks need at most 2 concurrent projects",
     );
     if (tenure === "under_1") L.note("crews together under a year");
     slot(
@@ -1162,7 +1226,7 @@ export function evaluateTender(
         : tenure === "1_3"
           ? "core crews together 1–3 years"
           : null,
-      "full marks here: core crews together 3+ years",
+      "full marks need core crews together 3 or more years",
     );
     const whsPts: Record<string, number> = {
       certified: 10,
@@ -1173,7 +1237,7 @@ export function evaluateTender(
       whs ? (whsPts[whs] ?? 0) : 0,
       10,
       whs ? `${(WHS[whs] ?? whs).toLowerCase()}` : null,
-      "full marks here: a certified WHS system",
+      "full marks need a certified WHS system",
     );
     const qaPts = Math.min(
       10,
@@ -1185,7 +1249,7 @@ export function evaluateTender(
       qaPts,
       10,
       "quality control in place",
-      "full marks here: independent inspections with documented ITPs",
+      "full marks need independent inspections with documented ITPs",
     );
     const refPts = Math.min(10, references.length * 4 + refLinks);
     if (refPts === 0) L.note("no references offered");
@@ -1237,7 +1301,7 @@ export function evaluateTender(
       upd ? (updPts[upd] ?? 0) : 0,
       16,
       upd ? `${(UPDATES[upd] ?? upd).toLowerCase()}` : null,
-      "full marks here: weekly progress updates",
+      "full marks need weekly progress updates",
     );
     if (a["contract.variations_written"] === false) {
       L.note("variations not always in writing");
@@ -1260,7 +1324,7 @@ export function evaluateTender(
       dlp ? (dlpPts[dlp] ?? 0) : 0,
       22,
       dlp ? `${dlp}-month defects period` : null,
-      "full marks here: a 24-month defects period",
+      "full marks need a 24 month defects period",
     );
     slot(
       a["aftercare.walkthrough"] === true ? 10 : 0,
@@ -1273,7 +1337,7 @@ export function evaluateTender(
       resp ? (respPts[resp] ?? 0) : 0,
       16,
       resp ? `${(RESPONSE[resp] ?? resp).toLowerCase()}` : null,
-      "full marks here: defect calls answered within 48 hours",
+      "full marks need defect calls answered within 48 hours",
     );
     slot(
       a["aftercare.manual"] === true ? 12 : 0,
@@ -1309,7 +1373,7 @@ export function evaluateTender(
     if (weatherPts < 30) {
       L.miss(
         30 - weatherPts,
-        "full marks here: 15+ weather days inside the build period",
+        "full marks need 15 or more weather days inside the build period",
       );
     }
     if (metrics.ldPerWeek !== null) {
@@ -1322,7 +1386,7 @@ export function evaluateTender(
     const vdPts = vd !== null ? (vd >= 45 ? 20 : vd >= 30 ? 15 : vd >= 21 ? 8 : 3) : 0;
     if (vdPts > 0) L.add(vdPts, `price holds ${vd} days`);
     if (vdPts < 20) {
-      L.miss(20 - vdPts, "full marks here: a price held 45+ days");
+      L.miss(20 - vdPts, "full marks need a price held 45 days or more");
     }
     if (programme.leadTime) {
       L.add(10, `lead time stated, ${programme.leadTime}`);
@@ -1411,6 +1475,24 @@ export function evaluateTender(
       `Priced on an assumed ${(str(a["site.soil_class"]) ?? "").toUpperCase()} class site, not a report for this block.`,
       "Share the soil report if one exists, or ask what a class change would cost.",
     );
+  }
+  {
+    // v3: the basis question only exists when the round has no soil
+    // report, so an answer here means the price rests on an
+    // assumption — unless a later addendum brought the report and the
+    // builder affirmed it, in which case the stale basis stays quiet.
+    const basis = str(a["site.soil_class_basis"]);
+    if (basis && a["site.soil_class_confirm"] !== true) {
+      flag(
+        "soil-assumed",
+        "attention",
+        "Soil classification assumed",
+        basis === "not_stated"
+          ? "No soil report was provided for this site and the tender states no assumed classification."
+          : `Priced on an assumed class ${basis === "h" ? "H1/H2" : basis.toUpperCase()} site; no soil report was provided for this block.`,
+        "Commission a soil report before contract, or ask what a class change would cost.",
+      );
+    }
   }
   if (str(a["site.rock"]) === "variation") {
     flag(

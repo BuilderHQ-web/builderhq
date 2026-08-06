@@ -72,6 +72,7 @@ import { cn } from "@/lib/utils";
 import { BUDGET_BAND_MIDPOINT } from "@/modules/scope";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
+import { UnlockWelcome } from "./unlock-welcome";
 
 // ── lookup labels ────────────────────────────────────────────────────────
 
@@ -381,6 +382,12 @@ export function ProjectDetail({
 
   return (
     <div className="pb-32">
+      {/* The once-only orientation, the first time a spot-holder
+          opens the project. */}
+      {unlocked ? (
+        <UnlockWelcome projectId={preview.id} hasScope={schedule !== null} />
+      ) : null}
+
       {/* Header — on the canvas, ruled off rather than boxed in white */}
       <div className="border-b border-border-subtle">
         <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1200px]">
@@ -459,6 +466,44 @@ export function ProjectDetail({
           </div>
         </div>
       </div>
+
+      {/* The unlocked map — one quiet strip so nothing on the page is
+          missed. Anchors only; the content keeps its order below. */}
+      {unlocked ? (
+        <div className="border-b border-border-subtle bg-bg-deep/20">
+          <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1200px]">
+            <nav className="flex items-center gap-5 overflow-x-auto py-2.5 text-[11.5px] font-ui text-text-muted whitespace-nowrap">
+              <span className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-semibold shrink-0">
+                On this page
+              </span>
+              {[
+                // A legacy round has no scope section; no dead anchor.
+                ...(schedule !== null
+                  ? [["#scope", "Scope of works"] as const]
+                  : []),
+                ["#documents", "Documents"] as const,
+                ["#owner", "Owner"] as const,
+                ["#messaging", "Messages"] as const,
+              ].map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="hover:text-text transition-colors shrink-0"
+                >
+                  {label}
+                </a>
+              ))}
+              <Link
+                href={`/builder/projects/${preview.slug}/tender`}
+                className="ml-auto inline-flex items-center gap-1 text-accent-light hover:text-accent-deep transition-colors shrink-0"
+              >
+                Your tender
+                <ArrowUpRight className="size-3" />
+              </Link>
+            </nav>
+          </div>
+        </div>
+      ) : null}
 
       <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1200px]">
         <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-x-12 gap-y-10">
@@ -559,9 +604,10 @@ export function ProjectDetail({
               </Reveal>
             ) : null}
 
-            {/* The scope of works, in build chapters — every line of
-                the pack folded into the six parts of a job. */}
-            {scopeGroups.some((g) => g.lines > 0) ? (
+            {/* The scope of works in build chapters — the pre-unlock
+                taste of the pack. Once the full line-by-line browser
+                is open below, the summary would only repeat it. */}
+            {!(unlocked && schedule) && scopeGroups.some((g) => g.lines > 0) ? (
               <Reveal immediate delay={0.17}>
                 <Card
                   title="Scope of works"
@@ -569,8 +615,8 @@ export function ProjectDetail({
                 >
                   <p className="mb-4 text-[12.5px] leading-[1.65] text-text-muted max-w-[62ch]">
                     Every priceable line of the pack, folded into the six
-                    chapters of a build. The full line-by-line schedule
-                    sits {unlocked ? "below" : "behind your spot"}.
+                    chapters of a build. The full line-by-line scope sits
+                    behind your spot.
                   </p>
                   <ScopeOfWorks groups={scopeGroups} />
                 </Card>
@@ -599,13 +645,15 @@ export function ProjectDetail({
             {unlocked && schedule ? (
               <Reveal immediate delay={0.21}>
                 <Card
-                  title="The pack, in full"
+                  id="scope"
+                  title="Scope of works"
                   icon={<BookOpenCheck className="size-4" />}
                 >
                   <ScheduleBrowser
                     schedule={schedule}
                     overview={overview}
                     advisories={advisories}
+                    pdfHref={`/builder/projects/${preview.slug}/scope-of-works`}
                   />
                 </Card>
               </Reveal>
@@ -614,6 +662,7 @@ export function ProjectDetail({
             {/* Documents — blurred + locked overlay if not unlocked */}
             <Reveal immediate delay={0.22}>
             <Card
+              id="documents"
               title={`Documents · ${documents.length}`}
               icon={<FileText className="size-4" />}
             >
@@ -690,7 +739,7 @@ export function ProjectDetail({
             ) : null}
 
             <Reveal immediate delay={0.12}>
-            <Card title="Project owner" icon={<Sparkles className="size-4" />}>
+            <Card id="owner" title="Project owner" icon={<Sparkles className="size-4" />}>
               <div className="relative">
                 <div
                   className={cn(
@@ -1270,13 +1319,15 @@ function Card({
   title,
   icon,
   children,
+  id,
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  id?: string;
 }) {
   return (
-    <section>
+    <section id={id} className={id ? "scroll-mt-24" : undefined}>
       <header className="flex items-center gap-2.5">
         <span className="text-accent-light [&_svg]:size-3.5">{icon}</span>
         <h3 className="text-[10.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold shrink-0">
@@ -1483,17 +1534,17 @@ function TenderPackPanel({
   return (
     <div>
       <p className="text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
-        Every document on this round has been read against the BuilderHQ
-        Scope Standard and checked by a person. Tenders here answer this
-        schedule line by line, so every quote lands on the same scope.
+        Every document on this round was read against the BuilderHQ
+        Scope Standard before it opened. Tenders answer this scope line
+        by line, so every quote lands on the same list.
       </p>
 
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-px rounded-lg overflow-hidden border border-border-subtle bg-border-subtle">
         {[
-          { k: "Schedule lines", v: String(pack.tenderable) },
+          { k: "Scope lines", v: String(pack.tenderable) },
           { k: "Divisions", v: String(pack.divisions.length) },
           {
-            k: "Client allowances",
+            k: "Provisional sums",
             v:
               pack.ownerAllowances > 0
                 ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
@@ -1514,8 +1565,8 @@ function TenderPackPanel({
 
       {pack.ownerAllowances > 0 ? (
         <p className="mt-3 text-[12px] leading-[1.6] text-text-muted">
-          The client&rsquo;s allowances are locked figures every tender
-          carries identically, so those lines never decide the
+          The client&rsquo;s provisional sums are set figures every
+          tender carries identically, so those lines never decide the
           comparison.
           {allowancePct !== null
             ? ` They total ${formatAud(pack.ownerAllowanceTotal)}, about ${allowancePct} percent of the stated budget.`

@@ -132,6 +132,7 @@ export async function loadRound(
       },
       answers: summaries[t.id]!.answers,
       projectState: project.state,
+      instrumentVersion: t.instrumentVersion,
     }));
 
   return {

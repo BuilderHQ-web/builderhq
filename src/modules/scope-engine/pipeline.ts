@@ -69,7 +69,7 @@ export const SYNTHESIS_MODEL = "claude-opus-4-8";
  * note locality (each note written only from its cited pages), and
  * one line per distinct cladding system.
  */
-export const SCOPE_PIPELINE_VERSION = 5;
+export const SCOPE_PIPELINE_VERSION = 6;
 
 /** 28 MB — the same ceiling the plan auto-fill extractor uses. */
 export const MAX_PDF_BYTES = 28 * 1024 * 1024;
@@ -310,6 +310,29 @@ const ClassificationSchema = z.object({
     .string()
     .nullish()
     .transform((v) => (v ? v.trim().slice(0, 120) : null)),
+  /** Soil reports only: the AS 2870 site classification the report
+   *  states. Normalised to the standard codes; anything else is
+   *  dropped rather than shown to a builder wrong. */
+  siteClass: z
+    .string()
+    .nullish()
+    .transform((v) => {
+      if (!v) return null;
+      const cleaned = v.trim().toUpperCase().replace(/^CLASS\s+/, "");
+      return /^(A|S|M|M-D|H1|H1-D|H2|H2-D|E|E-D|P)$/.test(cleaned)
+        ? cleaned
+        : null;
+    }),
+  /** Energy reports only: the NatHERS star rating the certificate
+   *  states (6.2). Out-of-range values drop to null. */
+  energyStars: z
+    .number()
+    .nullish()
+    .transform((v) =>
+      typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 10
+        ? Math.round(v * 10) / 10
+        : null,
+    ),
   pageCount: z
     .number()
     .int()
@@ -343,9 +366,19 @@ const CLASSIFY_TOOL: Anthropic.Tool = {
         description:
           "The client, project or company name the title block carries (e.g. 'Billy Residence', 'Chok & Co Pty Ltd'). Null when none is printed.",
       },
+      siteClass: {
+        type: ["string", "null"],
+        description:
+          "GEOTECHNICAL/SOIL REPORTS ONLY: the AS 2870 site classification the report states (one of A, S, M, M-D, H1, H1-D, H2, H2-D, E, E-D, P). Null for every other document kind, and null when the report does not state one. Never guess.",
+      },
+      energyStars: {
+        type: ["number", "null"],
+        description:
+          "ENERGY REPORTS/CERTIFICATES ONLY: the NatHERS star rating the certificate states (e.g. 6.2). Null for every other document kind, and null when no rating is printed. Never guess.",
+      },
       pageCount: { type: "integer", description: "Total pages in this PDF." },
     },
-    required: ["kind", "title", "revision", "issueDate", "clientName", "pageCount"],
+    required: ["kind", "title", "revision", "issueDate", "clientName", "siteClass", "energyStars", "pageCount"],
   },
 };
 
@@ -408,6 +441,118 @@ export async function classifyDocument(args: {
     classification: shape
       ? { ...parsed.data, pageCount: shape.pageCount }
       : parsed.data,
+    usage: usageOf(message),
+  };
+}
+
+/**
+ * Fact recovery for soil and energy documents. The classifier reads
+ * only the cover pages, but a geotechnical report often states its
+ * AS 2870 classification in the body and an energy report its rating
+ * mid-document. When classification comes back without the fact, one
+ * cheap follow-up reads deeper — soil and energy documents only, so
+ * the cost is two extra haiku calls per round at most.
+ */
+const FACT_RECOVERY_PAGES = 24;
+
+const FactRecoverySchema = z.object({
+  siteClass: z
+    .string()
+    .nullish()
+    .transform((v) => {
+      if (!v) return null;
+      const cleaned = v.trim().toUpperCase().replace(/^CLASS\s+/, "");
+      return /^(A|S|M|M-D|H1|H1-D|H2|H2-D|E|E-D|P)$/.test(cleaned)
+        ? cleaned
+        : null;
+    }),
+  energyStars: z
+    .number()
+    .nullish()
+    .transform((v) =>
+      typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 10
+        ? Math.round(v * 10) / 10
+        : null,
+    ),
+});
+
+const FACT_RECOVERY_TOOL: Anthropic.Tool = {
+  name: "record_document_facts",
+  description: "Record the stated facts from this report.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      siteClass: {
+        type: ["string", "null"],
+        description:
+          "SOIL/GEOTECHNICAL REPORTS: the AS 2870 site classification the report states (one of A, S, M, M-D, H1, H1-D, H2, H2-D, E, E-D, P). Null when the report does not state one. Never guess.",
+      },
+      energyStars: {
+        type: ["number", "null"],
+        description:
+          "ENERGY REPORTS/CERTIFICATES: the NatHERS star rating stated (e.g. 6.2). Null when no star rating is printed (a performance solution has none). Never guess.",
+      },
+    },
+    required: ["siteClass", "energyStars"],
+  },
+};
+
+export async function recoverDocFacts(args: {
+  bytes: Uint8Array;
+  filename: string;
+  kind: "soil" | "energy";
+}): Promise<{
+  siteClass: string | null;
+  energyStars: number | null;
+  usage: StageUsage;
+}> {
+  const shape = await loadPdfShape(args.bytes);
+  let sendBytes = args.bytes;
+  if (shape && shape.pageCount > FACT_RECOVERY_PAGES) {
+    try {
+      sendBytes = await shape.slice(1, FACT_RECOVERY_PAGES);
+    } catch {
+      sendBytes = args.bytes;
+    }
+  }
+  const base64 = Buffer.from(sendBytes).toString("base64");
+  const message = await anthropic().messages.create({
+    model: CLASSIFY_MODEL,
+    max_tokens: 512,
+    system:
+      "You read Australian residential construction reports. Report only what is printed; never guess.",
+    tools: [FACT_RECOVERY_TOOL],
+    tool_choice: { type: "tool", name: FACT_RECOVERY_TOOL.name },
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: base64,
+            },
+          },
+          {
+            type: "text",
+            text:
+              args.kind === "soil"
+                ? `This is a geotechnical/soil report ("${args.filename}"). Record the AS 2870 site classification it states with the record_document_facts tool.`
+                : `This is an energy report or certificate ("${args.filename}"). Record the NatHERS star rating it states with the record_document_facts tool.`,
+          },
+        ],
+      },
+    ],
+  });
+  const toolUse = message.content.find(
+    (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+  );
+  const parsed = FactRecoverySchema.safeParse(toolUse?.input);
+  return {
+    siteClass: parsed.success ? parsed.data.siteClass : null,
+    energyStars: parsed.success ? parsed.data.energyStars : null,
     usage: usageOf(message),
   };
 }

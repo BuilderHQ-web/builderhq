@@ -58,7 +58,11 @@ import {
   isAnswerComplete,
 } from "./instrument";
 import { tenderableItems, type TenderSchedule } from "./schedule";
-import { getProjectSchedule } from "@/modules/scope-engine";
+import {
+  getProjectSchedule,
+  packFactsForProject,
+  type RoundPackFacts,
+} from "@/modules/scope-engine";
 import {
   getOrCreateConversation,
   postTenderSubmittedSystemMessage,
@@ -872,9 +876,13 @@ export async function submit(
         }
       }
     }
+    const packFacts =
+      row.instrumentVersion != null
+        ? await packFactsForProject(row.projectId)
+        : null;
     const checklist =
       row.instrumentVersion != null
-        ? checklistProgress(row, checklistRows, schedule)
+        ? checklistProgress(row, checklistRows, schedule, packFacts)
         : null;
 
     const readiness = computeReadiness(row, lines, checklist);
@@ -1159,14 +1167,16 @@ export function checklistProgress(
   t: Pick<TenderRow, "instrumentVersion">,
   responses: Array<Pick<TenderResponseRow, "qid" | "value">>,
   schedule: TenderSchedule | null = null,
+  packFacts: RoundPackFacts | null = null,
 ): ChecklistProgress | null {
   if (t.instrumentVersion == null) return null;
   const answers = new Map(responses.map((r) => [r.qid, r.value]));
-  const required = requiredQuestionIds(
-    answers,
-    t.instrumentVersion,
-    schedule !== null,
-  );
+  const required = requiredQuestionIds(answers, t.instrumentVersion, {
+    hasSchedule: schedule !== null,
+    soilOnFile: packFacts?.soil.onFile,
+    structuralOnFile: packFacts?.structural.onFile,
+    energyOnFile: packFacts?.energy.onFile,
+  });
   // An answer only counts when it FULLY answers the question (every
   // matrix row marked, every items row filled, every schedule line of
   // the pack answered) — same definition the deck uses, so client
@@ -1318,6 +1328,8 @@ export async function saveTenderResponses(
       .where(eq(tenders.id, tenderId));
   }
 
+  // Lenient progress (no schedule or pack facts): callers use it as a
+  // rough gauge; the deck and the submit gate compute the strict one.
   return ok({ saved: entries.length, checklist: checklistProgress(row, all) });
 }
 

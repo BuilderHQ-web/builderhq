@@ -91,11 +91,27 @@ export interface TenderSchedule {
 /* ── the builder's states ───────────────────────────────────────────── */
 
 export const SCHEDULE_STATES = [
-  { value: "documented", label: "Included as documented" },
-  { value: "allowance", label: "Allowance" },
+  { value: "documented", label: "Included" },
+  { value: "allowance", label: "Provisional sum" },
   { value: "excluded", label: "Excluded" },
-  { value: "na", label: "Not applicable" },
+  { value: "na", label: "N/A" },
 ] as const;
+
+/**
+ * The standard note behind every schedule line's (i): what the line's
+ * notes are and where they come from. One text, used identically on
+ * the deck, the schedule browser and the printed document.
+ */
+export const SCHEDULE_NOTE_HINT =
+  "Written by BuilderHQ from the client's documents. It states what the documents say about this line, or what they leave open.";
+
+/**
+ * The short standard paragraph on every scope of works download.
+ * One text, everywhere, so no download ever explains itself
+ * differently.
+ */
+export const SCOPE_PDF_NOTE =
+  "This scope of works was prepared by BuilderHQ. Our AI reads every page of the client's documents and writes what it finds into the lines below. Each line notes what the documents say and where. Read it beside the documents themselves.";
 
 export type ScheduleState = (typeof SCHEDULE_STATES)[number]["value"];
 
@@ -119,6 +135,11 @@ export interface ScheduleEntry {
   p?: number | null;
   /** One line on why a line is "na"; meaningful only for that state. */
   n?: string | null;
+  /**
+   * The builder's own comment on the line, any state. Prints beside
+   * the mark on the tender document and reads on the comparison.
+   */
+  c?: string | null;
 }
 
 export type ScheduleAnswer = Record<string, ScheduleEntry>;
@@ -142,13 +163,19 @@ export function readScheduleAnswer(v: unknown): ScheduleAnswer {
       typeof e.n === "string" && e.n.trim().length > 0
         ? e.n.trim().slice(0, 200)
         : null;
+    const comment =
+      typeof e.c === "string" && e.c.trim().length > 0
+        ? e.c.trim().slice(0, 280)
+        : null;
     // Fields only mean something in their state; strip strays so no
-    // derivation downstream ever needs to re-check.
+    // derivation downstream ever needs to re-check. The comment is
+    // the exception: it belongs to the line, whatever the mark.
     out[itemId] = {
       s: state,
       a: state === "allowance" ? money(e.a) : null,
       p: state === "documented" ? money(e.p) : null,
       n: state === "na" ? note : null,
+      c: comment,
     };
   }
   return out;
@@ -173,11 +200,9 @@ export function isScheduleAnswerShape(v: unknown): boolean {
       v === undefined ||
       v === null ||
       (typeof v === "number" && Number.isFinite(v) && v >= 0);
-    const noteOk =
-      e.n === undefined ||
-      e.n === null ||
-      (typeof e.n === "string" && e.n.length <= 400);
-    return moneyOk(e.a) && moneyOk(e.p) && noteOk;
+    const noteOk = (v: unknown) =>
+      v === undefined || v === null || (typeof v === "string" && v.length <= 400);
+    return moneyOk(e.a) && moneyOk(e.p) && noteOk(e.n) && noteOk(e.c);
   });
 }
 

@@ -83,6 +83,7 @@ import {
 } from "./schema";
 import {
   classifyDocument,
+  recoverDocFacts,
   extractDocument,
   synthesiseRun,
   classifyResidualItems,
@@ -239,6 +240,12 @@ export async function startRun(
         revision: doc.revision,
         docTitle: doc.docTitle,
         pageCount: doc.pageCount,
+        // Classification is skipped for a reused document, so every
+        // classification-read fact must carry with the extraction.
+        issueDate: doc.issueDate,
+        clientName: doc.clientName,
+        siteClass: doc.siteClass,
+        energyStars: doc.energyStars,
         findings: doc.findings,
         updatedAt: new Date(),
       })
@@ -1037,7 +1044,33 @@ async function classifyOne(
       return;
     }
     const { classification, usage: u } = await classifyDocument(loaded);
-    setUsage(addUsage(usage, "classify", u));
+    // Accumulate through a local so the recovery add below builds on
+    // this one instead of a stale snapshot.
+    let acc = addUsage(usage, "classify", u);
+    setUsage(acc);
+    // The cover pages often stop short of a report's stated fact (a
+    // geotech's AS 2870 class, an energy report's star rating). One
+    // cheap deeper read recovers it; nulls that survive are honest.
+    let siteClass = classification.siteClass;
+    let energyStars = classification.energyStars;
+    if (
+      (classification.kind === "soil" && siteClass === null) ||
+      (classification.kind === "energy" && energyStars === null)
+    ) {
+      try {
+        const recovered = await recoverDocFacts({
+          bytes: loaded.bytes,
+          filename: loaded.filename,
+          kind: classification.kind as "soil" | "energy",
+        });
+        acc = addUsage(acc, "classify", recovered.usage);
+        setUsage(acc);
+        siteClass = siteClass ?? recovered.siteClass;
+        energyStars = energyStars ?? recovered.energyStars;
+      } catch {
+        // Recovery is best-effort; the confirm slide handles nulls.
+      }
+    }
     await db
       .update(scopeRunDocuments)
       .set({
@@ -1048,6 +1081,8 @@ async function classifyOne(
         pageCount: classification.pageCount,
         issueDate: classification.issueDate,
         clientName: classification.clientName,
+        siteClass,
+        energyStars,
         updatedAt: new Date(),
       })
       .where(eq(scopeRunDocuments.id, docRow.id));
@@ -2069,6 +2104,24 @@ export async function scopeModelReport(): Promise<ModelReport> {
 
 /* ── the round, read from the builder's side ─────────────────────── */
 
+/**
+ * Which key reports the round's register carries, plus the facts the
+ * classifier read off them. The tender deck turns questions into
+ * confirmations with these: a soil report on file means "priced to
+ * class M" instead of "which class did you assume?".
+ */
+export interface RoundPackFacts {
+  soil: { onFile: boolean; siteClass: string | null };
+  structural: { onFile: boolean };
+  energy: { onFile: boolean; stars: number | null };
+}
+
+export const EMPTY_PACK_FACTS: RoundPackFacts = {
+  soil: { onFile: false, siteClass: null },
+  structural: { onFile: false },
+  energy: { onFile: false, stars: null },
+};
+
 export interface BuilderRoundContext {
   /** The client's brief as short labelled facts, builder order. */
   brief: Array<{ k: string; v: string }>;
@@ -2076,6 +2129,45 @@ export interface BuilderRoundContext {
   overview: SynthesisOverview | null;
   /** What the register lacks — post-unlock pricing intelligence. */
   advisories: DocumentAdvice[];
+  /** Which key reports are on file, with their read facts. */
+  packFacts: RoundPackFacts;
+}
+
+/**
+ * The lean read of RoundPackFacts alone — the submit gate's version.
+ * Same facts getRoundContextForBuilders returns, without the brief,
+ * overview or advisory queries.
+ */
+export async function packFactsForProject(
+  projectId: string,
+): Promise<RoundPackFacts> {
+  const [run] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+      ),
+    )
+    .limit(1);
+  if (!run) return EMPTY_PACK_FACTS;
+  const register = await db
+    .select({
+      kind: scopeRunDocuments.kind,
+      siteClass: scopeRunDocuments.siteClass,
+      energyStars: scopeRunDocuments.energyStars,
+    })
+    .from(scopeRunDocuments)
+    .where(eq(scopeRunDocuments.runId, run.id));
+  const soilDoc = register.find((r) => r.kind === "soil");
+  const energyDoc = register.find((r) => r.kind === "energy");
+  return {
+    soil: { onFile: !!soilDoc, siteClass: soilDoc?.siteClass ?? null },
+    structural: { onFile: register.some((r) => r.kind === "structural") },
+    energy: { onFile: !!energyDoc, stars: energyDoc?.energyStars ?? null },
+  };
 }
 
 /**
@@ -2107,7 +2199,12 @@ export async function getRoundContextForBuilders(
     )
     .limit(1);
   if (!run || !project) {
-    return { brief, overview: null, advisories: [] };
+    return {
+      brief,
+      overview: null,
+      advisories: [],
+      packFacts: EMPTY_PACK_FACTS,
+    };
   }
 
   const [register, items] = await Promise.all([
@@ -2115,6 +2212,8 @@ export async function getRoundContextForBuilders(
       .select({
         documentId: scopeRunDocuments.documentId,
         kind: scopeRunDocuments.kind,
+        siteClass: scopeRunDocuments.siteClass,
+        energyStars: scopeRunDocuments.energyStars,
       })
       .from(scopeRunDocuments)
       .where(eq(scopeRunDocuments.runId, run.id)),
@@ -2160,10 +2259,27 @@ export async function getRoundContextForBuilders(
     projectType: project.type,
   });
 
+  const soilDoc = register.find((r) => r.kind === "soil");
+  const energyDoc = register.find((r) => r.kind === "energy");
+  const packFacts: RoundPackFacts = {
+    soil: {
+      onFile: !!soilDoc,
+      siteClass: soilDoc?.siteClass ?? null,
+    },
+    structural: {
+      onFile: register.some((r) => r.kind === "structural"),
+    },
+    energy: {
+      onFile: !!energyDoc,
+      stars: energyDoc?.energyStars ?? null,
+    },
+  };
+
   return {
     brief,
     overview: (run.overview as SynthesisOverview | null) ?? null,
     advisories,
+    packFacts,
   };
 }
 

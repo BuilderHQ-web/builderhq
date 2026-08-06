@@ -253,7 +253,15 @@ export function deriveRiskFlags(
   }
 
   // ── ground risk ───────────────────────────────────────────────────
-  if (str(a["site.soil_report"]) === "assumed") {
+  // v2 asked whether a report backed the price; the v3 basis question
+  // only exists when the round carries no report, so an answer there
+  // means the same assumption — unless the report arrived later and
+  // the builder affirmed pricing to it.
+  if (
+    str(a["site.soil_report"]) === "assumed" ||
+    (str(a["site.soil_class_basis"]) !== null &&
+      a["site.soil_class_confirm"] !== true)
+  ) {
     flags.push({
       id: "soil",
       severity: "attention",

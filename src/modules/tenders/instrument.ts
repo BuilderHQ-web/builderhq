@@ -54,7 +54,7 @@ import {
   type TenderSchedule,
 } from "./schedule";
 
-export const INSTRUMENT_VERSION = 2;
+export const INSTRUMENT_VERSION = 3;
 
 /* ── question model ─────────────────────────────────────────────────── */
 
@@ -145,6 +145,19 @@ export interface InstrumentQuestion {
    * gate, the document and the comparison can never disagree.
    */
   audience?: "legacy" | "schedule";
+  /**
+   * Document-aware presence (v3): the question exists only for rounds
+   * whose register carries (or lacks) a key report. A soil report on
+   * file turns "which class did you assume?" into "confirm you priced
+   * to class M"; no structural on file removes the engineering
+   * confirmation entirely. Resolved through questionInPlay, same as
+   * audience, so every surface agrees.
+   */
+  presentWhen?:
+    | "soil_on_file"
+    | "soil_off_file"
+    | "structural_on_file"
+    | "energy_on_file";
   /** Required for submission. Optional questions are colour, not gaps. */
   required: boolean;
 }
@@ -1494,10 +1507,213 @@ export const INSTRUMENT_SECTIONS_V1: InstrumentSection[] = [
   },
 ];
 
+/* ════════════════════════════════════════════════════════════════════
+   INSTRUMENT v3 — derived from v2. FROZEN DELTA: v2 above is a closed
+   version (tenders answered it; never edit meanings there), and this
+   derivation IS the v3 definition. Edit the current instrument HERE.
+
+   v3 (2026-08):
+   - Eligibility loses the round-conditions declaration (1.8): the
+     conditions bind by participation, not by an extra tap.
+   - Project understanding loses the listing check, the clarifications
+     question and the gaps list (2.1, 2.2, 2.3): the platform's own
+     reading already carries that record. Concerns and risks remain,
+     renumbered.
+   - The soil, structural and energy questions become document-aware.
+     A report on file turns the question into a confirmation of what
+     the report says; no report either asks for the assumed basis
+     (soil) or removes the question (structural, energy).
+   - The final claim gains "pursuant to the terms of the contract";
+     the allowance basis gains "provided by the client".
+   ════════════════════════════════════════════════════════════════════ */
+
+const V3_DROPPED = new Set([
+  "elig.conditions",
+  "understand.scope_confirm",
+  "understand.discrepancy",
+  "understand.rfis",
+  "understand.gaps",
+  "understand.gap_items",
+  "site.soil_report",
+  "site.soil_class",
+  "site.engineering",
+  "compliance.energy",
+]);
+
+/** Renumbered display refs for questions v3 keeps. */
+const V3_REREF: Record<string, string> = {
+  "understand.concerns": "2.1",
+  "understand.concern_items": "2.1a",
+  "understand.risks": "2.2",
+  "understand.risks_other": "2.2a",
+};
+
+const SOIL_CLASS_OPTIONS: InstrumentOption[] = [
+  { value: "a", label: "A · mostly sand or rock" },
+  { value: "s", label: "S · slightly reactive" },
+  { value: "m", label: "M · moderately reactive" },
+  { value: "h", label: "H1/H2 · highly reactive" },
+  { value: "e", label: "E · extremely reactive" },
+  { value: "p", label: "P · problem site" },
+  { value: "not_stated", label: "No classification assumed" },
+];
+
+export const INSTRUMENT_SECTIONS_V3: InstrumentSection[] =
+  INSTRUMENT_SECTIONS_V2.map((s) => ({
+    ...s,
+    // The industry term is provisional sum; the module says so.
+    ...(s.id === "pcps"
+      ? {
+          title: "Provisional sums and prime costs",
+          intro:
+            "Declaring your provisional sums precisely is what makes your price trustworthy. Vague figures are where other builders' quotes fall apart under an owner's questions; yours will not.",
+        }
+      : null),
+    questions: s.questions.flatMap((q): InstrumentQuestion[] => {
+      if (V3_DROPPED.has(q.id)) {
+        // The soil pair is replaced in place, keeping slide order.
+        if (q.id === "site.soil_report") {
+          return [
+            {
+              id: "site.soil_class_confirm",
+              ref: "5.2",
+              prompt: "I have priced to the soil report provided",
+              help: "The soil report in the document set sets the ground conditions the price rests on.",
+              type: "confirm",
+              presentWhen: "soil_on_file",
+              required: true,
+            },
+            {
+              id: "site.soil_class_basis",
+              ref: "5.2",
+              prompt: "Which soil classification is your price based on?",
+              help: "No soil report was provided for this site, so state the classification you have assumed.",
+              type: "select",
+              options: SOIL_CLASS_OPTIONS,
+              presentWhen: "soil_off_file",
+              required: true,
+            },
+          ];
+        }
+        if (q.id === "site.engineering") {
+          return [
+            {
+              id: "site.engineering_confirm",
+              ref: "5.5",
+              prompt: "My price is based on the structural engineering provided",
+              help: "The structural drawings and computations in the document set.",
+              type: "confirm",
+              presentWhen: "structural_on_file",
+              required: true,
+            },
+          ];
+        }
+        if (q.id === "compliance.energy") {
+          return [
+            {
+              id: "compliance.energy_confirm",
+              ref: "5.9",
+              prompt: "I have priced to the energy report provided",
+              help: "The energy report in the document set sets the thermal performance the build must meet.",
+              type: "confirm",
+              presentWhen: "energy_on_file",
+              required: true,
+            },
+          ];
+        }
+        return [];
+      }
+      if (q.id === "payments.final_claim") {
+        return [
+          {
+            ...q,
+            options: [
+              ...(q.options ?? []),
+              {
+                value: "contract_terms",
+                label: "Pursuant to the terms of the contract",
+              },
+            ],
+          },
+        ];
+      }
+      if (q.id === "pcps.has_ps") {
+        return [
+          {
+            ...q,
+            help: "A sum set aside for work that can't be priced exactly yet, e.g. site works or a retaining wall.",
+          },
+        ];
+      }
+      if (q.id === "pcps.has_pc") {
+        return [
+          {
+            ...q,
+            help: "A sum set aside for a product not selected yet, e.g. appliances, tapware, tiles.",
+          },
+        ];
+      }
+      if (q.id === "pcps.ps_items" || q.id === "pcps.pc_items") {
+        return [
+          {
+            ...q,
+            itemFields: (q.itemFields ?? []).map((f) =>
+              f.key === "allowance" ? { ...f, label: "Amount (ex GST)" } : f,
+            ),
+          },
+        ];
+      }
+      if (q.id === "pcps.overrun_margin") {
+        return [
+          {
+            ...q,
+            prompt:
+              "Margin applied when a provisional sum or prime cost runs over its figure",
+          },
+        ];
+      }
+      if (q.id === "pcps.basis") {
+        return [
+          {
+            ...q,
+            prompt:
+              "Are your provisional sums priced from this project's documents?",
+            help: "Answer no if any figure is generic rather than priced from these drawings and schedules.",
+            options: [
+              { value: "documented", label: "Yes, priced from the documents" },
+              { value: "partly", label: "Partly" },
+              { value: "generic", label: "Generic figures" },
+              { value: "client_provided", label: "Provided by the client" },
+            ],
+          },
+        ];
+      }
+      if (q.id === "scope.schedule") {
+        return [
+          {
+            ...q,
+            help: "Every line comes from the client's documents, read and checked before the round opened. Included means priced exactly as drawn and specified.",
+          },
+        ];
+      }
+      if (q.id === "pcps.schedule_confirm") {
+        return [
+          {
+            ...q,
+            prompt: "This is my provisional sum schedule",
+            help: "Built from your schedule answers: the client's provisional sums as you carried them, and every line you marked as a provisional sum with your figure. Change any line by returning to module 5.",
+          },
+        ];
+      }
+      const ref = V3_REREF[q.id];
+      return [ref ? { ...q, ref } : q];
+    }),
+  }));
+
 /* ── version resolution ─────────────────────────────────────────────── */
 
 /** The current instrument. */
-export const INSTRUMENT_SECTIONS = INSTRUMENT_SECTIONS_V2;
+export const INSTRUMENT_SECTIONS = INSTRUMENT_SECTIONS_V3;
 
 /**
  * The section set a given tender answered. Unknown or null versions
@@ -1507,7 +1723,8 @@ export function sectionsFor(
   version: number | null | undefined,
 ): InstrumentSection[] {
   if (version === 1) return INSTRUMENT_SECTIONS_V1;
-  return INSTRUMENT_SECTIONS_V2;
+  if (version === 2) return INSTRUMENT_SECTIONS_V2;
+  return INSTRUMENT_SECTIONS_V3;
 }
 
 /* ── scope matrix rows ──────────────────────────────────────────────── */
@@ -1560,24 +1777,87 @@ for (const q of INSTRUMENT_SECTIONS_V1.flatMap((s) => s.questions)) {
 for (const q of INSTRUMENT_SECTIONS_V2.flatMap((s) => s.questions)) {
   QUESTION_INDEX.set(q.id, q);
 }
+for (const q of INSTRUMENT_SECTIONS_V3.flatMap((s) => s.questions)) {
+  QUESTION_INDEX.set(q.id, q);
+}
 
 export function getQuestion(qid: string): InstrumentQuestion | undefined {
   return QUESTION_INDEX.get(qid);
 }
 
 /**
+ * The round shape presence resolves against: whether an approved
+ * schedule exists, and which key reports the register carries. Every
+ * surface builds one of these from the same server facts, so a
+ * question can never be asked in one place and skipped in another.
+ * The report flags default safe: absent flags read as "not on file",
+ * which asks rather than hides (soil) and hides rather than asks
+ * (structural, energy) — never a phantom confirmation of a document
+ * that may not exist.
+ */
+export interface InPlayContext {
+  hasSchedule: boolean;
+  soilOnFile?: boolean;
+  structuralOnFile?: boolean;
+  energyOnFile?: boolean;
+}
+
+/**
  * Is this question asked on this round? Audience-flagged questions
  * exist for exactly one round shape — the generic trade grid when no
  * approved schedule exists, the schedule confirmation when one does.
- * The single definition every surface uses.
+ * Document-aware questions (v3) exist only when the register carries
+ * (or lacks) their report. The single definition every surface uses.
  */
 export function questionInPlay(
   q: InstrumentQuestion,
-  hasSchedule: boolean,
+  ctx: InPlayContext,
 ): boolean {
-  if (q.audience === "legacy") return !hasSchedule;
-  if (q.audience === "schedule") return hasSchedule;
-  return true;
+  if (q.audience === "legacy" && ctx.hasSchedule) return false;
+  if (q.audience === "schedule" && !ctx.hasSchedule) return false;
+  switch (q.presentWhen) {
+    case "soil_on_file":
+      return ctx.soilOnFile === true;
+    case "soil_off_file":
+      return ctx.soilOnFile !== true;
+    case "structural_on_file":
+      return ctx.structuralOnFile === true;
+    case "energy_on_file":
+      return ctx.energyOnFile === true;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Rebuild the presence context a finished answer set implies — for
+ * surfaces that read a tender without the round's live register (the
+ * printed document, the sealed outcome). An answered document-aware
+ * question proves it was in play when the tender was priced; the
+ * register may have changed since, and a sealed tender must render
+ * what was actually asked.
+ */
+export function inPlayContextFromAnswers(
+  answers: Record<string, unknown>,
+  hasSchedule: boolean,
+): InPlayContext {
+  // Only an AFFIRMED confirmation proves its report was on file; a
+  // stored false is a leftover from a register that changed under the
+  // draft, and must not hide the question the tender actually
+  // answered.
+  const affirmed = (qid: string) => answers[qid] === true;
+  const has = (qid: string) =>
+    answers[qid] !== undefined && answers[qid] !== null;
+  return {
+    hasSchedule,
+    soilOnFile: affirmed("site.soil_class_confirm")
+      ? true
+      : has("site.soil_class_basis")
+        ? false
+        : undefined,
+    structuralOnFile: affirmed("site.engineering_confirm") ? true : undefined,
+    energyOnFile: affirmed("compliance.energy_confirm") ? true : undefined,
+  };
 }
 
 /**
@@ -1609,12 +1889,12 @@ export function gateAllows(
 export function requiredQuestionIds(
   answers: ReadonlyMap<string, unknown>,
   version: number | null | undefined = INSTRUMENT_VERSION,
-  hasSchedule = false,
+  ctx: InPlayContext = { hasSchedule: false },
 ): string[] {
   const ids: string[] = [];
   for (const q of allQuestionsFor(version)) {
     if (!q.required) continue;
-    if (!questionInPlay(q, hasSchedule)) continue;
+    if (!questionInPlay(q, ctx)) continue;
     if (q.showIf) {
       const gate = answers.get(q.showIf.qid);
       const gateValue =

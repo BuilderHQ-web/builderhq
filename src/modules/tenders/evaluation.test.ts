@@ -39,6 +39,9 @@ function input(answers: Record<string, unknown>, extra?: Partial<EvaluationInput
     documentCount: 0,
     answers,
     projectState: "VIC",
+    // The fixtures below answer the v2 question set; pin the rubric
+    // to match. v3 has its own tests.
+    instrumentVersion: 2,
     ...extra,
   };
 }
@@ -391,5 +394,87 @@ describe("na marks on a schedule round", () => {
     );
     expect(row).toBeDefined();
     expect(Object.values(row!.states)).toContain("Not applicable");
+  });
+});
+
+describe("the v3 preparation rubric", () => {
+  // v3 retired the clarifications and gaps questions and made soil
+  // document-aware; its redistributed weights must still land exactly
+  // on 100 at the top.
+  function v3Perfect(): Record<string, unknown> {
+    const a = perfectAnswers();
+    delete a["understand.rfis"];
+    delete a["understand.gaps"];
+    delete a["understand.gap_items"];
+    delete a["site.soil_report"];
+    a["site.soil_class_confirm"] = true;
+    // v3's itemisation slot runs to 12 disclosed amounts.
+    const amounts: Record<string, number> = {};
+    for (const r of scopeMatrixRows().slice(0, 12)) amounts[r.id] = 50_000;
+    a["scope.amounts"] = amounts;
+    return a;
+  }
+
+  test("full disclosure scores exactly 100 under v3", () => {
+    const e = evaluateTender(
+      input(v3Perfect(), { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(100);
+    expect(prep.receipts.some((r) => r.kind === "miss")).toBe(false);
+  });
+
+  test("a stated assumed class earns part of the soil slot", () => {
+    const a = v3Perfect();
+    delete a["site.soil_class_confirm"];
+    a["site.soil_class_basis"] = "m";
+    const e = evaluateTender(
+      input(a, { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(94);
+    expect(
+      prep.receipts.some(
+        (r) => r.kind === "miss" && (r.potential ?? 0) === 6,
+      ),
+    ).toBe(true);
+  });
+
+  test("no stated basis loses the whole soil slot and flags the owner", () => {
+    const a = v3Perfect();
+    delete a["site.soil_class_confirm"];
+    a["site.soil_class_basis"] = "not_stated";
+    const e = evaluateTender(
+      input(a, { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(84);
+    expect(e.flags.some((f) => f.id === "soil-assumed")).toBe(true);
+  });
+});
+
+describe("the statutory deposit cap", () => {
+  test("a deposit above the cap deducts firmness and flags high", () => {
+    const a = perfectAnswers();
+    a["payments.deposit"] = 20;
+    const e = evaluateTender(input(a, { documentCount: 3 }));
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(88);
+    expect(
+      e.flags.some((f) => f.id === "deposit-cap" && f.severity === "high"),
+    ).toBe(true);
+  });
+
+  test("a lawful deposit holds the ground and says so", () => {
+    const a = perfectAnswers();
+    a["payments.deposit"] = 5;
+    const e = evaluateTender(input(a, { documentCount: 3 }));
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(100);
+    expect(
+      firm.receipts.some(
+        (r) => r.kind === "note" && /statutory cap/.test(r.label),
+      ),
+    ).toBe(true);
   });
 });

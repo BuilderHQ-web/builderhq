@@ -8,7 +8,11 @@ import {
   listResponsesForTender,
 } from "@/modules/tenders";
 import { buildTenderDocument } from "@/modules/tenders/document";
-import { getProjectSchedule, getScheduleForRun } from "@/modules/scope-engine";
+import {
+  getProjectSchedule,
+  getScheduleForRun,
+  packFactsForProject,
+} from "@/modules/scope-engine";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listForTenderUnchecked } from "@/modules/documents";
 import type { MarketplacePreview } from "@/modules/projects";
@@ -76,11 +80,25 @@ export async function GET(
       ? ((await getScheduleForRun(pinnedRun)) ?? currentSchedule)
       : currentSchedule;
 
+  // A draft's document must ask what the deck asks, which follows the
+  // round's live register; a sealed record derives presence from its
+  // own answers inside the builder.
+  const packFacts =
+    tender.status === "draft" ? await packFactsForProject(preview.id) : null;
+
   const model = buildTenderDocument({
     tenderId: tender.id,
     status: tender.status,
     submittedAt: tender.submittedAt,
     instrumentVersion: tender.instrumentVersion,
+    inPlayCtx: packFacts
+      ? {
+          hasSchedule: schedule !== null && schedule.items.length > 0,
+          soilOnFile: packFacts.soil.onFile,
+          structuralOnFile: packFacts.structural.onFile,
+          energyOnFile: packFacts.energy.onFile,
+        }
+      : null,
     answers,
     docs: docs.map((d) => ({ filename: d.filename, sizeBytes: d.sizeBytes })),
     project: {

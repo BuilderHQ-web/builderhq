@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ChevronDown,
+  Download,
   Info,
   Landmark,
   ScrollText,
@@ -51,10 +52,13 @@ export function ScheduleBrowser({
   schedule,
   overview,
   advisories,
+  pdfHref = null,
 }: {
   schedule: TenderSchedule;
   overview: PackOverview | null;
   advisories: PackAdvisory[];
+  /** The scope of works as a PDF — rendered server-side. */
+  pdfHref?: string | null;
 }) {
   const divisions = useMemo(() => scheduleDivisions(schedule), [schedule]);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -111,7 +115,7 @@ export function ScheduleBrowser({
         <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
           <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-1.5">
             <ScrollText className="size-3.5 text-accent-light" />
-            The reader&rsquo;s overview
+            Overview
           </p>
           <p className="mt-2 text-[13px] leading-[1.7] text-text-muted">
             {overview.summary}
@@ -131,9 +135,8 @@ export function ScheduleBrowser({
             What the pack does not settle
           </p>
           <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
-            Price these with your eyes open. Every builder on the round
-            sees the same list, so a tender that handles them squarely
-            reads stronger, not dearer.
+            Every builder on the round sees this same list. A tender
+            that answers these clearly reads stronger.
           </p>
           <ul className="mt-3 space-y-2.5">
             {advisories.map((a) => (
@@ -152,41 +155,45 @@ export function ScheduleBrowser({
         </div>
       ) : null}
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-          The schedule, line by line
+          The scope of works, line by line
         </p>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-text-dim" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find a line"
-            className="h-9 w-[190px] rounded-md border border-border-subtle bg-surface-1 pl-8 pr-3 text-[12px] text-text outline-none focus:border-border-accent transition-colors"
-          />
+        <div className="flex items-center gap-2">
+          {pdfHref ? (
+            <a
+              href={pdfHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border border-border-subtle text-[12px] font-ui text-text-muted hover:border-border-accent hover:text-text transition-colors"
+            >
+              <Download className="size-3.5" />
+              Download PDF
+            </a>
+          ) : null}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-text-dim" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Find a line"
+              className="h-9 w-[190px] rounded-md border border-border-subtle bg-surface-1 pl-8 pr-3 text-[12px] text-text outline-none focus:border-border-accent transition-colors"
+            />
+          </div>
         </div>
       </div>
 
       <p className="mt-1.5 text-[11.5px] leading-[1.6] text-text-dim max-w-[68ch]">
-        Every line below goes to your tender, whatever its label here.
-        Documented means the client&rsquo;s documents evidence the line
-        and show where; open to price means the documents are silent and
-        the client asks you to price it within your quote. When you
-        tender, you mark every one.
+        Every line below goes into your tender. When you tender, you
+        mark what your price does with each one.
       </p>
 
       <ul className="mt-2.5 space-y-1.5">
         {visible.map((d) => {
           const expanded = searching || open.has(d.divisionId);
           const counts = [
-            `${d.items.filter((i) => i.kind === "evidenced").length} documented`,
-            d.items.some((i) => i.kind === "owner_allowance")
-              ? `${d.items.filter((i) => i.kind === "owner_allowance").length} client allowance`
-              : null,
-            d.items.some((i) => i.kind === "owner_open")
-              ? `${d.items.filter((i) => i.kind === "owner_open").length} open to price`
-              : null,
+            `${d.items.length} line${d.items.length === 1 ? "" : "s"}`,
             d.locked.length > 0 ? `${d.locked.length} outside the round` : null,
           ].filter(Boolean);
           return (
@@ -285,7 +292,7 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
         {item.kind === "owner_allowance" && item.ownerAmountAud !== null ? (
           <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-ui font-medium text-[#8a6414]">
             <Landmark className="size-3" />
-            {formatAud(item.ownerAmountAud)} allowance
+            {formatAud(item.ownerAmountAud)} provisional sum
           </span>
         ) : item.kind === "owner_open" ? (
           <span className="shrink-0 text-[11px] text-text-dim">

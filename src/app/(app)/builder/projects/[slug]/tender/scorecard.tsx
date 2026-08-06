@@ -32,8 +32,16 @@ export function useSelfEvaluation(args: {
   documentCount: number;
   companyName: string | null;
   projectState: string | null;
+  instrumentVersion?: number | null;
 }): TenderEvaluation {
-  const { answers, schedule, documentCount, companyName, projectState } = args;
+  const {
+    answers,
+    schedule,
+    documentCount,
+    companyName,
+    projectState,
+    instrumentVersion,
+  } = args;
   return useMemo(() => {
     const input: EvaluationInput = {
       tenderId: "self",
@@ -44,9 +52,17 @@ export function useSelfEvaluation(args: {
       documentCount,
       answers,
       projectState,
+      instrumentVersion,
     };
     return evaluateTender(input, schedule);
-  }, [answers, schedule, documentCount, companyName, projectState]);
+  }, [
+    answers,
+    schedule,
+    documentCount,
+    companyName,
+    projectState,
+    instrumentVersion,
+  ]);
 }
 
 export function BuilderScorecard({
@@ -67,8 +83,8 @@ export function BuilderScorecard({
           </p>
           <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted max-w-[52ch]">
             {mode === "draft"
-              ? "The exact rubric the client's evaluation runs, applied to your answers before you seal them. Every point still on the table below is yours to take: disclose more, or commit to stronger terms."
-              : "The exact rubric the client's evaluation runs, applied to your sealed answers."}
+              ? "This is the same scoring the client sees, run on your answers before you submit. Open a row to see every point: what you have been awarded, and what you can still earn by changing an answer."
+              : "The same scoring the client sees, run on your submitted answers."}
           </p>
         </div>
         <div className="shrink-0 text-right">
@@ -141,15 +157,26 @@ export function BuilderScorecard({
               {isOpen ? (
                 <div className="mt-2 mb-1 rounded-md bg-[rgba(24,34,44,0.025)] px-3 py-2.5">
                   <dl>
+                    {gains.length > 0 ? (
+                      <p className="mb-1 text-[9.5px] tracking-[0.16em] uppercase text-[#0a7d73] font-ui font-semibold">
+                        Points awarded
+                      </p>
+                    ) : null}
                     {gains.map((r, i) => (
                       <ScoreLine key={`g-${i}`} r={r} />
                     ))}
                     {onTable.length > 0 ? (
-                      <p className="mt-2 mb-1 text-[9.5px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
-                        {mode === "draft"
-                          ? "Still on the table"
-                          : "Missed or lost"}
-                      </p>
+                      <>
+                        <p className="mt-2 mb-1 text-[9.5px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
+                          Points not awarded
+                        </p>
+                        {mode === "draft" ? (
+                          <p className="mb-1 text-[10.5px] leading-[1.5] text-text-dim">
+                            Each line says what earns the points. Change
+                            that answer and they are yours.
+                          </p>
+                        ) : null}
+                      </>
                     ) : null}
                     {onTable.map((r, i) => (
                       <ScoreLine key={`m-${i}`} r={r} />
@@ -200,6 +227,12 @@ export function BuilderScorecard({
   );
 }
 
+/**
+ * One sign convention everywhere: awarded points are +, points not
+ * awarded are −, whether they were deducted by an answer (red) or
+ * simply not earned yet (amber). The colour tells the two apart; the
+ * sign never contradicts the group heading.
+ */
 function ScoreLine({ r }: { r: ReceiptLine }) {
   return (
     <div className="flex items-baseline gap-2.5 py-[2.5px]">
@@ -207,7 +240,7 @@ function ScoreLine({ r }: { r: ReceiptLine }) {
         className={cn(
           "w-8 shrink-0 text-right font-mono text-[10.5px] tabular-nums",
           r.kind === "note" && "text-text-dim",
-          r.kind === "base" && "font-semibold text-text",
+          r.kind === "base" && "font-semibold text-[#0a7d73]",
           r.kind === "delta" &&
             ((r.value ?? 0) > 0
               ? "font-medium text-[#0a7d73]"
@@ -217,13 +250,13 @@ function ScoreLine({ r }: { r: ReceiptLine }) {
         )}
       >
         {r.kind === "miss"
-          ? `+${r.potential ?? 0}`
+          ? `−${r.potential ?? 0}`
           : r.value === null
             ? "·"
-            : r.kind === "base"
-              ? r.value
-              : r.value > 0
-                ? `+${r.value}`
+            : r.value > 0
+              ? `+${r.value}`
+              : r.value === 0
+                ? "0"
                 : `−${Math.abs(r.value)}`}
       </dt>
       <dd

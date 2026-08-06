@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { formatAud } from "@/modules/tenders/comparison";
+import { inPlayContextFromAnswers } from "@/modules/tenders/instrument";
 import type { Tender } from "@/modules/tenders";
 import type { TenderSchedule } from "@/modules/tenders/schedule";
 import type { Document } from "@/modules/documents";
@@ -48,12 +49,14 @@ function SealedScorecard({
   documentCount,
   companyName,
   projectState,
+  instrumentVersion,
 }: {
   answers: Record<string, unknown>;
   schedule: TenderSchedule | null;
   documentCount: number;
   companyName: string | null;
   projectState: string | null;
+  instrumentVersion?: number | null;
 }) {
   const ev = useSelfEvaluation({
     answers,
@@ -61,6 +64,7 @@ function SealedScorecard({
     documentCount,
     companyName,
     projectState,
+    instrumentVersion,
   });
   return (
     <div className="mt-6">
@@ -116,9 +120,14 @@ export function TenderOutcome({
 
   const hasInstrument =
     tender.instrumentVersion != null && Object.keys(answers).length > 0;
+  // A sealed tender renders what it was ASKED, so presence derives
+  // from its own answers, never the round's current register.
   const modules = buildModules(
     tender.instrumentVersion,
-    schedule !== null && schedule.items.length > 0,
+    inPlayContextFromAnswers(
+      answers,
+      schedule !== null && schedule.items.length > 0,
+    ),
   );
   const canWithdraw =
     tender.status === "submitted" || tender.status === "shortlisted";
@@ -276,6 +285,7 @@ export function TenderOutcome({
               documentCount={docs.length}
               companyName={companyName}
               projectState={projectState}
+              instrumentVersion={tender.instrumentVersion}
             />
             <ModuleLedger
               modules={modules}

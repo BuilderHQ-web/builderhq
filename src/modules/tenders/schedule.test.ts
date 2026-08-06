@@ -87,25 +87,40 @@ describe("readScheduleAnswer", () => {
       a: null,
       p: 42_000,
       n: null,
+      c: null,
     });
     expect(parsed["roofing.tile-roof"]).toEqual({
       s: "allowance",
       a: 8_000,
       p: null,
       n: null,
+      c: null,
     });
     expect(parsed["earthworks.site-strip"]).toEqual({
       s: "na",
       a: null,
       p: null,
       n: "wrong site",
+      c: null,
     });
     expect(parsed["landscaping.turf"]).toEqual({
       s: "excluded",
       a: null,
       p: null,
       n: null,
+      c: null,
     });
+  });
+
+  // The comment is the one field that belongs to the line, whatever
+  // the mark: it survives every state, trimmed and capped.
+  test("a comment rides on any state", () => {
+    const parsed = readScheduleAnswer({
+      "framing.wall-frames": { s: "documented", c: " priced for pine " },
+      "landscaping.turf": { s: "excluded", c: "x".repeat(500) },
+    });
+    expect(parsed["framing.wall-frames"]!.c).toBe("priced for pine");
+    expect(parsed["landscaping.turf"]!.c).toHaveLength(280);
   });
 
   test("junk states and shapes are dropped", () => {
@@ -116,7 +131,7 @@ describe("readScheduleAnswer", () => {
       d: { s: "na", n: 42 },
     });
     expect(Object.keys(parsed)).toEqual(["d"]);
-    expect(parsed.d).toEqual({ s: "na", a: null, p: null, n: null });
+    expect(parsed.d).toEqual({ s: "na", a: null, p: null, n: null, c: null });
   });
 
   test("shape check admits the new fields and refuses junk", () => {

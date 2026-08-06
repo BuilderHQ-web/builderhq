@@ -37,8 +37,11 @@ import {
 
 import {
   sectionsFor,
+  allQuestionsFor,
   scopeMatrixRows,
   gateAllows,
+  questionInPlay,
+  inPlayContextFromAnswers,
   type InstrumentQuestion,
   type InstrumentSection,
   type ScopeState,
@@ -86,7 +89,7 @@ const SCOPE_META: Record<
     cls: "text-[#0a7d73]",
   },
   allowance: {
-    label: "Allowance",
+    label: "Provisional sum",
     dot: "bg-[#c99422]",
     cls: "text-[#8a6414]",
   },
@@ -597,7 +600,7 @@ const SCHED_META: Record<
     cls: "text-[#0a7d73]",
   },
   allowance: {
-    label: "Allowance",
+    label: "Provisional sum",
     dot: "bg-[#c99422]",
     cls: "text-[#8a6414]",
   },
@@ -767,7 +770,7 @@ function ScheduleAlignment({
                   {row.item.divisionLabel}
                   {row.item.kind === "owner_allowance" &&
                   row.item.ownerAmountAud !== null
-                    ? ` · your allowance ${formatAud(row.item.ownerAmountAud)}`
+                    ? ` · your provisional sum ${formatAud(row.item.ownerAmountAud)}`
                     : ""}
                 </span>
               </span>
@@ -780,22 +783,32 @@ function ScheduleAlignment({
                 {e ? (
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1.5 text-[11px] font-ui",
+                      "inline-flex items-center gap-1.5 text-[11px] font-ui min-w-0",
                       SCHED_META[e.s].cls,
                       row.differs && "font-semibold",
                     )}
+                    title={
+                      typeof e.c === "string" && e.c.length > 0
+                        ? `Builder's comment: ${e.c}`
+                        : undefined
+                    }
                   >
                     <span
                       className={cn(
-                        "size-2 rounded-full",
+                        "size-2 rounded-full shrink-0",
                         SCHED_META[e.s].dot,
                       )}
                     />
-                    {e.s === "allowance" && typeof e.a === "number"
-                      ? formatAud(e.a)
-                      : e.s === "documented" && typeof e.p === "number"
-                        ? `${formatAud(e.p)} firm`
-                        : SCHED_META[e.s].label}
+                    <span className="truncate">
+                      {e.s === "allowance" && typeof e.a === "number"
+                        ? formatAud(e.a)
+                        : e.s === "documented" && typeof e.p === "number"
+                          ? `${formatAud(e.p)} firm`
+                          : SCHED_META[e.s].label}
+                      {typeof e.c === "string" && e.c.length > 0
+                        ? ` · ${e.c}`
+                        : ""}
+                    </span>
                   </span>
                 ) : (
                   <span className="text-[11px] text-text-dim/60">
@@ -838,6 +851,17 @@ function ScheduleAlignment({
 /** Headline numbers already own the top of the page — no repeats. */
 const SKIP_QIDS = new Set(["price.total"]);
 
+/** Which question ids a version defines — cached, tiny. */
+const VERSION_QIDS = new Map<number, Set<string>>();
+function qidsFor(version: number): Set<string> {
+  let s = VERSION_QIDS.get(version);
+  if (!s) {
+    s = new Set(allQuestionsFor(version).map((q) => q.id));
+    VERSION_QIDS.set(version, s);
+  }
+  return s;
+}
+
 function AnswerSections({
   tenders,
   summaries,
@@ -847,16 +871,34 @@ function AnswerSections({
 }) {
   const [diffOnly, setDiffOnly] = useState(tenders.length > 1);
 
-  // Sections follow the newest instrument version in the comparison —
-  // shared question ids line up across versions, so a mixed round
-  // still reads correctly and version-specific extras simply show for
-  // the tenders that answered them. Scope's matrix has its own block.
+  // Sections follow the newest instrument version as the spine, then
+  // fold in any question an OLDER version in the comparison carries
+  // that the spine dropped — v3 retired whole questions, and a sealed
+  // v2 tender's answers to them must never vanish from a mixed round.
+  // The per-row filters below hide anything nobody answered and mask
+  // tenders whose version never asked. Scope's matrix has its own
+  // block.
   const answerSections = useMemo(() => {
-    const version = Math.max(
-      1,
-      ...tenders.map((t) => t.instrumentVersion ?? 1),
-    );
-    return sectionsFor(version).filter((s) => s.id !== "scope");
+    const versions = [...new Set(tenders.map((t) => t.instrumentVersion ?? 1))];
+    const newest = Math.max(1, ...versions);
+    const spine = sectionsFor(newest)
+      .filter((s) => s.id !== "scope")
+      .map((s) => ({ ...s, questions: [...s.questions] }));
+    const seen = new Set(spine.flatMap((s) => s.questions.map((q) => q.id)));
+    for (const v of versions) {
+      if (v === newest) continue;
+      for (const s of sectionsFor(v)) {
+        if (s.id === "scope") continue;
+        const target =
+          spine.find((t) => t.id === s.id) ?? spine[spine.length - 1]!;
+        for (const q of s.questions) {
+          if (seen.has(q.id)) continue;
+          seen.add(q.id);
+          target.questions.push(q);
+        }
+      }
+    }
+    return spine;
   }, [tenders]);
 
   return (
@@ -916,15 +958,22 @@ function AnswerSection({
     return section.questions
       .filter((q) => !SKIP_QIDS.has(q.id))
       .map((q) => {
-        // A dependant question a builder's gate answer never asked them
-        // renders "—", not "Not answered" — they weren't asked. Stale
-        // values behind a flipped gate are masked to null so differs
-        // and answered bookkeeping match what the owner actually sees.
-        const notAsked = tenders.map((t) =>
-          q.showIf
-            ? !gateAllows(q.showIf, summaries[t.id]!.answers[q.showIf.qid])
-            : false,
-        );
+        // A question a builder was never asked renders "—", not "Not
+        // answered": their version may not define it, its report
+        // presence may have excluded it, or a gate answer skipped it.
+        // Stale values behind any of those are masked to null so
+        // differs and answered bookkeeping match what the owner sees.
+        const notAsked = tenders.map((t) => {
+          const a = summaries[t.id]!.answers;
+          if (!qidsFor(t.instrumentVersion ?? 1).has(q.id)) return true;
+          if (
+            q.presentWhen &&
+            !questionInPlay(q, inPlayContextFromAnswers(a, true))
+          ) {
+            return true;
+          }
+          return q.showIf ? !gateAllows(q.showIf, a[q.showIf.qid]) : false;
+        });
         const values = tenders.map((t, i) =>
           notAsked[i] ? null : summaries[t.id]!.answers[q.id],
         );
