@@ -497,10 +497,11 @@ export function toScheduleItem(row: {
 }): TenderScheduleItem | null {
   const def = getScopeItem(row.itemId);
   if (!def) {
-    // A project-scoped custom line, promoted from an off-standard
-    // capture: "custom.<divisionId>.<slug>". Its label rides on the
-    // row because the Standard, by definition, does not name it.
-    const m = /^custom\.([a-z0-9-]+)\.[a-z0-9-]+$/.exec(row.itemId);
+    // A learned line: "ext.<divisionId>.<slug>" from the living
+    // vocabulary, or a legacy project-scoped "custom.<divisionId>.
+    // <slug>". Its label rides on the row because the authored
+    // Standard, by definition, does not name it.
+    const m = /^(?:custom|ext)\.([a-z0-9-]+)\.[a-z0-9-]+(?:-\d+)?$/.exec(row.itemId);
     if (!m || !row.label) return null;
     const division = getScopeDivision(m[1]!);
     return {

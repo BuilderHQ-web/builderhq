@@ -230,6 +230,41 @@ export const scopeRunCaptures = pgTable(
 
 export type ScopeRunCaptureRow = typeof scopeRunCaptures.$inferSelect;
 
+/**
+ * The living vocabulary — items the platform LEARNS from real
+ * packages. status 'extension' = in the list, evidenced when shown,
+ * never a gap. status 'core' = joins the expected pool for the types
+ * in appliesTo. Keys ("ext.<division>.<slug>") are permanent.
+ */
+export const scopeVocabExtensions = pgTable(
+  "scope_vocab_extensions",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    key: text().notNull().unique(),
+    divisionId: text("division_id").notNull(),
+    label: text().notNull(),
+    plain: text(),
+    aliases: jsonb().notNull().default([]),
+    /** extension | core | retired */
+    status: text().notNull().default("extension"),
+    /** Project types a CORE extension is expected on. */
+    appliesTo: jsonb("applies_to").notNull().default([]),
+    sourceCaptureId: uuid("source_capture_id"),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("scope_vocab_extensions_status_idx").on(t.status)],
+);
+
+export type ScopeVocabExtensionRow = typeof scopeVocabExtensions.$inferSelect;
+
 export type ScopeRunRow = typeof scopeRuns.$inferSelect;
 export type ScopeRunDocumentRow = typeof scopeRunDocuments.$inferSelect;
 export type ScopeRunItemRow = typeof scopeRunItems.$inferSelect;

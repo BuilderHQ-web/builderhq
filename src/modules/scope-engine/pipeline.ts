@@ -63,8 +63,13 @@ export const SYNTHESIS_MODEL = "claude-opus-4-8";
  * v4 — the capture lane errs toward capturing (a capture costs a
  * human ten seconds; a silent drop costs the client a missing line),
  * and docRefs exclude internal sheet cross-references at the source.
+ *
+ * v5 — source authority (the drawn documents govern materials; a
+ * template wall type in an energy report cannot clad a building),
+ * note locality (each note written only from its cited pages), and
+ * one line per distinct cladding system.
  */
-export const SCOPE_PIPELINE_VERSION = 4;
+export const SCOPE_PIPELINE_VERSION = 5;
 
 /** 28 MB — the same ceiling the plan auto-fill extractor uses. */
 export const MAX_PDF_BYTES = 28 * 1024 * 1024;
@@ -193,11 +198,33 @@ export function planChunks(
 // ── the ontology digest (system prompt, cached) ─────────────────────────
 
 /**
+ * An item the platform LEARNED from a past project — the living
+ * vocabulary beside the authored Standard. Extensions ride the digest
+ * so the model can evidence them directly; their absence is never a
+ * gap. Passed in by the caller: the pipeline stays DB-free.
+ */
+export interface ExtensionItem {
+  /** Permanent key, "ext.<division>.<slug>". */
+  id: string;
+  label: string;
+  division: string;
+  plain?: string | null;
+  aliases?: string[];
+  /** True when this item is core for the CURRENT project's type —
+   *  expected, so its absence is judged like any authored item's. */
+  core?: boolean;
+}
+
+/**
  * The Scope Standard rendered for the model: one line per item with
  * id, label and aliases. ~10k tokens; cache_control makes the second
- * and every later call on a run read it from cache.
+ * and every later call on a run read it from cache. Learned
+ * extensions append as their own section with their own law.
  */
-export function ontologyDigest(projectType: ScopeProjectType): string {
+export function ontologyDigest(
+  projectType: ScopeProjectType,
+  extensions: ExtensionItem[] = [],
+): string {
   const pool = itemsFor(projectType);
   const byDivision = new Map<string, string[]>();
   for (const item of pool) {
@@ -217,6 +244,24 @@ export function ontologyDigest(projectType: ScopeProjectType): string {
     if (!lines) continue;
     parts.push(`\n${d.order}. ${d.label} [${d.id}]`);
     parts.push(...lines);
+  }
+  const line = (e: ExtensionItem) =>
+    `  ${e.id} — ${e.label}${
+      e.aliases?.length ? ` (aka: ${e.aliases.join(", ")})` : ""
+    }`;
+  const core = extensions.filter((e) => e.core);
+  const evidenceOnly = extensions.filter((e) => !e.core);
+  if (core.length > 0) {
+    parts.push(
+      `\nLEARNED CORE ITEMS — expected on this project type, exactly like the Standard's own items. Evidence them when shown; judge their absence like any other item's.`,
+    );
+    parts.push(...core.map(line));
+  }
+  if (evidenceOnly.length > 0) {
+    parts.push(
+      `\nEXTENDED ITEMS — real work learned from past projects. Use these ids when THIS project's documents show the work; they are evidence-only and never gaps. Prefer an extended id over an offStandard capture when one fits.`,
+    );
+    parts.push(...evidenceOnly.map(line));
   }
   return parts.join("\n");
 }
@@ -514,6 +559,7 @@ async function extractCall(args: {
   filename: string;
   kind: string;
   projectType: ScopeProjectType;
+  extensions?: ExtensionItem[];
   /** When set, the PDF is pages [from..to] of a larger document. */
   range?: { from: number; to: number; total: number };
 }): Promise<{
@@ -535,7 +581,7 @@ async function extractCall(args: {
       { type: "text", text: EXTRACT_RULES },
       {
         type: "text",
-        text: ontologyDigest(args.projectType),
+        text: ontologyDigest(args.projectType, args.extensions ?? []),
         cache_control: { type: "ephemeral" },
       },
     ],
@@ -598,6 +644,8 @@ export async function extractDocument(args: {
   filename: string;
   kind: string;
   projectType: ScopeProjectType;
+  /** The living vocabulary — learned items the model may evidence. */
+  extensions?: ExtensionItem[];
 }): Promise<{
   findings: DocumentFindings;
   usage: StageUsage;
@@ -642,18 +690,20 @@ export async function extractDocument(args: {
   // are dropped, never stored. The dropped VALUES are logged, not just
   // the count: an id the model keeps reaching for is a candidate the
   // Scope Standard may be missing, and that is how the vocabulary
-  // learns from real packages.
+  // learns from real packages. Learned extensions are valid ids too.
+  const extIds = new Set((args.extensions ?? []).map((e) => e.id));
+  const validId = (id: string) => getScopeItem(id) != null || extIds.has(id);
   const unknown = new Set<string>();
   const pages = allPages.map((p) => ({
     ...p,
     itemIds: p.itemIds.filter((id) => {
-      const ok = getScopeItem(id) != null;
+      const ok = validId(id);
       if (!ok) unknown.add(id);
       return ok;
     }),
     statedFigures: p.statedFigures.map((f) => ({
       ...f,
-      itemId: f.itemId && getScopeItem(f.itemId) ? f.itemId : null,
+      itemId: f.itemId && validId(f.itemId) ? f.itemId : null,
     })),
   }));
   if (unknown.size > 0) {
@@ -946,6 +996,10 @@ const SYNTHESIS_RULES = `You are synthesising an Australian residential tender p
 Your job, in order:
 0. THE OVERVIEW. Describe the project as the documents describe it: two to four sentences a homeowner would be proud to publish (form, storeys, construction, notable systems and finishes), plus the countable facts (dwellings, total bedrooms, total bathrooms, storeys) ONLY where the documents state or clearly show them; omit a count rather than guess it. NEVER include the street address, lot or plan numbers, or any person's name: the overview is published to builders before they unlock the address.
 1. THE SELECTION. For every item id that any document evidences, emit ONE entry with status "evidenced", merged citations (the strongest pages across documents, up to 5) and a one-line note in the documents' own terms. No citation, no claim: an evidenced entry without citations will be discarded. For every evidenced item also judge DEPTH: "full" when the documents give a builder enough to price the work without assumption; "partial" when the work is shown or implied but quantities, specification, performance or interfaces are incomplete — and say in "remaining", in one line, what is still needed. Documented is not the same as priceable, and the difference is exactly what a builder needs to know.
+   Selection discipline:
+   - THE DRAWN DOCUMENTS GOVERN MATERIALS. What a building is framed, clad, roofed or finished in is established by elevations, sections, wall-type schedules and material legends on the architectural, structural and civil sets, and by a written specification. Energy reports model template constructions ("brick veneer" on a job with no brick), and generic construction notes repeat boilerplate; neither may establish a material system the drawings do not show. Where note or report text disagrees with the drawn system, the drawn system governs — mark the boilerplate variant not_expected with the reason, exactly as you would any absent system. Energy reports REMAIN authoritative for insulation values, glazing performance and air sealing; the geotechnical report REMAINS authoritative for ground conditions, footings and retaining recommendations.
+   - ONE LINE PER SYSTEM. Each distinct external cladding or roofing system the documents show gets its OWN item line: metal cladding, fibre cement, timber, render, lightweight panel, stone are separate items, never folded into one line's note.
+   - NOTES ARE LOCAL. Write each note ONLY from the pages you cite for that item. Never blend a material, product or figure from another document or another item into a note — external and internal variants of the same work take materials only from their own cited pages. A note that reaches beyond its citations will be caught and flagged in post-processing.
 1b. THE CAPTURES. The findings' offStandard entries name work no Standard item covers. Carry EVERY distinct piece of off-standard work through as a capture — with a short professional label, the division it belongs to, merged citations and a one-line note. Merge only true duplicates of the same work; never editorialise a distinct finding away. If a Standard item genuinely covers the work it belongs in the selection instead, and post-processing checks this again, so when unsure keep the capture.
 2. THE GAPS YOU CAN GROUND. Emit "gap" for items where the DOCUMENTS THEMSELVES make the silence pointed, with a one-line reason a homeowner could understand ("The drawings show a kitchen but no appliance schedule names the appliances"). Use "not_expected" where absence is clearly legitimate for this project (no pool shown anywhere means pool items are not_expected). Do NOT attempt an exhaustive sweep: every Standard item you do not mention is classified downstream in a dedicated pass, so completeness is not your burden here — precision and grounded notes are. When unsure between gap and not_expected, choose gap.
 3. THE CONFLICTS. Where documents contradict each other (different figures for the same thing, plan vs specification mismatches, stale revisions disagreeing), record the conflict. Conflict discipline:
@@ -961,6 +1015,8 @@ Discipline: cite only (documentId, page) pairs that exist in the findings you we
 export async function synthesiseRun(args: {
   projectType: ScopeProjectType;
   documents: SynthesisDocumentInput[];
+  /** The living vocabulary — learned items the model may evidence. */
+  extensions?: ExtensionItem[];
 }): Promise<{ synthesis: SynthesisResult; usage: StageUsage; salvaged: number }> {
   const payload = JSON.stringify(
     args.documents.map((d) => ({
@@ -989,7 +1045,7 @@ export async function synthesiseRun(args: {
       { type: "text", text: SYNTHESIS_RULES },
       {
         type: "text",
-        text: ontologyDigest(args.projectType),
+        text: ontologyDigest(args.projectType, args.extensions ?? []),
         cache_control: { type: "ephemeral" },
       },
     ],
@@ -1055,9 +1111,23 @@ export async function synthesiseRun(args: {
   const items: SynthesisResult["items"] = [];
   let droppedUnknown = 0;
   let droppedUncited = 0;
+  const synthesisExtIds = new Set((args.extensions ?? []).map((e) => e.id));
+  const coreExtIds = new Set(
+    (args.extensions ?? []).filter((e) => e.core).map((e) => e.id),
+  );
   for (const entry of itemsSalvage.values) {
-    if (!getScopeItem(entry.itemId)) {
+    if (!getScopeItem(entry.itemId) && !synthesisExtIds.has(entry.itemId)) {
       droppedUnknown += 1;
+      continue;
+    }
+    // An evidence-only learned extension may not be declared a gap or
+    // not_expected — its absence is simply silence. Core-tier learned
+    // items ARE expected, so they take any status like authored items.
+    if (
+      synthesisExtIds.has(entry.itemId) &&
+      !coreExtIds.has(entry.itemId) &&
+      entry.status !== "evidenced"
+    ) {
       continue;
     }
     if (seen.has(entry.itemId)) continue;
@@ -1173,6 +1243,8 @@ export async function classifyResidualItems(args: {
   registerKinds: string[];
   evidencedIds: string[];
   residualIds: string[];
+  /** Learned items whose core tier put them in the expected pool. */
+  extensions?: ExtensionItem[];
 }): Promise<{
   verdicts: Map<string, { verdict: "gap" | "not_expected"; note: string | null }>;
   usage: StageUsage;
@@ -1196,7 +1268,7 @@ export async function classifyResidualItems(args: {
         { type: "text", text: RESIDUAL_RULES },
         {
           type: "text",
-          text: ontologyDigest(args.projectType),
+          text: ontologyDigest(args.projectType, args.extensions ?? []),
           cache_control: { type: "ephemeral" },
         },
       ],

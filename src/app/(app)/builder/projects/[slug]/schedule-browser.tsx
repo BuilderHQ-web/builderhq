@@ -15,6 +15,7 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   ChevronDown,
+  Info,
   Landmark,
   ScrollText,
   Search,
@@ -267,8 +268,14 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
             </p>
           ) : null}
           {item.depth === "partial" && item.remaining ? (
-            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414]">
-              Still to be settled: {item.remaining}
+            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414] flex items-start gap-1">
+              <span
+                className="inline-flex shrink-0 mt-[1px] cursor-help"
+                title="This line can be priced from the documents, but our reading flagged details still to be confirmed. Check them before relying on the price."
+              >
+                <Info className="size-3" />
+              </span>
+              <span>Notes: {item.remaining}</span>
             </p>
           ) : null}
           {cite ? (

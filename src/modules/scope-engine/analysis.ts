@@ -155,14 +155,16 @@ export function enforceConflictIntegrity(
   return { conflicts: out, droppedCitations, droppedConflicts };
 }
 
-/** The type's pool minus everything the synthesis accounted for. */
+/** The type's pool minus everything the synthesis accounted for.
+ *  Core-tier learned items join the pool: from promotion on, their
+ *  absence is judged like any authored item's. */
 export function residualPool(
   projectType: ScopeProjectType,
   items: Array<{ itemId: string }>,
+  corePoolExtensionIds: string[] = [],
 ): string[] {
   const accounted = new Set(items.map((i) => i.itemId));
-  return itemsFor(projectType)
-    .map((i) => i.id)
+  return [...itemsFor(projectType).map((i) => i.id), ...corePoolExtensionIds]
     .filter((id) => !accounted.has(id));
 }
 
@@ -180,6 +182,9 @@ export interface ResidualVerdict {
 export function foldResiduals(
   residualIds: string[],
   verdicts: Map<string, ResidualVerdict>,
+  /** Plain sentences for learned core items, which the authored
+   *  Standard cannot supply. */
+  plainById: Map<string, string> = new Map(),
 ): SynthesisItem[] {
   return residualIds.map((itemId) => {
     const v = verdicts.get(itemId);
@@ -198,7 +203,7 @@ export function foldResiduals(
       itemId,
       status: "gap" as const,
       citations: [],
-      note: getScopeItem(itemId)?.plain ?? null,
+      note: getScopeItem(itemId)?.plain ?? plainById.get(itemId) ?? null,
       depth: null,
       remaining: null,
       confidence: 0.5,
@@ -215,16 +220,296 @@ export function foldResiduals(
 export function coverageReport(
   projectType: ScopeProjectType,
   items: Array<{ itemId: string }>,
+  opts: {
+    /** Core learned items — part of the pool the invariant covers. */
+    corePoolExtensionIds?: string[];
+    /** Evidence-only learned items — valid on a run, never expected,
+     *  so neither missing nor stray. */
+    knownExtensionIds?: string[];
+  } = {},
 ): { poolSize: number; covered: number; missing: string[]; strays: string[] } {
-  const pool = new Set(itemsFor(projectType).map((i) => i.id));
+  const pool = new Set([
+    ...itemsFor(projectType).map((i) => i.id),
+    ...(opts.corePoolExtensionIds ?? []),
+  ]);
+  const known = new Set(opts.knownExtensionIds ?? []);
   const seen = new Set<string>();
   const strays: string[] = [];
   for (const i of items) {
     if (pool.has(i.itemId)) seen.add(i.itemId);
-    else strays.push(i.itemId);
+    else if (!known.has(i.itemId) && !i.itemId.startsWith("custom.")) {
+      strays.push(i.itemId);
+    }
   }
   const missing = [...pool].filter((id) => !seen.has(id));
   return { poolSize: pool.size, covered: seen.size, missing, strays };
+}
+
+/* ── preliminary documents ──────────────────────────────────────────── */
+
+const PRELIM_MARKING =
+  /\b(preliminary|prelim|design development|not for construction|for information only)\b/i;
+
+/** A document whose revision or title marks it as anything other than
+ *  a construction issue. One predicate, used by the baseline check,
+ *  the authority guard and the desk alike. */
+export function isPreliminaryDocument(
+  revision: string | null,
+  docTitle: string | null,
+): boolean {
+  return Boolean(
+    (revision &&
+      (/^p\d+$/i.test(revision.trim()) || PRELIM_MARKING.test(revision))) ||
+      (docTitle && PRELIM_MARKING.test(docTitle)),
+  );
+}
+
+/* ── source authority ───────────────────────────────────────────────── */
+
+/**
+ * Divisions whose MATERIAL and SYSTEM claims must rest on the drawn
+ * documents. Energy reports carry template wall/roof types ("brick
+ * veneer" on a job with no brick), surveys and planning documents
+ * describe context, not scope — none of them may establish what a
+ * building is clad, framed or finished in. Divisions NOT listed here
+ * keep every kind authoritative, deliberately: the geotechnical
+ * report must keep establishing earthworks, footings and retaining
+ * facts, and the energy report keeps establishing insulation.
+ */
+const MATERIAL_DIVISIONS = new Set([
+  "framing",
+  "steel",
+  "roofing",
+  "external-walls",
+  "windows",
+  "external-doors",
+  "internal-doors",
+  "lining",
+  "fixout",
+  "stairs",
+  "joinery",
+  "tiling",
+  "flooring",
+  "painting",
+  "appliances",
+]);
+
+/** Kinds that may not establish material claims on their own. */
+const NON_AUTHORITATIVE_KINDS = new Set(["energy", "soil", "survey", "planning"]);
+
+export interface AuthorityEnforcement {
+  items: SynthesisItem[];
+  /** Evidenced material items whose ONLY sources were reports — the
+   *  brick-veneer-from-the-energy-report class. They rejoin the
+   *  residual pool, where the classifier judges the silence of the
+   *  DRAWN documents. */
+  demoted: string[];
+  /** Report citations stripped from material items that also carry
+   *  drawn evidence (the drawn pages keep the claim; the report was
+   *  corroboration at best, template noise at worst). */
+  strippedCitations: number;
+  /** Items whose every surviving source is a preliminary issue. */
+  prelimOnly: string[];
+}
+
+/**
+ * The drawn documents govern what a building is made of. For items in
+ * material divisions: report-kind citations are stripped when drawn
+ * evidence exists; an item with ONLY report-kind citations is demoted
+ * to the residual pool rather than published as evidenced. An item
+ * whose every surviving source is marked preliminary keeps its line
+ * but is graded partial with the reason stated — a mood board is not
+ * a construction issue.
+ */
+export function enforceSourceAuthority(
+  items: SynthesisItem[],
+  documents: Array<{ documentId: string; kind: string | null }>,
+  prelimDocumentIds: Set<string>,
+): AuthorityEnforcement {
+  const kindByDoc = new Map(documents.map((d) => [d.documentId, d.kind]));
+  const out: SynthesisItem[] = [];
+  const demoted: string[] = [];
+  const prelimOnly: string[] = [];
+  let strippedCitations = 0;
+
+  for (const entry of items) {
+    // Learned and custom ids carry their division one segment in:
+    // "ext.external-walls.corten" is external-walls work and obeys
+    // the same material law as any authored item.
+    const parts = entry.itemId.split(".");
+    const division =
+      (parts[0] === "ext" || parts[0] === "custom" ? parts[1] : parts[0]) ?? "";
+    if (entry.status !== "evidenced" || !MATERIAL_DIVISIONS.has(division)) {
+      out.push(entry);
+      continue;
+    }
+    const authoritative = entry.citations.filter(
+      (c) => !NON_AUTHORITATIVE_KINDS.has(kindByDoc.get(c.documentId) ?? ""),
+    );
+    if (authoritative.length === 0) {
+      demoted.push(entry.itemId);
+      continue;
+    }
+    strippedCitations += entry.citations.length - authoritative.length;
+
+    const allPrelim = authoritative.every((c) => prelimDocumentIds.has(c.documentId));
+    if (allPrelim) {
+      prelimOnly.push(entry.itemId);
+      out.push({
+        ...entry,
+        citations: authoritative,
+        depth: "partial",
+        remaining: entry.remaining
+          ? `${entry.remaining} · Source is a preliminary issue; confirm on the construction set.`
+          : "Source is a preliminary issue; confirm on the construction set.",
+      });
+    } else {
+      out.push({ ...entry, citations: authoritative });
+    }
+  }
+  return { items: out, demoted, strippedCitations, prelimOnly };
+}
+
+/* ── note grounding ─────────────────────────────────────────────────── */
+
+const NOTE_STOPWORDS = new Set([
+  "with",
+  "shown",
+  "noted",
+  "detail",
+  "details",
+  "internal",
+  "external",
+  "basement",
+  "ground",
+  "upper",
+  "first",
+  "floor",
+  "level",
+  "scheduled",
+  "schedule",
+  "plans",
+  "drawings",
+  "documents",
+  "throughout",
+  "including",
+  "system",
+  "systems",
+  "areas",
+  "locations",
+]);
+
+export interface NoteGroundingResult {
+  items: SynthesisItem[];
+  /** Items whose note imported a term from a document their citations
+   *  never touch — the bluestone-treads class of fabrication. */
+  flagged: Array<{ itemId: string; term: string; fromDocumentId: string }>;
+}
+
+/** Confidence multiplier for a note carrying an imported term. Lands
+ *  a 0.8 line at 0.64 — below the ops floor, in front of a person. */
+export const NOTE_IMPORT_PENALTY = 0.8;
+
+/**
+ * A note is written FROM its citations. Any distinctive term in an
+ * evidenced note that appears nowhere on the cited pages, but does
+ * appear in another document's extraction, was imported — the model
+ * blended documents. Wheeler's proof: "bluestone treads" welded onto
+ * both staircases from a design-development paving schedule that
+ * says "Bluestone Pavers - Sauna Area". The line keeps its place;
+ * its confidence drops below the ops floor, its depth caps at
+ * partial, and the reviewer is told exactly which term to check.
+ */
+export function enforceNoteGrounding(
+  items: SynthesisItem[],
+  documents: SynthesisDocumentInput[],
+): NoteGroundingResult {
+  // Per document: the full extraction text, lowercased once.
+  const textByDoc = new Map<string, string>();
+  const textByDocPage = new Map<string, string>();
+  for (const d of documents) {
+    const parts: string[] = [];
+    for (const p of d.findings.pages) {
+      const pageText = [
+        p.note ?? "",
+        ...p.statedFigures.map((f) => `${f.label} ${f.value}`),
+        ...(p.offStandard ?? []).map((o) => `${o.label} ${o.note ?? ""}`),
+      ]
+        .join(" ")
+        .toLowerCase();
+      textByDocPage.set(`${d.documentId}#${p.page}`, pageText);
+      parts.push(pageText);
+    }
+    textByDoc.set(d.documentId, parts.join(" "));
+  }
+
+  const out: SynthesisItem[] = [];
+  const flagged: NoteGroundingResult["flagged"] = [];
+  for (const entry of items) {
+    if (entry.status !== "evidenced" || !entry.note || entry.citations.length === 0) {
+      out.push(entry);
+      continue;
+    }
+    const item = getScopeItem(entry.itemId);
+    const ownVocab = `${entry.itemId} ${item?.label ?? ""} ${item?.plain ?? ""} ${(
+      item?.aliases ?? []
+    ).join(" ")}`.toLowerCase();
+    const citedText = entry.citations
+      .map((c) => textByDocPage.get(`${c.documentId}#${c.page}`) ?? "")
+      .join(" ");
+    const citedDocIds = new Set(entry.citations.map((c) => c.documentId));
+
+    // A page whose extraction barely spoke gives no basis to judge a
+    // note against — never flag off near-empty source text.
+    if (citedText.trim().length < 40) {
+      out.push(entry);
+      continue;
+    }
+
+    let importHit: { term: string; fromDocumentId: string } | null = null;
+    const words = entry.note.toLowerCase().match(/[a-z]{5,}/g) ?? [];
+    // Singular and plural are the same word: "tread" in the note is
+    // grounded by "treads" on the page, and vice versa.
+    const variants = (w: string) => {
+      const v = new Set([w, `${w}s`, `${w}es`]);
+      if (w.endsWith("es")) v.add(w.slice(0, -2));
+      if (w.endsWith("s")) v.add(w.slice(0, -1));
+      if (w.endsWith("ies")) v.add(`${w.slice(0, -3)}y`);
+      return [...v];
+    };
+    const inText = (text: string, w: string) =>
+      variants(w).some((v) => text.includes(v));
+    for (const w of new Set(words)) {
+      if (NOTE_STOPWORDS.has(w)) continue;
+      if (inText(ownVocab, w)) continue;
+      if (inText(citedText, w)) continue;
+      // Absent from every cited page — does it live in a document the
+      // citations never touch?
+      for (const [docId, text] of textByDoc) {
+        if (citedDocIds.has(docId)) continue;
+        if (inText(text, w)) {
+          importHit = { term: w, fromDocumentId: docId };
+          break;
+        }
+      }
+      if (importHit) break;
+    }
+
+    if (importHit) {
+      flagged.push({ itemId: entry.itemId, ...importHit });
+      const warning = `Check "${importHit.term}": it appears in another document, not on this line's cited pages.`;
+      out.push({
+        ...entry,
+        depth: "partial",
+        remaining: entry.remaining ? `${entry.remaining} · ${warning}` : warning,
+        confidence:
+          Math.round(entry.confidence * NOTE_IMPORT_PENALTY * 100) / 100,
+      });
+    } else {
+      out.push(entry);
+    }
+  }
+  return { items: out, flagged };
 }
 
 /* ── the baseline check ─────────────────────────────────────────────── */
@@ -347,20 +632,18 @@ export function baselineFindings(docs: BaselineDocument[]): BaselineFinding[] {
   // construction: pricing off them is the quiet start of every
   // variation dispute. High severity on the drawing sets a builder
   // prices from; attention elsewhere.
-  const PRELIM =
-    /\b(preliminary|prelim|design development|not for construction|for information only)\b/i;
   const DRAWING_KINDS = new Set(["architectural", "structural", "civil"]);
   for (const d of docs) {
-    const marked =
-      (d.revision && (/^p\d+$/i.test(d.revision.trim()) || PRELIM.test(d.revision))) ||
-      (d.docTitle && PRELIM.test(d.docTitle));
+    const marked = isPreliminaryDocument(d.revision, d.docTitle);
     if (marked) {
       const mark = d.revision && /^p\d+$/i.test(d.revision.trim())
         ? `revision ${d.revision.trim()}`
         : "preliminary";
       findings.push({
         summary: `${displayName(d)} is marked ${mark} (${
-          d.docTitle && PRELIM.test(d.docTitle) ? "its title says so" : "per its revision"
+          d.docTitle && PRELIM_MARKING.test(d.docTitle)
+            ? "its title says so"
+            : "per its revision"
         }). It is not a construction issue: builders pricing from it carry the risk of change, and a final issued set should replace it before a fixed price is signed.`,
         citations: [{ documentId: d.documentId, page: 1 }],
         severity: DRAWING_KINDS.has(d.kind ?? "") ? "high" : "attention",
@@ -711,6 +994,10 @@ export interface CaptureHygiene {
   /** Captures whose label already lives in the Standard — evidence the
    *  model should have mapped, not proposed. Logged, never stored. */
   mappedAway: Array<{ label: string; matchedItemId: string }>;
+  /** Captures matching a LEARNED extension: the same work seen on a
+   *  past project. They become evidenced lines under the extension's
+   *  permanent key — no ops click, cross-project comparable. */
+  autoMapped: Array<{ capture: SynthesisCapture; extensionId: string }>;
 }
 
 /** Lowercased, punctuation collapsed to single spaces, padded — so
@@ -725,12 +1012,32 @@ const paddedWords = (s: string) =>
  * whole-word phrase are mapped away here, in code, so the capture
  * lane cannot become a duplicate vocabulary.
  */
-export function captureHygiene(captures: SynthesisCapture[]): CaptureHygiene {
+export function captureHygiene(
+  captures: SynthesisCapture[],
+  extensions: Array<{ id: string; label: string; aliases?: string[] }> = [],
+): CaptureHygiene {
   const kept: CaptureHygiene["kept"] = [];
   const mappedAway: CaptureHygiene["mappedAway"] = [];
+  const autoMapped: CaptureHygiene["autoMapped"] = [];
   for (const c of captures) {
     const label = paddedWords(c.label);
     if (label.trim().length < 3) continue;
+
+    // The living vocabulary first: a capture matching a learned item
+    // is that item, seen again — it reuses the permanent key instead
+    // of asking ops to invent one.
+    const ext = extensions.find((e) => {
+      const candidates = [e.label, ...(e.aliases ?? [])].map(paddedWords);
+      return candidates.some(
+        (a) =>
+          (a.trim().includes(" ") && label.includes(a)) ||
+          (label.trim().length >= 6 && a.includes(label)),
+      );
+    });
+    if (ext) {
+      autoMapped.push({ capture: c, extensionId: ext.id });
+      continue;
+    }
     // Whole-word containment makes short aliases safe: " spa " can
     // match "pool and spa" but never "spatial". A MULTI-WORD phrase
     // match (or full-label containment) maps the capture away; a
@@ -760,7 +1067,7 @@ export function captureHygiene(captures: SynthesisCapture[]): CaptureHygiene {
     else if (weak) kept.push({ ...c, nearestItemId: weak });
     else kept.push(c);
   }
-  return { kept, mappedAway };
+  return { kept, mappedAway, autoMapped };
 }
 
 /* ── the readiness verdict ──────────────────────────────────────────── */

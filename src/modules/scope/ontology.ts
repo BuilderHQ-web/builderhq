@@ -24,7 +24,7 @@ import type { ScopeDivision, ScopeItem } from "./types";
 
 /** Semantic version of the library. Projects pin the version they
  *  were prepared under. */
-export const SCOPE_STANDARD_VERSION = "1.1.0";
+export const SCOPE_STANDARD_VERSION = "1.2.0";
 
 // ── divisions — the build in reading order ──────────────────────────────
 
@@ -1198,6 +1198,28 @@ export const SCOPE_ITEMS: ScopeItem[] = [
       "Sheet and plank cladding systems fixed over the frame, from weatherboard looks to crisp panel facades.",
     trade: "external_finishes",
     aliases: ["scyon", "axon", "linea", "matrix", "hardie", "fc sheet", "blueboard"],
+  },
+  {
+    id: "external-walls.metal-cladding",
+    division: "external-walls",
+    label: "Metal wall cladding",
+    plain:
+      "Metal sheet cladding to external walls: Colorbond profiles, standing seam, interlocking panels or weathering steel, with its trims and flashings.",
+    trade: "external_finishes",
+    aliases: [
+      "colorbond cladding",
+      "colorbond longline",
+      "longline",
+      "standing seam",
+      "interlocking panel",
+      "snaplock",
+      "nailstrip",
+      "corten",
+      "corten steel cladding",
+      "weathering steel",
+      "metal wall cladding",
+      "zincalume cladding",
+    ],
   },
   {
     id: "external-walls.timber-composite-cladding",

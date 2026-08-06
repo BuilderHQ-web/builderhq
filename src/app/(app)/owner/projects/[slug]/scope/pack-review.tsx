@@ -190,7 +190,13 @@ export function PackReview({
   const byDivision = useCallback((list: PackItem[]) => {
     const m = new Map<string, PackItem[]>();
     for (const it of list) {
-      const div = getScopeItem(it.itemId)?.division ?? "unknown";
+      // Learned lines ("ext.<division>.<slug>") and legacy custom
+      // lines file under their real division like any authored item.
+      const div =
+        getScopeItem(it.itemId)?.division ??
+        (it.itemId.startsWith("ext.") || it.itemId.startsWith("custom.")
+          ? it.itemId.split(".")[1] ?? "unknown"
+          : "unknown");
       const arr = m.get(div) ?? [];
       arr.push(it);
       m.set(div, arr);
@@ -1245,7 +1251,7 @@ function ChapterDocuments({
                         <span className="text-text">&ldquo;{m.ref}&rdquo;</span>
                         <span className="text-text-dim">
                           {" "}
-                          — mentioned in {m.sources.join(", ")}
+                          · mentioned in {m.sources.join(", ")}
                         </span>
                       </li>
                     ))}

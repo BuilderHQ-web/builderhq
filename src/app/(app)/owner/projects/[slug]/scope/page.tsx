@@ -24,7 +24,12 @@ import { auth } from "@/modules/auth";
 import { getBySlugForViewer } from "@/modules/projects";
 import { getOwnerReview } from "@/modules/scope-engine";
 import type { SynthesisOverview } from "@/modules/scope-engine/pipeline";
-import { adviseMissingDocuments, getScopeItem } from "@/modules/scope";
+import {
+  adviseMissingDocuments,
+  getScopeItem,
+  registerImportance,
+  resolveRegisterNames,
+} from "@/modules/scope";
 import { summariseDiff, type ScheduleDiff } from "@/modules/tenders/schedule";
 import { projectsBase } from "@/lib/dashboard-route";
 import { PackReview } from "./pack-review";
@@ -60,7 +65,6 @@ export default async function ScopeReviewPage({
   const {
     phase,
     run,
-    documentNames,
     register,
     items,
     resolutions,
@@ -176,20 +180,32 @@ export default async function ScopeReviewPage({
             advisories={advisories}
             brief={brief}
             briefComplete={briefComplete}
-            documentNames={documentNames}
+            documentNames={(() => {
+              const std = resolveRegisterNames(register);
+              return Object.fromEntries(
+                register.map((r) => [r.documentId, std.get(r.documentId) ?? r.filename]),
+              );
+            })()}
             namedMissing={(namedMissing ?? []).map((m) => ({
               ref: m.ref,
-              sources: m.citations.map(
-                (c) =>
-                  `${documentNames[c.documentId] ?? "a document"} p.${c.page}`,
-              ),
+              sources: m.citations.map((c) => {
+                const std = resolveRegisterNames(register);
+                return `${std.get(c.documentId) ?? "a document"} p.${c.page}`;
+              }),
             }))}
-            register={register.map((r) => ({
-              title: r.docTitle ?? r.filename,
-              filename: r.filename,
-              kind: r.kind,
-              pages: r.pageCount,
-            }))}
+            register={(() => {
+              const std = resolveRegisterNames(register);
+              return [...register]
+                .sort(
+                  (a, b) => registerImportance(a.kind) - registerImportance(b.kind),
+                )
+                .map((r) => ({
+                  title: std.get(r.documentId) ?? r.docTitle ?? r.filename,
+                  filename: r.filename,
+                  kind: r.kind,
+                  pages: r.pageCount,
+                }));
+            })()}
             facts={{
               title: project.title,
               type: project.type,

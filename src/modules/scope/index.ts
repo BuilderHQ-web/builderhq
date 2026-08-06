@@ -148,3 +148,11 @@ export {
   groupPackDivisions,
   type ScopeGroup,
 } from "./groups";
+
+export {
+  DOC_KIND_STANDARD_NAME,
+  DOC_KIND_ORDER,
+  registerImportance,
+  standardDocumentName,
+  resolveRegisterNames,
+} from "./doc-names";

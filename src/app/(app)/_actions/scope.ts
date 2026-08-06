@@ -78,10 +78,11 @@ export async function addScopeItemAction(
 
 export async function promoteCaptureAction(
   captureId: string,
+  tier: "extension" | "core" = "extension",
 ): Promise<Result<{ itemId: string }>> {
   const a = await requireAdmin();
   if (!a.ok) return a;
-  const r = await promoteCapture(a.value, captureId);
+  const r = await promoteCapture(a.value, captureId, tier);
   if (!r.ok) return r;
   return { ok: true, value: { itemId: r.value.itemId } };
 }

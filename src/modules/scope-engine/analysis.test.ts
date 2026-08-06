@@ -14,6 +14,9 @@ import { describe, expect, test } from "vitest";
 import {
   enforceCitationConsistency,
   enforceConflictIntegrity,
+  enforceSourceAuthority,
+  enforceNoteGrounding,
+  isPreliminaryDocument,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -907,5 +910,374 @@ describe("namedMissingDocuments — index pages and bare markers", () => {
       doc("g", "geo.pdf", "soil", [[]]),
     ]);
     expect(out.map((r) => r.ref)).toEqual(["External Finishes Schedule"]);
+  });
+});
+
+/* ── source authority: the drawn documents govern materials ─────────── */
+
+describe("enforceSourceAuthority", () => {
+  const docs = [
+    { documentId: "arch", kind: "architectural" },
+    { documentId: "struct", kind: "structural" },
+    { documentId: "energy", kind: "energy" },
+    { documentId: "geo", kind: "soil" },
+    { documentId: "dd", kind: "other" },
+  ];
+  const item = (
+    itemId: string,
+    citations: Array<{ documentId: string; page: number }>,
+  ) => ({
+    itemId,
+    status: "evidenced" as const,
+    citations,
+    note: "x",
+    depth: "full" as const,
+    remaining: null,
+    confidence: 0.8,
+  });
+
+  test("the Wheeler brick: a material claim sourced only from the energy report demotes", () => {
+    const r = enforceSourceAuthority(
+      [item("external-walls.brick-veneer", [{ documentId: "energy", page: 13 }])],
+      docs,
+      new Set(),
+    );
+    expect(r.items).toHaveLength(0);
+    expect(r.demoted).toEqual(["external-walls.brick-veneer"]);
+  });
+
+  test("drawn evidence keeps the claim; the report citation is stripped as noise", () => {
+    const r = enforceSourceAuthority(
+      [
+        item("external-walls.fc-cladding", [
+          { documentId: "arch", page: 16 },
+          { documentId: "energy", page: 7 },
+        ]),
+      ],
+      docs,
+      new Set(),
+    );
+    expect(r.items[0]!.citations).toEqual([{ documentId: "arch", page: 16 }]);
+    expect(r.strippedCitations).toBe(1);
+    expect(r.demoted).toEqual([]);
+  });
+
+  test("the geotechnical report keeps establishing ground facts untouched", () => {
+    const r = enforceSourceAuthority(
+      [item("earthworks.dewatering", [{ documentId: "geo", page: 3 }])],
+      docs,
+      new Set(),
+    );
+    expect(r.items).toHaveLength(1);
+    expect(r.items[0]!.citations).toHaveLength(1);
+    expect(r.demoted).toEqual([]);
+  });
+
+  test("the energy report keeps establishing insulation untouched", () => {
+    const r = enforceSourceAuthority(
+      [item("insulation.ceiling-batts", [{ documentId: "energy", page: 7 }])],
+      docs,
+      new Set(),
+    );
+    expect(r.items).toHaveLength(1);
+    expect(r.demoted).toEqual([]);
+  });
+
+  test("the Wheeler feature stone: a preliminary-only source grades partial with the reason", () => {
+    const r = enforceSourceAuthority(
+      [item("external-walls.feature-stone", [{ documentId: "dd", page: 2 }])],
+      docs,
+      new Set(["dd"]),
+    );
+    expect(r.items[0]!.depth).toBe("partial");
+    expect(r.items[0]!.remaining).toContain("preliminary");
+    expect(r.prelimOnly).toEqual(["external-walls.feature-stone"]);
+  });
+
+  test("gaps and non-material divisions pass through untouched", () => {
+    const gap = {
+      itemId: "external-walls.brick-veneer",
+      status: "gap" as const,
+      citations: [],
+      note: null,
+      depth: null,
+      remaining: null,
+      confidence: 0.5,
+    };
+    const r = enforceSourceAuthority([gap], docs, new Set());
+    expect(r.items[0]).toEqual(gap);
+  });
+});
+
+/* ── note grounding: notes are local to their citations ─────────────── */
+
+describe("enforceNoteGrounding", () => {
+  const page = (page: number, note: string | null, figures: Array<[string, string]> = []) => ({
+    page,
+    itemIds: [],
+    statedFigures: figures.map(([label, value]) => ({ label, value, itemId: null })),
+    offStandard: [],
+    docRefs: [],
+    note,
+  });
+  const docsWith = (archNotes: Array<ReturnType<typeof page>>, ddNotes: Array<ReturnType<typeof page>>) =>
+    [
+      {
+        documentId: "arch",
+        filename: "arch.pdf",
+        kind: "architectural",
+        revision: null,
+        findings: { pages: archNotes } as never,
+      },
+      {
+        documentId: "dd",
+        filename: "dd.pdf",
+        kind: "other",
+        revision: null,
+        findings: { pages: ddNotes } as never,
+      },
+    ] as never[];
+
+  test("the bluestone case: a term imported from an uncited document flags the line", () => {
+    const docs = docsWith(
+      [page(27, "External staircase and internal staircase details.")],
+      [page(2, "Bluestone pavers to sauna area per landscape palette.")],
+    ) as never;
+    const r = enforceNoteGrounding(
+      [
+        {
+          itemId: "stairs.internal-staircase",
+          status: "evidenced",
+          citations: [{ documentId: "arch", page: 27 }],
+          note: "Internal staircase with bluestone treads.",
+          depth: "full",
+          remaining: null,
+          confidence: 0.8,
+        },
+      ],
+      docs,
+    );
+    expect(r.flagged).toHaveLength(1);
+    expect(r.flagged[0]!.term).toBe("bluestone");
+    expect(r.flagged[0]!.fromDocumentId).toBe("dd");
+    const line = r.items[0]!;
+    expect(line.depth).toBe("partial");
+    expect(line.remaining).toContain("bluestone");
+    // 0.8 × 0.8 = 0.64 — below the ops floor, in front of a person.
+    expect(line.confidence).toBeLessThan(0.65);
+  });
+
+  test("a note grounded in its own cited pages passes untouched", () => {
+    const docs = docsWith(
+      [page(43, "Internal staircase elevations, mild steel handrail in clear lacquer.")],
+      [page(2, "Bluestone pavers to sauna area.")],
+    ) as never;
+    const r = enforceNoteGrounding(
+      [
+        {
+          itemId: "stairs.internal-staircase",
+          status: "evidenced",
+          citations: [{ documentId: "arch", page: 43 }],
+          note: "Internal staircase with mild steel handrail in clear lacquer.",
+          depth: "full",
+          remaining: null,
+          confidence: 0.8,
+        },
+      ],
+      docs,
+    );
+    expect(r.flagged).toEqual([]);
+    expect(r.items[0]!.depth).toBe("full");
+    expect(r.items[0]!.confidence).toBe(0.8);
+  });
+
+  test("a paraphrase that exists nowhere else is never punished", () => {
+    // "generously" appears in no document at all — style, not import.
+    const docs = docsWith(
+      [page(10, "Kitchen cabinetry run with overhead cupboards.")],
+      [page(2, "Unrelated content.")],
+    ) as never;
+    const r = enforceNoteGrounding(
+      [
+        {
+          itemId: "joinery.kitchen-cabinetry",
+          status: "evidenced",
+          citations: [{ documentId: "arch", page: 10 }],
+          note: "Kitchen cabinetry generously proportioned with overhead cupboards.",
+          depth: "full",
+          remaining: null,
+          confidence: 0.9,
+        },
+      ],
+      docs,
+    );
+    expect(r.flagged).toEqual([]);
+    expect(r.items[0]!.confidence).toBe(0.9);
+  });
+});
+
+describe("isPreliminaryDocument", () => {
+  test("P-revisions, prelim titles and DD titles all mark", () => {
+    expect(isPreliminaryDocument("P2", "Drainage plan")).toBe(true);
+    expect(isPreliminaryDocument("1", "PRELIMINARY ISSUE — working set")).toBe(true);
+    expect(isPreliminaryDocument("E", "REV C-E DESIGN DEVELOPMENT")).toBe(true);
+    expect(isPreliminaryDocument("C4", "Structural set")).toBe(false);
+    expect(isPreliminaryDocument(null, null)).toBe(false);
+  });
+});
+
+/* ── the living vocabulary ──────────────────────────────────────────── */
+
+describe("captureHygiene — the living vocabulary", () => {
+  const capture = (label: string) => ({
+    label,
+    divisionId: null,
+    citations: [{ documentId: "d", page: 1 }],
+    note: "seen on plans",
+    confidence: 0.8,
+  });
+  const SAUNA = {
+    id: "ext.landscaping.sauna",
+    label: "Sauna",
+    aliases: ["sauna cabin", "infrared sauna"],
+  };
+
+  test("a repeat discovery auto-maps to the learned key, no ops click", () => {
+    const r = captureHygiene([capture("Infrared sauna room")], [SAUNA]);
+    expect(r.kept).toEqual([]);
+    expect(r.autoMapped).toHaveLength(1);
+    expect(r.autoMapped[0]!.extensionId).toBe("ext.landscaping.sauna");
+  });
+
+  test("unlearned work still lands in the capture lane", () => {
+    const r = captureHygiene([capture("Observatory dome")], [SAUNA]);
+    expect(r.autoMapped).toEqual([]);
+    expect(r.kept).toHaveLength(1);
+  });
+});
+
+describe("residualPool and coverage with core extensions", () => {
+  test("a core learned item joins the complement", () => {
+    const pool = residualPool("single_dwelling", [], ["ext.landscaping.sauna"]);
+    expect(pool).toContain("ext.landscaping.sauna");
+  });
+
+  test("coverage counts core extensions and never strays known ones", () => {
+    const items = [
+      ...itemsFor("single_dwelling").map((i) => ({ itemId: i.id })),
+      { itemId: "ext.landscaping.sauna" },
+      { itemId: "ext.joinery.wine-cellar" },
+    ];
+    const r = coverageReport("single_dwelling", items, {
+      corePoolExtensionIds: ["ext.landscaping.sauna"],
+      knownExtensionIds: ["ext.landscaping.sauna", "ext.joinery.wine-cellar"],
+    });
+    expect(r.missing).toEqual([]);
+    expect(r.strays).toEqual([]);
+    expect(r.poolSize).toBe(itemsFor("single_dwelling").length + 1);
+  });
+
+  test("folded core-extension gaps carry the learned plain sentence", () => {
+    const folded = foldResiduals(
+      ["ext.landscaping.sauna"],
+      new Map(),
+      new Map([["ext.landscaping.sauna", "A sauna room and its services."]]),
+    );
+    expect(folded[0]!.note).toBe("A sauna room and its services.");
+  });
+});
+
+describe("captureHygiene — duplicate discoveries of one learned item", () => {
+  const capture = (label: string, page: number) => ({
+    label,
+    divisionId: null,
+    citations: [{ documentId: "d", page }],
+    note: null,
+    confidence: 0.8,
+  });
+
+  test("two captures matching one extension both auto-map; the caller merges to one line", () => {
+    // The run-bricking case: (runId, itemId) is unique, so the service
+    // MUST collapse these to a single selection line. This pins the
+    // shape the service dedupes over.
+    const SAUNA = {
+      id: "ext.landscaping.sauna",
+      label: "Sauna",
+      aliases: ["sauna cabin", "infrared sauna"],
+    };
+    const r = captureHygiene(
+      [capture("Sauna cabin to rear", 3), capture("Infrared sauna", 12)],
+      [SAUNA],
+    );
+    expect(r.autoMapped).toHaveLength(2);
+    expect(new Set(r.autoMapped.map((m) => m.extensionId)).size).toBe(1);
+  });
+});
+
+describe("enforceNoteGrounding — plurals and sparse pages never punish", () => {
+  const page = (page: number, note: string | null) => ({
+    page,
+    itemIds: [],
+    statedFigures: [],
+    offStandard: [],
+    docRefs: [],
+    note,
+  });
+  const docs = [
+    {
+      documentId: "arch",
+      filename: "arch.pdf",
+      kind: "architectural",
+      revision: null,
+      findings: {
+        pages: [
+          page(5, "External stairs with three concrete treads and steel stringers to the entry."),
+          page(9, null),
+        ],
+      } as never,
+    },
+    {
+      documentId: "other",
+      filename: "o.pdf",
+      kind: "other",
+      revision: null,
+      findings: { pages: [page(1, "Bluestone paving and tread details for the pool surround.")] } as never,
+    },
+  ] as never;
+
+  test("singular in the note, plural on the page: grounded", () => {
+    const r = enforceNoteGrounding(
+      [
+        {
+          itemId: "stairs.external-stairs",
+          status: "evidenced",
+          citations: [{ documentId: "arch", page: 5 }],
+          note: "External stair with concrete tread and steel stringer.",
+          depth: "full",
+          remaining: null,
+          confidence: 0.8,
+        },
+      ],
+      docs,
+    );
+    expect(r.flagged).toEqual([]);
+  });
+
+  test("a near-empty cited page gives no basis to flag", () => {
+    const r = enforceNoteGrounding(
+      [
+        {
+          itemId: "stairs.external-stairs",
+          status: "evidenced",
+          citations: [{ documentId: "arch", page: 9 }],
+          note: "External stairs with bluestone treads.",
+          depth: "full",
+          remaining: null,
+          confidence: 0.8,
+        },
+      ],
+      docs,
+    );
+    expect(r.flagged).toEqual([]);
   });
 });

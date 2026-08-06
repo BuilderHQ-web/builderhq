@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   ChevronDown,
+  Info,
   Loader2,
   Pencil,
   Play,
@@ -40,6 +41,8 @@ import {
   SCOPE_DIVISIONS,
   getScopeItem,
   SCOPE_ITEMS,
+  registerImportance,
+  resolveRegisterNames,
 } from "@/modules/scope";
 
 interface RegisterRow {
@@ -119,8 +122,14 @@ export function RunReview({
   const [running, setRunning] = useState(false);
   const stopRef = useRef(false);
 
-  const docName = useMemo(
-    () => new Map(register.map((d) => [d.documentId, d.filename])),
+  // One naming convention, everywhere: registers and citations speak
+  // standard names ("Structural Engineering"), never raw filenames.
+  const docName = useMemo(() => resolveRegisterNames(register), [register]);
+  const orderedRegister = useMemo(
+    () =>
+      [...register].sort(
+        (a, b) => registerImportance(a.kind) - registerImportance(b.kind),
+      ),
     [register],
   );
 
@@ -174,7 +183,7 @@ export function RunReview({
             </>
           )}
         </button>
-        <RegisterTable register={register} docName={docName} />
+        <RegisterTable register={orderedRegister} docName={docName} />
       </section>
     );
   }
@@ -182,7 +191,7 @@ export function RunReview({
   return (
     <div className="flex flex-col gap-8">
       <ReadinessBanner readiness={readiness} />
-      <RegisterTable register={register} docName={docName} />
+      <RegisterTable register={orderedRegister} docName={docName} />
       <NamedMissing refs={namedMissing} docName={docName} />
       <Captures captures={captures} docName={docName} status={status} />
       <Selection runId={runId} items={items} docName={docName} status={status} />
@@ -211,7 +220,9 @@ function ReadinessBanner({ readiness }: { readiness: ReadinessProp }) {
       <p className="mt-1 text-[13.5px] font-ui font-semibold text-text">
         {budget
           ? "Budget pricing only until the factors below are closed."
-          : "Ready for fixed-price tender."}
+          : readiness.factors.length > 0
+            ? "Ready for fixed-price tender, with notes below."
+            : "Ready for fixed-price tender."}
       </p>
       {readiness.factors.length > 0 ? (
         <ul className="mt-2 flex flex-col gap-1">
@@ -248,7 +259,7 @@ function NamedMissing({
       <span className="text-text">&ldquo;{r.ref}&rdquo;</span>
       <span className="text-text-dim">
         {" "}
-        — named on{" "}
+        · named on{" "}
         {r.citations
           .map((c) => `${docName.get(c.documentId) ?? "a document"} p.${c.page}`)
           .join(", ")}
@@ -258,11 +269,11 @@ function NamedMissing({
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
       <h2 className="text-[13px] font-ui font-semibold text-text">
-        Documents the pack names but does not contain · {refs.length}
+        Documents referenced but not included · {refs.length}
       </h2>
       <p className="mt-0.5 text-[11.5px] text-text-dim">
-        Read from the documents&rsquo; own references. Not proof a document
-        does not exist, only that it is not in this pack.
+        The documents mention these, but they are not in the pack. They may
+        exist with the client or a consultant, and are worth asking for.
       </p>
       <ul className="mt-2.5 flex flex-col gap-1.5">{head.map(line)}</ul>
       {rest.length > 0 ? (
@@ -294,19 +305,27 @@ function Captures({
   if (captures.length === 0) return null;
   const readOnly = status !== "review";
 
-  const decide = async (id: string, verdict: "promote" | "dismiss") => {
+  const decide = async (
+    id: string,
+    verdict: "extension" | "core" | "dismiss",
+  ) => {
     setBusy(id);
     try {
       const r =
-        verdict === "promote"
-          ? await promoteCaptureAction(id)
-          : await dismissCaptureAction(id);
+        verdict === "dismiss"
+          ? await dismissCaptureAction(id)
+          : await promoteCaptureAction(id, verdict);
       if (!r.ok) {
         toast.error("Could not decide the capture", r.error.message);
         return;
       }
-      setDecided((d) => ({ ...d, [id]: verdict === "promote" ? "promoted" : "dismissed" }));
-      if (verdict === "promote") router.refresh();
+      setDecided((d) => ({ ...d, [id]: verdict === "dismiss" ? "dismissed" : "promoted" }));
+      if (verdict === "core") {
+        toast.success("Added to the schedule and the core list.");
+      } else if (verdict === "extension") {
+        toast.success("Added to the schedule and the platform's list.");
+      }
+      if (verdict !== "dismiss") router.refresh();
     } finally {
       setBusy(null);
     }
@@ -318,9 +337,12 @@ function Captures({
         Work outside the Standard
       </h2>
       <p className="mt-0.5 text-[11.5px] text-text-dim">
-        The documents show this work, and no Scope Standard item names it.
-        Promote a capture to add it to the schedule as a project-specific
-        line; every promotion is a vote for the next Standard release.
+        The documents show this work, and no Scope Standard item names it
+        yet. Add to schedule puts the line on this project and saves it to
+        the platform&rsquo;s list, so the next project that shows the same
+        work is matched automatically. Add to core list does that AND makes
+        it expected on every project of this type. Dismiss it if it is not
+        real work.
       </p>
       <ul className="mt-3 flex flex-col gap-2.5">
         {captures.map((c) => {
@@ -358,15 +380,26 @@ function Captures({
                   ) : null}
                 </div>
                 {state === "pending" && !readOnly ? (
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5 shrink">
                     <button
                       type="button"
                       disabled={busy === c.id}
-                      onClick={() => decide(c.id, "promote")}
+                      onClick={() => decide(c.id, "extension")}
+                      title="Adds this line to the schedule, and saves it to the platform's list so the next project that shows it is matched automatically"
                       className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-accent text-accent-contrast text-[11.5px] font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60"
                     >
                       <Plus className="size-3.5" />
                       Add to schedule
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy === c.id}
+                      onClick={() => decide(c.id, "core")}
+                      title="Adds it to the schedule and to the core list: every future project of this type will be checked for this work"
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-full border border-accent/50 text-[11.5px] font-semibold text-[#0a7d73] hover:bg-[rgba(0,212,200,0.08)] transition-colors disabled:opacity-60"
+                    >
+                      <Plus className="size-3.5" />
+                      Add to core list
                     </button>
                     <button
                       type="button"
@@ -417,7 +450,6 @@ function RegisterTable({
   register: RegisterRow[];
   docName: Map<string, string>;
 }) {
-  void docName;
   return (
     <section>
       <h2 className="text-[10px] tracking-[0.22em] uppercase text-text-muted font-ui font-semibold pb-2.5 border-b border-border-subtle">
@@ -431,7 +463,7 @@ function RegisterTable({
           >
             <span className="min-w-0 flex-1 truncate">
               <span className="text-text font-ui font-medium">
-                {d.docTitle ?? d.filename}
+                {docName.get(d.documentId) ?? d.docTitle ?? d.filename}
               </span>
               <span className="text-text-dim">
                 {" · "}
@@ -514,11 +546,13 @@ function Selection({
     const m = new Map<string, ItemRow[]>();
     for (const r of rows) {
       const item = getScopeItem(r.itemId);
-      // Custom lines are "custom.<divisionId>.<slug>" — they file
-      // under their real division beside the Standard's items.
+      // Learned and custom lines are "<tier>.<divisionId>.<slug>" —
+      // they file under their real division beside the Standard's.
       const div =
         item?.division ??
-        (r.itemId.startsWith("custom.") ? r.itemId.split(".")[1] ?? "unknown" : "unknown");
+        (r.itemId.startsWith("custom.") || r.itemId.startsWith("ext.")
+          ? r.itemId.split(".")[1] ?? "unknown"
+          : "unknown");
       const arr = m.get(div) ?? [];
       arr.push(r);
       m.set(div, arr);
@@ -528,8 +562,16 @@ function Selection({
 
   const evidenced = rows.filter((r) => r.status === "evidenced").length;
   const gaps = rows.filter((r) => r.status === "gap").length;
-  const pending = rows.filter(
-    (r) => r.opsStatus === "pending" && r.status !== "not_expected",
+  const pending = rows.filter((r) => r.opsStatus === "pending").length;
+  // What the sweep will actually confirm: everything pending except
+  // sub-floor evidenced lines, which always wait for a person.
+  const sweepable = rows.filter(
+    (r) =>
+      r.opsStatus === "pending" &&
+      !(
+        r.status === "evidenced" &&
+        (r.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR
+      ),
   ).length;
 
   const apply = (updated: ItemRow) =>
@@ -554,12 +596,14 @@ function Selection({
             {pending > 0 ? (
               <ConfirmAll
                 runId={runId}
-                pending={pending}
+                pending={sweepable}
                 onDone={() =>
+                  // Confirm all confirms everything — gaps and
+                  // not-expected included. Only sub-floor evidenced
+                  // lines wait for an individual verdict.
                   setRows((prev) =>
                     prev.map((r) =>
                       r.opsStatus === "pending" &&
-                      r.status !== "not_expected" &&
                       !(
                         r.status === "evidenced" &&
                         (r.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR
@@ -748,8 +792,14 @@ function ItemLine({
             </p>
           ) : null}
           {row.depth === "partial" && row.remaining ? (
-            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414]">
-              Still needed: {row.remaining}
+            <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414] flex items-start gap-1">
+              <span
+                className="inline-flex shrink-0 mt-[1px] cursor-help"
+                title="This line can be priced from the documents, but our reading flagged details still to be confirmed. Check them before relying on the price."
+              >
+                <Info className="size-3" />
+              </span>
+              <span>Notes: {row.remaining}</span>
             </p>
           ) : null}
           {row.citations.length > 0 ? (
@@ -775,7 +825,7 @@ function ItemLine({
               <Pencil className="size-3.5" />
             </IconAction>
             <IconAction
-              title="Remove — the run got this wrong"
+              title="Remove: the run got this wrong"
               tone="danger"
               disabled={busy}
               onClick={() => verdict("removed")}

@@ -31,12 +31,16 @@ import {
   ownerAllowanceEligible,
   isOwnerAskableGap,
   isOwnerDocGap,
+  resolveRegisterNames,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
 import {
   enforceCitationConsistency,
   enforceConflictIntegrity,
+  enforceSourceAuthority,
+  enforceNoteGrounding,
+  isPreliminaryDocument,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -66,12 +70,14 @@ import {
   scopeRunItems,
   scopeRunConflicts,
   scopeRunCaptures,
+  scopeVocabExtensions,
   scopeReviewEvents,
   type ScopeRunRow,
   type ScopeRunDocumentRow,
   type ScopeRunItemRow,
   type ScopeRunConflictRow,
   type ScopeRunCaptureRow,
+  type ScopeVocabExtensionRow,
 } from "./schema";
 import {
   classifyDocument,
@@ -82,6 +88,7 @@ import {
   MAX_PDF_BYTES,
   SCOPE_PIPELINE_VERSION,
   type DocumentFindings,
+  type ExtensionItem,
   type StageUsage,
   type SynthesisDocumentInput,
   type SynthesisOverview,
@@ -285,6 +292,43 @@ async function loadDocBytes(documentId: string): Promise<{
   return { bytes, filename: doc.filename, objectKey: doc.objectKey };
 }
 
+/** The living vocabulary, loaded once per tick and threaded through
+ *  every pipeline call so the digest, the validators and the capture
+ *  matcher all speak the same learned language. */
+async function loadVocabExtensions(projectType: string): Promise<{
+  all: ExtensionItem[];
+  rows: ScopeVocabExtensionRow[];
+  coreIds: string[];
+  plainById: Map<string, string>;
+  labelById: Map<string, string>;
+}> {
+  const rows = await db
+    .select()
+    .from(scopeVocabExtensions)
+    .where(ne(scopeVocabExtensions.status, "retired"));
+  const isCore = (r: ScopeVocabExtensionRow) =>
+    r.status === "core" &&
+    Array.isArray(r.appliesTo) &&
+    (r.appliesTo as string[]).includes(projectType);
+  const all: ExtensionItem[] = rows.map((r) => ({
+    id: r.key,
+    label: r.label,
+    division: r.divisionId,
+    plain: r.plain,
+    aliases: Array.isArray(r.aliases) ? (r.aliases as string[]) : [],
+    core: isCore(r),
+  }));
+  return {
+    all,
+    rows,
+    coreIds: rows.filter(isCore).map((r) => r.key),
+    plainById: new Map(
+      rows.filter((r) => r.plain).map((r) => [r.key, r.plain!]),
+    ),
+    labelById: new Map(rows.map((r) => [r.key, r.label])),
+  };
+}
+
 function addUsage(
   usage: Record<string, StageUsage>,
   stage: string,
@@ -331,6 +375,11 @@ export async function processRunTick(
     .limit(1);
   if (!project) return fail("not_found", "Project vanished under the run.");
   const projectType = project.type as ScopeProjectType;
+
+  // The living vocabulary, once per tick: digest, validators and the
+  // capture matcher all see the same learned items, with core tier
+  // resolved against this project's type.
+  const vocab = await loadVocabExtensions(projectType);
 
   let usage = (run.usage ?? {}) as Record<string, StageUsage>;
   const bump = async (status: string) => {
@@ -402,7 +451,7 @@ export async function processRunTick(
           )
           .limit(1);
         if (!next) break;
-        await extractOne(next, projectType, usage, (u) => (usage = u));
+        await extractOne(next, projectType, vocab.all, usage, (u) => (usage = u));
       }
     }
 
@@ -468,48 +517,17 @@ export async function processRunTick(
     } = await synthesiseRun({
       projectType,
       documents: extracted,
+      extensions: vocab.all,
     });
     usage = addUsage(usage, "synthesis", synthUsage);
 
     // ── the deterministic half of accuracy ──────────────────────────
-    // Citations checked against the extract stage's own findings;
-    // demoted items rejoin the residual pool. Conflicts obey the same
-    // law: a fabricated page drops the citation, an uncited conflict
-    // drops entirely.
-    const enforced = enforceCitationConsistency(synthesis.items, extracted);
-    const conflictsEnforced = enforceConflictIntegrity(
-      synthesis.conflicts,
-      extracted,
-    );
-    // The complement is arithmetic: every relevant item the synthesis
-    // did not account for goes to the closed-choice classifier. A
-    // synthesis can no longer forget to sweep for gaps.
-    const residual = residualPool(projectType, enforced.items);
-    let residualVerdicts = new Map<
-      string,
-      { verdict: "gap" | "not_expected"; note: string | null }
-    >();
-    if (residual.length > 0) {
-      await bump("synthesising");
-      const evidencedIds = enforced.items
-        .filter((i) => i.status === "evidenced")
-        .map((i) => i.itemId);
-      const { verdicts, usage: residualUsage } = await classifyResidualItems({
-        projectType,
-        overviewSummary: synthesis.overview?.summary ?? null,
-        registerKinds: [
-          ...new Set(extracted.map((d) => d.kind).filter(Boolean)),
-        ],
-        evidencedIds,
-        residualIds: residual,
-      });
-      residualVerdicts = verdicts;
-      usage = addUsage(usage, "residual", residualUsage);
-    }
-    // Capture hygiene: a capture whose label the Standard already
-    // names is a mapping failure, not new vocabulary — mapped away in
-    // code and logged, never stored.
-    const hygiene = captureHygiene(synthesis.captures);
+    // Capture hygiene runs FIRST so auto-mapped repeat discoveries
+    // join the selection BEFORE the guards: an auto-mapped line obeys
+    // the citation law, the material-authority law and note locality
+    // exactly like a model-evidenced one. Dedup by extension key —
+    // two captures matching one learned item are one line.
+    const hygiene = captureHygiene(synthesis.captures, vocab.all);
     if (hygiene.mappedAway.length > 0) {
       logger.warn(
         {
@@ -520,11 +538,98 @@ export async function processRunTick(
         "captures matching existing Standard items dropped",
       );
     }
+    const synthesisedIds = new Set(synthesis.items.map((i) => i.itemId));
+    const autoByExt = new Map<string, (typeof hygiene.autoMapped)[number]>();
+    for (const m of hygiene.autoMapped) {
+      if (synthesisedIds.has(m.extensionId)) continue;
+      const prior = autoByExt.get(m.extensionId);
+      if (prior) {
+        // Same learned work seen twice: one line, merged citations.
+        prior.capture.citations = [
+          ...prior.capture.citations,
+          ...m.capture.citations,
+        ].slice(0, 10);
+      } else {
+        autoByExt.set(m.extensionId, {
+          ...m,
+          capture: { ...m.capture, citations: [...m.capture.citations] },
+        });
+      }
+    }
+    const autoMappedCandidates = [...autoByExt.values()].map(
+      ({ capture, extensionId }) => ({
+        itemId: extensionId,
+        status: "evidenced" as const,
+        citations: capture.citations,
+        note: capture.note,
+        depth: null,
+        remaining: null,
+        confidence: capture.confidence,
+      }),
+    );
 
-    // Custom lines carry forward: a promoted capture is a project
-    // decision, and a re-read must not silently un-make it. Copy
-    // custom items from the project's latest approved run, unless
-    // this run already has them.
+    // Citations checked against the extract stage's own findings;
+    // demoted items rejoin the residual pool. Conflicts obey the same
+    // law: a fabricated page drops the citation, an uncited conflict
+    // drops entirely.
+    const enforced = enforceCitationConsistency(
+      [...synthesis.items, ...autoMappedCandidates],
+      extracted,
+    );
+    // The drawn documents govern materials: report-only material
+    // claims demote to the residual pool, and preliminary-only
+    // sources grade partial with the reason stated.
+    const prelimDocIds = new Set(
+      docRows
+        .filter((d) => isPreliminaryDocument(d.row.revision, d.row.docTitle))
+        .map((d) => d.row.documentId),
+    );
+    const authority = enforceSourceAuthority(
+      enforced.items,
+      docRows.map((d) => ({
+        documentId: d.row.documentId,
+        kind: d.row.kind,
+      })),
+      prelimDocIds,
+    );
+    // Notes are local to their citations: an imported term (the
+    // bluestone class) drops the line below the ops floor and tells
+    // the reviewer which word to check.
+    const grounding = enforceNoteGrounding(authority.items, extracted);
+    if (authority.demoted.length > 0 || grounding.flagged.length > 0) {
+      logger.warn(
+        {
+          event: "scope.synthesis.authority_grounding",
+          runId,
+          authorityDemoted: authority.demoted.slice(0, 10),
+          noteImports: grounding.flagged.slice(0, 10),
+        },
+        "material claims demoted to the drawn documents' silence; imported note terms flagged",
+      );
+    }
+    const conflictsEnforced = enforceConflictIntegrity(
+      synthesis.conflicts,
+      extracted,
+    );
+    // The complement is arithmetic: every relevant item the synthesis
+    // did not account for goes to the closed-choice classifier. A
+    // synthesis can no longer forget to sweep for gaps. Grounded
+    // items are the post-guard truth: authority demotions rejoin the
+    // pool here and get judged on the DRAWN documents' silence.
+    // Auto-mapped candidates have now passed every guard alongside
+    // the model's own items; the belt on the unique index is a final
+    // dedupe by id before anything persists.
+    const seenIds = new Set<string>();
+    const selectedItems = grounding.items.filter((i) => {
+      if (seenIds.has(i.itemId)) return false;
+      seenIds.add(i.itemId);
+      return true;
+    });
+
+    // Promoted lines carry forward BEFORE the complement runs: a
+    // promotion is a project decision a re-read must not silently
+    // un-make, and a carried core line must count as accounted so
+    // the residual pool cannot mint a duplicate gap for it.
     const [priorApproved] = await db
       .select({ id: scopeRuns.id })
       .from(scopeRuns)
@@ -552,11 +657,16 @@ export async function processRunTick(
         .where(
           and(
             eq(scopeRunItems.runId, priorApproved.id),
-            sql`${scopeRunItems.itemId} like 'custom.%'`,
+            or(
+              sql`${scopeRunItems.itemId} like 'custom.%'`,
+              sql`${scopeRunItems.itemId} like 'ext.%'`,
+            ),
             ne(scopeRunItems.opsStatus, "removed"),
           ),
         );
+      const freshIds = new Set(selectedItems.map((i) => i.itemId));
       for (const c of priorCustom) {
+        if (freshIds.has(c.itemId)) continue;
         carriedCustom.push({
           itemId: c.itemId,
           status: c.status,
@@ -568,9 +678,40 @@ export async function processRunTick(
       }
     }
 
+    // Core-tier learned items join the expected pool: their absence
+    // is judged like any authored item's from promotion on.
+    const coreExtIds = vocab.coreIds;
+    const residual = residualPool(
+      projectType,
+      [...selectedItems, ...carriedCustom.map((c) => ({ itemId: c.itemId }))],
+      coreExtIds,
+    );
+    let residualVerdicts = new Map<
+      string,
+      { verdict: "gap" | "not_expected"; note: string | null }
+    >();
+    if (residual.length > 0) {
+      await bump("synthesising");
+      const evidencedIds = grounding.items
+        .filter((i) => i.status === "evidenced")
+        .map((i) => i.itemId);
+      const { verdicts, usage: residualUsage } = await classifyResidualItems({
+        projectType,
+        overviewSummary: synthesis.overview?.summary ?? null,
+        registerKinds: [
+          ...new Set(extracted.map((d) => d.kind).filter(Boolean)),
+        ],
+        evidencedIds,
+        residualIds: residual,
+        extensions: vocab.all,
+      });
+      residualVerdicts = verdicts;
+      usage = addUsage(usage, "residual", residualUsage);
+    }
+
     const finalItems = [
-      ...enforced.items,
-      ...foldResiduals(residual, residualVerdicts),
+      ...selectedItems,
+      ...foldResiduals(residual, residualVerdicts, vocab.plainById),
     ];
 
     // The deterministic baseline check: dates and title-block names
@@ -588,7 +729,10 @@ export async function processRunTick(
       })),
     );
     // The invariant this rework exists for, checked every run.
-    const coverage = coverageReport(projectType, finalItems);
+    const coverage = coverageReport(projectType, finalItems, {
+      corePoolExtensionIds: coreExtIds,
+      knownExtensionIds: vocab.all.map((e) => e.id),
+    });
     if (coverage.missing.length > 0 || coverage.strays.length > 0) {
       logger.warn(
         {
@@ -624,6 +768,10 @@ export async function processRunTick(
       citationHardDropped: enforced.hardDropped,
       citationSoftFlagged: enforced.softFlagged,
       demotedToResidual: enforced.demoted.length,
+      authorityDemoted: authority.demoted.length,
+      authorityStripped: authority.strippedCitations,
+      prelimOnlySources: authority.prelimOnly.length,
+      noteImportsFlagged: grounding.flagged.length,
       conflictCitationsDropped: conflictsEnforced.droppedCitations,
       conflictsDropped: conflictsEnforced.droppedConflicts,
       schemaSalvaged: extractSalvaged + synthesisSalvaged,
@@ -633,6 +781,8 @@ export async function processRunTick(
       offStandardSeen,
       capturesProposed: hygiene.kept.length,
       capturesMappedAway: hygiene.mappedAway.length,
+      capturesAutoMapped: autoMappedCandidates.length,
+      corePoolExtensions: coreExtIds.length,
       baselineFindings: baseline.length,
       customCarried: carriedCustom.length,
       poolSize: coverage.poolSize,
@@ -659,6 +809,11 @@ export async function processRunTick(
             revision: revisionByDoc.get(c.documentId) ?? null,
           })),
           note: i.note,
+          // Learned items carry their label on the row: the authored
+          // Standard cannot supply it, and clients render label-first.
+          label: i.itemId.startsWith("ext.")
+            ? vocab.labelById.get(i.itemId) ?? null
+            : null,
           depth: i.depth,
           remaining: i.remaining,
           confidence: i.confidence,
@@ -906,6 +1061,7 @@ async function classifyOne(
 async function extractOne(
   docRow: ScopeRunDocumentRow,
   projectType: ScopeProjectType,
+  extensions: ExtensionItem[],
   usage: Record<string, StageUsage>,
   setUsage: (u: Record<string, StageUsage>) => void,
 ): Promise<void> {
@@ -923,6 +1079,7 @@ async function extractOne(
       filename: loaded.filename,
       kind: docRow.kind ?? "other",
       projectType,
+      extensions,
     });
     setUsage(addUsage(usage, "extract", u));
     // The meta rides beside the pages: it is what proves, on a later
@@ -1227,17 +1384,21 @@ export async function addItem(
 }
 
 /**
- * Promote an off-standard capture into the run's selection as a
- * project-scoped custom line. The line's id is
- * "custom.<divisionId>.<slug>" — self-describing, stable across
- * re-reads (the carry-forward copies it), and priced by builders like
- * any other schedule line. Every promotion is also a vote: the
- * metrics desk ranks recurring capture labels as candidates for the
- * next Standard release.
+ * Promote an off-standard capture. Every promotion writes TWO things:
+ * an evidenced line on this run, and an entry in the living
+ * vocabulary — so the next project that shows the same work maps to
+ * the SAME permanent key ("ext.<division>.<slug>") automatically,
+ * with no ops click and full cross-project comparability.
+ *
+ * tier "extension" (the default door): in the list, evidenced when
+ * shown, never a gap. tier "core": joins the expected pool for this
+ * project's type — from now on its absence is judged like any
+ * authored item's.
  */
 export async function promoteCapture(
   actorId: string,
   captureId: string,
+  tier: "extension" | "core" = "extension",
 ): Promise<Result<ScopeRunItemRow>> {
   const [capture] = await db
     .select()
@@ -1248,6 +1409,40 @@ export async function promoteCapture(
   if (capture.opsStatus !== "pending") {
     return fail("conflict", "This capture has already been decided.");
   }
+  const [runRow] = await db
+    .select({ projectId: scopeRuns.projectId })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, capture.runId))
+    .limit(1);
+  const [proj] = runRow
+    ? await db
+        .select({ type: projects.type })
+        .from(projects)
+        .where(eq(projects.id, runRow.projectId))
+        .limit(1)
+    : [];
+
+  // Work the authored Standard already names must not be canonised
+  // twice: the promote door refuses and points at the real item.
+  const standardCheck = captureHygiene(
+    [
+      {
+        label: capture.label,
+        divisionId: capture.divisionId,
+        citations: [],
+        note: capture.note,
+        confidence: capture.confidence ?? 0.5,
+      },
+    ],
+    [],
+  );
+  if (standardCheck.mappedAway.length > 0) {
+    const matched = getScopeItem(standardCheck.mappedAway[0]!.matchedItemId);
+    return fail(
+      "conflict",
+      `The Standard already names this work as "${matched?.label ?? standardCheck.mappedAway[0]!.matchedItemId}". Add that item to the run instead.`,
+    );
+  }
 
   const division = capture.divisionId ?? "external-works";
   const slug =
@@ -1256,21 +1451,101 @@ export async function promoteCapture(
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "line";
-  let itemId = `custom.${division}.${slug}`;
-  const [taken] = await db
-    .select({ id: scopeRunItems.id })
-    .from(scopeRunItems)
-    .where(
-      and(eq(scopeRunItems.runId, capture.runId), eq(scopeRunItems.itemId, itemId)),
-    )
-    .limit(1);
-  if (taken) itemId = `${itemId}-2`;
 
+  // Resolve the key BEFORE any write: reuse when the label matches an
+  // existing entry (same work, permanent key); suffix when two
+  // genuinely different works collide on a slug; refuse only when the
+  // same work is already a line on this run.
+  const runItemTaken = async (candidate: string) => {
+    const [taken] = await db
+      .select({ id: scopeRunItems.id })
+      .from(scopeRunItems)
+      .where(
+        and(
+          eq(scopeRunItems.runId, capture.runId),
+          eq(scopeRunItems.itemId, candidate),
+        ),
+      )
+      .limit(1);
+    return Boolean(taken);
+  };
+  let key = `ext.${division}.${slug}`;
+  let existing: ScopeVocabExtensionRow | undefined;
+  for (const suffix of ["", "-2", "-3"]) {
+    const candidate = `ext.${division}.${slug}${suffix}`;
+    const [row] = await db
+      .select()
+      .from(scopeVocabExtensions)
+      .where(eq(scopeVocabExtensions.key, candidate))
+      .limit(1);
+    if (!row) {
+      key = candidate;
+      existing = undefined;
+      break;
+    }
+    const sameWork =
+      row.label.trim().toLowerCase() === capture.label.trim().toLowerCase();
+    if (sameWork) {
+      key = candidate;
+      existing = row;
+      break;
+    }
+    // Different work colliding on the slug — try the next suffix.
+    key = candidate;
+    existing = row;
+  }
+  if (existing && existing.label.trim().toLowerCase() !== capture.label.trim().toLowerCase()) {
+    return fail(
+      "conflict",
+      "Too many different works share this name. Rename the capture's work via Edit before promoting.",
+    );
+  }
+  if (await runItemTaken(key)) {
+    return fail("conflict", "This work is already a line on the run.");
+  }
+
+  // Only now, with every check passed, touch the vocabulary.
+  if (!existing) {
+    await db.insert(scopeVocabExtensions).values({
+      key,
+      divisionId: division,
+      label: capture.label,
+      plain: capture.note,
+      aliases: [],
+      status: tier,
+      appliesTo: tier === "core" && proj?.type ? [proj.type] : [],
+      sourceCaptureId: capture.id,
+      createdBy: actorId,
+    });
+  } else {
+    const appliesTo = new Set(
+      Array.isArray(existing.appliesTo) ? (existing.appliesTo as string[]) : [],
+    );
+    if (tier === "core" && proj?.type) appliesTo.add(proj.type);
+    const wantsUpdate =
+      existing.status === "retired" ||
+      (tier === "core" &&
+        (existing.status !== "core" ||
+          appliesTo.size !==
+            (Array.isArray(existing.appliesTo)
+              ? (existing.appliesTo as string[]).length
+              : 0)));
+    if (wantsUpdate) {
+      await db
+        .update(scopeVocabExtensions)
+        .set({
+          status: tier === "core" ? "core" : existing.status === "retired" ? "extension" : existing.status,
+          appliesTo: [...appliesTo],
+          updatedAt: new Date(),
+        })
+        .where(eq(scopeVocabExtensions.id, existing.id));
+    }
+  }
   const [row] = await db
     .insert(scopeRunItems)
     .values({
       runId: capture.runId,
-      itemId,
+      itemId: key,
       status: "evidenced",
       citations: capture.citations as object[],
       note: capture.note,
@@ -1284,11 +1559,12 @@ export async function promoteCapture(
   if (!row) return fail("internal", "Could not promote the capture.");
   await db
     .update(scopeRunCaptures)
-    .set({ opsStatus: "promoted", promotedItemId: itemId, updatedAt: new Date() })
+    .set({ opsStatus: "promoted", promotedItemId: key, updatedAt: new Date() })
     .where(eq(scopeRunCaptures.id, captureId));
-  await recordReview(capture.runId, itemId, "capture.promoted", actorId, null, {
+  await recordReview(capture.runId, key, "capture.promoted", actorId, null, {
     label: capture.label,
     divisionId: capture.divisionId,
+    tier,
   });
   return ok(row);
 }
@@ -2736,6 +3012,7 @@ async function scheduleForRun(
     db
       .select({
         documentId: scopeRunDocuments.documentId,
+        kind: scopeRunDocuments.kind,
         docTitle: scopeRunDocuments.docTitle,
         filename: documents.filename,
       })
@@ -2744,8 +3021,16 @@ async function scheduleForRun(
       .where(eq(scopeRunDocuments.runId, run.id)),
   ]);
 
-  const nameByDoc = new Map(
-    docRows.map((d) => [d.documentId, d.docTitle ?? d.filename ?? null]),
+  // Citations speak the standard naming convention everywhere a
+  // schedule renders: "Structural Engineering p.34", never a raw
+  // filename.
+  const nameByDoc = resolveRegisterNames(
+    docRows.map((d) => ({
+      documentId: d.documentId,
+      kind: d.kind,
+      docTitle: d.docTitle,
+      filename: d.filename ?? "",
+    })),
   );
   const resolutionByItem = new Map(resolutions.map((r) => [r.itemId, r]));
 
@@ -2875,9 +3160,10 @@ export async function bulkConfirmPending(
   if (run.status !== "review") {
     return fail("conflict", "Only runs in review can be swept.");
   }
-  // The sweep never launders doubt: an evidenced line below the
-  // confidence floor stays pending until a person looks at it, and
-  // approval stays blocked until they do.
+  // Confirm all confirms EVERYTHING — gaps and not-expected lines
+  // included. The one exception the sweep never makes: an evidenced
+  // line below the confidence floor stays pending until a person
+  // looks at it, and approval stays blocked until they do.
   const updated = await db
     .update(scopeRunItems)
     .set({ opsStatus: "confirmed", editedBy: actorId, editedAt: new Date() })
@@ -2885,7 +3171,6 @@ export async function bulkConfirmPending(
       and(
         eq(scopeRunItems.runId, runId),
         eq(scopeRunItems.opsStatus, "pending"),
-        ne(scopeRunItems.status, "not_expected"),
         or(
           ne(scopeRunItems.status, "evidenced"),
           // Both sides cast to real so the boundary resolves the same

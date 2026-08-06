@@ -44,6 +44,9 @@ import {
 import {
   enforceCitationConsistency,
   enforceConflictIntegrity,
+  enforceSourceAuthority,
+  enforceNoteGrounding,
+  isPreliminaryDocument,
   residualPool,
   foldResiduals,
   coverageReport,
@@ -259,6 +262,20 @@ const { synthesis, usage: su, salvaged } = await synthesiseRun({
 add("synthesis", su);
 
 const enforced = enforceCitationConsistency(synthesis.items, forSynthesis);
+// The drawn documents govern materials; notes are local to their
+// citations — production's exact guard order.
+const prelimDocIds = new Set(
+  docs
+    .map((d, i) => ({ d, id: `doc-${i}` }))
+    .filter(({ d }) => isPreliminaryDocument(d.revision, d.title))
+    .map(({ id }) => id),
+);
+const authority = enforceSourceAuthority(
+  enforced.items,
+  docs.map((d, i) => ({ documentId: `doc-${i}`, kind: d.kind })),
+  prelimDocIds,
+);
+const grounding = enforceNoteGrounding(authority.items, forSynthesis);
 // Conflicts obey the same law as evidence, exactly as production runs it.
 const conflictsEnforced = enforceConflictIntegrity(
   synthesis.conflicts,
@@ -287,20 +304,20 @@ const namedMissing = namedMissingDocuments(
     findings: d.findings,
   })),
 );
-const residual = residualPool(type, enforced.items);
+const residual = residualPool(type, grounding.items);
 console.error(`residual pool: ${residual.length} items to classify...`);
 const { verdicts, usage: ru } = await classifyResidualItems({
   projectType: type,
   overviewSummary: synthesis.overview?.summary ?? null,
   registerKinds: [...new Set(forSynthesis.map((d) => d.kind))],
-  evidencedIds: enforced.items
+  evidencedIds: grounding.items
     .filter((i) => i.status === "evidenced")
     .map((i) => i.itemId),
   residualIds: residual,
 });
 add("residual", ru);
 
-const finalItems = [...enforced.items, ...foldResiduals(residual, verdicts)];
+const finalItems = [...grounding.items, ...foldResiduals(residual, verdicts)];
 const coverage = coverageReport(type, finalItems);
 
 // ── the advisory engine, exactly as the product runs it ─────────────
