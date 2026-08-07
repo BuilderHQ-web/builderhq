@@ -713,7 +713,7 @@ function ChapterPack({
         {stats.documents === 1
           ? "your document"
           : `all ${stats.documents} documents`}
-        {stats.pages > 0 ? `, every one of their ${stats.pages} pages,` : ""}{" "}
+        {stats.pages > 0 ? `, every one of their ${stats.pages} page${stats.pages === 1 ? "" : "s"},` : ""}{" "}
         for your {facts.typeLabel.toLowerCase()}
         {place ? ` in ${place}` : ""}. The result is your scope of works:{" "}
         <Strong>{stats.evidenced} lines</Strong> across{" "}
@@ -778,7 +778,7 @@ function ChapterPack({
                 </span>
               ) : null}
               <span className="shrink-0 text-[10.5px] text-text-dim tabular-nums w-14 text-right">
-                {r.pages ? `${r.pages} pages` : ""}
+                {r.pages ? `${r.pages} page${r.pages === 1 ? "" : "s"}` : ""}
               </span>
             </li>
           ))}

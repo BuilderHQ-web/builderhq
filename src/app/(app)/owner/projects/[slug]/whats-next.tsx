@@ -38,7 +38,7 @@ function stepsFor(
     {
       key: "unlocked",
       title: "Builders join your round",
-      body: `Up to ${cap} builders take a spot, open your full plans, and can ask questions here. You are notified each time.`,
+      body: `Up to ${cap} builder${cap === 1 ? "" : "s"} take a spot, open your full plans, and can ask questions here. You are notified each time.`,
       eta: "In a few days",
     },
     {

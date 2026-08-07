@@ -1308,7 +1308,7 @@ const GRID: GridGroup[] = [
         value: (e) =>
           e.money.validityDays === null
             ? "Not stated"
-            : `${e.money.validityDays} days`,
+            : `${e.money.validityDays} day${e.money.validityDays === 1 ? "" : "s"}`,
         best: highestBy((e) => e.money.validityDays),
       },
     ],
@@ -1346,9 +1346,9 @@ const GRID: GridGroup[] = [
         },
         value: (e) =>
           e.programme.weatherDaysIncluded !== null
-            ? `${e.programme.weatherDaysIncluded} days inside the period`
+            ? `${e.programme.weatherDaysIncluded} day${e.programme.weatherDaysIncluded === 1 ? "" : "s"} inside the period`
             : e.programme.weatherAddonDays !== null
-              ? `${e.programme.weatherAddonDays} days on top, declared`
+              ? `${e.programme.weatherAddonDays} day${e.programme.weatherAddonDays === 1 ? "" : "s"} on top, declared`
               : "Not disclosed",
       },
       {

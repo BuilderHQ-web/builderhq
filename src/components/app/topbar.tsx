@@ -153,7 +153,7 @@ export function Topbar({
                   {isVerified ? (
                     <span title="Verified builder" className="shrink-0">
                       <ShieldCheck
-                        className="size-3.5 text-[#0a9c91]"
+                        className="size-3.5 text-accent-light"
                         aria-label="Verified builder"
                       />
                     </span>

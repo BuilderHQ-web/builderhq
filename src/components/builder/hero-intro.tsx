@@ -46,9 +46,9 @@ export function BuilderHeroIntro({ firstName }: { firstName: string }) {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium"
+        className="inline-flex items-center gap-2.5 text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium"
       >
-        <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
+        <span className="size-1.5 rounded-full bg-accent-light shadow-[0_0_8px_rgba(10,125,115,0.5)]" />
         {greeting}
       </motion.span>
 
@@ -66,7 +66,7 @@ export function BuilderHeroIntro({ firstName }: { firstName: string }) {
           className="inline-block text-accent-light"
           style={{
             textShadow:
-              "0 0 60px rgba(0,212,200,0.32), 0 0 120px rgba(0,212,200,0.12)",
+              "0 0 60px rgba(10,125,115,0.18), 0 0 120px rgba(10,125,115,0.08)",
           }}
         >
           {firstName}

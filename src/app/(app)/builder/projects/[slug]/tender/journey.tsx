@@ -3804,7 +3804,7 @@ export function MetricsPanel({
     cells.push({ k: "Deposit", v: `${m.depositPct}%` });
   }
   if (m.validityDays !== null) {
-    cells.push({ k: "Price holds for", v: `${m.validityDays} days` });
+    cells.push({ k: "Price holds for", v: `${m.validityDays} day${m.validityDays === 1 ? "" : "s"}` });
   }
   const lead = fmtQ("prog.lead_time");
   if (lead) cells.push({ k: "Lead time to site", v: lead });

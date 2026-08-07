@@ -40,7 +40,7 @@ import {
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { ProjectCard } from "@/components/builder/project-card";
 import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -286,7 +286,7 @@ export default async function BuilderDashboard() {
   // The ledger: the four working states always, the two terminal ones
   // only once they exist.
   const bookColumns: Array<[string, number]> = [
-    ["Draft", dash.pipeline.draft],
+    [plural(dash.pipeline.draft, "Draft", "Drafts"), dash.pipeline.draft],
     ["Submitted", dash.pipeline.submitted],
     ["Shortlisted", dash.pipeline.shortlisted],
     ["Awarded", dash.pipeline.awarded],
@@ -340,8 +340,22 @@ export default async function BuilderDashboard() {
 
             {/* the three figures — numbers only, no commentary */}
             <div className="mt-10 flex items-stretch justify-center divide-x divide-border-subtle">
-              <HeroStat label="Active tenders" value={String(dash.pipeline.active)} />
-              <HeroStat label="Unlocked projects" value={String(unlockedIds.length)} />
+              <HeroStat
+                label={plural(
+                  dash.pipeline.active,
+                  "Active tender",
+                  "Active tenders",
+                )}
+                value={String(dash.pipeline.active)}
+              />
+              <HeroStat
+                label={plural(
+                  unlockedIds.length,
+                  "Unlocked project",
+                  "Unlocked projects",
+                )}
+                value={String(unlockedIds.length)}
+              />
               <HeroStat
                 label="Value tendered"
                 value={
@@ -470,7 +484,7 @@ export default async function BuilderDashboard() {
                           aria-hidden
                           className={cn(
                             "absolute left-0 top-0 bottom-0 w-[3px]",
-                            row.tone === "win" && "bg-[#0a9c91]",
+                            row.tone === "win" && "bg-accent-light",
                             row.tone === "invite" &&
                               "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
                             row.tone === "warn" && "bg-[#c99422]",

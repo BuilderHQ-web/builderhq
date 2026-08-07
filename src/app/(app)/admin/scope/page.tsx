@@ -88,7 +88,7 @@ export default async function ScopeRunsPage() {
                     </span>
                     <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
                       {r.documentCount} document{r.documentCount === 1 ? "" : "s"}
-                      {r.itemCount > 0 ? ` · ${r.itemCount} items` : ""}
+                      {r.itemCount > 0 ? ` · ${r.itemCount} item${r.itemCount === 1 ? "" : "s"}` : ""}
                       {r.status === "approved" && !r.effectiveAt
                         ? " · awaiting the runner"
                         : ""}

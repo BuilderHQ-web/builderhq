@@ -87,7 +87,11 @@
   --color-ink-muted: #42606f;
   --color-ink-faint: #6e8795;
   --color-ink-border: rgba(12, 43, 63, 0.14);
-  --color-accent-deep: #077e76;
+  /* One deep teal across the app: this and --color-accent-light are the
+     same ink, so a surface can use either name without introducing a
+     second shade. The bright --color-accent is a FILL only (dark text
+     sits on it); as type on cream it measures 1.76:1 and fails. */
+  --color-accent-deep: #0a7d73;
 
   /* Semantic — deep enough to read as text on white; muted stays soft */
   --color-success: oklch(0.55 0.15 155);

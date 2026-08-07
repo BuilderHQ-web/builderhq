@@ -300,7 +300,7 @@ function ReadingState({
                     {names.get(r.documentId) ?? r.docTitle ?? r.filename}
                   </span>
                   <span className="shrink-0 text-[10.5px] text-text-dim tabular-nums">
-                    {r.pageCount ? `${r.pageCount} pages` : "…"}
+                    {r.pageCount ? `${r.pageCount} page${r.pageCount === 1 ? "" : "s"}` : "…"}
                   </span>
                 </li>
               ))}

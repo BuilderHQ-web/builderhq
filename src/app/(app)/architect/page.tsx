@@ -21,7 +21,7 @@ import { listForUser } from "@/modules/messaging";
 import { PARTICIPANT_ROLE_LABEL, type Project } from "@/modules/projects";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 export const metadata = { title: "Studio" };
 export const dynamic = "force-dynamic";
@@ -226,7 +226,11 @@ export default async function ArchitectDashboard() {
             {!isFirstTime ? (
               <div className="mt-9 flex flex-wrap items-stretch justify-center divide-x divide-border-subtle">
                 <HeroStat
-                  label="Projects uploaded"
+                  label={plural(
+                    data.projects.total,
+                    "Project uploaded",
+                    "Projects uploaded",
+                  )}
                   value={String(data.projects.total)}
                   sub={
                     active.length > 0
@@ -235,12 +239,20 @@ export default async function ArchitectDashboard() {
                   }
                 />
                 <HeroStat
-                  label="Tenders received"
+                  label={plural(
+                    data.tenders.total,
+                    "Tender received",
+                    "Tenders received",
+                  )}
                   value={String(data.tenders.total)}
-                  sub={`Across ${data.tenders.projectsWithTenders} project${data.tenders.projectsWithTenders === 1 ? "" : "s"}`}
+                  sub={`Across ${data.tenders.projectsWithTenders} ${plural(data.tenders.projectsWithTenders, "project", "projects")}`}
                 />
                 <HeroStat
-                  label="Decisions waiting"
+                  label={plural(
+                    data.tenders.awaitingDecision,
+                    "Decision waiting",
+                    "Decisions waiting",
+                  )}
                   value={String(data.tenders.awaitingDecision)}
                   sub={
                     data.tenders.awaitingDecision > 0

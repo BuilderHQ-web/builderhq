@@ -66,7 +66,10 @@ function buildSlides(
     key: "cover",
     kicker: "The quick read",
     title: projectTitle,
-    sub: `${active.length} tenders, read side by side. The shape of the round, in ninety seconds.`,
+    sub:
+      active.length === 1
+        ? "One tender, read in full. The shape of the round, in ninety seconds."
+        : `${active.length} tenders, read side by side. The shape of the round, in ninety seconds.`,
     body: null,
   });
 

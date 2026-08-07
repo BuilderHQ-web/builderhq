@@ -32,7 +32,7 @@ import {
 import { countUnreadForUser, listForUser } from "@/modules/messaging";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
 import {
   listProjectsSharedWithMe,
@@ -263,7 +263,11 @@ export default async function OwnerDashboard({
             {!isFirstTime ? (
               <div className="mt-9 flex items-stretch justify-center divide-x divide-border-subtle">
                 <HeroStat
-                  label="Tenders received"
+                  label={plural(
+                    data.tenders.total,
+                    "Tender received",
+                    "Tenders received",
+                  )}
                   value={String(data.tenders.total)}
                   sub={
                     data.tenders.total > 0
@@ -496,7 +500,7 @@ export default async function OwnerDashboard({
                             className={cn(
                               "size-1.5 rounded-full shrink-0 self-center",
                               e.kind === "tender_awarded"
-                                ? "bg-[#0a9c91]"
+                                ? "bg-accent-light"
                                 : e.kind === "tender_submitted"
                                   ? "bg-[#0a7d73]"
                                   : "bg-[rgba(24,34,44,0.22)]",

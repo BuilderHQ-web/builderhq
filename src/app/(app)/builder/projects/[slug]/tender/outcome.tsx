@@ -388,7 +388,7 @@ function LegacyFacts({ tender }: { tender: Tender }) {
     cells.push({ k: "Build period", v: `${tender.durationWeeks} weeks` });
   }
   if (tender.validityDays) {
-    cells.push({ k: "Price holds for", v: `${tender.validityDays} days` });
+    cells.push({ k: "Price holds for", v: `${tender.validityDays} day${tender.validityDays === 1 ? "" : "s"}` });
   }
   if (tender.proposedStartMonth) {
     cells.push({ k: "Proposed start", v: tender.proposedStartMonth });

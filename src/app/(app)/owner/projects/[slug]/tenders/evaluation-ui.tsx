@@ -1066,7 +1066,7 @@ function MoneySection({ ev }: { ev: TenderEvaluation }) {
               ? [
                   {
                     label: "Price holds",
-                    value: `${m.validityDays} days from submission`,
+                    value: `${m.validityDays} day${m.validityDays === 1 ? "" : "s"} from submission`,
                     strong: m.validityDays >= 30,
                   },
                 ]

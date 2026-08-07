@@ -468,7 +468,7 @@ function RegisterTable({
               <span className="text-text-dim">
                 {" · "}
                 {d.filename}
-                {d.pageCount ? ` · ${d.pageCount} pages` : ""}
+                {d.pageCount ? ` · ${d.pageCount} page${d.pageCount === 1 ? "" : "s"}` : ""}
               </span>
             </span>
             {d.kind ? (

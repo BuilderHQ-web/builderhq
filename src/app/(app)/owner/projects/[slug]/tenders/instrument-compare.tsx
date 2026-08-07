@@ -85,7 +85,7 @@ const SCOPE_META: Record<
 > = {
   included: {
     label: "Included",
-    dot: "bg-[#0a9c91]",
+    dot: "bg-accent-light",
     cls: "text-[#0a7d73]",
   },
   allowance: {
@@ -250,7 +250,7 @@ function PriceIntegrityStrip({
               <div className="mt-3">
                 <div className="h-[6px] rounded-full overflow-hidden bg-border-subtle/50 flex">
                   <div
-                    className="h-full bg-[#0a9c91]"
+                    className="h-full bg-accent-light"
                     style={{ width: `${100 - softPct}%` }}
                   />
                   {softPct > 0 ? (
@@ -596,7 +596,7 @@ const SCHED_META: Record<
 > = {
   documented: {
     label: "As documented",
-    dot: "bg-[#0a9c91]",
+    dot: "bg-accent-light",
     cls: "text-[#0a7d73]",
   },
   allowance: {
