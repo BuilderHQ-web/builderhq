@@ -1310,7 +1310,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     ],
     // The generic masthead card until a bespoke Issue 004 card is
     // made; a missing file would break every social preview.
-    ogImage: "/build-brief/og.jpg",
+    ogImage: "/build-brief/og-issue-004.jpg",
     note: {
       eyebrow: "This week from the BuilderHQ team",
       heading:
@@ -1863,7 +1863,7 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
       },
       {
         kind: "p",
-        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is an open framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
+        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is a structured framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
       },
       {
         kind: "p",
@@ -1928,7 +1928,7 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
     ],
     aboutLabel: "Editorial note",
     aboutAuthor:
-      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as an open framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
+      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as a structured framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
     keywords: [
       "construction procurement",
       "residential construction procurement",
