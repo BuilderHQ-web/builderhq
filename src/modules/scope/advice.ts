@@ -77,8 +77,16 @@ export function isOwnerDocGap(itemId: string): boolean {
 export interface DocumentAdvice {
   key: string;
   title: string;
-  /** One plain sentence: why this document earns its place. */
+  /** One plain sentence for the CLIENT: why this document earns its
+   *  place in their pack. */
   why: string;
+  /**
+   * The same gap stated for the BUILDER, who is not being asked to
+   * commission anything: what is absent from the set, and what that
+   * leaves them pricing on assumption. Both surfaces read the same
+   * rule; only the reader changes.
+   */
+  builderWhy: string;
   severity: "recommended" | "worth_noting";
 }
 
@@ -113,6 +121,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "structural",
       title: "Structural engineering drawings",
       why: "Footings, framing and steel are being priced from the architectural set alone. Certified engineering removes the assumptions builders would otherwise price in.",
+      builderWhy:
+        "Footings, framing and steel sit on the architectural set only. State the assumptions your price carries.",
       severity: "recommended",
     });
   }
@@ -121,6 +131,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "soil",
       title: "Soil report (geotechnical)",
       why: "Without a site classification, every builder must assume the ground conditions, and assumed ground is where prices move later.",
+      builderWhy:
+        "No site classification on file. State the ground conditions your price assumes.",
       severity: "recommended",
     });
   }
@@ -129,6 +141,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "civil",
       title: "Civil and stormwater design",
       why: "Multi-dwelling drainage usually needs its own engineered design; councils and builders both look for it.",
+      builderWhy:
+        "No engineered stormwater design on file. Drainage is priced from the architectural set.",
       severity: "recommended",
     });
   }
@@ -137,6 +151,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "energy",
       title: "Energy assessment",
       why: "The NatHERS or equivalent report confirms what the thermal performance requires; without it, insulation and glazing are priced on assumption.",
+      builderWhy:
+        "No NatHERS or equivalent report on file. Insulation and glazing carry no stated performance requirement.",
       severity: "worth_noting",
     });
   }
@@ -145,6 +161,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "specification",
       title: "Specifications and finishes schedule",
       why: "A written specification pins the products and finishes the drawings cannot, and cuts the provisional sums builders must otherwise carry.",
+      builderWhy:
+        "No written specification on file. Products and finishes come from the drawings alone, so state what you have allowed.",
       severity: "worth_noting",
     });
   }
@@ -153,6 +171,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "survey",
       title: "Feature and level survey",
       why: "Set-out and site levels come from the survey; builders price siteworks with more certainty when it is in the set.",
+      builderWhy:
+        "No feature and level survey on file. Set-out and site levels come from the architectural set.",
       severity: "worth_noting",
     });
   }
@@ -170,6 +190,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "joinery-package",
       title: "Joinery package",
       why: "Your cabinetry appears only on the architectural drawings. A joinery package with elevations and finishes lets builders price it exactly rather than by provisional sum.",
+      builderWhy:
+        "Cabinetry appears on the architectural drawings only. There are no joinery elevations or finishes to price from.",
       severity: "worth_noting",
     });
   }
@@ -186,6 +208,8 @@ export function adviseMissingDocuments(input: AdviceInput): DocumentAdvice[] {
       key: "window-schedule",
       title: "Window and door schedule",
       why: "Windows are drawn but not scheduled. Sizes, glazing and frames in a schedule tighten every quote's biggest openings line.",
+      builderWhy:
+        "Windows are drawn but not scheduled. Sizes, glazing and frames are not stated.",
       severity: "worth_noting",
     });
   }

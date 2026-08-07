@@ -257,7 +257,7 @@ export function TenderJourney({
   /** The client's brief as labelled facts; [] when unanswered. */
   clientBrief?: Array<{ k: string; v: string }>;
   /** What the pack's own reading flagged as unsettled. */
-  packAdvisories?: Array<{ key: string; title: string; why: string }>;
+  packAdvisories?: Array<{ key: string; title: string; builderWhy: string }>;
   /** Project home state ("VIC") — drives the statutory deposit check. */
   projectState?: string | null;
   /** Which key reports the round carries, with their read facts. */
@@ -2478,7 +2478,7 @@ function PackGapsHint({
   advisories,
   openLineCount,
 }: {
-  advisories: Array<{ key: string; title: string; why: string }>;
+  advisories: Array<{ key: string; title: string; builderWhy: string }>;
   openLineCount: number;
 }) {
   if (advisories.length === 0 && openLineCount === 0) return null;
@@ -2496,7 +2496,7 @@ function PackGapsHint({
           </li>
         ) : null}
         {advisories.map((a) => (
-          <li key={a.key}>{a.title}: {a.why}</li>
+          <li key={a.key}>{a.title}: {a.builderWhy}</li>
         ))}
       </ul>
       <p className="mt-2 text-[11.5px] text-text-dim">

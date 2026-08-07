@@ -40,7 +40,9 @@ export interface PackOverview {
 export interface PackAdvisory {
   key: string;
   title: string;
-  why: string;
+  /** The builder's reading of the gap; the client's `why` stays on
+   *  the pack review. */
+  builderWhy: string;
   severity: "recommended" | "worth_noting";
 }
 
@@ -91,16 +93,12 @@ export function ScheduleBrowser({
   return (
     <div>
       {advisories.length > 0 ? (
-        <div className="mt-4 rounded-lg border border-[rgba(201,148,34,0.35)] bg-[rgba(201,148,34,0.04)] px-4.5 py-4">
+        <div className="mb-7 rounded-lg border border-[rgba(201,148,34,0.35)] bg-[rgba(201,148,34,0.04)] px-5 py-4.5">
           <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold inline-flex items-center gap-1.5">
             <AlertTriangle className="size-3.5" />
-            What the pack does not settle
+            Documents not yet provided
           </p>
-          <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
-            Every builder on the round sees this same list. A tender
-            that answers these clearly reads stronger.
-          </p>
-          <ul className="mt-3 space-y-2.5">
+          <ul className="mt-3.5 space-y-2.5">
             {advisories.map((a) => (
               <li key={a.key} className="flex items-start gap-2.5">
                 <span className="mt-[7px] size-1.5 rounded-full bg-[#c99422] shrink-0" />
@@ -109,7 +107,7 @@ export function ScheduleBrowser({
                     {a.title}
                   </span>
                   <br />
-                  {a.why}
+                  {a.builderWhy}
                 </p>
               </li>
             ))}
