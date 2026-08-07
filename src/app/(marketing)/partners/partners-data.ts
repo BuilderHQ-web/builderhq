@@ -1830,7 +1830,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "adam-hobill-design",
     kind: "architect",
-    draft: true,
     roleLabel: "Residential building design practice",
     name: "Adam Hobill Design",
     monogram: "AH",
@@ -1871,7 +1870,8 @@ export const PARTNERS: Partner[] = [
     ],
     why: "Being named your region’s best designer is one thing. Being named it six times is another. The Housing Industry Association has made Adam Hobill its Residential Building Designer of the Year for the ACT and southern New South Wales on six occasions between 2003 and 2020, and in 2021 the Building Designers Association of Australia handed the practice its national Design Excellence award. Beneath those sit close to sixty awards and nominations across the HIA, Master Builders and the BDAA, stretching back two decades.\n\nWhat lies behind the trophies is a designer who has been on building sites since childhood, on his family’s own jobs, and who has since carried more than five hundred projects through to completion, including two homes for his own family. That last detail counts for more than it sounds, because he has stood where his clients stand, signing for a house he then has to live in. Adam still works personally on every project, at a pace set by the decisions rather than the calendar. For a Canberra family who want a home shaped around the way they actually live, that is a rare depth of experience.",
     about:
-      "Adam Hobill Design is a boutique residential building design practice in Narrabundah, Canberra, working across the ACT and southern New South Wales. Adam Hobill is its director and principal designer, alongside senior project designer Daniel Boucher, who holds a Bachelor of Architecture and an advanced diploma in building design, and Christina, a registered architect practising as a building designer with a particular interest in passive design and how a house meets its garden. The practice takes on custom homes, extensions and renovations, and is unusually direct about its range, working from around five hundred thousand dollars on a renovation and nine hundred thousand on a new home. Its houses have appeared in House and Garden, Home Beautiful and Inside Out.",
+      "Adam Hobill Design is a boutique residential building design practice in Narrabundah, Canberra, working across the ACT and southern New South Wales. Adam Hobill is its director and principal designer. The practice takes on custom homes, extensions and renovations, and is unusually direct about its range, typically working on extension and renovation projects from around five hundred thousand dollars, and nine hundred thousand plus on a new home. Its houses have appeared in House and Garden, Home Beautiful and Inside Out. The practice specialises in new builds that are on brief and on budget.",
+
     facts: {
       experience: "25+ yrs",
       basedIn: "Narrabundah, ACT",
