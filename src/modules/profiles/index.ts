@@ -53,6 +53,7 @@ export {
   completeArchitectOnboarding,
   // Builder
   getBuilderProfile,
+  isBuilderApproved,
   getBuilderBySlug,
   upsertBuilderProfile,
   addBuilderLicence,

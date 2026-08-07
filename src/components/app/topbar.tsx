@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Menu, Settings, User as UserIcon, Search, Sparkles } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Settings, ShieldCheck, User as UserIcon, Search, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -32,6 +32,9 @@ interface TopbarProps {
   };
   /** True when the builder has an active Founding Builder Access grant. */
   isFounding?: boolean;
+  /** True when the builder's registration is approved — renders the
+   *  verified mark beside their name. */
+  isVerified?: boolean;
   /** Server-side unread count, used to render the bell badge before the
    *  client polling kicks in. */
   initialUnreadCount?: number;
@@ -47,6 +50,7 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
 export function Topbar({
   user,
   isFounding = false,
+  isVerified = false,
   initialUnreadCount = 0,
 }: TopbarProps) {
   const pathname = usePathname();
@@ -142,12 +146,24 @@ export function Topbar({
                 <AvatarFallback>{initials || "U"}</AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex flex-col text-left leading-tight">
-                <span className="text-[12px] font-medium text-text truncate max-w-[140px]">
-                  {user.name ?? user.email ?? "Account"}
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-medium text-text truncate max-w-[140px]">
+                    {user.name ?? user.email ?? "Account"}
+                  </span>
+                  {isVerified ? (
+                    <span title="Verified builder" className="shrink-0">
+                      <ShieldCheck
+                        className="size-3.5 text-[#0a9c91]"
+                        aria-label="Verified builder"
+                      />
+                    </span>
+                  ) : null}
                 </span>
                 {user.role ? (
                   <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim">
-                    {roleLabel[user.role]}
+                    {user.role === "builder" && isVerified
+                      ? "Verified builder"
+                      : roleLabel[user.role]}
                   </span>
                 ) : null}
               </div>

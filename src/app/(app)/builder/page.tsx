@@ -1,22 +1,15 @@
 /**
- * Builder dashboard — the desk, round 3: the hybrid.
+ * Builder dashboard — one column, four summaries.
  *
- * The greeting hero returns from the original dashboard — time-of-day
- * greeting, one contextual sentence, and the big CTAs — with the
- * ledger figures as a quiet hairline strip beneath. Below it, the
- * white section boxes are gone: sections sit directly on the canvas,
- * each announced by a TINTED ICON CHIP + kicker + display title +
- * plain sentence with a hairline rule running right (the letterhead
- * convention). Colour codes the sections: teal = your work, blue =
- * the register, ink = the ledger, amber = anything needing action.
- * Only two things keep a wash: the desk panel (teal, or amber when
- * something urgent waits) and the standing card. Content rows are
- * individual white cards — the browse docket language — so white
- * marks OBJECTS, never sections.
- *
- * Everything data-side is unchanged: one ranked queue (awarded →
- * invitations → shortlisted → expiring → drafts, invites never
- * truncated), safe() around every query, and the same route surface.
+ * The hero greets, states what is waiting in one sentence, offers the
+ * two ways in (browse, my tenders) and shows three figures with no
+ * commentary. Below it, full-width sections in reading order: the
+ * desk (invitations, drafts and decisions, ranked), suggested
+ * projects (three, with the register behind a View all), and the
+ * tender ledger. Standing lives in the app header as the verified
+ * mark, not in a section. No right rail; rows are white cards on the
+ * canvas and sections separate by a plain ruled header, the same
+ * convention as the architect's desk.
  */
 
 import Link from "next/link";
@@ -24,20 +17,14 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
-  Bookmark,
   Check,
-  ClipboardCheck,
   Compass,
-  FileText,
-  Landmark,
-  Mail,
-  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { dashboardForRole } from "@/lib/dashboard-route";
 import { listForMarketplace } from "@/modules/projects";
-import type { MarketplacePreview } from "@/modules/projects";
 import { getBuilderProfile } from "@/modules/profiles";
 import { listMySavedProjectIds, listMyUnlockedProjectIds } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
@@ -45,12 +32,10 @@ import {
   listInvitesForBuilder,
   listDraftTendersForBuilder,
 } from "@/modules/tenders";
-import { countUnreadForUser, listForUser } from "@/modules/messaging";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import {
   getBuilderDashboardData,
   type BuilderDashboardData,
-  type BuilderActivityEvent,
 } from "@/modules/dashboards";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { ProjectCard } from "@/components/builder/project-card";
@@ -138,7 +123,7 @@ export default async function BuilderDashboard() {
       .filter((m) => m.statewide || m.suburb !== null) ?? [];
   const matchedCategories = profile?.categories.map((c) => c.category) ?? [];
 
-  const [dash, openRounds, invites, drafts, unreadCount, conversations, savedIds, fbaStatus, unlockedIds] =
+  const [dash, openRounds, invites, drafts, savedIds, fbaStatus, unlockedIds] =
     await Promise.all([
       userId
         ? safe("dashboard_rollup", getBuilderDashboardData(userId, firstName), EMPTY_DASH(firstName))
@@ -148,7 +133,7 @@ export default async function BuilderDashboard() {
         listForMarketplace({
           ...(matchedCategories.length === 1 ? { type: matchedCategories[0]! } : {}),
           ...(serviceAreaMatch.length > 0 ? { serviceAreaMatch } : {}),
-          limit: 5,
+          limit: 3,
         }),
         [],
       ),
@@ -160,8 +145,6 @@ export default async function BuilderDashboard() {
           )
         : [],
       userId ? safe("draft_tenders", listDraftTendersForBuilder(userId), []) : [],
-      userId ? safe("unread_count", countUnreadForUser(userId), 0) : 0,
-      userId ? safe("conversations", listForUser(userId), []) : [],
       userId ? safe("saved_ids", listMySavedProjectIds(userId), []) : [],
       userId
         ? safe("fba_status", getFbaStatus(userId), { active: false, reason: "no_grant" } as const)
@@ -184,20 +167,16 @@ export default async function BuilderDashboard() {
     verification.abnVerified && verification.anyLicenceVerified;
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
-  const savedCount = savedIds.length;
   const complimentaryUnlocks =
     fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   // The registration checklist state: not approved, not declined, and
-  // at least one check still outstanding — promoted to a full-width
-  // band. When both checks pass, the rail carries "checks complete".
+  // at least one check still outstanding.
   const needsChecklist =
     !isApproved &&
     approvalStatus !== "rejected" &&
     approvalStatus !== "suspended" &&
     !fullyVerified;
-
-  const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
 
   // ── the desk queue: one ranked list, every entry NAMED ────────────
   type DeskTone = "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
@@ -220,7 +199,7 @@ export default async function BuilderDashboard() {
         tone: "win",
         chip: "Awarded",
         title: a.projectTitle,
-        line: "Awarded to you. Contact details are on the tender.",
+        line: "Awarded to you. The owner's details are on the tender.",
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
       });
     }
@@ -232,7 +211,7 @@ export default async function BuilderDashboard() {
       tone: "invite",
       chip: "Invitation",
       title: inv.projectTitle,
-      line: `${inv.inviterName} invited you to tender. Review and accept to take your spot.`,
+      line: `${inv.inviterName} invited you. Accept to take your spot.`,
       metric: ago(inv.invitedAt),
     });
   }
@@ -244,7 +223,7 @@ export default async function BuilderDashboard() {
         tone: "neutral",
         chip: "Shortlisted",
         title: a.projectTitle,
-        line: "Shortlisted. You are in the final comparison.",
+        line: "You are in the final comparison.",
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
       });
     }
@@ -262,10 +241,10 @@ export default async function BuilderDashboard() {
         chip: lapsed ? "Lapsed" : "Expiring",
         title: a.projectTitle,
         line: lapsed
-          ? "Your price validity has lapsed. Withdraw or resubmit."
+          ? "Your price has lapsed. Withdraw or resubmit."
           : d === 0
-            ? "Your price validity ends today."
-            : `Your price validity ends in ${d} day${d === 1 ? "" : "s"}.`,
+            ? "Your price ends today."
+            : `Your price holds for ${d} more day${d === 1 ? "" : "s"}.`,
         metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
       });
     }
@@ -277,7 +256,7 @@ export default async function BuilderDashboard() {
       tone: "draft",
       chip: "Draft",
       title: dr.projectTitle,
-      line: `Draft tender in progress. Last worked on ${ago(dr.updatedAt)}.`,
+      line: `Pick up where you left off. Last saved ${ago(dr.updatedAt)}.`,
       metric: dr.totalPriceAud !== null ? compactAud(dr.totalPriceAud) : "Unpriced",
     });
   }
@@ -294,19 +273,30 @@ export default async function BuilderDashboard() {
   const queueOverflow = queue.length - queueShown.length;
   const deskUrgent = queue.some((q) => q.tone === "danger" || q.tone === "warn");
 
-  const winRatePct =
-    dash.performance.winRate !== null
-      ? Math.round(dash.performance.winRate * 100)
-      : null;
   const hasBook =
     dash.pipeline.active + dash.pipeline.decided + dash.pipeline.draft > 0;
 
   const heroLine =
     queue.length > 0
-      ? `${queue.length} item${queue.length === 1 ? "" : "s"} ${queue.length === 1 ? "is" : "are"} waiting on your desk.`
+      ? `${queue.length} item${queue.length === 1 ? "" : "s"} on your desk.`
       : dash.pipeline.active > 0
-        ? `${dash.pipeline.active} active tender${dash.pipeline.active === 1 ? "" : "s"} in the field. New rounds land here the moment they match your service area.`
-        : "Browse open tender rounds matched to your service area, take a spot, and tender with confidence.";
+        ? `${dash.pipeline.active} tender${dash.pipeline.active === 1 ? "" : "s"} with owners now.`
+        : "Browse open rounds in your area and take a spot.";
+
+  // The ledger: the four working states always, the two terminal ones
+  // only once they exist.
+  const bookColumns: Array<[string, number]> = [
+    ["Draft", dash.pipeline.draft],
+    ["Submitted", dash.pipeline.submitted],
+    ["Shortlisted", dash.pipeline.shortlisted],
+    ["Awarded", dash.pipeline.awarded],
+    ...(dash.pipeline.rejected > 0
+      ? ([["Rejected", dash.pipeline.rejected]] as Array<[string, number]>)
+      : []),
+    ...(dash.pipeline.withdrawn > 0
+      ? ([["Withdrawn", dash.pipeline.withdrawn]] as Array<[string, number]>)
+      : []),
+  ];
 
   return (
     <div>
@@ -346,37 +336,12 @@ export default async function BuilderDashboard() {
               >
                 My tenders
               </Link>
-              <Link
-                href="/builder/saved"
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
-              >
-                <Bookmark className="size-3.5" />
-                Saved{savedCount > 0 ? ` · ${savedCount}` : ""}
-              </Link>
             </div>
 
-            {/* the ledger — hairline strip, no boxes */}
-            <div className="mt-9 flex items-stretch justify-center divide-x divide-border-subtle">
-              <HeroStat
-                label="Active tenders"
-                value={String(dash.pipeline.active)}
-                sub={
-                  dash.pipeline.shortlisted > 0
-                    ? `${dash.pipeline.shortlisted} shortlisted`
-                    : dash.pipeline.active > 0
-                      ? "Awaiting decisions"
-                      : "None in the field"
-                }
-              />
-              <HeroStat
-                label="Win rate"
-                value={winRatePct !== null ? `${winRatePct}%` : "—"}
-                sub={
-                  dash.pipeline.decided > 0
-                    ? `${dash.pipeline.awarded} of ${dash.pipeline.decided} decided`
-                    : "No decisions yet"
-                }
-              />
+            {/* the three figures — numbers only, no commentary */}
+            <div className="mt-10 flex items-stretch justify-center divide-x divide-border-subtle">
+              <HeroStat label="Active tenders" value={String(dash.pipeline.active)} />
+              <HeroStat label="Unlocked projects" value={String(unlockedIds.length)} />
               <HeroStat
                 label="Value tendered"
                 value={
@@ -384,39 +349,31 @@ export default async function BuilderDashboard() {
                     ? compactAud(dash.performance.totalSubmittedValueAud)
                     : "—"
                 }
-                sub="Lifetime, submitted"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── registration band — the gate, never below the fold ───── */}
+      {/* ── registration bands — the gate, never below the fold ───── */}
       {needsChecklist ? (
         <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
           <div className="px-4 sm:px-6 lg:px-10 py-5">
-            <div className="mx-auto max-w-[1320px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
               <div className="min-w-0">
-                <p className="text-[10px] tracking-[0.22em] uppercase text-[#8a6414] font-ui font-semibold">
-                  Registration
-                </p>
-                <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
-                  {(verification.abnVerified ? 0 : 1) +
-                    (verification.anyLicenceVerified ? 0 : 1) ===
-                  1
-                    ? "One check stands between you and tendering"
-                    : "Two checks stand between you and tendering"}
+                <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                  Finish your registration
                 </h2>
                 <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
                   <ChecklistLine done={verification.abnVerified}>
-                    ABN verified against the Australian Business Register
+                    ABN verified
                   </ChecklistLine>
                   <ChecklistLine done={verification.anyLicenceVerified}>
                     Builder licence verified
                   </ChecklistLine>
                 </ul>
-                <p className="mt-2 text-[11px] leading-[1.55] text-text-dim">
-                  Registration completes automatically the moment both checks pass.
+                <p className="mt-2 text-[11.5px] leading-[1.55] text-text-dim">
+                  Tendering opens the moment both checks pass.
                 </p>
               </div>
               <Link
@@ -429,104 +386,120 @@ export default async function BuilderDashboard() {
             </div>
           </div>
         </section>
+      ) : approvalStatus === "rejected" || approvalStatus === "suspended" ? (
+        <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
+              <div className="min-w-0">
+                <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                  {approvalStatus === "rejected"
+                    ? "Your registration was not approved"
+                    : "Your registration is paused"}
+                </h2>
+                <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted max-w-[64ch]">
+                  {approvalStatus === "rejected"
+                    ? "Tendering is unavailable on this account. Write to us and we will review it with you."
+                    : "Tendering is paused on this account. Write to us if you believe this is a mistake."}
+                </p>
+              </div>
+              <a
+                href="mailto:info@builderhq.com.au"
+                className="inline-flex items-center gap-1 text-[12px] text-accent-light hover:underline shrink-0"
+              >
+                info@builderhq.com.au
+                <ArrowUpRight className="size-3" />
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : !isApproved && fullyVerified ? (
+        <section className="border-b border-border-accent/25 bg-[rgba(0,212,200,0.04)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-4">
+            <div className="mx-auto max-w-[1200px]">
+              <p className="text-[13px] font-ui font-semibold text-text">
+                Checks complete. Your registration is with our team.
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-text-muted">
+                Most reviews finish within one business day.
+              </p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
-      {/* ── working area — sections on the canvas ─────────────────── */}
+      {/* ── working area — one column, full width ─────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-        <div className="mx-auto max-w-[1320px] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
-          {/* left column — the work */}
-          <div className="min-w-0 flex flex-col gap-10">
-            {/* on your desk — the one toned panel on the page */}
+        <div className="mx-auto max-w-[1200px] flex flex-col gap-12">
+          {/* on your desk — the one toned panel on the page */}
+          {queueShown.length > 0 ? (
             <section
               className={cn(
                 "relative overflow-hidden rounded-xl border",
                 deskUrgent
-                  ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.07),rgba(250,248,243,0.5)_65%)]"
-                  : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.06),rgba(250,248,243,0.5)_65%)]",
+                  ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.06),rgba(250,248,243,0.5)_65%)]"
+                  : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.05),rgba(250,248,243,0.5)_65%)]",
               )}
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
-                style={{
-                  background: deskUrgent
-                    ? "radial-gradient(circle, rgba(217,164,65,0.18), transparent 70%)"
-                    : "radial-gradient(circle, rgba(0,212,200,0.18), transparent 70%)",
-                }}
-              />
               <div className="relative px-4 sm:px-6 py-5 sm:py-6">
-                <SectionHead
-                  chip={
-                    <IconChip tone={deskUrgent ? "amber" : "teal"}>
-                      <ClipboardCheck className="size-4" />
-                    </IconChip>
-                  }
-                  kicker="On your desk"
-                  kickerTone={deskUrgent ? "amber" : "teal"}
-                  title={
-                    queue.length === 0
-                      ? "A clear desk"
-                      : `${queue.length} item${queue.length === 1 ? "" : "s"} need${queue.length === 1 ? "s" : ""} your attention`
-                  }
-                  sub={
-                    queue.length === 0
-                      ? "New invitations, shortlist decisions and expiring prices appear here first."
-                      : "Most important first. Invitations never wait."
-                  }
-                  right={
-                    <Link
-                      href="/builder/tenders"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
-                    >
-                      My tenders
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  }
-                />
+                <header className="flex items-end justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                      On your desk
+                    </h2>
+                    <p className="mt-1 text-[11.5px] text-text-dim">
+                      Invitations, drafts and decisions. Most important first.
+                    </p>
+                  </div>
+                  <Link
+                    href="/builder/tenders"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0 pb-0.5"
+                  >
+                    My tenders
+                    <ArrowRight className="size-3" />
+                  </Link>
+                </header>
 
-                {queueShown.length > 0 ? (
-                  <ul className="mt-5 flex flex-col gap-2">
-                    {queueShown.map((row) => (
-                      <li key={row.key}>
-                        <Link
-                          href={row.href}
-                          className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
-                        >
-                          <span
-                            aria-hidden
-                            className={cn(
-                              "absolute left-0 top-0 bottom-0 w-[3px]",
-                              row.tone === "win" && "bg-[#0a9c91]",
-                              row.tone === "invite" &&
-                                "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
-                              row.tone === "warn" && "bg-[#c99422]",
-                              row.tone === "danger" && "bg-[#c25550]",
-                              row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
-                              row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
-                            )}
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2 min-w-0">
-                              <DeskChip tone={row.tone}>{row.chip}</DeskChip>
-                              <span className="font-ui font-medium text-[13.5px] text-text truncate">
-                                {row.title}
-                              </span>
-                            </span>
-                            <span className="block mt-0.5 text-[11.5px] leading-[1.5] text-text-muted truncate">
-                              {row.line}
+                <ul className="mt-4 flex flex-col gap-2">
+                  {queueShown.map((row) => (
+                    <li key={row.key}>
+                      <Link
+                        href={row.href}
+                        className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute left-0 top-0 bottom-0 w-[3px]",
+                            row.tone === "win" && "bg-[#0a9c91]",
+                            row.tone === "invite" &&
+                              "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
+                            row.tone === "warn" && "bg-[#c99422]",
+                            row.tone === "danger" && "bg-[#c25550]",
+                            row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                            row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
+                          )}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2 min-w-0">
+                            <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                            <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                              {row.title}
                             </span>
                           </span>
-                          {row.metric ? (
-                            <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
-                              {row.metric}
-                            </span>
-                          ) : null}
-                          <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+                          <span className="block mt-1 text-[12px] leading-[1.5] text-text-muted truncate">
+                            {row.line}
+                          </span>
+                        </span>
+                        {row.metric ? (
+                          <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                            {row.metric}
+                          </span>
+                        ) : null}
+                        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
                 {queueOverflow > 0 ? (
                   <Link
                     href="/builder/tenders"
@@ -538,56 +511,55 @@ export default async function BuilderDashboard() {
                 ) : null}
               </div>
             </section>
-
-            {/* open rounds — the register, on the canvas */}
+          ) : (
             <section>
-              <SectionHead
-                chip={
-                  <IconChip tone="blue">
-                    <Compass className="size-4" />
-                  </IconChip>
-                }
-                kicker="The register"
-                kickerTone="blue"
-                title="Open rounds in your area"
-                sub={
-                  serviceAreaMatch.length > 0
-                    ? matchedCategories.length === 1
-                      ? "Live tender rounds matched to your service area and category."
-                      : "Live tender rounds matched to your service area."
-                    : "Recent rounds from across the register."
-                }
-                rule
+              <PlainHead
+                title="On your desk"
+                sub="Nothing waiting. Invitations, drafts and decisions land here first."
                 right={
                   <Link
-                    href="/builder/browse"
+                    href="/builder/tenders"
                     className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
                   >
-                    Browse all
+                    My tenders
                     <ArrowRight className="size-3" />
                   </Link>
                 }
               />
+            </section>
+          )}
 
-              {openRounds.length === 0 ? (
-                <div className="mt-5 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center">
-                  <p className="font-ui font-semibold text-[13.5px] text-text">
-                    No open rounds match yet
-                  </p>
-                  <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[46ch] mx-auto">
-                    {serviceAreaMatch.length > 0
-                      ? "New projects in your area appear here the moment they publish. Widen your service area in your profile to see more."
-                      : "Set a service area in your profile and matched projects will appear here."}
-                  </p>
-                  <Link
-                    href="/builder/browse"
-                    className="mt-4 inline-flex items-center gap-1.5 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] hover:bg-surface-1 transition-colors"
-                  >
-                    Browse the register
-                    <ArrowRight className="size-3.5" />
-                  </Link>
-                </div>
-              ) : (
+          {/* suggested projects */}
+          <section>
+            <PlainHead
+              title="Suggested projects"
+              sub={
+                serviceAreaMatch.length > 0
+                  ? "Open rounds matched to your service area."
+                  : "Recent open rounds."
+              }
+            />
+
+            {openRounds.length === 0 ? (
+              <div className="mt-5 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center">
+                <p className="font-ui font-semibold text-[13.5px] text-text">
+                  No open rounds match yet
+                </p>
+                <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[46ch] mx-auto">
+                  {serviceAreaMatch.length > 0
+                    ? "New projects in your area appear here the moment they publish."
+                    : "Set a service area in your profile and matched projects appear here."}
+                </p>
+                <Link
+                  href="/builder/browse"
+                  className="mt-4 inline-flex items-center gap-1.5 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] hover:bg-surface-1 transition-colors"
+                >
+                  Browse projects
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <>
                 <div className="mt-5 flex flex-col gap-3">
                   {openRounds.map((p) => (
                     <ProjectCard
@@ -599,222 +571,78 @@ export default async function BuilderDashboard() {
                     />
                   ))}
                 </div>
-              )}
-            </section>
-
-            {/* the tender book — a ruled ledger, no box */}
-            {hasBook ? (
-              <section>
-                <SectionHead
-                  chip={
-                    <IconChip tone="ink">
-                      <Landmark className="size-4" />
-                    </IconChip>
-                  }
-                  kicker="Your ledger"
-                  kickerTone="ink"
-                  title="The tender book"
-                  sub="Every tender you have lodged, by status."
-                  rule
-                  right={
-                    <Link
-                      href="/builder/tenders"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
-                    >
-                      Every tender
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  }
-                />
-                <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 divide-x divide-border-subtle border-y border-border-subtle">
-                  {(
-                    [
-                      ["Draft", dash.pipeline.draft],
-                      ["Submitted", dash.pipeline.submitted],
-                      ["Shortlisted", dash.pipeline.shortlisted],
-                      ["Awarded", dash.pipeline.awarded],
-                      ["Rejected", dash.pipeline.rejected],
-                      ["Withdrawn", dash.pipeline.withdrawn],
-                    ] as const
-                  ).map(([label, n]) => (
-                    <div key={label} className="px-4 py-3.5">
-                      <p className="font-display text-[22px] leading-none text-text tabular-nums">
-                        {n}
-                      </p>
-                      <p className="mt-1 text-[10px] tracking-[0.14em] uppercase text-text-dim">
-                        {label}
-                      </p>
-                    </div>
-                  ))}
+                <div className="mt-5 flex justify-center">
+                  <Link
+                    href="/builder/browse"
+                    className="inline-flex items-center gap-1.5 h-10 px-6 rounded-full border border-border-strong text-text text-[12.5px] font-ui hover:bg-surface-1 transition-colors"
+                  >
+                    View all projects
+                    <ArrowRight className="size-3.5" />
+                  </Link>
                 </div>
-                {dash.performance.avgDaysToOutcome !== null ? (
-                  <p className="mt-2.5 text-[11.5px] text-text-dim">
-                    Decisions on your tenders have taken{" "}
-                    {dash.performance.avgDaysToOutcome} day
-                    {dash.performance.avgDaysToOutcome === 1 ? "" : "s"} on
-                    average.
-                  </p>
-                ) : null}
-              </section>
-            ) : null}
-          </div>
+              </>
+            )}
+          </section>
 
-          {/* right rail — quiet, on the canvas */}
-          <div className="min-w-0 flex flex-col gap-9">
-            {/* standing — the one tinted rail card */}
-            {isApproved ? (
-              <section className="rounded-xl border border-border-accent/35 bg-[linear-gradient(150deg,rgba(0,212,200,0.06),rgba(250,248,243,0.45)_70%)] p-4">
-                <RailHead>Standing</RailHead>
-                <div className="mt-2.5 flex items-start gap-2.5">
-                  <span className="size-8 rounded-full bg-accent text-accent-contrast flex items-center justify-center shrink-0">
-                    <ShieldCheck className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-ui font-semibold text-[13.5px] text-text">
-                      {fullyVerified
-                        ? "Registered and verified"
-                        : "Registered builder"}
+          {/* the tender ledger */}
+          {hasBook ? (
+            <section>
+              <PlainHead
+                title="Your tenders"
+                sub="Where every tender stands."
+                right={
+                  <Link
+                    href="/builder/tenders"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                  >
+                    View all
+                    <ArrowRight className="size-3" />
+                  </Link>
+                }
+              />
+              <div
+                className={cn(
+                  "mt-5 grid divide-x divide-border-subtle border-y border-border-subtle",
+                  bookColumns.length === 4
+                    ? "grid-cols-2 sm:grid-cols-4"
+                    : bookColumns.length === 5
+                      ? "grid-cols-3 sm:grid-cols-5"
+                      : "grid-cols-3 sm:grid-cols-6",
+                )}
+              >
+                {bookColumns.map(([label, n]) => (
+                  <div key={label} className="px-4 py-4 text-center">
+                    <p className="font-display text-[24px] leading-none text-text tabular-nums">
+                      {n}
                     </p>
-                    <p className="mt-0.5 text-[11.5px] leading-[1.55] text-text-muted">
-                      {fullyVerified
-                        ? "Your ABN and licence are confirmed against the public registers. Owners see this on every tender you submit."
-                        : "Your registration is active. Completing ABN and licence verification adds the verified marks owners look for."}
+                    <p className="mt-1.5 text-[10px] tracking-[0.14em] uppercase text-text-dim">
+                      {label}
                     </p>
                   </div>
-                </div>
-                {profile?.profile?.slug ? (
-                  <Link
-                    href={`/b/${profile.profile.slug}`}
-                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
-                  >
-                    Your public profile
-                    <ArrowUpRight className="size-3" />
-                  </Link>
-                ) : null}
-              </section>
-            ) : approvalStatus === "rejected" || approvalStatus === "suspended" ? (
-              <section className="rounded-xl border border-[rgba(217,164,65,0.4)] bg-[rgba(217,164,65,0.05)] p-4">
-                <RailHead warn>Registration</RailHead>
-                <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
-                  {approvalStatus === "rejected"
-                    ? "Your registration was not approved"
-                    : "Your registration is suspended"}
-                </p>
-                <p className="mt-1.5 text-[11.5px] leading-[1.6] text-text-muted">
-                  {approvalStatus === "rejected"
-                    ? "Tendering is unavailable on this account. Write to us and we will review it with you."
-                    : "Tendering is paused on this account. Write to us if you believe this is a mistake."}
-                </p>
-                <a
-                  href="mailto:info@builderhq.com.au"
-                  className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
-                >
-                  info@builderhq.com.au
-                  <ArrowUpRight className="size-3" />
-                </a>
-              </section>
-            ) : fullyVerified ? (
-              <section className="rounded-xl border border-border-accent/35 bg-[linear-gradient(150deg,rgba(0,212,200,0.05),rgba(250,248,243,0.45)_70%)] p-4">
-                <RailHead>Registration</RailHead>
-                <p className="mt-2 font-ui font-semibold text-[13.5px] text-text">
-                  Checks complete. Your registration is with our team.
-                </p>
-                <p className="mt-1.5 text-[11.5px] leading-[1.6] text-text-muted">
-                  Both verifications passed and your profile is in the review
-                  queue. Most reviews finish within one business day.
-                </p>
-              </section>
-            ) : null}
-
-            {/* correspondence — canvas group */}
-            <section>
-              <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border-subtle">
-                <RailHead icon={<Mail className="size-3.5" />}>
-                  Correspondence
-                </RailHead>
-                <Link
-                  href="/builder/messages"
-                  className="text-[11.5px] text-text-muted hover:text-text transition-colors"
-                >
-                  Messages
-                </Link>
+                ))}
               </div>
-              {unreadThreads.length === 0 ? (
-                <p className="pt-3 text-[12px] text-text-dim">
-                  {unreadCount > 0
-                    ? `${unreadCount} unread in Messages.`
-                    : "Nothing unread."}
-                </p>
-              ) : (
-                <ul className="pt-3 flex flex-col gap-2">
-                  {unreadThreads.map((c) => (
-                    <li key={c.id}>
-                      <Link
-                        href="/builder/messages"
-                        className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-border-subtle bg-surface-1 card-elev hover:border-border-strong transition-colors"
-                      >
-                        <span className="size-8 rounded-full bg-surface-3 text-text-muted text-[10.5px] font-ui font-semibold flex items-center justify-center shrink-0">
-                          {c.other.initials}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[12.5px] font-ui font-medium text-text truncate">
-                            {c.other.displayName}
-                          </span>
-                          <span className="block text-[11px] text-text-dim truncate">
-                            {c.lastMessagePreview ?? c.projectTitle}
-                          </span>
-                        </span>
-                        <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums shrink-0">
-                          {c.unreadCount}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </section>
+          ) : null}
 
-            {/* decisions log — canvas group */}
-            {dash.activity.length > 0 ? (
-              <section>
-                <div className="pb-2.5 border-b border-border-subtle">
-                  <RailHead icon={<FileText className="size-3.5" />}>
-                    The record
-                  </RailHead>
-                  <p className="mt-0.5 text-[10.5px] text-text-dim">
-                    Recent outcomes on your tenders.
-                  </p>
-                </div>
-                <ul className="divide-y divide-border-subtle/50">
-                  {dash.activity.slice(0, 5).map((e, i) => (
-                    <ActivityLine key={i} e={e} />
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-
-            {/* grandfathered founding note — canvas group */}
-            {fbaStatus.active ? (
-              <section>
-                <div className="pb-2.5 border-b border-border-subtle">
-                  <RailHead>Founding access</RailHead>
-                </div>
-                <p className="pt-3 text-[12px] leading-[1.6] text-text-muted">
-                  {fbaStatus.remainingThisCycle} complimentary unlock
-                  {fbaStatus.remainingThisCycle === 1 ? "" : "s"} left this
-                  cycle. Refreshes in {fbaStatus.daysToRefresh} day
-                  {fbaStatus.daysToRefresh === 1 ? "" : "s"}.
-                </p>
-                <Link
-                  href="/builder/access"
-                  className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
-                >
-                  Details
-                  <ArrowUpRight className="size-3" />
-                </Link>
-              </section>
-            ) : null}
-          </div>
+          {/* founding access — one quiet line */}
+          {fbaStatus.active ? (
+            <div className="border-y border-border-subtle py-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <Sparkles className="size-3.5 text-accent-light shrink-0" />
+              <p className="text-[12.5px] text-text-muted">
+                Founding access: {fbaStatus.remainingThisCycle} complimentary
+                unlock{fbaStatus.remainingThisCycle === 1 ? "" : "s"} left this
+                cycle. Refreshes in {fbaStatus.daysToRefresh} day
+                {fbaStatus.daysToRefresh === 1 ? "" : "s"}.
+              </p>
+              <Link
+                href="/builder/access"
+                className="inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
+              >
+                Details
+                <ArrowUpRight className="size-3" />
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -823,137 +651,40 @@ export default async function BuilderDashboard() {
 
 /* ── hero pieces ────────────────────────────────────────────────────── */
 
-function HeroStat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
+function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-5 sm:px-8 text-center min-w-0">
-      <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-        {label}
-      </p>
-      <p className="mt-1.5 font-display text-[24px] leading-none text-text tabular-nums">
+    <div className="px-8 sm:px-14 text-center min-w-0">
+      <p className="font-display text-[32px] sm:text-[36px] leading-none text-text tabular-nums">
         {value}
       </p>
-      <p className="mt-1 text-[10.5px] text-text-dim">{sub}</p>
+      <p className="mt-2 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        {label}
+      </p>
     </div>
   );
 }
 
-/* ── section headers ────────────────────────────────────────────────── */
+/* ── section header — a title, a quiet line, nothing else ───────────── */
 
-const CHIP_TONES = {
-  teal: "border-[rgba(0,212,200,0.3)] bg-[rgba(0,212,200,0.09)] text-[#0a7d73]",
-  blue: "border-[rgba(45,99,214,0.24)] bg-[rgba(45,99,214,0.07)] text-[#2d63d6]",
-  amber:
-    "border-[rgba(201,148,34,0.3)] bg-[rgba(201,148,34,0.09)] text-[#8a6414]",
-  ink: "border-border-subtle bg-[rgba(24,34,44,0.04)] text-text-muted",
-} as const;
-
-const KICKER_TONES = {
-  teal: "text-accent-light",
-  blue: "text-[#2d63d6]",
-  amber: "text-[#8a6414]",
-  ink: "text-text-muted",
-} as const;
-
-function IconChip({
-  tone,
-  children,
-}: {
-  tone: keyof typeof CHIP_TONES;
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "size-9 rounded-lg border flex items-center justify-center shrink-0",
-        CHIP_TONES[tone],
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-/**
- * Section header on the canvas: tinted icon chip + toned kicker +
- * display title + one plain sentence, with an optional hairline rule
- * running right from the header (the letterhead convention). Colour
- * does the wayfinding; no white box does the separating.
- */
-function SectionHead({
-  chip,
-  kicker,
-  kickerTone,
+function PlainHead({
   title,
   sub,
   right,
-  rule = false,
 }: {
-  chip: React.ReactNode;
-  kicker: string;
-  kickerTone: keyof typeof KICKER_TONES;
   title: string;
   sub?: string;
   right?: React.ReactNode;
-  rule?: boolean;
 }) {
   return (
-    <header className="flex items-start gap-3.5">
-      {chip}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-4">
-          <span
-            className={cn(
-              "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold shrink-0",
-              KICKER_TONES[kickerTone],
-            )}
-          >
-            {kicker}
-          </span>
-          {rule ? (
-            <span
-              aria-hidden
-              className="hidden sm:block h-px flex-1 bg-[rgba(24,34,44,0.10)]"
-            />
-          ) : null}
-          {right ? <span className="ml-auto shrink-0">{right}</span> : null}
-        </div>
-        <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+    <header className="flex items-end justify-between gap-4 pb-2.5 border-b border-border-subtle">
+      <div className="min-w-0">
+        <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
           {title}
         </h2>
         {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
       </div>
+      {right ? <span className="shrink-0 pb-0.5">{right}</span> : null}
     </header>
-  );
-}
-
-/** Rail section header — the same kicker voice, at the rail's scale. */
-function RailHead({
-  children,
-  icon,
-  warn = false,
-}: {
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-  warn?: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold inline-flex items-center gap-2",
-        warn ? "text-[#8a6414]" : "text-accent-light",
-      )}
-    >
-      {icon}
-      {children}
-    </span>
   );
 }
 
@@ -991,7 +722,7 @@ function DeskChip({
   );
 }
 
-/* ── rail pieces ────────────────────────────────────────────────────── */
+/* ── registration pieces ────────────────────────────────────────────── */
 
 function ChecklistLine({
   done,
@@ -1013,40 +744,6 @@ function ChecklistLine({
         <Check className="size-2.5" strokeWidth={3.5} />
       </span>
       <span className={done ? "text-text-muted" : "text-text"}>{children}</span>
-    </li>
-  );
-}
-
-function ActivityLine({ e }: { e: BuilderActivityEvent }) {
-  const line =
-    e.kind === "submitted"
-      ? `Tender submitted on ${e.projectTitle}${e.totalPriceAud !== null ? ` at ${compactAud(e.totalPriceAud)}` : ""}.`
-      : e.kind === "shortlisted"
-        ? `Shortlisted on ${e.projectTitle}.`
-        : e.kind === "awarded"
-          ? `Awarded ${e.projectTitle}.`
-          : `Decision recorded on ${e.projectTitle}.`;
-  return (
-    <li>
-      <Link
-        href={`/builder/projects/${e.projectSlug}/tender`}
-        className="py-2.5 flex items-baseline gap-2.5 hover:bg-[rgba(24,34,44,0.025)] rounded-md transition-colors px-1 -mx-1"
-      >
-        <span
-          className={cn(
-            "size-1.5 rounded-full shrink-0 self-center",
-            e.kind === "awarded"
-              ? "bg-[#0a9c91]"
-              : e.kind === "shortlisted"
-                ? "bg-[#0a7d73]"
-                : "bg-[rgba(24,34,44,0.22)]",
-          )}
-        />
-        <span className="min-w-0 flex-1 text-[11.5px] leading-[1.5] text-text-muted">
-          {line}
-        </span>
-        <span className="text-[10px] text-text-dim shrink-0">{ago(e.at)}</span>
-      </Link>
     </li>
   );
 }

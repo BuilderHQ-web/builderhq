@@ -394,6 +394,19 @@ export async function listApprovedBuildersPublic(): Promise<DirectoryBuilder[]> 
 
 // ── Builder profile ──────────────────────────────────────────────────────
 
+/**
+ * The one-column approval read, for hot paths (the app shell renders
+ * on every authenticated request and only needs the verified badge).
+ */
+export async function isBuilderApproved(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ approvalStatus: builderProfiles.approvalStatus })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.userId, userId))
+    .limit(1);
+  return row?.approvalStatus === "approved";
+}
+
 export interface BuilderProfileBundle {
   profile: BuilderProfile;
   licences: BuilderLicence[];
