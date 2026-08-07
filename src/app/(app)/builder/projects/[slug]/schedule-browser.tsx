@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   ChevronDown,
   Download,
-  Info,
   Landmark,
   Search,
 } from "lucide-react";
@@ -27,6 +26,7 @@ import {
   type TenderScheduleItem,
 } from "@/modules/tenders/schedule";
 import { cn } from "@/lib/utils";
+import { NoteHint } from "./note-hint";
 
 /** The reader's overview, structurally (server type stays server-side). */
 export interface PackOverview {
@@ -238,12 +238,7 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
           ) : null}
           {item.depth === "partial" && item.remaining ? (
             <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#8a6414] flex items-start gap-1">
-              <span
-                className="inline-flex shrink-0 mt-[1px] cursor-help"
-                title="This line can be priced from the documents, but our reading flagged details still to be confirmed. Check them before relying on the price."
-              >
-                <Info className="size-3" />
-              </span>
+              <NoteHint className="shrink-0 mt-[1px] text-[#b08a2a] hover:text-[#8a6414]" />
               <span>Notes: {item.remaining}</span>
             </p>
           ) : null}
@@ -255,10 +250,6 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
           <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-ui font-medium text-[#8a6414]">
             <Landmark className="size-3" />
             {formatAud(item.ownerAmountAud)} provisional sum
-          </span>
-        ) : item.kind === "owner_open" ? (
-          <span className="shrink-0 text-[11px] text-text-dim">
-            You price this
           </span>
         ) : null}
       </div>

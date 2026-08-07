@@ -397,7 +397,7 @@ export function ProjectDetail({
 
       {/* Header — on the canvas, ruled off rather than boxed in white */}
       <div className="border-b border-border-subtle">
-        <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1200px]">
+        <div className="px-4 sm:px-8 lg:px-14 py-5 sm:py-6 lg:py-8 mx-auto max-w-[1280px]">
           <Link
             href="/builder/browse"
             className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
@@ -481,7 +481,7 @@ export function ProjectDetail({
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[960px]">
+      <div className="px-4 sm:px-8 lg:px-14 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1280px]">
         <div className="space-y-11">
           <Reveal immediate delay={0.04}>
             <Card id="facts" title="Key details" icon={meta.icon}>
@@ -557,7 +557,7 @@ export function ProjectDetail({
           {(unlocked ? full?.description : preview.description) ? (
             <Reveal immediate delay={0.1}>
               <Card title="The brief" icon={<FileText className="size-4" />}>
-                <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line max-w-[72ch]">
+                <p className="text-[14px] leading-[1.75] text-text-muted whitespace-pre-line max-w-[80ch]">
                   {unlocked ? full?.description : preview.description}
                 </p>
               </Card>
@@ -578,7 +578,7 @@ export function ProjectDetail({
                     <p className="text-[12.5px] leading-[1.65] text-text-muted max-w-[68ch]">
                       Answered by the client before the round opened.
                     </p>
-                    <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-5">
+                    <dl className="mt-4 grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-10 gap-y-6">
                       {clientBrief.map((row) => (
                         <div key={row.k} className="min-w-0">
                           <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
@@ -798,7 +798,7 @@ function TenderCtaBar({
       id="tender-cta"
       className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-8 lg:px-14 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
             <FileText className="size-4" />
@@ -867,7 +867,7 @@ function UnlockBar({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-subtle bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-8 lg:px-14 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         {hasCredits ? (
           <>
             {/* Left — complimentary unlock under Founding Access */}
@@ -946,7 +946,7 @@ function UnlockBar({
 function ConfirmingBar() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.06)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center gap-3">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-8 lg:px-14 py-3 sm:py-4 flex items-center gap-3">
         <span className="size-10 rounded-md border border-border-accent bg-accent-muted/50 text-accent-light flex items-center justify-center shrink-0">
           <Loader2 className="size-4 animate-spin" />
         </span>
@@ -974,7 +974,7 @@ function ConfirmingBar() {
 function ProjectFullBar({ spots }: { spots: number }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-danger/30 bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-8 lg:px-14 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-danger/40 bg-danger/10 flex items-center justify-center shrink-0 text-danger">
             <Lock className="size-4" />
@@ -1042,7 +1042,7 @@ function ViewerModeBar({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-warning/30 bg-surface-1/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-8 lg:px-14 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-10 rounded-md border border-warning/40 bg-[rgba(255,181,71,0.10)] flex items-center justify-center shrink-0 text-warning">
             <ShieldCheck className="size-4" />
@@ -1405,13 +1405,13 @@ function ScopeStatsBand({ pack }: { pack: PackSummary }) {
     },
   ];
   return (
-    <div className="mt-5 border-y border-border-subtle py-5 flex items-stretch justify-center divide-x divide-border-subtle">
+    <div className="mt-6 border-y border-border-subtle py-7 grid grid-cols-3 divide-x divide-border-subtle">
       {stats.map((s) => (
-        <div key={s.k} className="px-6 sm:px-10 text-center min-w-0">
-          <p className="font-display text-[26px] sm:text-[30px] leading-none text-text tabular-nums">
+        <div key={s.k} className="px-4 text-center min-w-0">
+          <p className="font-display text-[30px] sm:text-[38px] leading-none text-text tabular-nums">
             {s.v}
           </p>
-          <p className="mt-1.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+          <p className="mt-2.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
             {s.k}
           </p>
         </div>

@@ -37,7 +37,6 @@ import {
   Check,
   ChevronDown,
   FileText,
-  Info,
   ListOrdered,
   Loader2,
   Paperclip,
@@ -69,13 +68,13 @@ import {
   deriveNotApplicable,
   ownerExcludedItems,
   formatCitation,
-  SCHEDULE_NOTE_HINT,
   type ScheduleDivision,
   type ScheduleEntry,
   type ScheduleState,
   type TenderSchedule,
   type TenderScheduleItem,
 } from "@/modules/tenders/schedule";
+import { NoteHint } from "../note-hint";
 import { BuilderScorecard, useSelfEvaluation } from "./scorecard";
 import {
   buildTenderDocument,
@@ -2962,41 +2961,6 @@ function EnergyRatingCard({ stars }: { stars: number | null }) {
         NatHERS star rating
       </p>
     </div>
-  );
-}
-
-/**
- * The standard (i) beside every schedule line's notes. One text,
- * shared with the schedule browser, so the explanation never drifts.
- */
-function NoteHint() {
-  const [open, setOpen] = useState(false);
-  return (
-    <span className="relative inline-flex">
-      <button
-        type="button"
-        aria-label="What these notes are"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
-        onBlur={() => setOpen(false)}
-        onPointerEnter={(e) => {
-          if (e.pointerType === "mouse") setOpen(true);
-        }}
-        onPointerLeave={(e) => {
-          if (e.pointerType === "mouse") setOpen(false);
-        }}
-        className="text-text-faint hover:text-text-muted transition-colors"
-      >
-        <Info className="size-3" />
-      </button>
-      {open ? (
-        <span className="absolute left-0 top-full z-20 mt-1.5 w-[250px] max-w-[72vw] rounded-md border border-border-subtle bg-surface-1 card-elev px-3 py-2 text-left text-[11px] leading-[1.55] font-normal text-text-muted">
-          {SCHEDULE_NOTE_HINT}
-        </span>
-      ) : null}
-    </span>
   );
 }
 

@@ -34,7 +34,7 @@ export interface FactRow {
 export function FactSheet({ rows }: { rows: FactRow[] }) {
   const kept = rows.filter((r): r is { k: string; v: string } => !!r.v);
   return (
-    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6">
+    <dl className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-10 gap-y-7">
       {kept.map((r) => (
         <div key={r.k} className="min-w-0">
           <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
