@@ -83,6 +83,9 @@ export async function updateProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canEdit(a.value, got.value)) return fail("forbidden", "Not allowed to edit.");
   return update(a.value.id, projectId, patch);
 }
@@ -105,6 +108,9 @@ export async function publishProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canPublish(a.value, got.value)) return fail("forbidden", "Not allowed to publish.");
 
   // The scope publish gate: when on, publishing becomes a submission
@@ -130,6 +136,9 @@ export async function softDeleteProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canDelete(a.value, got.value)) return fail("forbidden", "Not allowed to delete.");
   return softDelete(a.value.id, projectId);
 }
@@ -141,6 +150,10 @@ export async function saveOwnerBriefAction(
 ): Promise<Result<{ complete: boolean }>> {
   const a = await requireActor();
   if (!a.ok) return a;
+  const { isSampleProject } = await import("@/modules/sample");
+  if (await isSampleProject(projectId)) {
+    return fail("forbidden", "The example round is read only.");
+  }
   const { saveOwnerBrief } = await import("@/modules/projects");
   return saveOwnerBrief(a.value.id, projectId, brief);
 }

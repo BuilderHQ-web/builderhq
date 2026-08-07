@@ -8,6 +8,9 @@ import { getBuilderProfile } from "@/modules/profiles";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { ExampleRoundBanner } from "@/components/app/example-round-banner";
+import { ExampleWalkthrough } from "@/components/app/example-walkthrough";
+import { removeSampleAction } from "@/app/(app)/_actions/sample";
 import { loadRound } from "./_lib/load-round";
 import {
   TenderEvaluationSurface,
@@ -79,6 +82,9 @@ export default async function ProjectTendersPage({
       : null;
   }
 
+  const isSample = project.isSample === true;
+  const role = base === "/architect" ? "architect" : "owner";
+
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1400px]">
@@ -89,6 +95,16 @@ export default async function ProjectTendersPage({
           <ArrowLeft className="size-3.5" />
           Back to project
         </Link>
+
+        {isSample ? (
+          <>
+            <ExampleRoundBanner removeAction={removeSampleAction} />
+            <ExampleWalkthrough
+              role={role}
+              uploadHref={`${base}/projects/new`}
+            />
+          </>
+        ) : null}
 
         <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
           <div className="min-w-0">
@@ -177,7 +193,8 @@ export default async function ProjectTendersPage({
             builderFacts={builderFacts}
             projectSlug={project.slug}
             canDecide={
-              access.kind === "runner" || access.role === "decider"
+              !isSample &&
+              (access.kind === "runner" || access.role === "decider")
             }
             schedule={schedule}
             addenda={addenda}

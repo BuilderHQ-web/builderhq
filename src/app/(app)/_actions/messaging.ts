@@ -26,6 +26,7 @@ import {
   type Message,
 } from "@/modules/messaging";
 import { getProjectAccess } from "@/modules/projects";
+import { isSampleProject } from "@/modules/sample";
 import { isUnlocked } from "@/modules/unlocks";
 
 async function requireUserId(): Promise<Result<string>> {
@@ -113,6 +114,11 @@ export async function startProjectConversationAction(
     (access?.kind === "participant" && access.role === "decider");
   if (!allowed) {
     return fail("forbidden", "Messaging on this round is not part of your access.");
+  }
+
+  // The example round's builders are fictional; no thread ever opens.
+  if (await isSampleProject(projectId)) {
+    return fail("forbidden", "The example round is read only.");
   }
 
   if (!(await isUnlocked(builderId, projectId))) {

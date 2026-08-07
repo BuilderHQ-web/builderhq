@@ -126,6 +126,25 @@ export interface SampleRoundRef {
   title: string;
 }
 
+/** Is this project an example round? The read-only guards ask. */
+export async function isSampleProject(projectId: string): Promise<boolean> {
+  const r = await db.execute(
+    sql`select 1 from projects where id = ${projectId} and is_sample limit 1`,
+  );
+  return r.rows.length > 0;
+}
+
+/** Same question, asked from a tender. */
+export async function isSampleTender(tenderId: string): Promise<boolean> {
+  const r = await db.execute(sql`
+    select 1 from tenders t
+    join projects p on p.id = t.project_id
+    where t.id = ${tenderId} and p.is_sample
+    limit 1
+  `);
+  return r.rows.length > 0;
+}
+
 /** The account's example round, if it still exists. */
 export async function getSampleForUser(
   ownerId: string,

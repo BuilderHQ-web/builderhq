@@ -46,6 +46,7 @@ import {
   type Document,
 } from "@/modules/documents";
 import { getProjectAccess } from "@/modules/projects";
+import { isSampleTender } from "@/modules/sample";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireActor(): Promise<Result<ActorContext>> {
@@ -249,6 +250,10 @@ async function ownerDecision(
   // policy for clarity + to fail fast.
   const t = await getTenderRowForActor(a.value, tenderId, projectOwner);
   if (!t.ok) return t;
+  // The example round is for reading, never deciding.
+  if (await isSampleTender(tenderId)) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canDecideOnTender(a.value, t.value, projectOwner)) {
     // A joined DECIDER seat decides too — the service re-verifies the
     // seat before writing, this gate just fails fast for everyone
