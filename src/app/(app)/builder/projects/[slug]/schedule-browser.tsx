@@ -4,11 +4,10 @@
  * The pack, in full — the post-unlock reading room.
  *
  * A builder who paid for the spot gets the whole analysis, shaped for
- * pricing: the reader's overview of the documents, the list of what
- * the pack does not settle (the same list every rival sees), and the
- * complete schedule by division with the reader's verbatim finding
- * and citation on every line. This is the page a builder keeps open
- * beside their takeoff.
+ * pricing: what the pack does not settle (the same list every rival
+ * sees), and the complete scope by division with the reader's
+ * verbatim finding and citation on every item. This is the page a
+ * builder keeps open beside their takeoff.
  */
 
 import { useMemo, useState } from "react";
@@ -18,7 +17,6 @@ import {
   Download,
   Info,
   Landmark,
-  ScrollText,
   Search,
 } from "lucide-react";
 
@@ -50,12 +48,10 @@ const formatAud = (n: number) => `$${n.toLocaleString("en-AU")}`;
 
 export function ScheduleBrowser({
   schedule,
-  overview,
   advisories,
   pdfHref = null,
 }: {
   schedule: TenderSchedule;
-  overview: PackOverview | null;
   advisories: PackAdvisory[];
   /** The scope of works as a PDF — rendered server-side. */
   pdfHref?: string | null;
@@ -92,42 +88,8 @@ export function ScheduleBrowser({
       return next;
     });
 
-  const facts = overview
-    ? ([
-        overview.dwellings !== null
-          ? `${overview.dwellings} dwelling${overview.dwellings === 1 ? "" : "s"}`
-          : null,
-        overview.bedrooms !== null
-          ? `${overview.bedrooms} bed`
-          : null,
-        overview.bathrooms !== null
-          ? `${overview.bathrooms} bath`
-          : null,
-        overview.storeys !== null
-          ? `${overview.storeys} store${overview.storeys === 1 ? "y" : "ys"}`
-          : null,
-      ].filter(Boolean) as string[])
-    : [];
-
   return (
     <div>
-      {overview ? (
-        <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-4.5 py-4">
-          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold inline-flex items-center gap-1.5">
-            <ScrollText className="size-3.5 text-accent-light" />
-            Overview
-          </p>
-          <p className="mt-2 text-[13px] leading-[1.7] text-text-muted">
-            {overview.summary}
-          </p>
-          {facts.length > 0 ? (
-            <p className="mt-2.5 text-[11.5px] text-text-dim">
-              Read from the documents: {facts.join(" · ")}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
       {advisories.length > 0 ? (
         <div className="mt-4 rounded-lg border border-[rgba(201,148,34,0.35)] bg-[rgba(201,148,34,0.04)] px-4.5 py-4">
           <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold inline-flex items-center gap-1.5">
@@ -155,9 +117,9 @@ export function ScheduleBrowser({
         </div>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-          The scope of works, line by line
+          Identified scope of works, line by line
         </p>
         <div className="flex items-center gap-2">
           {pdfHref ? (
@@ -177,7 +139,7 @@ export function ScheduleBrowser({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a line"
+              placeholder="Find an item"
               className="h-9 w-[190px] rounded-md border border-border-subtle bg-surface-1 pl-8 pr-3 text-[12px] text-text outline-none focus:border-border-accent transition-colors"
             />
           </div>
@@ -185,7 +147,7 @@ export function ScheduleBrowser({
       </div>
 
       <p className="mt-1.5 text-[11.5px] leading-[1.6] text-text-dim max-w-[68ch]">
-        Every line below goes into your tender. When you tender, you
+        Every item below goes into your tender. When you tender, you
         mark what your price does with each one.
       </p>
 
@@ -193,7 +155,7 @@ export function ScheduleBrowser({
         {visible.map((d) => {
           const expanded = searching || open.has(d.divisionId);
           const counts = [
-            `${d.items.length} line${d.items.length === 1 ? "" : "s"}`,
+            `${d.items.length} item${d.items.length === 1 ? "" : "s"}`,
             d.locked.length > 0 ? `${d.locked.length} outside the round` : null,
           ].filter(Boolean);
           return (
@@ -242,7 +204,7 @@ export function ScheduleBrowser({
       </ul>
       {visible.length === 0 ? (
         <p className="mt-3 text-[12.5px] text-text-dim">
-          No line matches &ldquo;{query}&rdquo;.
+          No item matches &ldquo;{query}&rdquo;.
         </p>
       ) : null}
     </div>

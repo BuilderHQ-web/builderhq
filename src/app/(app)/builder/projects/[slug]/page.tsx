@@ -11,8 +11,7 @@ import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
 import { getActiveTenderForBuilder } from "@/modules/tenders";
-import { packSummary, tenderableItems } from "@/modules/tenders/schedule";
-import { groupPackDivisions } from "@/modules/scope/groups";
+import { packSummary } from "@/modules/tenders/schedule";
 import {
   getProjectSchedule,
   listAddenda,
@@ -60,22 +59,32 @@ export default async function BuilderProjectPage({
     listAddenda(preview.id),
     getRoundContextForBuilders(preview.id),
   ]);
-  // The pack, shaped for browsing. Counts travel to everyone; the
-  // highlights quote the documents and stay behind the unlock.
-  const pack = schedule ? packSummary(schedule) : null;
-  // The pack's priceable lines folded into build chapters — division
-  // names are already public in the pack panel, so this is safe for
-  // every viewer.
-  const scopeGroups = schedule
-    ? groupPackDivisions(tenderableItems(schedule))
-    : [];
+  // The pack, shaped for browsing. Counts travel to everyone. Before
+  // the unlock, a small taste of real items travels too (product
+  // decision 2026-08-07: four true lines sell the spot better than
+  // any summary); the unlocked page reads the full schedule instead,
+  // so it carries no highlights at all.
+  const rawPack = schedule ? packSummary(schedule) : null;
+  const pack = rawPack
+    ? {
+        ...rawPack,
+        highlights: unlocked ? [] : rawPack.highlights.slice(0, 4),
+      }
+    : null;
   const latestAddendum = addenda[0]
     ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
     : null;
 
   // If unlocked, fetch the full row + docs for download + owner contact.
   const fullR = unlocked ? await getFullForUnlockedBuilder(slug) : null;
-  const docs = await listActiveForProjectUnchecked(preview.id);
+  const rawDocs = await listActiveForProjectUnchecked(preview.id);
+  // Before the unlock, filenames stay server-side: consultants name
+  // their files after the street address, and a blur is not a wall.
+  // The list still shows what exists (category, size); the names open
+  // with the spot.
+  const docs = unlocked
+    ? rawDocs
+    : rawDocs.map((d, i) => ({ ...d, filename: `Document ${i + 1}` }));
   const ownerContact =
     unlocked && fullR?.ok
       ? await getOwnerContactPublic(fullR.value.ownerId)
@@ -137,10 +146,8 @@ export default async function BuilderProjectPage({
       pack={pack}
       latestAddendum={latestAddendum}
       clientBrief={roundContext.brief}
-      overview={unlocked ? roundContext.overview : null}
       advisories={unlocked ? roundContext.advisories : []}
       schedule={unlocked ? schedule : null}
-      scopeGroups={scopeGroups}
     />
   );
 }

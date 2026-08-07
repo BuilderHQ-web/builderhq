@@ -29,20 +29,18 @@ export interface FactRow {
   v: string | null;
 }
 
-/** Hairline-rule fact column, the tender-brief read. Null rows drop. */
+/** The key details, read at a glance: quiet labels, values that lead.
+ *  No rules, no boxes. Null rows drop. */
 export function FactSheet({ rows }: { rows: FactRow[] }) {
   const kept = rows.filter((r): r is { k: string; v: string } => !!r.v);
   return (
-    <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-8">
+    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-6">
       {kept.map((r) => (
-        <div
-          key={r.k}
-          className="border-t border-border-subtle py-3 first:border-t sm:[&:nth-child(-n+3)]:border-t [&:nth-child(-n+2)]:border-t"
-        >
-          <dt className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        <div key={r.k} className="min-w-0">
+          <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
             {r.k}
           </dt>
-          <dd className="mt-1 text-[14px] font-ui font-medium text-text">
+          <dd className="mt-1.5 text-[17px] font-ui font-semibold text-text leading-snug">
             {r.v}
           </dd>
         </div>

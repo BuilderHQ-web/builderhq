@@ -48,23 +48,23 @@ interface TourStop {
 const STOPS: TourStop[] = [
   {
     target: "facts",
-    title: "Project details",
-    line: "The type, size, budget and timing. The full address is on the right.",
+    title: "Key details",
+    line: "The type, size, budget and timing. The street address sits under the project name above.",
+  },
+  {
+    target: "owner",
+    title: "The client",
+    line: "Who is behind the project, their answers, and how to reach them.",
   },
   {
     target: "scope",
     title: "Scope of works",
-    line: "Prepared by BuilderHQ: our AI read every page of the documents and wrote the build into these lines. Search them, or download the lot as a PDF.",
+    line: "Prepared by BuilderHQ: our AI read every page of the documents and wrote the build into these items. Search them, or download the lot as a PDF.",
   },
   {
     target: "documents",
     title: "Documents",
     line: "Every drawing and report. Download them one by one, or all at once.",
-  },
-  {
-    target: "owner",
-    title: "The owner",
-    line: "Their contact details. You can call or email them directly.",
   },
   {
     target: "messaging",

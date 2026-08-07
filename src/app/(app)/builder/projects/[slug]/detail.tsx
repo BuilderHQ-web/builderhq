@@ -47,16 +47,9 @@ import type {
 } from "@/modules/tenders/schedule";
 import {
   ScheduleBrowser,
-  type PackOverview,
   type PackAdvisory,
 } from "./schedule-browser";
-import {
-  FactSheet,
-  ScopeOfWorks,
-  ProjectTimeline,
-  buildTimeline,
-} from "./brief-sections";
-import type { ScopeGroup } from "@/modules/scope/groups";
+import { FactSheet } from "./brief-sections";
 import type { OwnerContact } from "@/modules/profiles";
 import type { FbaStatus } from "@/modules/credits";
 import type { ConversationListItem } from "@/modules/messaging";
@@ -69,7 +62,6 @@ import {
   totalUnread,
 } from "@/components/app/messaging/project-thread";
 import { cn } from "@/lib/utils";
-import { BUDGET_BAND_MIDPOINT } from "@/modules/scope";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
 import { UnlockTour } from "./unlock-tour";
@@ -169,6 +161,19 @@ const DOC_CAT_LABEL: Record<DocumentCategory, string> = {
   other: "Other",
 };
 
+/** The order a builder reads a document set. */
+const DOC_CAT_ORDER: DocumentCategory[] = [
+  "architectural",
+  "structural_engineering",
+  "civil_engineering",
+  "specifications",
+  "land_report",
+  "soil_report",
+  "energy_rating",
+  "town_planning",
+  "other",
+];
+
 // ── component ────────────────────────────────────────────────────────────
 
 export function ProjectDetail({
@@ -187,10 +192,8 @@ export function ProjectDetail({
   pack = null,
   latestAddendum = null,
   clientBrief = [],
-  overview = null,
   advisories = [],
   schedule = null,
-  scopeGroups = [],
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -208,11 +211,8 @@ export function ProjectDetail({
   /** The client's brief, safe for every viewer. */
   clientBrief?: Array<{ k: string; v: string }>;
   /** Post-unlock only — the server withholds these until then. */
-  overview?: PackOverview | null;
   advisories?: PackAdvisory[];
   schedule?: TenderSchedule | null;
-  /** The pack's lines folded into build chapters; safe for all viewers. */
-  scopeGroups?: ScopeGroup[];
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -371,13 +371,20 @@ export function ProjectDetail({
     });
   };
 
-  // Group docs by category for display.
+  // Group docs by category, in the order a builder reads a set:
+  // architectural first, then engineering, specs and reports.
   const docsByCategory = documents.reduce<Record<string, Document[]>>(
     (acc, d) => {
       (acc[d.category] ??= []).push(d);
       return acc;
     },
     {},
+  );
+  const orderedDocs = Object.fromEntries(
+    DOC_CAT_ORDER.filter((c) => docsByCategory[c]).map((c) => [
+      c,
+      docsByCategory[c]!,
+    ]),
   );
 
   return (
@@ -401,38 +408,45 @@ export function ProjectDetail({
 
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold flex-wrap">
-                {meta.icon}
-                {meta.label}
-                {preview.tenderMode === "private" ? (
-                  <>
-                    <span className="text-text-dim/60 mx-1">·</span>
-                    <span className="text-text-dim">Private round</span>
-                  </>
-                ) : null}
-                <span className="text-text-dim/60 mx-1">·</span>
+              {/* The title already says what and where; the kicker only
+                  says what is YOURS about it. */}
+              <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-semibold flex-wrap">
                 {unlocked ? (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5 text-accent-light">
                     <Unlock className="size-3" />
                     You hold a spot
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-text-dim">
+                  <span className="inline-flex items-center gap-1.5 text-text-dim">
                     <Lock className="size-3" />
                     Preview
                   </span>
                 )}
+                {preview.tenderMode === "private" ? (
+                  <>
+                    <span className="text-text-dim/60">·</span>
+                    <span className="text-text-dim">Private round</span>
+                  </>
+                ) : null}
               </span>
               <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text break-words">
                 {preview.title}
               </h1>
-              <div className="mt-2 flex items-center gap-2 text-[13px] text-text-muted">
-                <MapPin className="size-3.5 shrink-0" />
+              <div className="mt-2.5 flex items-center gap-2 text-[13.5px] text-text-muted">
+                <MapPin className="size-3.5 shrink-0 text-accent-light" />
                 <span className="truncate">
-                  {preview.suburb && preview.state ? (
+                  {unlocked && full?.addressLine1 ? (
+                    <span className="font-ui font-medium text-text">
+                      {full.addressLine1}, {preview.suburb} {preview.state}{" "}
+                      {preview.postcode}
+                    </span>
+                  ) : preview.suburb && preview.state ? (
                     <>
                       {preview.suburb}, {preview.state}
                       {preview.postcode ? ` ${preview.postcode}` : ""}
+                      <span className="ml-2 text-[11.5px] text-text-dim">
+                        Street address opens with your spot
+                      </span>
                     </>
                   ) : (
                     "Location pending"
@@ -467,50 +481,10 @@ export function ProjectDetail({
         </div>
       </div>
 
-      {/* The unlocked map — one quiet strip so nothing on the page is
-          missed. Anchors only; the content keeps its order below. */}
-      {unlocked ? (
-        <div className="border-b border-border-subtle bg-bg-deep/20">
-          <div className="px-4 sm:px-6 lg:px-10 mx-auto max-w-[1200px]">
-            <nav className="flex items-center gap-5 overflow-x-auto py-2.5 text-[11.5px] font-ui text-text-muted whitespace-nowrap">
-              <span className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-semibold shrink-0">
-                On this page
-              </span>
-              {[
-                // A legacy round has no scope section; no dead anchor.
-                ...(schedule !== null
-                  ? [["#scope", "Scope of works"] as const]
-                  : []),
-                ["#documents", "Documents"] as const,
-                ["#owner", "Owner"] as const,
-                ["#messaging", "Messages"] as const,
-              ].map(([href, label]) => (
-                <a
-                  key={href}
-                  href={href}
-                  className="hover:text-text transition-colors shrink-0"
-                >
-                  {label}
-                </a>
-              ))}
-              <Link
-                href={`/builder/projects/${preview.slug}/tender`}
-                className="ml-auto inline-flex items-center gap-1 text-accent-light hover:text-accent-deep transition-colors shrink-0"
-              >
-                Your tender
-                <ArrowUpRight className="size-3" />
-              </Link>
-            </nav>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[1200px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-x-12 gap-y-10">
-          {/* Left — public details (staggered entrance) */}
-          <div className="space-y-10">
-            <Reveal immediate delay={0.04}>
-            <Card id="facts" title="Project fact sheet" icon={meta.icon}>
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 mx-auto max-w-[960px]">
+        <div className="space-y-11">
+          <Reveal immediate delay={0.04}>
+            <Card id="facts" title="Key details" icon={meta.icon}>
               <FactSheet
                 rows={[
                   { k: "Type", v: meta.label },
@@ -573,94 +547,137 @@ export function ProjectDetail({
                   },
                 ]}
               />
-              <div className="mt-6 border-t border-border-subtle pt-5">
-                <p className="mb-4 text-[10px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-                  Project timeline
-                </p>
-                <ProjectTimeline
-                  stations={buildTimeline({
-                    publishedAt: preview.publishedAt
-                      ? new Date(preview.publishedAt).toISOString()
-                      : null,
-                    targetStartMonth: preview.targetStartMonth,
-                    targetCompletionMonth: preview.targetCompletionMonth,
-                  })}
-                />
-              </div>
             </Card>
+          </Reveal>
+
+          {/* Visible before unlock (product decision 2026-07-03):
+              builders need the brief to judge fit; listings are
+              reviewed before going live so the text stays
+              address-safe. */}
+          {(unlocked ? full?.description : preview.description) ? (
+            <Reveal immediate delay={0.1}>
+              <Card title="The brief" icon={<FileText className="size-4" />}>
+                <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line max-w-[72ch]">
+                  {unlocked ? full?.description : preview.description}
+                </p>
+              </Card>
             </Reveal>
+          ) : null}
 
-            {/* Brief — visible before unlock (product decision 2026-07-03:
-                builders need the brief to judge fit; listings are reviewed
-                before going live so the free text stays address-safe). The
-                unlocked row remains the authoritative source post-unlock. */}
-            {(unlocked ? full?.description : preview.description) ? (
-              <Reveal immediate delay={0.16}>
-                <Card title="Brief" icon={<FileText className="size-4" />}>
-                  <p className="text-[13.5px] leading-[1.7] text-text-muted whitespace-pre-line">
-                    {unlocked ? full?.description : preview.description}
+          {/* Who is behind the project: their answers for every
+              viewer, their contact behind the spot. */}
+          {clientBrief.length > 0 || unlocked ? (
+            <Reveal immediate delay={0.14}>
+              <Card
+                id="owner"
+                title="The client"
+                icon={<Sparkles className="size-4" />}
+              >
+                {clientBrief.length > 0 ? (
+                  <>
+                    <p className="text-[12.5px] leading-[1.65] text-text-muted max-w-[68ch]">
+                      Answered by the client before the round opened.
+                    </p>
+                    <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-5">
+                      {clientBrief.map((row) => (
+                        <div key={row.k} className="min-w-0">
+                          <dt className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                            {row.k}
+                          </dt>
+                          <dd className="mt-1 text-[14px] font-ui font-semibold text-text leading-snug">
+                            {row.v}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </>
+                ) : null}
+
+                <div
+                  className={cn(
+                    "relative",
+                    clientBrief.length > 0 &&
+                      "mt-6 border-t border-border-subtle pt-5",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "transition-[filter] duration-[300ms]",
+                      unlocked ? "" : "blur-md select-none pointer-events-none",
+                    )}
+                  >
+                    {unlocked && ownerContact ? (
+                      <OwnerContactBlock contact={ownerContact} />
+                    ) : (
+                      <PlaceholderContactBlock />
+                    )}
+                  </div>
+                  {!unlocked ? (
+                    <BlurOverlay
+                      icon={<Lock className="size-3.5" />}
+                      title="Contact details open with your spot"
+                      compact
+                    />
+                  ) : null}
+                </div>
+              </Card>
+            </Reveal>
+          ) : null}
+
+          {/* The scope of works — the heart of the page. Everyone sees
+              what it holds; the spot opens every item. */}
+          {pack ? (
+            <Reveal immediate delay={0.18}>
+              <Card
+                id="scope"
+                title="Scope of works"
+                icon={<BookOpenCheck className="size-4" />}
+              >
+                <p className="text-[13px] leading-[1.7] text-text-muted max-w-[68ch]">
+                  We read every document on this round and wrote the
+                  scope of works from them. Every builder prices this
+                  same list, item by item.
+                </p>
+
+                <ScopeStatsBand pack={pack} />
+
+                {pack.ownerAllowances > 0 ? (
+                  <p className="mt-4 text-[12px] leading-[1.6] text-text-dim max-w-[68ch]">
+                    The client&rsquo;s provisional sums are set figures
+                    every builder carries, so those items never decide
+                    the comparison.
                   </p>
-                </Card>
-              </Reveal>
-            ) : null}
+                ) : null}
 
-            {/* The scope of works in build chapters — the pre-unlock
-                taste of the pack. Once the full line-by-line browser
-                is open below, the summary would only repeat it. */}
-            {!(unlocked && schedule) && scopeGroups.some((g) => g.lines > 0) ? (
-              <Reveal immediate delay={0.17}>
-                <Card
-                  title="Scope of works"
-                  icon={<BookOpenCheck className="size-4" />}
-                >
-                  <p className="mb-4 text-[12.5px] leading-[1.65] text-text-muted max-w-[62ch]">
-                    Every priceable line of the pack, folded into the six
-                    chapters of a build. The full line-by-line scope sits
-                    behind your spot.
+                {latestAddendum ? (
+                  <p className="mt-3 text-[12px] text-[#8a6414]">
+                    Addendum {String(latestAddendum.number).padStart(2, "0")}{" "}
+                    issued{" "}
+                    {new Date(latestAddendum.issuedAtISO).toLocaleDateString(
+                      "en-AU",
+                      { day: "numeric", month: "long", year: "numeric" },
+                    )}
+                    . The scope below is the re-issued one.
                   </p>
-                  <ScopeOfWorks groups={scopeGroups} />
-                </Card>
-              </Reveal>
-            ) : null}
+                ) : null}
 
-            {/* The tender pack — the documents, read. Counts for
-                everyone; the quoted highlights sit behind the unlock. */}
-            {pack ? (
-              <Reveal immediate delay={0.19}>
-                <Card
-                  title="The tender pack"
-                  icon={<BookOpenCheck className="size-4" />}
-                >
-                  <TenderPackPanel
-                    pack={pack}
-                    latestAddendum={latestAddendum ?? null}
-                    unlocked={unlocked}
-                    budgetBand={preview.budgetBand ?? null}
-                  />
-                </Card>
-              </Reveal>
-            ) : null}
+                <div className="mt-7">
+                  {unlocked && schedule ? (
+                    <ScheduleBrowser
+                      schedule={schedule}
+                      advisories={advisories}
+                      pdfHref={`/builder/projects/${preview.slug}/scope-of-works`}
+                    />
+                  ) : (
+                    <ScopeTeaser pack={pack} />
+                  )}
+                </div>
+              </Card>
+            </Reveal>
+          ) : null}
 
-            {/* The full reading room — the analysis a spot buys. */}
-            {unlocked && schedule ? (
-              <Reveal immediate delay={0.21}>
-                <Card
-                  id="scope"
-                  title="Scope of works"
-                  icon={<BookOpenCheck className="size-4" />}
-                >
-                  <ScheduleBrowser
-                    schedule={schedule}
-                    overview={overview}
-                    advisories={advisories}
-                    pdfHref={`/builder/projects/${preview.slug}/scope-of-works`}
-                  />
-                </Card>
-              </Reveal>
-            ) : null}
-
-            {/* Documents — blurred + locked overlay if not unlocked */}
-            <Reveal immediate delay={0.22}>
+          {/* Documents — blurred + locked overlay if not unlocked */}
+          <Reveal immediate delay={0.22}>
             <Card
               id="documents"
               title={`Documents · ${documents.length}`}
@@ -668,108 +685,11 @@ export function ProjectDetail({
             >
               <DocumentsPanel
                 documents={documents}
-                docsByCategory={docsByCategory}
+                docsByCategory={orderedDocs}
                 unlocked={unlocked}
               />
             </Card>
-            </Reveal>
-          </div>
-
-          {/* Right — sticky summary + private fields (staggered with the
-              left column so the page paints in synchronised waves) */}
-          <div className="space-y-5">
-            <Reveal immediate delay={0.06}>
-            <Card title="Address" icon={<MapPin className="size-4" />}>
-              <div className="relative">
-                <div
-                  className={cn(
-                    "transition-[filter] duration-[300ms]",
-                    unlocked ? "" : "blur-md select-none pointer-events-none",
-                  )}
-                >
-                  <p className="text-[14px] leading-[1.6] text-text">
-                    {unlocked ? full?.addressLine1 ?? "—" : "14 Example Street"}
-                    <br />
-                    <span className="text-text-muted">
-                      {preview.suburb} {preview.state} {preview.postcode}
-                    </span>
-                  </p>
-                </div>
-                {!unlocked ? (
-                  <BlurOverlay
-                    icon={<Lock className="size-3.5" />}
-                    title="Exact street address"
-                    sub={`Suburb · ${preview.suburb ?? "—"}`}
-                    compact
-                  />
-                ) : null}
-              </div>
-            </Card>
-            </Reveal>
-
-            {clientBrief.length > 0 ? (
-              <Reveal immediate delay={0.1}>
-                <Card
-                  title="The client"
-                  icon={<Sparkles className="size-4" />}
-                >
-                  <p className="text-[11.5px] leading-[1.6] text-text-muted">
-                    Answered by the client before the round opened. The
-                    pre-tender meeting, already held: whether the money
-                    is real, where approval stands, and what wins the
-                    job.
-                  </p>
-                  <dl className="mt-3 space-y-2">
-                    {clientBrief.map((row) => (
-                      <div
-                        key={row.k}
-                        className="flex items-baseline justify-between gap-3"
-                      >
-                        <dt className="text-[10.5px] tracking-[0.1em] uppercase text-text-dim font-ui font-semibold shrink-0">
-                          {row.k}
-                        </dt>
-                        <dd className="text-[12.5px] font-ui font-medium text-text text-right">
-                          {row.v}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </Card>
-              </Reveal>
-            ) : null}
-
-            <Reveal immediate delay={0.12}>
-            <Card id="owner" title="Project owner" icon={<Sparkles className="size-4" />}>
-              <div className="relative">
-                <div
-                  className={cn(
-                    "transition-[filter] duration-[300ms]",
-                    unlocked ? "" : "blur-md select-none pointer-events-none",
-                  )}
-                >
-                  {unlocked && ownerContact ? (
-                    <OwnerContactBlock contact={ownerContact} />
-                  ) : (
-                    <PlaceholderContactBlock />
-                  )}
-                </div>
-                {!unlocked ? (
-                  <BlurOverlay
-                    icon={<Lock className="size-3.5" />}
-                    title="Owner contact + thread"
-                    compact
-                  />
-                ) : null}
-              </div>
-            </Card>
-            </Reveal>
-
-            {!unlocked ? (
-              <Reveal immediate delay={0.24}>
-                <UnlockBenefitsCard priceAud={priceAud} documents={documents.length} />
-              </Reveal>
-            ) : null}
-          </div>
+          </Reveal>
         </div>
 
         {/* Inline project messaging — only when the builder has
@@ -1174,52 +1094,6 @@ function ViewerModeBar({
   );
 }
 
-/**
- * UnlockBenefitsCard — a clear, scannable panel (right column, under
- * Lifecycle) spelling out exactly what unlocking buys. Only shown while
- * locked; once unlocked it's redundant.
- */
-function UnlockBenefitsCard({
-  priceAud,
-  documents,
-}: {
-  priceAud: number;
-  documents: number;
-}) {
-  const items = [
-    "Exact street address",
-    ...(documents > 0
-      ? [`${documents} project document${documents === 1 ? "" : "s"} to download`]
-      : []),
-    "Owner's name and contact details",
-    "Direct messaging with the owner",
-    "Submit a tender on the project",
-  ];
-  return (
-    <Card title="What you'll unlock" icon={<Unlock className="size-4" />}>
-      <ul className="space-y-2.5">
-        {items.map((t) => (
-          <li key={t} className="flex items-start gap-2.5 text-[13px] text-text-muted">
-            <span className="mt-[1px] size-4 rounded-full bg-accent-muted/60 border border-border-accent flex items-center justify-center shrink-0">
-              <Check className="size-2.5 text-accent-light" />
-            </span>
-            <span className="leading-[1.5]">{t}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-dim">
-          <ShieldCheck className="size-3 text-accent-light/80" />
-          Secure one-off payment
-        </span>
-        <span className="font-display text-accent-light text-[18px] leading-none">
-          ${priceAud}
-        </span>
-      </div>
-    </Card>
-  );
-}
-
 // ── pieces ───────────────────────────────────────────────────────────────
 
 /**
@@ -1242,12 +1116,17 @@ function MessagingSection({
   const unread = totalUnread(initialConversations);
 
   useEffect(() => {
-    if (window.location.hash === "#messaging") setOpen(true);
     const onHash = () => {
       if (window.location.hash === "#messaging") setOpen(true);
     };
+    // Deferred so the arrival-by-anchor open happens outside the
+    // effect's own render pass.
+    const t = setTimeout(onHash, 0);
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("hashchange", onHash);
+    };
   }, []);
 
   return (
@@ -1510,133 +1389,85 @@ function PlaceholderContactBlock() {
 }
 
 /**
- * The pack, browsable: what a builder weighs before unlocking. Every
- * line of it comes from the client's documents read under the Scope
- * Standard and checked by a person — the counts say how much of the
- * project is genuinely documented, and the highlights (post-unlock)
- * quote what the documents actually say.
+ * The scope in three figures: no boxes, no table — centred numbers
+ * over quiet labels, ruled off above and below.
  */
-function TenderPackPanel({
-  pack,
-  latestAddendum,
-  unlocked,
-  budgetBand,
-}: {
-  pack: PackSummary;
-  latestAddendum: { number: number; issuedAtISO: string } | null;
-  unlocked: boolean;
-  budgetBand: string | null;
-}) {
-  // Client allowances against the stated budget: plain arithmetic a
-  // builder would do on paper, done for them.
-  const mid = budgetBand ? (BUDGET_BAND_MIDPOINT[budgetBand] ?? null) : null;
-  const allowancePct =
-    mid && pack.ownerAllowanceTotal > 0
-      ? Math.round((pack.ownerAllowanceTotal / mid) * 1000) / 10
-      : null;
+function ScopeStatsBand({ pack }: { pack: PackSummary }) {
+  const stats = [
+    { k: "Scope items", v: String(pack.tenderable) },
+    { k: "Trades", v: String(pack.divisions.length) },
+    {
+      k: "Provisional sums",
+      v:
+        pack.ownerAllowances > 0
+          ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
+          : "None",
+    },
+  ];
+  return (
+    <div className="mt-5 border-y border-border-subtle py-5 flex items-stretch justify-center divide-x divide-border-subtle">
+      {stats.map((s) => (
+        <div key={s.k} className="px-6 sm:px-10 text-center min-w-0">
+          <p className="font-display text-[26px] sm:text-[30px] leading-none text-text tabular-nums">
+            {s.v}
+          </p>
+          <p className="mt-1.5 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+            {s.k}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The pre-unlock read of the scope: a handful of real items exactly
+ * as the documents state them, fading into the spot that opens the
+ * rest. Specific beats abstract — four true lines sell the other two
+ * hundred better than any summary could.
+ */
+function ScopeTeaser({ pack }: { pack: PackSummary }) {
   return (
     <div>
-      <p className="text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
-        Every document on this round was read against the BuilderHQ
-        Scope Standard before it opened. Tenders answer this scope line
-        by line, so every quote lands on the same list.
-      </p>
-
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-px rounded-lg overflow-hidden border border-border-subtle bg-border-subtle">
-        {[
-          { k: "Scope lines", v: String(pack.tenderable) },
-          { k: "Divisions", v: String(pack.divisions.length) },
-          {
-            k: "Provisional sums",
-            v:
-              pack.ownerAllowances > 0
-                ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
-                : "None",
-          },
-          { k: "Outside this round", v: String(pack.ownerExcluded) },
-        ].map((s) => (
-          <div key={s.k} className="bg-surface-1 px-3.5 py-3">
-            <p className="text-[9.5px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-              {s.k}
-            </p>
-            <p className="mt-1 font-display text-[17px] leading-none text-text tabular-nums">
-              {s.v}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {pack.ownerAllowances > 0 ? (
-        <p className="mt-3 text-[12px] leading-[1.6] text-text-muted">
-          The client&rsquo;s provisional sums are set figures every
-          tender carries identically, so those lines never decide the
-          comparison.
-          {allowancePct !== null
-            ? ` They total ${formatAud(pack.ownerAllowanceTotal)}, about ${allowancePct} percent of the stated budget.`
-            : ""}
-        </p>
-      ) : null}
-
-      {latestAddendum ? (
-        <p className="mt-3 text-[12px] text-[#8a6414]">
-          Addendum {String(latestAddendum.number).padStart(2, "0")} issued{" "}
-          {new Date(latestAddendum.issuedAtISO).toLocaleDateString("en-AU", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-          . The schedule below is the re-issued one.
-        </p>
-      ) : null}
-
       {pack.highlights.length > 0 ? (
-        <div className="mt-4 relative">
-          <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-            What the documents say
-          </p>
-          <ul
-            className={cn(
-              "mt-2 space-y-2",
-              unlocked ? "" : "blur-md select-none pointer-events-none",
-            )}
-          >
-            {pack.highlights.map((h) => (
-              <li key={h.itemId} className="flex items-start gap-2.5">
-                <span className="mt-[7px] size-1.5 rounded-full bg-accent shrink-0" />
-                <p className="text-[12.5px] leading-[1.6] text-text-muted min-w-0">
-                  <span className="font-ui font-medium text-text">
-                    {h.label}
+        <div className="relative">
+          <ul className="space-y-4">
+            {pack.highlights.map((h, i) => (
+              <li
+                key={h.itemId}
+                className={cn(
+                  "min-w-0",
+                  i === pack.highlights.length - 1 &&
+                    "[mask-image:linear-gradient(to_bottom,black_30%,transparent)]",
+                )}
+              >
+                <p className="text-[13.5px] font-ui font-semibold text-text leading-[1.35]">
+                  {h.label}
+                  <span className="ml-2 text-[11px] font-normal text-text-dim">
+                    {h.divisionLabel}
                   </span>
-                  <span className="text-text-dim"> · {h.divisionLabel}</span>
-                  <br />
-                  {unlocked ? h.note : "The stated figures unlock with the documents."}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-[1.6] text-text-muted max-w-[68ch]">
+                  {h.note}
                 </p>
               </li>
             ))}
           </ul>
-          {!unlocked ? (
-            <BlurOverlay
-              icon={<Lock className="size-3.5" />}
-              title="What the documents say, line by line"
-              sub={`${pack.highlights.length} highlights from the pack`}
-              compact
-            />
-          ) : null}
         </div>
       ) : null}
 
-      {!unlocked ? (
-        <p className="mt-3 text-[12px] text-text-muted">
-          Your spot opens the reader&rsquo;s overview of the documents,
-          the list of what the pack does not settle, and the full
-          schedule line by line with citations.
+      <div className="mt-5 rounded-lg border border-border-accent/40 bg-[rgba(0,212,200,0.04)] px-5 py-5 text-center">
+        <span className="mx-auto flex size-9 items-center justify-center rounded-full border border-border-accent/50 bg-[rgba(0,212,200,0.08)] text-accent-light">
+          <Lock className="size-4" />
+        </span>
+        <p className="mt-3 font-ui font-semibold text-[15px] text-text">
+          {pack.tenderable} items in the full scope of works
         </p>
-      ) : null}
-
-      <p className="mt-4 text-[11px] text-text-dim">
-        BuilderHQ Scope Standard v{pack.standardVersion} ·{" "}
-        {pack.evidenced} lines documented · {pack.lines} lines on the record
-      </p>
+        <p className="mt-1.5 text-[12.5px] leading-[1.65] text-text-muted max-w-[46ch] mx-auto">
+          Secure a tender spot below to open every item, each with the
+          page of the documents it came from.
+        </p>
+      </div>
     </div>
   );
 }
