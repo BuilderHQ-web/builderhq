@@ -9,8 +9,10 @@
  * short guided walk of the real page: the tour scrolls to each
  * section in turn and lifts it into a spotlight while everything else
  * sits dimmed and blurred behind it, with one plain line saying what
- * the section is. Next moves on; Escape or Skip leaves at any point;
- * it never returns for that project.
+ * the section is. Next moves on; it never returns for that project.
+ * The very first walkthrough a builder ever takes has no skip — it is
+ * six quick steps and they should see them once. From their second
+ * unlocked project on, Skip and Escape leave at any point.
  *
  * The spotlight works by elevation, not by cutting holes: a fixed
  * blurred scrim covers the page, and the current section is raised
@@ -27,6 +29,9 @@ import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 const KEY_PREFIX = "bhq.unlock-tour.v1.";
+/** Set after the builder's first ever walkthrough, on any project —
+ *  from then on the tour can be skipped. */
+const ANY_SEEN_KEY = "bhq.unlock-tour.seen-any.v1";
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /* ── the walk ───────────────────────────────────────────────────────── */
@@ -49,7 +54,7 @@ const STOPS: TourStop[] = [
   {
     target: "scope",
     title: "Scope of works",
-    line: "Every line of the build, read from the documents. Search it, or download it as a PDF.",
+    line: "Prepared by BuilderHQ: our AI read every page of the documents and wrote the build into these lines. Search them, or download the lot as a PDF.",
   },
   {
     target: "documents",
@@ -171,21 +176,29 @@ export function UnlockTour({
   const [phase, setPhase] = useState<"hidden" | "opening" | "tour">("hidden");
   const [stops, setStops] = useState<TourStop[]>([]);
   const [step, setStep] = useState(0);
+  // The builder's very first walkthrough, on any project, has no
+  // skip: six quick steps, seen once. Later projects can skip.
+  const [canSkip, setCanSkip] = useState(false);
   const spotRef = useRef<SpotState | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let seen = true;
+    let skippable = false;
     try {
       seen = window.localStorage.getItem(KEY_PREFIX + projectId) === "1";
+      skippable = window.localStorage.getItem(ANY_SEEN_KEY) === "1";
     } catch {
       // Storage unavailable — skip the tour rather than loop it.
     }
     if (seen) return;
     // A short beat lets the page paint first, so the ceremony fades
     // in over the real thing rather than replacing a blank frame.
-    const t = setTimeout(() => setPhase("opening"), 250);
+    const t = setTimeout(() => {
+      setCanSkip(skippable);
+      setPhase("opening");
+    }, 250);
     return () => clearTimeout(t);
   }, [projectId]);
 
@@ -195,6 +208,7 @@ export function UnlockTour({
     setPhase("hidden");
     try {
       window.localStorage.setItem(KEY_PREFIX + projectId, "1");
+      window.localStorage.setItem(ANY_SEEN_KEY, "1");
     } catch {
       // Worst case it shows again next visit.
     }
@@ -237,9 +251,17 @@ export function UnlockTour({
   }, [phase, step, stops, reduceMotion]);
 
   const next = useCallback(() => {
-    if (step >= stops.length - 1) finish();
-    else setStep((s) => s + 1);
-  }, [step, stops.length, finish]);
+    if (step >= stops.length - 1) {
+      // Done: the walk ends where the page begins.
+      finish();
+      window.scrollTo({
+        top: 0,
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    } else {
+      setStep((s) => s + 1);
+    }
+  }, [step, stops.length, finish, reduceMotion]);
 
   const back = useCallback(() => {
     setStep((s) => Math.max(0, s - 1));
@@ -260,7 +282,7 @@ export function UnlockTour({
       ) {
         return;
       }
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && canSkip) {
         e.preventDefault();
         finish();
         return;
@@ -278,7 +300,7 @@ export function UnlockTour({
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [phase, next, back, finish]);
+  }, [phase, next, back, finish, canSkip]);
 
   // Remember where focus was so leaving the tour puts it back.
   useEffect(() => {
@@ -301,7 +323,7 @@ export function UnlockTour({
         className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-[rgba(250,248,243,0.94)] backdrop-blur-md"
         role="dialog"
         aria-modal="true"
-        aria-label="Project unlocked"
+        aria-label="Tender spot secured"
       >
         <div className="max-w-[560px] w-full text-center">
           {/* the mark: a ring drawing itself closed, a key turned */}
@@ -348,7 +370,7 @@ export function UnlockTour({
             transition={{ duration: 0.5, delay: d(0.9), ease: EASE }}
             className="mt-7 text-[10px] tracking-[0.34em] uppercase text-accent-deep font-ui font-semibold"
           >
-            Project unlocked
+            Tender spot secured
           </motion.p>
           <motion.h2
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
@@ -379,16 +401,18 @@ export function UnlockTour({
               onClick={beginTour}
               className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_12px_32px_-12px_rgba(0,212,200,0.5)]"
             >
-              Show me around
+              Begin the walkthrough
               <ArrowRight className="size-4" />
             </button>
-            <button
-              type="button"
-              onClick={finish}
-              className="text-[12.5px] text-text-dim hover:text-text transition-colors"
-            >
-              Skip
-            </button>
+            {canSkip ? (
+              <button
+                type="button"
+                onClick={finish}
+                className="text-[12.5px] text-text-dim hover:text-text transition-colors"
+              >
+                Skip
+              </button>
+            ) : null}
           </motion.div>
         </div>
       </motion.div>
@@ -435,13 +459,15 @@ export function UnlockTour({
             <p className="text-[9.5px] tracking-[0.22em] uppercase text-accent-deep font-ui font-semibold tabular-nums">
               {step + 1} of {stops.length}
             </p>
-            <button
-              type="button"
-              onClick={finish}
-              className="text-[11px] text-text-dim hover:text-text transition-colors"
-            >
-              Skip tour
-            </button>
+            {canSkip ? (
+              <button
+                type="button"
+                onClick={finish}
+                className="text-[11px] text-text-dim hover:text-text transition-colors"
+              >
+                Skip tour
+              </button>
+            ) : null}
           </div>
           <p className="mt-1.5 font-ui font-semibold text-[15.5px] text-text">
             {stop.title}
