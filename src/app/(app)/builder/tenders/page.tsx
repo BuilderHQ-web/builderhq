@@ -4,9 +4,10 @@ import { FileText, Compass } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { listTendersForBuilder } from "@/modules/tenders";
-import { listByIds } from "@/modules/projects";
+import { listByIds, type MarketplacePreview } from "@/modules/projects";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/app/empty-state";
+import { CoverArt } from "@/components/builder/project-cover";
 
 export const metadata = { title: "My tenders" };
 
@@ -183,7 +184,7 @@ function Row({
     updatedAt: Date;
     submittedAt: Date | null;
   };
-  project: { slug: string; title: string; suburb: string | null; state: string | null } | undefined;
+  project: MarketplacePreview | undefined;
 }) {
   const meta = STATUS_META[tender.status];
   const slug = project?.slug;
@@ -196,43 +197,54 @@ function Row({
     <Link
       href={slug ? `/builder/projects/${slug}/tender` : "/builder/tenders"}
       className={cn(
-        "group relative rounded-lg border border-border-subtle bg-surface-1 card-elev",
+        "group relative flex items-stretch rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden",
         "transition-[border-color,box-shadow,transform] duration-200",
         "hover:border-border-strong hover:card-elev-lg hover:-translate-y-px",
-        "grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(90px,auto))_auto] gap-x-5 gap-y-3 px-4 sm:px-5 py-4 items-center",
       )}
     >
-      <div className="min-w-0">
-        <div className="text-[14px] font-ui font-semibold text-text truncate">
-          {project?.title ?? "Project"}
+      {/* the project's drawn cover, at ledger scale */}
+      {project ? (
+        <div className="relative hidden sm:block w-[124px] shrink-0 border-r border-border-subtle/60 overflow-hidden">
+          <CoverArt
+            facts={project}
+            sizes="124px"
+            imgClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+          />
         </div>
-        <div className="mt-0.5 text-[11.5px] text-text-dim truncate">
-          {project?.suburb
-            ? `${project.suburb}, ${project.state}`
-            : "Location pending"}
+      ) : null}
+      <div className="min-w-0 flex-1 grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(90px,auto))_auto] gap-x-5 gap-y-3 px-4 sm:px-5 py-4 items-center">
+        <div className="min-w-0">
+          <div className="text-[14px] font-ui font-semibold text-text truncate">
+            {project?.title ?? "Project"}
+          </div>
+          <div className="mt-0.5 text-[11.5px] text-text-dim truncate">
+            {project?.suburb
+              ? `${project.suburb}, ${project.state}`
+              : "Location pending"}
+          </div>
         </div>
+        <span
+          className={cn(
+            "justify-self-end lg:order-last inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase shrink-0",
+            meta.cls,
+          )}
+        >
+          {meta.label}
+        </span>
+        <RowKv label="Price">
+          {tender.totalPriceAud != null
+            ? new Intl.NumberFormat("en-AU", {
+                style: "currency",
+                currency: "AUD",
+                maximumFractionDigits: 0,
+              }).format(tender.totalPriceAud)
+            : "—"}
+        </RowKv>
+        <RowKv label="Duration">
+          {tender.durationWeeks ? `${tender.durationWeeks} weeks` : "—"}
+        </RowKv>
+        <RowKv label={dateLabel}>{dateValue}</RowKv>
       </div>
-      <span
-        className={cn(
-          "justify-self-end lg:order-last inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase shrink-0",
-          meta.cls,
-        )}
-      >
-        {meta.label}
-      </span>
-      <RowKv label="Price">
-        {tender.totalPriceAud != null
-          ? new Intl.NumberFormat("en-AU", {
-              style: "currency",
-              currency: "AUD",
-              maximumFractionDigits: 0,
-            }).format(tender.totalPriceAud)
-          : "—"}
-      </RowKv>
-      <RowKv label="Duration">
-        {tender.durationWeeks ? `${tender.durationWeeks} weeks` : "—"}
-      </RowKv>
-      <RowKv label={dateLabel}>{dateValue}</RowKv>
     </Link>
   );
 }

@@ -78,8 +78,12 @@ export default async function BrowsePage({
     ]);
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  // Browse is the market a builder can still enter. Rounds they hold
+  // live in full under Unlocked; listing them here twice is noise.
+  const openRounds = projects.filter((p) => !unlockedSet.has(p.id));
+  const heldHere = projects.length - openRounds.length;
   // The trust line: which of these rounds carry an analysed pack.
-  const packStats = await packStatsForProjects(projects.map((p) => p.id));
+  const packStats = await packStatsForProjects(openRounds.map((p) => p.id));
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
   // A builder who already holds a spot on a private round sees it in
@@ -105,7 +109,10 @@ export default async function BrowsePage({
               Open tender rounds
             </h1>
             <p className="mt-2 text-[13px] text-text-muted">
-              {projects.length} project{projects.length === 1 ? "" : "s"} live across Australia.
+              {openRounds.length} project{openRounds.length === 1 ? "" : "s"} live across Australia.
+              {heldHere > 0
+                ? ` ${heldHere} you hold ${heldHere === 1 ? "is" : "are"} under Unlocked.`
+                : ""}
               {stubs.length > 0
                 ? ` ${stubs.length} more running privately.`
                 : ""}
@@ -125,7 +132,7 @@ export default async function BrowsePage({
         <FilterBar params={params} />
 
         {/* Results */}
-        {projects.length === 0 ? (
+        {openRounds.length === 0 ? (
           <div className="mt-8">
             <EmptyState
               icon={<Filter className="size-5" />}
@@ -136,12 +143,12 @@ export default async function BrowsePage({
           </div>
         ) : (
           <div className="mt-8 flex flex-col gap-3">
-            {projects.map((p, i) => (
+            {openRounds.map((p, i) => (
               <Reveal key={p.id} immediate delay={Math.min(i * 0.04, 0.24)}>
                 <ProjectCard
                   project={p}
                   isSaved={savedSet.has(p.id)}
-                  isUnlocked={unlockedSet.has(p.id)}
+                  isUnlocked={false}
                   fbaActive={fbaActive}
                   packStats={packStats[p.id] ?? null}
                 />

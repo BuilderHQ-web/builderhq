@@ -130,10 +130,12 @@ export default async function BuilderDashboard() {
         : Promise.resolve(EMPTY_DASH(firstName)),
       safe(
         "open_rounds",
+        // Over-fetch: rounds the builder already holds are filtered
+        // out below, and three suggestions should survive that.
         listForMarketplace({
           ...(matchedCategories.length === 1 ? { type: matchedCategories[0]! } : {}),
           ...(serviceAreaMatch.length > 0 ? { serviceAreaMatch } : {}),
-          limit: 3,
+          limit: 8,
         }),
         [],
       ),
@@ -167,6 +169,11 @@ export default async function BuilderDashboard() {
     verification.abnVerified && verification.anyLicenceVerified;
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  // Suggested means still open to you: held rounds live on the desk
+  // and under Unlocked, never as a suggestion.
+  const suggested = openRounds
+    .filter((p) => !unlockedSet.has(p.id))
+    .slice(0, 3);
   const complimentaryUnlocks =
     fbaStatus.active && fbaStatus.remainingThisCycle > 0;
 
@@ -554,7 +561,7 @@ export default async function BuilderDashboard() {
               }
             />
 
-            {openRounds.length === 0 ? (
+            {suggested.length === 0 ? (
               <div className="mt-5 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center">
                 <p className="font-ui font-semibold text-[13.5px] text-text">
                   No open rounds match yet
@@ -575,12 +582,12 @@ export default async function BuilderDashboard() {
             ) : (
               <>
                 <div className="mt-5 flex flex-col gap-3">
-                  {openRounds.map((p) => (
+                  {suggested.map((p) => (
                     <ProjectCard
                       key={p.id}
                       project={p}
                       isSaved={savedSet.has(p.id)}
-                      isUnlocked={unlockedSet.has(p.id)}
+                      isUnlocked={false}
                       fbaActive={complimentaryUnlocks}
                     />
                   ))}

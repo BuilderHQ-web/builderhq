@@ -29,12 +29,9 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useTransition } from "react";
 import {
   ArrowUpRight,
-  Bath,
-  Bed,
   BookOpenCheck,
   Bookmark,
   BookmarkCheck,
@@ -45,7 +42,6 @@ import {
   Loader2,
   Lock,
   MapPin,
-  Ruler,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -54,72 +50,24 @@ import {
   saveProjectAction,
   unsaveProjectAction,
 } from "@/app/(app)/_actions/marketplace";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
+import { CoverArt } from "./project-cover";
 import type { MarketplacePreview } from "@/modules/projects";
 import { unlockPriceFor } from "@/modules/projects/pricing";
 // Constants path (NOT the module index) so we don't pull
 // `unlocks/service.ts` — which is `server-only` — into the client bundle.
 import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 
-/** Per-type band art — soft light-theme gradients with the type's
- *  accent, carrying the blueprint grid and a large faded icon. */
+/** The type's name and mark; the cover art lives in project-cover. */
 const TYPE_META: Record<
   MarketplacePreview["type"],
-  { label: string; Icon: LucideIcon; band: string }
+  { label: string; Icon: LucideIcon }
 > = {
-  single_dwelling: {
-    label: "Single dwelling",
-    Icon: Home,
-    band: "from-[rgba(0,212,200,0.22)] to-[rgba(45,99,214,0.12)]",
-  },
-  multi_dwelling: {
-    label: "Multi dwelling",
-    Icon: Building,
-    band: "from-[rgba(45,99,214,0.19)] to-[rgba(120,180,255,0.13)]",
-  },
-  renovation: {
-    label: "Renovation",
-    Icon: Wrench,
-    band: "from-[rgba(201,148,34,0.19)] to-[rgba(194,85,80,0.10)]",
-  },
-  extension: {
-    label: "Extension",
-    Icon: Layers,
-    band: "from-[rgba(10,125,115,0.19)] to-[rgba(0,212,200,0.14)]",
-  },
+  single_dwelling: { label: "Single dwelling", Icon: Home },
+  multi_dwelling: { label: "Multi dwelling", Icon: Building },
+  renovation: { label: "Renovation", Icon: Wrench },
+  extension: { label: "Extension", Icon: Layers },
 };
-
-/**
- * The drawn cover for a listing — picked from the project's own facts
- * so every card wears art that agrees with what it says. The set is
- * static and hand-curated (public/project-covers); the mapping IS the
- * assignment, so every project past and future is covered the moment
- * its facts exist, with no upload or admin step.
- */
-function coverFor(p: MarketplacePreview): string {
-  const base = "/project-covers";
-  switch (p.type) {
-    case "single_dwelling":
-      if (p.floors != null && p.floors <= 1) return `${base}/single-1.webp`;
-      if (p.floors != null && p.floors >= 3) return `${base}/single-3.webp`;
-      return `${base}/single-2.webp`;
-    case "multi_dwelling": {
-      const d = p.dwellingCount ?? 3;
-      if (d <= 2) return `${base}/multi-2.webp`;
-      if (d === 3) return `${base}/multi-3.webp`;
-      return `${base}/multi-4.webp`;
-    }
-    case "renovation":
-      return p.renovationScope === "structural" ||
-        p.renovationScope === "full_internal_and_external"
-        ? `${base}/reno-structural.webp`
-        : `${base}/reno-internal.webp`;
-    case "extension":
-      if (p.extensionType === "first_floor") return `${base}/ext-first.webp`;
-      if (p.extensionType === "ground_and_first") return `${base}/ext-both.webp`;
-      return `${base}/ext-ground.webp`;
-  }
-}
 
 const BUDGET_LABEL: Record<string, string> = {
   under_500k: "Under $500k",
@@ -187,18 +135,19 @@ export function ProjectCard({
     });
   };
 
-  // Spec chips — only the facts this project actually has.
-  const chips: Array<{ Icon: LucideIcon; value: string; label: string }> = [];
+  // The specification line — only the facts this project actually has,
+  // set as quiet type rather than boxed chips.
+  const specs: Array<{ value: string; label: string }> = [];
   if (project.bedrooms != null)
-    chips.push({ Icon: Bed, value: String(project.bedrooms), label: project.bedrooms === 1 ? "Bed" : "Beds" });
+    specs.push({ value: String(project.bedrooms), label: plural(project.bedrooms, "bed", "beds") });
   if (project.bathrooms != null)
-    chips.push({ Icon: Bath, value: String(project.bathrooms), label: project.bathrooms === 1 ? "Bath" : "Baths" });
+    specs.push({ value: String(project.bathrooms), label: plural(project.bathrooms, "bath", "baths") });
   if (project.type === "multi_dwelling" && project.dwellingCount != null)
-    chips.push({ Icon: Building, value: String(project.dwellingCount), label: "Dwellings" });
+    specs.push({ value: String(project.dwellingCount), label: plural(project.dwellingCount, "dwelling", "dwellings") });
   else if (project.type !== "multi_dwelling" && project.floors != null)
-    chips.push({ Icon: Layers, value: String(project.floors), label: project.floors === 1 ? "Storey" : "Storeys" });
+    specs.push({ value: String(project.floors), label: plural(project.floors, "storey", "storeys") });
   if (project.landSizeBand && LAND_LABEL[project.landSizeBand])
-    chips.push({ Icon: Ruler, value: LAND_LABEL[project.landSizeBand]!, label: "Land m²" });
+    specs.push({ value: LAND_LABEL[project.landSizeBand]!, label: "m² land" });
 
   return (
     <Link
@@ -214,26 +163,16 @@ export function ProjectCard({
       {/* ── the band — the drawn cover on the type's paper ────────── */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden bg-gradient-to-br",
+          "relative shrink-0 overflow-hidden",
           "border-b lg:border-b-0 lg:border-r border-border-subtle/60",
           "h-[150px] lg:h-auto lg:w-[248px] lg:min-h-[172px]",
-          meta.band,
         )}
       >
-        {/* the drawing — ink on white; multiply lets the paper tint
-            through so the same monochrome art wears each type's wash */}
-        <Image
-          src={coverFor(project)}
-          alt=""
-          fill
+        <CoverArt
+          facts={project}
           sizes="(min-width: 1024px) 248px, 100vw"
-          className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.035]"
-          style={{ objectPosition: "center 42%" }}
-        />
-        {/* legibility scrim under the title block */}
-        <span
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-[72px] bg-gradient-to-t from-white/85 via-white/40 to-transparent"
+          scrim
+          imgClassName="transition-transform duration-500 group-hover:scale-[1.035]"
         />
 
         {/* type chip */}
@@ -276,23 +215,24 @@ export function ProjectCard({
           </p>
         </div>
 
-        {chips.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {chips.map((c) => (
-              <span
-                key={c.label}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)]"
-              >
-                <c.Icon className="size-3.5 text-text-dim" strokeWidth={1.8} />
-                <span className="font-display text-[14.5px] leading-none text-text tabular-nums pt-px">
-                  {c.value}
+        {specs.length > 0 ? (
+          <p className="flex flex-wrap items-baseline gap-y-1 text-[13.5px] leading-none">
+            {specs.map((s, i) => (
+              <span key={s.label} className="inline-flex items-baseline">
+                {i > 0 ? (
+                  <span aria-hidden className="px-2.5 text-text-faint">
+                    ·
+                  </span>
+                ) : null}
+                <span className="font-ui font-semibold text-text tabular-nums">
+                  {s.value}
                 </span>
-                <span className="text-[8.5px] tracking-[0.14em] uppercase text-text-dim pt-[3px]">
-                  {c.label}
+                <span className="ml-1.5 text-[11.5px] text-text-muted">
+                  {s.label}
                 </span>
               </span>
             ))}
-          </div>
+          </p>
         ) : null}
 
         {/* the line no other marketplace can print: the pack is READ */}
@@ -300,10 +240,13 @@ export function ProjectCard({
           <p className="inline-flex items-center gap-1.5 text-[11.5px] text-[#0a7d73] font-ui">
             <BookOpenCheck className="size-3.5 shrink-0" />
             <span className="min-w-0 truncate">
-              Tender pack analysed
+              {packStats.documents} tender{" "}
+              {plural(packStats.documents, "document", "documents")} analysed
               <span className="text-text-muted">
-                {" "}· {packStats.pages} pages read · {packStats.lines} scope
-                lines on the schedule
+                {" "}· {packStats.pages}{" "}
+                {plural(packStats.pages, "page", "pages")} read ·{" "}
+                {packStats.lines} scope{" "}
+                {plural(packStats.lines, "item", "items")} identified
               </span>
             </span>
           </p>
@@ -460,21 +403,36 @@ export function PrivateRoundStubCard({
         "border-border-subtle/70 border-dashed bg-surface-1/60",
       )}
     >
-      {/* band — same rail geometry as the live docket, muted */}
+      {/* band — same rail geometry as the live docket, the type's
+          default drawing ghosted right back: present, not selling */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden bg-gradient-to-br opacity-[0.55] saturate-[0.35]",
+          "relative shrink-0 overflow-hidden",
           "border-b lg:border-b-0 lg:border-r border-border-subtle/60",
           "flex flex-row lg:flex-col items-center lg:items-start justify-between",
           "gap-3 px-4 py-3 lg:py-4 lg:w-[232px] lg:min-h-[104px]",
-          meta.band,
         )}
       >
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+        <span
+          aria-hidden
+          className="absolute inset-0 opacity-[0.45] saturate-[0.35]"
+        >
+          <CoverArt
+            facts={{
+              type: stub.type,
+              floors: null,
+              dwellingCount: null,
+              renovationScope: null,
+              extensionType: null,
+            }}
+            sizes="232px"
+          />
+        </span>
+        <span className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
           <meta.Icon className="size-3 text-text-dim" />
           {meta.label}
         </span>
-        <span className="hidden lg:inline-flex items-center gap-1.5 text-[9px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
+        <span className="relative hidden lg:inline-flex items-center gap-1.5 text-[9px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
           <Lock className="size-3" />
           Private round
         </span>

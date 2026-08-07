@@ -10,6 +10,7 @@ import {
   countMySaved,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import { packStatsForProjects } from "@/modules/scope-engine";
 import { ProjectCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
 import { EmptyState } from "@/components/app/empty-state";
@@ -38,6 +39,8 @@ export default async function UnlockedPage() {
   );
   const savedSet = new Set(savedIds);
   const fbaActive = fbaStatus.active && fbaStatus.remainingThisCycle > 0;
+  // The trust line travels with the card wherever it renders.
+  const packStats = await packStatsForProjects(projects.map((p) => p.id));
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
@@ -80,6 +83,7 @@ export default async function UnlockedPage() {
                   isSaved={savedSet.has(p.id)}
                   isUnlocked={true}
                   fbaActive={fbaActive}
+                  packStats={packStats[p.id] ?? null}
                 />
               </Reveal>
             ))}
