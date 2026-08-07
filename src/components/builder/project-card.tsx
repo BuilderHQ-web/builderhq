@@ -139,8 +139,9 @@ export function ProjectCard({
     });
   };
 
-  // The specification line — only the facts this project actually has,
-  // set as quiet type rather than boxed chips.
+  // The specification chips — only the facts this project actually
+  // has. Structured cells, no icons: the value leads, the label sits
+  // in small caps beside it.
   const specs: Array<{ value: string; label: string }> = [];
   if (project.bedrooms != null)
     specs.push({ value: String(project.bedrooms), label: plural(project.bedrooms, "bed", "beds") });
@@ -151,7 +152,7 @@ export function ProjectCard({
   else if (project.type !== "multi_dwelling" && project.floors != null)
     specs.push({ value: String(project.floors), label: plural(project.floors, "storey", "storeys") });
   if (project.landSizeBand && LAND_LABEL[project.landSizeBand])
-    specs.push({ value: LAND_LABEL[project.landSizeBand]!, label: "m² land" });
+    specs.push({ value: LAND_LABEL[project.landSizeBand]!, label: "Land m²" });
 
   return (
     <Link
@@ -228,23 +229,21 @@ export function ProjectCard({
         </div>
 
         {specs.length > 0 ? (
-          <p className="flex flex-wrap items-baseline gap-y-1 text-[13.5px] leading-none">
-            {specs.map((s, i) => (
-              <span key={s.label} className="inline-flex items-baseline">
-                {i > 0 ? (
-                  <span aria-hidden className="px-2.5 text-text-faint">
-                    ·
-                  </span>
-                ) : null}
-                <span className="font-ui font-semibold text-text tabular-nums">
+          <div className="flex flex-wrap items-center gap-2">
+            {specs.map((s) => (
+              <span
+                key={s.label}
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.02)]"
+              >
+                <span className="font-ui font-semibold text-[13px] leading-none text-text tabular-nums">
                   {s.value}
                 </span>
-                <span className="ml-1.5 text-[11.5px] text-text-muted">
+                <span className="text-[8.5px] tracking-[0.14em] uppercase text-text-dim pt-px">
                   {s.label}
                 </span>
               </span>
             ))}
-          </p>
+          </div>
         ) : null}
 
         {/* the line no other marketplace can print: the pack is READ */}
