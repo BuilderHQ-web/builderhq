@@ -29,6 +29,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import {
   ArrowUpRight,
@@ -69,24 +70,56 @@ const TYPE_META: Record<
   single_dwelling: {
     label: "Single dwelling",
     Icon: Home,
-    band: "from-[rgba(0,212,200,0.16)] to-[rgba(45,99,214,0.08)]",
+    band: "from-[rgba(0,212,200,0.22)] to-[rgba(45,99,214,0.12)]",
   },
   multi_dwelling: {
     label: "Multi dwelling",
     Icon: Building,
-    band: "from-[rgba(45,99,214,0.13)] to-[rgba(120,180,255,0.09)]",
+    band: "from-[rgba(45,99,214,0.19)] to-[rgba(120,180,255,0.13)]",
   },
   renovation: {
     label: "Renovation",
     Icon: Wrench,
-    band: "from-[rgba(201,148,34,0.14)] to-[rgba(194,85,80,0.07)]",
+    band: "from-[rgba(201,148,34,0.19)] to-[rgba(194,85,80,0.10)]",
   },
   extension: {
     label: "Extension",
     Icon: Layers,
-    band: "from-[rgba(10,125,115,0.14)] to-[rgba(0,212,200,0.10)]",
+    band: "from-[rgba(10,125,115,0.19)] to-[rgba(0,212,200,0.14)]",
   },
 };
+
+/**
+ * The drawn cover for a listing — picked from the project's own facts
+ * so every card wears art that agrees with what it says. The set is
+ * static and hand-curated (public/project-covers); the mapping IS the
+ * assignment, so every project past and future is covered the moment
+ * its facts exist, with no upload or admin step.
+ */
+function coverFor(p: MarketplacePreview): string {
+  const base = "/project-covers";
+  switch (p.type) {
+    case "single_dwelling":
+      if (p.floors != null && p.floors <= 1) return `${base}/single-1.webp`;
+      if (p.floors != null && p.floors >= 3) return `${base}/single-3.webp`;
+      return `${base}/single-2.webp`;
+    case "multi_dwelling": {
+      const d = p.dwellingCount ?? 3;
+      if (d <= 2) return `${base}/multi-2.webp`;
+      if (d === 3) return `${base}/multi-3.webp`;
+      return `${base}/multi-4.webp`;
+    }
+    case "renovation":
+      return p.renovationScope === "structural" ||
+        p.renovationScope === "full_internal_and_external"
+        ? `${base}/reno-structural.webp`
+        : `${base}/reno-internal.webp`;
+    case "extension":
+      if (p.extensionType === "first_floor") return `${base}/ext-first.webp`;
+      if (p.extensionType === "ground_and_first") return `${base}/ext-both.webp`;
+      return `${base}/ext-ground.webp`;
+  }
+}
 
 const BUDGET_LABEL: Record<string, string> = {
   under_500k: "Under $500k",
@@ -178,43 +211,39 @@ export function ProjectCard({
         "active:translate-y-0 active:duration-[90ms]",
       )}
     >
-      {/* ── the band — type + budget on the blueprint art ─────────── */}
+      {/* ── the band — the drawn cover on the type's paper ────────── */}
       <div
         className={cn(
           "relative shrink-0 overflow-hidden bg-gradient-to-br",
           "border-b lg:border-b-0 lg:border-r border-border-subtle/60",
-          "flex flex-row lg:flex-col items-center lg:items-start justify-between",
-          // pr clears the floating save button while the band is the
-          // top strip (below lg); on lg the button sits over the rail.
-          "gap-3 pl-4 pr-12 lg:pr-4 py-3 lg:py-4 lg:w-[232px] lg:min-h-[136px]",
+          "h-[150px] lg:h-auto lg:w-[248px] lg:min-h-[172px]",
           meta.band,
         )}
       >
-        {/* blueprint grid — the drafting-sheet texture */}
+        {/* the drawing — ink on white; multiply lets the paper tint
+            through so the same monochrome art wears each type's wash */}
+        <Image
+          src={coverFor(project)}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 248px, 100vw"
+          className="object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.035]"
+          style={{ objectPosition: "center 42%" }}
+        />
+        {/* legibility scrim under the title block */}
         <span
           aria-hidden
-          className="absolute inset-0 opacity-[0.5]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px)",
-          }}
+          className="absolute inset-x-0 bottom-0 h-[72px] bg-gradient-to-t from-white/85 via-white/40 to-transparent"
         />
-        {/* the type, oversized and fading off the sheet */}
-        <meta.Icon
-          aria-hidden
-          strokeWidth={0.9}
-          className="absolute -bottom-5 -right-4 lg:-bottom-6 lg:-right-5 size-[92px] lg:size-[110px] text-text opacity-[0.06] rotate-[-6deg] transition-transform duration-300 group-hover:rotate-[-2deg] group-hover:scale-[1.03]"
-        />
+
         {/* type chip */}
-        <span className="relative inline-flex items-center gap-1.5 min-w-0">
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/70 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
-            <meta.Icon className="size-3 text-accent-light" />
-            {meta.label}
-          </span>
+        <span className="absolute top-3 left-3.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/75 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+          <meta.Icon className="size-3 text-accent-light" />
+          {meta.label}
         </span>
 
         {/* the figure owners lead with */}
-        <div className="relative text-right lg:text-left shrink-0">
+        <div className="absolute left-3.5 bottom-3">
           <p className="text-[8.5px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
             Project budget
           </p>
