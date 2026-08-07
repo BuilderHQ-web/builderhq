@@ -72,7 +72,7 @@ import { cn } from "@/lib/utils";
 import { BUDGET_BAND_MIDPOINT } from "@/modules/scope";
 import { toast } from "@/components/ui/toast";
 import { Reveal } from "@/components/app/reveal";
-import { UnlockWelcome } from "./unlock-welcome";
+import { UnlockTour } from "./unlock-tour";
 
 // ── lookup labels ────────────────────────────────────────────────────────
 
@@ -382,10 +382,10 @@ export function ProjectDetail({
 
   return (
     <div className="pb-32">
-      {/* The once-only orientation, the first time a spot-holder
-          opens the project. */}
+      {/* The once-only guided walk of this page, the first time a
+          spot-holder opens the project. */}
       {unlocked ? (
-        <UnlockWelcome projectId={preview.id} hasScope={schedule !== null} />
+        <UnlockTour projectId={preview.id} projectTitle={preview.title} />
       ) : null}
 
       {/* Header — on the canvas, ruled off rather than boxed in white */}
@@ -510,7 +510,7 @@ export function ProjectDetail({
           {/* Left — public details (staggered entrance) */}
           <div className="space-y-10">
             <Reveal immediate delay={0.04}>
-            <Card title="Project fact sheet" icon={meta.icon}>
+            <Card id="facts" title="Project fact sheet" icon={meta.icon}>
               <FactSheet
                 rows={[
                   { k: "Type", v: meta.label },
@@ -874,7 +874,10 @@ function TenderCtaBar({
       : "View tender";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <div
+      id="tender-cta"
+      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-accent/40 bg-[rgba(0,212,200,0.04)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+    >
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex items-start gap-3">
           <span className="size-9 rounded-md bg-accent-muted/40 border border-border-accent flex items-center justify-center text-accent-light shrink-0">
