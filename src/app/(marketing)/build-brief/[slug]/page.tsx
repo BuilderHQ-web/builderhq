@@ -371,6 +371,13 @@ export default async function BriefIssuePage({
 
   const pc = issue.partnerCorner;
   const partner = pc ? getPartner(pc.partnerSlug) : undefined;
+  // The practice's mark: an explicit one for the edition, else the
+  // partner's own, else the firm they practise under. An individual
+  // broker's brand is their institution's, and that artwork is not
+  // always prepared to float on a white card.
+  const practiceMark = pc?.logo ?? partner?.logo ?? partner?.institution?.logo;
+  const practiceName =
+    pc?.logo || partner?.logo ? partner?.name : partner?.institution?.name;
   const issues = briefIssues();
   const idx = issues.findIndex((i) => i.slug === issue.slug);
   const newer = idx > 0 ? issues[idx - 1] : undefined;
@@ -993,12 +1000,12 @@ export default async function BriefIssuePage({
 
               <div
                 className={`mt-8 grid grid-cols-1 gap-8 lg:gap-12 items-start ${
-                  pc.portrait || (pc.showLogo && partner?.logo)
+                  pc.portrait || (pc.showLogo && practiceMark)
                     ? "lg:grid-cols-[220px_minmax(0,1fr)]"
                     : ""
                 }`}
               >
-                {pc.portrait || (pc.showLogo && partner?.logo) ? (
+                {pc.portrait || (pc.showLogo && practiceMark) ? (
                   <figure className="max-w-[220px]">
                     {pc.portrait ? (
                     <div className="overflow-hidden rounded-xl ring-1 ring-[#101820]/[0.08]">
@@ -1032,7 +1039,7 @@ export default async function BriefIssuePage({
                         the same weight as the person who founded it.
                         Either may stand alone; neither depends on the
                         other being supplied. */}
-                    {pc.showLogo && partner?.logo ? (
+                    {pc.showLogo && practiceMark ? (
                       <div
                         className={
                           pc.portrait
@@ -1041,15 +1048,17 @@ export default async function BriefIssuePage({
                         }
                       >
                         <Image
-                          src={partner.logo}
-                          alt={`${partner.name} logo`}
+                          src={practiceMark}
+                          alt={`${practiceName} logo`}
                           width={320}
                           height={120}
                           className="h-16 w-auto object-contain object-left"
                         />
-                        <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
-                          {partner.roleLabel} · {partner.suburb}, {partner.state}
-                        </p>
+                        {partner ? (
+                          <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
+                            {partner.roleLabel} · {partner.suburb}, {partner.state}
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
                   </figure>

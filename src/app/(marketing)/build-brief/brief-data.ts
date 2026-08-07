@@ -202,6 +202,14 @@ export interface BriefIssue {
      * introduced alongside the business they built.
      */
     showLogo?: boolean;
+    /**
+     * The mark to use, when the register record does not carry one the
+     * Brief can render. An individual broker's brand is their firm's,
+     * which lives on `institution`, and that artwork is not always
+     * prepared to float on a white card. Falls back to the partner
+     * logo, then the institution logo.
+     */
+    logo?: string;
     /** Caption under the portrait when person and practice share the
      *  frame, e.g. "Fletcher Thompson, Director". */
     portraitCaption?: string;
@@ -2050,6 +2058,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       principalRole: "Senior Finance Broker",
       portrait: "/build-brief/issue-005/jason-pogorelec.jpg",
       portraitCaption: "Jason Pogorelec, Senior Finance Broker",
+      showLogo: true,
+      logo: "/build-brief/issue-005/inovayt.png",
       deck: "Strategy that looks past a single settlement.",
       stats: [
         { value: "5.0", label: "Google rating, Inovayt", star: true },
