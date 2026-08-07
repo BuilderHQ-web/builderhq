@@ -10,7 +10,10 @@ import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
-import { getActiveTenderForBuilder } from "@/modules/tenders";
+import {
+  getActiveTenderForBuilder,
+  getInviterForProject,
+} from "@/modules/tenders";
 import { packSummary } from "@/modules/tenders/schedule";
 import {
   getProjectSchedule,
@@ -91,6 +94,10 @@ export default async function BuilderProjectPage({
       : null;
   const fbaStatus = await getStatus(userId);
   const priceAud = unlockPriceFor(preview.type);
+  // Provenance: who put this builder's name on the round, if anyone.
+  const invitedBy = unlocked
+    ? await getInviterForProject(userId, preview.id)
+    : null;
   // Existing builder tender for this project (if any) — drives the
   // "Submit tender" / "Edit draft" / "View tender" CTA.
   const myTender = unlocked
@@ -148,6 +155,7 @@ export default async function BuilderProjectPage({
       clientBrief={roundContext.brief}
       advisories={unlocked ? roundContext.advisories : []}
       schedule={unlocked ? schedule : null}
+      invitedBy={invitedBy}
     />
   );
 }

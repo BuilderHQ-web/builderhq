@@ -1455,6 +1455,125 @@ export async function listInvitesForBuilder(
 }
 
 /**
+ * The invitations this builder has accepted, with the project they
+ * opened. One row per project (a re-issued invitation collapses onto
+ * the latest acceptance). Keyed on the joined invite row rather than
+ * the unlock's source, so a spot granted by ops against a standing
+ * invitation still reads as invited.
+ */
+export async function listAcceptedInvitesForBuilder(
+  builderUserId: string,
+): Promise<
+  Array<{
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+    acceptedAt: Date;
+  }>
+> {
+  const inviterUsers = users;
+  const rows = await db
+    .select({
+      projectId: tenderBuilderInvites.projectId,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+      respondedAt: tenderBuilderInvites.respondedAt,
+      unlockedAt: unlocks.unlockedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    // The invitation only reads as accepted while the spot is held.
+    .innerJoin(
+      unlocks,
+      and(
+        eq(unlocks.projectId, tenderBuilderInvites.projectId),
+        eq(unlocks.builderId, builderUserId),
+      ),
+    )
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "joined"),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.respondedAt));
+  const seen = new Set<string>();
+  const out: Array<{
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+    acceptedAt: Date;
+  }> = [];
+  for (const r of rows) {
+    if (seen.has(r.projectId)) continue;
+    seen.add(r.projectId);
+    out.push({
+      projectId: r.projectId,
+      projectSlug: r.projectSlug,
+      projectTitle: r.projectTitle,
+      projectSuburb: r.projectSuburb,
+      projectState: r.projectState,
+      inviterName: r.practiceName ?? r.inviterName ?? "A project runner",
+      invitedAt: r.invitedAt,
+      acceptedAt: r.respondedAt ?? r.unlockedAt,
+    });
+  }
+  return out;
+}
+
+/**
+ * Who invited this builder onto this project, if anyone — the detail
+ * page's one-line provenance. Null for spots taken from the market.
+ */
+export async function getInviterForProject(
+  builderUserId: string,
+  projectId: string,
+): Promise<string | null> {
+  const inviterUsers = users;
+  const [row] = await db
+    .select({
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.projectId, projectId),
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "joined"),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.respondedAt))
+    .limit(1);
+  if (!row) return null;
+  return row.practiceName ?? row.inviterName ?? "A project runner";
+}
+
+/**
  * Nav-level invitation tallies for a builder. `total` counts every
  * invitation ever addressed to this account (any status, matched by
  * userId or email) — the Invitations tab exists once a builder has

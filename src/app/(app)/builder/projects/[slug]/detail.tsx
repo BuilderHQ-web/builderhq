@@ -194,6 +194,7 @@ export function ProjectDetail({
   clientBrief = [],
   advisories = [],
   schedule = null,
+  invitedBy = null,
 }: {
   preview: MarketplacePreview;
   full: Project | null;
@@ -213,6 +214,9 @@ export function ProjectDetail({
   /** Post-unlock only — the server withholds these until then. */
   advisories?: PackAdvisory[];
   schedule?: TenderSchedule | null;
+  /** Who put this builder's name on the round, when the spot came by
+   *  invitation. Null for spots taken from the market. */
+  invitedBy?: string | null;
   myTenderStatus:
     | "draft"
     | "submitted"
@@ -422,6 +426,15 @@ export function ProjectDetail({
                     Preview
                   </span>
                 )}
+                {invitedBy ? (
+                  <>
+                    <span className="text-text-dim/60">·</span>
+                    <span className="inline-flex items-center gap-1.5 text-accent-light">
+                      <Mail className="size-3" />
+                      Invited by {invitedBy}
+                    </span>
+                  </>
+                ) : null}
                 {preview.tenderMode === "private" ? (
                   <>
                     <span className="text-text-dim/60">·</span>

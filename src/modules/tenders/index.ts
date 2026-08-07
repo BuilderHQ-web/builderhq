@@ -79,6 +79,8 @@ export {
   listBuilderInvitesForRunner,
   listInvitedBuildersForRunner,
   listInvitesForBuilder,
+  listAcceptedInvitesForBuilder,
+  getInviterForProject,
   countInvitesForBuilderNav,
   listDraftTendersForBuilder,
   revokeBuilderInvite,

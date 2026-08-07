@@ -41,6 +41,7 @@ import {
   Layers,
   Loader2,
   Lock,
+  Mail,
   MapPin,
   Wrench,
   type LucideIcon,
@@ -101,6 +102,7 @@ export function ProjectCard({
   isUnlocked,
   fbaActive = false,
   packStats = null,
+  invited = false,
 }: {
   project: MarketplacePreview;
   isSaved: boolean;
@@ -108,6 +110,8 @@ export function ProjectCard({
   fbaActive?: boolean;
   /** The analysed pack's card-weight stats; null on legacy rounds. */
   packStats?: CardPackStats | null;
+  /** True when this spot came by invitation — wears the Invited mark. */
+  invited?: boolean;
 }) {
   const meta = TYPE_META[project.type];
   const [saved, setSaved] = useState(isSaved);
@@ -175,10 +179,18 @@ export function ProjectCard({
           imgClassName="transition-transform duration-500 group-hover:scale-[1.035]"
         />
 
-        {/* type chip */}
-        <span className="absolute top-3 left-3.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/75 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
-          <meta.Icon className="size-3 text-accent-light" />
-          {meta.label}
+        {/* type chip, and the invited mark when the spot came by name */}
+        <span className="absolute top-3 left-3.5 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border-subtle bg-white/75 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+            <meta.Icon className="size-3 text-accent-light" />
+            {meta.label}
+          </span>
+          {invited ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent/60 bg-white/75 backdrop-blur-[2px] text-[9.5px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold whitespace-nowrap">
+              <Mail className="size-3" />
+              Invited
+            </span>
+          ) : null}
         </span>
 
         {/* the figure owners lead with */}
