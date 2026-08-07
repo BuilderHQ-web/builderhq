@@ -28,10 +28,10 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
-const KEY_PREFIX = "bhq.unlock-tour.v1.";
+const KEY_PREFIX = "bhq.unlock-tour.v2.";
 /** Set after the builder's first ever walkthrough, on any project —
  *  from then on the tour can be skipped. */
-const ANY_SEEN_KEY = "bhq.unlock-tour.seen-any.v1";
+const ANY_SEEN_KEY = "bhq.unlock-tour.seen-any.v2";
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /* ── the walk ───────────────────────────────────────────────────────── */
