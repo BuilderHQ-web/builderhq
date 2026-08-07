@@ -2043,25 +2043,24 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       pullQuote: "Builder C looks cheapest and is not.",
     },
     partnerCorner: {
-      partnerSlug: "de-lune-construction",
+      partnerSlug: "jason-pogorelec",
       headline:
-        "Meet Fletcher Thompson of de Lune Construction, where the drawing is protected all the way to handover.",
-      principal: "Fletcher Thompson",
-      principalRole: "Founder and Director",
-      portrait: "/build-brief/issue-005/fletcher-thompson.jpg",
-      showLogo: true,
-      portraitCaption: "Fletcher Thompson, Founder and Director",
-      deck: "Construction as the continuation of architecture.",
+        "Meet Jason Pogorelec of Inovayt, a broker who plans the finance past the settlement.",
+      principal: "Jason Pogorelec",
+      principalRole: "Senior Finance Broker",
+      portrait: "/build-brief/issue-005/jason-pogorelec.jpg",
+      portraitCaption: "Jason Pogorelec, Senior Finance Broker",
+      deck: "Strategy that looks past a single settlement.",
       stats: [
-        { value: "5.0", label: "Google rating", star: true },
-        { value: "15 yrs", label: "Complex architectural builds" },
-        { value: "Dual", label: "Residential and commercial registration" },
+        { value: "5.0", label: "Google rating, Inovayt", star: true },
+        { value: "15+ yrs", label: "In finance broking" },
+        { value: "9", label: "Industry honours since 2011" },
       ],
-      why: "This edition is about projects that fail after the contract, so it is worth introducing a builder whose method is built around the opposite. Fletcher Thompson holds a degree in architecture and registration as both a residential and commercial builder, and de Lune works on the principle that construction is the continuation of architecture. The detail is resolved with the architect rather than left to be discovered on site.",
+      why: "This edition is about projects lost between the signed contract and the slab, and finance decides most of them. Jason Pogorelec has spent more than fifteen years in broking, all of it with one firm, and works the way that problem needs: analytical, organised, and built around a client's next decade rather than a single approval. He structures lending across home, investment, commercial and self-managed super, so that a construction loan taken today does not narrow the options tomorrow.",
       practice:
-        "A Hawthorn building company working across architecturally designed residential and commercial projects in Melbourne, with architects, consultants and clients, from early planning through to completion. The portfolio spans bespoke homes alongside detailed commercial and hospitality work.",
+        "A senior finance broker with Inovayt in West Melbourne, working across construction loans, investment lending and self-managed super fund finance. Nine industry honours since 2011, including AFG's Top 20 Champion Broker list for Victoria in 2019 and 2020, and a finalist placing for Best Residential Broker at the 2022 Better Business Awards.",
       welcome:
-        "A builder who reads drawings the way an architect wrote them is exactly the practice this platform exists to put in front of the right projects.",
+        "In a week where finance is what decides whether a project starts, a broker who plans past the approval is exactly who this platform exists to put in front of owners early.",
     },
     overToYou: {
       question: "What would you most like The Build Brief to help you understand?",
