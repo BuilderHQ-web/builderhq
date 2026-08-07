@@ -1372,7 +1372,7 @@ const GRID: GridGroup[] = [
         label: "Trades in the price",
         info: {
           title: "Trades in the price",
-          text: "How many of the scope lines this project needs are included in the tender price, out of all the lines that apply.",
+          text: "How many of the scope items this project needs are included in the tender price, out of all the items that apply.",
         },
         value: (e) => `${e.scope.included} of ${e.scope.applicable}`,
         best: highestBy((e) =>
@@ -1380,9 +1380,9 @@ const GRID: GridGroup[] = [
         ),
       },
       {
-        label: "Excluded scope lines",
+        label: "Excluded scope items",
         info: {
-          title: "Excluded scope lines",
+          title: "Excluded scope items",
           text: "Work this tender does not price at all. You would arrange and pay for it separately, so add it mentally to the headline number.",
         },
         value: (e) => String(e.scope.excluded),
@@ -1730,7 +1730,7 @@ function Disagreements({
           Where they disagree
         </h2>
         <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
-          {round.scopeDisagreements.length} scope line
+          {round.scopeDisagreements.length} scope item
           {round.scopeDisagreements.length === 1 ? " is" : "s are"} treated
           differently across these tenders. Until each builder prices the
           same scope, their totals are not the same number.
@@ -1741,7 +1741,7 @@ function Disagreements({
           <thead>
             <tr className="border-b border-border-subtle/40">
               <th className="px-5 py-2.5 text-left text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui w-[220px]">
-                Scope line
+                Scope item
               </th>
               {evaluations.map((e) => (
                 <th

@@ -20,6 +20,7 @@ import { getArchitectDashboardData } from "@/modules/dashboards";
 import { listForUser } from "@/modules/messaging";
 import { PARTICIPANT_ROLE_LABEL, type Project } from "@/modules/projects";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
+import { CoverArt } from "@/components/builder/project-cover";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
 
@@ -676,8 +677,16 @@ function BookRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-4 sm:px-5 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+        className="flex items-stretch rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
+        <span className="relative hidden sm:block w-[124px] shrink-0 border-r border-border-subtle/60 overflow-hidden">
+          <CoverArt
+            facts={p}
+            sizes="124px"
+            imgClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        </span>
+        <span className="min-w-0 flex-1 flex items-center gap-4 px-4 sm:px-5 py-3.5">
         <span className="min-w-0 flex-1">
           <span className="block truncate font-ui font-medium text-[13.5px] text-text">
             {p.title}
@@ -719,6 +728,7 @@ function BookRow({
           {PHASE_LABEL[phase]}
         </span>
         <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+        </span>
       </Link>
     </li>
   );

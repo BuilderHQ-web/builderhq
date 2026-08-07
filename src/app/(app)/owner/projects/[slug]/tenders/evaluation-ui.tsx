@@ -1134,7 +1134,7 @@ function ScopeSection({ ev }: { ev: TenderEvaluation }) {
     <DossierSection
       icon={Layers}
       title="What the price carries"
-      lede={`${s.included} of ${s.applicable} applicable scope lines are included in the price${s.allowance > 0 ? `, ${s.allowance} carried as allowances` : ""}${s.excluded > 0 ? `, ${s.excluded} excluded` : ""}.`}
+      lede={`${s.included} of ${s.applicable} applicable scope items are included in the price${s.allowance > 0 ? `, ${s.allowance} carried as allowances` : ""}${s.excluded > 0 ? `, ${s.excluded} excluded` : ""}.`}
     >
       <div className="rounded-sm border border-border-subtle bg-surface-1 p-4">
         <div className="flex items-center justify-between gap-4">
@@ -1197,7 +1197,7 @@ function ScopeSection({ ev }: { ev: TenderEvaluation }) {
           ) : null}
         </div>
         <ChipRow label="Carried as allowances" items={s.allowanceTrades} tone={TONE.warn} />
-        <ChipRow label="Excluded scope lines" items={s.excludedTrades} tone={TONE.risk} />
+        <ChipRow label="Excluded scope items" items={s.excludedTrades} tone={TONE.risk} />
         <ChipRow label="Written exclusions" items={s.extraExclusions} tone={TONE.ink} />
         {s.notApplicableRows.length > 0 ? (
           <div className="mt-3">

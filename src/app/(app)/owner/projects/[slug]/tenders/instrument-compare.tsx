@@ -439,7 +439,7 @@ function CoverageMatrix({
                   <span className="font-ui font-semibold text-text">
                     {differCount} of {rows.length}
                   </span>{" "}
-                  scope lines. That is where the price difference lives.
+                  scope items. That is where the price difference lives.
                 </>
               ) : (
                 "Every builder covers the same scope. The comparison is price and conditions."

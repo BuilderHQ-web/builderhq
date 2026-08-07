@@ -1,12 +1,13 @@
 /**
- * Owner dashboard — deliberately quiet.
+ * Owner dashboard — deliberately quiet, one column.
  *
  * The greeting hero sits centred with one contextual sentence, the
- * CTAs, and three honest figures. Below it, three plain sections:
- * "Your desk" (only tenders that have come in), "Your projects"
- * (every project and where its round stands), and the shared-seat
- * list when one exists. The rail holds messages, activity and the
- * tender tallies. safe() wraps every query so a flaky aggregate
+ * CTAs, and three honest figures. Below it, full-width sections in
+ * reading order: "Your desk" (only tenders that have come in), "Your
+ * projects" (every project wearing its drawn cover), the shared-seat
+ * list when one exists, and the tender ledger. No rail: messages
+ * live behind the bell and the Messages tab, the same convention as
+ * the builder's desk. safe() wraps every query so a flaky aggregate
  * never blanks the desk.
  */
 
@@ -17,8 +18,6 @@ import {
   ArrowUpRight,
   Eye,
   FileText,
-  Landmark,
-  Mail,
   Plus,
   ShieldCheck,
 } from "lucide-react";
@@ -29,8 +28,8 @@ import {
   getOwnerDashboardData,
   type OwnerDashboardData,
 } from "@/modules/dashboards";
-import { countUnreadForUser, listForUser } from "@/modules/messaging";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
+import { CoverArt } from "@/components/builder/project-cover";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
@@ -83,20 +82,6 @@ const compactAud = (n: number) =>
       ? `$${Math.round(n / 1_000)}k`
       : aud(n);
 
-function ago(d: Date): string {
-  const mins = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60000));
-  if (mins < 60) return `${Math.max(1, mins)}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return d.toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Melbourne",
-  });
-}
-
 const EMPTY_DATA = (firstName: string): OwnerDashboardData => ({
   meta: { firstName },
   projects: { total: 0, active: 0, draft: 0, recent: [], list: [] },
@@ -126,18 +111,15 @@ export default async function OwnerDashboard({
   const fullName = session?.user?.name ?? "Project owner";
   const firstName = fullName.split(" ")[0] || "Project owner";
 
-  const [data, unreadCount, conversations, sharedWithMe] = await Promise.all([
+  const [data, sharedWithMe] = await Promise.all([
     userId
       ? safe("dashboard", getOwnerDashboardData(userId, firstName), EMPTY_DATA(firstName))
       : Promise.resolve(EMPTY_DATA(firstName)),
-    userId ? safe("unread", countUnreadForUser(userId), 0) : 0,
-    userId ? safe("conversations", listForUser(userId), []) : [],
     userId ? safe("shared", listProjectsSharedWithMe(userId), []) : [],
   ]);
 
   const isFirstTime = data.projects.total === 0;
   const welcome = (await searchParams)?.welcome;
-  const unreadThreads = conversations.filter((c) => c.unreadCount > 0).slice(0, 3);
 
   // ── the desk queue — only tenders that have come in ───────────────
   type DeskTone = "warn" | "neutral" | "draft";
@@ -300,9 +282,9 @@ export default async function OwnerDashboard({
         </div>
       </section>
 
-      {/* ── working area — sections on the canvas ─────────────────── */}
+      {/* ── working area — one column, full width ─────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
-        <div className="mx-auto max-w-[1320px]">
+        <div className="mx-auto max-w-[1200px]">
           {isFirstTime ? (
             <div className="flex flex-col gap-10">
               {/* A pure participant (the architect's client) may hold a
@@ -314,9 +296,9 @@ export default async function OwnerDashboard({
               <FirstProjectPrimer />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
-              {/* left column — the work */}
-              <div className="min-w-0 flex flex-col gap-10">
+            <div className="flex flex-col gap-12">
+              {/* one full-width column, reading order */}
+              <div className="min-w-0 flex flex-col gap-12">
                 {/* your desk — tenders that have come in */}
                 <section>
                   <PlainHead
@@ -433,124 +415,49 @@ export default async function OwnerDashboard({
                 {sharedWithMe.length > 0 ? (
                   <SharedWithYou items={sharedWithMe} />
                 ) : null}
-              </div>
 
-              {/* right rail — quiet, on the canvas */}
-              <div className="min-w-0 flex flex-col gap-9">
-                {/* correspondence — canvas group */}
-                <section>
-                  <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border-subtle">
-                    <RailHead icon={<Mail className="size-3.5" />}>
-                      Messages
-                    </RailHead>
-                    <Link
-                      href="/owner/messages"
-                      className="text-[11.5px] text-text-muted hover:text-text transition-colors"
-                    >
-                      Open
-                    </Link>
-                  </div>
-                  {unreadThreads.length === 0 ? (
-                    <p className="pt-3 text-[12px] text-text-dim">
-                      {unreadCount > 0
-                        ? `${unreadCount} unread in Messages.`
-                        : "Nothing unread."}
-                    </p>
-                  ) : (
-                    <ul className="pt-3 flex flex-col gap-2">
-                      {unreadThreads.map((c) => (
-                        <li key={c.id}>
-                          <Link
-                            href="/owner/messages"
-                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-border-subtle bg-surface-1 card-elev hover:border-border-strong transition-colors"
-                          >
-                            <span className="size-8 rounded-full bg-surface-3 text-text-muted text-[10.5px] font-ui font-semibold flex items-center justify-center shrink-0">
-                              {c.other.initials}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-[12.5px] font-ui font-medium text-text truncate">
-                                {c.other.displayName}
-                              </span>
-                              <span className="block text-[11px] text-text-dim truncate">
-                                {c.lastMessagePreview ?? c.projectTitle}
-                              </span>
-                            </span>
-                            <span className="text-[10px] font-ui font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(0,166,155,0.10)] text-[#0a7d73] tabular-nums shrink-0">
-                              {c.unreadCount}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-
-                {/* the record — canvas group */}
-                {data.activity.length > 0 ? (
-                  <section>
-                    <div className="pb-2.5 border-b border-border-subtle">
-                      <RailHead icon={<FileText className="size-3.5" />}>
-                        Activity
-                      </RailHead>
-                    </div>
-                    <ul className="divide-y divide-border-subtle/50">
-                      {data.activity.slice(0, 5).map((e, i) => (
-                        <li key={i} className="py-2.5 flex items-baseline gap-2.5">
-                          <span
-                            className={cn(
-                              "size-1.5 rounded-full shrink-0 self-center",
-                              e.kind === "tender_awarded"
-                                ? "bg-accent-light"
-                                : e.kind === "tender_submitted"
-                                  ? "bg-[#0a7d73]"
-                                  : "bg-[rgba(24,34,44,0.22)]",
-                            )}
-                          />
-                          <span className="min-w-0 flex-1 text-[11.5px] leading-[1.5] text-text-muted">
-                            {e.kind === "tender_submitted"
-                              ? `${e.builderName} submitted a tender on ${e.projectTitle}${e.totalPriceAud != null ? ` at ${compactAud(e.totalPriceAud)}` : ""}.`
-                              : e.kind === "tender_awarded"
-                                ? `${e.projectTitle} awarded to ${e.builderName}.`
-                                : `${e.builderName} withdrew their tender on ${e.projectTitle}.`}
-                          </span>
-                          <span className="text-[10px] text-text-dim shrink-0">
-                            {ago(e.at)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
-
-                {/* the book — a ruled ledger, no box */}
+                {/* the tender ledger — full width, the builder desk's
+                    convention. Declined appears only once it exists. */}
                 {data.tenders.total > 0 ? (
                   <section>
-                    <div className="pb-2.5 border-b border-border-subtle">
-                      <RailHead icon={<Landmark className="size-3.5" />}>
-                        Tenders
-                      </RailHead>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 border-y border-border-subtle">
+                    <PlainHead
+                      title="Your tenders"
+                      sub="Every tender received, by status."
+                      right={
+                        <Link
+                          href="/owner/tenders"
+                          className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                        >
+                          View all
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      }
+                    />
+                    <div
+                      className={cn(
+                        "mt-5 grid divide-x divide-border-subtle border-y border-border-subtle",
+                        data.tenders.byStatus.rejected > 0
+                          ? "grid-cols-2 sm:grid-cols-4"
+                          : "grid-cols-3",
+                      )}
+                    >
                       {(
                         [
                           ["Submitted", data.tenders.byStatus.submitted],
                           ["Shortlisted", data.tenders.byStatus.shortlisted],
                           ["Awarded", data.tenders.byStatus.awarded],
-                          ["Declined", data.tenders.byStatus.rejected],
-                        ] as const
-                      ).map(([label, n], i) => (
-                        <div
-                          key={label}
-                          className={cn(
-                            "px-4 py-3",
-                            i % 2 === 1 && "border-l border-border-subtle",
-                            i >= 2 && "border-t border-border-subtle",
-                          )}
-                        >
-                          <p className="font-display text-[20px] leading-none text-text tabular-nums">
+                          ...(data.tenders.byStatus.rejected > 0
+                            ? ([["Declined", data.tenders.byStatus.rejected]] as Array<
+                                [string, number]
+                              >)
+                            : []),
+                        ] as Array<[string, number]>
+                      ).map(([label, n]) => (
+                        <div key={label} className="px-4 py-4 text-center">
+                          <p className="font-display text-[24px] leading-none text-text tabular-nums">
                             {n}
                           </p>
-                          <p className="mt-1 text-[9.5px] tracking-[0.14em] uppercase text-text-dim">
+                          <p className="mt-1.5 text-[10px] tracking-[0.14em] uppercase text-text-dim">
                             {label}
                           </p>
                         </div>
@@ -778,29 +685,6 @@ function SectionHead({
   );
 }
 
-/** Rail section header — the same kicker voice, at the rail's scale. */
-function RailHead({
-  children,
-  icon,
-  warn = false,
-}: {
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-  warn?: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "text-[10px] tracking-[0.22em] uppercase font-ui font-semibold inline-flex items-center gap-2",
-        warn ? "text-[#8a6414]" : "text-accent-light",
-      )}
-    >
-      {icon}
-      {children}
-    </span>
-  );
-}
-
 /** Named chip on every desk row — the event type in words, not a dot. */
 function DeskChip({
   tone,
@@ -852,8 +736,16 @@ function ProjectFileRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-4 sm:px-5 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+        className="flex items-stretch rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
+        <span className="relative hidden sm:block w-[124px] shrink-0 border-r border-border-subtle/60 overflow-hidden">
+          <CoverArt
+            facts={p}
+            sizes="124px"
+            imgClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        </span>
+        <span className="min-w-0 flex-1 flex items-center gap-4 px-4 sm:px-5 py-3.5">
         <span className="min-w-0 flex-1">
           <span className="block font-ui font-medium text-[13.5px] text-text truncate">
             {p.title}
@@ -892,6 +784,7 @@ function ProjectFileRow({
           {STATUS_LABEL[p.status] ?? p.status}
         </span>
         <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+        </span>
       </Link>
     </li>
   );
@@ -906,21 +799,30 @@ function PlainProjectRow({ p }: { p: Project }) {
             ? `/owner/projects/${p.slug}/edit`
             : `/owner/projects/${p.slug}`
         }
-        className="flex items-center gap-4 px-4 sm:px-5 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+        className="flex items-stretch rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
       >
-        <span className="min-w-0 flex-1">
-          <span className="block font-ui font-medium text-[13.5px] text-text truncate">
-            {p.title}
-          </span>
-          <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
-            {TYPE_LABEL[p.type]}
-            {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
-          </span>
+        <span className="relative hidden sm:block w-[124px] shrink-0 border-r border-border-subtle/60 overflow-hidden">
+          <CoverArt
+            facts={p}
+            sizes="124px"
+            imgClassName="transition-transform duration-500 group-hover:scale-[1.04]"
+          />
         </span>
-        <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold bg-[rgba(24,34,44,0.06)] text-text-muted">
-          {STATUS_LABEL[p.status] ?? p.status}
+        <span className="min-w-0 flex-1 flex items-center gap-4 px-4 sm:px-5 py-3.5">
+          <span className="min-w-0 flex-1">
+            <span className="block font-ui font-medium text-[13.5px] text-text truncate">
+              {p.title}
+            </span>
+            <span className="block mt-0.5 text-[11.5px] text-text-dim truncate">
+              {TYPE_LABEL[p.type]}
+              {p.suburb ? ` · ${p.suburb}, ${p.state}` : ""}
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] tracking-[0.08em] uppercase font-ui font-semibold bg-[rgba(24,34,44,0.06)] text-text-muted">
+            {STATUS_LABEL[p.status] ?? p.status}
+          </span>
+          <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
         </span>
-        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
       </Link>
     </li>
   );
