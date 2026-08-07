@@ -1174,7 +1174,10 @@ function TenderCard({
         ) : null}
       </div>
 
-      <div className="mt-auto border-t border-border-subtle/70 px-5 py-3.5 flex items-center justify-between gap-3">
+      <div
+        id={index === 0 ? "readeval" : undefined}
+        className="mt-auto scroll-mt-28 border-t border-border-subtle/70 px-5 py-3.5 flex items-center justify-between gap-3"
+      >
         <button
           type="button"
           onClick={onOpen}
@@ -1724,13 +1727,16 @@ function Disagreements({
     ? round.scopeDisagreements
     : round.scopeDisagreements.slice(0, 6);
   return (
-    <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+    <section
+      id="differ"
+      className="scroll-mt-28 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden"
+    >
       <header className="px-5 sm:px-7 py-5 border-b border-border-subtle/60">
         <SectionKicker icon={GitCompareArrows}>
           The same project, read differently
         </SectionKicker>
         <h2 className="mt-1.5 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
-          Where they disagree
+          Where the tenders differ
         </h2>
         <p className="mt-1.5 text-[12.5px] text-text-muted max-w-[64ch]">
           {round.scopeDisagreements.length} scope item

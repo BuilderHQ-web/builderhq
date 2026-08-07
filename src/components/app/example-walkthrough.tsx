@@ -34,55 +34,74 @@ interface Stop {
   example: string;
 }
 
+// In page order, top to bottom — the walk never jumps around. The
+// one exception is the quick read, which lives in the masthead but
+// closes the tour deliberately: the finale scrolls back to the top,
+// straight to it. Every example is TRUE OF THE SEEDED DATA — if the
+// personas or scheduleFor() change, these sentences change with them.
 const STOPS: Stop[] = [
   {
     target: "builders",
     title: "The builders",
-    line: "Every builder on BuilderHQ is checked before they can price anything: company, ABN and licence, verified against the public registers.",
+    line: "Before you read a single dollar, know who is talking. Every builder here passed verification before they could enter: company, ABN and licence, checked against the public registers.",
     example:
-      "Each card below shows the builder's licence and years in operation, so you know who you are reading before you read a dollar.",
+      "All three builders below carry a green tick on their ABN and licence. That tick means we checked the register, not that they told us so.",
   },
   {
     target: "overview",
     title: "The overview",
-    line: "Once the tenders are in, we write you the overview: what the prices are and what the decision actually comes down to, in plain words.",
+    line: "Once the tenders are in, we write what this round comes down to, in plain words: who is cheapest, what that price truly carries, and exactly what the extra money buys.",
     example:
-      "The paragraph below is not a template. It was written from these three tenders alone, and it changes when they do.",
+      "It works out below that the $37,000 saving rests on $82,500 of allowances, then prices the step up: $40,700 more removes that risk entirely and brings the keys forward two weeks.",
   },
   {
     target: "tenders",
     title: "Each tender, in full",
-    line: "A tender here is not a PDF to decode. It is the builder's answers under signature: the price, the programme, what is firm, what is allowed for, what is excluded.",
+    line: "Each card is one builder's tender: the price, how firm it is, the programme, and a score out of 100 built from the same evidence for everyone.",
     example:
-      "You can already see below that the lowest tender, $712,800, is only partly firm, while the $753,500 one is fully priced with no allowances.",
+      "The lowest tender, $712,800, is firm to 87 percent, with $82,500 still able to move. The $753,500 tender is fully priced, with nothing left open.",
   },
   {
-    target: "quickread",
-    title: "The quick read",
-    line: "Short on time? This plays the whole round as ninety seconds of cards: the prices, the catch in the fine print, the clock.",
+    target: "readeval",
+    title: "Read the evaluation",
+    line: "Behind every card sits the full evaluation: every question we put to the builder, their answer to each one, and every flag and warning our reading raised.",
     example:
-      "Press play after the tour and it will show you why the cheapest price here is not the bargain it looks.",
+      "The lowest tender carries 2 significant flags and 6 worth attention. Open Read the evaluation and it shows you exactly what each one is and why it matters.",
   },
   {
     target: "compare",
-    title: "The comparison",
-    line: "The same questions, side by side. Every row is the builders' own answers lined up, and a teal cell marks the strongest position on that row.",
+    title: "The decision grid",
+    line: "The same questions, side by side. Every row is the builders' own answers lined up, and a teal cell marks the strongest answer on that row.",
     example:
-      "In the disagreements table below, the driveway is excluded by the lowest tender and priced as documented by the other two. Twenty items sit outside that price altogether.",
+      "The scope row reads 133 of 171 trades in the lowest price against 171 of 171 in the other two. That one row explains most of the price gap.",
   },
   {
     target: "scores",
     title: "The score",
-    line: "Every tender is scored out of 100 from the same evidence: how firm the money is, how much of the scope is priced, how well the builder prepared, and more. The weighted overall sits on top.",
+    line: "Every tender scores out of 100 across six dimensions: price firmness, scope coverage, preparation, credentials, delivery and programme confidence. Teal marks who leads each one.",
     example:
-      "The fully priced tender leads the money score below, and teal marks who leads each dimension. Open any tender to see the working.",
+      "The lowest price scores 25 on price firmness because so much of it can still move. A cheap number with a weak score is the pattern this table exists to catch.",
+  },
+  {
+    target: "differ",
+    title: "Where the tenders differ",
+    line: "Anything the three tenders treat differently is pulled into its own table, item by item, so nothing hides in the fine print.",
+    example:
+      "38 items are treated differently in this round. The driveway is one: excluded by the lowest tender, priced as documented by the other two.",
   },
   {
     target: "record",
     title: "The record",
-    line: "Questions, messages and decisions stay on the round's file, so the whole history lives in one place.",
+    line: "Questions, messages, shortlists and the award all stay on the round's file, timestamped, for as long as the project lives.",
     example:
-      "When you ask a builder a question, the answer lands here on the record, not in a lost email thread.",
+      "Ask a builder to firm up an allowance and both the question and the answer sit here on the record, not in a lost email thread.",
+  },
+  {
+    target: "quickread",
+    title: "And when you are short on time",
+    line: "The quick read plays this whole round as ninety seconds of cards: the prices, the catch in the fine print, the clock.",
+    example:
+      "Press it when the tour ends. Ninety seconds, and the catch in the lowest price is impossible to miss.",
   },
 ];
 
@@ -116,7 +135,6 @@ export function ExampleWalkthrough({
   uploadHref: string;
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: "closed" });
-  const [panelTop, setPanelTop] = useState<number | null>(null);
   const litRef = useRef<Array<[HTMLElement, string | null]>>([]);
   const reduceMotion =
     typeof window !== "undefined" &&
@@ -184,7 +202,6 @@ export function ExampleWalkthrough({
         return;
       }
       setPhase({ kind: "stop", index });
-      setPanelTop(null);
       el.scrollIntoView({
         block: "center",
         behavior: reduceMotion ? "auto" : "smooth",
@@ -209,14 +226,6 @@ export function ExampleWalkthrough({
         }
         litRef.current = pairs;
         document.body.style.overflow = "hidden";
-        const rect = el.getBoundingClientRect();
-        const below = rect.bottom + 16;
-        const panelH = 250;
-        setPanelTop(
-          below + panelH < window.innerHeight
-            ? below
-            : Math.max(16, rect.top - panelH - 16),
-        );
       }, settle);
     },
     [reduceMotion, revert],
@@ -403,8 +412,7 @@ export function ExampleWalkthrough({
       <div
         role="dialog"
         aria-label={stop.title}
-        className="fixed z-[65] left-1/2 -translate-x-1/2 w-[min(400px,calc(100vw-32px))] rounded-2xl bg-white border border-border-subtle p-5 shadow-[0_0_0_1px_rgba(0,212,200,0.25),_0_24px_60px_-24px_rgba(24,34,44,0.45)]"
-        style={{ top: panelTop ?? window.innerHeight - 230 }}
+        className="fixed z-[65] right-4 bottom-4 sm:right-6 sm:bottom-6 w-[min(420px,calc(100vw-32px))] rounded-2xl bg-white border border-border-subtle p-5 shadow-[0_0_0_1px_rgba(0,212,200,0.25),_0_24px_60px_-24px_rgba(24,34,44,0.45)]"
       >
         <p className="text-[9.5px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold tabular-nums">
           {i + 1} of {STOPS.length}

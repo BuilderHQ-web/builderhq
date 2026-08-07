@@ -133,13 +133,37 @@ async function ensureSampleBuilders(): Promise<
     const lic = await db.execute(
       sql`select id from builder_licences where builder_id = ${userId} limit 1`,
     );
-    if (lic.rows.length === 0) {
-      await db.execute(sql`
+    let licenceId = (lic.rows[0]?.id as string) ?? null;
+    if (!licenceId) {
+      const created = await db.execute(sql`
         insert into builder_licences
           (builder_id, state, licence_type, licence_number,
            verification_status, verified_at)
         values (${userId}, 'VIC', 'Domestic Builder Unlimited',
                 ${who.licence}, 'verified', now())
+        returning id
+      `);
+      licenceId = created.rows[0]!.id as string;
+    }
+    // The register-check records the evaluation reads: without these,
+    // the builders section would show the fictional builders amber,
+    // contradicting the walkthrough's "verified before they enter".
+    const hasAbn = await db.execute(sql`
+      select 1 from builder_verifications
+      where builder_id = ${userId} and kind = 'abn' and status = 'verified'
+      limit 1
+    `);
+    if (hasAbn.rows.length === 0) {
+      await db.execute(sql`
+        insert into builder_verifications
+          (builder_id, kind, subject_value, status, provider, verified_at)
+        values (${userId}, 'abn', ${who.abn}, 'verified', 'sample', now())
+      `);
+      await db.execute(sql`
+        insert into builder_verifications
+          (builder_id, kind, target_id, subject_value, status, provider, verified_at)
+        values (${userId}, 'licence', ${licenceId}, ${who.licence},
+                'verified', 'sample', now())
       `);
     }
     out[p.key] = userId;
