@@ -376,8 +376,12 @@ export default async function BriefIssuePage({
   // broker's brand is their institution's, and that artwork is not
   // always prepared to float on a white card.
   const practiceMark = pc?.logo ?? partner?.logo ?? partner?.institution?.logo;
-  const practiceName =
-    pc?.logo || partner?.logo ? partner?.name : partner?.institution?.name;
+  // Whose mark it is follows from who owns one, not from where the file
+  // came from: a partner with their own logo is the practice, while an
+  // individual under a firm carries the firm's.
+  const practiceName = partner?.logo
+    ? partner.name
+    : (partner?.institution?.name ?? partner?.name);
   const issues = briefIssues();
   const idx = issues.findIndex((i) => i.slug === issue.slug);
   const newer = idx > 0 ? issues[idx - 1] : undefined;
