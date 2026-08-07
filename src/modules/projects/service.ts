@@ -406,6 +406,8 @@ export async function listForMarketplace(
     // Private rounds are invisible to the marketplace — only builders
     // the runner invited can reach them (via their invite, not browse).
     ne(projects.tenderMode, "private"),
+    // Example rounds are ghosts outside their own account.
+    eq(projects.isSample, false),
   ];
 
   if (filters.q && filters.q.trim()) {
@@ -508,6 +510,8 @@ export async function listPrivateRoundStubs(
     inArray(projects.status, ["published", "tendering"]),
     isNull(projects.deletedAt),
     eq(projects.tenderMode, "private"),
+    // Example rounds are ghosts outside their own account.
+    eq(projects.isSample, false),
   ];
   if (filters.type) conds.push(eq(projects.type, filters.type));
   if (filters.state) conds.push(eq(projects.state, filters.state));

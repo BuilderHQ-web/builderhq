@@ -314,6 +314,15 @@ export const projects = pgTable(
       .default(false),
 
     /**
+     * The example round seeded into every new owner and architect
+     * account. Sample projects are first-class on their owner's own
+     * surfaces and ghosts everywhere else: never in the marketplace
+     * or the private stubs, never in anyone's aggregates, and no
+     * mail ever fires from one.
+     */
+    isSample: boolean("is_sample").notNull().default(false),
+
+    /**
      * Acquisition source for the project. NULL = legacy / created
      * before tracking. New values: "ads_funnel" (came through the
      * /start landing), "owner_app" (dashboard), "migration" (Bubble

@@ -21,6 +21,8 @@ import { listForUser } from "@/modules/messaging";
 import { PARTICIPANT_ROLE_LABEL, type Project } from "@/modules/projects";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { CoverArt } from "@/components/builder/project-cover";
+import { SampleRoundCard } from "@/components/app/sample-round-card";
+import { getSampleForUser } from "@/modules/sample";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
 
@@ -108,10 +110,11 @@ export default async function ArchitectDashboard() {
   const userId = session.user.id;
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
 
-  const [profile, data, conversations] = await Promise.all([
+  const [profile, data, conversations, sample] = await Promise.all([
     safe("profile", getArchitectProfile(userId), null),
     getArchitectDashboardData(userId, firstName),
     safe("conversations", listForUser(userId), []),
+    safe("sample", getSampleForUser(userId), null),
   ]);
 
   const isFirstTime = data.projects.total === 0;
@@ -272,7 +275,15 @@ export default async function ArchitectDashboard() {
       <section className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         <div className="mx-auto max-w-[1320px]">
           {isFirstTime ? (
-            <FirstTenderPrimer />
+            <div className="flex flex-col gap-10">
+              {sample ? (
+                <SampleRoundCard
+                  href={`/architect/projects/${sample.slug}/tenders`}
+                  role="architect"
+                />
+              ) : null}
+              <FirstTenderPrimer />
+            </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_330px] gap-x-10 gap-y-10">
               {/* left — the work */}
@@ -430,6 +441,15 @@ export default async function ArchitectDashboard() {
                     </>
                   )}
                 </section>
+
+                {/* the example round — reference material once real
+                    work exists */}
+                {sample ? (
+                  <SampleRoundCard
+                    href={`/architect/projects/${sample.slug}/tenders`}
+                    role="architect"
+                  />
+                ) : null}
               </div>
 
               {/* rail — quiet, on the canvas */}

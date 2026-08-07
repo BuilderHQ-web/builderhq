@@ -8,6 +8,7 @@ import {
   auth,
   unstable_update,
 } from "@/modules/auth";
+import { seedSampleRound } from "@/modules/sample";
 import {
   completeOwnerOnboarding,
   getOwnerProfile,
@@ -93,6 +94,10 @@ export async function ownerOnboardingAction(
 
   const complete = await completeOwnerOnboarding(userId);
   if (!complete.ok) return { error: complete.error.message };
+
+  // The example round: a finished tender waiting on the new desk.
+  // Never blocks onboarding; failures log inside.
+  await seedSampleRound(userId);
 
   // Ops heads-up — fire-and-forget so the redirect isn't blocked on
   // Resend latency. Failure is logged inside the send wrapper.

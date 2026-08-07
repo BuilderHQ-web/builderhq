@@ -136,7 +136,7 @@ export async function getOwnerDashboardData(
   ownerId: string,
   firstName: string,
 ): Promise<OwnerDashboardData> {
-  const list = await listMine(ownerId);
+  const list = (await listMine(ownerId)).filter((p) => !p.isSample);
 
   if (list.length === 0) {
     return {

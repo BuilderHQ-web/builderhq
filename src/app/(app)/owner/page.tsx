@@ -30,6 +30,8 @@ import {
 } from "@/modules/dashboards";
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { CoverArt } from "@/components/builder/project-cover";
+import { SampleRoundCard } from "@/components/app/sample-round-card";
+import { getSampleForUser } from "@/modules/sample";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
 import type { Project } from "@/modules/projects";
@@ -111,11 +113,12 @@ export default async function OwnerDashboard({
   const fullName = session?.user?.name ?? "Project owner";
   const firstName = fullName.split(" ")[0] || "Project owner";
 
-  const [data, sharedWithMe] = await Promise.all([
+  const [data, sharedWithMe, sample] = await Promise.all([
     userId
       ? safe("dashboard", getOwnerDashboardData(userId, firstName), EMPTY_DATA(firstName))
       : Promise.resolve(EMPTY_DATA(firstName)),
     userId ? safe("shared", listProjectsSharedWithMe(userId), []) : [],
+    userId ? safe("sample", getSampleForUser(userId), null) : null,
   ]);
 
   const isFirstTime = data.projects.total === 0;
@@ -293,6 +296,12 @@ export default async function OwnerDashboard({
               {sharedWithMe.length > 0 ? (
                 <SharedWithYou items={sharedWithMe} />
               ) : null}
+              {sample ? (
+                <SampleRoundCard
+                  href={`/owner/projects/${sample.slug}/tenders`}
+                  role="owner"
+                />
+              ) : null}
               <FirstProjectPrimer />
             </div>
           ) : (
@@ -464,6 +473,15 @@ export default async function OwnerDashboard({
                       ))}
                     </div>
                   </section>
+                ) : null}
+
+                {/* the example round — reference material once real
+                    work exists, so it closes the column */}
+                {sample ? (
+                  <SampleRoundCard
+                    href={`/owner/projects/${sample.slug}/tenders`}
+                    role="owner"
+                  />
                 ) : null}
               </div>
             </div>

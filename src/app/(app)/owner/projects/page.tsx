@@ -98,8 +98,15 @@ export default async function ProjectsPage() {
                       className="size-1 shrink-0 rounded-full bg-transparent group-hover:bg-accent group-hover:shadow-[0_0_8px_rgba(0,212,200,0.6)] transition-all duration-[140ms]"
                     />
                     <div className="min-w-0">
-                      <div className="text-[14px] font-semibold text-text truncate">
-                        {p.title}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[14px] font-semibold text-text truncate">
+                          {p.title}
+                        </span>
+                        {p.isSample ? (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-sm border border-border-subtle text-[8.5px] tracking-[0.14em] uppercase text-text-dim font-semibold">
+                            Example
+                          </span>
+                        ) : null}
                       </div>
                       <div className="text-[11px] text-text-dim truncate md:hidden">
                         {p.suburb ? `${p.suburb}, ${p.state}` : "Address pending"}
