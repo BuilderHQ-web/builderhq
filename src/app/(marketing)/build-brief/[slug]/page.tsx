@@ -223,10 +223,9 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
           ) : null}
         </div>
 
-        {signal.chart ? (
-          <BriefChart spec={signal.chart} />
-        ) : signal.rows?.length ? (
-          <div>
+        {signal.chart ? <BriefChart spec={signal.chart} /> : null}
+        {signal.rows?.length ? (
+          <div className={signal.chart ? "mt-6" : undefined}>
             {signal.rowsTitle ? (
               <p className="text-[11px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold mb-3">
                 {signal.rowsTitle}
@@ -260,6 +259,28 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
           </p>
         ))}
       </div>
+
+      {/* A dated, actionable item that would be lost inside body copy —
+          a deadline the reader has to act on before it passes. Set on
+          its own ground so it survives a skim. */}
+      {signal.callout ? (
+        <aside className="mt-7 rounded-xl border-l-[3px] border-accent-light bg-[#101820]/[0.035] px-5 sm:px-6 py-5">
+          <p className="text-[11px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold">
+            {signal.callout.kicker}
+          </p>
+          <p className="mt-2 font-ui font-semibold text-[16px] tracking-[-0.01em] text-text">
+            {signal.callout.title}
+          </p>
+          <div className="mt-3 flex flex-col gap-3 max-w-[64ch]">
+            {signal.callout.paragraphs.map((p, i) => (
+              <p key={i} className="text-[14.5px] leading-[1.65] text-text-muted">
+                <InlineText text={p} />
+              </p>
+            ))}
+          </div>
+        </aside>
+      ) : null}
+
       <TakesGrid takes={signal.takes} />
       <SourceLine>{signal.source}</SourceLine>
     </BriefCard>
@@ -350,6 +371,17 @@ export default async function BriefIssuePage({
 
   const pc = issue.partnerCorner;
   const partner = pc ? getPartner(pc.partnerSlug) : undefined;
+  // The practice's mark: an explicit one for the edition, else the
+  // partner's own, else the firm they practise under. An individual
+  // broker's brand is their institution's, and that artwork is not
+  // always prepared to float on a white card.
+  const practiceMark = pc?.logo ?? partner?.logo ?? partner?.institution?.logo;
+  // Whose mark it is follows from who owns one, not from where the file
+  // came from: a partner with their own logo is the practice, while an
+  // individual under a firm carries the firm's.
+  const practiceName = partner?.logo
+    ? partner.name
+    : (partner?.institution?.name ?? partner?.name);
   const issues = briefIssues();
   const idx = issues.findIndex((i) => i.slug === issue.slug);
   const newer = idx > 0 ? issues[idx - 1] : undefined;
@@ -439,7 +471,10 @@ export default async function BriefIssuePage({
               ...(project
                 ? [{ label: "Project of the Week", href: "#project" }]
                 : []),
-              { label: "Voices", href: "#voices" },
+              ...(issue.voices ? [{ label: "Voices", href: "#voices" }] : []),
+              ...(issue.bps
+                ? [{ label: "The Standard", href: "#bps" }]
+                : []),
               ...(pc ? [{ label: "Partner Corner", href: "#partner-corner" }] : []),
               ...(issue.faq?.length
                 ? [{ label: "In brief", href: "#questions" }]
@@ -605,6 +640,15 @@ export default async function BriefIssuePage({
                   </section>
                 ))}
 
+                {issue.feature.pullQuote ? (
+                  <p
+                    className="mt-9 max-w-[32ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
+                    style={SERIF}
+                  >
+                    {issue.feature.pullQuote}
+                  </p>
+                ) : null}
+
                 {issue.feature.finePrint ? (
                   <details className="group mt-8 rounded-xl bg-[#fbfaf7] ring-1 ring-[#101820]/[0.08] open:pb-1">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
@@ -765,7 +809,8 @@ export default async function BriefIssuePage({
           </MastheadPanel>
           ) : null}
 
-          {/* Voices */}
+          {/* Voices — only where the edition carries one. */}
+          {issue.voices ? (
           <BriefCard id="voices">
             <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
               {issue.voices.kicker}
@@ -804,6 +849,135 @@ export default async function BriefIssuePage({
               <SourceLine>{issue.voices.source}</SourceLine>
             ) : null}
           </BriefCard>
+          ) : null}
+
+          {/* The BuilderHQ Procurement Standard — an editorial section
+              on the problem the Standard addresses. It names an
+              industry-wide practice, never a party at fault. */}
+          {issue.bps ? (
+            <BriefCard id="bps">
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.bps.kicker}
+              </BriefKicker>
+              <h2 className={`max-w-[30ch] ${SECTION_H2}`}>
+                {issue.bps.headline}
+                {issue.bps.headlineAccent ? (
+                  <> <span className="text-accent-light">{issue.bps.headlineAccent}</span></>
+                ) : null}
+              </h2>
+              {issue.bps.standfirst ? (
+                <p
+                  className="mt-4 max-w-[46ch] text-[clamp(1.05rem,0.7vw+0.9rem,1.3rem)] leading-[1.45] text-text-muted"
+                  style={SERIF}
+                >
+                  {issue.bps.standfirst}
+                </p>
+              ) : null}
+
+              <div className="mt-7 flex flex-col gap-4 max-w-[68ch]">
+                {issue.bps.paragraphs.map((p, i) => (
+                  <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
+                    <InlineText text={p} />
+                  </p>
+                ))}
+              </div>
+
+              {issue.bps.pullQuote ? (
+                <p
+                  className="mt-9 max-w-[34ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
+                  style={SERIF}
+                >
+                  {issue.bps.pullQuote}
+                </p>
+              ) : null}
+
+              {/* One line, priced three ways, then the four answers the
+                  Standard requires instead. The argument is easier to
+                  see than to read. */}
+              {issue.bps.comparison ? (
+                <div className="mt-9">
+                  <p className="text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {issue.bps.comparison.title}
+                  </p>
+                  <p className="mt-3 font-ui font-semibold text-[15px] text-text">
+                    <span className="text-text-dim">The line:</span>{" "}
+                    {issue.bps.comparison.line}
+                  </p>
+                  <div className="mt-4 grid gap-px overflow-hidden rounded-lg bg-[#101820]/[0.10] sm:grid-cols-3">
+                    {issue.bps.comparison.quotes.map((q) => (
+                      <div key={q.who} className="bg-[#faf7f2] px-5 py-5">
+                        <p className="text-[11px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                          {q.who}
+                        </p>
+                        <p className="mt-2.5 text-[15px] font-ui font-semibold leading-[1.35] text-text">
+                          {q.treatment}
+                        </p>
+                        {q.note ? (
+                          <p className="mt-1.5 text-[13px] leading-[1.6] text-text-muted">
+                            {q.note}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[15px] leading-[1.7] text-text-muted max-w-[64ch]">
+                    <InlineText text={issue.bps.comparison.verdict} />
+                  </p>
+                  <p className="mt-7 text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {issue.bps.comparison.answersTitle}
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {issue.bps.comparison.answers.map((a) => (
+                      <li
+                        key={a}
+                        className="rounded-full border border-accent-light/40 px-3.5 py-1.5 text-[12.5px] text-text"
+                      >
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {issue.bps.principles?.length ? (
+                <ol className="mt-9 grid gap-px overflow-hidden rounded-lg bg-[#101820]/[0.10] sm:grid-cols-2">
+                  {issue.bps.principles.map((pr) => (
+                    <li key={pr.n} className="bg-[#faf7f2] px-5 py-5">
+                      <span
+                        className="text-[11px] tracking-[0.18em] text-accent-light font-ui font-semibold tabular-nums"
+                      >
+                        {pr.n}
+                      </span>
+                      <p className="mt-2 text-[15px] font-ui font-semibold leading-[1.35] text-text">
+                        {pr.title}
+                      </p>
+                      <p className="mt-2 text-[13.5px] leading-[1.7] text-text-muted">
+                        {pr.body}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+
+              {issue.bps.definition ? (
+                <div className="mt-9 border-t border-[#101820]/[0.12] pt-6">
+                  <p className="text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {issue.bps.definition.heading}
+                  </p>
+                  <div className="mt-3 flex flex-col gap-4 max-w-[68ch]">
+                    {issue.bps.definition.paragraphs.map((p, i) => (
+                      <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
+                        <InlineText text={p} />
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {issue.bps.takes ? <TakesGrid takes={issue.bps.takes} /> : null}
+              {issue.bps.source ? <SourceLine>{issue.bps.source}</SourceLine> : null}
+            </BriefCard>
+          ) : null}
 
           {/* Partner Corner — renders only when an edition carries one;
               pulls the live partner record from the register. */}
@@ -830,11 +1004,14 @@ export default async function BriefIssuePage({
 
               <div
                 className={`mt-8 grid grid-cols-1 gap-8 lg:gap-12 items-start ${
-                  pc.portrait ? "lg:grid-cols-[220px_minmax(0,1fr)]" : ""
+                  pc.portrait || (pc.showLogo && practiceMark)
+                    ? "lg:grid-cols-[220px_minmax(0,1fr)]"
+                    : ""
                 }`}
               >
-                {pc.portrait ? (
+                {pc.portrait || (pc.showLogo && practiceMark) ? (
                   <figure className="max-w-[220px]">
+                    {pc.portrait ? (
                     <div className="overflow-hidden rounded-xl ring-1 ring-[#101820]/[0.08]">
                       <Image
                         src={pc.portrait}
@@ -844,17 +1021,50 @@ export default async function BriefIssuePage({
                         className="w-full h-auto"
                       />
                     </div>
+                    ) : null}
+                    {pc.portrait ? (
                     <figcaption className="mt-3">
                       <p className="text-[13.5px] font-ui font-semibold text-text">
-                        {pc.principal}
+                        {pc.portraitCaption ?? pc.principal}
                       </p>
-                      <p className="text-[11.5px] text-text-dim">{pc.principalRole}</p>
+                      {pc.portraitCaption ? null : (
+                        <p className="text-[11.5px] text-text-dim">
+                          {pc.principalRole}
+                        </p>
+                      )}
                       {pc.principalQuote ? (
                         <p className="mt-2 text-[12.5px] italic leading-[1.5] text-text-muted">
                           “{pc.principalQuote}”
                         </p>
                       ) : null}
                     </figcaption>
+                    ) : null}
+                    {/* The practice's mark, given the same column and
+                        the same weight as the person who founded it.
+                        Either may stand alone; neither depends on the
+                        other being supplied. */}
+                    {pc.showLogo && practiceMark ? (
+                      <div
+                        className={
+                          pc.portrait
+                            ? "mt-5 border-t border-[#101820]/[0.12] pt-5"
+                            : ""
+                        }
+                      >
+                        <Image
+                          src={practiceMark}
+                          alt={`${practiceName} logo`}
+                          width={320}
+                          height={120}
+                          className="h-16 w-auto object-contain object-left"
+                        />
+                        {partner ? (
+                          <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
+                            {partner.roleLabel} · {partner.suburb}, {partner.state}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </figure>
                 ) : null}
                 <div>
@@ -918,7 +1128,9 @@ export default async function BriefIssuePage({
                       href="/partners"
                       className="inline-flex items-center gap-2 rounded-full ring-1 ring-[#101820]/[0.14] px-5 py-2.5 text-[12.5px] font-ui font-semibold text-text hover:bg-[#101820]/[0.04] transition-colors"
                     >
-                      Meet our Preferred Design Partners
+                      {partner?.kind === "builder"
+                        ? "Meet our Preferred Partners"
+                        : "Meet our Preferred Design Partners"}
                     </Link>
                   </div>
                 </div>

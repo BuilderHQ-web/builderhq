@@ -126,6 +126,10 @@ export interface Partner {
   /** Industry recognition, rendered as a gold plaque strip under the
    *  identity band. Lead with the biggest honour; keep to three. */
   awards?: { label: string; sub?: string }[];
+  /** A quieter recognition, shown on a compact dark strip rather than the
+   *  gold honours board — for a platform or service accolade (e.g. Best of
+   *  Houzz) that is not a formal design or industry award. */
+  accolade?: { label: string; sub?: string; tag?: string };
   website?: string;
   /** Instagram profile. A compact icon beside the website button, or the
    *  full link when the partner has no website. */
@@ -251,6 +255,68 @@ export const PARTNERS: Partner[] = [
         suburb: "Kensington",
         type: "Townhouse development",
         image: "/partners/summerhill-building-designers/kensington.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "quorum-studios",
+    kind: "architect",
+    roleLabel: "Residential architecture studio",
+    name: "Quorum Studios",
+    monogram: "QS",
+    logo: "/partners/quorum-studios/logo.png",
+    principal: "Manny and Vanessa Pedro",
+    suburb: "Brisbane",
+    state: "QLD",
+    tagline:
+      "A deliberately small Brisbane residential studio, pairing a registered architect who has judged Queensland’s HIA awards with a director trained in psychology and people development.",
+    disciplines: ["Luxury new homes", "Character dwellings", "Pre-designed house plans"],
+    google: { rating: 5.0, reviews: 18 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "18 reviews" },
+      {
+        label: "HIA awards panel",
+        value: "Judge",
+        sub: "Queensland House, Kitchen and Bathroom",
+      },
+      {
+        label: "In practice",
+        value: "10+ yrs",
+        sub: "across two continents",
+      },
+    ],
+    why: "In a register full of practices that enter design awards, Manny Pedro has been asked to judge them. He sat on the panel for Queensland’s HIA House, Kitchen and Bathroom of the Year, which is a different order of recognition from a shortlisting, because the industry does not hand you the scorecard unless it already trusts your eye. More than a decade in practice across two continents sits behind that, worked to a plain discipline he states simply as less is more, which shows up in the buildings as intuitive solutions rather than gestures.\n\nThe other half of this studio is the part most practices never think to build. Vanessa Pedro holds an honours degree in psychology and spent years in human resources and people development before taking on the client side of an architecture business. Building a house is the most emotionally exposed purchase most people ever make, and having someone whose actual training is in people running that relationship is rare and genuinely useful. The studio has stayed small on purpose, declining to trade intimacy for scale, and all eighteen of its reviewers have given it five stars. For an owner who wants a considered home and a calm process, that is an unusually well matched pair.",
+    about:
+      "Quorum Studios was founded in 2023 by Manny and Vanessa Pedro and works from Brisbane on residential architecture, from luxury new homes through to traditional character dwellings. Manny holds registration 6279 with the Board of Architects Queensland and leads the design; Vanessa directs business support and marketing and brings the interiors eye that runs alongside it. Every project opens with a single question about how a client wants to live, and the studio stays with it from the first sketch to the final site visit rather than stepping away once documentation is issued. Beside its bespoke commissions it offers a range of pre-designed house plans, which puts the same thinking within reach at a lower entry point. Recent work includes a home at Coorparoo, the Villa Palma residence and a pavilion on the Gold Coast.",
+    facts: {
+      established: "2023",
+      basedIn: "Brisbane, QLD",
+      serves: "Brisbane and South East Queensland",
+      focus: "Luxury homes and character dwellings",
+    },
+    website: "https://www.qstudio.au",
+    instagram: "https://www.instagram.com/quorum_studio_qld/",
+    facebook: "https://www.facebook.com/people/Quorum-Studios/100080181046794/",
+    galleryUrl: "https://www.qstudio.au",
+    work: [
+      {
+        title: "Coorparoo",
+        suburb: "Coorparoo",
+        type: "New home",
+        image: "/partners/quorum-studios/coorparoo.jpg",
+      },
+      {
+        title: "Villa Palma",
+        suburb: "Queensland",
+        type: "New home",
+        image: "/partners/quorum-studios/villa-palma.jpg",
+      },
+      {
+        title: "Coastal pavilion",
+        suburb: "Gold Coast",
+        type: "New home",
+        image: "/partners/quorum-studios/pavilion.jpg",
       },
     ],
     joined: "2026",
@@ -1162,7 +1228,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "architects-ring-associates",
     kind: "architect",
-    draft: true,
     name: "Architects Ring & Associates",
     monogram: "AR",
     logo: "/partners/architects-ring-associates/logo.png",
@@ -1201,7 +1266,7 @@ export const PARTNERS: Partner[] = [
         sub: "Australian Institute of Architects · 2004",
       },
     ],
-    why: "Architects Ring & Associates is one of Canberra's most awarded architecture practices, and one of its most senior. Founded in 1991 by Terence Ring, who has designed in the capital since 1975, the studio has been named ACT House of the Year twelve times and MBA National House of the Year three times, among more than one hundred local and national awards. Terry himself holds the Australian Institute of Architects President's Award and the ACT Chapter Medallion for Architecture, and the practice's commissions range from luxury homes to an extension of the Governor-General's residence, alongside community and Indigenous housing work. Its architects are registered in the ACT and NSW, and few practices know Canberra's sites and planning rules as intimately. For an owner planning something of ambition in the capital, this is about as assured as an introduction gets.",
+    why: "Architects Ring & Associates is one of Canberra's most awarded architecture practices, and one of its most senior. Founded in 1991 by Terence Ring, who has designed in the capital since 1975, the studio has been named ACT House of the Year twelve times and MBA National House of the Year three times, among more than one hundred local and national awards.\n\nTerry himself holds the Australian Institute of Architects President's Award and the ACT Chapter Medallion for Architecture, and the practice's commissions range from luxury homes to an extension of the Governor-General's residence, alongside community and Indigenous housing work. Its architects are registered in the ACT and NSW, and few practices know Canberra's sites and planning rules as intimately. For an owner planning something of ambition in the capital, this is about as assured as an introduction gets.",
     about:
       "Architects Ring & Associates is a Kingston based architecture and interior design practice, founded in 1991 by its director Terence Ring, who has practised in Canberra since 1975 and taught architecture and interior design at the Canberra Institute of Technology. The firm began in a home studio in Griffith through one of Australia's worst recessions and grew into one of the capital's most established, now working from a multi-storey building it designed on Wentworth Avenue. ARAA designs across the luxury residential, commercial, multi-unit and heritage sectors, and gives back through Indigenous and community housing, places of worship and an annual schools mentoring program. Its work has won more than one hundred awards, including the ACT House of the Year twelve times and the MBA National House of the Year three times, and Terry holds the AIA President's Award and the ACT Chapter Medallion for Architecture. The practice designs around the idea of 'genius loci', a sense of place, and many of its homes are still owned by the clients who first commissioned them decades ago.",
     facts: {
@@ -2416,6 +2481,132 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "niche-home-designs",
+    kind: "architect",
+    roleLabel: "Building design practice",
+    name: "Niche Home Designs",
+    monogram: "NH",
+    logo: "/partners/niche-home-designs/logo.png",
+    principal: "Nick Nikolaidis",
+    suburb: "Sydney",
+    state: "NSW",
+    tagline:
+      "A multi award winning Sydney studio designing bespoke homes since 1994, known for a signature modern look and for carrying every project hands on through council approval.",
+    disciplines: ["New homes", "Alterations and additions", "Multi residential and sustainable"],
+    institution: {
+      name: "Building Designers Association of Australia",
+      role: "Accredited Building Designer",
+      note: "Director Nick Nikolaidis",
+    },
+    google: { rating: 5, reviews: 8 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "8 reviews" },
+      { label: "Completed projects", value: "1,400" },
+      { label: "Designing since", value: "1994", sub: "over 30 years" },
+    ],
+    awards: [
+      { label: "Residential Buildings over 450 sqm, winner", sub: "HIA NSW · Blakehurst Dwelling" },
+      { label: "Low Density Multi Residential, winner", sub: "BDA NSW · Kangaroo Point Dwellings" },
+      { label: "New Houses, winner", sub: "BDA Sydney · Connells Point Dwelling" },
+    ],
+    why: "Niche Home Designs has been designing bespoke Sydney homes since 1994, and the record is hard to argue with: around 1,400 completed projects and eighteen industry awards, among them state wins with the Building Designers Association and the HIA and finalist places at national level. What we value as much as the trophies is that this is still a hands on studio: director Nick Nikolaidis works on each home himself, and the practice has spent three decades learning exactly how to carry a design through a development application and council. For an owner heading to tender, that is the combination that matters, a home designed to an award standard, drawn by people who know how to get it approved and built.",
+    about:
+      "Niche Home Designs is a multi award winning building design studio founded in Sydney in 1994 and led by its director, Nick Nikolaidis, an accredited building designer and member of the Building Designers Association of Australia. The studio designs new homes, alterations and additions, multi residential projects and sustainable homes, working for the most part across southern Sydney’s St George and Sutherland Shire areas, and taking projects across the rest of Sydney and New South Wales. Its process is deliberately hands on: a site visit and detailed brief, concept sketches, then the development application and council approval, followed by the documentation needed for a construction certificate. Years of working with councils and building authorities, alongside a settled network of industry consultants, sit behind that, and the studio pairs its signature modern look with whatever style a client has in mind.",
+    facts: {
+      established: "1994",
+      basedIn: "Sydney, NSW",
+      serves: "Sydney and NSW",
+      focus: "New homes, additions and multi residential",
+    },
+    website: "https://nichehomedesigns.com.au/",
+    instagram: "https://www.instagram.com/nichehomedesigns/",
+    facebook: "https://www.facebook.com/nichehomedesigns",
+    linkedin: "https://www.linkedin.com/company/niche-home-designs/",
+    galleryUrl: "https://nichehomedesigns.com.au/",
+    work: [
+      {
+        title: "Sylvania Waters Residence",
+        suburb: "Sylvania Waters",
+        type: "New home",
+        image: "/partners/niche-home-designs/sylvania-waters-1.jpg",
+      },
+      {
+        title: "Sylvania Waters Dwelling",
+        suburb: "Sylvania Waters",
+        type: "New home",
+        image: "/partners/niche-home-designs/sylvania-waters-2.jpg",
+      },
+      {
+        title: "Sans Souci Dwelling",
+        suburb: "Sans Souci",
+        type: "New home",
+        image: "/partners/niche-home-designs/sans-souci.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "studio-lira",
+    kind: "architect",
+    roleLabel: "Architecture | Interiors",
+    name: "Studio LIRA",
+    monogram: "LI",
+    logo: "/partners/studio-lira/logo.png",
+    suburb: "Newtown",
+    state: "NSW",
+    tagline:
+      "Two Italian architects, registered in Sydney and Rome, whose Newtown studio brings a European sense of proportion and restraint to homes, interiors and fit-outs.",
+    disciplines: ["New homes and additions", "Heritage properties", "Interiors and commercial"],
+    google: { rating: 5.0, reviews: 7 },
+    institution: {
+      name: "NSW Architects Registration Board",
+      role: "Registered architects",
+      note: "NSW licence 13292",
+    },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "7 reviews" },
+      { label: "In architecture", value: "20 yrs", sub: "ten of them in Sydney" },
+      { label: "Registered architects", value: "2", sub: "NSW and Rome" },
+    ],
+    accolade: {
+      label: "Best of Houzz for Service",
+      sub: "2017, 2023, 2024 and 2025",
+      tag: "4× winner",
+    },
+    why: "Studio LIRA is the kind of practice we are always looking for and rarely find: built on genuine experience across new homes, alterations and additions, heritage properties and commercial projects, with a rigorous approach from the earliest ideas to the final built outcome. Every project begins by understanding the people, the place and what already exists, allowing a clear concept to emerge. The result feels thoughtful, enduring and built to last.\n\nThat same care continues into delivery. Their documentation anticipates challenges, supports a smoother approval pathway and provides builders with clear, buildable information. They stay closely involved during construction, so the original vision is realised with the same care and precision.\n\nFor owners who value considered architecture, technical confidence and the continuity of one team from first sketch to completion, Studio LIRA is a practice we recommend with genuine confidence.",
+    about:
+      "Studio LIRA is a Sydney based architecture and interiors practice with experience delivering projects across Australia and overseas. For Studio LIRA, every project is driven by a central idea that gives the architecture its identity. That idea informs every decision, from the overall spatial composition to the smallest material detail, creating work that feels coherent and enduring. Every design is shaped by its own story, context and purpose.\n\nThey believe that good architecture is realised through collaboration and a shared commitment to quality, and they value long-term relationships with clients, consultants, builders and craftspeople who take genuine pride in their work, recognising that careful detailing, quality craftsmanship and thoughtful execution are what ultimately transform a strong idea into lasting architecture.",
+    facts: {
+      basedIn: "Newtown, NSW",
+      serves: "Sydney",
+      focus: "New homes, interiors and fit-outs",
+    },
+    website: "https://studiolira.com.au/",
+    instagram: "https://www.instagram.com/studioliraarchitects/",
+    galleryUrl: "https://studiolira.com.au/",
+    work: [
+      {
+        title: "Castle Hill Residence",
+        suburb: "Castle Hill",
+        type: "New home",
+        image: "/partners/studio-lira/castle-hill-exterior.jpg",
+      },
+      {
+        title: "Castle Hill Interior",
+        suburb: "Castle Hill",
+        type: "Interior",
+        image: "/partners/studio-lira/castle-hill-interior.jpg",
+      },
+      {
+        title: "Double Bay Apartments",
+        suburb: "Double Bay",
+        type: "Multi residential",
+        image: "/partners/studio-lira/double-bay-apartments.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Build partners ─────────────────────────────────────────────── */
   /* Real, in review (draft). New partner kind: registered builders we
@@ -2896,7 +3087,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "de-lune-construction",
     kind: "builder",
-    draft: true,
     roleLabel: "Architectural builder",
     name: "de Lune Construction",
     monogram: "DL",
@@ -2921,9 +3111,9 @@ export const PARTNERS: Partner[] = [
         sub: "residential and commercial",
       },
     ],
-    why: "Fletcher Thompson sits between two worlds, and that is exactly why we introduce him. A degree in architecture on one side, registration as both a residential and a commercial builder on the other: design vision and precise execution in the same pair of hands. His practice runs on the belief that construction is the continuation of architecture, protecting the architect's intent through rigorous on-site delivery, with fifteen years of expertise behind it. The current book says plenty, from the completed Malvern Residence to commercial builds for Programa and Curve Cycling Melbourne. For an owner taking on an architecturally ambitious home, this is the builder who speaks the architect's language fluently and builds it faithfully.",
+    why: "de Lune Construction approaches building as the continuation of architecture.\n\nLed by director Fletcher Thompson, whose background spans both an architectural education and construction, the practice understands that exceptional projects are the product of thousands of considered decisions long before work begins on site. Planning is rigorous, communication is direct and execution is disciplined, allowing architects and clients to move through construction with confidence.\n\nRather than simply delivering what is documented, de Lune works collaboratively to resolve details, protect design intent and build with the same level of care that shaped the original concept. It is a measured, thoughtful approach that makes them a natural fit for architecturally ambitious projects.",
     about:
-      "de Lune Construction is a Hawthorn based building company founded and led by director Fletcher Thompson, who pairs a degree in architecture with registration as both a residential and commercial builder. The team specialises in complex architectural builds across Melbourne, working closely with clients, architects and consultants from concept to completion, with an approach built on seamless communication, detailed planning and innovative problem solving. The practice holds that construction is the continuation of architecture: the drawings are protected through rigorous on-site execution, so the idea that was designed is the building that gets delivered. Its portfolio spans residential projects such as the Malvern and Nicholson residences alongside commercial work including Programa HQ and Curve Cycling Melbourne.",
+      "de Lune Construction is a Hawthorn based builder specialising in architecturally designed residential and commercial projects across Melbourne.\n\nWorking closely with architects, consultants and clients, the practice delivers projects from early planning through to completion, with an emphasis on detailed preparation, transparent communication and uncompromising quality. Every project is approached with the belief that better planning leads to better outcomes on site.\n\nThe portfolio spans bespoke homes alongside detailed commercial and hospitality work, from the Malvern and Nicholson residences to Programa HQ and Curve Cycling Melbourne. It reflects a practice trusted to deliver projects where precision, collaboration and attention to detail matter.",
     facts: {
       experience: "15 yrs",
       basedIn: "Hawthorn, VIC",
@@ -3266,7 +3456,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "jason-pogorelec",
     kind: "finance",
-    draft: true,
     roleLabel: "Senior finance broker",
     name: "Jason Pogorelec",
     monogram: "JP",
@@ -3276,6 +3465,7 @@ export const PARTNERS: Partner[] = [
     tagline:
       "Finance broking for people building homes and portfolios, with strategy that looks past a single settlement.",
     disciplines: ["Construction loans", "Investment lending", "SMSF"],
+    google: { rating: 5.0, reviews: 998 },
     institution: {
       name: "Inovayt",
       role: "Senior Finance Broker",
@@ -4148,6 +4338,67 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "tristina-haines",
+    kind: "finance",
+    roleLabel: "Mortgage broker",
+    name: "Tristina Haines",
+    monogram: "TH",
+    portrait: "/partners/tristina-haines/portrait.jpg",
+    institution: {
+      name: "More Than Mortgages",
+      role: "Mortgage broker",
+      note: "Credit representative 538497 under Australian Credit Licence 387025",
+      logo: "/partners/tristina-haines/more-than-mortgages.png",
+    },
+    suburb: "Deakin",
+    state: "ACT",
+    tagline:
+      "With 15 years in finance and a decade inside banking, Tristina knows how to structure and present a loan application to give it the strongest possible chance.",
+    disciplines: ["Construction loans", "First home buyers", "Complex and self-employed"],
+    google: { rating: 5, reviews: 231 },
+    why: "Tristina is the kind of broker people want beside them when their situation is not straightforward. Her years at Bendigo Bank were not only spent lending: she coached and accredited the managers and lenders coming through, so she has taught other people how a lending decision gets made. That is an unusual vantage point for a broker to work from.\n\nIt shows most in the awkward cases: self-employed income, construction lending, a property decision made in the middle of a separation. She explains the process clearly, handles difficult conversations with discretion and looks for a practical way forward rather than listing the obstacles. The practice behind her was founded by Deanna Ezzy, one of the most decorated brokers in the ACT, who now mentors its brokers rather than writing loans herself.",
+    about:
+      "Tristina Haines is a mortgage broker with More Than Mortgages in Deakin, three years with the practice. She started out as a bank teller and loans officer before moving into lending, and holds a Diploma in Finance and Broking. She was named among Specialist Finance Group’s Top 20 High Achievers across the ACT and New South Wales for 2025 and 2026. An experienced client partner and processing team work alongside her, carrying each application from preparation through to settlement.",
+    aboutLabel: "About Tristina",
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "231 reviews, More Than Mortgages" },
+      { label: "In finance", value: "15 yrs", sub: "five of them broking" },
+      { label: "On your file", value: "3", sub: "broker, partner, processor" },
+    ],
+    awards: [
+      { label: "Regional Broker of the Year", sub: "finalist · Australian Broking Awards 2025" },
+      {
+        label: "Innovator of the Year",
+        sub: "finalist · Broker Innovation Awards, 2025 and 2026",
+      },
+    ],
+    accolade: {
+      label: "Deanna Ezzy, founder and mentor",
+      sub: "ACT Mortgage Broker of the Year 2023 · six years the ACT’s number one female broker · eight years in MPA’s national Top 100",
+      tag: "The practice",
+    },
+    facts: {
+      experience: "15 years in finance",
+      basedIn: "Deakin, ACT",
+      serves: "Canberra and beyond",
+      focus: "Home, investment and construction lending",
+    },
+    website: "https://www.morethanmortgages.com.au/team/tristina-haines/",
+    instagram: "https://www.instagram.com/morethanmortgages/",
+    facebook: "https://www.facebook.com/morethanmortgagesaustralia",
+    linkedin: "https://www.linkedin.com/in/tristina-haines/",
+    servicesLabel: "Where Tristina helps",
+    services: [
+      "Construction loans and progress payments",
+      "Pre-approval before you go to tender",
+      "First home buyers",
+      "Investment and portfolio finance",
+      "Self-employed and complex income",
+      "Refinancing and SMSF lending",
+    ],
+    joined: "2026",
+  },
+  {
     slug: "william-kiln",
     kind: "finance",
     roleLabel: "Finance broker",
@@ -4204,6 +4455,9 @@ export const PARTNERS: Partner[] = [
 export const ARCHITECT_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "architect" && !p.draft,
 );
+export const BUILDER_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "builder" && !p.draft,
+);
 export const FINANCE_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "finance" && !p.draft,
 );
@@ -4248,14 +4502,20 @@ export function partnerNavTypes(): PartnerNavType[] {
       href: "/partners/architects",
     },
     {
+      label: "Builder partners",
+      sub: "Builders whose work we know first hand",
+      count: BUILDER_PARTNERS.length,
+      href: "/partners/builders",
+    },
+    {
       label: "Finance partners",
       sub: "Brokers who know construction lending",
       count: FINANCE_PARTNERS.length,
       href: "/partners/finance-brokers",
     },
-    // Builders, engineers, lawyers and consultants join here as the
-    // register widens. Empty disciplines are filtered out below, so a
-    // type can be added before its first partner goes live.
+    // Engineers, lawyers and consultants join here as the register
+    // widens. Empty disciplines are filtered out below, so a type can
+    // be added before its first partner goes live.
   ].filter((t) => t.count > 0);
 }
 
@@ -4350,6 +4610,13 @@ export const MARQUEE_LOGOS: PartnerLogo[] = [
     dark: false,
   },
   {
+    slug: "de-lune-construction",
+    name: "de Lune Construction",
+    src: "/partners/de-lune-construction/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
     slug: "summerhill-building-designers",
     name: "Summerhill Building Designers",
     src: "/partners/summerhill-building-designers/logo-float-v2.png",
@@ -4388,6 +4655,13 @@ export const MARQUEE_LOGOS: PartnerLogo[] = [
     slug: "dawes-design",
     name: "Dawes Design",
     src: "/partners/dawes-design/logo-float-v2.png",
+    norm: true,
+    dark: false,
+  },
+  {
+    slug: "jason-pogorelec",
+    name: "Inovayt",
+    src: "/partners/jason-pogorelec/logo-float-v2.png",
     norm: true,
     dark: false,
   },

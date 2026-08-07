@@ -13,6 +13,7 @@
 export {
   // Tables
   projectOwnerProfiles,
+  architectProfiles,
   builderProfiles,
   builderLicences,
   builderServiceAreas,
@@ -29,6 +30,7 @@ export {
 export type {
   ProjectOwnerProfile,
   NewProjectOwnerProfile,
+  ArchitectProfile,
   BuilderProfile,
   NewBuilderProfile,
   BuilderLicence,
@@ -45,6 +47,10 @@ export {
   getOwnerContactPublic,
   upsertOwnerProfile,
   completeOwnerOnboarding,
+  // Architect
+  getArchitectProfile,
+  upsertArchitectProfile,
+  completeArchitectOnboarding,
   // Builder
   getBuilderProfile,
   getBuilderBySlug,
@@ -60,11 +66,13 @@ export {
   hasCompletedOnboarding,
   // Zod schemas (consumed by server actions)
   ownerProfileSchema,
+  architectProfileSchema,
   builderProfileSchema,
   builderLicenceSchema,
   setServiceAreasSchema,
   setProjectCategoriesSchema,
   type OwnerProfileInput,
+  type ArchitectProfileInput,
   type BuilderProfileInput,
   type BuilderLicenceInput,
   type BuilderProfileBundle,

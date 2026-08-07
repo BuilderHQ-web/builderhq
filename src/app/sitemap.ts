@@ -32,6 +32,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
     },
     {
+      url: `${SITE}/partners/builders`,
+      priority: 0.8,
+      changeFrequency: "weekly" as const,
+    },
+    {
       url: `${SITE}/partners/finance-brokers`,
       priority: 0.8,
       changeFrequency: "weekly",

@@ -48,6 +48,10 @@ export interface BriefSignal {
   /** In-code chart (Issue 002 onward) — see brief-charts.tsx. */
   chart?: BriefChartSpec;
   body: string[];
+  /** A dated, actionable item that would be lost inside body copy —
+   *  a deadline the reader has to act on. Set apart from the prose so
+   *  it survives a skim. Issue 005 onward. */
+  callout?: { kicker: string; title: string; paragraphs: string[] };
   source: string;
   takes: BriefTakes;
 }
@@ -100,6 +104,8 @@ export interface BriefIssue {
     /** Newspaper fact box beside the article — key figures pulled
      *  from the copy, never new claims. */
     factBox?: { title: string; rows: Array<{ k: string; v: string }> };
+    /** One line lifted from the article, set large. */
+    pullQuote?: string;
     quoteDoc?: {
       docTitle: string;
       docSubtitle: string;
@@ -133,13 +139,48 @@ export interface BriefIssue {
     source?: string;
     takes: BriefTakes;
   };
-  voices: {
+  /** Absent = the section does not render for that edition. */
+  voices?: {
     kicker: string;
     headline: string;
     quote: string;
     attribution: string;
     role: string;
     body: string[];
+    source?: string;
+    takes?: BriefTakes;
+  };
+  /**
+   * The BuilderHQ Procurement Standard. An editorial section on the
+   * problem the Standard addresses, written to inform rather than to
+   * sell: the practice it describes is industry-wide and the fix is
+   * named, not pitched.
+   */
+  bps?: {
+    kicker: string;
+    headline: string;
+    headlineAccent?: string;
+    /** Italic serif deck under the headline. */
+    standfirst?: string;
+    paragraphs: string[];
+    /** The problem stated as discrete, checkable propositions. */
+    principles?: Array<{ n: string; title: string; body: string }>;
+    /**
+     * One scope line shown as three builders actually price it, then
+     * the four answers the Standard requires instead. Issue 005 onward:
+     * the argument is easier to see than to read.
+     */
+    comparison?: {
+      title: string;
+      line: string;
+      quotes: Array<{ who: string; treatment: string; note?: string }>;
+      verdict: string;
+      answersTitle: string;
+      answers: string[];
+    };
+    /** Closing block: what the Standard is, plainly. */
+    definition?: { heading: string; paragraphs: string[] };
+    pullQuote?: string;
     source?: string;
     takes?: BriefTakes;
   };
@@ -155,6 +196,23 @@ export interface BriefIssue {
      *  for them. */
     principalQuote?: string;
     portrait?: string;
+    /**
+     * Show the practice's mark beside the principal's portrait. The
+     * person and the practice carry equal billing where a founder is
+     * introduced alongside the business they built.
+     */
+    showLogo?: boolean;
+    /**
+     * The mark to use, when the register record does not carry one the
+     * Brief can render. An individual broker's brand is their firm's,
+     * which lives on `institution`, and that artwork is not always
+     * prepared to float on a white card. Falls back to the partner
+     * logo, then the institution logo.
+     */
+    logo?: string;
+    /** Caption under the portrait when person and practice share the
+     *  frame, e.g. "Fletcher Thompson, Director". */
+    portraitCaption?: string;
     /** Editorial deck — one statement line above the copy. */
     deck?: string;
     /** Compact stat row from the register record. */
@@ -1240,6 +1298,915 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "CommBank Newsroom",
     ],
   },
+  {
+    slug: "issue-004",
+    number: 4,
+    date: "2026-07-31",
+    displayDate: "Friday, 31 July 2026",
+    title:
+      "The average new house is declared at $517,430 before land, and Victoria resets its workmanship benchmark.",
+    standfirst:
+      "The average new Australian house was declared at $517,430 of building work at permit stage last financial year, before land. Inflation eased enough to take an August rate rise off the table. And from 1 August, Victoria’s revised Guide to Standards and Tolerances sets the benchmark for judging workmanship.",
+    seoTitle:
+      "The Build Brief 004: What a New House Costs Before It Is Built | BuilderHQ",
+    seoDescription:
+      "The average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0%, before land. Inflation eased to 3.8% and an August rate rise moved off the table. Victoria’s Guide to Standards and Tolerances 2026 edition applies from 1 August and is not retrospective. Plus the Productivity Commission on housing regulation.",
+    keywords: [
+      "cost to build a house australia 2026",
+      "average build cost new house australia",
+      "average house approval value australia",
+      "how much does it cost to build a house in australia",
+      "cpi june 2026 australia",
+      "rba august 2026 rate decision",
+      "trimmed mean inflation australia",
+      "new dwelling prices australia",
+      "guide to standards and tolerances 2026",
+      "guide to standards and tolerances victoria",
+      "building and plumbing commission victoria",
+      "domestic building workmanship standards victoria",
+      "building tolerances australia",
+      "domestic building disputes victoria",
+      "productivity commission housing supply regulation",
+      "upzoning australia",
+      "building approvals 2025-26",
+      "housing approvals australia financial year",
+      "builderhq procurement standard",
+      "comparing builder quotes australia",
+    ],
+    // The generic masthead card until a bespoke Issue 004 card is
+    // made; a missing file would break every social preview.
+    ogImage: "/build-brief/og-issue-004.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading:
+        "The industry raised its own bar. A federal review asked government to lower theirs.",
+      paragraphs: [
+        "Three numbers this week. What a house costs to build, what money costs while you build it, and the benchmark your workmanship is now judged against.",
+        "The average new house was declared at $517,430 of building work before land, up 5.0%. Inflation eased enough to take an August rate rise off the table. And Victoria's revised Guide to Standards and Tolerances applies from tomorrow.",
+        "Set that beside Monday, when the Productivity Commission found that regulation has become a handbrake on new homes. One arm of the system settled how we judge work done well. Another said the rules on what can be built at all are slowing supply. Both are in here.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "Cost Pulse",
+        headline: "The average new house is declared at half a million dollars",
+        headlineAccent: "before land.",
+        stat: {
+          value: "$517,430",
+          label:
+            "average declared build cost of a new private house, 2025-26",
+          sub: "up 5.0% on the year",
+        },
+        chart: {
+          kind: "bars",
+          title: "Average declared build cost of a new private house",
+          desc: "The average approval value for a new private house rose from $492,931 in 2024-25 to $517,430 in 2025-26, an increase of 5.0%. Both figures are declared building work at permit stage and exclude land.",
+          valueHeading: "Average declared value",
+          bars: [
+            { label: "2024-25", value: 492931, display: "$492,931" },
+            {
+              label: "2025-26",
+              value: 517430,
+              display: "$517,430",
+              accent: true,
+            },
+          ],
+        },
+        body: [
+          "Across 2025-26 the average approval value for a new private house was $517,430, up 5.0% on last year's $492,931. June alone averaged $529,790.",
+          "Know what it is. When a permit is issued the cost of the work is declared, and the ABS collects every one. Construction at the point of approval, excluding land. Not an index, not a forecast. Declared values sit low too, since variations and site costs land later, so the 5.0% movement is the truer signal.",
+          "Wednesday's inflation data agrees from a different direction: new dwelling prices rose 5.8% over the year, up from 5.6%. Two independent measures, both near 5%, both edging up.",
+        ],
+        source:
+          "ABS Building Approvals, Australia, June 2026 (released 30 July 2026); ABS Consumer Price Index, June 2026",
+        takes: {
+          owners:
+            "Build cost, land and finance move separately. Ask which of the three your estimate actually covers, and [get a current estimate](/estimate_request_landing_page) before you commit to a budget.",
+          designers:
+            "Cost advice given at concept needs a review date attached. Five per cent a year compounds across a long documentation phase.",
+          builders:
+            "Two national measures now sit near 5%. Useful context when you explain a price movement to a client who last saw a figure in January.",
+          brokers:
+            "Construction cost assumptions set twelve months ago are roughly 5% light before anything site-specific is considered.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Market Mood",
+        headline: "The headline rate came down. The measure the Reserve Bank watches",
+        headlineAccent: "did not.",
+        stat: {
+          value: "3.8%",
+          label: "annual CPI inflation, 12 months to June 2026",
+          sub: "trimmed mean held at 3.6%",
+        },
+        chart: {
+          kind: "slope",
+          title: "Annual inflation, headline against underlying",
+          desc: "Headline CPI eased from 4.0% in the year to May to 3.8% in the year to June. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and stayed above the 2 to 3 per cent target band.",
+          valueHeading: "Headline CPI",
+          points: [
+            { label: "Year to May", value: 4.0, display: "4.0%" },
+            { label: "Year to June", value: 3.8, display: "3.8%", accent: true },
+          ],
+          second: {
+            label: "Trimmed mean",
+            points: [
+              { label: "Year to May", value: 3.6, display: "3.6%" },
+              { label: "Year to June", value: 3.6, display: "3.6%" },
+            ],
+          },
+          band: { from: 2.0, to: 3.0, label: "RBA target band" },
+          reference: { value: 3.0, display: "3.0%", label: "Top of target band" },
+          domain: [1.6, 4.4],
+        },
+        body: [
+          "Annual inflation eased to 3.8% in the year to June, from 4.0%. Fuel fell 10.9% as oil markets steadied. Markets cut the odds of an 11 August rise to near zero, Westpac moved to a hold, and all four majors now expect no change. The cash rate stays at 4.35%.",
+          "The caution is the second line on the chart. The trimmed mean, the measure the Reserve Bank watches, held flat at 3.6% and stays above the target band. Housing was again the largest contributor at 6.8%, driven by electricity up 22.4% after rebates expired. A hold is welcome. It is not relief.",
+        ],
+        source:
+          "ABS Consumer Price Index, Australia, June 2026 (released 29 July 2026); The Conversation; Canstar",
+        takes: {
+          owners:
+            "Near-term rate risk has eased. Confirm how long your finance approval and your builder's price each hold, because the two rarely expire together.",
+          designers:
+            "Client confidence should improve into spring. Feasibility conversations get easier when the rate outlook is stable.",
+          builders:
+            "A hold is not a cut. Borrowing costs stay where they are, and so does the pressure on client budgets.",
+          brokers:
+            "Underlying inflation above the target band means the next move is still unsettled. Buffers keep earning their place.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "The Rulebook",
+        headline: "Your finishes are judged from 1.5 metres away.",
+        headlineAccent: "Now it is written down.",
+        stat: {
+          value: "1.5 m",
+          label: "the distance a wall, ceiling or floor finish is assessed from",
+          sub: "600 mm for fixtures · 3 m for glass",
+        },
+        rowsTitle: "What the Guide calls outside tolerance",
+        rows: [
+          { label: "Floor level, any room", value: "10 mm" },
+          { label: "Floor level, any 2 m length", value: "4 mm", accent: true },
+          { label: "Floor level, across the whole footprint", value: "20 mm" },
+          { label: "Crack in a slab on ground", value: "2 mm wide" },
+          { label: "Crack in a masonry wall", value: "5 mm wide" },
+        ],
+        chart: {
+          kind: "strip",
+          title: "Where the Guide sits, and what outranks it",
+          desc: "Legislation, regulations, the National Construction Code and Australian Standards prescribe requirements and take precedence. The Guide is informative only.",
+          stages: [
+            { label: "Legislation and regulations" },
+            { label: "National Construction Code" },
+            { label: "Australian Standards" },
+            { label: "The Guide", accent: true },
+          ],
+          callout: {
+            from: 3,
+            to: 3,
+            label: "Informative only",
+            sub: "Everything above it takes precedence",
+          },
+          legend: { accent: "Recognised benchmarks", context: "Prescribed requirements" },
+        },
+        body: [
+          "Victoria's Building and Plumbing Commission has issued the 2026 edition of the Guide to Standards and Tolerances. It applies to contracts entered into and work commenced on or after 1 August 2026, and it is not retrospective. Earlier jobs stay on the previous edition.",
+          "Two rules do most of the work. Finishes are assessed from a normal viewing position, 1.5 metres back in ordinary light, so a mark you have to hunt for is generally within tolerance. And tolerances never scale down: 4 mm over 2 metres means 4 mm over 1 metre and 4 mm over 500 mm, not a proportion of it.",
+        ],
+        source:
+          "Building and Plumbing Commission, Guide to Standards and Tolerances 2026 (dated 14 July 2026, applies from 1 August 2026)",
+        takes: {
+          owners:
+            "Before raising a concern, look at it from 1.5 metres in normal light. That is the test the Guide applies.",
+          designers:
+            "Where a finish needs to beat the recognised tolerance, the specification is the only place to say so.",
+          builders:
+            "A written benchmark cuts both ways. It is the standard a client is held to as much as you are.",
+          brokers:
+            "Workmanship disputes stall progress claims. A settled benchmark shortens the argument.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "The deposit now takes eleven years. The rules are part of",
+      headlineAccent: "the price.",
+      standfirst:
+        "The Productivity Commission released its interim report on housing supply regulation this week. Its finding is that regulation has become a handbrake on new homes. Submissions are open until the end of September.",
+      paragraphs: [
+        "The Productivity Commission's interim report landed Monday with a direct finding: regulation has become a handbrake on new housing supply.",
+        "The framing deserves care. The Commission is not against regulation, and accepts rules are needed for safety, quality and liveability. Its argument is that too much of it stops homes being built. The context: a 20% deposit now takes about eleven years to save, up from eight in 2005.",
+      ],
+      sections: [
+        {
+          heading: "Four principles",
+          paragraphs: [
+            "The report proposes four principles for a better housing regulatory system: adopt a build mindset, regulate only where necessary, coordinate housing with infrastructure, and keep the process simple.",
+          ],
+        },
+        {
+          heading: "Where reform would do the most",
+          paragraphs: [
+            "**Land-use controls.** The single biggest lever the Commission examined. It raises broad-based upzoning: three-storey development on most residential land, smaller minimum lot sizes, more mixed use, and more mid-rise in well-serviced areas. Commissioner Alison Roberts put it plainly: the rules that stop someone adding a granny flat, or replacing a house with townhouses, sit at the core of the problem.",
+            "**Infrastructure coordination.** Roads, utilities and sewerage usually come before homes, especially in greenfield areas. Where housing and infrastructure plans are not aligned, rezoned land can sit unused for years. The report wants infrastructure plans funded and sequenced alongside land release.",
+            "**Approval processes.** Approvals cross multiple decision-makers, and poor coordination adds months or years. One developer told the Commission that approvals added more than three years to a 1,600 lot development in Melbourne's growth corridor. Proposed fixes: fast-track pathways, state-led assessment, coordination bodies that can resolve disputes.",
+          ],
+        },
+        {
+          heading: "What it is, and what it is not",
+          paragraphs: [
+            "This is an interim report. It makes no recommendations, sets out reform directions and asks for evidence. Submissions close 30 September 2026; the final report is due March 2027. The Housing Industry Association has welcomed it.",
+            "Read it beside this week's other numbers. Approvals closed the year at 205,249 dwellings, up 9.2% and the highest since 2020-21. Master Builders still puts the country 47,750 homes short. Permission is at a five-year high and delivery is behind. The path from approval to completed home is where the years go.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The figures",
+        rows: [
+          { k: "Years to save a 20% deposit", v: "About 11, from 8 in 2005" },
+          { k: "Dwellings approved, 2025-26", v: "205,249, up 9.2%" },
+          { k: "Shortfall against the Accord", v: "47,750 homes" },
+          { k: "Approval delay, one Melbourne project", v: "More than 3 years" },
+          { k: "Submissions close", v: "30 September 2026" },
+          { k: "Final report due", v: "March 2027" },
+        ],
+      },
+      pullQuote: "Land that has been rezoned for housing can sit unused for years.",
+      source:
+        "Productivity Commission, Housing supply regulation interim report (released 27 July 2026); ABS Building Approvals, June 2026; Master Builders Australia; Housing Industry Association",
+      takes: {
+        owners:
+          "If you have been through a slow approval, the Commission is taking submissions until 30 September.",
+        designers:
+          "The upzoning directions point toward more medium-density work. Practices positioned for townhouses and mid-rise stand to benefit.",
+        builders:
+          "Nothing changes today. The final report lands in March 2027, and state governments decide what follows it.",
+        brokers:
+          "Approval delay is a funding cost. Three years added to a rezoned site is carried by someone.",
+      },
+    },
+    bps: {
+      kicker: "The BuilderHQ Procurement Standard",
+      headline: "Cost is the part everyone talks about. Scope is where the money",
+      headlineAccent: "quietly moves.",
+      standfirst:
+        "The Feature is about the years lost between approval and completion. This is about the weeks lost between drawings and a signed contract, and why three quotes for the same house are so hard to compare.",
+      paragraphs: [
+        "A national average cannot tell an owner whether the three quotes on their kitchen table describe the same house. Usually they do not. One carries an allowance for joinery, one prices it firm, one is silent. Each quote is honest. None is comparable, and the difference only surfaces later as a variation.",
+        "That is not a failure of builders. It is a failure of format. Australian residential tendering has no common structure, so every builder invents one, and the person least equipped to reconcile them is the homeowner.",
+        "We measured it. We ran real Australian document sets through our analysis, from one architectural set to twelve documents deep, then checked what they actually settle. The pattern held regardless of thickness. In every package the same areas were left open: site preliminaries, painting, landscaping, services connections. Ordinary trades on every job. That is the gap a builder fills with judgement, and judgement is what an owner cannot compare.",
+      ],
+      principles: [
+        {
+          n: "01",
+          title: "One scope, read from the documents",
+          body: "The documents are read against a fixed schedule of the work a home requires. Every line is either evidenced, with the page it came from, or recorded as a gap. Nothing is assumed.",
+        },
+        {
+          n: "02",
+          title: "The gaps are settled before pricing, not after",
+          body: "Where the documents are silent, the question is asked once, of the client, before the round opens. Every builder then carries the same figure. Otherwise each guesses privately and the difference appears later as a variation.",
+        },
+        {
+          n: "03",
+          title: "Every tender answers the same lines",
+          body: "For each line a builder states one of four things: included as documented, carried as an allowance at a stated figure, excluded, or not applicable. A quote stops being a document to interpret.",
+        },
+        {
+          n: "04",
+          title: "The comparison shows its working",
+          body: "Where builders disagree on a line, it is visible rather than buried. Every figure carries the disclosure it came from, so an owner can defend it and a builder is never ambushed by it.",
+        },
+      ],
+      definition: {
+        heading: "What the Standard is",
+        paragraphs: [
+          "A common format for residential tendering: one scope read from the project's own documents, one set of questions every builder answers, one comparison that shows its working.",
+          "Fair in both directions. A builder who prices carefully should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference.",
+          "Being built now, tested against real Australian project documents. Not yet released. [Our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
+        ],
+      },
+      pullQuote:
+        "A national average cannot tell an owner whether three quotes describe the same house.",
+      takes: {
+        owners:
+          "When you next receive quotes, put them side by side and look for the lines that appear in one and not the others. That difference is usually the whole story.",
+        designers:
+          "A documented allowance is worth more than a silent assumption. Where a schedule cannot be finalised, naming the gap is more useful to the tender than leaving it out.",
+        builders:
+          "A common format protects careful pricing. When every tender answers the same lines, a well-disclosed quote stops being punished for the things it was honest about.",
+        brokers:
+          "Scope certainty at contract signing is the best predictor of whether a facility draws down to plan.",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "de-lune-construction",
+      headline:
+        "Meet Fletcher Thompson and de Lune Construction, where the drawing is protected all the way to handover.",
+      deck: "Construction as the continuation of architecture.",
+      principal: "Fletcher Thompson",
+      principalRole: "Founder and Director",
+      portrait: "/build-brief/issue-004/fletcher-thompson.jpg",
+      portraitCaption: "Fletcher Thompson, Founder and Director",
+      showLogo: true,
+      stats: [
+        { value: "5.0", label: "Google rating", star: true },
+        { value: "15 yrs", label: "Complex architectural builds" },
+        { value: "Dual", label: "Residential and commercial registration" },
+      ],
+      why: "Fletcher Thompson sits between two worlds, and that is why we introduce him. A degree in architecture on one side, registration as both a residential and commercial builder on the other. His practice runs on the belief that construction is the continuation of architecture, with fifteen years behind it. For an owner taking on an architecturally ambitious home, this is a builder who speaks the architect's language fluently and builds it faithfully.",
+      practice:
+        "A Hawthorn building company specialising in complex architectural builds across Melbourne, working with clients, architects and consultants from concept to completion. Its portfolio spans the Malvern and Nicholson residences alongside commercial work including Programa HQ and Curve Cycling Melbourne.",
+      welcome:
+        "A builder who reads drawings the way an architect wrote them is exactly the practice this platform exists to put in front of the right projects.",
+    },
+    faq: [
+      {
+        q: "How much does it cost to build a house in Australia in 2026?",
+        a: "Across the 2025-26 financial year the average approval value for a new private house in Australia was $517,430, up 5.0% on the $492,931 average in 2024-25. The June 2026 figure alone was $529,790. This is the cost of building work declared when a building permit is issued and it excludes land. Declared values at permit stage tend to sit low, because variations, upgrades and site costs land later, so the real average is almost certainly higher.",
+      },
+      {
+        q: "Did Australian inflation fall in June 2026?",
+        a: "Yes. Annual CPI inflation eased to 3.8% in the twelve months to June 2026, down from 4.0% in the year to May, and the CPI fell 0.1% in the month itself. The trimmed mean, the Reserve Bank's preferred measure of underlying inflation, held at 3.6% and remains above the 2 to 3 per cent target band.",
+      },
+      {
+        q: "Will the RBA raise rates in August 2026?",
+        a: "Financial markets cut the probability of a rise at the 10 to 11 August 2026 meeting to close to zero after the June quarter inflation figures, and all four major banks expect no change. The cash rate stands at 4.35%. Underlying inflation above the target band means the direction of the next move is still unsettled.",
+      },
+      {
+        q: "When does the Guide to Standards and Tolerances 2026 edition apply?",
+        a: "The 2026 edition applies to contracts entered into and building work commenced on or after 1 August 2026. It does not apply retrospectively, so contracts entered into or work commenced before that date continue under the previous edition. An Applicability of the Guide section within the document sets out when this edition applies.",
+      },
+      {
+        q: "Is the Guide to Standards and Tolerances legislation?",
+        a: "No. The Guide is a reference tool and is neither legislation nor technical advice. Where legislation, regulations, the National Construction Code or Australian Standards prescribe specific requirements, those requirements take precedence. The Guide provides recognised benchmarks for assessing the quality of domestic building work and should be considered together with the circumstances of the work, the contract documents and any applicable legislative requirements. Victoria's Building and Plumbing Commission uses it as a recognised reference when responding to enquiries and supporting the resolution of domestic building disputes.",
+      },
+      {
+        q: "What did the Productivity Commission say about housing regulation?",
+        a: "In its interim report released on 27 July 2026, the Productivity Commission found that regulation has become a handbrake on new housing supply. It accepts that rules are necessary for safety, quality and liveability, but argues that too much or poorly designed regulation slows and narrows housing. It identifies land-use controls as the reform with the greatest potential effect on supply. The report is an interim report and makes no recommendations. Submissions close on 30 September 2026 and the final report is due in March 2027.",
+      },
+      {
+        q: "How many homes were approved in Australia in 2025-26?",
+        a: "205,249 dwellings were approved across the 2025-26 financial year, up 9.2% and the highest total since 2020-21, with multi-unit approvals at their strongest level since 2017-18. On Master Builders Australia's assessment, the country still finished 47,750 homes short of what was needed, a second consecutive year behind the National Housing Accord pace.",
+      },
+      {
+        q: "Why are builder quotes so hard to compare?",
+        a: "Because there is no common format. One quote may carry an allowance for an item, another may price it firm, and a third may be silent on it, so three honest quotes can describe three different scopes of work. When BuilderHQ tested real Australian project document sets, the same areas were left unsettled in every package regardless of how many documents the project had: site preliminaries, painting, landscaping and the connection of services. Those are the gaps each builder fills with private judgement, and they are the differences an owner cannot see until they surface later as a variation.",
+      },
+    ],
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    share:
+      "The average new Australian house was declared at $517,430 before land last financial year, and Victoria’s revised workmanship benchmark applies from 1 August. This week's Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    sourceGroups: [
+      {
+        heading: "Build cost and approvals",
+        links: [
+          {
+            label: "ABS, Building Approvals, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia/latest-release",
+          },
+          {
+            label: "ABS media release, Dwelling approvals rise in June",
+            href: "https://www.abs.gov.au/media-centre/media-releases/dwelling-approvals-rise-june-0",
+          },
+        ],
+      },
+      {
+        heading: "Inflation and rates",
+        links: [
+          {
+            label: "ABS, Consumer Price Index, Australia, June 2026",
+            href: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release",
+          },
+          {
+            label: "ABS media release, CPI rose 3.8% in the year to June 2026",
+            href: "https://www.abs.gov.au/media-centre/media-releases/cpi-rose-38-year-june-2026",
+          },
+          {
+            label:
+              "The Conversation, Australian inflation has eased a little, an August interest rate rise now looks unlikely",
+            href: "https://theconversation.com/australian-inflation-has-eased-a-little-an-august-interest-rate-rise-now-looks-unlikely-288399",
+          },
+          {
+            label: "Canstar, Will inflation dip be enough to stop an RBA hike?",
+            href: "https://www.canstar.com.au/news/will-inflation-dip-be-enough-to-stop-rba-hike/",
+          },
+        ],
+      },
+      {
+        heading: "Workmanship standards",
+        links: [
+          {
+            label:
+              "Building and Plumbing Commission, Guide to Standards and Tolerances 2026",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2026",
+          },
+          {
+            label: "Building and Plumbing Commission, the previous edition",
+            href: "https://www.bpc.vic.gov.au/resource-hub/guides/guide-to-standards-and-tolerances-2015-under-review-2024",
+          },
+        ],
+      },
+      {
+        heading: "Housing supply regulation",
+        links: [
+          {
+            label: "Productivity Commission, Housing supply regulation interim report",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/interim/",
+          },
+          {
+            label: "Make a submission, closes 30 September 2026",
+            href: "https://www.pc.gov.au/inquiries-and-research/housing-supply/make-submission/",
+          },
+          {
+            label: "HIA, Productivity Commission push for bold housing reform",
+            href: "https://hia.com.au/our-industry/newsroom/planning-and-environment/2026/07/productivity-commission-push-for-bold-housing-reform",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Australian Bureau of Statistics, the Productivity Commission, Victoria's Building and Plumbing Commission, Master Builders Australia and the Housing Industry Association. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Australian Bureau of Statistics",
+      "the Productivity Commission",
+      "the Building and Plumbing Commission",
+      "Master Builders Australia",
+      "the Housing Industry Association",
+    ],
+  },
+  {
+    slug: "issue-005",
+    number: 5,
+    date: "2026-08-07",
+    displayDate: "Friday, 7 August 2026",
+    title:
+      "New home contract cancellations jumped 50%, and the SMSF borrowing ban starts Monday.",
+    standfirst:
+      "Cancellations of new home contracts rose 50% in June while sales for the year were up 18.4%. From Monday, self-managed super funds can no longer borrow to buy residential property. Home values fell 0.7% in July. And from July 2027, negative gearing follows new builds only.",
+    seoTitle:
+      "The Build Brief 005: Projects Are Being Lost After the Contract Is Signed | BuilderHQ",
+    seoDescription:
+      "New home contract cancellations jumped 50% in June, and the SMSF borrowing ban starts Monday 10 August. National home values fell 0.7% in July. From July 2027 negative gearing follows new builds, and a one for one knockdown rebuild does not qualify.",
+    keywords: [
+      "new home contract cancellations australia",
+      "smsf borrowing ban 10 august 2026",
+      "smsf limited recourse borrowing residential property",
+      "cotality home value index july 2026",
+      "australian home values falling 2026",
+      "on completion valuation construction loan",
+      "negative gearing new builds 2027",
+      "what qualifies as a new build australia",
+      "knockdown rebuild negative gearing",
+      "capital gains tax changes 2027 australia",
+      "hia new home sales june 2026",
+      "apprentice retention australia",
+      "apprenticeship commencements declining",
+      "construction labour shortage australia",
+      "new home commencements forecast australia",
+      "residential construction news australia",
+      "building contract finance approval",
+      "compare builder quotes australia",
+    ],
+    ogImage: "/build-brief/og-issue-005.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading: "Demand is not the problem. Conversion is.",
+      paragraphs: [
+        "Three sets of numbers landed this week. Each one marks a different point where a home that someone wants does not get built.",
+        "The first is finance. New home contract cancellations jumped 50% in June, which the Housing Industry Association puts down to tighter borrowing capacity and conditional finance being withdrawn. Sales across the 2025-26 financial year were still up 18.4%. People want to build. More of those projects are failing between the signature and the slab.",
+        "The second is valuation. National home values fell 0.7% in July, the largest monthly fall since December 2022, and the decline spread beyond Sydney and Melbourne for the first time. A cheaper site sounds like good news until you remember that construction lenders assess what the finished home will be worth, not what the land cost.",
+        "The third is people. New research covering more than 12,000 apprentices found that three in four have never considered leaving. The ones who do are not short of commitment. They are short of support.",
+        "One date before Monday. From 10 August, self-managed super funds can no longer borrow to buy residential property, and builders are holding thousands of signed contracts that depend on it. Details in the first signal. [Last week's edition](/build-brief/issue-004) covered what a new house now costs to build.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "Demand Watch",
+        headline: "Projects are being lost after the contract is",
+        headlineAccent: "signed.",
+        stat: {
+          value: "+50%",
+          label: "jump in new home contract cancellations, June 2026",
+          sub: "SMSF borrowing ban starts Monday 10 August",
+        },
+        chart: {
+          kind: "figures",
+          title: "Demand is still there. Conversion is weakening.",
+          desc: "New home sales across the 2025-26 financial year were up 18.4%, and June quarter sales were 4.6% higher than the same quarter a year earlier, while cancellations of new home sales contracts rose 50% in June compared with May.",
+          valueHeading: "Change",
+          figures: [
+            { label: "New home sales, 2025-26 financial year", value: 18.4, display: "+18.4%" },
+            { label: "Sales, June quarter, year on year", value: 4.6, display: "+4.6%" },
+            {
+              label: "Contract cancellations, June on May",
+              value: 50,
+              display: "+50%",
+              accent: true,
+            },
+          ],
+          footnote:
+            "Two measures of appetite, one measure of completion. The gap between them is the story.",
+        },
+        body: [
+          "The Housing Industry Association's latest New Home Sales report found cancellations of new home sales contracts jumped 50% in June compared with May. The HIA puts the increase down to higher borrowing costs limiting borrowing capacity, and to conditional finance being withdrawn.",
+          "Demand has not disappeared. Sales in the June quarter were still 4.6% higher than the same period a year earlier, and sales across the full 2025-26 financial year were up 18.4%. The monthly picture varied by state. New South Wales recorded the largest fall at 12.5%, Victoria was down 9.2% and Queensland down 3.0%, while Western Australia rose 8.1% and South Australia held steady.",
+          "That tension is the story. People still want to build. Fewer of those projects are surviving the trip from signed contract to site. More than 80% of builders now expect new home commencements to fall by at least 5%, and half expect declines of more than 10%.",
+        ],
+        callout: {
+          kicker: "Before Monday",
+          title: "The SMSF borrowing deadline",
+          paragraphs: [
+            "From Monday 10 August, self-managed super funds can no longer enter new limited recourse borrowing arrangements to buy residential property. Contracts exchanged before Monday remain valid even if settlement falls afterwards. Existing arrangements are grandfathered, including the right to refinance, and commercial and business real property borrowing is unaffected. A fund can still buy residential property outright without borrowing.",
+            "The HIA surveyed Australia's largest detached home builders, together representing more than 40% of national detached housing construction. On the HIA's own estimate those builders hold 3,613 signed contracts backed by these arrangements that have not yet started on site, and expect 2,415 of them, close to 67%, to be cancelled. The HIA puts the combined effect at a 3.5% to 5% reduction in detached housing commencements nationally, and notes the figure covers detached housing only, so the total may be larger. These are expected cancellations reported by builders, not cancellations that have already occurred.",
+            "If any contract in your pipeline depends on SMSF borrowing and has not commenced, today is the day to open that file.",
+          ],
+        },
+        source:
+          "HIA New Home Sales report, June 2026; HIA survey on SMSF limited recourse borrowing arrangements, July 2026",
+        takes: {
+          owners:
+            "A signed building contract is not the end of feasibility. Check that the final contract, variations, finance approval and valuation still agree before committing cash, and [test the numbers early](/estimate_request_landing_page).",
+          designers:
+            "Late design changes can move a project outside the finance assumptions that got it approved. Cost control after planning matters as much as cost control before it.",
+          builders:
+            "A full sales pipeline is not the same as a secure construction pipeline. Finance readiness is worth understanding before labour and programme are committed.",
+          brokers:
+            "Conditional approval needs to survive the final contract price. Recheck the facility whenever scope, build cost or client contribution changes.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Value Watch",
+        headline: "A cheaper site does not automatically mean an easier",
+        headlineAccent: "build.",
+        stat: {
+          value: "-0.7%",
+          label: "national home values, July 2026",
+          sub: "largest monthly fall since December 2022",
+        },
+        chart: {
+          kind: "diverging",
+          title: "July pushed the downturn wider",
+          desc: "National dwelling values fell 0.7% in July 2026, Sydney fell 1.4% and Melbourne fell 1.2%. All three are monthly changes measured against no change.",
+          valueHeading: "Monthly change, July 2026",
+          zeroLabel: "no change",
+          bars: [
+            { label: "Australia", value: -0.7, display: "-0.7%", accent: true },
+            { label: "Sydney", value: -1.4, display: "-1.4%" },
+            { label: "Melbourne", value: -1.2, display: "-1.2%" },
+          ],
+          footnote:
+            "Annual national growth is still positive at 5.3%. Over the three months to July, upper quartile values fell 3.2% while the lower price tier rose 0.3%.",
+        },
+        body: [
+          "Cotality's national Home Value Index fell 0.7% in July, accelerating from June's 0.4% decline and recording the largest national monthly fall since December 2022. Annual growth slowed to 5.3%. Sydney fell 1.4% for the month and Melbourne 1.2%, while previously stronger mid-sized markets lost momentum, with Brisbane down 0.6% and Adelaide down 0.2%. The combined regional index fell 0.2%, its first decline since January 2023.",
+          "[Our second edition](/build-brief/issue-002) picked up the first behavioural signal in this story, when auction activity and clearance rates weakened. This is the next stage: softer demand now showing up in values.",
+          "The correction is concentrated at the expensive end. Over the three months to July, upper quartile values fell 3.2% nationally while the lower price tier rose 0.3%.",
+          "For residential construction, falling prices are neither automatically good nor automatically bad. A buyer may acquire a site more cheaply. But the finished property may also value lower, and construction lenders assess what the proposed home is expected to be worth once complete rather than what the land cost. Lenders describe this differently, but the principle holds across the market: the loan is sized against the completed asset. That is why a cheaper site can still produce a project that is harder to finance.",
+        ],
+        source: "Cotality Home Value Index, July 2026 (released 3 August 2026)",
+        takes: {
+          owners:
+            "Use the negotiating opportunity, but rerun the project's completed value before assuming a cheaper purchase improves feasibility. [A preliminary estimate](/estimate_request_landing_page) is the cheapest place to test it.",
+          designers:
+            "A project should work against both the client's construction budget and a defensible end value. In a moving market those are different tests.",
+          builders:
+            "Clients can face finance pressure even when your contract price has not changed. A softer valuation can still delay or resize the job.",
+          brokers:
+            "The on-completion valuation deserves as much attention as serviceability. A market movement can change the equity position without changing the drawings.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "Workforce",
+        headline: "Most apprentices want to stay. The workplace decides whether they",
+        headlineAccent: "do.",
+        stat: {
+          value: "76%",
+          label: "of current apprentices had not considered leaving",
+          sub: "supportive workplaces cut that risk by 28%",
+        },
+        chart: {
+          kind: "relation",
+          title: "Retention is an experience problem, not a commitment problem",
+          desc: "Around 76% of current Australian apprentices had not considered leaving. Apprentices who felt cared for and supported at work were 28% less likely to consider leaving.",
+          valueHeading: "Finding",
+          headline: {
+            display: "76%",
+            label: "of current apprentices had not considered leaving their apprenticeship",
+          },
+          driver: {
+            condition: "Apprentices who felt cared for and supported at work were",
+            effect: "28% less likely to consider leaving",
+          },
+          steps: ["Clear expectations", "Regular check-ins", "Structured mentoring"],
+        },
+        body: [
+          "Apprenticeship Support Australia released its National First Year Experience Report on Tuesday, launched in Sydney by the Minister for Skills and Training. It draws on the experiences of more than 12,000 current and former apprentices and trainees, and it lands at a time when apprenticeship and traineeship commencements are still falling nationally.",
+          "Its most useful finding challenges a common assumption. Around 76% of current Australian apprentices said they had not considered leaving. Attrition is not mainly a commitment problem.",
+          "Where the risk changes is the early workplace experience, and the first twelve months carry the greatest risk. Apprentices who felt cared for and supported at work were 28% less likely to consider leaving. Those experiencing sadness, anxiety or worry were 65% more likely to consider leaving. Cost of living pressure is widespread, with 55% reporting they were quite or extremely affected, rising to 58% among apprentices living with disability and 60% among First Nations apprentices. Only 49% said school had given them good information about all career pathways before they started.",
+          "Organisation size shapes the experience in both directions. Apprentices in smaller workplaces often benefit from closer supervision, but retention risk rises where an employer lacks the time, systems or mentoring capacity to notice a problem early.",
+          "The Brief has covered the construction labour shortage before. This week's research gives it a second half. Recruitment is only part of the answer. Retention is capacity too, and the [builders we introduce](/partners/builders) tend to be the ones who hold a team together.",
+        ],
+        source:
+          "Apprenticeship Support Australia, National First Year Experience Report, released 4 August 2026; reported by Build Australia",
+        takes: {
+          owners:
+            "A builder with a stable team has an operational advantage. Workforce continuity affects sequencing, workmanship and programme.",
+          designers:
+            "Clear, buildable documentation helps site teams at every experience level. Complexity that exists only on paper still has to be taught and executed.",
+          builders:
+            "Mentoring, clarity and supervision are how future capacity gets built. The research points to small, practical actions rather than large programmes.",
+          brokers:
+            "Workforce stability affects programme reliability, which affects progress claims, facility duration and holding costs.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline:
+        "From July 2027, negative gearing follows new builds. A one for one knockdown rebuild",
+      headlineAccent: "is not one.",
+      standfirst:
+        "The tax treatment of residential investment changes on 1 July 2027, and the definition of a new build is narrower than the phrase suggests. If a project completes after that date, the structure matters now.",
+      paragraphs: [
+        "The Government's tax package was announced in the Budget on 12 May 2026 and is now law. Two measures change how residential investment is taxed from 1 July 2027, and both turn on a single question: does the project add to the housing stock?",
+      ],
+      sections: [
+        {
+          heading: "What changes",
+          paragraphs: [
+            "**Negative gearing narrows to new builds.** From 1 July 2027, an investor who buys an established residential property after 7:30pm on 12 May 2026 can no longer offset rental losses against salary or other income. Those losses are quarantined instead: they can be offset against residential rental income or against future capital gains from residential property, and carried forward to later years.",
+            "**Properties held before the cutoff are grandfathered.** Anything owned at 7:30pm on 12 May 2026, including contracts exchanged but not yet settled, continues under the existing rules until it is sold. The test is the purchase date, not the settlement date.",
+            "**There is an interim window.** Established properties bought after the cutoff can still be negatively geared until 30 June 2027. The restriction applies from 1 July 2027.",
+            "**Capital gains tax changes too.** The 50% CGT discount is replaced by cost base indexation with a minimum 30% tax rate on gains, applying to gains that accrue from 1 July 2027. Investors in eligible new builds can choose either the existing 50% discount or the new arrangement.",
+          ],
+        },
+        {
+          heading: "What counts as a new build",
+          paragraphs: [
+            "This is the part that decides how projects get structured, and the line is drawn around net new dwellings rather than new construction.",
+            "**Generally eligible:** a dwelling built on previously vacant land; a development that demolishes an existing property and replaces it with a greater number of dwellings; off the plan apartments; house and land packages; qualifying duplex developments; and newly built properties that have not previously been sold or occupied.",
+            "**Generally not eligible:** a knockdown rebuild that replaces one dwelling with one dwelling; substantial renovations; and granny flat additions to an existing established property.",
+            "One further limit matters for anyone building to sell. The new build treatment is available to the first investor purchaser only. A subsequent buyer of the same property does not inherit it.",
+            "Separate exemptions have been flagged for build to rent developments and for private investors participating in government housing programs, along with properties held in superannuation funds and widely held trusts. Detail on the scope of those exemptions remains limited.",
+          ],
+        },
+        {
+          heading: "Why this matters before 2027",
+          paragraphs: [
+            "Residential projects take time. A townhouse development that starts documentation now may not reach a first investor buyer until well after July 2027, which means the tax treatment of the finished product is being decided at design stage today.",
+            "The practical consequence is that dwelling yield has acquired a tax dimension it did not have before. One house replaced by two townhouses sits on one side of the line. One house replaced by one larger house sits on the other. That does not make the second project wrong, and plenty of owner occupier work is unaffected entirely. It does mean the question is worth asking early, particularly on infill sites where the difference between one dwelling and two is a planning decision rather than a construction one. If an investor buyer is the exit, [test the numbers before the design locks](/estimate_request_landing_page).",
+            "None of this is advice about any particular project. The framework is law, the finer definition of an eligible new build is still being settled through the legislative and consultation process, and the answer for any given site depends on facts that a qualified adviser needs to look at. General information only, current at the date of publication. Seek advice specific to your circumstances.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The dates",
+        rows: [
+          { k: "Grandfathering cutoff", v: "7:30pm, 12 May 2026, by purchase date" },
+          { k: "Interim window ends", v: "30 June 2027" },
+          { k: "New rules apply from", v: "1 July 2027" },
+          { k: "Negative gearing", v: "New builds only" },
+          { k: "CGT discount", v: "50% replaced by indexation, minimum 30% rate" },
+          { k: "New build treatment", v: "First investor purchaser only" },
+        ],
+      },
+      pullQuote:
+        "The tax treatment of the finished product is being decided at design stage today.",
+      source:
+        "ATO, Tax reform: boosting home ownership, reforming negative gearing and capital gains tax; Budget 2026-27 tax reform explainer; Pitcher Partners; William Buck; Goodwin Chivas; Duo Tax",
+      takes: {
+        owners:
+          "If a project completes after July 2027 and an investor buyer is the exit, dwelling yield now carries a tax consequence. Get advice before the design locks.",
+        designers:
+          "On infill sites, the difference between one dwelling and two has moved from a planning question to a planning and tax question.",
+        builders:
+          "Knockdown rebuild and renovation work is not disadvantaged for owner occupiers. It is the investor exit that changes.",
+        brokers:
+          "Two tax regimes will run side by side from July 2027, depending on purchase date and dwelling type. Client records need to carry the date.",
+      },
+    },
+    bps: {
+      kicker: "The BuilderHQ Procurement Standard",
+      headline: "A contract is only as strong as the scope it was signed",
+      headlineAccent: "on.",
+      standfirst:
+        "Market Watch 01 counts projects lost between signature and site. Finance explains most of them. Scope explains some, and scope is the part we can fix.",
+      paragraphs: [
+        "When three builders price the same house, they are rarely pricing the same scope. Each quote is honest. None is comparable. The owner signs the lowest number, and the difference surfaces later as a variation, at the point in a project where the budget has the least room left in it.",
+      ],
+      comparison: {
+        title: "Same drawings, same house, three quotes",
+        line: "Landscaping to the rear yard",
+        quotes: [
+          {
+            who: "Builder A",
+            treatment: "Included as documented",
+            note: "Prices the work shown on the landscape plan.",
+          },
+          {
+            who: "Builder B",
+            treatment: "$18,000 allowance",
+            note: "Carries a figure, to be adjusted against actual cost.",
+          },
+          {
+            who: "Builder C",
+            treatment: "Not mentioned",
+            note: "Silent. The owner reads that as included.",
+          },
+        ],
+        verdict:
+          "Builder C looks cheapest and is not. Nobody has done anything wrong. The three quotes describe three different houses, and nothing in the paperwork tells the owner that.",
+        answersTitle: "Under the Standard, every builder answers the same line, one of four ways",
+        answers: [
+          "Included as documented",
+          "Allowance, at a stated figure",
+          "Excluded",
+          "Not applicable",
+        ],
+      },
+      definition: {
+        heading: "What the Standard does",
+        paragraphs: [
+          "The documents are read against a fixed schedule of the work a home requires, and every gap is settled with the client before pricing opens, so all three builders carry the same figure rather than each guessing privately.",
+          "Fair in both directions. A builder who prices carefully should not lose to a cheaper quote that is quieter about what it leaves out. An owner should not need to be a quantity surveyor to see the difference. [Our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) sets out the argument in full.",
+        ],
+      },
+      pullQuote: "Builder C looks cheapest and is not.",
+    },
+    partnerCorner: {
+      partnerSlug: "jason-pogorelec",
+      headline:
+        "Meet Jason Pogorelec of Inovayt, a broker who plans the finance past the settlement.",
+      principal: "Jason Pogorelec",
+      principalRole: "Senior Finance Broker",
+      portrait: "/build-brief/issue-005/jason-pogorelec.jpg",
+      portraitCaption: "Jason Pogorelec, Senior Finance Broker",
+      showLogo: true,
+      logo: "/build-brief/issue-005/inovayt.png",
+      deck: "Strategy that looks past a single settlement.",
+      stats: [
+        { value: "5.0", label: "Google rating, Inovayt", star: true },
+        { value: "15+ yrs", label: "In finance broking" },
+        { value: "9", label: "Industry honours since 2011" },
+      ],
+      why: "This edition is about projects lost between the signed contract and the slab, and finance decides most of them. Jason Pogorelec has spent more than fifteen years in broking, all of it with one firm, and works the way that problem needs: analytical, organised, and built around a client's next decade rather than a single approval. He structures lending across home, investment, commercial and self-managed super, so that a construction loan taken today does not narrow the options tomorrow.",
+      practice:
+        "A senior finance broker with Inovayt in West Melbourne, working across construction loans, investment lending and self-managed super fund finance. Nine industry honours since 2011, including AFG's Top 20 Champion Broker list for Victoria in 2019 and 2020, and a finalist placing for Best Residential Broker at the 2022 Better Business Awards.",
+      welcome:
+        "In a week where finance is what decides whether a project starts, a broker who plans past the approval is exactly who this platform exists to put in front of owners early.",
+    },
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    faq: [
+      {
+        q: "Why are new home contract cancellations rising in Australia?",
+        a: "Cancellations of new home sales contracts jumped 50% in June 2026 compared with May. The Housing Industry Association attributes the increase to higher borrowing costs limiting borrowing capacity, and to conditional finance being withdrawn. Demand itself has not fallen away: sales in the June quarter were 4.6% higher than the same quarter a year earlier, and sales across the 2025-26 financial year were up 18.4%.",
+      },
+      {
+        q: "When does the SMSF borrowing ban start?",
+        a: "From Monday 10 August 2026, self-managed super funds can no longer enter new limited recourse borrowing arrangements to buy residential property. Contracts exchanged before that date remain valid even if settlement occurs afterwards.",
+      },
+      {
+        q: "Can an SMSF still buy residential property after 10 August 2026?",
+        a: "Yes, but not with new borrowing. A fund can still buy residential property outright. Existing limited recourse borrowing arrangements are grandfathered and can still be refinanced, and borrowing for commercial and business real property is unaffected. The change applies to new residential borrowing arrangements only.",
+      },
+      {
+        q: "How many building contracts are affected by the SMSF borrowing ban?",
+        a: "The Housing Industry Association surveyed Australia's largest detached home builders, together representing more than 40% of national detached housing construction. On the HIA's estimate those builders hold 3,613 signed contracts backed by these arrangements that have not yet started on site, and expect 2,415 of them, close to 67%, to be cancelled. The HIA puts the effect at a 3.5% to 5% reduction in detached housing commencements nationally, and notes the figure covers detached housing only. These are expected cancellations reported by builders, not cancellations that have already happened.",
+      },
+      {
+        q: "Did Australian home values fall in July 2026?",
+        a: "Yes. Cotality's national Home Value Index fell 0.7% in July 2026, accelerating from a 0.4% decline in June and recording the largest national monthly fall since December 2022. Sydney fell 1.4% and Melbourne 1.2%. The combined regional index fell 0.2%, its first decline since January 2023. Annual national growth slowed to 5.3%.",
+      },
+      {
+        q: "Does a cheaper site make a construction loan easier to get?",
+        a: "Not necessarily. Construction lenders assess what the proposed home is expected to be worth once complete, rather than what the land cost. If values are falling, the completed property may also value lower, which can change the equity position without anything changing in the drawings or the contract price.",
+      },
+      {
+        q: "What qualifies as a new build for negative gearing from 1 July 2027?",
+        a: "The line is drawn around net new dwellings rather than new construction. Generally eligible: a dwelling built on previously vacant land, a development that replaces an existing property with a greater number of dwellings, off the plan apartments, house and land packages, qualifying duplex developments, and newly built properties not previously sold or occupied. Generally not eligible: a knockdown rebuild that replaces one dwelling with one dwelling, substantial renovations, and granny flat additions to an existing established property. The treatment is available to the first investor purchaser only. The framework is law, but the finer definition is still being settled, so specific advice is needed for any particular project.",
+      },
+      {
+        q: "Is a knockdown rebuild negatively gearable after 2027?",
+        a: "A knockdown rebuild that replaces one dwelling with one dwelling is generally not treated as a new build, so from 1 July 2027 an investor buying it would not be able to offset rental losses against other income. Replacing one dwelling with a greater number of dwellings generally is treated as a new build. Owner occupier work is unaffected: the change applies to the tax treatment of residential investment.",
+      },
+      {
+        q: "Why do most apprentices leave, and what keeps them?",
+        a: "Around 76% of current Australian apprentices said they had not considered leaving, so attrition is not mainly a commitment problem. Apprentices who felt cared for and supported at work were 28% less likely to consider leaving, while those experiencing sadness, anxiety or worry were 65% more likely to. Cost of living pressure was widespread, with 55% reporting they were quite or extremely affected. The findings come from Apprenticeship Support Australia's National First Year Experience Report, drawing on more than 12,000 current and former apprentices and trainees.",
+      },
+      {
+        q: "Why are three builder quotes for the same house so hard to compare?",
+        a: "Because there is no common format for what a quote has to answer. One builder may price an item as documented, another may carry an allowance, and a third may not mention it at all, so three honest quotes can describe three different scopes of work. The cheapest quote is often the one that is quietest about what it leaves out, and the difference usually surfaces later as a variation.",
+      },
+    ],
+    share:
+      "New home contract cancellations jumped 50% in June, and the SMSF borrowing ban starts Monday. This week's Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      { label: "Issue 004: what a new house costs before it is built", href: "/build-brief/issue-004" },
+      { label: "Issue 003: the cost base restarts and the failure rate turns", href: "/build-brief/issue-003" },
+      { label: "Issue 002: Victoria's new building rules and the labour squeeze", href: "/build-brief/issue-002" },
+      {
+        label: "Perspective: Australian construction has a procurement problem",
+        href: "/build-brief/perspectives/construction-procurement-standard",
+      },
+    ],
+    sourceGroups: [
+      {
+        heading: "Cancellations and the SMSF deadline",
+        links: [
+          {
+            label: "HIA, New Home Sales report",
+            href: "https://hia.com.au/our-industry/economics/data-forecasts/resource/new-home-sales-report",
+          },
+          {
+            label: "HIA, Housing supply set to fall as thousands of new home contracts face cancellation",
+            href: "https://hia.com.au/our-industry/newsroom/economic-research-and-forecasting/2026/07/housing-supply-set-to-fall-as-thousands-of-new-home-contracts-face-cancellation",
+          },
+          {
+            label: "Broker Daily, SMSF borrowing ban puts thousands of building contracts at risk",
+            href: "https://www.brokerdaily.au/property/21794-smsf-borrowing-ban-puts-thousands-of-building-contracts-at-risk",
+          },
+        ],
+      },
+      {
+        heading: "Home values",
+        links: [
+          {
+            label: "Cotality, Australia's housing market downturn widens",
+            href: "https://www.cotality.com/au/insights/articles/australias-housing-market-downturn-widens",
+          },
+          {
+            label: "Reuters, Australia's home price retreat gathers pace in July",
+            href: "https://www.investing.com/news/economic-indicators/australias-home-price-retreat-gathers-pace-in-july-cotality-data-shows-4829700",
+          },
+        ],
+      },
+      {
+        heading: "Apprentice retention",
+        links: [
+          {
+            label: "Build Australia, New report finds most apprentices plan to stay",
+            href: "https://www.buildaustralia.com.au/news_article/new-report-finds-most-apprentices-plan-to-stay/",
+          },
+          {
+            label: "Mirage News, Research uncovers factors keeping apprentices in training",
+            href: "https://www.miragenews.com/research-uncovers-factors-keeping-apprentices-1720680/",
+          },
+        ],
+      },
+      {
+        heading: "Negative gearing and capital gains tax",
+        links: [
+          {
+            label: "ATO, Tax reform: boosting home ownership, reforming negative gearing and capital gains tax",
+            href: "https://www.ato.gov.au/about-ato/new-legislation/in-detail/individuals/tax-reform-boosting-home-ownership-reforming-negative-gearing-and-capital-gains-tax",
+          },
+          {
+            label: "Budget 2026-27, tax reform explainer",
+            href: "https://budget.gov.au/content/04-tax-reform.htm",
+          },
+          {
+            label: "Goodwin Chivas, Negative gearing limited to new builds from 1 July 2027",
+            href: "https://www.goodwinchivas.com.au/reading-room/negative-gearing-limited-to-new-builds",
+          },
+          {
+            label: "Duo Tax, What qualifies as a new build after the 2026 Federal Budget changes?",
+            href: "https://duotax.com.au/insights/what-qualifies-as-a-new-build/",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Housing Industry Association, Cotality, Apprenticeship Support Australia, the Australian Taxation Office, the Commonwealth Treasury and Build Australia. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Housing Industry Association",
+      "Cotality",
+      "Apprenticeship Support Australia",
+      "the Australian Taxation Office",
+      "the Commonwealth Treasury",
+      "Build Australia",
+    ],
+  },
 ];
 
 /** Issues newest-first for the hub and feeds. */
@@ -1382,7 +2349,7 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
       },
       {
         kind: "p",
-        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is an open framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
+        text: "BuilderHQ believes the industry would benefit from a consistent procurement framework. The proposed BuilderHQ Procurement Standard, or BPS, is a structured framework that standardises how procurement information is presented. It does not tell builders what to charge or how to build.",
       },
       {
         kind: "p",
@@ -1447,7 +2414,7 @@ export const BRIEF_PERSPECTIVES: BriefPerspective[] = [
     ],
     aboutLabel: "Editorial note",
     aboutAuthor:
-      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as an open framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
+      "BuilderHQ is developing the BuilderHQ Procurement Standard (BPS) as a structured framework for industry consultation. Builders, architects, designers, lenders, insurers and industry bodies interested in shaping future versions of the proposed framework are invited to register their interest.",
     keywords: [
       "construction procurement",
       "residential construction procurement",

@@ -37,8 +37,8 @@ export default function NotFound() {
             Off the map
           </h1>
           <p className="text-[13.5px] leading-[22px] text-text-muted max-w-sm">
-            The page you&apos;re after doesn&apos;t exist — moved, renamed, or
-            never built. Head back to the start.
+            The page you&apos;re after doesn&apos;t exist. It may have moved,
+            been renamed, or never been built. Head back to the start.
           </p>
         </div>
 

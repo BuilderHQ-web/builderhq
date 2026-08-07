@@ -217,9 +217,9 @@ export const LENS: Record<Role, LensCopy> = {
         "No anonymous bids. No pay-to-appear. Just builders who cleared the gate.",
     },
     network: {
-      h2a: "Need a designer",
-      h2b: "or a broker?",
-      body: "Our Preferred Partner networks connect you with building designers and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
+      h2a: "Need a designer,",
+      h2b: "builder or broker?",
+      body: "Our Preferred Partner networks connect you with building designers, builders and finance brokers we know and trust. Tell us what you need before you build, and we’ll point you to the right fit. No charge, no obligation.",
       cta: { label: "Request an introduction", href: REQUEST_INTRO_HREF },
     },
     faq: [
@@ -395,13 +395,13 @@ export const LENS: Record<Role, LensCopy> = {
   /* ── ARCHITECT — design literate, allergic to sales. Give, don't ask. ── */
   architect: {
     hero: {
-      badge: "Now inviting partner practices",
+      badge: "For architects and designers",
       h1a: "Your designs,",
       h1b: "in the right hands.",
-      sub: "We put your practice in front of homeowners and builders planning to build.",
-      primary: { label: "Join the network", href: ARCHITECT_JOIN_HREF },
+      sub: "Run structured tenders for your clients, with your builders or ours, and keep your name on the work.",
+      primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["By invitation", "Featured and referred", "Your name on your work"],
+      facts: ["Free for practices", "Open, private or hybrid tenders", "Your name on your work"],
     },
     problem: {
       kicker: "The idea",

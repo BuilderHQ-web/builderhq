@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 import { countMyUnreadMessagesAction } from "@/app/(app)/_actions/messaging";
 
-type Role = "project_owner" | "builder" | "admin";
+type Role = "project_owner" | "builder" | "admin" | "architect";
 
 interface NavItem {
   href: string;
@@ -50,6 +50,19 @@ const ownerNav: NavSection[] = [
       { href: "/owner/projects", label: "Projects", icon: Folders },
       { href: "/owner/tenders", label: "Tenders", icon: FileSpreadsheet },
       { href: "/owner/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
+    ],
+  },
+  {
+    title: "Account",
+    items: [{ href: "/settings", label: "Settings", icon: Settings }],
+  },
+];
+
+const architectNav: NavSection[] = [
+  {
+    items: [
+      { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/architect/projects", label: "Tenders", icon: Folders },
     ],
   },
   {
@@ -107,6 +120,7 @@ const navByRole: Record<Role, NavSection[]> = {
   project_owner: ownerNav,
   builder: builderNav,
   admin: adminNav,
+  architect: architectNav,
 };
 
 interface SidebarProps {

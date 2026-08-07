@@ -31,7 +31,7 @@ import { readAdsFunnelCookie } from "@/lib/ads-funnel-cookie";
 
 export interface ActorContext {
   id: string;
-  role: "project_owner" | "builder" | "admin";
+  role: "project_owner" | "builder" | "admin" | "architect";
   /** "session" = Auth.js JWT (verified user).
    *  "draft"   = ads-funnel soft-auth cookie (unverified, single
    *              project scope). */

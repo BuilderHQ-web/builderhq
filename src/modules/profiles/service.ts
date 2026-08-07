@@ -29,6 +29,7 @@ import { fail, ok, type Result } from "@/lib/result";
 import { users } from "@/modules/users";
 
 import {
+  architectProfiles,
   builderLicences,
   builderProfiles,
   builderProjectCategories,
@@ -43,6 +44,7 @@ import {
   type BuilderProjectCategory,
   type BuilderServiceArea,
   type ProjectOwnerProfile,
+  type ArchitectProfile,
 } from "./schema";
 
 // ── Zod schemas ──────────────────────────────────────────────────────────
@@ -73,6 +75,14 @@ export const ownerProfileSchema = z.object({
   contactPref: z.enum(contactPrefEnum.enumValues).default("email"),
 });
 export type OwnerProfileInput = z.infer<typeof ownerProfileSchema>;
+
+export const architectProfileSchema = z.object({
+  practiceName: z.string().min(2, "Practice name is required").max(120).trim(),
+  suburb: z.string().max(120).trim().nullish(),
+  state: z.enum(australianStateEnum.enumValues).nullish(),
+  contactPhone: z.string().max(30).trim().nullish(),
+});
+export type ArchitectProfileInput = z.infer<typeof architectProfileSchema>;
 
 export const builderProfileSchema = z.object({
   companyName: z.string().min(2, "Company name is required").max(120).trim(),
@@ -271,6 +281,78 @@ export async function completeOwnerOnboarding(
     .where(eq(projectOwnerProfiles.userId, userId));
 
   logger.info({ event: "profile.owner.onboarded", userId }, "owner onboarding completed");
+  return ok({ ok: true });
+}
+
+// ── Architect profile ────────────────────────────────────────────────────
+
+export async function getArchitectProfile(
+  userId: string,
+): Promise<ArchitectProfile | null> {
+  const [row] = await db
+    .select()
+    .from(architectProfiles)
+    .where(eq(architectProfiles.userId, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function upsertArchitectProfile(
+  userId: string,
+  raw: unknown,
+): Promise<Result<ArchitectProfile>> {
+  const parsed = architectProfileSchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("validation", "Some fields need fixing.", { issues: parsed.error.issues });
+  }
+  const v = parsed.data;
+
+  const [row] = await db
+    .insert(architectProfiles)
+    .values({
+      userId,
+      practiceName: v.practiceName,
+      suburb: v.suburb ?? null,
+      state: v.state ?? null,
+      contactPhone: v.contactPhone ?? null,
+    })
+    .onConflictDoUpdate({
+      target: architectProfiles.userId,
+      set: {
+        practiceName: v.practiceName,
+        suburb: v.suburb ?? null,
+        state: v.state ?? null,
+        contactPhone: v.contactPhone ?? null,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  if (!row) return fail("internal", "Could not save your studio profile.");
+  return ok(row);
+}
+
+export async function completeArchitectOnboarding(
+  userId: string,
+): Promise<Result<{ ok: true }>> {
+  const [profile] = await db
+    .select({ id: architectProfiles.userId })
+    .from(architectProfiles)
+    .where(eq(architectProfiles.userId, userId))
+    .limit(1);
+  if (!profile) {
+    return fail("validation", "Save your studio before finishing onboarding.");
+  }
+
+  await db
+    .update(architectProfiles)
+    .set({ onboardingCompletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(architectProfiles.userId, userId));
+
+  logger.info(
+    { event: "profile.architect.onboarded", userId },
+    "architect onboarding completed",
+  );
   return ok({ ok: true });
 }
 
@@ -791,6 +873,15 @@ export async function hasCompletedOnboarding(
       .select({ at: builderProfiles.onboardingCompletedAt })
       .from(builderProfiles)
       .where(eq(builderProfiles.userId, userId))
+      .limit(1);
+    return !!row?.at;
+  }
+
+  if (role === "architect") {
+    const [row] = await db
+      .select({ at: architectProfiles.onboardingCompletedAt })
+      .from(architectProfiles)
+      .where(eq(architectProfiles.userId, userId))
       .limit(1);
     return !!row?.at;
   }
