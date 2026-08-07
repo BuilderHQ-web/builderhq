@@ -83,7 +83,52 @@ export interface BriefStripSpec {
   legend?: { accent: string; context: string };
 }
 
-export type BriefChartSpec = BriefBarsSpec | BriefSlopeSpec | BriefStripSpec;
+/** Figure row — where the story is the contrast between two or three
+ *  headline numbers, not their scale. A bar chart would imply they are
+ *  measures of the same thing; these are not. Issue 005 onward. */
+export interface BriefFiguresSpec {
+  kind: "figures";
+  title: string;
+  desc: string;
+  valueHeading: string;
+  figures: BriefBarDatum[];
+  footnote?: string;
+}
+
+/** Diverging bars — read against a zero line so a fall reads as a fall.
+ *  BriefBars scales from zero and cannot carry negative values.
+ *  Issue 005 onward. */
+export interface BriefDivergingSpec {
+  kind: "diverging";
+  title: string;
+  desc: string;
+  valueHeading: string;
+  bars: BriefBarDatum[];
+  /** Label for the zero rule, e.g. "no change". */
+  zeroLabel?: string;
+  footnote?: string;
+}
+
+/** Relation — one headline figure, the single condition that moves it,
+ *  and the practical steps beneath. For findings whose story is a cause
+ *  rather than a distribution. Issue 005 onward. */
+export interface BriefRelationSpec {
+  kind: "relation";
+  title: string;
+  desc: string;
+  valueHeading: string;
+  headline: { display: string; label: string };
+  driver: { condition: string; effect: string };
+  steps?: string[];
+}
+
+export type BriefChartSpec =
+  | BriefBarsSpec
+  | BriefSlopeSpec
+  | BriefStripSpec
+  | BriefFiguresSpec
+  | BriefDivergingSpec
+  | BriefRelationSpec;
 
 const MONO: CSSProperties = { fontFamily: "var(--font-jetbrains-mono)" };
 
@@ -444,8 +489,184 @@ function BriefStrip({ spec }: { spec: BriefStripSpec }) {
   );
 }
 
+/** Figure row — two or three headline numbers side by side, where the
+ *  story is the contrast between them rather than a scale. Issue 005
+ *  onward (demand holding while conversion weakens). */
+export function BriefFigures({ spec }: { spec: BriefFiguresSpec }) {
+  return (
+    <figure aria-label={`Chart: ${spec.title}. ${spec.desc}`}>
+      <figcaption className="text-[12.5px] font-ui font-semibold text-text">
+        {spec.title}
+      </figcaption>
+      <div
+        aria-hidden
+        className="mt-4 grid grid-cols-1 gap-px overflow-hidden rounded-lg bg-[#101820]/[0.08] sm:grid-cols-3"
+      >
+        {spec.figures.map((f) => (
+          <div key={f.label} className="bg-white px-4 py-4">
+            <p
+              className={`text-[26px] leading-none tracking-[-0.02em] ${
+                f.accent ? "font-semibold text-accent-light" : "text-text"
+              }`}
+              style={MONO}
+            >
+              {f.display}
+            </p>
+            <p className="mt-2 text-[11.5px] leading-[1.35] text-text-muted">
+              {f.label}
+            </p>
+          </div>
+        ))}
+      </div>
+      {spec.footnote ? (
+        <p className="mt-3 text-[12px] leading-[1.5] text-text-muted">
+          {spec.footnote}
+        </p>
+      ) : null}
+      <SrTable
+        caption={`${spec.title}. ${spec.desc}`}
+        valueHeading={spec.valueHeading}
+        rows={spec.figures}
+      />
+    </figure>
+  );
+}
+
+/** Diverging bars — values read against a zero line, so a fall reads as
+ *  a fall. BriefBars scales from zero and cannot carry negatives.
+ *  Issue 005 onward (monthly change in dwelling values). */
+export function BriefDiverging({ spec }: { spec: BriefDivergingSpec }) {
+  const values = spec.bars.map((b) => b.value);
+  const lo = Math.min(0, ...values);
+  const hi = Math.max(0, ...values);
+  const span = hi - lo || 1;
+  const pct = (v: number) => ((v - lo) / span) * 100;
+  const zero = pct(0);
+
+  return (
+    <figure aria-label={`Chart: ${spec.title}. ${spec.desc}`}>
+      <figcaption className="text-[12.5px] font-ui font-semibold text-text">
+        {spec.title}
+      </figcaption>
+      <div aria-hidden className="mt-4 flex flex-col gap-3.5">
+        {spec.bars.map((b) => {
+          const v = pct(b.value);
+          const left = Math.min(zero, v);
+          const width = Math.max(Math.abs(v - zero), 0.75);
+          return (
+            <div key={b.label}>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-[12px] leading-[1.4] text-text-muted">
+                  {b.label}
+                </span>
+                <span
+                  className={`text-[12.5px] tabular-nums ${
+                    b.accent ? "font-semibold text-accent-light" : "text-text"
+                  }`}
+                  style={MONO}
+                >
+                  {b.display}
+                </span>
+              </div>
+              <div className="relative mt-1.5 h-[9px] rounded-full bg-[#101820]/[0.05]">
+                <span
+                  className="absolute inset-y-[-3px] w-px"
+                  style={{ left: `${zero}%`, background: CONTEXT_FILL, opacity: 0.5 }}
+                />
+                <div
+                  className="absolute inset-y-0 rounded-full"
+                  style={{
+                    left: `${left}%`,
+                    width: `${width}%`,
+                    background: b.accent ? ACCENT_FILL : CONTEXT_FILL,
+                    opacity: b.accent ? 1 : 0.55,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 flex items-center gap-1.5 text-[10.5px] text-text-dim" style={MONO}>
+        <span className="inline-block h-3 w-px" style={{ background: CONTEXT_FILL, opacity: 0.5 }} />
+        {spec.zeroLabel ?? "zero"}
+      </p>
+      {spec.footnote ? (
+        <p className="mt-2 text-[12px] leading-[1.5] text-text-muted">{spec.footnote}</p>
+      ) : null}
+      <SrTable
+        caption={`${spec.title}. ${spec.desc}`}
+        valueHeading={spec.valueHeading}
+        rows={spec.bars}
+      />
+    </figure>
+  );
+}
+
+/** Relation — one headline figure, the single condition that moves it,
+ *  and the practical steps beneath. For findings where the story is a
+ *  cause and not a distribution. Issue 005 onward. */
+export function BriefRelation({ spec }: { spec: BriefRelationSpec }) {
+  return (
+    <figure aria-label={`Chart: ${spec.title}. ${spec.desc}`}>
+      <figcaption className="text-[12.5px] font-ui font-semibold text-text">
+        {spec.title}
+      </figcaption>
+      <div aria-hidden className="mt-4">
+        <div className="rounded-lg border border-[#101820]/[0.08] px-4 py-4">
+          <p
+            className="text-[30px] leading-none tracking-[-0.02em] font-semibold text-accent-light"
+            style={MONO}
+          >
+            {spec.headline.display}
+          </p>
+          <p className="mt-2 text-[12px] leading-[1.4] text-text-muted">
+            {spec.headline.label}
+          </p>
+        </div>
+        <div className="flex flex-col items-start gap-2 pl-4 pt-3">
+          <span
+            aria-hidden
+            className="h-4 w-px"
+            style={{ background: CONTEXT_FILL, opacity: 0.4 }}
+          />
+          <p className="text-[12.5px] leading-[1.45] text-text">
+            {spec.driver.condition}{" "}
+            <span className="font-semibold text-accent-light" style={MONO}>
+              {spec.driver.effect}
+            </span>
+          </p>
+        </div>
+        {spec.steps?.length ? (
+          <ul className="mt-4 flex flex-wrap gap-x-2 gap-y-2 border-t border-[#101820]/[0.08] pt-3.5">
+            {spec.steps.map((s) => (
+              <li
+                key={s}
+                className="rounded-full border border-[#101820]/[0.1] px-3 py-1 text-[11.5px] text-text-muted"
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <SrTable
+        caption={`${spec.title}. ${spec.desc}`}
+        valueHeading={spec.valueHeading}
+        rows={[
+          { label: spec.headline.label, display: spec.headline.display },
+          { label: spec.driver.condition, display: spec.driver.effect },
+        ]}
+      />
+    </figure>
+  );
+}
+
 export function BriefChart({ spec }: { spec: BriefChartSpec }) {
   if (spec.kind === "bars") return <BriefBars spec={spec} />;
   if (spec.kind === "slope") return <BriefSlope spec={spec} />;
+  if (spec.kind === "figures") return <BriefFigures spec={spec} />;
+  if (spec.kind === "diverging") return <BriefDiverging spec={spec} />;
+  if (spec.kind === "relation") return <BriefRelation spec={spec} />;
   return <BriefStrip spec={spec} />;
 }

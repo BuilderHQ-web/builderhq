@@ -259,6 +259,28 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
           </p>
         ))}
       </div>
+
+      {/* A dated, actionable item that would be lost inside body copy —
+          a deadline the reader has to act on before it passes. Set on
+          its own ground so it survives a skim. */}
+      {signal.callout ? (
+        <aside className="mt-7 rounded-xl border-l-[3px] border-accent-light bg-[#101820]/[0.035] px-5 sm:px-6 py-5">
+          <p className="text-[11px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold">
+            {signal.callout.kicker}
+          </p>
+          <p className="mt-2 font-ui font-semibold text-[16px] tracking-[-0.01em] text-text">
+            {signal.callout.title}
+          </p>
+          <div className="mt-3 flex flex-col gap-3 max-w-[64ch]">
+            {signal.callout.paragraphs.map((p, i) => (
+              <p key={i} className="text-[14.5px] leading-[1.65] text-text-muted">
+                <InlineText text={p} />
+              </p>
+            ))}
+          </div>
+        </aside>
+      ) : null}
+
       <TakesGrid takes={signal.takes} />
       <SourceLine>{signal.source}</SourceLine>
     </BriefCard>
@@ -856,6 +878,54 @@ export default async function BriefIssuePage({
                 >
                   {issue.bps.pullQuote}
                 </p>
+              ) : null}
+
+              {/* One line, priced three ways, then the four answers the
+                  Standard requires instead. The argument is easier to
+                  see than to read. */}
+              {issue.bps.comparison ? (
+                <div className="mt-9">
+                  <p className="text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {issue.bps.comparison.title}
+                  </p>
+                  <p className="mt-3 font-ui font-semibold text-[15px] text-text">
+                    <span className="text-text-dim">The line:</span>{" "}
+                    {issue.bps.comparison.line}
+                  </p>
+                  <div className="mt-4 grid gap-px overflow-hidden rounded-lg bg-[#101820]/[0.10] sm:grid-cols-3">
+                    {issue.bps.comparison.quotes.map((q) => (
+                      <div key={q.who} className="bg-[#faf7f2] px-5 py-5">
+                        <p className="text-[11px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                          {q.who}
+                        </p>
+                        <p className="mt-2.5 text-[15px] font-ui font-semibold leading-[1.35] text-text">
+                          {q.treatment}
+                        </p>
+                        {q.note ? (
+                          <p className="mt-1.5 text-[13px] leading-[1.6] text-text-muted">
+                            {q.note}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[15px] leading-[1.7] text-text-muted max-w-[64ch]">
+                    <InlineText text={issue.bps.comparison.verdict} />
+                  </p>
+                  <p className="mt-7 text-[11px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                    {issue.bps.comparison.answersTitle}
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {issue.bps.comparison.answers.map((a) => (
+                      <li
+                        key={a}
+                        className="rounded-full border border-accent-light/40 px-3.5 py-1.5 text-[12.5px] text-text"
+                      >
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ) : null}
 
               {issue.bps.principles?.length ? (
