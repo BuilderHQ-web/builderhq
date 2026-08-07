@@ -66,6 +66,33 @@ const SAMPLE_BUILDERS: Record<
   },
 };
 
+/**
+ * The example round's document register — names and page counts only,
+ * so every surface that says "we read the documents" has a register
+ * to point at. The files themselves do not exist: object keys are
+ * sentinel paths under sample/, and nothing offers them for download
+ * on a read-only round.
+ */
+const SAMPLE_DOCUMENTS: Array<{
+  filename: string;
+  category: string;
+  kind: string;
+  docTitle: string;
+  pageCount: number;
+  siteClass?: string;
+  energyStars?: number;
+}> = [
+  { filename: "Architectural Drawings Rev D.pdf", category: "architectural", kind: "architectural", docTitle: "Architectural drawings", pageCount: 64 },
+  { filename: "Structural Drawings Rev C.pdf", category: "structural_engineering", kind: "structural", docTitle: "Structural engineering drawings", pageCount: 38 },
+  { filename: "Civil and Stormwater Design.pdf", category: "civil_engineering", kind: "civil", docTitle: "Civil and stormwater design", pageCount: 16 },
+  { filename: "Project Specifications.pdf", category: "specifications", kind: "specification", docTitle: "Specifications and finishes schedule", pageCount: 47 },
+  { filename: "Geotechnical Report.pdf", category: "soil_report", kind: "soil", docTitle: "Soil report (geotechnical)", pageCount: 18, siteClass: "H1" },
+  { filename: "Energy Rating Report.pdf", category: "energy_rating", kind: "energy", docTitle: "Energy assessment", pageCount: 9, energyStars: 7.1 },
+  { filename: "Feature and Level Survey.pdf", category: "land_report", kind: "survey", docTitle: "Feature and level survey", pageCount: 4 },
+  { filename: "Town Planning Approval.pdf", category: "town_planning", kind: "planning", docTitle: "Town planning approval", pageCount: 11 },
+  { filename: "Window and Door Schedule.pdf", category: "other", kind: "other", docTitle: "Window and door schedule", pageCount: 4 },
+];
+
 const SAMPLE_TITLE = "Single dwelling · Pascoe Vale, VIC";
 const SAMPLE_DESCRIPTION =
   "An architect-designed double-storey home with a basement level, built into a sloping site: four bedrooms, four bathrooms, a four-car garage, and a landscaped garden. This is an example project we prepared so you can explore a finished round before running your own.";
@@ -124,6 +151,69 @@ export interface SampleRoundRef {
   id: string;
   slug: string;
   title: string;
+}
+
+type TemplateItem = {
+  itemId: string;
+  status: string;
+  note: string | null;
+  label: string | null;
+};
+
+/** Per-item allowance figures for the exposed persona, by division. */
+const CORTEN_ALLOWANCE_RATE: Record<string, number> = {
+  joinery: 6000,
+  appliances: 3000,
+  tiling: 2500,
+  flooring: 3500,
+};
+
+/**
+ * Each persona's answer to the 242-line schedule — the marks that
+ * light up the scope of works across the evaluation. The three
+ * stories in schedule form: Corten prices most of it but carries its
+ * own provisional sums through the selections and leaves the garden
+ * out; Meridian prices every line as documented; Brightwater does the
+ * same and shows its reading in a few line comments.
+ */
+function scheduleFor(
+  key: SamplePersona["key"],
+  items: TemplateItem[],
+): Record<string, { s: string; a?: number; n?: string; c?: string }> {
+  const out: Record<string, { s: string; a?: number; n?: string; c?: string }> =
+    {};
+  let exposure = 0;
+  for (const it of items) {
+    const div = it.itemId.split(".")[0] ?? "";
+    if (key === "corten") {
+      if (div === "landscaping" || div === "external-works") {
+        out[it.itemId] = { s: "excluded", c: "By others" };
+        continue;
+      }
+      const rate = CORTEN_ALLOWANCE_RATE[div];
+      if (rate && exposure < 95_000) {
+        exposure += rate;
+        out[it.itemId] = { s: "allowance", a: rate };
+        continue;
+      }
+      out[it.itemId] = { s: "documented" };
+      continue;
+    }
+    out[it.itemId] = { s: "documented" };
+  }
+  if (key === "brightwater") {
+    const commentOn = (prefix: string, c: string) => {
+      const hit = items.find((it) => it.itemId.startsWith(prefix));
+      if (hit) out[hit.itemId] = { s: "documented", c };
+    };
+    commentOn(
+      "retaining-walls.",
+      "Priced from the structural drawings, piering included.",
+    );
+    commentOn("windows.", "Double glazed throughout, as specified.");
+    commentOn("landscaping.", "Full landscape works included, as drawn.");
+  }
+  return out;
 }
 
 /** Is this project an example round? The read-only guards ask. */
@@ -201,23 +291,43 @@ export async function seedSampleRound(
     const projectId = proj.rows[0]!.id as string;
 
     // The approved scope run, cloned from the canonical template.
+    const tpl = template as unknown as {
+      items: TemplateItem[];
+      overview: unknown;
+    };
     const run = await db.execute(sql`
       insert into scope_runs
-        (project_id, status, scope_version, effective_at, approved_at)
+        (project_id, status, scope_version, effective_at, approved_at, overview)
       values (${projectId}, 'approved', '1.1.0',
-              now() - interval '23 days', now() - interval '23 days')
+              now() - interval '23 days', now() - interval '23 days',
+              ${JSON.stringify(tpl.overview)}::jsonb)
       returning id
     `);
     const runId = run.rows[0]!.id as string;
 
-    const items = (template as {
-      items: Array<{
-        itemId: string;
-        status: string;
-        note: string | null;
-        label: string | null;
-      }>;
-    }).items;
+    // The register: real rows, sentinel files. 211 pages across nine
+    // documents, with the two read facts the deck and cards surface.
+    for (const d of SAMPLE_DOCUMENTS) {
+      const doc = await db.execute(sql`
+        insert into documents
+          (owner_id, project_id, object_key, filename, content_type,
+           size_bytes, status, category)
+        values (${ownerId}, ${projectId},
+                ${`sample/${slug}/${d.filename}`}, ${d.filename},
+                'application/pdf', 0, 'active', ${d.category})
+        returning id
+      `);
+      await db.execute(sql`
+        insert into scope_run_documents
+          (run_id, document_id, status, kind, doc_title, page_count,
+           site_class, energy_stars)
+        values (${runId}, ${doc.rows[0]!.id as string}, 'classified',
+                ${d.kind}, ${d.docTitle}, ${d.pageCount},
+                ${d.siteClass ?? null}, ${d.energyStars ?? null})
+      `);
+    }
+
+    const items = tpl.items;
     // One statement per chunk keeps parameter counts comfortable.
     const CHUNK = 60;
     for (let i = 0; i < items.length; i += CHUNK) {
@@ -254,7 +364,13 @@ export async function seedSampleRound(
         returning id
       `);
       const tenderId = t.rows[0]!.id as string;
-      const answers = Object.entries(buildPersonaAnswers(p));
+      // The persona's answers, plus the schedule marks that light the
+      // scope of works up across the evaluation, pinned to this run.
+      const answers = Object.entries({
+        ...buildPersonaAnswers(p),
+        "scope.schedule": scheduleFor(p.key, items),
+        "scope.schedule_run": runId,
+      });
       const RCHUNK = 80;
       for (let i = 0; i < answers.length; i += RCHUNK) {
         const slice = answers.slice(i, i + RCHUNK);
@@ -297,6 +413,10 @@ export async function removeSampleRound(ownerId: string): Promise<boolean> {
   if (!existing) return false;
   await db.execute(sql`
     update tenders set deleted_at = now()
+    where project_id = ${existing.id} and deleted_at is null
+  `);
+  await db.execute(sql`
+    update documents set deleted_at = now()
     where project_id = ${existing.id} and deleted_at is null
   `);
   await db.execute(sql`

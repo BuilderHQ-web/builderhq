@@ -716,8 +716,8 @@ function ChapterPack({
         {stats.pages > 0 ? `, every one of their ${stats.pages} page${stats.pages === 1 ? "" : "s"},` : ""}{" "}
         for your {facts.typeLabel.toLowerCase()}
         {place ? ` in ${place}` : ""}. The result is your scope of works:{" "}
-        <Strong>{stats.evidenced} lines</Strong> across{" "}
-        <Strong>{stats.divisions} divisions</Strong>, each tied to the page
+        <Strong>{stats.evidenced} item{stats.evidenced === 1 ? "" : "s"}</Strong> across{" "}
+        <Strong>{stats.divisions} trades</Strong>, each tied to the page
         it came from. Where your documents are silent, we prepared{" "}
         <Strong>
           {stats.questions} question{stats.questions === 1 ? "" : "s"}
@@ -730,8 +730,8 @@ function ChapterPack({
         {[
           { k: "Documents read", v: String(stats.documents) },
           { k: "Pages read", v: String(stats.pages) },
-          { k: "Lines evidenced", v: String(stats.evidenced) },
-          { k: "Divisions covered", v: String(stats.divisions) },
+          { k: "Items evidenced", v: String(stats.evidenced) },
+          { k: "Trades covered", v: String(stats.divisions) },
           { k: "Questions prepared", v: String(stats.questions) },
         ].map((s) => (
           <div key={s.k} className="bg-surface-1 px-4 py-3.5">

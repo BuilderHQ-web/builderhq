@@ -1452,5 +1452,12 @@
    "note": "Timber reveals (100/275) specified with window units.",
    "label": null
   }
- ]
+ ],
+ "overview": {
+  "storeys": 3,
+  "summary": "A large architect-designed home built into a steeply sloping site, arranged over a basement and two levels above (up to three levels on the slope). The basement holds a four-car garage, theatre and storage; upper levels contain the kitchen, living, dining, studio, master suite and three further bedrooms with ensuites, plus a walk-in-robe and separate studio. Construction is substantial: a piled basement retention system with shotcrete and Dincel/block retaining walls, bored piers and a reinforced suspended concrete slab, timber and steel-framed upper structure, and a Colorbond metal roof with box gutters. Notable features include a reinforced concrete lap pool, a residential lift, extensive polished-plaster (Marmorino) finishes, double-glazed aluminium windows, ducted air-conditioning, a fireplace, and a landscaped garden with sauna, firepit and reflection ponds.",
+  "bedrooms": 4,
+  "bathrooms": 5,
+  "dwellings": null
+ }
 }

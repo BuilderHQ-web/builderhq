@@ -537,8 +537,9 @@ function RoundStrip({
         {onOpenStory ? (
           <button
             type="button"
+            id="quickread"
             onClick={onOpenStory}
-            className="group relative px-5 py-4 text-left col-span-2 lg:col-span-1 transition-opacity hover:opacity-95"
+            className="group relative scroll-mt-28 px-5 py-4 text-left col-span-2 lg:col-span-1 transition-opacity hover:opacity-95"
             style={{ background: "#14343c" }}
           >
             <span
@@ -1548,6 +1549,8 @@ function DecisionGrid({
                 evaluations={evaluations}
               />
             ))}
+          </tbody>
+          <tbody id="scores" className="scroll-mt-28">
             {/* Dimension scores */}
             <tr>
               <td

@@ -28,34 +28,61 @@ interface Stop {
   /** DOM id of the section to light. */
   target: string;
   title: string;
+  /** What this section is, in plain words. */
   line: string;
+  /** One concrete thing to notice in the lit section, right now. */
+  example: string;
 }
 
 const STOPS: Stop[] = [
   {
-    target: "overview",
-    title: "The overview",
-    line: "The whole round in one read: what the prices are, and what the decision comes down to.",
-  },
-  {
     target: "builders",
     title: "The builders",
-    line: "Who priced the project: company, ABN and licence, verified before they could take a spot.",
+    line: "Every builder on BuilderHQ is checked before they can price anything: company, ABN and licence, verified against the public registers.",
+    example:
+      "Each card below shows the builder's licence and years in operation, so you know who you are reading before you read a dollar.",
+  },
+  {
+    target: "overview",
+    title: "The overview",
+    line: "Once the tenders are in, we write you the overview: what the prices are and what the decision actually comes down to, in plain words.",
+    example:
+      "The paragraph below is not a template. It was written from these three tenders alone, and it changes when they do.",
   },
   {
     target: "tenders",
     title: "Each tender, in full",
-    line: "A tender here is the builder's answers under signature: the price, what is firm, what is allowed for, what is excluded. Open any of them and read it like a document.",
+    line: "A tender here is not a PDF to decode. It is the builder's answers under signature: the price, the programme, what is firm, what is allowed for, what is excluded.",
+    example:
+      "You can already see below that the lowest tender, $712,800, is only partly firm, while the $753,500 one is fully priced with no allowances.",
+  },
+  {
+    target: "quickread",
+    title: "The quick read",
+    line: "Short on time? This plays the whole round as ninety seconds of cards: the prices, the catch in the fine print, the clock.",
+    example:
+      "Press play after the tour and it will show you why the cheapest price here is not the bargain it looks.",
   },
   {
     target: "compare",
     title: "The comparison",
-    line: "The same questions, side by side. This is where the lowest price shows what it really carries, and where the tenders disagree.",
+    line: "The same questions, side by side. Every row is the builders' own answers lined up, and a teal cell marks the strongest position on that row.",
+    example:
+      "In the disagreements table below, the driveway is excluded by the lowest tender and priced as documented by the other two. Twenty items sit outside that price altogether.",
+  },
+  {
+    target: "scores",
+    title: "The score",
+    line: "Every tender is scored out of 100 from the same evidence: how firm the money is, how much of the scope is priced, how well the builder prepared, and more. The weighted overall sits on top.",
+    example:
+      "The fully priced tender leads the money score below, and teal marks who leads each dimension. Open any tender to see the working.",
   },
   {
     target: "record",
     title: "The record",
-    line: "Questions, messages and decisions stay on the file, so the round keeps one history.",
+    line: "Questions, messages and decisions stay on the round's file, so the whole history lives in one place.",
+    example:
+      "When you ask a builder a question, the answer lands here on the record, not in a lost email thread.",
   },
 ];
 
@@ -184,7 +211,7 @@ export function ExampleWalkthrough({
         document.body.style.overflow = "hidden";
         const rect = el.getBoundingClientRect();
         const below = rect.bottom + 16;
-        const panelH = 190;
+        const panelH = 250;
         setPanelTop(
           below + panelH < window.innerHeight
             ? below
@@ -233,16 +260,29 @@ export function ExampleWalkthrough({
                 <p className="text-[10px] tracking-[0.34em] uppercase text-accent-light font-ui font-semibold">
                   The example round
                 </p>
-                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[40px] sm:text-[56px] leading-[0.95] text-text">
-                  See a finished round
+                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[38px] sm:text-[52px] leading-[0.95] text-text">
+                  Welcome to BuilderHQ
                 </h2>
-                <p className="mt-5 text-[15px] leading-[1.75] text-text-muted max-w-[46ch] mx-auto">
-                  Three builders priced one home, and everything they answered
-                  is on this page.{" "}
-                  {role === "architect"
-                    ? "Five minutes here shows you what every round your practice runs will produce."
-                    : "Five minutes here shows you what your own round will give you."}
-                </p>
+                <div className="mt-6 text-left mx-auto max-w-[52ch] space-y-4 text-[14.5px] leading-[1.75] text-text-muted">
+                  <p>
+                    BuilderHQ runs your whole tender, start to finish.{" "}
+                    {role === "architect"
+                      ? "Your practice uploads a project,"
+                      : "You upload your project,"}{" "}
+                    we read every document and write the scope of works,
+                    verified builders price that same list, and every tender
+                    comes back structured, scored and ready to compare side by
+                    side. You question, shortlist and award, all in one place
+                    {role === "architect"
+                      ? ", with your practice's name on the evaluation."
+                      : "."}
+                  </p>
+                  <p>
+                    To show you, we prepared an example: three builders priced
+                    one home, and everything they answered is on this page.
+                    Five minutes here shows you the whole journey.
+                  </p>
+                </div>
                 <div className="mt-9 flex flex-col items-center gap-3">
                   <button
                     type="button"
@@ -271,17 +311,22 @@ export function ExampleWalkthrough({
                 </h2>
                 <div className="mt-6 text-left mx-auto max-w-[52ch] space-y-4 text-[14.5px] leading-[1.75] text-text-muted">
                   <p>
-                    When a project is uploaded, we read every page of every
+                    Within 24 hours of upload, we read every page of every
                     document and write a scope of works from them. This
-                    round&apos;s runs to{" "}
+                    round&apos;s came from{" "}
+                    <span className="text-text font-semibold">
+                      211 pages across nine documents
+                    </span>{" "}
+                    and runs to{" "}
                     <span className="text-text font-semibold">242 items</span>,
-                    each traced to the documents.
+                    each traced to the page it came from.
                   </p>
                   <p>
                     Every builder prices that same list, item by item, and
-                    marks what their price does with each one. That is why the
-                    tenders on this page can be compared like for like, not
-                    guessed at from three different PDFs.
+                    marks what their price does with each one: included, a
+                    provisional sum, or excluded. That is why the tenders on
+                    this page can be compared like for like, not guessed at
+                    from three different PDFs.
                   </p>
                   <p className="inline-flex items-start gap-2 text-[13px] text-text-dim">
                     <BookOpenCheck className="size-4 mt-0.5 shrink-0 text-accent-light" />
@@ -369,6 +414,12 @@ export function ExampleWalkthrough({
         </h3>
         <p className="mt-2 text-[12.5px] leading-[1.65] text-text-muted">
           {stop.line}
+        </p>
+        <p className="mt-2.5 border-l-2 border-border-accent/50 pl-2.5 text-[12px] leading-[1.6] text-text-muted">
+          <span className="font-ui font-semibold text-accent-light">
+            For instance:
+          </span>{" "}
+          {stop.example}
         </p>
         <div className="mt-4 flex items-center justify-between gap-3">
           <button
