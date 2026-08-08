@@ -202,12 +202,23 @@ export function ExampleWalkthrough({
         return;
       }
       setPhase({ kind: "stop", index });
+      // Small screens: no scrim, no elevation, no scroll lock. The
+      // section wears a ring and the page stays free to scroll, with
+      // the copy in a bottom sheet. Desktop keeps the spotlight.
+      const mobile = !window.matchMedia("(min-width: 640px)").matches;
       el.scrollIntoView({
-        block: "center",
+        block: mobile ? "start" : "center",
         behavior: reduceMotion ? "auto" : "smooth",
       });
       const settle = reduceMotion ? 60 : 420;
       setTimeout(() => {
+        if (mobile) {
+          litRef.current = [[el, el.getAttribute("style")]];
+          el.style.outline = "2px solid rgba(0,212,200,0.65)";
+          el.style.outlineOffset = "6px";
+          el.style.borderRadius = "12px";
+          return;
+        }
         const pairs: Array<[HTMLElement, string | null]> = [];
         pairs.push([el, el.getAttribute("style")]);
         let a = el.parentElement;
@@ -269,7 +280,7 @@ export function ExampleWalkthrough({
                 <p className="text-[10px] tracking-[0.34em] uppercase text-accent-light font-ui font-semibold">
                   The example round
                 </p>
-                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[38px] sm:text-[52px] leading-[0.95] text-text">
+                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[52px] leading-[0.95] text-text">
                   Welcome to BuilderHQ
                 </h2>
                 <div className="mt-6 text-left mx-auto max-w-[52ch] space-y-4 text-[14.5px] leading-[1.75] text-text-muted">
@@ -292,11 +303,11 @@ export function ExampleWalkthrough({
                     Five minutes here shows you the whole journey.
                   </p>
                 </div>
-                <div className="mt-9 flex flex-col items-center gap-3">
+                <div className="mt-9 w-full flex flex-col items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setPhase({ kind: "scope" })}
-                    className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
+                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
                   >
                     Begin the walkthrough
                     <ArrowRight className="size-4" />
@@ -315,7 +326,7 @@ export function ExampleWalkthrough({
                 <p className="text-[10px] tracking-[0.34em] uppercase text-accent-light font-ui font-semibold">
                   Before the tenders
                 </p>
-                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[34px] sm:text-[46px] leading-[0.95] text-text">
+                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[27px] sm:text-[46px] leading-[0.95] text-text">
                   It starts with a scope of works
                 </h2>
                 <div className="mt-6 text-left mx-auto max-w-[52ch] space-y-4 text-[14.5px] leading-[1.75] text-text-muted">
@@ -343,11 +354,11 @@ export function ExampleWalkthrough({
                     you want to read it.
                   </p>
                 </div>
-                <div className="mt-9">
+                <div className="mt-9 w-full">
                   <button
                     type="button"
                     onClick={() => goToStop(0)}
-                    className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"
+                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors"
                   >
                     Now, the tenders
                     <ArrowRight className="size-4" />
@@ -359,7 +370,7 @@ export function ExampleWalkthrough({
                 <p className="text-[10px] tracking-[0.34em] uppercase text-accent-light font-ui font-semibold">
                   That is the whole journey
                 </p>
-                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[38px] sm:text-[52px] leading-[0.95] text-text">
+                <h2 className="mt-4 font-display uppercase tracking-[-0.018em] text-[30px] sm:text-[52px] leading-[0.95] text-text">
                   Ready to run your own?
                 </h2>
                 <p className="mt-5 text-[15px] leading-[1.75] text-text-muted max-w-[48ch] mx-auto">
@@ -370,11 +381,11 @@ export function ExampleWalkthrough({
                     ? ", with your practice's name on the evaluation."
                     : "."}
                 </p>
-                <div className="mt-9 flex flex-col items-center gap-3">
+                <div className="mt-9 w-full flex flex-col items-center gap-3">
                   <a
                     href={uploadHref}
                     onClick={close}
-                    className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
+                    className="w-full sm:w-auto justify-center inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[13px] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.4),_0_8px_24px_-8px_rgba(0,212,200,0.4)]"
                   >
                     Upload your first project
                     <ArrowRight className="size-4" />
@@ -406,13 +417,13 @@ export function ExampleWalkthrough({
     <>
       <div
         aria-hidden
-        className="fixed inset-0 z-[50] bg-[rgba(24,34,44,0.42)] backdrop-blur-[3px]"
+        className="hidden sm:block fixed inset-0 z-[50] bg-[rgba(24,34,44,0.42)] backdrop-blur-[3px]"
         onClick={close}
       />
       <div
         role="dialog"
         aria-label={stop.title}
-        className="fixed z-[65] right-4 bottom-4 sm:right-6 sm:bottom-6 w-[min(420px,calc(100vw-32px))] rounded-2xl bg-white border border-border-subtle p-5 shadow-[0_0_0_1px_rgba(0,212,200,0.25),_0_24px_60px_-24px_rgba(24,34,44,0.45)]"
+        className="fixed z-[65] inset-x-0 bottom-0 rounded-t-2xl border-b-0 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[min(420px,calc(100vw-32px))] sm:rounded-2xl sm:border-b sm:pb-5 bg-white border border-border-subtle p-5 shadow-[0_0_0_1px_rgba(0,212,200,0.25),_0_24px_60px_-24px_rgba(24,34,44,0.45)]"
       >
         <p className="text-[9.5px] tracking-[0.22em] uppercase text-accent-light font-ui font-semibold tabular-nums">
           {i + 1} of {STOPS.length}

@@ -112,6 +112,20 @@ function spotlightOn(el: HTMLElement, panel: boolean): SpotState {
     touched.push({ el: node, prevStyle: node.getAttribute("style") });
   };
 
+  // Small screens get a lighter hand: no scrim renders there, so
+  // nothing needs elevating and the page keeps scrolling. The visited
+  // section wears a ring instead, and the negative-margin lift that
+  // would push a full-width section past the viewport never applies.
+  const mobile = !window.matchMedia("(min-width: 640px)").matches;
+  if (mobile) {
+    remember(el);
+    el.style.transition = "outline-color 0.35s ease";
+    el.style.outline = "2px solid rgba(0,212,200,0.65)";
+    el.style.outlineOffset = "6px";
+    el.style.borderRadius = "12px";
+    return { touched, timer: null };
+  }
+
   // Every ancestor that traps z-index gets lifted with the section,
   // or the scrim would blur the very thing the walk is pointing at.
   // Entrance wrappers caught mid-animation settle to their final
@@ -432,7 +446,7 @@ export function UnlockTour({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         onClick={next}
-        className="fixed inset-0 z-50 bg-[rgba(24,34,44,0.42)] backdrop-blur-[3px]"
+        className="hidden sm:block fixed inset-0 z-50 bg-[rgba(24,34,44,0.42)] backdrop-blur-[3px]"
         aria-hidden
       />
 
@@ -444,8 +458,10 @@ export function UnlockTour({
         aria-modal="true"
         aria-label={`${stop.title}. ${stop.line}`}
         className={cn(
-          "fixed inset-x-4 z-[70] mx-auto max-w-[430px] outline-none",
-          stop.fixed ? "bottom-28 sm:bottom-32" : "bottom-5 sm:bottom-8",
+          "fixed z-[70] outline-none",
+          stop.fixed
+            ? "inset-x-4 mx-auto max-w-[430px] bottom-28 sm:bottom-32"
+            : "inset-x-0 bottom-0 sm:inset-x-4 sm:bottom-8 sm:mx-auto sm:max-w-[430px]",
         )}
       >
         <motion.div
@@ -453,7 +469,12 @@ export function UnlockTour({
           initial={reduceMotion ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: EASE }}
-          className="rounded-xl border border-border-subtle bg-surface-1 card-elev-lg px-5 py-4"
+          className={cn(
+            "border border-border-subtle bg-surface-1 card-elev-lg px-5 py-4",
+            stop.fixed
+              ? "rounded-xl"
+              : "rounded-t-2xl rounded-b-none border-b-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:rounded-xl sm:border-b sm:pb-4",
+          )}
         >
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-[9.5px] tracking-[0.22em] uppercase text-accent-deep font-ui font-semibold tabular-nums">

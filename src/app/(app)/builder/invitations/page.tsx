@@ -105,10 +105,11 @@ export default async function BuilderInvitationsPage() {
                           {shortDate(inv.invitedAt)}
                         </span>
                       </span>
-                      <span className="shrink-0 inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-accent-light group-hover:text-accent-deep transition-colors">
+                      <span className="shrink-0 hidden sm:inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-accent-light group-hover:text-accent-deep transition-colors">
                         View the invitation
                         <ArrowUpRight className="size-3.5" />
                       </span>
+                      <ArrowUpRight className="sm:hidden size-4 shrink-0 text-accent-light" />
                     </Link>
                   </Reveal>
                 ))}
@@ -146,10 +147,11 @@ export default async function BuilderInvitationsPage() {
                           {shortDate(inv.acceptedAt)}
                         </span>
                       </span>
-                      <span className="shrink-0 inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-text-muted group-hover:text-text transition-colors">
+                      <span className="shrink-0 hidden sm:inline-flex items-center gap-1.5 text-[12px] font-ui font-semibold text-text-muted group-hover:text-text transition-colors">
                         Open the project
                         <ArrowUpRight className="size-3.5" />
                       </span>
+                      <ArrowUpRight className="sm:hidden size-4 shrink-0 text-text-dim" />
                     </Link>
                   </Reveal>
                 ))}

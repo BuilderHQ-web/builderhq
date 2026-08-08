@@ -674,7 +674,7 @@ export default async function BuilderDashboard() {
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-8 sm:px-14 text-center min-w-0">
+    <div className="px-5 sm:px-14 text-center min-w-0">
       <p className="font-display text-[32px] sm:text-[36px] leading-none text-text tabular-nums">
         {value}
       </p>
