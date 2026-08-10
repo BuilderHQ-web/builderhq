@@ -232,11 +232,60 @@ export function SceneCursor({ cursor, clicks }: { cursor: Cursor; clicks: number
 
 /* ── Which card is the visitor actually looking at ───────────────── */
 
+/** A card's vertical extent in viewport coordinates. */
+export type Span = { top: number; bottom: number };
+
 /**
- * The deck pins every card at the same offset, so "is it on screen" is
- * true for all four at once and cannot pick the active one. The card
- * covering the middle of the viewport is the one being read, on the
- * sticky desktop deck and in the plain mobile column alike.
+ * Which card is being read, given where they all are.
+ *
+ * The rule has to survive two different layouts. On desktop the deck
+ * pins every card at the same offset, so once you are into it several
+ * cards occupy the identical rectangle and the one you can actually see
+ * is the last of them, the one drawn on top. On a phone there is no
+ * sticky at all, just a column, and exactly one card straddles the
+ * middle of the screen at a time.
+ *
+ * "Covers the centre line, highest index wins" answers both. When
+ * nothing covers it, which happens in the gap between two cards and
+ * before the deck is reached, fall back to whichever visible card is
+ * nearest, so the answer never goes blank mid-scroll.
+ *
+ * Pure, and exported, because this is the part worth testing: it is
+ * where the previous implementation was wrong.
+ */
+export function pickActiveCard(spans: Array<Span | null>, mid: number, viewportH: number): number {
+  let covering = -1;
+  for (let i = 0; i < spans.length; i++) {
+    const s = spans[i];
+    if (!s || s.bottom - s.top <= 0) continue;
+    if (s.top <= mid && s.bottom >= mid) covering = i;
+  }
+  if (covering !== -1) return covering;
+
+  let nearest = -1;
+  let best = Infinity;
+  for (let i = 0; i < spans.length; i++) {
+    const s = spans[i];
+    if (!s || s.bottom < 0 || s.top > viewportH) continue;
+    const d = Math.abs((s.top + s.bottom) / 2 - mid);
+    if (d <= best) {
+      best = d;
+      nearest = i;
+    }
+  }
+  return nearest;
+}
+
+/**
+ * The live version of the above.
+ *
+ * This used to be an IntersectionObserver with the root inset 50% top
+ * and bottom, which reads well and does not work: insetting by exactly
+ * half in both directions collapses the root to zero height, and a
+ * zero-area intersection is reported as not intersecting. The callback
+ * therefore never fired, `active` never moved off its initial 0, and
+ * only the first card in the deck ever animated. Measuring four
+ * rectangles on scroll is less clever and actually correct.
  */
 export function useCardInView(count: number): {
   active: number;
@@ -253,32 +302,32 @@ export function useCardInView(count: number): {
   );
 
   React.useEffect(() => {
-    const els = refs.current.filter(Boolean) as HTMLElement[];
-    if (!els.length) return;
+    // Scroll events are already delivered at most once a frame, and four
+    // getBoundingClientRect reads with no writes between them do not
+    // force a second layout, so there is nothing to throttle.
+    const measure = () => {
+      const vh = window.innerHeight;
+      const spans = refs.current.map((el) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom };
+      });
+      const next = pickActiveCard(spans, vh / 2, vh);
+      if (next !== -1) setActive(next);
+    };
 
-    // A root inset to half the viewport top and bottom leaves a band one
-    // pixel tall across the middle of the screen, so an element counts as
-    // intersecting only while it crosses the centre line. That is the
-    // definition of "being read", and unlike scroll arithmetic it costs
-    // nothing per frame and needs no rAF.
-    const crossing = new Set<number>();
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const i = els.indexOf(e.target as HTMLElement);
-          if (i === -1) continue;
-          if (e.isIntersecting) crossing.add(i);
-          else crossing.delete(i);
-        }
-        // In the sticky pile several cards can cross the line at once.
-        // The one drawn on top is the one the visitor can see.
-        if (crossing.size) setActive(Math.max(...crossing));
-      },
-      { rootMargin: "-50% 0px -50% 0px", threshold: 0 },
-    );
+    measure();
+    // Again once the fonts have settled, since the first pass can run
+    // against a layout that is about to change height.
+    const settle = window.setTimeout(measure, 400);
 
-    for (const el of els) io.observe(el);
-    return () => io.disconnect();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      window.clearTimeout(settle);
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
   }, [count]);
 
   return { active, setCardRef };
