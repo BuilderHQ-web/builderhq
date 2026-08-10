@@ -54,17 +54,29 @@ import type { Role } from "./content";
 import { LoopToast } from "./mocks";
 import { SceneCursor, useSceneScript } from "./scene-motion";
 
-/* Real product palette (teal app on dark chrome). */
-const INK = "#e9f1f9";
-const MUT = "#93a6b7";
-const DIM = "#617483";
-const LINE = "rgba(120,180,255,0.10)";
-const CARD = "rgba(255,255,255,0.03)";
-const TEAL = "#00d4c8";
-const TEALS = "#7ef5ed";
-const AMBER = "#ffb547";
-const RUST = "#f0a19a";
-const STONE = "#a9b3bd";
+/* The real product palette, lifted from globals.css.
+ *
+ * These scenes used to be drawn in a dark blue chrome, which was a
+ * straightforward lie: the app is light. Every value below is the token
+ * the running app actually uses, so what a visitor sees on the deck is
+ * what they get when they sign in. Contrast against the card is carried
+ * by the copy panel beside it, which is now deep navy.
+ *
+ * One rule survives from the app: bright teal is a FILL, never type.
+ * #00d4c8 is 1.76:1 on paper. Type uses the deep teal. */
+const PAPER = "#fbf9f4";     // --color-surface-1, the app's card paper
+const CANVAS = "#f4f1ea";    // --color-bg, the page behind it
+const INK = "#161c22";       // --color-text
+const MUT = "#48535d";       // --color-text-muted
+const DIM = "#78828d";       // --color-text-dim
+const LINE = "rgba(24,34,44,0.10)";   // --color-border-subtle
+const LINE_2 = "rgba(24,34,44,0.14)"; // --color-border
+const CARD = "#ffffff";
+const TEAL = "#00d4c8";      // --color-accent, fill only
+const TEALS = "#0a7d73";     // --color-accent-deep, the type teal
+const AMBER = "#b26a08";     // --color-warning
+const RUST = "#a63f2f";
+const STONE = "#78828d";
 
 /* ── Primitives ─────────────────────────────────────────────────── */
 
@@ -80,13 +92,13 @@ function Frame({
   toast?: React.ReactNode;
 }) {
   return (
-    <div className="relative w-full h-full flex flex-col" style={{ background: "#0a1119" }}>
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b shrink-0" style={{ borderColor: LINE }}>
+    <div className="relative w-full h-full flex flex-col" style={{ background: CANVAS }}>
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b shrink-0" style={{ borderColor: LINE_2, background: PAPER }}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <Logo height={16} />
+          <Logo height={16} tone="dark" />
           <span className="text-[11.5px] truncate" style={{ color: DIM }}>/ {crumb}</span>
         </div>
-        <span className="size-[26px] rounded-full text-[9.5px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(0,212,200,0.16)", color: TEALS }}>
+        <span className="size-[26px] rounded-full text-[9.5px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(10,125,115,0.12)", color: TEALS }}>
           {avatar}
         </span>
       </div>
@@ -103,8 +115,8 @@ function Card({ children, className = "", accent = false }: { children: React.Re
     <div
       className={"rounded-lg border " + className}
       style={{
-        borderColor: accent ? "rgba(0,212,200,0.30)" : LINE,
-        background: accent ? "rgba(0,212,200,0.06)" : CARD,
+        borderColor: accent ? "rgba(10,125,115,0.35)" : LINE_2,
+        background: accent ? "rgba(0,212,200,0.08)" : CARD,
       }}
     >
       {children}
@@ -125,7 +137,7 @@ function Tile({ v, l, tone }: { v: string; l: string; tone?: "teal" | "amber" })
 
 function Avatar({ txt }: { txt: string }) {
   return (
-    <span className="size-8 shrink-0 rounded-lg text-[10.5px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(120,180,255,0.10)", color: MUT }}>
+    <span className="size-8 shrink-0 rounded-lg text-[10.5px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(24,34,44,0.06)", color: MUT }}>
       {txt}
     </span>
   );
@@ -134,10 +146,10 @@ function Avatar({ txt }: { txt: string }) {
 function Badge({ children, tone = "teal" }: { children: React.ReactNode; tone?: "teal" | "line" | "amber" }) {
   const s =
     tone === "amber"
-      ? { border: "rgba(255,181,71,0.4)", bg: "rgba(255,181,71,0.10)", color: AMBER }
+      ? { border: "rgba(178,106,8,0.35)", bg: "rgba(232,152,30,0.14)", color: AMBER }
       : tone === "line"
-        ? { border: LINE, bg: "transparent", color: MUT }
-        : { border: "rgba(0,212,200,0.4)", bg: "rgba(0,212,200,0.12)", color: TEALS };
+        ? { border: LINE_2, bg: "transparent", color: MUT }
+        : { border: "rgba(10,125,115,0.30)", bg: "rgba(10,125,115,0.10)", color: TEALS };
   return (
     <span className="inline-flex items-center gap-1 rounded-[5px] border px-1.5 py-[3px] text-[9px] tracking-[0.08em] uppercase font-bold whitespace-nowrap" style={{ borderColor: s.border, background: s.bg, color: s.color }}>
       {children}
@@ -147,7 +159,7 @@ function Badge({ children, tone = "teal" }: { children: React.ReactNode; tone?: 
 
 function Bar({ pct }: { pct: number }) {
   return (
-    <span className="block h-[4px] w-full rounded-full overflow-hidden" style={{ background: "rgba(120,180,255,0.10)" }}>
+    <span className="block h-[4px] w-full rounded-full overflow-hidden" style={{ background: "rgba(24,34,44,0.09)" }}>
       <span className="block h-full rounded-full" style={{ width: pct + "%", background: `linear-gradient(90deg, ${TEAL}, ${TEALS})` }} />
     </span>
   );
@@ -290,7 +302,7 @@ function Mark({ label, on, tone = "teal" }: { label: string; on?: boolean; tone?
       className="inline-flex items-center h-[22px] px-2 rounded-full border text-[9.5px] whitespace-nowrap"
       style={
         on
-          ? { borderColor: "transparent", background: bg, color: "#03121a", fontWeight: 700 }
+          ? { borderColor: "transparent", background: bg, color: tone === "teal" ? "#03121a" : "#ffffff", fontWeight: 700 }
           : { borderColor: LINE, background: "transparent", color: MUT }
       }
     >
@@ -606,7 +618,7 @@ function ScopeOfWorksScene({ active }: { active: boolean }) {
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
-            style={{ background: "linear-gradient(180deg, rgba(10,17,25,0), #0a1119)" }}
+            style={{ background: `linear-gradient(180deg, rgba(244,241,234,0), ${CANVAS})` }}
           />
         </div>
       </Frame>

@@ -7,9 +7,9 @@
  * (FlyingLabel) and the re-light pulse (RoleWash) render above the fold.
  *
  * Narrative: hook (hero) → pick your view (selector) → what is wrong
- * today (problem) → how it works (spine) → the rules (trust) → what it
- * costs (pricing) → the network → the whole picture (ecosystem) → what
- * people say → the publication → questions → close.
+ * today (problem) → how it works (spine) → the rules (trust) → the
+ * network → the whole picture (ecosystem) → what people say → the
+ * publication → questions → close.
  */
 
 import {
@@ -30,7 +30,6 @@ import { RoleSelector } from "./role-selector";
 import { Problem } from "./problem";
 import { Spine } from "./spine";
 import { Trust } from "./trust";
-import { Pricing } from "./pricing";
 import { Network } from "./network";
 import { Ecosystem } from "./ecosystem";
 import { Testimonials } from "./testimonials";
@@ -67,17 +66,15 @@ export function Landing({
         <Spine authedHref={authedHref} />
         <SectionDivider n="03" label="The rules" />
         <Trust />
-        <SectionDivider n="04" label="What it costs" />
-        <Pricing />
-        <SectionDivider n="05" label="Our partners" />
+        <SectionDivider n="04" label="Our partners" />
         <Network />
-        <SectionDivider n="06" label="Who it’s for" />
+        <SectionDivider n="05" label="Who it’s for" />
         <Ecosystem />
-        <SectionDivider n="07" label="What people say" />
+        <SectionDivider n="06" label="What people say" />
         <Testimonials />
-        <SectionDivider n="08" label="The publication" />
+        <SectionDivider n="07" label="The publication" />
         <BuildBriefStrip />
-        <SectionDivider n="09" label="Questions" />
+        <SectionDivider n="08" label="Questions" />
         <FAQ />
         <Close authedHref={authedHref} />
       </main>

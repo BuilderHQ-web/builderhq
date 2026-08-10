@@ -28,7 +28,6 @@ import { useRole } from "./role";
 const LINKS = [
   { label: "How it Works", href: "#how" },
   { label: "Trust", href: "#trust" },
-  { label: "Pricing", href: "#pricing" },
   { label: "Our Partners", href: "/partners" },
   { label: "Build Brief", href: "/build-brief" },
   { label: "FAQs", href: "#faq" },

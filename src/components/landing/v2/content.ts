@@ -2,10 +2,9 @@
  * Landing v2 — the three-lens content system.
  *
  * One page, three lenses: the skeleton (hero → choose → problem → how →
- * trust → pricing → network → ecosystem → FAQ → close) never changes;
- * the words re-tune per audience, including Trust and Pricing, which
- * are fully forked so every section speaks to its reader, never past
- * them.
+ * trust → network → ecosystem → FAQ → close) never changes;
+ * the words re-tune per audience, including Trust, which is fully
+ * forked so every section speaks to its reader, never past them.
  *
  * Copy rules, enforced here so components stay dumb:
  *   · Every claim is literally true of the product today: the scope is
@@ -49,7 +48,7 @@ type Cta = { label: string; href: string };
  *              the sentence that lands.
  *   blurb      the supporting paragraph.
  *
- * Sections with a narrow heading column (trust, pricing, network) run
+ * Sections with a narrow heading column (trust, network) run
  * head-only: h2a, h2b and a paragraph. A third level in a 400px column
  * reads as clutter.
  */
@@ -57,7 +56,9 @@ export interface SectionHeadCopy {
   h2a: string;
   h2b: string;
   lead: string;
-  blurb: string;
+  /** Optional by design. A chapter that already carries columns of
+   *  evidence under the head does not need a paragraph as well. */
+  blurb?: string;
 }
 
 export type TrustIcon =
@@ -105,18 +106,6 @@ export interface LensCopy {
     cards: Array<{ icon: TrustIcon; title: string; body: string }>;
     footer: string;
   };
-  /** What it costs. Replaces the old "who checks it" chapter, which was
-   *  the platform talking about itself; this answers the question every
-   *  reader actually arrives with. */
-  pricing: {
-    h2a: string;
-    h2b: string;
-    body: string;
-    note: string;
-    panelTitle: string;
-    rows: Array<{ label: string; value: string }>;
-    panelFooter: string;
-  };
   network: {
     h2a: string;
     h2b: string;
@@ -162,21 +151,19 @@ export const LENS: Record<Role, LensCopy> = {
         h2a: "What is wrong with how",
         h2b: "homes get priced today.",
         lead: "Three builders price three different jobs.",
-        blurb:
-          "Choosing your builder is the biggest financial decision of the build. It is usually made on three documents that were never written to be compared.",
       },
       points: [
         {
           claim: "Every builder prices a different job",
-          body: "One allows for the retaining wall. One leaves it out. One sets aside a rough figure. Nobody priced the same job.",
+          body: "One allows for the retaining wall. One leaves it out. One sets aside a rough figure.",
         },
         {
           claim: "The three quotes never line up",
-          body: "Three formats, three sets of inclusions, and no way to tell which number is complete and which is optimistic.",
+          body: "Three formats, three sets of inclusions, and no way to tell which number is complete.",
         },
         {
           claim: "What nobody priced becomes a variation",
-          body: "The cheapest quote is often the one that left the most out. The rest arrives later, at a price nobody competed on.",
+          body: "The cheapest quote is often the one that left the most out. The rest arrives later.",
         },
       ],
       bridge: {
@@ -241,21 +228,6 @@ export const LENS: Record<Role, LensCopy> = {
       footer:
         "The contract is signed directly between you and your builder.",
     },
-    pricing: {
-      h2a: "You pay nothing.",
-      h2b: "No commission.",
-    body: "Your scope of works, your tender round and the comparison cost you nothing. There is no fee at any point, and nobody takes a percentage of what you spend on your build.",
-      note: "No card required, and nothing to cancel.",
-      panelTitle: "What you pay",
-      rows: [
-        { label: "Your scope of works", value: "Free" },
-        { label: "Your tender round", value: "Free" },
-        { label: "The comparison", value: "Free" },
-        { label: "Commission on your build", value: "None" },
-      ],
-      panelFooter:
-        "Builders pay a one off fee for a spot on an open round. That is the only money on the platform.",
-    },
     network: {
       h2a: "Need a designer,",
       h2b: "builder or broker?",
@@ -316,21 +288,19 @@ export const LENS: Record<Role, LensCopy> = {
         h2a: "What is wrong with how",
         h2b: "work is won today.",
         lead: "Price every detail and you look expensive.",
-        blurb:
-          "Estimating is days of work, given away free. The price that allows for everything reads as the highest one on the table.",
       },
       points: [
         {
           claim: "Days of work before you price a thing",
-          body: "Days of estimating begin with working out what the documents actually cover, and every builder on the job repeats the same work.",
+          body: "Every tender starts by working out what the documents actually cover.",
         },
         {
           claim: "Doing it properly reads as a higher price",
-          body: "Allow for the difficult ground and say plainly what is excluded, and the honest number reads worse than a vague one.",
+          body: "Allow for the difficult ground, and the honest number reads worse than a vague one.",
         },
         {
           claim: "Nobody reads past the bottom line",
-          body: "A quote is compared on the bottom line, so the work behind it, the programme and the exclusions never get looked at.",
+          body: "The work behind it, the programme and the exclusions never get looked at.",
         },
       ],
       bridge: {
@@ -395,21 +365,6 @@ export const LENS: Record<Role, LensCopy> = {
       footer:
         "Your details are never sold or passed around. Rounds are capped, and you see the cap before you commit.",
     },
-    pricing: {
-      h2a: "One fee per round.",
-      h2b: "No commission.",
-    body: "Browsing every open round is free. You pay once for a spot, and the fee follows the type of job. Nobody takes a percentage of what you win.",
-      note: "No subscription, and nothing to cancel.",
-      panelTitle: "A spot on an open round",
-      rows: [
-        { label: "Renovation", value: "$49" },
-        { label: "Extension", value: "$99" },
-        { label: "Single dwelling", value: "$149" },
-        { label: "Multi dwelling", value: "$199" },
-      ],
-      panelFooter:
-        "One off, per round, paid when you decide to tender. Spots are capped and never resold, and rounds you are invited to cost you nothing.",
-    },
     network: {
       h2a: "The people your",
       h2b: "clients rely on.",
@@ -470,21 +425,19 @@ export const LENS: Record<Role, LensCopy> = {
         h2a: "What is wrong with how",
         h2b: "tenders are run today.",
         lead: "A proper tender is unpaid work.",
-        blurb:
-          "Running a round properly means assembling a scope, briefing builders and lining up three submissions that were never written to match. All of it outside the fee.",
       },
       points: [
         {
           claim: "Someone has to write the scope",
-          body: "Without one shared list, each builder prices their own reading of the drawings, and the submissions cannot be lined up afterwards.",
+          body: "Without one shared list, each builder prices their own reading of the drawings.",
         },
         {
           claim: "Comparing submissions is unpaid work",
-          body: "Three formats, three sets of inclusions, and someone in the practice has to reconcile them before the client can be advised.",
+          body: "Someone in the practice reconciles three formats before the client can be advised.",
         },
         {
           claim: "Your name is on the recommendation",
-          body: "Whatever the practice does, the recommendation is attached to it, and it has to be defensible long after the round closes.",
+          body: "It has to be defensible long after the round closes.",
         },
       ],
       bridge: {
@@ -548,21 +501,6 @@ export const LENS: Record<Role, LensCopy> = {
       ],
       footer:
         "The round is yours, and the contract is your client’s.",
-    },
-    pricing: {
-      h2a: "Free for practices.",
-      h2b: "No commission.",
-    body: "Running rounds for your clients is free, and so is inviting your own builders. BuilderHQ takes no commission from any side of the build, and there is no membership and no minimum.",
-      note: "No card required, and nothing to cancel.",
-      panelTitle: "Who pays what",
-      rows: [
-        { label: "Your practice", value: "Free" },
-        { label: "Your client", value: "Free" },
-        { label: "Builders you invite", value: "Free" },
-        { label: "Builders on an open round", value: "One off fee" },
-      ],
-      panelFooter:
-        "A spot on an open round runs from $49 for a renovation to $199 for multi dwelling work. That is the only money on the platform.",
     },
     network: {
       h2a: "What our partner",

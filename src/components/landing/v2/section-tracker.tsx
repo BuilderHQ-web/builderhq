@@ -16,7 +16,6 @@ const SECTION_IDS = [
   "choose",
   "how",
   "trust",
-  "pricing",
   "network",
   "ecosystem",
   "brief",

@@ -38,9 +38,11 @@ export function SectionHead({ head }: { head: SectionHeadCopy }) {
         {head.lead}
       </p>
 
-      <p className="mt-3.5 mx-auto max-w-[58ch] text-pretty text-[15px] sm:text-[16px] leading-[1.65] text-text-muted">
-        {head.blurb}
-      </p>
+      {head.blurb ? (
+        <p className="mt-3.5 mx-auto max-w-[58ch] text-pretty text-[15px] sm:text-[16px] leading-[1.65] text-text-muted">
+          {head.blurb}
+        </p>
+      ) : null}
     </div>
   );
 }

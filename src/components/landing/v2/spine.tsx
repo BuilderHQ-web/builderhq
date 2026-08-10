@@ -22,7 +22,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
-import { LENS } from "./content";
+import { LENS, ROLE_PALETTE } from "./content";
 import { SectionHead } from "./section-head";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
@@ -36,10 +36,16 @@ const TOP_BASE = 72;
  *  measured from here, so the deck sits balanced under it. */
 const HEADER_OFFSET = 76;
 
+/** The copy panel. Not flat: a deep blue that lifts towards the top left
+ *  so the card has a light source, with the lens bloom laid over it. */
+const NAVY =
+  "linear-gradient(158deg, #132433 0%, #0c1826 46%, #101f2d 100%)";
+
 export function Spine({ authedHref }: { authedHref?: string | null }) {
   const { role } = useRole();
   const copy = LENS[role].spine;
   const hero = LENS[role].hero;
+  const pal = ROLE_PALETTE[role];
   const cta = authedHref
     ? { label: "Open your dashboard", href: authedHref }
     : hero.primary;
@@ -90,38 +96,58 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                   style={{ top: deckTop, zIndex: 10 + i }}
                 >
                   <article
-                    className="relative grid grid-cols-1 lg:grid-cols-[0.98fr_1.02fr] overflow-hidden rounded-[24px] lg:h-[calc(85dvh-82px)] lg:min-h-[476px] lg:max-h-[714px]"
+                    className="relative grid grid-cols-1 lg:grid-cols-[0.94fr_1.06fr] overflow-hidden rounded-[24px] lg:h-[calc(85dvh-82px)] lg:min-h-[476px] lg:max-h-[714px]"
                     style={{
-                      background: "#f8f6f2",
+                      background: NAVY,
                       boxShadow:
                         "0 -14px 34px -26px rgba(0,0,0,0.55), 0 30px 70px -30px rgba(0,0,0,0.6), 0 0 0 1px rgba(15,25,35,0.05)",
                     }}
                   >
-                    {/* ── Copy side ─────────────────────────── */}
-                    <div className="flex flex-col p-7 sm:p-9 lg:p-12 xl:p-14 min-h-0">
+                    {/* ── Copy side ─────────────────────────────────
+                        Deep navy, so the product panel beside it can be
+                        the light theme the app actually ships. The bloom
+                        takes the lens hue, which is the only thing on the
+                        card that changes between audiences. */}
+                    <div className="relative flex flex-col p-7 sm:p-9 lg:p-12 xl:p-14 min-h-0 overflow-hidden">
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          background: `radial-gradient(120% 95% at 6% 0%, ${pal.glow1}, transparent 62%)`,
+                        }}
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          background:
+                            "radial-gradient(80% 60% at 100% 100%, rgba(0,212,200,0.07), transparent 70%)",
+                        }}
+                      />
+
                       {/* Label row — lives inside the peek strip. */}
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-[13.5px] tracking-[0.04em] text-[#98a1a9]">
+                      <div className="relative flex items-center gap-3">
+                        <span className="font-mono text-[13.5px] tracking-[0.04em] text-[rgba(233,241,249,0.42)]">
                           {String(i + 1).padStart(2, "0")} / {String(copy.steps.length).padStart(2, "0")}
                         </span>
-                        <span className="text-[15.5px] font-semibold text-[#1a222a] tracking-[-0.015em]">
+                        <span className="text-[15.5px] font-semibold tracking-[-0.015em]" style={{ color: pal.accent }}>
                           {step.title}
                         </span>
                       </div>
 
-                      <div className="flex-1 flex flex-col justify-center py-8 lg:py-4">
-                        <p className="font-ui font-semibold tracking-[-0.032em] text-[clamp(1.85rem,2.3vw+0.6rem,2.6rem)] leading-[1.1] text-[#12181f] max-w-[19ch] text-balance">
+                      <div className="relative flex-1 flex flex-col justify-center py-8 lg:py-4">
+                        <p className="font-ui font-semibold tracking-[-0.032em] text-[clamp(1.85rem,2.3vw+0.6rem,2.6rem)] leading-[1.1] text-[#f3f7fb] max-w-[19ch] text-balance">
                           {step.headline}
                         </p>
-                        <p className="mt-5 lg:mt-6 max-w-[44ch] text-pretty text-[16px] lg:text-[16.5px] leading-[1.65] text-[#525d67]">
+                        <p className="mt-5 lg:mt-6 max-w-[44ch] text-pretty text-[16px] lg:text-[16.5px] leading-[1.65] text-[rgba(233,241,249,0.68)]">
                           {step.body}
                         </p>
                       </div>
 
-                      <div>
+                      <div className="relative">
                         <Link
                           href={cta.href}
-                          className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full bg-[#12171c] text-[#f4f4f2] text-[14.5px] font-semibold hover:bg-[#232b33] transition-colors duration-[180ms]"
+                          className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full bg-accent text-accent-contrast text-[14.5px] font-semibold hover:bg-accent-hover transition-colors duration-[180ms]"
                         >
                           {cta.label}
                           <ArrowUpRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -130,7 +156,7 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                     </div>
 
                     {/* ── Product side — the real UI, edge to edge ── */}
-                    <div className="relative min-h-[340px] lg:min-h-0 lg:h-full border-t lg:border-t-0 lg:border-l border-[rgba(15,25,35,0.07)]">
+                    <div className="relative min-h-[340px] lg:min-h-0 lg:h-full border-t lg:border-t-0 lg:border-l border-[rgba(255,255,255,0.08)]">
                       <AppScene role={role} step={i} active={active === i} />
                     </div>
                   </article>
