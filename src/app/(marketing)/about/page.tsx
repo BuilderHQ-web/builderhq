@@ -15,7 +15,7 @@ import { MarketingPageShell } from "@/components/landing/page-shell";
 export const metadata = {
   title: "About",
   description:
-    "BuilderHQ is Australia's residential tendering platform, built so owners and builders can find each other on real terms, fast.",
+    "BuilderHQ runs the tender for Australian residential construction. One scope, comparable submissions, and a decision you can defend.",
 };
 
 export default function AboutPage() {
@@ -23,7 +23,7 @@ export default function AboutPage() {
     <MarketingPageShell
       kicker="About"
       title="Built for the residential build."
-      sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted, so the right team gets the job, faster."
+      sub="A proper tender was once something only large projects could afford. BuilderHQ turns that into software, so a suburban renovation is run with the rigour of a tower."
     >
       {/* Mission statement */}
       <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
@@ -39,49 +39,47 @@ export default function AboutPage() {
           Our mission
         </span>
         <h2 className="relative mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
-          To make building a home in Australia
+          To give every build the tender
           <br />
-          <span className="text-accent-light">feel less like chasing</span>.
+          <span className="text-accent-light">only large projects could afford</span>.
         </h2>
         <p className="relative mt-6 max-w-[60ch] text-[14.5px] leading-[1.75] text-text-subtle">
-          Tendering a residential build today means three PDFs from three
-          different builders, written in three different formats, with three
-          different scope assumptions buried in the fine print. Owners can&apos;t
-          actually compare. Builders can&apos;t stand out for the right reasons.
-          Architects lose hours relaying messages between the two. We&apos;re fixing that
-          with structured tenders, live verification, and a single workspace
-          everyone can trust.
+          Ask three builders to price the same house and you get three
+          documents that cannot be compared. Nobody is pricing the same
+          thing, so the cheapest is often the one that left the most out.
+          BuilderHQ prepares one scope, has every builder price that same
+          list, and shows the differences in the open.
         </p>
       </section>
 
       {/* Pillars */}
       <section className="mb-12 lg:mb-20">
         <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-          What we believe
+          Platform integrity
         </span>
         <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
-          Four principles, no compromise.
+          Four principles, every round.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Pillar
             icon={<ShieldCheck className="size-4" />}
-            title="Verified before tender"
-            body="Every builder runs through live ABR + state-register checks before they tender. Trust shouldn't depend on whether you read the fine print."
+            title="Verified before pricing"
+            body="ABN checked against the national register. Licences against the state register where one connects, and by our team where it does not."
           />
           <Pillar
             icon={<Layers className="size-4" />}
-            title="Structured by default"
-            body="Tenders use the same scope, fields, and format. When you compare three builders, you're actually comparing the same thing, not three writing styles."
+            title="One shared scope"
+            body="The client approves one scope. Every builder prices that same list line by line, marking each item included, provisional, excluded or not applicable."
           />
           <Pillar
             icon={<Hammer className="size-4" />}
-            title="Australian residential only"
-            body="Residential only, Australian only. No commercial crossover, no offshore quoting. Just the builders who build homes here, in your state."
+            title="Open, weighted scoring"
+            body="Six dimensions, weights published in advance, applied to every tender. Each score shows its working, including the points not earned."
           />
           <Pillar
             icon={<BadgeDollarSign className="size-4" />}
-            title="Free for owners, forever"
-            body="No fees to publish, match, or award. We make money from a small unlock fee builders pay to access private project details. Never from you."
+            title="Free to run rounds"
+            body="Owners and practices pay nothing to run a tender. Builders pay a one-off fee per project. No subscriptions, and no commission on any contract."
           />
         </div>
       </section>
@@ -106,23 +104,21 @@ export default function AboutPage() {
             </span>
           </div>
           <h2 className="mt-5 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
-            Shaped by the people who actually
+            Shaped by the people who
             <br />
-            <span className="text-accent-light">build, design, and own</span>.
+            <span className="text-accent-light">build, design and own</span>.
           </h2>
           <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            Every section, every field, and every workflow on BuilderHQ was
-            reviewed against decades of residential build experience:
-            registered builders running real projects, registered architects
-            who deliver them weekly, owner-builders who&apos;ve been through
-            it themselves, and quantity surveyors who know where tenders
-            quietly diverge.
+            The scope standard, the tender instrument and the scoring were
+            all reviewed against decades of residential experience:
+            registered builders running projects, architects who deliver
+            them, owner-builders who have been through it, and quantity
+            surveyors who know where tenders quietly diverge.
           </p>
           <p className="mt-5 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            We&apos;re still listening. Real-world feedback shapes the
-            roadmap directly, if you&apos;ve been around an Australian
-            residential build and you have a sharper way of doing
-            something, we want to hear it.
+            We are still listening. If you have run an Australian
+            residential build and see a sharper way of doing something,
+            we would like to hear it.
           </p>
 
           {/* Three "shaped by" pills, keeps the prose from being a
@@ -161,9 +157,8 @@ export default function AboutPage() {
           <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
             BuilderHQ is built and run from Melbourne by a small Australian
             team, led by founder Aryan Vadera. Every builder application is
-            reviewed by a person, every early project is walked through by
-            hand, and the roadmap is shaped by the owners, builders and
-            architects using the platform. If you&apos;d like to talk to us
+            reviewed by a person. Every scope of works is checked line by
+            line before the client sees it. If you would like to talk to us
             before you sign up, call. A person answers.
           </p>
 
@@ -197,8 +192,8 @@ export default function AboutPage() {
           Ready to <span className="text-accent-light">build it</span>?
         </h2>
         <p className="mt-5 mx-auto max-w-[44ch] text-[14px] leading-[1.7] text-text-subtle">
-          Two minutes to publish your project. Verified builders take it
-          from there.
+          Upload the drawings. We prepare the scope, and verified builders
+          price it.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           <Link

@@ -26,7 +26,7 @@ import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 
 /** Which product screen leads for each lens. */
-const SCENE_STEP: Record<Role, number> = { homeowner: 2, builder: 0, architect: 1, finance: 1 };
+const SCENE_STEP: Record<Role, number> = { homeowner: 2, builder: 0, architect: 1 };
 
 interface Chip {
   icon: LucideIcon;
@@ -46,10 +46,6 @@ const CHIPS: Record<Role, [Chip, Chip]> = {
   architect: [
     { icon: Star, title: "Practice featured", sub: "Narrabundah courtyard house" },
     { icon: Send, title: "New referral", sub: "Homeowner · Deakin" },
-  ],
-  finance: [
-    { icon: Send, title: "New introduction", sub: "Homeowner planning a build" },
-    { icon: Star, title: "Preferred partner", sub: "Listed in the directory" },
   ],
 };
 

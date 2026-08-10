@@ -259,7 +259,7 @@ export function LandingNav({
               </Link>
 
               {/* Lens switch — same three chips, panel edition */}
-              <div className="mt-5 grid grid-cols-2 gap-1.5" role="group" aria-label="Show BuilderHQ for">
+              <div className="mt-5 grid grid-cols-3 gap-1.5" role="group" aria-label="Show BuilderHQ for">
                 {ROLE_ORDER.map((r) => (
                   <button
                     key={r}

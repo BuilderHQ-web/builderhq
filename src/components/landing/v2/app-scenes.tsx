@@ -1,44 +1,51 @@
 "use client";
 
 /**
- * App scenes — rich, faithful recreations of the real BuilderHQ product,
- * one per spine step per lens. Dark product UI on the light deck cards is
- * deliberate (the Base44 "real screenshot on a clean card" look) and the
- * app itself is teal, so every scene stays teal regardless of the card's
- * role hue — it's a screenshot, not a themed panel.
+ * App scenes: faithful, reduced-scale reproductions of screens the
+ * BuilderHQ product actually ships, one per spine step per lens. Dark
+ * product UI on the light deck cards is deliberate (a real screenshot
+ * sitting on a clean card), and the app is teal, so every scene stays
+ * teal regardless of the card's role hue.
  *
- * Every label, price, spec band, document category and status here is
- * lifted from the actual components: the browse ProjectCard, the locked
- * project detail + unlock bar ("Exact address · owner contact · N
- * documents", "Unlock for $149", "Secure checkout by Stripe"), the tender
- * composer cost breakdown (real trade names), and the owner tender
- * comparison (KPI tiles, completeness, "Best value"). Architect has no
- * app UI in the product — those three scenes are honest representations
- * of the email/referral program, styled as BuilderHQ network cards.
+ * Every label, count, division name, price and status below is lifted
+ * from the running app:
+ *
+ *   owner pack review      · the register, the stats band, the chapter
+ *                            nav, the provisional sum cards, the rail
+ *   owner evaluation       · the round strip, the tender cards, the six
+ *                            published dimensions, the flag counts
+ *   builder browse         · the marketplace docket
+ *   builder project        · the scope stats band, the division browser
+ *   builder tender deck    · the schedule marks, the instrument contents
+ *
+ * Project data is the example round the app seeds: Pascoe Vale VIC,
+ * nine documents, 211 pages, 242 items identified, 228 tenderable
+ * across 29 trades, three builders on a three spot round.
  */
 
 import * as React from "react";
 import {
-  Layers,
-  Home,
-  Building2,
-  Bed,
-  Bath,
-  Ruler,
-  Lock,
-  FileText,
-  MapPin,
-  Sparkles,
+  ArrowUpRight,
+  BadgeCheck,
+  BookOpenCheck,
+  Bookmark,
+  Building,
   Check,
-  MessageCircle,
-  Bell,
-  CreditCard,
-  ShieldCheck,
-  Trophy,
-  TrendingUp,
-  Star,
-  Send,
+  ChevronDown,
+  FileText,
+  Files,
+  Home,
   Landmark,
+  Layers,
+  Lock,
+  Mail,
+  MapPin,
+  Rocket,
+  ScrollText,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Wrench,
 } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
@@ -54,6 +61,8 @@ const CARD = "rgba(255,255,255,0.03)";
 const TEAL = "#00d4c8";
 const TEALS = "#7ef5ed";
 const AMBER = "#ffb547";
+const RUST = "#f0a19a";
+const STONE = "#a9b3bd";
 
 /* ── Primitives ─────────────────────────────────────────────────── */
 
@@ -120,14 +129,6 @@ function Avatar({ txt }: { txt: string }) {
   );
 }
 
-function Verified() {
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded-[4px] px-1 py-[1px] text-[8.5px] tracking-[0.08em] uppercase font-bold" style={{ background: "rgba(0,212,200,0.12)", color: TEALS }}>
-      <ShieldCheck className="size-2.5" strokeWidth={2.6} /> Verified
-    </span>
-  );
-}
-
 function Badge({ children, tone = "teal" }: { children: React.ReactNode; tone?: "teal" | "line" | "amber" }) {
   const s =
     tone === "amber"
@@ -144,78 +145,244 @@ function Badge({ children, tone = "teal" }: { children: React.ReactNode; tone?: 
 
 function Bar({ pct }: { pct: number }) {
   return (
-    <span className="mt-1.5 block h-[4px] w-full rounded-full overflow-hidden" style={{ background: "rgba(120,180,255,0.10)" }}>
+    <span className="block h-[4px] w-full rounded-full overflow-hidden" style={{ background: "rgba(120,180,255,0.10)" }}>
       <span className="block h-full rounded-full" style={{ width: pct + "%", background: `linear-gradient(90deg, ${TEAL}, ${TEALS})` }} />
     </span>
   );
 }
 
-function Spec({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function Kicker({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: MUT }}>
-      <span style={{ color: DIM }}>{icon}</span>
+    <p className="text-[9px] tracking-[0.18em] uppercase font-semibold" style={{ color: DIM }}>
+      {children}
+    </p>
+  );
+}
+
+function TealBtn({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center justify-center gap-1.5 h-8 px-3.5 rounded-full text-[11.5px] font-bold" style={{ background: TEAL, color: "#03121a" }}>
       {children}
     </span>
   );
 }
 
-function TealBtn({ children, full = false }: { children: React.ReactNode; full?: boolean }) {
+/** A register row: standard name, the consultant's filename, kind, pages. */
+function DocRow({ name, file, kind, pages }: { name: string; file: string; kind?: string; pages: string }) {
   return (
-    <span className={"inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-bold " + (full ? "w-full" : "")} style={{ background: TEAL, color: "#03121a" }}>
-      {children}
-    </span>
+    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2" style={{ borderColor: LINE, background: CARD }}>
+      <FileText className="size-3.5 shrink-0" style={{ color: DIM }} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[11.5px] font-medium leading-tight truncate" style={{ color: INK }}>{name}</p>
+        <p className="text-[9.5px] leading-tight truncate" style={{ color: DIM }}>{file}</p>
+      </div>
+      {kind ? (
+        <span className="hidden sm:inline shrink-0 rounded-full border px-1.5 py-[2px] text-[8.5px] tracking-[0.08em] uppercase" style={{ borderColor: LINE, color: MUT }}>
+          {kind}
+        </span>
+      ) : null}
+      <span className="shrink-0 w-[46px] text-right text-[9.5px] tabular-nums" style={{ color: DIM }}>{pages}</span>
+    </div>
   );
 }
 
-/** The real marketplace ProjectCard, miniaturised and faithful. */
-function ProjectCard({
-  type,
-  Icon,
-  price,
-  budget,
-  title,
-  loc,
-  specs,
-  docs,
-  spots,
-  urgent,
+/** One division of the scope of works, collapsed or open. */
+function Division({
+  label,
+  count,
+  open,
+  children,
 }: {
-  type: string;
-  Icon: typeof Layers;
-  price: string;
-  budget: string;
-  title: string;
-  loc: string;
-  specs: { icon: React.ReactNode; t: string }[];
-  docs: string;
-  spots: string;
-  urgent?: boolean;
+  label: string;
+  count: string;
+  open?: boolean;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border overflow-hidden" style={{ borderColor: LINE, background: CARD }}>
-      <div className="relative h-[74px] overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(126,245,237,0.16), rgba(0,212,200,0.12))" }}>
-        <div aria-hidden className="absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(rgba(142,252,244,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.10) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
-        <Icon aria-hidden className="absolute -right-3 -bottom-5 size-[92px]" strokeWidth={0.8} style={{ color: "rgba(120,180,255,0.18)" }} />
-        <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-[3px] rounded-[4px] border text-[8.5px] tracking-[0.12em] uppercase font-semibold" style={{ borderColor: "rgba(0,212,200,0.35)", background: "rgba(3,9,15,0.62)", color: TEALS }}>
-          <Icon className="size-2.5" /> {type}
-        </span>
-        <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-1.5 py-[3px] rounded-[4px] border text-[9px] font-bold" style={{ borderColor: "rgba(120,180,255,0.14)", background: "rgba(3,9,15,0.62)", color: MUT }}>
-          <Lock className="size-2.5" /> {price}
-        </span>
+      <div className="flex items-center gap-2.5 px-3 py-[7px]">
+        <span className="min-w-0 flex-1 text-[11.5px] font-medium truncate" style={{ color: INK }}>{label}</span>
+        <span className="shrink-0 text-[10px] tabular-nums" style={{ color: DIM }}>{count}</span>
+        <ChevronDown className={"size-3 shrink-0 " + (open ? "rotate-180" : "")} style={{ color: DIM }} />
       </div>
-      <div className="p-3">
-        <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: INK }}>{title}</p>
-        <p className="mt-1 flex items-center gap-1 text-[11px]" style={{ color: MUT }}>
-          <MapPin className="size-3" style={{ color: DIM }} /> {loc}
-          <span style={{ color: DIM }}>·</span>
-          <span className="font-semibold" style={{ color: INK }}>{budget}</span>
-        </p>
-        <div className="mt-2 flex items-center gap-3">{specs.map((s, i) => <Spec key={i} icon={s.icon}>{s.t}</Spec>)}</div>
-        <div className="mt-2.5 pt-2.5 border-t flex items-center justify-between text-[10.5px]" style={{ borderColor: LINE, color: DIM }}>
-          <span className="inline-flex items-center gap-1"><FileText className="size-3" /> {docs}</span>
-          <span style={{ color: urgent ? AMBER : DIM, fontWeight: urgent ? 700 : 400 }}>{spots}</span>
+      {open ? (
+        <div className="border-t px-3 py-2 flex flex-col gap-2" style={{ borderColor: LINE }}>{children}</div>
+      ) : null}
+    </div>
+  );
+}
+
+/** A scope line: the item, its plain sentence, its citation. */
+function ScopeLine({ label, plain, cite, right }: { label: string; plain: string; cite?: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium leading-tight" style={{ color: INK }}>{label}</p>
+        <p className="mt-0.5 text-[10px] leading-[1.45] line-clamp-2" style={{ color: MUT }}>{plain}</p>
+        {cite ? <p className="mt-0.5 text-[9px] truncate" style={{ color: DIM }}>{cite}</p> : null}
+      </div>
+      {right ? <span className="shrink-0 pt-0.5">{right}</span> : null}
+    </div>
+  );
+}
+
+/** The four marks a builder can put on a line, plus the carry chip. */
+function Mark({ label, on, tone = "teal" }: { label: string; on?: boolean; tone?: "teal" | "rust" | "stone" }) {
+  const bg = tone === "rust" ? RUST : tone === "stone" ? STONE : TEAL;
+  return (
+    <span
+      className="inline-flex items-center h-[22px] px-2 rounded-full border text-[9.5px] whitespace-nowrap"
+      style={
+        on
+          ? { borderColor: "transparent", background: bg, color: "#03121a", fontWeight: 700 }
+          : { borderColor: LINE, background: "transparent", color: MUT }
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
+/** The marketplace docket, miniaturised: band, body, round state. */
+function ProjectDocket() {
+  return (
+    <div className="rounded-lg border overflow-hidden" style={{ borderColor: LINE, background: CARD }}>
+      <div className="relative h-[62px] overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(126,245,237,0.16), rgba(0,212,200,0.10))" }}>
+        <div aria-hidden className="absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(rgba(142,252,244,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.10) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+        <Home aria-hidden className="absolute -right-3 -bottom-5 size-[84px]" strokeWidth={0.8} style={{ color: "rgba(120,180,255,0.16)" }} />
+        <span className="absolute top-1.5 left-2.5 inline-flex items-center gap-1 px-1.5 py-[2px] rounded-[3px] border text-[8.5px] tracking-[0.14em] uppercase font-semibold" style={{ borderColor: "rgba(0,212,200,0.32)", background: "rgba(3,9,15,0.62)", color: TEALS }}>
+          <Home className="size-2.5" /> Single dwelling
+        </span>
+        <span className="absolute top-1.5 right-2.5 inline-flex size-5 items-center justify-center rounded-[4px] border" style={{ borderColor: LINE, background: "rgba(3,9,15,0.62)", color: DIM }}>
+          <Bookmark className="size-3" />
+        </span>
+        <div className="absolute left-2.5 bottom-1.5">
+          <p className="text-[7.5px] leading-none tracking-[0.18em] uppercase font-semibold" style={{ color: MUT }}>Project budget</p>
+          <p className="mt-1 font-ui font-semibold text-[15px] leading-none tabular-nums" style={{ color: INK }}>$500k to $1m</p>
         </div>
       </div>
+      <div className="px-3 py-2">
+        <p className="text-[12.5px] font-semibold leading-tight truncate" style={{ color: INK }}>Double-storey home with basement</p>
+        <p className="mt-1 flex items-center gap-1 text-[10.5px]" style={{ color: MUT }}>
+          <MapPin className="size-3" style={{ color: DIM }} /> Pascoe Vale, VIC
+        </p>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          {[["4", "beds"], ["4", "baths"], ["3", "storeys"], ["600-800", "Land m²"]].map(([v, l]) => (
+            <span key={l} className="inline-flex items-center gap-1 h-[20px] px-1.5 rounded-[4px] border" style={{ borderColor: LINE }}>
+              <span className="text-[10.5px] font-semibold leading-none tabular-nums" style={{ color: INK }}>{v}</span>
+              <span className="text-[7.5px] tracking-[0.12em] uppercase" style={{ color: DIM }}>{l}</span>
+            </span>
+          ))}
+        </div>
+        <p className="mt-1.5 inline-flex items-center gap-1.5 text-[10px]" style={{ color: TEALS }}>
+          <BookOpenCheck className="size-3 shrink-0" />
+          <span className="truncate">
+            9 tender documents analysed
+            <span style={{ color: MUT }}> · 211 pages read · 242 scope items identified</span>
+          </span>
+        </p>
+      </div>
+      <div className="flex items-center justify-between border-t px-3 py-1.5" style={{ borderColor: LINE }}>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-[3px]" aria-hidden>
+            <i className="size-1.5 rounded-full" style={{ background: TEAL }} />
+            <i className="size-1.5 rounded-full" style={{ background: "rgba(120,180,255,0.22)" }} />
+            <i className="size-1.5 rounded-full" style={{ background: "rgba(120,180,255,0.22)" }} />
+          </span>
+          <span className="text-[10.5px]" style={{ color: MUT }}>2 of 3 spots open</span>
+        </span>
+        <span className="text-[10.5px] tabular-nums" style={{ color: DIM }}>$149 to enter</span>
+      </div>
+    </div>
+  );
+}
+
+/** A quieter docket for the rounds below the fold on browse. */
+function DocketMini({ Icon, title, sub, price }: { Icon: typeof Layers; title: string; sub: string; price: string }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-1.5" style={{ borderColor: LINE, background: CARD }}>
+      <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: "rgba(0,212,200,0.10)", color: TEALS }}>
+        <Icon className="size-3" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold leading-none truncate" style={{ color: INK }}>{title}</p>
+        <p className="mt-1 text-[9px] leading-none truncate" style={{ color: DIM }}>{sub}</p>
+      </div>
+      <span className="shrink-0 text-[10px] tabular-nums" style={{ color: MUT }}>{price}</span>
+    </div>
+  );
+}
+
+/** A builder on the round: identity, then the checks. */
+function BuilderRow({
+  txt,
+  name,
+  sub,
+  licence,
+  right,
+  state,
+}: {
+  txt: string;
+  name: string;
+  sub: string;
+  licence: string;
+  right?: React.ReactNode;
+  state?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
+      <Avatar txt={txt} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: INK }}>{name}</p>
+        <p className="text-[9.5px] leading-tight truncate" style={{ color: DIM }}>{sub}</p>
+        <span className="mt-1 flex items-center gap-1.5">
+          <Chip label="ABN" />
+          <Chip label={licence} />
+          {state ? <span className="text-[9px]" style={{ color: DIM }}>{state}</span> : null}
+        </span>
+      </div>
+      {right ? <span className="shrink-0">{right}</span> : null}
+    </div>
+  );
+}
+
+function Chip({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-[1px] text-[8.5px] tracking-[0.06em] uppercase" style={{ borderColor: "rgba(0,212,200,0.32)", color: TEALS }}>
+      <ShieldCheck className="size-2.5" /> {label}
+    </span>
+  );
+}
+
+/** One tender in the evaluation: the number, the read, the flags. */
+function TenderRow({
+  txt,
+  name,
+  price,
+  sub,
+  score,
+}: {
+  txt: string;
+  name: string;
+  price: string;
+  sub: string;
+  score: number;
+}) {
+  return (
+    <div className="rounded-lg border px-3 py-2" style={{ borderColor: LINE, background: CARD }}>
+      <div className="flex items-center gap-2.5">
+        <Avatar txt={txt} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: INK }}>{name}</p>
+          <p className="text-[9.5px] leading-tight truncate" style={{ color: DIM }}>{sub}</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="font-ui font-semibold text-[12.5px] tabular-nums leading-none" style={{ color: INK }}>{price}</p>
+          <p className="text-[8.5px] mt-0.5 uppercase tracking-[0.1em]" style={{ color: DIM }}>inc GST</p>
+        </div>
+        <span className="shrink-0 w-7 text-right font-ui font-semibold text-[14px] tabular-nums" style={{ color: TEALS }}>{score}</span>
+      </div>
+      <div className="mt-1.5"><Bar pct={score} /></div>
     </div>
   );
 }
@@ -225,520 +392,464 @@ function ProjectCard({
 export function AppScene({ role, step }: { role: Role; step: number }) {
   if (role === "homeowner") return <HomeownerScene step={step} />;
   if (role === "builder") return <BuilderScene step={step} />;
-  if (role === "architect") return <ArchitectScene step={step} />;
-  return <FinanceScene step={step} />;
+  return <ArchitectScene step={step} />;
 }
 
-/* ── Homeowner: post → interest → compare → award ───────────────── */
+/* ── Homeowner: read → scope → round → evaluation ────────────────── */
 
 function HomeownerScene({ step }: { step: number }) {
   if (step === 0)
     return (
-      <Frame crumb="New project · review" avatar="AV">
+      <Frame crumb="Pascoe Vale · the pack" avatar="AV">
         <div className="flex items-center justify-between">
-          <p className="text-[14px] font-semibold" style={{ color: INK }}>Two-storey family home</p>
-          <Badge><Home className="size-2.5" /> Single dwelling</Badge>
+          <Kicker>What we read</Kicker>
+          <Badge tone="line">Scope Standard v1.2.0</Badge>
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Spec icon={<Bed className="size-3" />}>4 bed</Spec>
-          <Spec icon={<Bath className="size-3" />}>2 bath</Spec>
-          <Spec icon={<Building2 className="size-3" />}>2 storeys</Spec>
-          <Spec icon={<Ruler className="size-3" />}>Land 600 – 800 m²</Spec>
+        <div className="grid grid-cols-3 gap-2">
+          <Tile v="9" l="Documents read" />
+          <Tile v="211" l="Pages read" />
+          <Tile v="242" l="Items evidenced" tone="teal" />
         </div>
-        <Card className="px-3.5 py-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-[0.1em]" style={{ color: DIM }}>Budget · timeline</span>
-            <span className="text-[12px] font-semibold" style={{ color: INK }}>$1.2M – $1.5M · start Mar 2027</span>
-          </div>
-        </Card>
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-[11px] font-semibold" style={{ color: INK }}>Documents</span>
-          <span className="text-[10.5px]" style={{ color: DIM }}>3 files</span>
-        </div>
-        <DocRow name="Architectural plans.pdf" cat="Architectural plans" size="2.4 MB" />
-        <DocRow name="Structural engineering.pdf" cat="Structural engineering" size="1.1 MB" />
-        <Card accent className="flex items-center gap-2.5 px-3.5 py-2.5">
-          <Lock className="size-3.5 shrink-0" style={{ color: TEALS }} />
-          <p className="text-[11px] leading-snug" style={{ color: MUT }}>Street address stays private until a verified builder unlocks.</p>
-        </Card>
-        <div className="flex justify-end pt-0.5">
-          <TealBtn><Sparkles className="size-3" /> Publish project</TealBtn>
+        <DocRow name="Architectural Plans" file="Architectural Drawings Rev D.pdf" pages="64 pages" />
+        <DocRow name="Structural Engineering" file="Structural Drawings Rev C.pdf" pages="38 pages" />
+        <DocRow name="Project Specifications" file="Project Specifications.pdf" pages="47 pages" />
+        <DocRow name="Geotechnical Report" file="Geotechnical Report.pdf" pages="18 pages" />
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <span className="inline-flex items-center gap-1.5 text-[10.5px]" style={{ color: MUT }}>
+            <ShieldCheck className="size-3.5 shrink-0" style={{ color: TEALS }} />
+            Checked line by line by a person
+          </span>
+          <Badge><BadgeCheck className="size-2.5" /> Scope of works ready</Badge>
         </div>
       </Frame>
     );
 
   if (step === 1)
     return (
-      <Frame
-        crumb="Your project · builders"
-        avatar="AV"
-        toast={<LoopToast icon={<Bell className="size-3.5" />} text="Southern Cross just unlocked" accent={TEAL} delay={1.7} />}
-      >
-        <div className="flex items-center justify-between px-0.5">
-          <p className="text-[13.5px] font-semibold" style={{ color: INK }}>Verified builders</p>
-          <Badge tone="amber">2 of 3 spots open</Badge>
+      <Frame crumb="Scope of works" avatar="AV">
+        <div className="flex items-center justify-between">
+          <p className="text-[13px] font-semibold" style={{ color: INK }}>Scope of works</p>
+          <Badge><Check className="size-2.5" strokeWidth={3} /> Approved</Badge>
         </div>
-        <BuilderRow txt="HH" name="Hartley Homes" sub="Canberra · 14 yrs · 38 tenders" tag="Unlocked" />
-        <BuilderRow txt="SC" name="Southern Cross Building" sub="Queanbeyan · 9 yrs · 21 tenders" tag="Unlocked" />
-        <BuilderRow txt="BM" name="Brindabella Master Builders" sub="Fyshwick · 22 yrs" tag="Viewing" muted />
-        <Card className="flex items-center gap-2.5 px-3.5 py-2.5">
-          <ShieldCheck className="size-3.5 shrink-0" style={{ color: TEALS }} />
-          <p className="text-[11px] leading-snug" style={{ color: MUT }}>Every builder cleared ABN + licence checks before they appear.</p>
-        </Card>
+        <p className="text-[10.5px] leading-snug" style={{ color: MUT }}>
+          242 items of work, built from your documents. Every builder prices this same list.
+        </p>
+        <div className="flex flex-col gap-1.5">
+          <Division label="Preliminaries and site establishment" count="14 items" />
+          <Division label="Approvals, certification and compliance" count="11 items" />
+          <Division label="Earthworks and excavation" count="8 items" open>
+            <ScopeLine
+              label="Bulk excavation, cut and fill"
+              plain="The big earthmoving that levels a sloping block into the platforms the home sits on."
+              cite="Civil C03, page 2, Rev B"
+            />
+            <ScopeLine
+              label="Detailed excavation for footings and services"
+              plain="The precise trenches and pier holes dug for footings, slab edges and underground pipes."
+              cite="Structural S02, page 4, Rev B"
+            />
+          </Division>
+          <Division label="Footings and ground floor structure" count="7 items" />
+          <Division label="Retaining walls and ground structures" count="4 items" />
+        </div>
       </Frame>
     );
 
   if (step === 2)
     return (
-      <Frame crumb="Tenders · comparison" avatar="AV">
-        <div className="grid grid-cols-3 gap-2">
-          <Tile v="3" l="Tenders" />
-          <Tile v="$1.28M" l="Median" tone="teal" />
-          <Tile v="100%" l="Verified" />
+      <Frame
+        crumb="Your round · builders"
+        avatar="AV"
+        toast={<LoopToast icon={<Sparkles className="size-3.5" />} text="Brightwater Homes took the last spot" accent={TEAL} delay={1.8} />}
+      >
+        <div className="flex items-center justify-between">
+          <Kicker>Builders on your round</Kicker>
+          <span className="text-[10px] tabular-nums" style={{ color: DIM }}>3 of 3 spots taken</span>
         </div>
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-[11px]" style={{ color: MUT }}>3 tenders · same scope</span>
-          <Badge tone="line">Price · low → high</Badge>
-        </div>
-        <TenderRow txt="SC" name="Southern Cross" price="$1,240,000" delta="−$44k" wks="38 wks" pct={82} badge="Best value" verified />
-        <TenderRow txt="HH" name="Hartley Homes" price="$1,284,000" delta="median" wks="34 wks" pct={91} badge="Fastest" verified highlight />
-        <TenderRow txt="BM" name="Brindabella" price="$1,355,000" delta="+$71k" wks="40 wks" pct={74} />
+        <BuilderRow
+          txt="CB"
+          name="Corten Build Co."
+          sub="6 years in operation · Melbourne, VIC"
+          licence="CB-L 88231"
+          right={<span className="text-[9.5px] tabular-nums" style={{ color: MUT }}>228 items marked</span>}
+        />
+        <BuilderRow
+          txt="MB"
+          name="Meridian Building Co"
+          sub="14 years in operation · Brunswick, VIC"
+          licence="CDB-U 51102"
+          right={<span className="text-[9.5px] tabular-nums" style={{ color: MUT }}>228 items marked</span>}
+        />
+        <BuilderRow
+          txt="BH"
+          name="Brightwater Homes"
+          sub="22 years in operation · Ivanhoe, VIC"
+          licence="CDB-U 22540"
+          right={<span className="text-[9.5px] tabular-nums" style={{ color: MUT }}>228 items marked</span>}
+        />
+        {/* Short: the hero floats a notification chip over this scene's
+            bottom-right corner, so the line must clear it. */}
+        <p className="text-[10px] leading-snug px-0.5 max-w-[62%]" style={{ color: DIM }}>
+          Teal marks are checked against the registers.
+        </p>
       </Frame>
     );
 
   return (
-    <Frame crumb="Award · Hartley Homes" avatar="AV">
-      <Card accent className="p-3.5">
-        <div className="flex items-center gap-2.5">
-          <Avatar txt="HH" />
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: INK }}>Hartley Homes <Verified /></p>
-            <p className="text-[10.5px]" style={{ color: DIM }}>34 weeks · fixed price</p>
-          </div>
-          <div className="text-right">
-            <p className="font-ui font-semibold text-[15px] tabular-nums" style={{ color: TEALS }}>$1,284,000</p>
-            <Badge><Trophy className="size-2.5" /> Awarded</Badge>
-          </div>
-        </div>
-      </Card>
-      <div className="grid grid-cols-2 gap-2.5">
-        <Tile v="$0" l="Commission" tone="teal" />
-        <Tile v="$0" l="Platform fee" tone="teal" />
+    <Frame crumb="Tenders · before you decide" avatar="AV">
+      <div className="grid grid-cols-3 gap-2">
+        <Tile v="3" l="Tenders received" />
+        <Tile v="$712,800" l="Lowest inc GST" tone="teal" />
+        <Tile v="2" l="Significant flags" tone="amber" />
       </div>
-      <Card className="flex items-center gap-2.5 px-3.5 py-2.5">
-        <Check className="size-3.5 shrink-0" strokeWidth={3} style={{ color: TEALS }} />
-        <p className="text-[11px] leading-snug" style={{ color: MUT }}>The contract is direct, between you and Hartley Homes.</p>
-      </Card>
+      <TenderRow txt="CB" name="Corten Build Co." price="$712,800" sub="36 weeks · 2 significant flags · 6 worth attention" score={53} />
+      <TenderRow txt="MB" name="Meridian Building Co" price="$753,500" sub="34 weeks · no significant flags · 3 worth attention" score={77} />
+      <TenderRow txt="BH" name="Brightwater Homes" price="$800,800" sub="30 weeks · no significant flags · 2 worth attention" score={89} />
+      <div>
+        <Kicker>Six published weights, applied to every tender</Kicker>
+        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1">
+          {[
+            ["Price firmness", "25"],
+            ["Credentials and capacity", "15"],
+            ["Scope coverage", "25"],
+            ["Delivery and aftercare", "12"],
+            ["Preparation", "15"],
+            ["Programme confidence", "8"],
+          ].map(([l, w]) => (
+            <span key={l} className="flex items-baseline gap-2 min-w-0">
+              <span className="text-[10px] truncate" style={{ color: MUT }}>{l}</span>
+              <span className="ml-auto text-[10px] tabular-nums font-semibold" style={{ color: INK }}>{w}</span>
+            </span>
+          ))}
+        </div>
+      </div>
     </Frame>
   );
 }
 
-function DocRow({ name, cat, size }: { name: string; cat: string; size: string }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2" style={{ borderColor: LINE, background: CARD }}>
-      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md" style={{ background: "rgba(0,212,200,0.12)", color: TEALS }}>
-        <FileText className="size-3.5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-medium leading-tight truncate" style={{ color: INK }}>{name}</p>
-        <p className="text-[10px] leading-tight truncate" style={{ color: DIM }}>{cat}</p>
-      </div>
-      <span className="text-[10px] tabular-nums" style={{ color: DIM }}>{size}</span>
-    </div>
-  );
-}
-
-function BuilderRow({ txt, name, sub, tag, muted }: { txt: string; name: string; sub: string; tag: string; muted?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
-      <Avatar txt={txt} />
-      <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 text-[12.5px] font-semibold leading-tight" style={{ color: INK }}>
-          {name} {!muted ? <Verified /> : null}
-        </p>
-        <p className="text-[10.5px] leading-tight truncate" style={{ color: DIM }}>{sub}</p>
-      </div>
-      <Badge tone={muted ? "line" : "teal"}>{tag}</Badge>
-    </div>
-  );
-}
-
-function TenderRow({ txt, name, price, delta, wks, pct, badge, verified, highlight }: { txt: string; name: string; price: string; delta: string; wks: string; pct: number; badge?: string; verified?: boolean; highlight?: boolean }) {
-  return (
-    <div className="rounded-lg border px-3 py-2.5" style={{ borderColor: highlight ? "rgba(0,212,200,0.30)" : LINE, background: highlight ? "rgba(0,212,200,0.06)" : CARD }}>
-      <div className="flex items-center gap-2.5">
-        <Avatar txt={txt} />
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-[12.5px] font-semibold leading-tight" style={{ color: INK }}>
-            {name} {verified ? <Verified /> : null}
-          </p>
-          <p className="text-[10px] leading-tight" style={{ color: DIM }}>{wks} · {pct}% complete</p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="font-ui font-semibold text-[13.5px] tabular-nums leading-none" style={{ color: TEALS }}>{price}</p>
-          <p className="text-[9.5px] tabular-nums mt-0.5" style={{ color: DIM }}>{delta}</p>
-        </div>
-      </div>
-      <div className="mt-1.5 flex items-center gap-2">
-        <Bar pct={pct} />
-        {badge ? <span className="shrink-0"><Badge>{badge}</Badge></span> : null}
-      </div>
-    </div>
-  );
-}
-
-/* ── Builder: browse → preview → unlock → tender ────────────────── */
+/* ── Builder: browse → scope → schedule → submitted ──────────────── */
 
 function BuilderScene({ step }: { step: number }) {
   if (step === 0)
     return (
       <Frame
         crumb="Browse projects"
-        toast={<LoopToast icon={<Sparkles className="size-3.5" />} text="New match in Deakin ACT" accent={TEAL} delay={1.8} />}
+        toast={<LoopToast icon={<Sparkles className="size-3.5" />} text="New round in Pascoe Vale, VIC" accent={TEAL} delay={1.8} />}
       >
         <div className="flex items-center gap-1.5 flex-wrap">
-          {["Extension", "ACT", "$500k – $1M"].map((c) => (
-            <span key={c} className="rounded-md border px-2 py-[3px] text-[10.5px]" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.06)", color: TEALS }}>{c}</span>
+          {["Single dwelling", "VIC", "$500k to $1m"].map((c) => (
+            <span key={c} className="rounded-md border px-2 py-[2px] text-[10px]" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.06)", color: TEALS }}>{c}</span>
           ))}
-          <span className="rounded-md border px-2 py-[3px] text-[10.5px]" style={{ borderColor: LINE, color: DIM }}>+ Postcode</span>
+          <span className="rounded-md border px-2 py-[2px] text-[10px]" style={{ borderColor: LINE, color: DIM }}>+ Postcode</span>
         </div>
-        <ProjectCard
-          type="Extension"
-          Icon={Layers}
-          price="$99"
-          budget="$500k – $1M"
-          title="Rear extension · Deakin"
-          loc="Deakin, ACT 2600"
-          specs={[{ icon: <Bed className="size-3" />, t: "4" }, { icon: <Bath className="size-3" />, t: "2" }, { icon: <Ruler className="size-3" />, t: "Build 90 m²" }]}
-          docs="8 documents"
-          spots="2 of 3 spots"
-        />
-        <BuilderProjectMini type="Single dwelling" Icon={Home} price="$149" title="New build · Griffith" budget="$1.2M – $1.5M" spots="3 spots" />
+        <ProjectDocket />
+        <DocketMini Icon={Layers} title="Rear extension, Northcote" sub="Extension · $500k to $1m · 2 of 3 spots open" price="$99 to enter" />
+        <DocketMini Icon={Wrench} title="Kitchen and bathroom renovation, Coburg" sub="Renovation · Under $500k · 3 of 3 spots open" price="$49 to enter" />
+        <DocketMini Icon={Building} title="Four townhouses, Reservoir" sub="Multi dwelling · $2m to $3m · 1 spot left" price="$199 to enter" />
       </Frame>
     );
 
   if (step === 1)
     return (
-      <Frame crumb="Deakin extension · preview">
-        <div className="flex items-center justify-between">
-          <p className="text-[13.5px] font-semibold" style={{ color: INK }}>Rear extension · Deakin</p>
-          <Badge tone="line">Preview</Badge>
+      <Frame crumb="Pascoe Vale · scope of works">
+        <div className="grid grid-cols-3 border-y py-3" style={{ borderColor: LINE }}>
+          {[
+            ["228", "Scope items"],
+            ["29", "Trades"],
+            ["7 · $569,801", "Provisional sums"],
+          ].map(([v, l], i) => (
+            <div key={l} className={"px-2 text-center min-w-0 " + (i ? "border-l" : "")} style={{ borderColor: LINE }}>
+              <p className="font-ui font-semibold text-[15px] leading-none tabular-nums truncate" style={{ color: INK }}>{v}</p>
+              <p className="mt-1.5 text-[8px] tracking-[0.16em] uppercase font-semibold" style={{ color: DIM }}>{l}</p>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Spec icon={<Bed className="size-3" />}>4 bed</Spec>
-          <Spec icon={<Bath className="size-3" />}>2 bath</Spec>
-          <Spec icon={<Ruler className="size-3" />}>Land 600 – 800 m²</Spec>
-          <Spec icon={<Ruler className="size-3" />}>Build 80 – 120 m²</Spec>
+        <div className="flex items-center justify-between gap-2">
+          <Kicker>Identified scope of works, line by line</Kicker>
+          <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border text-[10px]" style={{ borderColor: LINE, color: DIM }}>
+            <Search className="size-3" /> Find an item
+          </span>
         </div>
-        <DocRow name="Architectural plans.pdf" cat="Open before you unlock" size="preview" />
-        <DocRow name="Structural engineering.pdf" cat="Open before you unlock" size="preview" />
-        <div className="relative">
-          <div className="grid grid-cols-2 gap-2.5 select-none" style={{ filter: "blur(4.5px)", opacity: 0.6 }} aria-hidden>
-            <Card className="px-3 py-2.5"><p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: DIM }}>Address</p><p className="text-[12px] mt-1" style={{ color: INK }}>14 Example Street</p></Card>
-            <Card className="px-3 py-2.5"><p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: DIM }}>Owner</p><p className="text-[12px] mt-1" style={{ color: INK }}>J. Robertson</p></Card>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10.5px] font-semibold" style={{ borderColor: "rgba(0,212,200,0.35)", background: "rgba(3,9,15,0.72)", color: TEALS }}>
-              <Lock className="size-3" /> Address + owner unlock after payment
-            </span>
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Division label="Preliminaries and site establishment" count="14 items" />
+          <Division label="Footings and ground floor structure" count="7 items" open>
+            <ScopeLine
+              label="Waffle pod slab"
+              plain="A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab."
+              cite="Structural S02, page 4, Rev B"
+            />
+            <ScopeLine
+              label="Piers and screw piles"
+              plain="Deep supports drilled down to solid ground where the surface soil cannot carry the home."
+              cite="Geotechnical Report, page 11"
+              right={
+                <span className="inline-flex items-center gap-1 text-[9.5px] font-medium whitespace-nowrap" style={{ color: AMBER }}>
+                  <Landmark className="size-2.5" /> $24,000 provisional sum
+                </span>
+              }
+            />
+          </Division>
+          <Division label="Retaining walls and ground structures" count="4 items" />
         </div>
       </Frame>
     );
 
   if (step === 2)
     return (
-      <Frame crumb="Unlock · Deakin extension">
-        <Card className="p-3.5">
-          <p className="text-[10px] uppercase tracking-[0.12em] mb-2" style={{ color: DIM }}>What you&apos;ll unlock</p>
-          {["Exact street address", "8 documents to download", "Owner’s name + contact", "Direct messaging with the owner", "Submit a tender"].map((t) => (
-            <p key={t} className="flex items-center gap-2 py-[3px] text-[11.5px]" style={{ color: MUT }}>
-              <Check className="size-3 shrink-0" strokeWidth={3} style={{ color: TEALS }} /> {t}
-            </p>
-          ))}
-        </Card>
-        <Card accent className="p-3.5">
-          <div className="flex items-center justify-between">
-            <p className="text-[14px] font-bold" style={{ color: INK }}>Unlock this project</p>
-            <span className="font-ui font-semibold text-[18px] tabular-nums" style={{ color: TEALS }}>$99</span>
+      <Frame crumb="Tender · the schedule">
+        <div>
+          <p className="text-[8.5px] tracking-[0.2em] uppercase font-semibold tabular-nums">
+            <span style={{ color: TEALS }}>5.1</span>
+            <span style={{ color: DIM }}> · The tender schedule · 5 of 29</span>
+          </p>
+          <p className="mt-1.5 text-[14px] font-semibold leading-tight" style={{ color: INK }}>
+            Footings and ground floor structure
+          </p>
+          <p className="mt-1 text-[10.5px] leading-snug" style={{ color: MUT }}>
+            7 items from the client&rsquo;s documents. Mark what your price does with each one.
+          </p>
+        </div>
+        <div className="rounded-lg border px-3 py-2" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.04)" }}>
+          <p className="text-[11px] font-semibold leading-tight" style={{ color: INK }}>Waffle pod slab</p>
+          <p className="mt-0.5 text-[9.5px]" style={{ color: DIM }}>Structural S02, page 4, Rev B</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            <Mark label="Included" on />
+            <Mark label="Provisional sum" />
+            <Mark label="Excluded" />
+            <Mark label="N/A" />
           </div>
-          <p className="mt-1 text-[10.5px]" style={{ color: DIM }}>Exact address · owner contact · 8 documents</p>
-          <div className="mt-2.5 flex items-center justify-between gap-2">
-            <Badge tone="amber">2 of 3 spots open</Badge>
-            <TealBtn><CreditCard className="size-3" /> Unlock for $99</TealBtn>
+        </div>
+        <div className="rounded-lg border px-3 py-2" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.04)" }}>
+          <p className="text-[11px] font-semibold leading-tight" style={{ color: INK }}>Piers and screw piles</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            <Mark label="Included" />
+            <Mark label="Provisional sum" on />
+            <Mark label="Excluded" />
+            <Mark label="N/A" />
           </div>
-        </Card>
-        <p className="px-0.5 text-[10px]" style={{ color: DIM }}>Secure checkout by Stripe · card, Apple Pay &amp; Google Pay. No commission if you win.</p>
+          <p className="mt-2 text-[9.5px]" style={{ color: MUT }}>Provisional sum in your price for this line</p>
+          <span className="mt-1 inline-flex items-center h-7 px-2.5 rounded-md border text-[11px] tabular-nums" style={{ borderColor: LINE, background: "rgba(255,255,255,0.02)", color: INK }}>
+            $24,000
+          </span>
+        </div>
+        <div className="rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
+          <p className="text-[11px] font-semibold leading-tight" style={{ color: INK }}>Termite management system</p>
+          <p className="mt-0.5 text-[9.5px]" style={{ color: AMBER }}>The client&rsquo;s schedule carries $3,800 for this line.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            <Mark label="Carry $3,800" on />
+            <Mark label="Included" />
+            <Mark label="My own figure" />
+            <Mark label="Excluded" tone="rust" />
+            <Mark label="N/A" tone="stone" />
+          </div>
+        </div>
       </Frame>
     );
 
   return (
-    <Frame crumb="Tender · Deakin extension">
-      <div className="grid grid-cols-3 gap-2">
-        <Tile v="$1.28M" l="Total price" tone="teal" />
-        <Tile v="34 wks" l="Duration" />
-        <Tile v="30 days" l="Valid" />
-      </div>
-      <div className="flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-semibold" style={{ color: INK }}>Cost breakdown</span>
-        <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: TEALS }}><Check className="size-2.5" strokeWidth={3} /> Saved</span>
-      </div>
-      <Card className="overflow-hidden">
+    <Frame crumb="Tender · submitted">
+      <Card accent className="px-3.5 py-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[12.5px] font-semibold leading-tight" style={{ color: INK }}>Tender submitted</p>
+            <p className="mt-0.5 text-[10px] truncate" style={{ color: MUT }}>Signed by Sam Wheeler, Director · 63 of 63 answered</p>
+          </div>
+          <span className="shrink-0 font-ui font-semibold text-[11.5px] tabular-nums" style={{ color: TEALS }}>BHQ-7A4C21E9</span>
+        </div>
+      </Card>
+      <Kicker>Contents</Kicker>
+      <div className="rounded-lg border overflow-hidden" style={{ borderColor: LINE, background: CARD }}>
         {[
-          ["Preliminaries", "$96,000"],
-          ["Concrete work", "$168,400"],
-          ["Carpentry", "$214,900"],
-          ["Roofing", "$71,200"],
-          ["Electrical services", "$58,600"],
-        ].map(([t, v], i) => (
-          <div key={t} className={"flex items-center justify-between px-3.5 py-[7px] " + (i ? "border-t" : "")} style={{ borderColor: LINE }}>
-            <span className="text-[11.5px]" style={{ color: MUT }}>{t}</span>
-            <span className="text-[11.5px] tabular-nums font-medium" style={{ color: INK }}>{v}</span>
+          ["01", "Eligibility", "6/6"],
+          ["02", "Project understanding", "5/5"],
+          ["03", "Company credentials", "9/9"],
+          ["04", "Commercial submission", "8/8"],
+          ["05", "What’s included", "4/4"],
+          ["06", "What’s not included", "3/3"],
+          ["07", "Provisional sums and prime costs", "4/4"],
+          ["08", "Programme", "7/7"],
+          ["09", "Delivery", "8/8"],
+          ["10", "Builder commentary", "3/3"],
+          ["11", "Sign-off", "6/6"],
+        ].map(([n, t, p], i) => (
+          <div key={n} className={"flex items-center gap-2.5 px-3 py-[3px] " + (i ? "border-t" : "")} style={{ borderColor: LINE }}>
+            <span className="w-4 shrink-0 font-mono text-[9px] tabular-nums" style={{ color: DIM }}>{n}</span>
+            <span className="min-w-0 flex-1 text-[10.5px] truncate" style={{ color: INK }}>{t}</span>
+            <span className="shrink-0 text-[9.5px] tabular-nums" style={{ color: DIM }}>{p}</span>
+            <Check className="size-3 shrink-0" strokeWidth={3} style={{ color: TEALS }} />
           </div>
         ))}
-      </Card>
-      <div className="flex items-center justify-between pt-0.5">
-        <span className="text-[10.5px]" style={{ color: DIM }}>28 trades · same format as every tender</span>
-        <TealBtn><Send className="size-3" /> Submit tender</TealBtn>
       </div>
+      <p className="inline-flex items-center gap-1.5 text-[10px] px-0.5" style={{ color: DIM }}>
+        <ScrollText className="size-3" /> The reference prints on every page and verifies online.
+      </p>
     </Frame>
   );
 }
 
-function BuilderProjectMini({ type, Icon, price, title, budget, spots, urgent }: { type: string; Icon: typeof Layers; price: string; title: string; budget: string; spots: string; urgent?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
-      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-md" style={{ background: "rgba(0,212,200,0.10)", color: TEALS }}>
-        <Icon className="size-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: INK }}>{title}</p>
-        <p className="text-[10.5px] leading-tight" style={{ color: DIM }}>{type} · {budget}</p>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="inline-flex items-center gap-1 text-[10.5px] font-bold" style={{ color: MUT }}><Lock className="size-2.5" /> {price}</p>
-        <p className="text-[9.5px] mt-0.5" style={{ color: urgent ? AMBER : DIM, fontWeight: urgent ? 700 : 400 }}>{spots}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Architect: invited → featured → referred → market update ─────
-   No app UI exists for architects — these represent the email/referral
-   program honestly, as BuilderHQ network cards. */
+/* ── Architect: the set → the pack → the round → the evaluation ──── */
 
 function ArchitectScene({ step }: { step: number }) {
-  // 0 · Get featured
   if (step === 0)
     return (
-      <Frame crumb="Network · Studio North" avatar="SN">
-        <Card accent className="flex items-center gap-2.5 px-3.5 py-3">
-          <span className="size-9 shrink-0 rounded-lg text-[12px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>SN</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: INK }}>Studio North Design</p>
-            <p className="text-[10.5px]" style={{ color: DIM }}>Melbourne · residential + heritage</p>
-          </div>
-          <Badge><Star className="size-2.5" /> Partner</Badge>
-        </Card>
-        <div className="rounded-lg border overflow-hidden" style={{ borderColor: LINE }}>
-          <div className="relative h-[68px]" style={{ background: "linear-gradient(135deg, rgba(126,245,237,0.14), rgba(0,212,200,0.10))" }}>
-            <div aria-hidden className="absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(rgba(142,252,244,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(142,252,244,0.10) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-            <span className="absolute bottom-2 left-3 text-[11px] font-semibold" style={{ color: INK }}>Narrabundah courtyard house</span>
-          </div>
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-[10.5px]" style={{ color: DIM }}>Featured · tagged @studionorth</span>
-            <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold" style={{ color: TEALS }}><TrendingUp className="size-3" /> 8,200 reached</span>
-          </div>
+      <Frame crumb="Studio North · Pascoe Vale" avatar="SN">
+        <div className="flex items-center justify-between">
+          <Kicker>What we read · Scope Standard v1.2.0</Kicker>
+          <Badge tone="line">Issued for tender</Badge>
+        </div>
+        <DocRow name="Architectural Plans" file="Architectural Drawings Rev D.pdf" kind="Architectural" pages="64 pages" />
+        <DocRow name="Structural Engineering" file="Structural Drawings Rev C.pdf" kind="Structural" pages="38 pages" />
+        <DocRow name="Civil Engineering" file="Civil and Stormwater Design.pdf" kind="Civil" pages="16 pages" />
+        <DocRow name="Project Specifications" file="Project Specifications.pdf" kind="Specification" pages="47 pages" />
+        <DocRow name="Land Survey" file="Feature and Level Survey.pdf" kind="Survey" pages="4 pages" />
+        <div className="flex items-center justify-between gap-2 px-0.5">
+          <span className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: DIM }}>
+            <Files className="size-3" /> Geotechnical, energy, planning and window schedule follow
+          </span>
+          <span className="shrink-0 text-[10px] tabular-nums" style={{ color: MUT }}>211 pages</span>
         </div>
       </Frame>
     );
 
-  // 1 · Get referred (the payoff: warm clients arriving)
   if (step === 1)
     return (
-      <Frame
-        crumb="Referrals · Studio North"
-        avatar="SN"
-        toast={<LoopToast icon={<Bell className="size-3.5" />} text="New referral · homeowner in Deakin" accent={TEAL} delay={1.6} />}
-      >
-        <div className="flex items-center justify-between px-0.5">
-          <p className="text-[13px] font-semibold" style={{ color: INK }}>Warm referrals</p>
-          <Badge>2 new this week</Badge>
+      <Frame crumb="Pack review · Pascoe Vale" avatar="SN">
+        <div className="grid grid-cols-5 border-y" style={{ borderColor: LINE }}>
+          {[
+            ["01", "The pack"],
+            ["02", "Scope of works"],
+            ["03", "Documents"],
+            ["04", "Provisional sums"],
+            ["05", "Your brief"],
+          ].map(([n, t], i) => {
+            const active = i === 3;
+            return (
+              <span key={n} className="relative min-w-0 px-1.5 py-2">
+                <span className="block font-mono text-[8px]" style={{ color: active ? TEALS : DIM }}>{n}</span>
+                <span className="mt-0.5 block text-[8.5px] truncate" style={{ color: active ? INK : MUT }}>{t}</span>
+                <span aria-hidden className="absolute inset-x-0 -bottom-px h-[2px]" style={{ background: active ? TEAL : "transparent" }} />
+              </span>
+            );
+          })}
         </div>
-        <IntroRow label="Homeowner · Deakin" sub="New build · two storey · $1.2M – $1.5M" />
-        <IntroRow label="Homeowner · Griffith" sub="Extension · rear addition · $500k – $1M" />
-        <div className="flex items-center justify-between pt-0.5">
-          <span className="text-[10px]" style={{ color: DIM }}>You choose who to send. Never auto-shared.</span>
-          <TealBtn><Send className="size-3" /> Make the introduction</TealBtn>
+        <div className="flex items-center justify-between">
+          <p className="text-[12.5px] font-semibold" style={{ color: INK }}>Provisional sums</p>
+          <Badge><Check className="size-2.5" strokeWidth={3} /> 3 of 3 answered</Badge>
+        </div>
+        <PackDecision
+          title="Joinery and cabinetry"
+          covers="Kitchen, vanities, robes, laundry and built-in cabinetry."
+          state="Budget set: $28,000"
+        />
+        <PackDecision
+          title="Floor coverings"
+          covers="Floorboards, carpet, engineered timber and laminate to the areas the drawings show."
+          state="Builders will price these"
+        />
+        <PackDecision
+          title="Tile selections"
+          covers="The tiles themselves; laying is priced by the builders."
+          state="Budget set: $9,000"
+        />
+        <div className="flex items-center justify-between gap-2 border-t pt-2.5" style={{ borderColor: LINE }}>
+          <span className="inline-flex items-center gap-1.5 text-[10px] min-w-0" style={{ color: TEALS }}>
+            <Check className="size-3 shrink-0" strokeWidth={3} />
+            <span className="truncate">Every question answered.</span>
+          </span>
+          <TealBtn><Rocket className="size-3" /> Approve and go live</TealBtn>
         </div>
       </Frame>
     );
 
-  // 2 · Stay ahead (market update)
   if (step === 2)
     return (
-      <Frame crumb="Market Update · July" avatar="SN">
-        <div className="flex items-end justify-between px-1 h-[76px] gap-1.5">
-          {[42, 55, 48, 63, 58, 71, 66].map((h, i) => (
-            <span key={i} className="flex-1 rounded-t-[3px]" style={{ height: h + "%", background: i === 5 ? TEAL : "rgba(0,212,200,0.28)" }} />
-          ))}
+      <Frame crumb="Round · invited builders" avatar="SN">
+        <div className="flex items-center justify-between">
+          <Kicker>Invited builders</Kicker>
+          <span className="text-[10px] tabular-nums" style={{ color: DIM }}>2 invited · 3 spots in the round</span>
         </div>
-        <p className="px-1 text-[10.5px]" style={{ color: DIM }}>Residential activity · ACT · last 7 months</p>
-        <Card className="overflow-hidden">
-          {[
-            ["Median build cost", "$1.28M", "+3%"],
-            ["Active residential projects", "42", "+11%"],
-            ["Avg tenders per project", "2.4", "+0.3"],
-          ].map(([l, v, d], i) => (
-            <div key={l} className={"flex items-center justify-between px-3.5 py-2 " + (i ? "border-t" : "")} style={{ borderColor: LINE }}>
-              <span className="text-[11.5px]" style={{ color: MUT }}>{l}</span>
-              <span className="flex items-center gap-2">
-                <span className="text-[11.5px] font-semibold tabular-nums" style={{ color: INK }}>{v}</span>
-                <span className="text-[10px] font-semibold" style={{ color: TEALS }}>{d}</span>
-              </span>
-            </div>
-          ))}
-        </Card>
+        <BuilderRow
+          txt="MB"
+          name="Meridian Building Co"
+          sub="14 years in operation · Brunswick, VIC"
+          licence="CDB-U 51102"
+          right={<Badge><Check className="size-2.5" strokeWidth={3} /> Joined</Badge>}
+        />
+        <BuilderRow
+          txt="BH"
+          name="Brightwater Homes"
+          sub="22 years in operation · Ivanhoe, VIC"
+          licence="CDB-U 22540"
+          right={<Badge tone="line"><Mail className="size-2.5" /> Invited</Badge>}
+        />
+        <div className="flex items-center gap-2.5 rounded-lg border border-dashed px-3 py-2.5" style={{ borderColor: LINE }}>
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(120,180,255,0.06)", color: DIM }}>
+            <Lock className="size-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11.5px] font-medium leading-tight" style={{ color: MUT }}>1 spot open to the network</p>
+            <p className="text-[9.5px] leading-tight truncate" style={{ color: DIM }}>Verified builders across VIC can take it</p>
+          </div>
+          <Badge tone="amber">Open</Badge>
+        </div>
+        <p className="text-[10px] leading-snug px-0.5" style={{ color: DIM }}>
+          These builders join free. Remaining spots open to the network.
+        </p>
       </Frame>
     );
 
-  // 3 · Join the network (free)
   return (
-    <Frame crumb="Preferred Design Partner Network" avatar="SN">
-      <Card accent className="p-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>
-            <MessageCircle className="size-4" />
-          </span>
-          <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: DIM }}>Personal invite · from the BuilderHQ team</p>
-        </div>
-        <p className="mt-2.5 text-[13px] leading-snug" style={{ color: INK }}>
-          “Hi Sarah, we’d love to feature Studio North in the network we point homeowners to.”
+    <Frame crumb="Tender evaluation" avatar="SN">
+      <div>
+        <p className="inline-flex items-center gap-1.5 text-[8.5px] tracking-[0.22em] uppercase font-semibold" style={{ color: TEALS }}>
+          <Files className="size-3" /> The tender evaluation
         </p>
-      </Card>
-      <div className="flex gap-1.5">
-        {["No fees", "No contracts", "Opt out anytime"].map((c) => (
-          <span key={c} className="rounded-md border px-2 py-1 text-[10px]" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.06)", color: TEALS }}>{c}</span>
+        <p className="mt-1.5 text-[14px] font-semibold leading-tight truncate" style={{ color: INK }}>
+          Double-storey home with basement
+        </p>
+        <p className="mt-1 text-[10px]" style={{ color: DIM }}>
+          Prepared by <span style={{ color: MUT }}>Studio North Architecture</span> with BuilderHQ
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Tile v="3" l="Tenders received" />
+        <Tile v="$712,800" l="Lowest inc GST" tone="teal" />
+        <Tile v="30 to 36 wks" l="Build period" />
+        <Tile v="2" l="Significant flags" tone="amber" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {[
+          ["CB", "Corten Build Co.", "$712,800", 53],
+          ["MB", "Meridian Building Co", "$753,500", 77],
+          ["BH", "Brightwater Homes", "$800,800", 89],
+        ].map(([t, n, p, s]) => (
+          <div key={t as string} className="flex items-center gap-2.5">
+            <span className="w-7 shrink-0 text-[9px] font-bold" style={{ color: MUT }}>{t as string}</span>
+            <span className="w-[104px] shrink-0 text-[10.5px] truncate" style={{ color: INK }}>{n as string}</span>
+            <span className="flex-1"><Bar pct={s as number} /></span>
+            <span className="shrink-0 text-[10px] tabular-nums" style={{ color: MUT }}>{p as string}</span>
+            <span className="w-6 shrink-0 text-right font-ui font-semibold text-[12px] tabular-nums" style={{ color: TEALS }}>{s as number}</span>
+          </div>
         ))}
       </div>
+      <p className="inline-flex items-center gap-1.5 text-[10px] px-0.5" style={{ color: DIM }}>
+        <ArrowUpRight className="size-3" /> Every score shows its working, line by line.
+      </p>
     </Frame>
   );
 }
 
-/** Warm referral / introduction row. A ready client arriving; shared by the
- *  architect (referrals) and finance (introductions) scenes. */
-function IntroRow({ label, sub }: { label: string; sub: string }) {
+/** One client decision on the pack: what it covers, what was decided. */
+function PackDecision({ title, covers, state }: { title: string; covers: string; state: string }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
-      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(0,212,200,0.12)", color: TEALS }}>
-        <MapPin className="size-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: INK }}>{label}</p>
-        <p className="text-[10.5px] leading-tight truncate" style={{ color: DIM }}>{sub}</p>
+    <div className="rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: CARD }}>
+      <div className="flex items-start justify-between gap-2.5">
+        <p className="text-[11.5px] font-semibold leading-tight min-w-0" style={{ color: INK }}>{title}</p>
+        <span className="shrink-0 inline-flex items-center gap-1 text-[9.5px] font-semibold whitespace-nowrap" style={{ color: TEALS }}>
+          <Check className="size-2.5" strokeWidth={3} /> {state}
+        </span>
       </div>
-      <Badge>Good fit</Badge>
+      <p className="mt-0.5 text-[10px] leading-[1.45] line-clamp-1" style={{ color: MUT }}>{covers}</p>
     </div>
-  );
-}
-
-/* Finance broker: listed, introduced, market update, join. No app UI in the
-   product (it is the Preferred Finance Partner program), so these are honest
-   BuilderHQ network cards, same as the architect lens. */
-
-function FinanceScene({ step }: { step: number }) {
-  // 0 · Get listed (directory)
-  if (step === 0)
-    return (
-      <Frame crumb="Directory · Meridian Finance" avatar="MF">
-        <Card accent className="flex items-center gap-2.5 px-3.5 py-3">
-          <span className="size-9 shrink-0 rounded-lg text-[12px] font-bold inline-flex items-center justify-center" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>MF</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: INK }}>Meridian Finance</p>
-            <p className="text-[10.5px]" style={{ color: DIM }}>Canberra · construction + home loans</p>
-          </div>
-          <Badge><Star className="size-2.5" /> Partner</Badge>
-        </Card>
-        <div className="flex items-center gap-1.5 flex-wrap px-0.5">
-          {["Construction loans", "Refinancing", "First home"].map((c) => (
-            <span key={c} className="rounded-md border px-2 py-[3px] text-[10.5px]" style={{ borderColor: LINE, background: CARD, color: MUT }}>{c}</span>
-          ))}
-        </div>
-        <Card className="flex items-center gap-2.5 px-3.5 py-2.5">
-          <Landmark className="size-3.5 shrink-0" style={{ color: TEALS }} />
-          <p className="text-[11px] leading-snug" style={{ color: MUT }}>Listed in the Preferred Finance Partner directory, seen by homeowners financing a build.</p>
-        </Card>
-      </Frame>
-    );
-
-  // 1 · Get introduced (the payoff: clients ready to finance)
-  if (step === 1)
-    return (
-      <Frame
-        crumb="Introductions · Meridian"
-        avatar="MF"
-        toast={<LoopToast icon={<Bell className="size-3.5" />} text="New introduction · homeowner in Deakin" accent={TEAL} delay={1.6} />}
-      >
-        <div className="flex items-center justify-between px-0.5">
-          <p className="text-[13px] font-semibold" style={{ color: INK }}>Warm introductions</p>
-          <Badge>2 new this week</Badge>
-        </div>
-        <IntroRow label="Homeowner · Deakin" sub="Construction finance · $1.2M – $1.5M build" />
-        <IntroRow label="Homeowner · Ainslie" sub="Refinance to fund a build · $500k+" />
-        <div className="flex items-center justify-between pt-0.5">
-          <span className="text-[10px]" style={{ color: DIM }}>A warm introduction. Never a resold lead.</span>
-          <TealBtn><Send className="size-3" /> Make the introduction</TealBtn>
-        </div>
-      </Frame>
-    );
-
-  // 2 · Stay ahead (market update)
-  if (step === 2)
-    return (
-      <Frame crumb="Market Update · July" avatar="MF">
-        <div className="flex items-end justify-between px-1 h-[76px] gap-1.5">
-          {[44, 52, 49, 60, 58, 73, 68].map((h, i) => (
-            <span key={i} className="flex-1 rounded-t-[3px]" style={{ height: h + "%", background: i === 5 ? TEAL : "rgba(0,212,200,0.28)" }} />
-          ))}
-        </div>
-        <p className="px-1 text-[10.5px]" style={{ color: DIM }}>Homeowners financing a build · ACT · last 7 months</p>
-        <Card className="overflow-hidden">
-          {[
-            ["Avg construction loan", "$940k", "+4%"],
-            ["Homeowners financing a build", "63", "+12%"],
-            ["Median build cost", "$1.28M", "+3%"],
-          ].map(([l, v, d], i) => (
-            <div key={l} className={"flex items-center justify-between px-3.5 py-2 " + (i ? "border-t" : "")} style={{ borderColor: LINE }}>
-              <span className="text-[11.5px]" style={{ color: MUT }}>{l}</span>
-              <span className="flex items-center gap-2">
-                <span className="text-[11.5px] font-semibold tabular-nums" style={{ color: INK }}>{v}</span>
-                <span className="text-[10px] font-semibold" style={{ color: TEALS }}>{d}</span>
-              </span>
-            </div>
-          ))}
-        </Card>
-      </Frame>
-    );
-
-  // 3 · Join the network (free)
-  return (
-    <Frame crumb="Preferred Finance Partner" avatar="MF">
-      <Card accent className="p-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(0,212,200,0.14)", color: TEALS }}>
-            <MessageCircle className="size-4" />
-          </span>
-          <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: DIM }}>Personal invite · from the BuilderHQ team</p>
-        </div>
-        <p className="mt-2.5 text-[13px] leading-snug" style={{ color: INK }}>
-          “Hi Michael, we’d love to include Meridian Finance in the network we point homeowners to for finance.”
-        </p>
-      </Card>
-      <div className="flex gap-1.5">
-        {["No cost", "No exclusivity", "Opt out anytime"].map((c) => (
-          <span key={c} className="rounded-md border px-2 py-1 text-[10px]" style={{ borderColor: "rgba(0,212,200,0.28)", background: "rgba(0,212,200,0.06)", color: TEALS }}>{c}</span>
-        ))}
-      </div>
-    </Frame>
   );
 }

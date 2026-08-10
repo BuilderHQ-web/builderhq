@@ -25,12 +25,6 @@ const AUDIENCES: Record<string, { role: Role; title: string; description: string
     description:
       "A hand picked network of practices we feature, promote and refer to homeowners and builders. No fees, no contracts, no catch.",
   },
-  "finance-brokers": {
-    role: "finance",
-    title: "BuilderHQ for finance brokers: the Preferred Finance Partner Program",
-    description:
-      "Warm introductions to homeowners planning a build, the moment they ask us for finance. No fees, no exclusivity, no lead charges.",
-  },
 };
 
 export function generateStaticParams() {

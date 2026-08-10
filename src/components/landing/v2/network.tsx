@@ -51,13 +51,6 @@ const META: Record<
     words: ["Featured", "Promoted", "Referred"],
     note: "No membership fees. No contracts. Opt out with one email.",
   },
-  finance: {
-    kicker: "Preferred Finance Partner Network",
-    line: "Hand picked brokers,",
-    accent: "personally spoken with.",
-    words: ["Listed", "Featured", "Introduced"],
-    note: "No fees. No lead charges. Opt out with one email.",
-  },
 };
 
 export function Network() {

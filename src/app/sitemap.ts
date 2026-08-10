@@ -20,11 +20,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/`, priority: 1, changeFrequency: "weekly" },
     { url: `${SITE}/for/builders`, priority: 0.9, changeFrequency: "monthly" },
     { url: `${SITE}/for/architects`, priority: 0.9, changeFrequency: "monthly" },
-    {
-      url: `${SITE}/for/finance-brokers`,
-      priority: 0.9,
-      changeFrequency: "monthly",
-    },
+    // /for/finance-brokers now 308s to /partners/finance-brokers, which is
+    // listed below. A sitemap should carry the destination, not the redirect.
     { url: `${SITE}/partners`, priority: 0.9, changeFrequency: "weekly" },
     {
       url: `${SITE}/partners/architects`,

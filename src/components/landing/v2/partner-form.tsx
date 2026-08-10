@@ -34,7 +34,7 @@ import {
   type PartnerRole,
 } from "@/modules/leads/partner-roles";
 
-import { ROLE_PALETTE, type Role } from "./content";
+import { ROLE_PALETTE, type PaletteKey } from "./content";
 import {
   submitPartnerInterestAction,
   submitIntroRequestAction,
@@ -58,7 +58,7 @@ const SENTINELS: Record<
 
 /** Which lens hue colours the modal. The join form follows the chosen
  *  role so the modal still feels part of that lens. */
-const ROLE_HUE: Record<PartnerRole, Role> = {
+const ROLE_HUE: Record<PartnerRole, PaletteKey> = {
   architect: "architect",
   builder: "builder",
   finance: "finance",

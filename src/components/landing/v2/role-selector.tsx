@@ -12,7 +12,7 @@
  */
 
 import * as React from "react";
-import { Home, HardHat, PenTool, Landmark, ArrowUpRight, Check } from "lucide-react";
+import { Home, HardHat, PenTool, ArrowUpRight, Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -23,21 +23,18 @@ const ICONS: Record<Role, LucideIcon> = {
   homeowner: Home,
   builder: HardHat,
   architect: PenTool,
-  finance: Landmark,
 };
 
 const BLURB: Record<Role, string> = {
   homeowner: "Planning a build or renovation",
   builder: "Winning residential work",
   architect: "Designing homes for clients",
-  finance: "Guiding clients through building finance",
 };
 
 const WORD: Record<Role, string> = {
   homeowner: "Homeowner",
   builder: "Builder",
   architect: "Building Designer",
-  finance: "Finance Broker",
 };
 
 export function RoleSelector() {
@@ -65,7 +62,7 @@ export function RoleSelector() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
           {ROLE_ORDER.map((r) => (
             <RoleCard
               key={r}
