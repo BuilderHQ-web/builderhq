@@ -136,7 +136,16 @@ function Frame({ role }: { role: Role }) {
           className="relative h-[max(250px,calc(100svh-540px))] sm:h-[476px] lg:h-[528px] overflow-hidden"
           style={{ background: C.canvas }}
         >
-          <Journey active={active} />
+          {/* A phone gives this box about 270px, which is not enough
+              room for a screen designed around 480: the scenes that pin
+              a bar to their own foot were landing it on top of their own
+              content. So on a phone the scene keeps its real height and
+              the frame crops it from the top, which is what looking at a
+              screenshot of a taller screen actually looks like. The fade
+              below marks the crop as deliberate. */}
+          <div className="absolute inset-x-0 top-0 h-[460px] sm:relative sm:h-full">
+            <Journey active={active} />
+          </div>
 
           {/* Mobile keeps the deliberate bottom peek. */}
           <div
