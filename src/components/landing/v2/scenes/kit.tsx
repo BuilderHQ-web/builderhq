@@ -62,6 +62,28 @@ export type ToneKey = keyof typeof TONE;
  *  between paper resting on the canvas and paper printed onto it. */
 export const ELEV = "0 1px 2px rgba(24,34,44,0.04), 0 8px 20px -14px rgba(24,34,44,0.18)";
 
+/* ── The hero journey ────────────────────────────────────────────── */
+
+/**
+ * One step of the end-to-end story the hero plays. The screens are
+ * plain components: they mount when their step becomes current and
+ * unmount when it passes, so each one owns its own entrance and its own
+ * single micro-event and none of them needs a shared clock.
+ *
+ * `hold` is how long the step stays on screen, in milliseconds, and it
+ * also drives the fill of that step's segment on the index rail. Budget
+ * it against how much there is to read: a screen with one figure needs
+ * far less time than a comparison table.
+ */
+export type HeroStep = {
+  /** Stable key. Also the AnimatePresence key, so it must be unique. */
+  key: string;
+  /** The rail label. Two or three words; it has to fit a seventh of the frame. */
+  label: string;
+  hold: number;
+  Screen: () => React.ReactElement;
+};
+
 /* ── Chrome ──────────────────────────────────────────────────────── */
 
 /**
