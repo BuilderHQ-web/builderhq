@@ -332,13 +332,21 @@ export function Division({
   );
 }
 
-/** A scope line: the item, its plain sentence, its citation. */
+/**
+ * A scope line: the item, its plain sentence, its citation.
+ *
+ * `gap` is the honest half of the register. A line the documents only
+ * partly answer is marked partial and says what is absent, rather than
+ * being quietly written as though the set were complete. The wording
+ * comes from scope/advice.ts, which is where the product decides it.
+ */
 export function ScopeLine({
   label,
   plain,
   cite,
   citeKey,
   citeHot,
+  gap,
   right,
 }: {
   label: string;
@@ -346,12 +354,23 @@ export function ScopeLine({
   cite?: string;
   citeKey?: string;
   citeHot?: boolean;
+  gap?: string;
   right?: React.ReactNode;
 }) {
   return (
     <div className="flex items-start gap-2.5">
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium leading-tight" style={{ color: C.ink }}>{label}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="min-w-0 flex-1 text-[11px] font-medium leading-tight" style={{ color: C.ink }}>{label}</p>
+          {gap ? (
+            <span
+              className="shrink-0 rounded-full border px-1.5 py-[1px] text-[8px] uppercase tracking-[0.12em] font-bold"
+              style={{ borderColor: TONE.warn.border, background: TONE.warn.bg, color: TONE.warn.text }}
+            >
+              Partial
+            </span>
+          ) : null}
+        </div>
         <p className="mt-0.5 text-[10px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>{plain}</p>
         {cite ? (
           <p
@@ -360,6 +379,15 @@ export function ScopeLine({
             style={citeHot ? { color: "#ffffff", background: C.tealInk, fontWeight: 600 } : { color: C.dim }}
           >
             {cite}
+          </p>
+        ) : null}
+        {gap ? (
+          <p
+            className="mt-1 flex items-start gap-1.5 rounded px-1.5 py-1 text-[9.5px] leading-[1.4]"
+            style={{ background: TONE.warn.bg, color: TONE.warn.text }}
+          >
+            <span aria-hidden className="mt-[4px] size-1 shrink-0 rounded-full" style={{ background: TONE.warn.text }} />
+            {gap}
           </p>
         ) : null}
       </div>

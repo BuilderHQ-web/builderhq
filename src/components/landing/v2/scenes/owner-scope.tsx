@@ -25,19 +25,31 @@ type S = { open: string | null; hot: string | null; cite: boolean; shift: number
 
 const RESTING: S = { open: "earthworks", hot: null, cite: false, shift: 0 };
 
-/** Seven of the register's thirty one divisions: enough that the list
- *  runs past the viewport, so the scroll beat has somewhere to go. */
+/** Fourteen of the register's thirty one divisions. Enough that the
+ *  list reads as a real register rather than a sample of one, and
+ *  enough that the scroll beat has somewhere to go. */
 const DIVISIONS: Array<{ key: string; label: string; count: string }> = [
   { key: "prelim", label: "Preliminaries and site establishment", count: "14 items" },
   { key: "approvals", label: "Approvals, certification and compliance", count: "11 items" },
+  { key: "demolition", label: "Demolition and site clearing", count: "6 items" },
   { key: "earthworks", label: "Earthworks and excavation", count: "8 items" },
   { key: "footings", label: "Footings and ground floor structure", count: "7 items" },
   { key: "retaining", label: "Retaining walls and ground structures", count: "4 items" },
   { key: "concrete", label: "Concrete, formwork and reinforcement", count: "9 items" },
   { key: "steel", label: "Structural steel and framing", count: "12 items" },
+  { key: "roofing", label: "Roofing, gutters and downpipes", count: "10 items" },
+  { key: "cladding", label: "External wall cladding and finishes", count: "9 items" },
+  { key: "windows", label: "Windows and external doors", count: "8 items" },
+  { key: "plumbing", label: "Plumbing and drainage", count: "15 items" },
+  { key: "electrical", label: "Electrical, data and lighting", count: "13 items" },
+  { key: "joinery", label: "Joinery and cabinetry", count: "11 items" },
 ];
 
-const LINES: Record<string, Array<{ label: string; plain: string; cite: string }>> = {
+/** The lines behind the divisions the pointer opens. Two of them carry a
+ *  gap, because the register says what the documents do not answer as
+ *  plainly as it says what they do. The gap wording is the product's
+ *  own, from scope/advice.ts. */
+const LINES: Record<string, Array<{ label: string; plain: string; cite: string; gap?: string }>> = {
   earthworks: [
     {
       label: "Bulk excavation, cut and fill",
@@ -59,19 +71,21 @@ const LINES: Record<string, Array<{ label: string; plain: string; cite: string }
     {
       label: "Soil classification and site report",
       plain: "The report that says what the ground is made of, which decides how the footings are built.",
-      cite: "Geotechnical Report, page 3",
+      cite: "Not found in your documents",
+      gap: "No site classification on file, so every builder must assume the ground conditions.",
     },
   ],
-  footings: [
+  joinery: [
     {
-      label: "Bored piers to engineer's schedule",
-      plain: "The concrete columns drilled down to stable ground so the slab does not move with the soil.",
-      cite: "Structural S04, page 1, Rev B",
+      label: "Kitchen cabinetry and benchtops",
+      plain: "The cupboards, drawers and benches that make up the kitchen, built and installed.",
+      cite: "Architectural A21, page 3, Rev D",
+      gap: "Cabinetry appears on the architectural drawings only, with no joinery elevations to price from.",
     },
     {
-      label: "Waffle raft slab and edge beams",
-      plain: "The ground floor slab and the thickened edges that carry the walls above it.",
-      cite: "Structural S05, page 2, Rev B",
+      label: "Wardrobes and built in storage",
+      plain: "The fitted robes and storage joinery through the bedrooms and hallway.",
+      cite: "Architectural A22, page 1, Rev D",
     },
   ],
 };
@@ -96,13 +110,13 @@ export function OwnerScopeScene({ active }: { active: boolean }) {
       { wait: 1250 },
       { set: { cite: false } },
       // Beat three: scroll the register on and open another.
-      { set: { shift: -96 } },
+      { set: { shift: -430 } },
       { wait: 520 },
-      { move: "div-footings" },
-      { set: { hot: "footings" } },
+      { move: "div-joinery" },
+      { set: { hot: "joinery" } },
       { click: true },
-      { set: { open: "footings", hot: null } },
-      { wait: 1450 },
+      { set: { open: "joinery", hot: null } },
+      { wait: 1900 },
       { cursor: "hide" },
     ],
   });
@@ -143,6 +157,7 @@ export function OwnerScopeScene({ active }: { active: boolean }) {
                     cite={l.cite}
                     citeKey={i === 0 ? `cite-${d.key}` : undefined}
                     citeHot={i === 0 && state.cite && state.open === d.key}
+                    gap={l.gap}
                   />
                 ))}
               </Division>

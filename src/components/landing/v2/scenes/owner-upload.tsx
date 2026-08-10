@@ -20,7 +20,7 @@ import { FileUp, ShieldCheck, Check } from "lucide-react";
 import { SceneCursor, useSceneScript } from "../scene-motion";
 import { C, Frame, Kicker } from "./kit";
 
-type Phase = "drop" | "scan" | "done";
+type Phase = "drop" | "scan" | "done" | "scope";
 type S = { phase: Phase; hot: boolean; status: number };
 
 const RESTING: S = { phase: "drop", hot: false, status: 0 };
@@ -69,7 +69,11 @@ export function OwnerUploadScene({ active }: { active: boolean }) {
       { set: { status: 3 } },
       { wait: 700 },
       { set: { phase: "done" } },
-      { wait: 2200 },
+      { wait: 2100 },
+      // The payoff. What was read is one thing; what it turned into is
+      // the thing worth arriving at.
+      { set: { phase: "scope" } },
+      { wait: 2900 },
     ],
   });
 
@@ -79,12 +83,18 @@ export function OwnerUploadScene({ active }: { active: boolean }) {
         <div className="shrink-0">
           <Kicker>AI auto-fill from plans</Kicker>
           <p className="mt-2 text-[15px] font-ui font-semibold tracking-[-0.015em]" style={{ color: C.ink }}>
-            {state.phase === "done" ? "Got it." : "Upload your plans"}
+            {state.phase === "scope"
+              ? "Your scope of works"
+              : state.phase === "done"
+                ? "Got it."
+                : "Upload your plans"}
           </p>
           <p className="mt-1 text-[10.5px] leading-[1.5] max-w-[46ch]" style={{ color: C.muted }}>
-            {state.phase === "done"
-              ? "Pulled 14 details from your plans. You review and edit every one before anything is published."
-              : "Drop in your architectural plans as a PDF. We read them and fill out your project for you."}
+            {state.phase === "scope"
+              ? "Every item of work your documents cover, written out and ready for you to read."
+              : state.phase === "done"
+                ? "Pulled 14 details from your plans. You review and edit every one before anything is published."
+                : "Drop in your architectural plans as a PDF. We read them and fill out your project for you."}
           </p>
         </div>
 
@@ -166,12 +176,77 @@ export function OwnerUploadScene({ active }: { active: boolean }) {
                 ))}
               </motion.div>
             ) : null}
+
+            {state.phase === "scope" ? (
+              <motion.div
+                key="scope"
+                className="w-full flex flex-col items-center text-center"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <p className="text-[9px] uppercase tracking-[0.24em] font-semibold" style={{ color: C.tealInk }}>
+                  Identified from your documents
+                </p>
+                <CountUp to={242} />
+                <p className="-mt-1 text-[12.5px] font-semibold" style={{ color: C.ink }}>
+                  items of work
+                </p>
+                <div className="mt-5 flex items-stretch gap-0 rounded-lg border overflow-hidden" style={{ borderColor: C.line, background: C.paper }}>
+                  {[
+                    ["29", "trades"],
+                    ["211", "pages read"],
+                    ["9", "documents"],
+                  ].map(([v, l], i) => (
+                    <div
+                      key={l}
+                      className="px-5 py-2.5 text-center"
+                      style={i === 0 ? undefined : { borderLeft: `1px solid ${C.line}` }}
+                    >
+                      <p className="font-ui font-semibold text-[15px] leading-none tabular-nums" style={{ color: C.ink }}>{v}</p>
+                      <p className="mt-1 text-[8.5px] uppercase tracking-[0.12em]" style={{ color: C.dim }}>{l}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ) : null}
           </AnimatePresence>
         </div>
       </Frame>
 
       <SceneCursor cursor={cursor} clicks={clicks} />
     </div>
+  );
+}
+
+/**
+ * The headline figure, counted rather than printed. A number that lands
+ * on screen already finished reads as a graphic; one that arrives reads
+ * as a result. Steps in thirds so it settles on the real total.
+ */
+function CountUp({ to }: { to: number }) {
+  const [n, setN] = React.useState(0);
+  React.useEffect(() => {
+    const started = performance.now();
+    const dur = 900;
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - started) / dur);
+      // Ease out cubic, so it decelerates onto the figure.
+      setN(Math.round(to * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [to]);
+  return (
+    <p
+      className="mt-1.5 font-ui font-semibold tabular-nums leading-none tracking-[-0.04em]"
+      style={{ fontSize: 68, color: C.ink }}
+    >
+      {n}
+    </p>
   );
 }
 
