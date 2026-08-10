@@ -38,7 +38,7 @@ export function SentBody({
     "idle" | "sending" | "sent" | "error"
   >("idle");
 
-  // Conversion event — once per project, this session only.
+  // Conversion event, once per project, this session only.
   useEffect(() => {
     if (!projectId) return;
     const key = `ads_funnel_conv:${projectId}`;
@@ -85,7 +85,7 @@ export function SentBody({
   const lead =
     plansOutcome === "uploaded" ? (
       <>
-        Open the email and tap the link — your project goes live to verified
+        Open the email and tap the link, your project goes live to verified
         Australian builders the moment you confirm.
       </>
     ) : (
@@ -97,7 +97,7 @@ export function SentBody({
 
   return (
     <>
-      {/* Google Ads tag loader. Only loads here, not on the landing —
+      {/* Google Ads tag loader. Only loads here, not on the landing, 
               keeps the public hero clean of marketing scripts. */}
       {adsId ? (
         <>

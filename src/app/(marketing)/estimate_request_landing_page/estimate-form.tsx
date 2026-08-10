@@ -6,11 +6,11 @@
  * Six fields, four required:
  *
  *   • first name      (required)
- *   • last name       (required — we need it for outreach)
+ *   • last name       (required, we need it for outreach)
  *   • email           (required)
- *   • phone           (required — this is a call-back flow)
+ *   • phone           (required, this is a call-back flow)
  *   • project type    (optional, dropdown)
- *   • company         (optional — surfaces if the lead is an architect
+ *   • company         (optional, surfaces if the lead is an architect
  *                      or designer referring on a client's behalf)
  *
  * NO customer-facing email is sent. The action persists the lead,
@@ -25,7 +25,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { submitEstimateRequestAction } from "./actions";
 
 /**
- * Class-name shape — same approach as GuideForm. Typed as a readonly
+ * Class-name shape, same approach as GuideForm. Typed as a readonly
  * index signature because Next.js's CSS-module types resolve that way
  * and TypeScript won't widen them into a hand-listed interface.
  */
@@ -54,7 +54,7 @@ export function EstimateForm({ styles }: { styles: Styles }) {
   const [invalidField, setInvalidField] = useState<Field | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // Source attribution — same shape as GuideForm so the leads table
+  // Source attribution, same shape as GuideForm so the leads table
   // gets comparable values across both campaigns. Falls back to
   // referrer-domain extraction when there's no UTM tag.
   const getSource = (): string => {
@@ -334,7 +334,7 @@ export function EstimateForm({ styles }: { styles: Styles }) {
             />
           </svg>
           We&apos;ll reach out within <strong>12 hours</strong> to collect your
-          drawings. No spam, no upsell — just the estimate.
+          drawings. No spam, no upsell, just the estimate.
         </div>
       </form>
     </>

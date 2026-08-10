@@ -1,4 +1,5 @@
 import { MarketingPageShell } from "@/components/landing/page-shell";
+import { resolveNavAuthedHref } from "@/components/landing/cta-links";
 import {
   A,
   LegalDocument,
@@ -6,6 +7,12 @@ import {
   Strong,
   Ul,
 } from "@/app/(marketing)/terms/page";
+import {
+  COMPANY_ABN,
+  COMPANY_LEGAL_NAME,
+  COMPANY_LOCATION,
+  COMPANY_NAME,
+} from "@/lib/company";
 
 export const metadata = {
   title: "Privacy Policy",
@@ -14,7 +21,7 @@ export const metadata = {
 };
 
 /**
- * /privacy — long-form privacy policy. Layout mirrors /terms (sticky
+ * /privacy, long-form privacy policy. Layout mirrors /terms (sticky
  * TOC + readable prose column). Content was supplied by the BuilderHQ
  * team, polished against APP and OAIC NDB scheme references, and
  * structured into numbered sections for easy citation.
@@ -27,10 +34,14 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          BuilderHQ Technologies Pty Ltd (ABN 33 612 815 139, &quot;we&quot;,
-          &quot;us&quot;, &quot;BuilderHQ&quot;) operates a marketplace that
-          connects project owners and licensed builders, and provides tools
-          for tender submissions and comparison.
+          {COMPANY_LEGAL_NAME} (ABN {COMPANY_ABN}, &quot;we&quot;,
+          &quot;us&quot;, &quot;{COMPANY_NAME}&quot;) operates a platform for
+          running residential construction tenders: preparing scope of works
+          documents from customer materials, collecting structured tender
+          submissions, and computing comparisons and evaluations from
+          builders&apos; own answers. BuilderHQ is not a party to any
+          building contract and does not provide legal, financial or building
+          advice.
         </P>
         <P>
           We respect your privacy and handle personal information in
@@ -147,7 +158,7 @@ const SECTIONS = [
         <P>
           We will only use or disclose personal information for the primary
           purpose of collection, or for a reasonably expected related
-          secondary purpose — or with your consent, or as otherwise
+          secondary purpose, or with your consent, or as otherwise
           permitted by law.
         </P>
       </>
@@ -197,7 +208,7 @@ const SECTIONS = [
         </P>
         <P>
           Operational emails (e.g., tender outcomes, account receipts,
-          password resets) are not marketing — they&apos;re part of using
+          password resets) are not marketing, they&apos;re part of using
           the service and continue regardless of marketing preference.
         </P>
       </>
@@ -217,7 +228,7 @@ const SECTIONS = [
           </li>
           <li>
             <Strong>Service providers</Strong> under contract who support
-            our operations — payment processing, cloud hosting, analytics,
+            our operations, payment processing, cloud hosting, analytics,
             communications, identity / verification.
           </li>
           <li>
@@ -232,7 +243,7 @@ const SECTIONS = [
         </Ul>
         <P>
           We require service providers to protect personal information and
-          use it only for our purposes — never their own marketing.
+          use it only for our purposes, never their own marketing.
         </P>
       </>
     ),
@@ -261,7 +272,7 @@ const SECTIONS = [
         <P>
           We take reasonable steps to protect personal information from
           misuse, interference, loss, and unauthorised access, modification,
-          or disclosure — through technical, organisational, and
+          or disclosure, through technical, organisational, and
           contractual measures (e.g., access controls, encryption in
           transit, role-based permissions). However, no method is 100%
           secure.
@@ -307,7 +318,7 @@ const SECTIONS = [
           If a data breach is likely to result in serious harm, we will
           assess and, if the breach is an eligible data breach under the
           NDB scheme, notify affected individuals and the Office of the
-          Australian Information Commissioner (OAIC) — including
+          Australian Information Commissioner (OAIC), including
           recommendations for steps individuals should take.
         </P>
       </>
@@ -365,25 +376,27 @@ const SECTIONS = [
           information we hold about you, contact our Privacy Officer:
         </P>
         <P>
-          Privacy Officer — BuilderHQ Technologies Pty Ltd
+          Privacy Officer, {COMPANY_LEGAL_NAME}
           <br />
           Email:{" "}
           <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>
           <br />
-          Address: Melbourne, Victoria, Australia
+          Address: {COMPANY_LOCATION}
         </P>
       </>
     ),
   },
 ];
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const navAuthedHref = await resolveNavAuthedHref();
   return (
     <MarketingPageShell
+      authedHref={navAuthedHref}
       kicker="Legal"
       title="Privacy policy."
       sub="How we collect, use, and protect your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles."
-      meta="Last updated · 10 May 2026"
+      meta="Last updated · 10 August 2026"
     >
       <LegalDocument sections={SECTIONS} />
     </MarketingPageShell>

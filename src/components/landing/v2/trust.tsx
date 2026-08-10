@@ -1,116 +1,78 @@
 "use client";
 
 /**
- * Trust — the rules, as a short manifesto. Fully forked per lens now:
- * homeowners hear verification + privacy + the cap; builders hear
- * tender-ready projects, pipeline control and a fair table; architects
- * hear credit, judgement and freedom to leave. Editorial numbered list,
- * lens-hued accents.
+ * The standards. The rules the platform runs on, as a short manifesto.
+ *
+ * A statement that stays put while the reader walks the list: the claim
+ * sticks in the left column, six numbered rules scroll past on the right,
+ * separated by hairlines and counted in mono numerals. One voice, one
+ * hue; the rules come from STANDARDS in content.ts and this file holds
+ * no words of its own.
+ *
+ * Exported as `Trust` because the composition and the `#trust` anchor
+ * (nav, footer, section analytics) already point at that name.
  */
 
-import {
-  ShieldCheck,
-  Lock,
-  Scale,
-  FileCheck2,
-  Compass,
-  Tag,
-  Handshake,
-  DoorOpen,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-
 import { Reveal } from "../reveal";
-import { LENS, ROLE_PALETTE, type TrustIcon } from "./content";
-import { useRole } from "./role";
-import { RoleSwap, SwapItem } from "./swap";
+import { STANDARDS } from "./content";
 
-const ICONS: Record<TrustIcon, LucideIcon> = {
-  shield: ShieldCheck,
-  lock: Lock,
-  scale: Scale,
-  file: FileCheck2,
-  compass: Compass,
-  tag: Tag,
-  handshake: Handshake,
-  door: DoorOpen,
-};
+/** The heading is one string in content.ts and is set in two tones here:
+ *  the claim in ink, the second sentence in deep teal. Split at the first
+ *  sentence break so the words live in the content file and only the
+ *  emphasis lives in this one. */
+const CUT = STANDARDS.h2.indexOf(". ");
+const CLAIM = CUT < 0 ? STANDARDS.h2 : STANDARDS.h2.slice(0, CUT + 1);
+const PRODUCT = CUT < 0 ? "" : STANDARDS.h2.slice(CUT + 2);
 
 export function Trust() {
-  const { role } = useRole();
-  const copy = LENS[role].trust;
-  const pal = ROLE_PALETTE[role];
-
   return (
-    <section id="trust" className="relative px-5 md:px-10 py-20 lg:py-24 scroll-mt-16 lg:min-h-[100svh] lg:flex lg:items-center">
+    <section id="trust" className="relative px-5 md:px-10 py-20 lg:py-24 scroll-mt-16">
       <div className="mx-auto w-full max-w-[1000px]">
         <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-10 lg:gap-16">
-          {/* Statement */}
+          {/* The statement */}
           <Reveal>
             <div className="lg:sticky lg:top-28 self-start text-center lg:text-left">
-              <h2 className="font-ui font-semibold tracking-[-0.035em] text-[clamp(2.2rem,3.2vw+0.5rem,3.6rem)] leading-[1.08]">
-                <span className="text-text">Trust isn’t a feature.</span>{" "}
-                <span style={{ color: pal.accentSoft }}>It’s the product.</span>
+              <h2 className="font-ui font-semibold tracking-[-0.03em] text-[clamp(2.1rem,3vw+0.6rem,3.5rem)] leading-[1.08]">
+                <span className="text-text">{CLAIM}</span>
+                {PRODUCT ? <span className="text-accent-light"> {PRODUCT}</span> : null}
               </h2>
-              <RoleSwap>
-                <p className="mt-5 mx-auto lg:mx-0 max-w-[40ch] text-[14.5px] leading-[1.65] text-text-muted">
-                  {copy.intro}
-                </p>
-              </RoleSwap>
+              <p className="mt-5 mx-auto lg:mx-0 max-w-[38ch] text-[17px] leading-[1.65] text-text-muted">
+                {STANDARDS.lede}
+              </p>
             </div>
           </Reveal>
 
           {/* The rules */}
-          <RoleSwap stagger>
-            <div role="list">
-              {copy.cards.map((card, i) => {
-                const Icon = ICONS[card.icon];
-                return (
-                  <SwapItem key={card.title}>
-                    <div
-                      role="listitem"
-                      className={[
-                        "grid grid-cols-[auto_1fr] gap-x-5 lg:gap-x-7 py-8 lg:py-10",
-                        i === 0 ? "" : "border-t border-border-subtle",
-                      ].join(" ")}
-                    >
-                      <div className="flex flex-col items-center gap-3">
-                        <span className="font-mono text-[13px] tabular-nums" style={{ color: pal.accent + "cc" }}>
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span
-                          className="inline-flex size-9 items-center justify-center rounded-lg border"
-                          style={{
-                            borderColor: pal.accent + "40",
-                            background: pal.accent + "14",
-                            color: pal.accentSoft,
-                          }}
-                        >
-                          <Icon className="size-4.5" strokeWidth={2.2} />
-                        </span>
-                      </div>
-                      <div className="min-w-0 pt-0.5">
-                        <h3 className="font-ui font-bold tracking-[-0.015em] text-[19px] lg:text-[21px] leading-[1.25] text-text">
-                          {card.title}
-                        </h3>
-                        <p className="mt-2.5 max-w-[54ch] text-[14px] lg:text-[14.5px] leading-[1.72] text-text-muted">
-                          {card.body}
-                        </p>
-                      </div>
-                    </div>
-                  </SwapItem>
-                );
-              })}
-            </div>
-          </RoleSwap>
+          <div role="list">
+            {STANDARDS.rules.map((rule, i) => (
+              <Reveal
+                key={rule.title}
+                role="listitem"
+                className={[
+                  "grid grid-cols-[2rem_1fr] sm:grid-cols-[2.75rem_1fr] gap-x-3 sm:gap-x-5 py-7 lg:py-8",
+                  i === 0 ? "" : "border-t border-border-subtle",
+                ].join(" ")}
+              >
+                <span className="font-mono text-[14px] tabular-nums leading-[1.45] pt-[5px] text-accent-light">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-ui font-semibold tracking-[-0.02em] text-[19px] lg:text-[21px] leading-[1.3] text-text">
+                    {rule.title}
+                  </h3>
+                  <p className="mt-2.5 max-w-[56ch] text-[16px] leading-[1.65] text-text-muted">
+                    {rule.body}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
 
-        <Reveal delay={0.15}>
-          <RoleSwap>
-            <p className="mt-14 lg:mt-16 text-center text-[13.5px] leading-[1.6] text-text-dim">
-              {copy.footer}
-            </p>
-          </RoleSwap>
+        <Reveal delay={0.1}>
+          <p className="mt-12 lg:mt-16 mx-auto max-w-[58ch] text-center text-[16px] leading-[1.65] text-text-muted">
+            {STANDARDS.footer}
+          </p>
         </Reveal>
       </div>
     </section>

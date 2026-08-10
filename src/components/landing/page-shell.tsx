@@ -20,6 +20,10 @@ import { Footer } from "@/components/landing/v2/footer";
 import { PartnerForm } from "@/components/landing/v2/partner-form";
 
 interface Props {
+  /** Signed-in destination for the nav's primary CTA. Pages that can
+   *  resolve it should pass it (see lib resolveCtaLinks); null renders
+   *  the signed-out CTA. */
+  authedHref?: string | null;
   kicker: string;
   title: string;
   sub?: string;
@@ -29,6 +33,7 @@ interface Props {
 }
 
 export function MarketingPageShell({
+  authedHref = null,
   kicker,
   title,
   sub,
@@ -61,17 +66,17 @@ export function MarketingPageShell({
       </div>
 
       <RoleProvider>
-        <LandingNav authedHref={null} homeAnchors partnerNav={partnerNavTypes()} />
+        <LandingNav authedHref={authedHref} homeAnchors partnerNav={partnerNavTypes()} />
 
         <main className="relative z-10 pt-32 lg:pt-40 pb-20 lg:pb-28 px-5 md:px-10">
           <div className="mx-auto max-w-[860px]">
             {/* Page header */}
             <header className="mb-12 lg:mb-16">
               <span className="inline-flex items-center gap-2.5 text-[11px] tracking-[0.24em] uppercase text-accent-light font-ui font-semibold">
-                <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,212,200,0.7)]" />
+                <span className="size-1.5 rounded-full bg-accent" />
                 {kicker}
               </span>
-              <h1 className="mt-6 font-ui font-semibold tracking-[-0.04em] leading-[1.04] text-[clamp(2.5rem,4.6vw+1rem,4.6rem)] text-text break-words">
+              <h1 className="mt-6 font-ui font-semibold tracking-[-0.03em] leading-[1.06] text-[clamp(2.25rem,3.4vw+1rem,3.5rem)] text-text break-words">
                 {title}
               </h1>
               {sub ? (
@@ -80,7 +85,7 @@ export function MarketingPageShell({
                 </p>
               ) : null}
               {meta ? (
-                <p className="mt-5 text-[11px] tracking-[0.18em] uppercase text-text-dim">
+                <p className="mt-5 text-[11px] tracking-[0.18em] uppercase text-text-muted">
                   {meta}
                 </p>
               ) : null}

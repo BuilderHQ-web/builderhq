@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * FAQ v3 — Base44's pattern in our colours: a big plain heading on the
- * left, and on the right a bare list of full-width hairline rows, each
- * a large-type question with a thin plus that rotates open. No card
- * chrome, no accordion box — just typography and lines. Question sets
- * stay forked per lens; state resets on lens change via RoleSwap.
+ * 06 · Questions. A big plain heading on the left, and on the right a
+ * bare list of full-width hairline rows, each a large-type question with
+ * a thin plus that rotates open. No card chrome, no accordion box, just
+ * typography and lines. One set of questions for every reader; the words
+ * live in FAQ in ./content.
  */
 
 import { useState } from "react";
@@ -14,29 +14,24 @@ import { Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Reveal } from "../reveal";
-import { LENS } from "./content";
-import { useRole } from "./role";
-import { RoleSwap } from "./swap";
+import { FAQ as COPY } from "./content";
 
 export function FAQ() {
-  const { role } = useRole();
-  const faqs = LENS[role].faq;
-
   return (
     <section id="faq" className="relative px-5 md:px-10 py-20 lg:py-32 scroll-mt-16">
       <div className="mx-auto max-w-[1200px]">
         <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-10 lg:gap-20 items-start">
-          {/* Heading — plain, big, Base44-still */}
+          {/* Heading: plain, big, still. */}
           <Reveal>
             <div className="lg:sticky lg:top-28 text-center lg:text-left">
-              <h2 className="font-ui font-semibold tracking-[-0.04em] text-[clamp(2.3rem,3.4vw+0.5rem,3.8rem)] leading-[1.06] text-text max-w-[14ch] mx-auto lg:mx-0">
-                Frequently asked questions
+              <h2 className="font-ui font-semibold tracking-[-0.03em] text-[clamp(2.1rem,3.2vw+0.5rem,3.5rem)] leading-[1.08] text-text max-w-[14ch] mx-auto lg:mx-0">
+                {COPY.h2}
               </h2>
-              <p className="mt-6 mx-auto lg:mx-0 max-w-[36ch] text-[14.5px] leading-[1.65] text-text-muted">
+              <p className="mt-6 mx-auto lg:mx-0 max-w-[36ch] text-[16px] leading-[1.65] text-text-muted">
                 If yours isn’t here, email{" "}
                 <a
                   href="mailto:info@builderhq.com.au"
-                  className="text-accent-light underline underline-offset-2 hover:text-accent transition-colors"
+                  className="text-accent-light underline underline-offset-2 hover:text-text transition-colors"
                 >
                   info@builderhq.com.au
                 </a>{" "}
@@ -47,9 +42,7 @@ export function FAQ() {
 
           {/* Rows */}
           <Reveal delay={0.06}>
-            <RoleSwap>
-              <Rows faqs={faqs} />
-            </RoleSwap>
+            <Rows faqs={COPY.items} />
           </Reveal>
         </div>
       </div>
@@ -57,7 +50,7 @@ export function FAQ() {
   );
 }
 
-function Rows({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
+function Rows({ faqs }: { faqs: ReadonlyArray<{ q: string; a: string }> }) {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
@@ -81,7 +74,7 @@ function Rows({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
             <Plus
               className={cn(
                 "size-5 shrink-0 transition-transform duration-[260ms] ease-[var(--ease-out)]",
-                open === i ? "rotate-45 text-accent-light" : "text-text-dim group-hover:text-text-muted",
+                open === i ? "rotate-45 text-accent-light" : "text-text-muted",
               )}
               strokeWidth={1.8}
             />
@@ -95,7 +88,7 @@ function Rows({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
                 transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
-                <p className="pb-8 pr-12 text-[15px] leading-[1.75] text-text-muted max-w-[64ch]">
+                <p className="pb-8 pr-12 text-[16px] leading-[1.7] text-text-muted max-w-[64ch]">
                   {qa.a}
                 </p>
               </motion.div>

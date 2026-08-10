@@ -34,7 +34,7 @@ import {
   type PartnerRole,
 } from "@/modules/leads/partner-roles";
 
-import { ROLE_PALETTE, type Role } from "./content";
+import { BRAND } from "./palette";
 import {
   submitPartnerInterestAction,
   submitIntroRequestAction,
@@ -54,14 +54,6 @@ const SENTINELS: Record<
   "#join-builder": { mode: "join", role: "builder" },
   "#join-finance": { mode: "join", role: "finance" },
   "#request-intro": { mode: "intro" },
-};
-
-/** Which lens hue colours the modal. The join form follows the chosen
- *  role so the modal still feels part of that lens. */
-const ROLE_HUE: Record<PartnerRole, Role> = {
-  architect: "architect",
-  builder: "builder",
-  finance: "finance",
 };
 
 const AU_STATES = ["VIC", "NSW", "QLD", "ACT", "SA", "WA", "TAS", "NT"] as const;
@@ -158,10 +150,8 @@ export function PartnerForm() {
   }, [mode, close]);
 
   const copy = mode ? COPY[mode] : null;
-  // The join form takes the hue of the chosen role; before a role is
-  // picked it sits on the homeowner (house) hue, as does the intro form.
-  const pal =
-    ROLE_PALETTE[mode === "join" && role ? ROLE_HUE[role] : "homeowner"];
+  // One brand hue across every partner discipline.
+  const pal = BRAND;
   const spec = role ? partnerRole(role) : null;
 
   const toggleNeed = (value: IntroNeed) =>

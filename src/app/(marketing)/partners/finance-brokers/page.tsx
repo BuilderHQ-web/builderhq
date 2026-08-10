@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { resolveNavAuthedHref } from "@/components/landing/cta-links";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -16,10 +17,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/partners/finance-brokers" },
 };
 
-export default function FinancePartnersPage() {
+export default async function FinancePartnersPage() {
+  const navAuthedHref = await resolveNavAuthedHref();
   const partners = PARTNERS.filter((p) => !p.draft && p.kind === "finance");
   return (
     <MarketingPageShell
+      authedHref={navAuthedHref}
       kicker="Our Partners · Finance brokers"
       title="Brokers who know construction."
       sub="Finance partners with real experience in construction lending, and clients who speak well of them. We introduce them to homeowners the moment finance comes up. No fees, no exclusivity."

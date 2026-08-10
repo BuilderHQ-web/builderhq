@@ -1,4 +1,10 @@
 import { MarketingPageShell } from "@/components/landing/page-shell";
+import { resolveNavAuthedHref } from "@/components/landing/cta-links";
+import {
+  COMPANY_ABN,
+  COMPANY_LEGAL_NAME,
+  COMPANY_LOCATION,
+} from "@/lib/company";
 
 export const metadata = {
   title: "Terms of Use",
@@ -7,7 +13,7 @@ export const metadata = {
 };
 
 /**
- * /terms — formal long-form document. Layout: sticky table-of-contents
+ * /terms, formal long-form document. Layout: sticky table-of-contents
  * on desktop (left rail), readable prose column on the right. On mobile
  * the TOC stacks above the content. Anchor ids on every section let the
  * TOC scroll-link properly.
@@ -62,14 +68,19 @@ const SECTIONS = [
     ),
   },
   {
-    id: "marketplace-role",
-    title: "3. Our role (marketplace only)",
+    id: "our-role",
+    title: "3. Our role",
     body: (
       <>
         <P>
-          BuilderHQ operates as a marketplace and workflow tool. We do not
-          perform building work, guarantee project outcomes, or become a
-          party to any contract between Project Owners and Builders.
+          BuilderHQ operates a platform for running residential construction
+          tenders: preparing scope of works documents from customer
+          materials, collecting structured tender submissions, and computing
+          comparisons and evaluations from builders&apos; own answers.
+          BuilderHQ is not a party to any building contract and does not
+          provide legal, financial or building advice. We do not perform
+          building work, guarantee project outcomes, or become a party to any
+          contract between Project Owners and Builders.
         </P>
         <P>
           Unless expressly stated, we do not verify the accuracy of
@@ -166,7 +177,7 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          BuilderHQ may provide AI-generated insights — for example, risk
+          BuilderHQ may provide AI-generated insights, for example, risk
           flags, scope-gap identification, or tender summaries.
         </P>
         <P>
@@ -391,11 +402,11 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          BuilderHQ Technologies Pty Ltd
+          {COMPANY_LEGAL_NAME}
           <br />
-          ABN: 33 612 815 139
+          ABN: {COMPANY_ABN}
           <br />
-          Melbourne, Victoria, Australia
+          {COMPANY_LOCATION}
           <br />
           Support:{" "}
           <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>
@@ -405,9 +416,11 @@ const SECTIONS = [
   },
 ];
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const navAuthedHref = await resolveNavAuthedHref();
   return (
     <MarketingPageShell
+      authedHref={navAuthedHref}
       kicker="Legal"
       title="Terms of use."
       sub="The rules that govern how the BuilderHQ platform is used by project owners, builders, and visitors. Plain English where we can; precise where we must."

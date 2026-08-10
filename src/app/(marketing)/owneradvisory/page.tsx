@@ -21,6 +21,7 @@ import Link from "next/link";
 import { Ambient } from "@/components/landing/ambient";
 import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
+import { companyFooterLine } from "@/lib/company";
 
 import s from "./owneradvisory.module.css";
 import { OwnerAdvisoryForm } from "./owner-advisory-form";
@@ -214,7 +215,23 @@ export default function OwnerAdvisoryPage() {
 
         <footer className={s.footer}>
           <div className={s.footerLeft}>
-            © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
+            {companyFooterLine()}
+            <br />
+            <span style={{ color: "var(--ink-soft)" }}>
+              Part of{" "}
+              <Link
+                href="/"
+                style={{
+                  color: "inherit",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                BuilderHQ
+              </Link>
+              , the tendering platform for Australian residential
+              construction.
+            </span>
           </div>
           <div className={s.footerLinks}>
             <Link href="https://builderhq.com.au">builderhq.com.au</Link>

@@ -18,14 +18,14 @@ import {
 } from "../../_lib/quiz-state";
 
 /**
- * Step 3 — scope. Adapts to the project type picked in step 1:
+ * Step 3, scope. Adapts to the project type picked in step 1:
  *
  *   single_dwelling → bedrooms + bathrooms + floors (stepper)
  *   multi_dwelling   → dwelling count + headline bedrooms / bathrooms
  *   renovation       → renovationScope (6-option chip pick)
  *   extension        → extensionType (5-option chip pick)
  *
- * The headline copy adapts too — never reads "what are you building"
+ * The headline copy adapts too, never reads "what are you building"
  * twice; always feels like the next logical question.
  */
 
@@ -79,7 +79,7 @@ export function ScopeStep() {
     if (earliest === "type" || earliest === "location") {
       router.replace(`/start/q/${earliest}`);
     }
-    // We intentionally don't depend on `state` — bounce only checks the
+    // We intentionally don't depend on `state`, bounce only checks the
     // initial state once on mount; subsequent updates are user choices
     // we want to keep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,7 +98,7 @@ export function ScopeStep() {
     router.push("/start/q/timeline");
   }
 
-  // If type isn't picked yet, the guard above will redirect — render
+  // If type isn't picked yet, the guard above will redirect, render
   // nothing in the meantime to avoid a flash of the wrong layout.
   if (!state.type) {
     return null;
@@ -198,7 +198,7 @@ function ScopeBody({
     return (
       <div className="grid grid-cols-1 gap-2">
         <p className="text-text-faint text-[11.5px] font-body mb-1">
-          Pick everything that applies — owners often combine more than one.
+          Pick everything that applies, owners often combine more than one.
         </p>
         {RENO_SCOPES.map((s) => (
           <OptionCard

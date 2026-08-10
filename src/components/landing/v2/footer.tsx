@@ -1,45 +1,22 @@
 /**
- * Footer v3 — Base44's clean architecture in our colours: brand and a
- * plain-English description on the left, labelled link columns across
- * the right, one hairline, one quiet copyright line. Nothing else.
+ * Footer — brand and a plain-English description on the left, four
+ * labelled link columns on the right, one hairline, one entity line.
+ * Nothing else.
+ *
+ * Every word comes from content.ts; the entity and the ABN come from
+ * lib/company.ts, so the site can never contradict itself about who it
+ * legally is.
  */
 
 import Link from "next/link";
-import { Logo } from "@/components/brand/logo";
 
-const COLUMNS: Array<{
-  label: string;
-  links: Array<{ label: string; href: string }>;
-}> = [
-  {
-    label: "Platform",
-    links: [
-      { label: "How it works", href: "#how" },
-      { label: "Trust and verification", href: "#trust" },
-      { label: "Preferred Partners", href: "/partners" },
-      { label: "The Build Brief", href: "/build-brief" },
-      { label: "FAQs", href: "#faq" },
-    ],
-  },
-  {
-    label: "Company",
-    links: [
-      { label: "About", href: "/about" },
-      { label: "Book a call", href: "/book-a-call" },
-      { label: "Contact", href: "mailto:info@builderhq.com.au" },
-    ],
-  },
-  {
-    label: "Legal",
-    links: [
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
-    ],
-  },
-];
+import { Logo } from "@/components/brand/logo";
+import { COMPANY_LOCATION, companyFooterLine } from "@/lib/company";
+import { FOOTER } from "./content";
 
 export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
   const resolve = (h: string) => (homeAnchors && h.startsWith("#") ? "/" + h : h);
+
   return (
     <footer
       className="relative border-t border-border-subtle px-5 md:px-10 pt-16 pb-8"
@@ -49,29 +26,29 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
       }}
     >
       <div className="mx-auto max-w-[1200px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr] gap-12 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-10">
           {/* Brand */}
           <div className="flex flex-col items-center lg:items-start gap-5 text-center lg:text-left">
             <Link href="/" aria-label="BuilderHQ home" className="inline-flex items-center">
               <Logo height={24} tone="dark" />
             </Link>
-            <p className="max-w-[44ch] text-[14px] leading-[1.7] text-text-muted">
-              BuilderHQ is where Australia’s residential builds get organised.
-              Homeowners tender their plans, verified builders price real work,
-              and building designers get seen and referred. Free for homeowners,
-              no commission, ever.
+            <p className="max-w-[46ch] text-[16px] leading-[1.65] text-text-muted">
+              {FOOTER.description}
             </p>
-            {/* Talk to a person — the trust signal almost no marketplace
-                offers. Real numbers, real reply. */}
-            <p className="text-[13px] leading-[1.8] text-text-muted">
+            {/* Talk to a person. Real numbers, answered by us. */}
+            <p className="text-[16px] leading-[1.8] text-text-muted">
               <a href="tel:0416926380" className="hover:text-text transition-colors">
                 0416 926 380
               </a>
-              <span aria-hidden className="mx-2 text-text-faint">·</span>
+              <span aria-hidden className="mx-2 text-text-faint">
+                ·
+              </span>
               <a href="tel:0452280062" className="hover:text-text transition-colors">
                 0452 280 062
               </a>
-              <span aria-hidden className="mx-2 text-text-faint">·</span>
+              <span aria-hidden className="mx-2 text-text-faint">
+                ·
+              </span>
               <a
                 href="mailto:info@builderhq.com.au"
                 className="hover:text-text transition-colors"
@@ -82,21 +59,33 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
           </div>
 
           {/* Link columns */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 lg:justify-items-end">
-            {COLUMNS.map((col) => (
-              <nav key={col.label} aria-label={col.label} className="flex flex-col items-center sm:items-start gap-3.5">
-                <p className="text-[11px] tracking-[0.18em] uppercase text-text-dim font-semibold">
-                  {col.label}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-10">
+            {FOOTER.columns.map((col) => (
+              <nav
+                key={col.title}
+                aria-label={col.title}
+                className="flex flex-col items-center sm:items-start gap-3.5"
+              >
+                <p className="text-[11px] tracking-[0.18em] uppercase text-text-muted font-semibold">
+                  {col.title}
                 </p>
                 {col.links.map((l) =>
-                  l.href.startsWith("/") ? (
-                    <Link key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
-                      {l.label}
-                    </Link>
-                  ) : (
-                    <a key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
+                  l.href.startsWith("mailto:") ? (
+                    <a
+                      key={l.label}
+                      href={l.href}
+                      className="text-[16px] text-text-muted hover:text-text transition-colors"
+                    >
                       {l.label}
                     </a>
+                  ) : (
+                    <Link
+                      key={l.label}
+                      href={resolve(l.href)}
+                      className="text-[16px] text-text-muted hover:text-text transition-colors"
+                    >
+                      {l.label}
+                    </Link>
                   ),
                 )}
               </nav>
@@ -105,11 +94,11 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
         </div>
 
         <div className="mt-14 pt-6 border-t border-border-subtle/70 flex flex-col lg:flex-row items-center lg:items-baseline justify-between gap-2">
-          <p className="text-[12.5px] text-text-dim text-center lg:text-left">
-            © {new Date().getFullYear()} BuilderHQ · ABN 70 697 584 722
+          <p className="text-[14px] text-text-muted text-center lg:text-left">
+            {companyFooterLine({ withLocation: false })}
           </p>
-          <p className="text-[12.5px] text-text-dim text-center lg:text-right">
-            Melbourne, Victoria, Australia
+          <p className="text-[14px] text-text-muted text-center lg:text-right">
+            {COMPANY_LOCATION}
           </p>
         </div>
       </div>

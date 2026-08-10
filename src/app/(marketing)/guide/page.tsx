@@ -1,5 +1,8 @@
 /**
- * /guide — Melbourne Build Brief landing page.
+ * /guide — The Melbourne Building Guide landing page.
+ *
+ * Named "The Melbourne Build Brief" until August 2026, when the name was
+ * given up to end the collision with /build-brief, the published weekly.
  *
  * Editorial magazine-cover treatment that converts: 21-page free PDF
  * download in exchange for first name + email (phone optional). Live
@@ -15,6 +18,7 @@ import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
+import { companyFooterLine } from "@/lib/company";
 import s from "./guide.module.css";
 import theme from "./theme.module.css";
 import { GuideForm } from "./guide-form";
@@ -35,11 +39,11 @@ const inter = Inter({
 
 export const metadata = {
   title:
-    "The Melbourne Build Brief, A Field Guide for Homeowners | BuilderHQ",
+    "The Melbourne Building Guide, a field guide for homeowners | BuilderHQ",
   description:
     "Free 21-page independent guide to building or renovating in Melbourne. Real 2026 costs, contract clauses, the 12 red flags, and how to vet a builder properly. No sign-up tricks.",
   openGraph: {
-    title: "The Melbourne Build Brief",
+    title: "The Melbourne Building Guide",
     description:
       "A 21-page independent field guide for homeowners building or renovating in Melbourne. Free.",
     type: "website",
@@ -111,7 +115,7 @@ export default function GuidePage() {
               </p>
 
               <div className={s.insideBlock}>
-                <div className={s.insideLabel}>Inside the Brief</div>
+                <div className={s.insideLabel}>Inside the guide</div>
                 <ul className={s.insideList}>
                   <li className={s.insideItem}>
                     Real <em>2026 Melbourne</em> pricing
@@ -146,7 +150,7 @@ export default function GuidePage() {
                     <h3 className={s.coverTitle}>
                       The
                       <em>Melbourne</em>
-                      Build Brief.
+                      Building Guide.
                     </h3>
                     <p className={s.coverDeck}>
                       Costs · Contracts · Red Flags · Vetting · Tenders
@@ -206,8 +210,23 @@ export default function GuidePage() {
       </main>
 
       <footer className={s.footer}>
-        <div className={s.footerLeft}>
-          © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
+        <div className={s.footerLeft} style={{ lineHeight: 1.65 }}>
+          {companyFooterLine()}
+          <br />
+          <span style={{ color: "var(--g-text)" }}>
+            Part of{" "}
+            <Link
+              href="/"
+              style={{
+                color: "inherit",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+              }}
+            >
+              BuilderHQ
+            </Link>
+            , the tendering platform for Australian residential construction.
+          </span>
         </div>
         <div className={s.footerLinks}>
           <Link href="https://builderhq.com.au">builderhq.com.au</Link>

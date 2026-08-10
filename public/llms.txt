@@ -1,21 +1,27 @@
 # BuilderHQ
 
-> BuilderHQ (builderhq.com.au) is Australia's residential construction tendering platform. Homeowners and developers list their project once, with full architectural plans, and up to three verified builders price it on the same scope, so quotes are comparable like for like. Free for homeowners; every builder is ABN and licence checked; never more than three builders per project. Based in Melbourne, operating Australia wide.
+> BuilderHQ (builderhq.com.au) is the tendering platform for Australian residential construction. Upload the plans and it reads the documents and writes the scope of works, line by line, each line tied to the page it came from. Verified builders price that same list and answer the same structured questions, so every tender arrives comparable. Every tender is then scored on six published dimensions, side by side, with every difference pulled out in the open. Free for homeowners and for the practices that run rounds for their clients. Built in Melbourne, operating Australia wide.
 
-BuilderHQ also runs the Preferred Partner register, a hand-picked network of building designers, architects and finance brokers it introduces to owners and builders (no one pays to be listed), and publishes The Build Brief, a weekly briefing on the economics of getting homes built in Australia.
+How verification works: every builder’s ABN is checked against the Australian Business Register. Licences are checked against the state register where one connects, and by our team where one does not. Insurance cover is declared by the builder under signature. Only then does a builder see a project.
+
+What BuilderHQ does not do: it does not measure drawings, take off quantities, or produce a bill of quantities or a cost estimate. It does not pick a winner or recommend one. It writes the scope, collects structured tenders, scores them on published dimensions and shows every difference. The decision belongs to the client, the contract is signed directly between the client and the builder, and BuilderHQ takes no commission from either side.
+
+BuilderHQ also runs the Preferred Partner register, a hand picked group of building designers, architects, builders and finance brokers it knows well enough to introduce, and publishes The Build Brief, a weekly briefing on the economics of getting homes built in Australia.
 
 ## Platform
 
-- [How BuilderHQ works](https://builderhq.com.au/): list a project with full plans, up to three verified builders price the same scope, compare and appoint.
-- [For builders](https://builderhq.com.au/for/builders): tender-ready projects with full working drawings, owners ready to build, never more than three builders per job.
-- [For building designers](https://builderhq.com.au/for/architects): the Preferred Design Partner Network, featured and referred at no cost.
-- [For finance brokers](https://builderhq.com.au/for/finance-brokers): the Preferred Finance Partner Program, warm introductions when owners ask for finance.
+- [How a round runs](https://builderhq.com.au/): upload the plans, approve the scope of works, verified builders price that same list and answer the same questions, then compare the tenders and award.
+- [For homeowners](https://builderhq.com.au/for/homeowners): approve a line by line scope of works, then choose between tenders that finally measure the same things. Free for homeowners.
+- [For architects and building designers](https://builderhq.com.au/for/architects): run structured tender rounds for your clients, with your builders or ours, free for practices.
+- [For builders](https://builderhq.com.au/for/builders): price residential work on a scope already prepared from the documents, line by line, and have your tender read on more than the bottom line. Rounds are capped, and the cap is shown before you take a spot.
+- [Pricing](https://builderhq.com.au/pricing): free for homeowners and for the practices that run rounds. Builders pay a one off fee to take a spot on an open round, from $49 to $199 by project type. Browsing is free, invited builders take part free, and nobody pays commission.
 - [FAQs](https://builderhq.com.au/faq)
 - [About BuilderHQ](https://builderhq.com.au/about)
 
 ## The Build Brief
 
 - [The Build Brief](https://builderhq.com.au/build-brief): five minutes on the economics of getting homes built in Australia. Housing starts, building approvals, construction costs, and the decisions that matter. Plain, sourced, every Friday.
+- [Issue 004, 31 July 2026](https://builderhq.com.au/build-brief/issue-004): the average new Australian house was declared at $517,430 of building work at permit stage in 2025-26, up 5.0% and before land, inflation eased enough to take an August rate rise off the table, Victoria's revised Guide to Standards and Tolerances applies from 1 August and is not retrospective, and the Productivity Commission found regulation is holding back housing supply.
 - [Issue 003, 24 July 2026](https://builderhq.com.au/build-brief/issue-003): construction costs rose 1.0% in the June quarter as the March lull ended, construction insolvencies fell for the first time in five years (3,435 in 2025-26, down 4.5%, still 24.4% of all administrations), a Melbourne prefab pilot went slab to practical completion in 20 business days, and the BuilderHQ Procurement Standard (BPS) goes to Master Builders Australia for consideration.
 - [Issue 002, 17 July 2026](https://builderhq.com.au/build-brief/issue-002): Victoria's new building rules in plain terms (First Resort Home Warranty, rectification orders, financial standing as a licence condition), Australia as the world's most labour-constrained construction market, and auctions giving way to negotiation.
 - [Issue 001, 10 July 2026](https://builderhq.com.au/build-brief/issue-001): housing starts against the 1.2 million home target, May building approvals, new dwelling construction costs, and how to compare three builder quotes fairly.
@@ -25,8 +31,9 @@ BuilderHQ also runs the Preferred Partner register, a hand-picked network of bui
 
 ## Preferred Partners
 
-- [Preferred Partner register](https://builderhq.com.au/partners): building designers and finance brokers BuilderHQ knows well enough to introduce. Personally invited, no paid placements.
+- [Preferred Partner register](https://builderhq.com.au/partners): building designers, builders and finance brokers BuilderHQ knows well enough to introduce. Personally invited, no paid placements. The register is separate from tendering: any practice can run tender rounds on BuilderHQ, on the register or not.
 - [Design partners](https://builderhq.com.au/partners/architects)
+- [Build partners](https://builderhq.com.au/partners/builders)
 - [Finance partners](https://builderhq.com.au/partners/finance-brokers)
 
 ## Contact

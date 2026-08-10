@@ -11,14 +11,22 @@ import * as React from "react";
 
 import { track } from "@/lib/analytics";
 
+/**
+ * The eight landmarks of the home page, in reading order. Keep this list
+ * in step with landing.tsx: an id that drifts stops reporting silently,
+ * which is the worst kind of analytics bug. `proof` and `close` are
+ * supplied by wrappers in landing.tsx; the rest sit on the section
+ * elements themselves.
+ */
 const SECTION_IDS = [
   "hero",
-  "choose",
+  "problem",
   "how",
   "trust",
-  "network",
   "ecosystem",
+  "proof",
   "faq",
+  "close",
 ] as const;
 
 export function SectionTracker() {
@@ -34,9 +42,11 @@ export function SectionTracker() {
           observer.unobserve(entry.target);
         }
       },
-      // 35% visible = the visitor genuinely reached the section, not a
-      // one-pixel graze while scrolling past.
-      { threshold: 0.35 },
+      // The root is squeezed to the middle third of the viewport, so a
+      // section counts as read when it passes under the reader's eye.
+      // A visible-fraction threshold cannot do this job: a section
+      // taller than the screen never reaches one.
+      { rootMargin: "-35% 0px -35% 0px", threshold: 0 },
     );
 
     for (const id of SECTION_IDS) {
