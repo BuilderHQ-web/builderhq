@@ -81,12 +81,18 @@ export function useSceneScript<S extends object>({
   const [clicks, setClicks] = React.useState(0);
 
   // The script is written inline at the call site, so a fresh array
-  // arrives on every render. Hold it in a ref and key the effect on
-  // `enabled` alone, or the timeline restarts on each parent render.
+  // arrives on every render. Hold it in a ref and key the timeline on
+  // `enabled` alone, or it restarts on each parent render. Synced in an
+  // effect rather than during render: refs written mid-render can be
+  // torn between a render that was thrown away and the one that landed.
+  // This effect is declared first, so it has run before the timeline
+  // below reads either ref.
   const scriptRef = React.useRef(script);
-  scriptRef.current = script;
   const restingRef = React.useRef(resting);
-  restingRef.current = resting;
+  React.useEffect(() => {
+    scriptRef.current = script;
+    restingRef.current = resting;
+  });
 
   React.useEffect(() => {
     if (!enabled || reduced) {

@@ -191,12 +191,13 @@ export function MockButton({ children, ghost }: { children: React.ReactNode; gho
 export function LoopToast({
   icon,
   text,
-  accent,
   delay = 1.2,
 }: {
   icon: React.ReactNode;
   text: string;
-  accent: string;
+  /** Kept on the signature for callers; the toast stopped tinting
+   *  itself per lens when it moved onto the light theme. */
+  accent?: string;
   delay?: number;
 }) {
   return (
