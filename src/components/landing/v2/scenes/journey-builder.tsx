@@ -1,33 +1,56 @@
 "use client";
 
 /**
- * Builder · the whole story, six screens.
+ * Builder · the whole story, six screens, one pair of hands.
  *
  * The hero plays a builder's week end to end: the register they browse
- * on a Tuesday night, the project they take a spot on, the scope that
+ * on a Tuesday night, the project they hold a spot on, the scope that
  * was written for them before they arrived, the schedule they walk, the
  * document they send, and the job they win. One builder the whole way
  * through, Meridian Building Co, so the same name and the same figure
  * are on the last screen as on the fifth.
  *
- * Every screen is a miniature of a real surface: /builder/browse, the
- * unlocked project page, its scope card, module 5 of the tender deck,
- * the review slide, and the awarded outcome. The strings are the app's
- * own. Two product rules carried over from the kit and easy to break:
- * bright teal is a fill and never type, and the project shows UNLOCKED
- * from the second screen on, because a visitor should see what a spot
- * buys rather than the wall in front of it.
+ * WHY THIS FILE WAS REWRITTEN. The first version swapped screens on a
+ * timer. It read as a slideshow of screenshots however nicely it
+ * crossfaded, and for one reason worth writing down: nothing CAUSED the
+ * change. So there is no step array here any more and no per-screen
+ * clock. There is ONE script, on the deck's own timeline engine, and
+ * every navigation is motivated: the pointer reaches a real control,
+ * the control lights the way a real hover lights, the pointer presses
+ * it, and only then does the app go somewhere. The frame, its topbar
+ * and the pointer live outside the crossfade and never remount, so the
+ * hand never blinks out between two screens.
  *
- * Unlike the deck scenes there is no cursor and no script here. A
- * screen mounts, plays a short entrance, fires exactly one event, and
- * is replaced. The step's `hold` is the pacing.
+ * WHAT THE POINTER PRESSES, in order: the type filter and Apply on the
+ * register, the Pascoe Vale row, the "Scope of works" section, "Start
+ * your tender" on the project's fixed bar, two Included chips and then
+ * "Continue" in the deck footer, "Submit tender" and its confirmation.
+ * All six are controls the app actually renders.
+ *
+ * Two product rules carried over from the kit and easy to break: bright
+ * teal is a FILL and never type, and the project reads UNLOCKED from
+ * the frame it opens on, with its real street address and its real
+ * filenames, because a visitor should see what a spot buys rather than
+ * the wall in front of it.
+ *
+ * ONE NAMED COMPRESSION, so a later reader does not think it a mistake.
+ * The builder project page is a single tall page whose sections carry
+ * the ids and titles the unlock tour walks: Key details, The client,
+ * Scope of works, Documents, Messages. In the app you reach them by
+ * scrolling three thousand pixels. In a 660px frame that is not
+ * available, so the miniature gives those same sections a rail and lets
+ * the pointer step between them. The names are the app's own; only the
+ * rail is the miniature's.
  */
 
 import * as React from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
+  ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   BookOpenCheck,
+  Building,
   Check,
   ChevronDown,
   Compass,
@@ -38,50 +61,99 @@ import {
   MapPin,
   Sparkles,
   Unlock,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
+import { SceneCursor, useSceneScript } from "../scene-motion";
 import {
   C,
   TONE,
   ELEV,
   Frame,
   Card,
+  Division,
   Kicker,
+  ListFade,
+  Mark,
   Pill,
+  ScopeLine,
   TealBtn,
   Track,
-  Division,
-  ScopeLine,
-  Mark,
-  ListFade,
-  type HeroStep,
   type ToneKey,
 } from "./kit";
 
-/** The app's own entrance easing (journey.tsx, Reveal). */
-const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+/* ══ The session ════════════════════════════════════════════════════ */
 
 /** The builder the journey follows, and the round they are on. */
 const US = "Meridian Building Co";
 const PROJECT = "Single dwelling · Pascoe Vale, VIC";
 
+type Screen = "browse" | "project" | "scope" | "tender" | "submit" | "won";
+
 /**
- * The one timer every screen shares: its single event, fired once the
- * entrance has settled. Reduced motion gets the settled state on the
- * first frame instead, since under it the hero holds on step one and
- * nothing would ever arrive to fire it.
+ * The breadcrumb in the topbar. It is the cheapest and most convincing
+ * signal that the session navigated, so it changes with every screen
+ * while everything else in the chrome holds still.
  */
-function useBeat(ms: number): boolean {
-  const reduced = useReducedMotion();
-  const [fired, setFired] = React.useState(false);
-  React.useEffect(() => {
-    if (reduced) return;
-    const t = window.setTimeout(() => setFired(true), ms);
-    return () => window.clearTimeout(t);
-  }, [ms, reduced]);
-  return fired || Boolean(reduced);
-}
+const CRUMB: Record<Screen, string> = {
+  browse: "Browse projects",
+  project: PROJECT,
+  scope: "Scope of works",
+  tender: "Tender · the schedule",
+  submit: "Review and submit",
+  won: "Your tender",
+};
+
+type S = {
+  screen: Screen;
+  /** The control under the pointer. Nothing lights unless it is here. */
+  hot: string | null;
+  /** Browse: the type select carries a value; the query has been re-run.
+   *  Separate because the app's filter bar is a GET form: choosing does
+   *  nothing until Apply. */
+  picked: boolean;
+  filtered: boolean;
+  /** Which section of the project page the rail is lit on. */
+  sec: "facts" | "scope" | "documents";
+  /** The document register's offset. Negative scrolls it up. */
+  docY: number;
+  /** The open division on the scope screen, and its lit citation. */
+  open: string | null;
+  cite: boolean;
+  /** The schedule's offset, the lines marked Included, and the deck's
+   *  own answered counter, which the 3px track is derived from. */
+  schedY: number;
+  marked: readonly string[];
+  answered: number;
+  /** The second step of the two-step submit. */
+  confirm: boolean;
+};
+
+/**
+ * Screen one, complete and finished, with nothing having happened yet:
+ * the register as it loads, before any filter. This is also exactly
+ * what renders under prefers-reduced-motion, so it has to stand alone.
+ */
+const RESTING: S = {
+  screen: "browse",
+  hot: null,
+  picked: false,
+  filtered: false,
+  sec: "facts",
+  docY: 0,
+  open: null,
+  cite: false,
+  schedY: 0,
+  marked: [],
+  answered: 18,
+  confirm: false,
+};
+
+/** The app's entrance easing, and the slower curve a scrolled surface
+ *  wants so it reads as scrolling rather than jumping. */
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const SCROLL = { duration: 0.85, ease: [0.22, 1, 0.36, 1] } as const;
 
 /** A palette hex at one of the app's own alphas, so the cover tints
  *  stay provably the palette rather than a second set of colours. */
@@ -90,10 +162,422 @@ function alpha(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
+/* ══ The journey ════════════════════════════════════════════════════ */
+
+export function BuilderJourney({ active }: { active: boolean }) {
+  const root = React.useRef<HTMLDivElement>(null);
+
+  const { state, cursor, clicks } = useSceneScript<S>({
+    enabled: active,
+    resting: RESTING,
+    rootRef: root,
+    loopPause: 2200,
+    script: [
+      /* ── 1 · Browse ───────────────────────────────────────────────
+         The register as it loads, then the filter a builder actually
+         uses. Choosing a type does nothing until Apply, which is the
+         app's own GET-form behaviour and the reason for two presses. */
+      { wait: 1100 },
+      { move: "type", ms: 760 },
+      { set: { hot: "type" } },
+      { wait: 420 },
+      { click: true },
+      { set: { picked: true, hot: null } },
+      { wait: 700 },
+      { move: "apply", ms: 620 },
+      { set: { hot: "apply" } },
+      { wait: 420 },
+      { click: true },
+      { set: { filtered: true, hot: null } },
+      { wait: 1400 },
+      // The row is a link. Pressing it is what opens the project.
+      { move: "row", ms: 820 },
+      { set: { hot: "row" } },
+      { wait: 460 },
+      { click: true },
+      { set: { screen: "project", hot: null } },
+      { wait: 1000 },
+
+      /* ── 2 · The project ──────────────────────────────────────────
+         Unlocked from the first frame. The register of nine documents
+         is scrolled the way a builder scrolls it, and the rail follows
+         the reading before the pointer navigates on. */
+      { wait: 1300 },
+      { move: "doc-1", ms: 780 },
+      { set: { hot: "doc-1" } },
+      { wait: 520 },
+      // Two waypoints, measured against the rendered register: the
+      // second lands it on the last of the nine, which is what gives
+      // the reader a beat at the bottom instead of a list still moving.
+      { set: { hot: null, sec: "documents", docY: -180 } },
+      { wait: 900 },
+      { set: { docY: -374 } },
+      { wait: 950 },
+      { move: "nav-scope", ms: 800 },
+      { set: { hot: "nav-scope" } },
+      { wait: 440 },
+      { click: true },
+      { set: { screen: "scope", sec: "scope", hot: null } },
+      { wait: 950 },
+
+      /* ── 3 · The scope ────────────────────────────────────────────
+         The claim on this screen is that every item was written from
+         the documents and carries the page it came from, so the
+         pointer opens a division and then reads a citation. */
+      { wait: 1300 },
+      { move: "div-footings", ms: 760 },
+      { set: { hot: "div-footings" } },
+      { wait: 440 },
+      { click: true },
+      { set: { open: "footings", hot: null } },
+      { wait: 800 },
+      { move: "cite-footings", ms: 560 },
+      { set: { cite: true } },
+      { wait: 1100 },
+      { set: { cite: false } },
+      { move: "start-tender", ms: 820 },
+      { set: { hot: "start-tender" } },
+      { wait: 460 },
+      { click: true },
+      { set: { screen: "tender", hot: null } },
+      { wait: 1000 },
+
+      /* ── 4 · Your tender ──────────────────────────────────────────
+         The whole job is to say what your price does with each line.
+         One mark, then the schedule is scrolled on and the line at the
+         bottom is marked too, so the counter and the track move twice
+         and the scroll has a reason to exist. */
+      { wait: 1200 },
+      { move: "slab-included", ms: 800 },
+      { set: { hot: "slab-included" } },
+      { wait: 460 },
+      { click: true },
+      { set: { marked: ["slab"], answered: 19, hot: null } },
+      { wait: 1300 },
+      { set: { schedY: -126 } },
+      { wait: 1000 },
+      { move: "termite-included", ms: 720 },
+      { set: { hot: "termite-included" } },
+      { wait: 440 },
+      { click: true },
+      { set: { marked: ["slab", "termite"], answered: 20, hot: null } },
+      { wait: 1400 },
+      { move: "continue", ms: 800 },
+      { set: { hot: "continue" } },
+      { wait: 440 },
+      { click: true },
+      { set: { screen: "submit", hot: null } },
+      { wait: 1000 },
+
+      /* ── 5 · Submit ───────────────────────────────────────────────
+         Two steps, because the app has two: submitting seals the
+         tender, and the sentence that says so is worth reading. */
+      { wait: 1400 },
+      { move: "submit", ms: 800 },
+      { set: { hot: "submit" } },
+      { wait: 440 },
+      { click: true },
+      { set: { confirm: true, hot: null } },
+      { wait: 1500 },
+      { move: "submit-confirm", ms: 600 },
+      { set: { hot: "submit-confirm" } },
+      { wait: 420 },
+      { click: true },
+      { set: { screen: "won", hot: null } },
+      { wait: 1000 },
+
+      /* ── 6 · Won ──────────────────────────────────────────────────
+         The end of the session. The pointer rests on the one thing a
+         builder reaches for here, and only then leaves the screen. */
+      { wait: 1800 },
+      { move: "pdf", ms: 820 },
+      { set: { hot: "pdf" } },
+      { wait: 1500 },
+      { set: { hot: null } },
+      { cursor: "hide" },
+      { wait: 400 },
+    ],
+  });
+
+  const { screen } = state;
+  const onProjectPage = screen === "project" || screen === "scope";
+
+  return (
+    <div ref={root} className="relative w-full h-full">
+      <Frame
+        crumb={CRUMB[screen]}
+        avatar="MB"
+        // The page-level bars are chrome, not content: the project's
+        // tender bar is fixed to the foot of the real page and the
+        // deck's controls are ruled off at the foot of the real deck.
+        // Keeping them out here means the bar survives the project to
+        // scope move without remounting, exactly as it does in the app.
+        overlay={
+          <AnimatePresence mode="wait" initial={false}>
+            {onProjectPage ? (
+              <FootBar key="cta" tone="cta">
+                <div className="min-w-0 flex items-center gap-2">
+                  <span
+                    className="shrink-0 inline-flex size-6 items-center justify-center rounded-md border"
+                    style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
+                  >
+                    <FileText className="size-3" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10.5px] font-semibold leading-tight truncate" style={{ color: C.ink }}>
+                      Ready to tender on this project?
+                    </p>
+                    <p className="mt-[1px] text-[8.5px] leading-tight truncate" style={{ color: C.dim }}>
+                      Twelve short modules, about thirty minutes.
+                    </p>
+                  </div>
+                </div>
+                <Press k="start-tender" hot={state.hot === "start-tender"}>
+                  <TealBtn>Start your tender</TealBtn>
+                </Press>
+              </FootBar>
+            ) : screen === "tender" ? (
+              <FootBar key="deck" tone="deck">
+                <span className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: C.dim }}>
+                  <ArrowLeft className="size-3" />
+                  Back
+                </span>
+                <Press k="continue" hot={state.hot === "continue"}>
+                  <TealBtn>
+                    Continue
+                    <ArrowRight className="size-3" />
+                  </TealBtn>
+                </Press>
+              </FootBar>
+            ) : null}
+          </AnimatePresence>
+        }
+      >
+        {/* The only thing that crossfades is the screen body. The
+            topbar, the foot bar and the pointer sit outside it. */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={screen}
+            className="flex-1 min-h-0 flex flex-col gap-2.5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.4, ease: EASE }}
+          >
+            {screen === "browse" ? (
+              <BrowseScreen picked={state.picked} filtered={state.filtered} hot={state.hot} />
+            ) : screen === "project" ? (
+              <ProjectScreen sec={state.sec} docY={state.docY} hot={state.hot} />
+            ) : screen === "scope" ? (
+              <ScopeScreen sec={state.sec} open={state.open} cite={state.cite} hot={state.hot} />
+            ) : screen === "tender" ? (
+              <TenderScreen
+                y={state.schedY}
+                marked={state.marked}
+                answered={state.answered}
+                hot={state.hot}
+              />
+            ) : screen === "submit" ? (
+              <SubmitScreen confirm={state.confirm} hot={state.hot} />
+            ) : (
+              <WonScreen hot={state.hot} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </Frame>
+
+      <SceneCursor cursor={cursor} clicks={clicks} />
+    </div>
+  );
+}
+
+/* ══ Shared furniture ═══════════════════════════════════════════════ */
+
+/**
+ * A teal control the pointer can press. The ring is the app's own hover
+ * treatment on the register's Apply button; the small swell is what
+ * turns a lit rectangle into something that looks reachable. Transform
+ * and box shadow only, so nothing here touches layout.
+ */
+function Press({ k, hot, children }: { k: string; hot: boolean; children: React.ReactNode }) {
+  return (
+    <motion.span
+      data-cursor={k}
+      className="inline-flex shrink-0 rounded-full"
+      style={{ boxShadow: hot ? `0 0 0 3px ${C.tealMuted}` : undefined }}
+      initial={false}
+      animate={{ scale: hot ? 1.045 : 1 }}
+      transition={{ duration: 0.24, ease: EASE }}
+    >
+      {children}
+    </motion.span>
+  );
+}
+
+/**
+ * A bar ruled off at the foot of the frame, the way both the project
+ * page and the tender deck pin their controls. The project's bar is
+ * the teal-ruled one the app fixes to the viewport; the deck's is the
+ * quiet rule under its slides, so the two do not read as the same
+ * furniture surviving a navigation it did not survive.
+ */
+function FootBar({ tone, children }: { tone: "cta" | "deck"; children: React.ReactNode }) {
+  return (
+    <motion.div
+      className="absolute inset-x-0 bottom-0 z-20 border-t px-3 h-[44px] flex items-center justify-between gap-2"
+      style={
+        tone === "cta"
+          ? { borderColor: C.tealLine, background: C.paper }
+          : { borderColor: C.line2, background: C.canvas }
+      }
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 20, opacity: 0 }}
+      transition={{ duration: 0.32, ease: EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** The spacer that keeps a list from running beneath the foot bar, the
+ *  way the real page keeps a pb-32 under its fixed one. On a phone the
+ *  column already runs past the fold, so reserving the full bar there
+ *  would only push more of the list out of sight. */
+function BarSpacer() {
+  return <div aria-hidden className="shrink-0 h-3 sm:h-11" />;
+}
+
+/** A section's rule: teal label, then a hairline to the right edge.
+ *  Split from its body so a section whose body is a scrolling viewport
+ *  can keep the rule outside the clip. */
+function RuleLine({ label, icon: Icon }: { label: string; icon: LucideIcon }) {
+  return (
+    <header className="shrink-0 flex items-center gap-2">
+      <Icon className="size-3 shrink-0" style={{ color: C.tealInk }} strokeWidth={2.2} />
+      <h3 className="text-[8.5px] tracking-[0.2em] uppercase font-semibold shrink-0" style={{ color: C.tealInk }}>
+        {label}
+      </h3>
+      <span aria-hidden className="h-px flex-1" style={{ background: C.line }} />
+    </header>
+  );
+}
+
+/** A ruled section whose body sits still. */
+function Ruled({
+  label,
+  icon,
+  children,
+  className = "",
+}: {
+  label: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={"shrink-0 " + className}>
+      <RuleLine label={label} icon={icon} />
+      <div className="pt-2">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * The floor a scrolling list keeps on a phone.
+ *
+ * The frame is 250 to 272px tall there, and a column of shrink-0 blocks
+ * will happily squeeze a flex-1 list to nothing, which reads as a
+ * broken screen rather than a small one. Below `sm` the list holds a
+ * floor and the tail of the column runs under the shell's deliberate
+ * bottom peek instead; from `sm` up there is room and the list simply
+ * fills what is left.
+ */
+const LIST = "relative flex-1 min-h-[92px] sm:min-h-0 overflow-hidden";
+
+/**
+ * The project page's sections, given a rail.
+ *
+ * The keys and the labels are the page's own, from the six stops the
+ * unlock tour walks. Two of them stand down on a phone so the rail can
+ * never run past the frame's edge.
+ */
+const SECTIONS: Array<{ key: string; label: string; phone: boolean }> = [
+  { key: "facts", label: "Key details", phone: true },
+  { key: "owner", label: "The client", phone: false },
+  { key: "scope", label: "Scope of works", phone: true },
+  { key: "documents", label: "Documents", phone: true },
+  { key: "messaging", label: "Messages", phone: false },
+];
+
+function SectionRail({ active, hot }: { active: string; hot: string | null }) {
+  return (
+    <div className="relative shrink-0 flex items-center gap-1 overflow-hidden">
+      {SECTIONS.map((s) => {
+        const on = s.key === active;
+        const lit = s.key === "scope" && hot === "nav-scope";
+        return (
+          <span
+            key={s.key}
+            data-cursor={s.key === "scope" ? "nav-scope" : undefined}
+            className={
+              "shrink-0 rounded-full px-2 py-[3px] text-[8.5px] sm:text-[9px] whitespace-nowrap transition-colors duration-200 " +
+              (s.phone ? "inline-flex" : "hidden sm:inline-flex")
+            }
+            style={
+              on
+                ? { color: TONE.good.text, background: TONE.good.bg, fontWeight: 600 }
+                : lit
+                  ? { color: C.tealInk, background: C.tealWash, fontWeight: 600 }
+                  : { color: C.muted }
+            }
+          >
+            {s.label}
+          </span>
+        );
+      })}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-6 sm:hidden"
+        style={{ background: `linear-gradient(90deg, transparent, ${C.canvas})` }}
+      />
+    </div>
+  );
+}
+
 /* ══ 1 · Browse ═════════════════════════════════════════════════════ */
+
+type Kind = "single_dwelling" | "multi_dwelling" | "renovation" | "extension";
+
+/** Type name and mark, from the register card's own TYPE_META. Note
+ *  "Multi dwelling" is unhyphenated on the card even though the filter
+ *  hyphenates it. */
+const TYPE_META: Record<Kind, { label: string; Icon: LucideIcon }> = {
+  single_dwelling: { label: "Single dwelling", Icon: Home },
+  multi_dwelling: { label: "Multi dwelling", Icon: Building },
+  renovation: { label: "Renovation", Icon: Wrench },
+  extension: { label: "Extension", Icon: Layers },
+};
+
+/** The one-off spot price per type, from projects/pricing.ts. */
+const PRICE: Record<Kind, number> = {
+  renovation: 49,
+  extension: 99,
+  single_dwelling: 149,
+  multi_dwelling: 199,
+};
+
+/** The paper the drawn cover is multiplied onto, per type. */
+const TINT: Record<Kind, string> = {
+  single_dwelling: `linear-gradient(to bottom right, ${alpha(C.teal, 0.22)}, ${alpha(C.blue, 0.12)})`,
+  multi_dwelling: `linear-gradient(to bottom right, ${alpha(C.blue, 0.19)}, ${alpha(C.blue, 0.08)})`,
+  renovation: `linear-gradient(to bottom right, ${TONE.warn.bg}, ${TONE.risk.bg})`,
+  extension: `linear-gradient(to bottom right, ${alpha(C.tealInk, 0.19)}, ${alpha(C.teal, 0.14)})`,
+};
 
 type Docket = {
   id: string;
+  kind: Kind;
   title: string;
   where: string;
   budget: string;
@@ -101,13 +585,37 @@ type Docket = {
   specs: Array<[string, string]>;
   spots: number;
   taken: number;
+  /** The analysed line, only on rounds whose documents were read. */
+  pack?: string;
 };
 
-/** The register with the type filter applied, so every row is work
- *  this builder actually does. The single dwelling spot price is $149. */
-const ROUNDS: Docket[] = [
+/** Four live rounds, the shape browse returns before any filter. */
+const ALL: Docket[] = [
+  {
+    id: "northcote",
+    kind: "extension",
+    title: "Rear extension, Northcote",
+    where: "Northcote, VIC",
+    budget: "$500k to $1m",
+    cover: "/project-covers/ext-ground.webp",
+    specs: [["3", "beds"], ["2", "baths"], ["2", "storeys"]],
+    spots: 3,
+    taken: 1,
+  },
+  {
+    id: "coburg",
+    kind: "renovation",
+    title: "Kitchen and bathroom renovation, Coburg",
+    where: "Coburg, VIC",
+    budget: "Under $500k",
+    cover: "/project-covers/reno-internal.webp",
+    specs: [["4", "beds"], ["2", "baths"], ["1", "storey"]],
+    spots: 3,
+    taken: 0,
+  },
   {
     id: "pascoe",
+    kind: "single_dwelling",
     title: PROJECT,
     where: "Pascoe Vale, VIC",
     budget: "$1.5m to $2m",
@@ -115,9 +623,27 @@ const ROUNDS: Docket[] = [
     specs: [["4", "beds"], ["4", "baths"], ["3", "storeys"]],
     spots: 3,
     taken: 1,
+    pack: "9 tender documents analysed · 211 pages read · 242 scope items identified",
   },
   {
+    id: "reservoir",
+    kind: "multi_dwelling",
+    title: "Four townhouses, Reservoir",
+    where: "Reservoir, VIC",
+    budget: "$2m to $3m",
+    cover: "/project-covers/multi-4.webp",
+    specs: [["3", "beds"], ["2", "baths"], ["4", "dwellings"]],
+    spots: 3,
+    taken: 2,
+  },
+];
+
+/** What the same query returns once type=Single dwelling is applied. */
+const FILTERED: Docket[] = [
+  ALL[2]!,
+  {
     id: "brunswick",
+    kind: "single_dwelling",
     title: "New home, Brunswick East",
     where: "Brunswick East, VIC",
     budget: "$1m to $1.5m",
@@ -128,6 +654,7 @@ const ROUNDS: Docket[] = [
   },
   {
     id: "yarraville",
+    kind: "single_dwelling",
     title: "New home, Yarraville",
     where: "Yarraville, VIC",
     budget: "$1m to $1.5m",
@@ -138,14 +665,19 @@ const ROUNDS: Docket[] = [
   },
 ];
 
-function BrowseScreen() {
-  // The event: the analysed line arrives on the round the story
-  // follows, which is the one thing on the register a builder cannot
-  // get anywhere else.
-  const analysed = useBeat(820);
+function BrowseScreen({
+  picked,
+  filtered,
+  hot,
+}: {
+  picked: boolean;
+  filtered: boolean;
+  hot: string | null;
+}) {
+  const rows = filtered ? FILTERED : ALL;
 
   return (
-    <Frame crumb="Browse projects" avatar="MB">
+    <>
       <div className="shrink-0">
         <Kicker icon={Compass}>Browse</Kicker>
         <p
@@ -154,40 +686,58 @@ function BrowseScreen() {
         >
           Open tender rounds
         </p>
-        <p className="mt-1.5 text-[9.5px] sm:text-[10px] leading-[1.5]" style={{ color: C.muted }}>
-          12 projects live across Australia. 3 more running privately. 1 filter applied.
+        <p className="mt-1.5 text-[9.5px] sm:text-[10px] leading-[1.5] truncate" style={{ color: C.muted }}>
+          {filtered
+            ? "3 projects live across Australia. 3 more running privately. 1 filter applied."
+            : "12 projects live across Australia. 3 more running privately."}
         </p>
       </div>
 
-      <FilterBar />
+      <FilterBar picked={picked} hot={hot} />
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
-        <div className="flex flex-col gap-2">
-          {ROUNDS.map((d, i) => (
-            <motion.div
-              key={d.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.36, delay: 0.05 + i * 0.08, ease: EASE }}
-            >
-              <DocketRow d={d} analysed={i === 0 && analysed} />
-            </motion.div>
-          ))}
-        </div>
+      <div className={LIST}>
+        {/* The re-query genuinely replaces the result set, so the rows
+            are keyed on it and re-settle rather than morph. */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={filtered ? "filtered" : "all"}
+            className="flex flex-col gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            {rows.map((d, i) => (
+              <motion.div
+                key={d.id}
+                initial={filtered ? { opacity: 0, y: 8 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, delay: Math.min(i * 0.07, 0.24), ease: EASE }}
+              >
+                <DocketRow
+                  d={d}
+                  cursorKey={filtered && i === 0 ? "row" : undefined}
+                  hot={filtered && i === 0 && hot === "row"}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
         <ListFade />
       </div>
-    </Frame>
+    </>
   );
 }
 
-/** The GET form, ruled top and bottom, carrying the applied type. */
-function FilterBar() {
+/** The GET form. Choosing a type does nothing until Apply is pressed,
+ *  which is why the pointer presses both. */
+function FilterBar({ picked, hot }: { picked: boolean; hot: string | null }) {
   return (
     <div
-      className="shrink-0 grid items-center gap-2 border-y py-2"
+      className="shrink-0 grid items-center gap-2 border-y py-2.5"
       style={{
         borderColor: C.line,
-        gridTemplateColumns: "minmax(0,1.4fr) minmax(0,116px) auto",
+        gridTemplateColumns: "minmax(0,1.4fr) minmax(0,120px) auto",
       }}
     >
       <span
@@ -196,16 +746,28 @@ function FilterBar() {
       >
         Search by title
       </span>
+
       <span
-        className="flex items-center justify-between gap-1 h-7 px-2 rounded-[3px] border text-[10px]"
-        style={{ borderColor: C.tealLine, background: C.tealWash, color: C.tealInk }}
+        data-cursor="type"
+        className="flex items-center justify-between gap-1 h-7 px-2 rounded-[3px] border text-[10px] transition-colors duration-200"
+        style={{
+          borderColor: picked || hot === "type" ? C.tealLine : C.line2,
+          background: picked ? C.tealWash : C.paper,
+          color: picked ? C.tealInk : C.muted,
+        }}
       >
-        <span className="truncate">Single dwelling</span>
+        <span className="truncate">{picked ? "Single dwelling" : "Any type"}</span>
         <ChevronDown className="size-3 shrink-0" strokeWidth={2.2} />
       </span>
+
       <span
-        className="inline-flex items-center justify-center h-7 px-3.5 rounded-md text-[10.5px] font-semibold tracking-[0.04em]"
-        style={{ background: C.teal, color: C.onTeal, boxShadow: `0 0 0 1px ${C.tealLine}` }}
+        data-cursor="apply"
+        className="inline-flex items-center justify-center h-8 px-4 rounded-md text-[10.5px] font-semibold tracking-[0.04em]"
+        style={{
+          background: C.teal,
+          color: C.onTeal,
+          boxShadow: hot === "apply" ? `0 0 0 3px ${C.tealMuted}` : `0 0 0 1px ${C.tealLine}`,
+        }}
       >
         Apply
       </span>
@@ -214,24 +776,28 @@ function FilterBar() {
 }
 
 /** One docket: the tinted band with the drawn cover and the budget, the
- *  body, and the state rail. Three panels, one round per row. */
-function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
+ *  body, and the state rail. Hovering it lights the whole row and the
+ *  open-in arrow arrives, because the row is a link. */
+function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?: boolean }) {
+  const meta = TYPE_META[d.kind];
   const left = Math.max(0, d.spots - d.taken);
 
   return (
     <div
-      className="flex rounded-xl border overflow-hidden"
-      style={{ borderColor: C.line, background: C.paper, boxShadow: ELEV }}
+      data-cursor={cursorKey}
+      className="flex rounded-xl border overflow-hidden transition-colors duration-200"
+      style={{
+        borderColor: hot ? C.tealLine : C.line,
+        background: hot ? C.tealWash : C.paper,
+        boxShadow: ELEV,
+      }}
     >
       {/* the band — the type's paper with the ink drawing multiplied on */}
-      <div className="relative shrink-0 w-[80px] sm:w-[98px] border-r overflow-hidden" style={{ borderColor: C.line }}>
-        <span
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom right, ${alpha(C.teal, 0.22)}, ${alpha(C.blue, 0.12)})`,
-          }}
-        />
+      <div
+        className="relative shrink-0 w-[82px] sm:w-[100px] border-r overflow-hidden"
+        style={{ borderColor: C.line }}
+      >
+        <span aria-hidden className="absolute inset-0" style={{ background: TINT[d.kind] }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={d.cover}
@@ -241,7 +807,7 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
         />
         <span
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-[36px]"
+          className="absolute inset-x-0 bottom-0 h-[38px]"
           style={{
             background: `linear-gradient(to top, ${alpha(C.paper, 0.94)} 40%, ${alpha(C.paper, 0.5)}, transparent)`,
           }}
@@ -250,8 +816,8 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
           className="absolute top-1 left-1 inline-flex items-center gap-[3px] px-[3px] py-[1px] rounded-[3px] border text-[6px] sm:text-[6.5px] tracking-[0.06em] uppercase font-semibold whitespace-nowrap"
           style={{ borderColor: C.line, background: alpha(C.paper, 0.8), color: C.ink }}
         >
-          <Home className="size-[8px]" style={{ color: C.tealInk }} strokeWidth={2.2} />
-          Single dwelling
+          <meta.Icon className="size-[8px]" style={{ color: C.tealInk }} strokeWidth={2.2} />
+          {meta.label}
         </span>
         <div className="absolute left-1.5 bottom-1">
           <p className="text-[6px] tracking-[0.16em] uppercase font-semibold" style={{ color: C.muted }}>
@@ -267,8 +833,11 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
       </div>
 
       {/* the body — title, locality, the specification */}
-      <div className="min-w-0 flex-1 px-2 py-1.5 flex flex-col justify-center gap-1">
-        <p className="font-ui font-semibold text-[10.5px] sm:text-[11.5px] leading-[1.3] truncate" style={{ color: C.ink }}>
+      <div className="min-w-0 flex-1 px-2.5 py-2 flex flex-col justify-center gap-1">
+        <p
+          className="font-ui font-semibold text-[10.5px] sm:text-[11.5px] leading-[1.3] truncate"
+          style={{ color: C.ink }}
+        >
           {d.title}
         </p>
         <p className="flex items-center gap-1 text-[9px] min-w-0" style={{ color: C.muted }}>
@@ -291,26 +860,17 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
             </span>
           ))}
         </div>
-        {analysed ? (
-          <motion.div
-            className="overflow-hidden"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            transition={{ duration: 0.38, ease: EASE }}
-          >
-            <p className="flex items-center gap-1 pt-[2px] text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
-              <BookOpenCheck className="size-[10px] shrink-0" />
-              <span className="truncate">
-                9 tender documents analysed · 211 pages read · 242 scope items identified
-              </span>
-            </p>
-          </motion.div>
+        {d.pack ? (
+          <p className="flex items-center gap-1 text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
+            <BookOpenCheck className="size-[10px] shrink-0" />
+            <span className="truncate">{d.pack}</span>
+          </p>
         ) : null}
       </div>
 
       {/* the state rail — the dots first, the fee after */}
       <div
-        className="shrink-0 w-[86px] sm:w-[100px] border-l px-1.5 py-1.5 overflow-hidden flex flex-col items-end justify-center gap-1"
+        className="shrink-0 w-[86px] sm:w-[102px] border-l px-1.5 py-2 overflow-hidden flex flex-col items-end justify-center gap-1"
         style={{ borderColor: C.line }}
       >
         <span className="inline-flex items-center gap-1">
@@ -332,8 +892,18 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
           </span>
         </span>
         <span className="text-[8px] tabular-nums" style={{ color: C.dim }}>
-          $149 to enter
+          ${PRICE[d.kind]} to enter
         </span>
+        <motion.span
+          className="inline-flex items-center gap-1 text-[8px] font-semibold"
+          style={{ color: C.tealInk }}
+          initial={false}
+          animate={{ opacity: hot ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          Open the project
+          <ArrowUpRight className="size-[10px]" strokeWidth={2.4} />
+        </motion.span>
       </div>
     </div>
   );
@@ -341,7 +911,7 @@ function DocketRow({ d, analysed }: { d: Docket; analysed?: boolean }) {
 
 /* ══ 2 · The project ════════════════════════════════════════════════ */
 
-/** The pre-unlock fact sheet, now read with the address on it. */
+/** The fact sheet, read with the street address on it. */
 const FACTS: Array<[string, string]> = [
   ["Type", "Single dwelling"],
   ["Storeys", "3"],
@@ -351,55 +921,34 @@ const FACTS: Array<[string, string]> = [
   ["Budget", "$1.5m to $2m"],
 ];
 
-/** The register with its real filenames. Nine on the round; the three
- *  a builder opens first are the ones on screen. */
+/**
+ * The register, in the order a builder reads a document set, with the
+ * real filenames. Nine on this round, which is why the pointer scrolls
+ * it twice rather than pretending three is the set.
+ */
 const DOCS: Array<[string, string, string]> = [
   ["Architectural plans", "Architectural Drawings Rev D.pdf", "8.4 MB"],
+  ["Architectural plans", "Site Plan and Setout Rev D.pdf", "2.2 MB"],
   ["Structural engineering", "Structural Drawings Rev C.pdf", "5.7 MB"],
   ["Civil engineering", "Civil and Stormwater Design.pdf", "3.1 MB"],
+  ["Project specifications", "Specification and Finishes Schedule.pdf", "1.6 MB"],
+  ["Land report", "Feature and Level Survey.pdf", "0.9 MB"],
+  ["Soil report", "Geotechnical Site Investigation.pdf", "1.1 MB"],
+  ["Energy efficiency", "NatHERS Assessment and Stamped Plans.pdf", "2.8 MB"],
+  ["Town planning", "Planning Permit and Endorsed Plans.pdf", "4.3 MB"],
 ];
 
-function ProjectScreen() {
-  // The event: the round's own bar arrives at the foot of the page.
-  const bar = useBeat(700);
-
+function ProjectScreen({
+  sec,
+  docY,
+  hot,
+}: {
+  sec: string;
+  docY: number;
+  hot: string | null;
+}) {
   return (
-    <Frame
-      crumb={PROJECT}
-      avatar="MB"
-      // The round's own bar is fixed to the foot of the real page, so it
-      // is pinned here too: on a short frame it stays legible while the
-      // register behind it clips, which is what the app does.
-      overlay={
-        bar ? (
-          <motion.div
-            className="absolute inset-x-0 bottom-0 z-20 border-t px-3 py-1.5 flex items-center justify-between gap-2"
-            style={{ borderColor: C.tealLine, background: C.paper }}
-            initial={{ y: 22, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.4, ease: EASE }}
-          >
-            <div className="min-w-0 flex items-center gap-2">
-              <span
-                className="shrink-0 inline-flex size-6 items-center justify-center rounded-md border"
-                style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
-              >
-                <FileText className="size-3" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[10.5px] font-semibold leading-tight" style={{ color: C.ink }}>
-                  Ready to tender on this project?
-                </p>
-                <p className="mt-[1px] text-[8.5px] leading-tight truncate" style={{ color: C.dim }}>
-                  Twelve short modules, about thirty minutes.
-                </p>
-              </div>
-            </div>
-            <TealBtn>Start your tender</TealBtn>
-          </motion.div>
-        ) : null
-      }
-    >
+    <>
       <div className="shrink-0">
         <span
           className="inline-flex items-center gap-1.5 text-[8.5px] tracking-[0.22em] uppercase font-semibold"
@@ -409,12 +958,12 @@ function ProjectScreen() {
           You hold a spot
         </span>
         <p
-          className="mt-1 font-ui font-semibold uppercase text-[16px] sm:text-[19px] leading-[0.95] tracking-[-0.018em]"
+          className="mt-1 font-ui font-semibold uppercase text-[16px] sm:text-[19px] leading-[0.95] tracking-[-0.018em] truncate"
           style={{ color: C.ink }}
         >
           {PROJECT}
         </p>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[10px] min-w-0" style={{ color: C.muted }}>
+        <p className="mt-1.5 flex items-center gap-1.5 text-[9.5px] sm:text-[10px] min-w-0" style={{ color: C.muted }}>
           <MapPin className="size-3 shrink-0" style={{ color: C.tealInk }} />
           <span className="truncate font-ui font-medium" style={{ color: C.ink }}>
             18 Miller Street, Pascoe Vale VIC 3044
@@ -422,14 +971,18 @@ function ProjectScreen() {
         </p>
       </div>
 
-      <Ruled label="Key details" icon={Home}>
-        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+      <SectionRail active={sec} hot={hot} />
+
+      {/* On a phone the register is worth more than the fact sheet, and
+          there is only room for one of them. */}
+      <Ruled label="Key details" icon={Home} className="hidden sm:block">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-2">
           {FACTS.map(([k, v]) => (
             <div key={k} className="min-w-0">
               <p className="text-[7.5px] tracking-[0.14em] uppercase" style={{ color: C.dim }}>
                 {k}
               </p>
-              <p className="mt-0.5 font-ui font-semibold text-[11px] leading-tight truncate" style={{ color: C.ink }}>
+              <p className="mt-0.5 font-ui font-semibold text-[10.5px] sm:text-[11px] leading-tight truncate" style={{ color: C.ink }}>
                 {v}
               </p>
             </div>
@@ -437,32 +990,27 @@ function ProjectScreen() {
         </div>
       </Ruled>
 
-      <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
-        <Ruled label="Documents · 9" icon={FileText}>
-          <div className="mb-1.5">
-            <span
-              className="inline-flex items-center gap-1.5 h-6 px-2 rounded-sm border text-[9.5px] font-medium"
-              style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
-            >
-              <Download className="size-3" />
-              Download all
-              <span style={{ color: C.dim }}>· 9</span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
+      <div className="flex-1 min-h-[114px] sm:min-h-0 flex flex-col">
+        <RuleLine label="Documents · 9" icon={FileText} />
+        <div className={LIST}>
+          <motion.div
+            className="flex flex-col gap-1.5 pt-2"
+            initial={false}
+            animate={{ y: docY }}
+            transition={docY === 0 ? { duration: 0 } : SCROLL}
+          >
             {DOCS.map(([cat, name, size], i) => (
-              <motion.div
-                key={name}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.34, delay: 0.06 + i * 0.07, ease: EASE }}
-              >
+              <div key={name}>
                 <p className="text-[7.5px] tracking-[0.18em] uppercase mb-1" style={{ color: C.dim }}>
                   {cat}
                 </p>
                 <div
-                  className="flex items-center justify-between gap-2 px-2 py-1 rounded-sm border"
-                  style={{ borderColor: C.line, background: C.wash }}
+                  data-cursor={i === 0 ? "doc-1" : undefined}
+                  className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-sm border transition-colors duration-200"
+                  style={{
+                    borderColor: i === 0 && hot === "doc-1" ? C.tealLine : C.line,
+                    background: i === 0 && hot === "doc-1" ? C.tealWash : C.wash,
+                  }}
                 >
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium truncate" style={{ color: C.ink }}>
@@ -479,117 +1027,107 @@ function ProjectScreen() {
                     <Download className="size-2.5" />
                   </span>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </div>
-        </Ruled>
-        <ListFade />
+          </motion.div>
+          <ListFade />
+        </div>
       </div>
 
-      {/* The app keeps a pb-32 spacer under its fixed bar; the mini
-          keeps its own so the register never runs beneath it. */}
-      <div aria-hidden className="shrink-0" style={{ height: 40 }} />
-    </Frame>
-  );
-}
-
-/** A ruled section: teal label, then a hairline to the right edge. */
-function Ruled({
-  label,
-  icon: Icon,
-  children,
-}: {
-  label: string;
-  icon: LucideIcon;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="min-h-0 shrink-0">
-      <header className="flex items-center gap-2">
-        <Icon className="size-3 shrink-0" style={{ color: C.tealInk }} strokeWidth={2.2} />
-        <h3 className="text-[8.5px] tracking-[0.2em] uppercase font-semibold shrink-0" style={{ color: C.tealInk }}>
-          {label}
-        </h3>
-        <span aria-hidden className="h-px flex-1" style={{ background: C.line }} />
-      </header>
-      <div className="pt-2">{children}</div>
-    </section>
+      <BarSpacer />
+    </>
   );
 }
 
 /* ══ 3 · The scope ══════════════════════════════════════════════════ */
 
-/** Four of the round's twenty nine divisions. Footings is open because
- *  it is the one the builder walks two screens later. */
+/** Three of the round's twenty nine divisions. Footings is the one the
+ *  builder opens here and walks two screens later. */
 const DIVISIONS: Array<{ key: string; label: string; count: string }> = [
   { key: "footings", label: "Footings and ground floor structure", count: "7 items" },
   { key: "concrete", label: "Concrete, formwork and reinforcement", count: "9 items" },
   { key: "steel", label: "Structural steel and framing", count: "12 items" },
-  { key: "roofing", label: "Roofing, gutters and downpipes", count: "10 items" },
 ];
 
-function ScopeScreen() {
+function ScopeScreen({
+  sec,
+  open,
+  cite,
+  hot,
+}: {
+  sec: string;
+  open: string | null;
+  cite: boolean;
+  hot: string | null;
+}) {
   return (
-    <Frame crumb="Scope of works" avatar="MB">
-      <div className="shrink-0">
-        <Kicker icon={Layers}>Scope of works</Kicker>
-        {/* The stats band on the real page: no boxes, centred figures
-            over quiet labels, ruled above and below. */}
-        <div className="mt-2 grid grid-cols-3 border-y py-2.5" style={{ borderColor: C.line }}>
-          {[
-            ["Scope items", 228],
-            ["Trades", 29],
-            ["Pages read", 211],
-          ].map(([l, v], i) => (
-            <div
-              key={l as string}
-              className="px-2 text-center min-w-0"
-              style={i === 0 ? undefined : { borderLeft: `1px solid ${C.line}` }}
-            >
-              <p
-                className="font-ui font-semibold text-[20px] sm:text-[26px] leading-none tabular-nums"
-                style={{ color: C.ink }}
-              >
-                {i === 0 ? <CountUp to={v as number} /> : (v as number)}
-              </p>
-              <p className="mt-1.5 text-[7.5px] tracking-[0.18em] uppercase font-semibold" style={{ color: C.dim }}>
-                {l as string}
-              </p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2 text-[9.5px] leading-[1.5]" style={{ color: C.muted }}>
-          Every item below goes into your tender. When you tender, you mark what your price does with each one.
+    <>
+      <SectionRail active={sec} hot={hot} />
+
+      <Ruled label="Scope of works" icon={BookOpenCheck}>
+        <p className="hidden sm:block text-[10px] leading-[1.55] max-w-[62ch]" style={{ color: C.muted }}>
+          We read every document on this round and wrote the scope of works from them. Every
+          builder prices this same list, item by item.
         </p>
+      </Ruled>
+
+      {/* The stats band on the real page: no boxes, centred figures over
+          quiet labels, ruled above and below. */}
+      <div className="shrink-0 grid grid-cols-3 border-y py-3" style={{ borderColor: C.line }}>
+        {[
+          ["Scope items", 228],
+          ["Trades", 29],
+          ["Pages read", 211],
+        ].map(([l, v], i) => (
+          <div
+            key={l as string}
+            className="px-2 text-center min-w-0"
+            style={i === 0 ? undefined : { borderLeft: `1px solid ${C.line}` }}
+          >
+            <p
+              className="font-ui font-semibold text-[20px] sm:text-[26px] leading-none tabular-nums"
+              style={{ color: C.ink }}
+            >
+              {i === 0 ? <CountUp to={v as number} /> : (v as number)}
+            </p>
+            <p className="mt-1.5 text-[7.5px] tracking-[0.18em] uppercase font-semibold" style={{ color: C.dim }}>
+              {l as string}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      <div className={LIST}>
         <div className="flex flex-col gap-1.5">
-          {DIVISIONS.map((d, i) => (
-            <motion.div
+          {DIVISIONS.map((d) => (
+            <Division
               key={d.key}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.34, delay: 0.05 + i * 0.06, ease: EASE }}
+              label={d.label}
+              count={d.count}
+              cursorKey={`div-${d.key}`}
+              hot={hot === `div-${d.key}`}
+              open={open === d.key}
             >
-              <Division label={d.label} count={d.count} open={d.key === "footings"}>
-                <ScopeLine
-                  label="Waffle pod slab"
-                  plain="A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab."
-                  cite="Structural S02, page 4, Rev B"
-                />
-                <ScopeLine
-                  label="Piers and screw piles"
-                  plain="Deep supports drilled or screwed down to solid ground where the surface soil cannot carry the home."
-                  cite="Geotechnical Report, page 11"
-                />
-              </Division>
-            </motion.div>
+              <ScopeLine
+                label="Waffle pod slab"
+                plain="A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab."
+                cite="Structural S02, page 4, Rev B"
+                citeKey={`cite-${d.key}`}
+                citeHot={cite && open === d.key}
+              />
+              <ScopeLine
+                label="Piers and screw piles"
+                plain="Deep supports drilled or screwed down to solid ground where the surface soil cannot carry the home."
+                cite="Geotechnical Report, page 11"
+              />
+            </Division>
           ))}
         </div>
         <ListFade />
       </div>
-    </Frame>
+
+      <BarSpacer />
+    </>
   );
 }
 
@@ -599,10 +1137,8 @@ function ScopeScreen() {
  * result. Ease out cubic, so it decelerates onto the real total.
  */
 function CountUp({ to }: { to: number }) {
-  const reduced = useReducedMotion();
   const [n, setN] = React.useState(0);
   React.useEffect(() => {
-    if (reduced) return;
     const started = performance.now();
     const dur = 820;
     let frame = 0;
@@ -613,8 +1149,8 @@ function CountUp({ to }: { to: number }) {
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [to, reduced]);
-  return <>{reduced ? to : n}</>;
+  }, [to]);
+  return <>{n}</>;
 }
 
 /* ══ 4 · Your tender ════════════════════════════════════════════════ */
@@ -656,15 +1192,19 @@ const LINES: Array<{ id: string; label: string; plain: string; cite: string }> =
   },
 ];
 
-function TenderScreen() {
-  // The event: one line is settled in a single tap. The chip fills, the
-  // card takes the teal wash and drops its lift, and the header counter
-  // and the track move on the same frame, exactly as the deck does it.
-  const marked = useBeat(880);
-  const answered = marked ? 19 : 18;
-
+function TenderScreen({
+  y,
+  marked,
+  answered,
+  hot,
+}: {
+  y: number;
+  marked: readonly string[];
+  answered: number;
+  hot: string | null;
+}) {
   return (
-    <Frame crumb="Tender · the schedule" avatar="MB">
+    <>
       <div className="shrink-0">
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0 overflow-hidden whitespace-nowrap">
@@ -686,53 +1226,62 @@ function TenderScreen() {
         <p className="text-[8.5px] tracking-[0.18em] uppercase font-semibold tabular-nums" style={{ color: C.dim }}>
           <span style={{ color: C.tealInk }}>5.1</span> · The tender schedule · 4 of 9
         </p>
-        <h2 className="mt-1 font-ui font-semibold tracking-[-0.02em] text-[13px] sm:text-[15px] leading-[1.25]" style={{ color: C.ink }}>
+        <h2
+          className="mt-1.5 font-ui font-semibold tracking-[-0.02em] text-[14px] sm:text-[17px] leading-[1.25]"
+          style={{ color: C.ink }}
+        >
           Footings and ground floor structure
         </h2>
-        <p className="mt-1 text-[9.5px] leading-[1.5]" style={{ color: C.muted }}>
+        <p className="hidden sm:block mt-1.5 text-[10px] leading-[1.55] max-w-[58ch]" style={{ color: C.muted }}>
           3 lines from the client&rsquo;s documents. Mark what your price does with each one.
         </p>
       </div>
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
-        <div className="flex flex-col gap-1.5">
-          {LINES.map((line, i) => (
-            <motion.div
-              key={line.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.34, delay: 0.05 + i * 0.07, ease: EASE }}
-            >
+      <div className={LIST}>
+        <motion.div
+          className="flex flex-col gap-2"
+          initial={false}
+          animate={{ y }}
+          transition={y === 0 ? { duration: 0 } : SCROLL}
+        >
+          {LINES.map((line) => {
+            const on = marked.includes(line.id);
+            return (
               <Card
-                tone={i === 0 && marked ? "accent" : "plain"}
-                className="px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-300"
+                key={line.id}
+                tone={on ? "accent" : "plain"}
+                className="px-3 py-3 transition-[background-color,border-color,box-shadow] duration-300"
               >
-                <p className="text-[10.5px] font-ui font-semibold leading-[1.35]" style={{ color: C.ink }}>
+                <p className="text-[11px] sm:text-[11.5px] font-ui font-semibold leading-[1.35]" style={{ color: C.ink }}>
                   {line.label}
                 </p>
-                <p className="mt-0.5 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+                <p className="mt-1.5 text-[9.5px] leading-[1.5] max-w-[56ch]" style={{ color: C.muted }}>
                   {line.plain}
                 </p>
-                <p className="mt-0.5 text-[8.5px] truncate" style={{ color: C.dim }}>
+                <p className="mt-1.5 text-[8.5px] truncate" style={{ color: C.dim }}>
                   {line.cite}
                 </p>
-                <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   {MARKS.map((m) => (
                     <Mark
                       key={m.key}
                       label={m.label}
                       tone={m.tone}
-                      on={i === 0 && marked && m.key === "included"}
+                      on={on && m.key === "included"}
+                      cursorKey={m.key === "included" ? `${line.id}-included` : undefined}
+                      hot={hot === `${line.id}-${m.key}`}
                     />
                   ))}
                 </div>
               </Card>
-            </motion.div>
-          ))}
-        </div>
+            );
+          })}
+        </motion.div>
         <ListFade />
       </div>
-    </Frame>
+
+      <BarSpacer />
+    </>
   );
 }
 
@@ -758,72 +1307,18 @@ const MODULES: Array<[string, string, string]> = [
   ["12", "Sign-off", "5/5"],
 ];
 
-function SubmitScreen() {
-  // The event: the two-step submit resolves and the tender seals. It is
-  // the one thing on this screen that cannot be undone by editing, so
-  // the control is replaced rather than merely ticked.
-  const sealed = useBeat(1750);
-
+function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }) {
   return (
-    <Frame
-      crumb="Tender submission"
-      avatar="MB"
-      right={
-        <span className="inline-flex items-center gap-1 text-[9.5px]" style={{ color: C.dim }}>
-          <Check className="size-2.5" strokeWidth={3} style={{ color: C.tealInk }} />
-          Saved
-        </span>
-      }
-      // The deck's footer controls are ruled off at the foot of the
-      // page, and sealing is the whole point of this screen, so the
-      // control keeps its place at every frame height.
-      overlay={
-        <div
-          className="absolute inset-x-0 bottom-0 z-20 border-t px-3 py-1.5 h-[42px] flex items-center"
-          style={{ borderColor: C.line, background: C.canvas }}
-        >
-          {sealed ? (
-            <motion.div
-              className="flex items-center gap-2"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.42, ease: EASE }}
-            >
-              <span
-                className="inline-flex size-6 items-center justify-center rounded-full"
-                style={{ background: C.teal, color: C.onTeal }}
-              >
-                <Check className="size-3.5" strokeWidth={3} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-ui font-semibold leading-tight" style={{ color: C.ink }}>
-                  Tender submitted
-                </p>
-                <p className="text-[8.5px] leading-tight truncate" style={{ color: C.dim }}>
-                  Sealed and verifiable. Send it anywhere.
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <TealBtn>
-                Submit tender
-                <ArrowRight className="size-3" />
-              </TealBtn>
-              <span className="text-[9.5px]" style={{ color: C.dim }}>
-                Save and exit
-              </span>
-            </div>
-          )}
-        </div>
-      }
-    >
+    <>
       <div className="shrink-0">
         <Track pct={100} />
         <div className="mt-1.5">
           <Kicker>Review and submit</Kicker>
         </div>
-        <p className="mt-0.5 text-[12px] font-ui font-semibold leading-tight tracking-[-0.015em]" style={{ color: C.ink }}>
+        <p
+          className="hidden sm:block mt-1 text-[13px] font-ui font-semibold leading-tight tracking-[-0.015em]"
+          style={{ color: C.ink }}
+        >
           Your tender is ready. It reads well.
         </p>
       </div>
@@ -832,10 +1327,7 @@ function SubmitScreen() {
           it on white; the kit has no white, so it is the paper with the
           2px ink rule and a lift, which is what makes it read as a page
           rather than another card. */}
-      <div
-        className="shrink-0 rounded-[4px] px-3 py-1.5"
-        style={{ background: C.paper, boxShadow: ELEV }}
-      >
+      <div className="shrink-0 rounded-[4px] px-3 py-2" style={{ background: C.paper, boxShadow: ELEV }}>
         <div className="flex items-center justify-between gap-3">
           <span className="font-ui font-bold text-[10px] tracking-[-0.01em]" style={{ color: C.ink }}>
             BuilderHQ
@@ -845,7 +1337,7 @@ function SubmitScreen() {
           </span>
         </div>
         <div className="mt-1 h-[2px]" style={{ background: TONE.ink.text }} />
-        <div className="mt-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <div className="min-w-0">
             <p className="font-ui text-[11.5px] leading-[1.15] truncate" style={{ color: C.ink }}>
               {PROJECT}
@@ -866,15 +1358,12 @@ function SubmitScreen() {
             </p>
           </div>
         </div>
-        <div className="mt-1 pt-1 border-t flex items-center justify-end" style={{ borderColor: C.line }}>
-          <span className="inline-flex items-center gap-1 text-[8.5px] leading-none font-semibold" style={{ color: C.tealInk }}>
-            Read the full document
-            <ArrowRight className="size-2.5" />
-          </span>
-        </div>
       </div>
 
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      {/* The ledger stands down on a phone. Everything else on this
+          screen can be clipped; the control the pointer presses cannot,
+          so the ledger yields its space rather than the footer. */}
+      <div className="hidden sm:block relative flex-1 min-h-0 overflow-hidden">
         <div className="border-t" style={{ borderColor: C.line }}>
           {MODULES.map(([n, title, count]) => (
             <div key={n} className="flex items-center gap-2 py-[2px] border-b" style={{ borderColor: C.line }}>
@@ -904,21 +1393,70 @@ function SubmitScreen() {
         <ListFade />
       </div>
 
-      {/* The ledger must not run beneath the pinned control. */}
-      <div aria-hidden className="shrink-0" style={{ height: 40 }} />
-    </Frame>
+      {/* The two-step submit, inline where the app puts it. The block
+          holds one height for both states, so the ledger above it never
+          reflows while the controls change. */}
+      <div
+        className="shrink-0 mt-auto relative border-t h-[62px] sm:h-[72px]"
+        style={{ borderColor: C.line }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {confirm ? (
+            <motion.div
+              key="confirm"
+              className="absolute inset-0 flex flex-col justify-center gap-1.5"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.28, ease: EASE }}
+            >
+              <p className="text-[9px] sm:text-[9.5px] leading-[1.45] line-clamp-2 max-w-[56ch]" style={{ color: C.ink }}>
+                Submitting seals your tender for this round. The owner receives it exactly as this
+                review reads, and it can only change by withdrawing.
+              </p>
+              <div className="flex items-center gap-3">
+                <Press k="submit-confirm" hot={hot === "submit-confirm"}>
+                  <TealBtn>
+                    Submit tender
+                    <ArrowRight className="size-3" />
+                  </TealBtn>
+                </Press>
+                <span className="text-[9.5px]" style={{ color: C.muted }}>
+                  Keep editing
+                </span>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="cta"
+              className="absolute inset-0 flex items-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.28, ease: EASE }}
+            >
+              <Press k="submit" hot={hot === "submit"}>
+                <TealBtn>
+                  Submit tender
+                  <ArrowRight className="size-3" />
+                </TealBtn>
+              </Press>
+              <span className="text-[9.5px]" style={{ color: C.dim }}>
+                Save and exit
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }
 
 /* ══ 6 · Won ════════════════════════════════════════════════════════ */
 
-function WonScreen() {
-  // The event: the client's band arrives under the decision. It is the
-  // whole commercial argument in one rule, so it lands on its own.
-  const client = useBeat(760);
-
+function WonScreen({ hot }: { hot: string | null }) {
   return (
-    <Frame crumb="Your tender" avatar="MB">
+    <>
       <div className="shrink-0">
         <div className="flex items-center gap-2">
           <Kicker>Tender</Kicker>
@@ -928,7 +1466,7 @@ function WonScreen() {
           </Pill>
         </div>
         <p
-          className="mt-2 font-ui font-semibold uppercase text-[17px] sm:text-[20px] leading-[0.95] tracking-[-0.018em]"
+          className="mt-2 font-ui font-semibold uppercase text-[17px] sm:text-[20px] leading-[0.95] tracking-[-0.018em] truncate"
           style={{ color: C.ink }}
         >
           {PROJECT}
@@ -936,59 +1474,41 @@ function WonScreen() {
         <p className="mt-1.5 text-[10px] tabular-nums truncate" style={{ color: C.muted }}>
           {US} · $753,500 inc GST
         </p>
-        <p className="mt-2 text-[10.5px] leading-[1.6] max-w-[52ch]" style={{ color: C.muted }}>
-          The owner went with you. Well earned. Reach out, agree the contract, and take it from here.
+        <p className="mt-2.5 text-[10px] sm:text-[10.5px] leading-[1.6] max-w-[54ch]" style={{ color: C.muted }}>
+          The owner went with you. Well earned. Reach out, agree the contract, and take it from
+          here.
         </p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden">
-        {client ? (
-          <motion.div
-            className="border-y py-2.5"
-            style={{ borderColor: C.tealLine }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.44, ease: EASE }}
+        <div className="border-y py-3" style={{ borderColor: C.tealLine }}>
+          <p className="text-[8.5px] tracking-[0.16em] uppercase font-semibold" style={{ color: C.tealInk }}>
+            Your client
+          </p>
+          <p className="mt-1.5 text-[10px] sm:text-[10.5px] leading-[1.6] max-w-[54ch]" style={{ color: C.ink }}>
+            Agree the contract and insurances directly. Your conversation stays in Messages.
+          </p>
+          <p
+            className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold"
+            style={{ color: C.tealInk }}
           >
-            <p className="text-[8.5px] tracking-[0.16em] uppercase font-semibold" style={{ color: C.tealInk }}>
-              Your client
-            </p>
-            <p className="mt-1.5 text-[10.5px] leading-[1.6] max-w-[52ch]" style={{ color: C.ink }}>
-              Agree the contract and insurances directly. Your conversation stays in Messages.
-            </p>
-            <p className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: C.tealInk }}>
-              <Check className="size-3 shrink-0" strokeWidth={3} />
-              No commission on what you win
-            </p>
-          </motion.div>
-        ) : null}
+            <Check className="size-3 shrink-0" strokeWidth={3} />
+            No commission on what you win
+          </p>
+        </div>
       </div>
 
       <div className="shrink-0 flex items-center gap-3">
-        <TealBtn>
-          <Download className="size-3" />
-          Tender document (PDF)
-        </TealBtn>
+        <Press k="pdf" hot={hot === "pdf"}>
+          <TealBtn>
+            <Download className="size-3" />
+            Tender document (PDF)
+          </TealBtn>
+        </Press>
         <span className="text-[9.5px] truncate" style={{ color: C.dim }}>
           Sealed and verifiable. Send it anywhere.
         </span>
       </div>
-    </Frame>
+    </>
   );
 }
-
-/* ══ The journey ════════════════════════════════════════════════════ */
-
-/**
- * Six steps, 19.4 seconds. The holds are budgeted against reading load:
- * the register and the schedule carry the most to read and hold longest,
- * the outcome is one sentence and holds least.
- */
-export const BUILDER_JOURNEY: HeroStep[] = [
-  { key: "browse", label: "Browse", hold: 3400, Screen: BrowseScreen },
-  { key: "project", label: "The project", hold: 3200, Screen: ProjectScreen },
-  { key: "scope", label: "The scope", hold: 3400, Screen: ScopeScreen },
-  { key: "tender", label: "Your tender", hold: 3400, Screen: TenderScreen },
-  { key: "submit", label: "Submit", hold: 3200, Screen: SubmitScreen },
-  { key: "won", label: "Won", hold: 2800, Screen: WonScreen },
-];

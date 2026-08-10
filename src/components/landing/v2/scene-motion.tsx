@@ -34,8 +34,11 @@ import { motion, useReducedMotion } from "motion/react";
 /* ── Script ──────────────────────────────────────────────────────── */
 
 export type Beat<S> =
-  /** Glide to the centre of `[data-cursor="<key>"]` inside the scene. */
-  | { move: string }
+  /** Glide to the centre of `[data-cursor="<key>"]` inside the scene.
+   *  `ms` overrides the travel time: a long reach across a screen wants
+   *  longer than a nudge to the next row, and matching the two is most
+   *  of what makes a pointer look like a hand. */
+  | { move: string; ms?: number }
   /** Press and release. Purely visual; the state change is a `set`. */
   | { click: true }
   /** Merge a patch into the scene's state bag. */
@@ -141,7 +144,7 @@ export function useSceneScript<S extends object>({
         const at = centreOf(beat.move);
         if (at) {
           setCursor((c) => ({ ...c, ...at, shown: true, down: false, snap: !c.shown }));
-          hold = shownRef.current ? DUR.move : DUR.cursor;
+          hold = shownRef.current ? (beat.ms ?? DUR.move) : DUR.cursor;
           shownRef.current = true;
         }
       } else if ("click" in beat) {
@@ -198,8 +201,8 @@ export function SceneCursor({ cursor, clicks }: { cursor: Cursor; clicks: number
         scale: cursor.down ? 0.86 : 1,
       }}
       transition={{
-        x: cursor.snap ? { duration: 0 } : { type: "spring", stiffness: 170, damping: 21, mass: 0.9 },
-        y: cursor.snap ? { duration: 0 } : { type: "spring", stiffness: 170, damping: 21, mass: 0.9 },
+        x: cursor.snap ? { duration: 0 } : { type: "spring", stiffness: 120, damping: 20, mass: 1.05 },
+        y: cursor.snap ? { duration: 0 } : { type: "spring", stiffness: 120, damping: 20, mass: 1.05 },
         opacity: { duration: 0.24 },
         scale: { duration: 0.12 },
       }}
