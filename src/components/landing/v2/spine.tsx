@@ -27,6 +27,7 @@ import { SectionHead } from "./section-head";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 import { AppScene } from "./app-scenes";
+import { useCardInView } from "./scene-motion";
 
 /** Sticky geometry: every card pins at the same offset, so each
  *  incoming card settles exactly over the previous one — full cover. */
@@ -46,6 +47,12 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
   // Pin each card vertically centred between the header and the viewport
   // bottom (equal gap top and bottom) rather than jammed under the nav.
   // cardH mirrors the CSS height: clamp(476, 85dvh-82, 714).
+  // Which card the visitor is actually reading. The deck pins all four
+  // at the same offset, so a scene cannot infer this from its own
+  // visibility, and without it four timelines would run at once behind
+  // each other.
+  const { active, setCardRef } = useCardInView(copy.steps.length);
+
   const [deckTop, setDeckTop] = React.useState(TOP_BASE);
   React.useEffect(() => {
     const compute = () => {
@@ -78,6 +85,7 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
               return (
                 <div
                   key={step.title}
+                  ref={setCardRef(i)}
                   className="lg:sticky mb-6 lg:mb-[30vh] last:mb-0 lg:last:mb-0"
                   style={{ top: deckTop, zIndex: 10 + i }}
                 >
@@ -123,7 +131,7 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
 
                     {/* ── Product side — the real UI, edge to edge ── */}
                     <div className="relative min-h-[340px] lg:min-h-0 lg:h-full border-t lg:border-t-0 lg:border-l border-[rgba(15,25,35,0.07)]">
-                      <AppScene role={role} step={i} />
+                      <AppScene role={role} step={i} active={active === i} />
                     </div>
                   </article>
 

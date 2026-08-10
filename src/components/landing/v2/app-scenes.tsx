@@ -24,6 +24,7 @@
  */
 
 import * as React from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -51,6 +52,7 @@ import {
 import { Logo } from "@/components/brand/logo";
 import type { Role } from "./content";
 import { LoopToast } from "./mocks";
+import { SceneCursor, useSceneScript } from "./scene-motion";
 
 /* Real product palette (teal app on dark chrome). */
 const INK = "#e9f1f9";
@@ -186,40 +188,94 @@ function DocRow({ name, file, kind, pages }: { name: string; file: string; kind?
   );
 }
 
-/** One division of the scope of works, collapsed or open. */
+/** One division of the scope of works, collapsed or open.
+ *
+ *  `cursorKey` marks the header row as a target the scene's timeline can
+ *  send the pointer to; `hot` is the hover state a real pointer would
+ *  produce, driven by the script rather than by CSS, so it survives the
+ *  synthetic cursor having no actual hover. */
 function Division({
   label,
   count,
   open,
+  cursorKey,
+  hot,
   children,
 }: {
   label: string;
   count: string;
   open?: boolean;
+  cursorKey?: string;
+  hot?: boolean;
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border overflow-hidden" style={{ borderColor: LINE, background: CARD }}>
-      <div className="flex items-center gap-2.5 px-3 py-[7px]">
+    <div
+      className="rounded-lg border overflow-hidden transition-colors duration-200"
+      style={{
+        borderColor: hot || open ? "rgba(0,212,200,0.28)" : LINE,
+        background: hot ? "rgba(0,212,200,0.05)" : CARD,
+      }}
+    >
+      <div data-cursor={cursorKey} className="flex items-center gap-2.5 px-3 py-[7px]">
         <span className="min-w-0 flex-1 text-[11.5px] font-medium truncate" style={{ color: INK }}>{label}</span>
         <span className="shrink-0 text-[10px] tabular-nums" style={{ color: DIM }}>{count}</span>
-        <ChevronDown className={"size-3 shrink-0 " + (open ? "rotate-180" : "")} style={{ color: DIM }} />
+        <ChevronDown
+          className="size-3 shrink-0 transition-transform duration-[280ms]"
+          style={{ color: DIM, transform: open ? "rotate(180deg)" : undefined }}
+        />
       </div>
-      {open ? (
-        <div className="border-t px-3 py-2 flex flex-col gap-2" style={{ borderColor: LINE }}>{children}</div>
-      ) : null}
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="border-t px-3 py-2 flex flex-col gap-2" style={{ borderColor: LINE }}>{children}</div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
 
 /** A scope line: the item, its plain sentence, its citation. */
-function ScopeLine({ label, plain, cite, right }: { label: string; plain: string; cite?: string; right?: React.ReactNode }) {
+function ScopeLine({
+  label,
+  plain,
+  cite,
+  citeKey,
+  citeHot,
+  right,
+}: {
+  label: string;
+  plain: string;
+  cite?: string;
+  citeKey?: string;
+  citeHot?: boolean;
+  right?: React.ReactNode;
+}) {
   return (
     <div className="flex items-start gap-2.5">
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-medium leading-tight" style={{ color: INK }}>{label}</p>
         <p className="mt-0.5 text-[10px] leading-[1.45] line-clamp-2" style={{ color: MUT }}>{plain}</p>
-        {cite ? <p className="mt-0.5 text-[9px] truncate" style={{ color: DIM }}>{cite}</p> : null}
+        {cite ? (
+          <p
+            data-cursor={citeKey}
+            className="mt-0.5 inline-block max-w-full truncate rounded px-1 -mx-1 text-[9px] transition-colors duration-200"
+            style={
+              citeHot
+                ? { color: "#03121a", background: TEALS, fontWeight: 600 }
+                : { color: DIM }
+            }
+          >
+            {cite}
+          </p>
+        ) : null}
       </div>
       {right ? <span className="shrink-0 pt-0.5">{right}</span> : null}
     </div>
@@ -389,15 +445,180 @@ function TenderRow({
 
 /* ── AppScene router ────────────────────────────────────────────── */
 
-export function AppScene({ role, step }: { role: Role; step: number }) {
-  if (role === "homeowner") return <HomeownerScene step={step} />;
+/**
+ * `active` is true only for the card the visitor is actually reading.
+ * The deck pins four cards at one offset, so a scene must be told; it
+ * cannot work this out from its own visibility.
+ */
+export function AppScene({
+  role,
+  step,
+  active = false,
+}: {
+  role: Role;
+  step: number;
+  active?: boolean;
+}) {
+  if (role === "homeowner") return <HomeownerScene step={step} active={active} />;
   if (role === "builder") return <BuilderScene step={step} />;
   return <ArchitectScene step={step} />;
 }
 
+/* ── Scope of works · the demonstrated scene ─────────────────────────
+   The one scene that is driven rather than drawn. The claim beside it
+   is that the list is written in plain English and tied to the page it
+   came from, so that is precisely what the pointer does: opens a
+   division nobody has looked at, reads the citation under a line,
+   scrolls the register and opens another. Every state below is real
+   component state; nothing is faked over a still.
+   ─────────────────────────────────────────────────────────────────── */
+
+type ScopeState = { open: string | null; hot: string | null; cite: boolean; shift: number };
+
+const SCOPE_RESTING: ScopeState = { open: "earthworks", hot: null, cite: false, shift: 0 };
+
+/** Seven of the register's thirty one divisions: enough that the list
+ *  runs past the viewport, so the scroll beat has somewhere to go. */
+const DIVISIONS: Array<{ key: string; label: string; count: string }> = [
+  { key: "prelim", label: "Preliminaries and site establishment", count: "14 items" },
+  { key: "approvals", label: "Approvals, certification and compliance", count: "11 items" },
+  { key: "earthworks", label: "Earthworks and excavation", count: "8 items" },
+  { key: "footings", label: "Footings and ground floor structure", count: "7 items" },
+  { key: "retaining", label: "Retaining walls and ground structures", count: "4 items" },
+  { key: "concrete", label: "Concrete, formwork and reinforcement", count: "9 items" },
+  { key: "steel", label: "Structural steel and framing", count: "12 items" },
+];
+
+const LINES: Record<string, Array<{ label: string; plain: string; cite: string }>> = {
+  earthworks: [
+    {
+      label: "Bulk excavation, cut and fill",
+      plain: "The big earthmoving that levels a sloping block into the platforms the home sits on.",
+      cite: "Civil C03, page 2, Rev B",
+    },
+    {
+      label: "Detailed excavation for footings and services",
+      plain: "The precise trenches and pier holes dug for footings, slab edges and underground pipes.",
+      cite: "Structural S02, page 4, Rev B",
+    },
+  ],
+  approvals: [
+    {
+      label: "Building permit and mandatory inspections",
+      plain: "The permit itself, and the inspections a surveyor must sign off as the build passes each stage.",
+      cite: "Specification A1.2, page 7, Rev C",
+    },
+    {
+      label: "Soil classification and site report",
+      plain: "The report that says what the ground is made of, which decides how the footings are built.",
+      cite: "Geotechnical Report, page 3",
+    },
+  ],
+  footings: [
+    {
+      label: "Bored piers to engineer's schedule",
+      plain: "The concrete columns drilled down to stable ground so the slab does not move with the soil.",
+      cite: "Structural S04, page 1, Rev B",
+    },
+    {
+      label: "Waffle raft slab and edge beams",
+      plain: "The ground floor slab and the thickened edges that carry the walls above it.",
+      cite: "Structural S05, page 2, Rev B",
+    },
+  ],
+};
+
+function ScopeOfWorksScene({ active }: { active: boolean }) {
+  const root = React.useRef<HTMLDivElement>(null);
+
+  const { state, cursor, clicks } = useSceneScript<ScopeState>({
+    enabled: active,
+    resting: SCOPE_RESTING,
+    rootRef: root,
+    script: [
+      // Beat one: open a division nobody has looked at.
+      { move: "div-approvals" },
+      { set: { hot: "approvals" } },
+      { click: true },
+      { set: { open: "approvals", hot: null } },
+      { wait: 620 },
+      // Beat two: read where the line came from.
+      { move: "cite-approvals" },
+      { set: { cite: true } },
+      { wait: 1250 },
+      { set: { cite: false } },
+      // Beat three: scroll the register on and open another.
+      { set: { shift: -96 } },
+      { wait: 520 },
+      { move: "div-footings" },
+      { set: { hot: "footings" } },
+      { click: true },
+      { set: { open: "footings", hot: null } },
+      { wait: 1450 },
+      { cursor: "hide" },
+    ],
+  });
+
+  return (
+    <div ref={root} className="relative w-full h-full">
+      <Frame crumb="Scope of works" avatar="AV">
+        <div className="flex items-center justify-between shrink-0">
+          <p className="text-[13px] font-semibold" style={{ color: INK }}>Scope of works</p>
+          <Badge><Check className="size-2.5" strokeWidth={3} /> Approved</Badge>
+        </div>
+        <p className="text-[10.5px] leading-snug shrink-0" style={{ color: MUT }}>
+          242 items of work, built from your documents. Every builder prices this same list.
+        </p>
+
+        {/* The register, clipped, so the scroll beat reads as a list
+            being scrolled rather than a card changing height. */}
+        <div className="relative flex-1 min-h-0 overflow-hidden">
+          <motion.div
+            className="flex flex-col gap-1.5"
+            animate={{ y: state.shift }}
+            transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {DIVISIONS.map((d) => (
+              <Division
+                key={d.key}
+                label={d.label}
+                count={d.count}
+                cursorKey={`div-${d.key}`}
+                hot={state.hot === d.key}
+                open={state.open === d.key}
+              >
+                {(LINES[d.key] ?? []).map((l, i) => (
+                  <ScopeLine
+                    key={l.label}
+                    label={l.label}
+                    plain={l.plain}
+                    cite={l.cite}
+                    citeKey={i === 0 ? `cite-${d.key}` : undefined}
+                    citeHot={i === 0 && state.cite && state.open === d.key}
+                  />
+                ))}
+              </Division>
+            ))}
+          </motion.div>
+
+          {/* The register keeps going; say so rather than ending on a
+              hard edge mid-row. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+            style={{ background: "linear-gradient(180deg, rgba(10,17,25,0), #0a1119)" }}
+          />
+        </div>
+      </Frame>
+
+      <SceneCursor cursor={cursor} clicks={clicks} />
+    </div>
+  );
+}
+
 /* ── Homeowner: read → scope → round → evaluation ────────────────── */
 
-function HomeownerScene({ step }: { step: number }) {
+function HomeownerScene({ step, active }: { step: number; active: boolean }) {
   if (step === 0)
     return (
       <Frame crumb="Pascoe Vale · the pack" avatar="AV">
@@ -424,36 +645,7 @@ function HomeownerScene({ step }: { step: number }) {
       </Frame>
     );
 
-  if (step === 1)
-    return (
-      <Frame crumb="Scope of works" avatar="AV">
-        <div className="flex items-center justify-between">
-          <p className="text-[13px] font-semibold" style={{ color: INK }}>Scope of works</p>
-          <Badge><Check className="size-2.5" strokeWidth={3} /> Approved</Badge>
-        </div>
-        <p className="text-[10.5px] leading-snug" style={{ color: MUT }}>
-          242 items of work, built from your documents. Every builder prices this same list.
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <Division label="Preliminaries and site establishment" count="14 items" />
-          <Division label="Approvals, certification and compliance" count="11 items" />
-          <Division label="Earthworks and excavation" count="8 items" open>
-            <ScopeLine
-              label="Bulk excavation, cut and fill"
-              plain="The big earthmoving that levels a sloping block into the platforms the home sits on."
-              cite="Civil C03, page 2, Rev B"
-            />
-            <ScopeLine
-              label="Detailed excavation for footings and services"
-              plain="The precise trenches and pier holes dug for footings, slab edges and underground pipes."
-              cite="Structural S02, page 4, Rev B"
-            />
-          </Division>
-          <Division label="Footings and ground floor structure" count="7 items" />
-          <Division label="Retaining walls and ground structures" count="4 items" />
-        </div>
-      </Frame>
-    );
+  if (step === 1) return <ScopeOfWorksScene active={active} />;
 
   if (step === 2)
     return (
