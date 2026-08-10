@@ -66,11 +66,11 @@ export function Landing({
         <Spine authedHref={authedHref} />
         <SectionDivider n="03" label="Why trust us" />
         <Trust />
-        <SectionDivider n="04" label="The people" />
+        <SectionDivider n="04" label="Who checks it" />
         <Proof />
-        <SectionDivider n="05" label="The network" />
+        <SectionDivider n="05" label="Our partners" />
         <Network />
-        <SectionDivider n="06" label="One platform" />
+        <SectionDivider n="06" label="Who it’s for" />
         <Ecosystem />
         <SectionDivider n="07" label="What people say" />
         <Testimonials />

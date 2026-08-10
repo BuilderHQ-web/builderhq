@@ -31,21 +31,21 @@ const META: Record<
   }
 > = {
   homeowner: {
-    kicker: "Preferred Partner Networks",
+    kicker: "Preferred Partner register",
     line: "Trusted partners,",
     accent: "personally chosen.",
-    words: ["Building designers", "Brokers", "Introduced"],
+    words: ["Designers", "Builders", "Brokers"],
     note: "No charge to you. No obligation. Just the right fit.",
   },
   builder: {
-    kicker: "Preferred Partner Networks",
+    kicker: "Preferred Partner register",
     line: "Trusted partners,",
     accent: "personally chosen.",
-    words: ["Building designers", "Brokers", "Introduced"],
+    words: ["Designers", "Brokers", "Introductions"],
     note: "No charge. No obligation. Send us the good ones.",
   },
   architect: {
-    kicker: "Preferred Design Partner Network",
+    kicker: "Preferred Partner register",
     line: "Hand picked practices,",
     accent: "personally spoken with.",
     words: ["Featured", "Promoted", "Referred"],

@@ -29,10 +29,15 @@ export function SectionDivider({ n, label }: { n: string; label: string }) {
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         />
         <span className="flex items-center gap-2.5 shrink-0">
-          <span className="font-mono text-[12px] tabular-nums" style={{ color: pal.accent }}>
+          <span className="font-mono text-[12px] tabular-nums" style={{ color: pal.accentSoft }}>
             {n}
           </span>
-          <span className="text-[11px] tracking-[0.22em] uppercase text-text-dim font-medium">
+          {/* Readable, not decorative. At 11px in text-dim nobody read
+              the label, so the heading below arrived without its
+              question. 13px, less extreme tracking, and a colour that
+              passes contrast: still small caps on a hairline, but now
+              it does its job. */}
+          <span className="text-[13px] tracking-[0.16em] uppercase text-text-muted font-semibold">
             {label}
           </span>
         </span>

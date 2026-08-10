@@ -1,15 +1,27 @@
 /**
- * BuildBriefStrip — the landing's Build Brief section, set as the
- * front page of a broadsheet: dateline, double rule, serif nameplate,
- * this week's headline, and an index strip of the edition's three
- * Market Watch signals. The credibility IS the design — no gloss,
- * just the publication itself, printed on paper.
+ * BuildBriefStrip — the publication, introduced rather than reprinted.
  *
- * Everything comes from brief-data, so a new edition re-typesets the
- * front page automatically. Server component, zero client JS.
+ * This was a full broadsheet front page: dateline, double rules,
+ * nameplate, this week's headline and standfirst, and a three-column
+ * index of the edition's statistics. Handsome on its own, but it sat
+ * in the middle of a product argument reproducing a different medium,
+ * and it read as a separate website wedged into this one.
+ *
+ * Now it does one job: say what The Build Brief is and offer the way
+ * in. The contrast does the work the broadsheet furniture used to do.
+ * The whole band drops to ink while the rest of the page is cream, so
+ * the eye registers a change of register, a publication rather than a
+ * pitch, without a single extra rule or box. Instrument Serif carries
+ * the nameplate; it is loaded for the publication anyway and appears
+ * nowhere else on the landing, which is exactly why it reads as a
+ * masthead here.
+ *
+ * Compact by design: this is an interstitial between chapters, not a
+ * chapter. Server component, zero client JS.
  */
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import {
   issueNo,
@@ -18,87 +30,94 @@ import {
 
 const SERIF = { fontFamily: "var(--font-instrument-serif)" } as const;
 
+/** What the publication actually covers, in the reader's terms. */
+const COVERS = [
+  "What building is costing",
+  "What the rules now require",
+  "What it means for your project",
+];
+
 export function BuildBriefStrip() {
   const issue = latestIssue();
 
   return (
     <section
       aria-label="The Build Brief"
-      className="relative px-5 md:px-10 py-16 lg:py-24"
+      className="relative px-5 md:px-10 py-16 lg:py-20"
+      style={{ background: "#101820" }}
     >
-      <div className="mx-auto w-full max-w-[880px]">
-        <Link
-          href={`/build-brief/${issue.slug}`}
-          className="group block rounded-2xl bg-[#fffdf8] ring-1 ring-[#101820]/[0.09] card-elev px-6 py-8 sm:px-12 sm:py-11 transition-all duration-300 hover:-translate-y-1 hover:ring-[#101820]/[0.16]"
-        >
-          {/* dateline */}
-          <div className="flex items-baseline justify-between gap-4 text-[10px] sm:text-[10.5px] tracking-[0.18em] uppercase font-ui font-semibold text-text-dim">
-            <span>Issue {issueNo(issue)}</span>
-            <span className="hidden sm:block">{issue.displayDate}</span>
-            <span>Melbourne</span>
-          </div>
+      {/* A hairline top and bottom so the band reads as a deliberate
+          change of paper rather than a gap in the page. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px"
+        style={{ background: "rgba(0,212,200,0.28)" }}
+      />
+      <span
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-px"
+        style={{ background: "rgba(0,212,200,0.28)" }}
+      />
 
-          {/* masthead rules */}
-          <div aria-hidden className="mt-3 border-t-2 border-[#101820]" />
-          <div aria-hidden className="mt-[3px] border-t border-[#101820]/50" />
+      <div className="mx-auto w-full max-w-[1000px] grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        {/* the publication */}
+        <div className="min-w-0">
+          <p className="text-[11px] tracking-[0.24em] uppercase font-ui font-semibold" style={{ color: "#2fd4c8" }}>
+            From BuilderHQ, every Friday
+          </p>
 
-          {/* nameplate */}
           <p
-            className="mt-7 text-center text-[clamp(2.7rem,5.4vw+0.8rem,4.6rem)] leading-[0.95] tracking-[-0.01em] text-text"
-            style={SERIF}
+            className="mt-3 text-[clamp(2.1rem,3.4vw+0.6rem,3rem)] leading-[1.02] tracking-[-0.01em]"
+            style={{ ...SERIF, color: "#f3ede2" }}
           >
             The Build Brief
           </p>
-          <p className="mt-3.5 text-center text-[10px] sm:text-[10.5px] tracking-[0.28em] uppercase text-text-dim font-ui font-semibold">
-            Five minutes on the economics of getting homes built
+
+          <p
+            className="mt-4 max-w-[52ch] text-[15px] sm:text-[16px] leading-[1.65]"
+            style={{ color: "rgba(243,237,226,0.66)" }}
+          >
+            A short weekly read on the economics of getting homes built
+            in Australia. Plain language, every figure sourced, no
+            opinion dressed up as news.
           </p>
 
-          <div aria-hidden className="mt-7 border-t border-[#101820]/[0.14]" />
-
-          {/* this week's headline */}
-          <h2 className="mt-8 mx-auto max-w-[26ch] text-center font-ui font-semibold tracking-[-0.03em] leading-[1.14] text-[clamp(1.45rem,2vw+0.7rem,2.15rem)] text-text">
-            {issue.title}
-          </h2>
-          <p className="mt-4 mx-auto max-w-[58ch] text-center text-[14px] sm:text-[14.5px] leading-[1.65] text-text-muted">
-            {issue.standfirst}
-          </p>
-
-          {/* index strip — the edition's three signals */}
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-3 gap-y-4 border-y border-[#101820]/[0.1] py-5 sm:divide-x sm:divide-[#101820]/[0.1]">
-            {issue.signals.map((s) => (
-              <div key={s.n} className="sm:px-8 sm:first:pl-0 sm:last:pr-0">
-                <p className="text-[30px] leading-none text-text" style={SERIF}>
-                  {s.stat.value}
-                </p>
-                <p className="mt-2 text-[10.5px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold">
-                  {s.n} · {s.kicker}
-                </p>
-                <p className="mt-1 text-[12px] leading-[1.5] text-text-muted max-w-[28ch]">
-                  {s.stat.label}
-                </p>
-              </div>
+          <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+            {COVERS.map((line) => (
+              <li
+                key={line}
+                className="inline-flex items-center gap-2 text-[13px]"
+                style={{ color: "rgba(243,237,226,0.78)" }}
+              >
+                <span
+                  aria-hidden
+                  className="size-1 rounded-full shrink-0"
+                  style={{ background: "#2fd4c8" }}
+                />
+                {line}
+              </li>
             ))}
-          </div>
+          </ul>
+        </div>
 
-          {/* foot */}
-          <div className="mt-7 flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-            <span className="inline-flex items-center rounded-full bg-[#101820] px-5 py-2.5 text-[12.5px] font-ui font-semibold text-white transition-colors group-hover:bg-[#1b2733]">
-              Read Issue {issueNo(issue)} →
-            </span>
-            <span className="text-[10.5px] tracking-[0.22em] uppercase text-text-dim font-ui font-semibold">
-              Plain · Sourced · Every Friday
-            </span>
-          </div>
-        </Link>
-
-        <p className="mt-6 text-center text-[13px] text-text-muted">
+        {/* the way in */}
+        <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
+          <Link
+            href={`/build-brief/${issue.slug}`}
+            className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-ui font-semibold transition-colors"
+            style={{ background: "#00d4c8", color: "#031118" }}
+          >
+            Read issue {issueNo(issue)}
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
           <Link
             href="/build-brief"
-            className="font-ui font-medium text-text hover:text-accent-light transition-colors"
+            className="text-[12.5px] font-ui transition-colors hover:opacity-100"
+            style={{ color: "rgba(243,237,226,0.6)" }}
           >
-            Browse all editions →
+            Browse every edition
           </Link>
-        </p>
+        </div>
       </div>
     </section>
   );

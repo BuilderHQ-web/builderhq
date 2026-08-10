@@ -49,8 +49,8 @@ export function Trust() {
           <Reveal>
             <div className="lg:sticky lg:top-28 self-start text-center lg:text-left">
               <h2 className="font-ui font-semibold tracking-[-0.035em] text-[clamp(2.2rem,3.2vw+0.5rem,3.6rem)] leading-[1.08]">
-                <span className="text-text">Trust isn’t a feature.</span>{" "}
-                <span style={{ color: pal.accentSoft }}>It’s the product.</span>
+                <span className="text-text">You can check</span>{" "}
+                <span style={{ color: pal.accentSoft }}>everything we say.</span>
               </h2>
               <RoleSwap>
                 <p className="mt-5 mx-auto lg:mx-0 max-w-[40ch] text-[14.5px] leading-[1.65] text-text-muted">

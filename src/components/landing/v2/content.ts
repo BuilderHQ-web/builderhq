@@ -54,6 +54,9 @@ export interface LensCopy {
     /** One short, low-friction promise — reads the same on every
      *  breakpoint, so keep it around the two-line phone length. */
     sub: string;
+    /** A second sentence, shown from sm upward only. The mobile hero
+     *  stays at `sub` alone so it never crowds a phone. */
+    subMore?: string;
     primary: Cta;
     secondary: Cta;
     /** Three instant answers under the CTAs — product facts only. */
@@ -122,20 +125,21 @@ export const LENS: Record<Role, LensCopy> = {
       h1a: "One scope.",
       h1b: "Three prices.",
       sub: "Every builder prices the same list, so the numbers compare.",
+      subMore: "You approve that list before it goes out, and it costs you nothing.",
       primary: { label: "Start your project", href: "/signup?role=owner" },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["Free for homeowners", "You approve the scope", "Verified builders only"],
     },
     problem: {
       kicker: "The problem",
-      h2a: "Three quotes, three",
-      h2b: "different scopes.",
+      h2a: "Three builders price",
+      h2b: "three different jobs.",
       blurb:
         "Choosing your builder is the biggest financial decision of the build. It is usually made on three documents that were never written to be compared.",
       points: [
         {
-          claim: "Every builder prices a different scope",
-          body: "One allows for the retaining wall. One excludes it. One calls it a provisional sum. Nobody priced the same job.",
+          claim: "Every builder prices a different job",
+          body: "One allows for the retaining wall. One leaves it out. One sets aside a rough figure. Nobody priced the same job.",
         },
         {
           claim: "The quotes cannot be compared",
@@ -146,7 +150,7 @@ export const LENS: Record<Role, LensCopy> = {
           body: "The cheapest quote is often the one that left the most out. The rest arrives later, at a price nobody competed on.",
         },
       ],
-      bridge: "The fix is a scope everyone prices, before anyone prices it.",
+      bridge: "The fix is one list of works that every builder prices.",
     },
     spine: {
       blurb:
@@ -160,7 +164,7 @@ export const LENS: Record<Role, LensCopy> = {
         {
           title: "The same list",
           headline: "Every builder prices what you approved.",
-          body: "Verified builders take a spot and walk your scope line by line, marking each item included, a provisional sum, excluded or not applicable.",
+          body: "Verified builders take a spot and walk your list line by line, marking each item included, excluded, not applicable, or an amount set aside.",
         },
         {
           title: "The tender",
@@ -176,12 +180,12 @@ export const LENS: Record<Role, LensCopy> = {
     },
     trust: {
       intro:
-        "A tender is only as good as the rules behind it. Three BuilderHQ runs on, for everyone.",
+        "A tender is only as good as the rules behind it. These are ours, for everyone.",
       cards: [
         {
           icon: "file",
-          title: "No citation, no claim",
-          body: "Every line in your scope points to a document, a page and a revision. Anything that cannot be traced is removed before you see it.",
+          title: "Every line names its source",
+          body: "Each line points to the document, page and revision it came from. Anything we cannot trace is removed before you see it.",
         },
         {
           icon: "shield",
@@ -259,26 +263,27 @@ export const LENS: Record<Role, LensCopy> = {
   builder: {
     hero: {
       badge: "Live tender rounds",
-      h1a: "The scope is written.",
-      h1b: "Price it.",
-      sub: "Every builder on the round prices the same list.",
+      h1a: "Find work",
+      h1b: "worth pricing.",
+      sub: "Live projects, drawings in, scope already written.",
+      subMore: "Every builder on the round prices the same list, and the spots are capped.",
       primary: { label: "Pick your next project", href: "/signup?role=builder" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["Scope prepared for you", "Capped rounds", "No commission"],
+      facts: ["Scope already written", "Capped rounds", "One off fee, no subscription"],
     },
     problem: {
       kicker: "The problem",
-      h2a: "Careful pricing",
-      h2b: "reads as expensive.",
+      h2a: "Price every detail",
+      h2b: "and you look expensive.",
       blurb:
-        "Estimating is days of work, given away free. And the tender that allows for everything looks dearest.",
+        "Estimating is days of work, given away free. The price that allows for everything looks highest.",
       points: [
         {
           claim: "Every tender starts from scratch",
           body: "Days of estimating begin with working out what the documents actually cover, and every builder on the job repeats the same work.",
         },
         {
-          claim: "Thoroughness looks like a higher price",
+          claim: "Doing it properly reads as a higher price",
           body: "Allow for the difficult ground and say plainly what is excluded, and the honest number reads worse than a vague one.",
         },
         {
@@ -320,8 +325,8 @@ export const LENS: Record<Role, LensCopy> = {
       cards: [
         {
           icon: "file",
-          title: "No citation, no claim",
-          body: "Every line you price points to a document, a page and a revision. Nothing is measured off a drawing, and nothing is assumed on your behalf.",
+          title: "Every line names its source",
+          body: "Each line you price points to the document, page and revision it came from. Nothing is measured off a drawing, nothing assumed on your behalf.",
         },
         {
           icon: "scale",
@@ -335,7 +340,7 @@ export const LENS: Record<Role, LensCopy> = {
         },
       ],
       footer:
-        "And your details are never sold or passed around. Rounds are capped, and the cap is visible before you commit.",
+        "Your details are never sold or passed around. Rounds are capped, and you see the cap before you commit.",
     },
     proof: {
       h2a: "The scope is checked",
@@ -352,9 +357,9 @@ export const LENS: Record<Role, LensCopy> = {
       panelFooter: "No recycled leads. No scope to assemble. Work worth pricing.",
     },
     network: {
-      h2a: "Building designers and brokers,",
-      h2b: "in your corner.",
-      body: "Our Preferred Partner register covers the people your clients lean on: building designers for the drawings, finance brokers for the lending. When a job needs one, we make the introduction.",
+      h2a: "The designers and brokers",
+      h2b: "your clients rely on.",
+      body: "Our Preferred Partner register covers the people your clients rely on: building designers for the drawings, finance brokers for the lending. When a job needs one, we make the introduction.",
       cta: { label: "Meet our partners", switchTo: "architect" },
     },
     faq: [
@@ -400,7 +405,8 @@ export const LENS: Record<Role, LensCopy> = {
       badge: "For architects and designers",
       h1a: "Run the tender.",
       h1b: "Skip the admin.",
-      sub: "Structured rounds for your clients, with your builders or ours, under your practice’s name.",
+      sub: "Your client’s tender, with your builders or ours, under your practice’s name.",
+      subMore: "Every tender comes back in the same shape, ready to compare line by line.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["Free for practices", "Your builders or ours", "Your name on the evaluation"],
@@ -417,7 +423,7 @@ export const LENS: Record<Role, LensCopy> = {
           body: "Without one shared list, each builder prices their own reading of the drawings, and the submissions cannot be lined up afterwards.",
         },
         {
-          claim: "Normalising submissions is unpaid work",
+          claim: "Comparing submissions is unpaid work",
           body: "Three formats, three sets of inclusions, and someone in the practice has to reconcile them before the client can be advised.",
         },
         {
@@ -459,8 +465,8 @@ export const LENS: Record<Role, LensCopy> = {
       cards: [
         {
           icon: "file",
-          title: "No citation, no claim",
-          body: "Every scope line names the document, page and revision it came from. Nothing is measured off a drawing, and anything that cannot be traced is removed.",
+          title: "Every line names its source",
+          body: "Each line names the document, page and revision it came from. Nothing is measured off a drawing, and anything we cannot trace is removed.",
         },
         {
           icon: "scale",
@@ -477,9 +483,9 @@ export const LENS: Record<Role, LensCopy> = {
         "The round is yours, and the contract is your client’s.",
     },
     proof: {
-      h2a: "Nothing goes out",
-      h2b: "unchecked.",
-      body: "The scope is drafted from the documents, then a person reviews every line. Approval is refused while anything is unread. Your client answers a short list of open questions, typically about six, and approves the pack.",
+      h2a: "Every line is read",
+      h2b: "before your client sees it.",
+      body: "The scope is drafted from the documents, then a person reviews every line. Approval is refused while anything is unread. Your client answers a short list of open questions, typically about six, and approves the scope.",
       place: "Built in Melbourne, for Australia.",
       panelTitle: "Before the round opens",
       gates: [
@@ -554,17 +560,17 @@ export const ECOSYSTEM = {
     {
       who: "Building designers",
       bring: "bring the design",
-      line: "Rounds run under the practice’s name.",
+      line: "Tenders run under the practice’s name.",
     },
     {
       who: "Builders",
       bring: "bring it to life",
-      line: "One list, priced fairly, won directly.",
+      line: "One list to price, no commission.",
     },
     {
-      who: "Finance Brokers",
+      who: "Finance brokers",
       bring: "back the build",
-      line: "The right finance, right when it counts.",
+      line: "Introduced when a client needs lending.",
     },
   ],
 } as const;

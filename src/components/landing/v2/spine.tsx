@@ -65,7 +65,7 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
           <div className="text-center mb-12 lg:mb-16">
             <h2 className="mx-auto max-w-[24ch] font-ui font-semibold tracking-[-0.035em] text-[clamp(2.3rem,3.6vw+0.5rem,4rem)] leading-[1.06]">
               <span className="text-text">Four steps.</span>{" "}
-              <span style={{ color: pal.accentSoft }}>Clear from the start.</span>
+              <span style={{ color: pal.accentSoft }}>Scope, price, compare, decide.</span>
             </h2>
             <RoleSwap className="inline-block">
               <p className="mt-5 mx-auto max-w-[54ch] text-[15.5px] sm:text-[16.5px] leading-[1.65] text-text-muted">
