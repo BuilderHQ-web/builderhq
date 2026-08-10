@@ -204,9 +204,11 @@ export function LoopToast({
       aria-hidden
       className="absolute top-12 right-3.5 flex items-center gap-2 rounded-xl border px-3 py-2 pointer-events-none"
       style={{
-        borderColor: accent + "45",
-        background: "rgba(7,17,28,0.96)",
-        boxShadow: `0 14px 34px -14px ${accent}80`,
+        // The scenes are the app's light theme now, so a toast floating
+        // over one is paper with a hairline, not a dark plate.
+        borderColor: "rgba(24,34,44,0.12)",
+        background: "#ffffff",
+        boxShadow: "0 18px 40px -18px rgba(24,34,44,0.32), 0 2px 6px -2px rgba(24,34,44,0.10)",
       }}
       initial={{ opacity: 0, y: 8, x: 6 }}
       animate={{ opacity: [0, 1, 1, 0], y: [8, 0, 0, -8], x: [6, 0, 0, 0] }}
@@ -219,10 +221,10 @@ export function LoopToast({
         ease: EASE,
       }}
     >
-      <span className="inline-flex size-6 items-center justify-center rounded-full" style={{ background: accent + "1f", color: accent }}>
+      <span className="inline-flex size-6 items-center justify-center rounded-full" style={{ background: "rgba(10,125,115,0.12)", color: "#0a7d73" }}>
         {icon}
       </span>
-      <span className="text-[11.5px] font-medium" style={{ color: "#e9f1f9" }}>{text}</span>
+      <span className="text-[11.5px] font-medium" style={{ color: "#161c22" }}>{text}</span>
     </motion.div>
   );
 }

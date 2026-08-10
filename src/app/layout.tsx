@@ -70,7 +70,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#f4f1ea",
-  colorScheme: "dark",
+  // Light, and left over from before the theme flip. The CSS
+  // `color-scheme: light` on :root already wins, but this meta tag was
+  // still telling the browser to render form controls, scrollbars and
+  // the default canvas dark.
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   // Extend the page behind the notch and home indicator so the body
