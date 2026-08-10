@@ -13,7 +13,7 @@ import {
 } from "../../_lib/quiz-state";
 
 /**
- * Step 7, architectural plans. Two paths:
+ * Step 7 — architectural plans. Two paths:
  *
  *   Upload path: drag/drop file → POST /api/start/q/plans (init)
  *                → upload to R2 with the signed URL → POST again
@@ -24,7 +24,7 @@ import {
  *                sends magic link → redirects to /start/sent. The
  *                project stays as a draft awaiting plans.
  *
- * The skip path is intentionally just as accessible as upload, 
+ * The skip path is intentionally just as accessible as upload —
  * users at the "scoping" stage of a project (many of them) don't
  * have plans yet. Forcing the upload would drop them entirely.
  */
@@ -51,7 +51,7 @@ export function PlansStep() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    // If no project id in URL, bounce, the user shouldn't be here
+    // If no project id in URL, bounce — the user shouldn't be here
     // without having completed step 6. Easy edge: someone refreshed
     // after closing the tab. We can't recover their soft-auth cookie
     // is fine but without projectId we don't know which project.
@@ -72,7 +72,7 @@ export function PlansStep() {
       return;
     }
     if (f.size > MAX_BYTES) {
-      setError(`File is too large. 50 MB max, yours is ${formatBytes(f.size)}.`);
+      setError(`File is too large. 50 MB max — yours is ${formatBytes(f.size)}.`);
       return;
     }
     setFile(f);
@@ -113,7 +113,7 @@ export function PlansStep() {
     setSubmitting(true);
     setError(null);
     try {
-      // Phase 1: init upload, server creates the document row +
+      // Phase 1: init upload — server creates the document row +
       // returns a presigned R2 URL.
       const init = await fetch("/api/start/q/plans", {
         method: "POST",
@@ -143,7 +143,7 @@ export function PlansStep() {
       // Phase 2: direct upload to R2 with XHR so we get progress.
       await uploadWithProgress(initBody.uploadUrl, file, setProgress);
 
-      // Phase 3: complete, server flips the doc to "active" + sends
+      // Phase 3: complete — server flips the doc to "active" + sends
       // the magic link + flags project for publishing.
       const complete = await fetch("/api/start/q/plans", {
         method: "POST",

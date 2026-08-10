@@ -6,7 +6,7 @@ import { ImageResponse } from "next/og";
  * issues do) falls back to this branded card instead of a bare title.
  */
 export const alt =
-  "BuilderHQ, the tendering platform for Australian residential construction. Where projects start.";
+  "BuilderHQ — Australia's residential tender platform. Upload once, compare like for like, build.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -55,7 +55,7 @@ export default function Image() {
               fontWeight: 600,
             }}
           >
-            Australian residential construction
+            Australia's Residential Tender Platform
           </div>
           <div
             style={{
@@ -67,7 +67,7 @@ export default function Image() {
               maxWidth: "980px",
             }}
           >
-            The tendering platform for residential construction.
+            Upload once. Compare like for like. Build.
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export default function Image() {
         >
           <div style={{ display: "flex" }}>builderhq.com.au</div>
           <div style={{ display: "flex" }}>
-            Where projects start.
+            Up to three verified builders. The same scope.
           </div>
         </div>
       </div>

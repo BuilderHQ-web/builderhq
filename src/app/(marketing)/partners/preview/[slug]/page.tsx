@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Lock } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
-import { COMPANY_ABN, COMPANY_NAME } from "@/lib/company";
 
 import { PARTNERS, getPartner } from "../../partners-data";
 import { PartnerProfileSections, partnerHeaderProps } from "../../partner-profile";
@@ -123,9 +122,8 @@ export default async function PartnerPreviewPage({
 
           {/* Minimal footer. */}
           <footer className="mt-20 pt-6 border-t border-border-subtle/70">
-            <p className="text-[12px] text-text-muted">
-              {COMPANY_NAME} · ABN {COMPANY_ABN} · A private preview, not yet
-              live.
+            <p className="text-[12px] text-text-dim">
+              BuilderHQ · ABN 70 697 584 722 · A private preview, not yet live.
             </p>
           </footer>
         </div>

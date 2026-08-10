@@ -21,14 +21,12 @@
 import type { CSSProperties } from "react";
 import { ArrowUpRight, Image as ImageIcon, Star } from "lucide-react";
 
-import { BRAND } from "@/components/landing/v2/palette";
+import { ROLE_PALETTE } from "@/components/landing/v2/content";
 import { cn } from "@/lib/utils";
 import type { Partner, PartnerKind, PartnerWork } from "./partners-data";
 
-/** One brand hue for every partner discipline. The per-kind palette
- *  retired with the role morph; see components/landing/v2/palette.ts. */
-export function partnerHue(_kind: PartnerKind) {
-  return BRAND;
+export function partnerHue(kind: PartnerKind) {
+  return ROLE_PALETTE[kind];
 }
 
 type PartnerHue = ReturnType<typeof partnerHue>;

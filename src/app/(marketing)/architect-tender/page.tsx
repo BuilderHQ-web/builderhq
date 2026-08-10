@@ -1,18 +1,18 @@
 /**
- * /architect-tender, V3 elevation pass.
+ * /architect-tender — V3 elevation pass.
  *
  * Tone goal (per Aryan's "10/10" brief):
  *   Architects from a cold-email outreach land here with skepticism.
- *   In the first 3 seconds the page has to feel deliberate, modern and
- *   serious, and make submitting the form feel like the obvious next
+ *   In the first 3 seconds the page has to feel deliberate, modern,
+ *   serious — and make submitting the form feel like the obvious next
  *   step. Everything is tuned to that single conversion.
  *
  * Layout:
- *   · Two-column desktop grid: hero copy left, form card right. The
+ *   · Two-column desktop grid — hero copy left, form card right. The
  *     action is above the fold on a 13" laptop.
  *   · Ambient backdrop (orbs + grid + noise) drifts slowly behind
  *     everything so the page feels alive without animating the action.
- *   · Form card carries a rotating teal beam along its perimeter,
+ *   · Form card carries a rotating teal beam along its perimeter —
  *     defined in the CSS module (see .formCard::before / ::after).
  *   · Council marquee below the fold is the credibility pillar.
  *
@@ -26,7 +26,6 @@ import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 
 import { Logo } from "@/components/brand/logo";
-import { COMPANY_NAME } from "@/lib/company";
 import s from "./architect-tender.module.css";
 import { ArchitectTenderForm } from "./architect-tender-form";
 import { CouncilMarquee } from "./council-marquee";
@@ -55,7 +54,7 @@ export const metadata = {
 /**
  * Council directory used in the marquee. Order alternates wide
  * horizontal wordmarks with stacked marks so the band reads with
- * rhythm. All assets in /public/brand/councils/, pre-processed to
+ * rhythm. All assets in /public/brand/councils/ — pre-processed to
  * transparent backgrounds + trimmed to bounding box.
  *
  * Each entry supports a `wide` flag so the marquee can give horizontal
@@ -91,7 +90,7 @@ export default function ArchitectTenderPage() {
           "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Ambient backdrop, fixed behind content. Orbs drift on long
+      {/* Ambient backdrop — fixed, behind content. Orbs drift on long
           loops; grid + noise are static. */}
       <div className={s.ambient} aria-hidden>
         <div className={`${s.orb} ${s.orb1}`} />
@@ -102,7 +101,7 @@ export default function ArchitectTenderPage() {
       <div className={s.noise} aria-hidden />
 
       <div className={s.fade}>
-        {/* Top bar: logo (links home) + invitation indicator */}
+        {/* Top bar — logo (links home) + invitation indicator */}
         <header className={s.topbar}>
           <Link href="/" className={s.brand} aria-label="BuilderHQ, home">
             <Logo height={26} />
@@ -128,7 +127,7 @@ export default function ArchitectTenderPage() {
                 <span className={s.headlineItalic}>tender.</span>
               </h1>
               <p className={s.subhead}>
-                Builder outreach, tender setup and coordination, handled.
+                Builder outreach, tender setup, coordination — handled.
                 Free for Planning Permit projects across the Melbourne
                 metro.
               </p>
@@ -142,10 +141,10 @@ export default function ArchitectTenderPage() {
                 </h2>
                 <div className={s.prose}>
                   <p>
-                    The biggest cost on most Melbourne builds isn&rsquo;t
-                    construction. It&rsquo;s the gap between planning
-                    approval and ground break, when owners scramble for
-                    builders and gather quotes that don&rsquo;t compare.
+                    The biggest cost on most Melbourne builds isn&apos;t
+                    construction. It&apos;s the gap between planning
+                    approval and ground break — when owners scramble for
+                    builders and gather quotes that don&apos;t compare.
                   </p>
                   <p>
                     BuilderHQ runs tender in parallel with planning. Vetted
@@ -215,7 +214,7 @@ export default function ArchitectTenderPage() {
                 </div>
 
                 {/* Form reads useSearchParams for ?address / ?architect /
-                    ?ref pre-fill. Next 16 requires a Suspense boundary
+                    ?ref pre-fill — Next 16 requires a Suspense boundary
                     around any client component that reads search params
                     during prerender. */}
                 <Suspense fallback={null}>
@@ -226,7 +225,7 @@ export default function ArchitectTenderPage() {
           </div>
         </main>
 
-        {/* Council marquee, a quiet credibility band below the action.
+        {/* Council marquee — quiet credibility band below the action.
             See council-marquee.tsx for the silhouette + hover-colour
             treatment notes. */}
         <CouncilMarquee styles={s} councils={COUNCILS} />
@@ -264,7 +263,7 @@ export default function ArchitectTenderPage() {
             <div className={s.footerDivider} aria-hidden />
 
             <div className={s.footerMeta}>
-              <span>© {year} {COMPANY_NAME}</span>
+              <span>© {year} BuilderHQ</span>
               <span className={s.footerMetaRight}>
                 Private outreach · not indexed
               </span>

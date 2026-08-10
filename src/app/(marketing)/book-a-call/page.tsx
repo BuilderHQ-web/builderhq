@@ -1,5 +1,5 @@
 /**
- * /book-a-call, the "Book a free call" Google Ads landing page.
+ * /book-a-call — "Book a free call" Google Ads landing page.
  *
  * The low-friction alternative to the /start plans-upload funnel: a cold
  * visitor books a 15-minute intro call instead of uploading drawings, and
@@ -16,7 +16,6 @@ import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { companyFooterLine } from "@/lib/company";
 import s from "../estimate_request_landing_page/estimate.module.css";
 import theme from "../guide/theme.module.css";
 import light from "./light.module.css";
@@ -53,7 +52,7 @@ export default function BookACallLandingPage() {
     <div
       className={`${theme.scope} ${light.light} ${fraunces.variable} ${inter.variable} ${s.body}`}
     >
-      {/* Ambient backdrop, same family as /estimate + /guide. */}
+      {/* Ambient backdrop — same family as /estimate + /guide. */}
       <div className={s.ambient}>
         <div className={`${s.orb} ${s.orb1}`} />
         <div className={`${s.orb} ${s.orb2}`} />
@@ -80,7 +79,7 @@ export default function BookACallLandingPage() {
       <main className={s.main}>
         <div className={s.container}>
           <div className={s.hero}>
-            {/* LEFT: editorial content */}
+            {/* LEFT — editorial content */}
             <div className={s.heroContent}>
               <div className={s.kicker}>
                 <span className={s.kickerDot} />
@@ -94,9 +93,9 @@ export default function BookACallLandingPage() {
               </h1>
 
               <p className={s.heroDeck}>
-                Book a free 15 minute call. We will match you with vetted
-                builders to quote your project and walk you through getting
-                started. No plans needed.
+                Skip the legwork. Book a free 15-minute call and we&apos;ll match
+                you with vetted builders to quote your project — and walk you
+                through getting started. No plans needed.
               </p>
 
               <div className={s.insideBlock}>
@@ -136,7 +135,7 @@ export default function BookACallLandingPage() {
               </p>
             </div>
 
-            {/* RIGHT: qualifier form */}
+            {/* RIGHT — qualifier form */}
             <div className={s.formWrap}>
               <div className={s.formCard}>
                 {/* BookCallForm reads useSearchParams for utm attribution,
@@ -148,7 +147,7 @@ export default function BookACallLandingPage() {
             </div>
           </div>
 
-          {/* "How it works", three-step timeline */}
+          {/* "How it works" — three-step timeline */}
           <section className={s.howSection}>
             <div className={s.howEyebrow}>How it works</div>
             <div className={s.howGrid}>
@@ -182,23 +181,8 @@ export default function BookACallLandingPage() {
       </main>
 
       <footer className={s.footer}>
-        <div className={s.footerLeft} style={{ lineHeight: 1.65 }}>
-          {companyFooterLine()}
-          <br />
-          <span style={{ color: "var(--g-text)" }}>
-            Part of{" "}
-            <Link
-              href="/"
-              style={{
-                color: "inherit",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              BuilderHQ
-            </Link>
-            , the tendering platform for Australian residential construction.
-          </span>
+        <div className={s.footerLeft}>
+          © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
         </div>
         <div className={s.footerLinks}>
           <Link href="https://builderhq.com.au">builderhq.com.au</Link>

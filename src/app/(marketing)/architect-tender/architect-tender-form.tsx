@@ -62,17 +62,12 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
   // so it survives any later setState round-trips.
   const [ref, setRef] = useState("");
   useEffect(() => {
-    // Deferred so the hydrate happens outside the effect's own render
-    // pass; the fields are empty on first paint either way.
-    const t = setTimeout(() => {
-      const a = searchParams.get("address");
-      const arch = searchParams.get("architect");
-      const r = searchParams.get("ref");
-      if (a) setProjectAddress((cur) => cur || a);
-      if (arch) setFirstName((cur) => cur || arch);
-      if (r) setRef(r);
-    }, 0);
-    return () => clearTimeout(t);
+    const a = searchParams.get("address");
+    const arch = searchParams.get("architect");
+    const r = searchParams.get("ref");
+    if (a) setProjectAddress((cur) => cur || a);
+    if (arch) setFirstName((cur) => cur || arch);
+    if (r) setRef(r);
   }, [searchParams]);
 
   const clearError = (field: Field) => {

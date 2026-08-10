@@ -1,35 +1,46 @@
+"use client";
+
 /**
  * Canvas — the single continuous backdrop the whole page floats on.
  *
- * One warm off-white ground, one fixed teal ambient, the blueprint grid
- * and a fine grain. No lens, no crossfade, no re-lighting: the page has
- * one surface and it never changes under the reader. The recipe matches
- * MarketingPageShell, so the home page and the inner pages read as the
- * same sheet of paper.
+ * One deep base colour, constant across lenses, so the page never
+ * "switches" the way the v1 dark/light bands did. Only the ambient
+ * light shifts per role: three stacked glow layers (teal / steel /
+ * gold), one visible at a time, cross-fading over ~900ms when the lens
+ * changes. Reads as the room's lighting changing, not a new page.
  *
- * Sits at z-0 behind everything; content layers on top. Pointer-events
- * off so it never intercepts a click. No client state, so it renders on
- * the server and ships no JavaScript.
+ * Sits at z-0 behind everything; grid + noise + the section content
+ * layer on top. Pointer-events off so it never intercepts clicks.
  */
 
+import { ROLE_ORDER, ROLE_PALETTE } from "./content";
+import { useRole } from "./role";
+
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
 export function Canvas() {
+  const { role } = useRole();
+
   return (
-    <div
-      aria-hidden
-      className="fixed inset-0 z-0 pointer-events-none"
-      style={{ background: "#f4f1ea" }}
-    >
-      {/* Ambient light: a teal bloom above the fold, a fainter one at the
-          far corner so the long page never goes flat. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 90% 55% at 50% -12%, rgba(0,170,158,0.10), transparent 62%),
-            radial-gradient(ellipse 62% 48% at 104% 108%, rgba(0,170,158,0.06), transparent 62%)
-          `,
-        }}
-      />
+    <div aria-hidden className="fixed inset-0 z-0 pointer-events-none" style={{ background: "#f4f1ea" }}>
+      {ROLE_ORDER.map((r) => {
+        const p = ROLE_PALETTE[r];
+        return (
+          <div
+            key={r}
+            className="absolute inset-0"
+            style={{
+              opacity: role === r ? 1 : 0,
+              transition: `opacity 900ms ${EASE}`,
+              background: `
+                radial-gradient(ellipse 68% 52% at 12% -8%, ${p.glow1}, transparent 58%),
+                radial-gradient(ellipse 60% 48% at 104% 108%, ${p.glow2}, transparent 62%),
+                radial-gradient(circle at 50% 50%, ${p.tint}, transparent 70%)
+              `,
+            }}
+          />
+        );
+      })}
 
       {/* Blueprint grid — faint, fixed. Part of the brand texture. */}
       <div
@@ -52,6 +63,66 @@ export function Canvas() {
           backgroundSize: "200px 200px",
         }}
       />
+    </div>
+  );
+}
+
+/**
+ * RoleWash — the one-shot pulse fired when the lens changes. A soft
+ * radial bloom in the incoming role's colour sweeps out from the upper
+ * third and fades in ~900ms, so the whole surface visibly re-lights
+ * as the label docks. Skips the first mount (no pulse on load).
+ */
+
+import * as React from "react";
+import { AnimatePresence, motion } from "motion/react";
+
+export function RoleWash() {
+  const { role } = useRole();
+  const first = React.useRef(true);
+  const seq = React.useRef(0);
+  const [pulse, setPulse] = React.useState<{ id: number; wash: string } | null>(null);
+
+  React.useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    seq.current += 1;
+    const id = seq.current;
+    setPulse({ id, wash: ROLE_PALETTE[role].wash });
+    const t = window.setTimeout(() => {
+      setPulse((cur) => (cur?.id === id ? null : cur));
+    }, 1300);
+    return () => window.clearTimeout(t);
+  }, [role]);
+
+  return (
+    <div aria-hidden className="fixed inset-0 z-[2] pointer-events-none overflow-hidden">
+      <AnimatePresence>
+        {pulse ? (
+          <motion.div
+            key={`${pulse.id}-flood`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: [0, 1, 0], scale: 1.2 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1], times: [0, 0.42, 1] }}
+            className="absolute inset-0"
+            style={{ background: `radial-gradient(circle at 50% 42%, ${pulse.wash}, transparent 72%)` }}
+          />
+        ) : null}
+        {pulse ? (
+          <motion.div
+            key={`${pulse.id}-sweep`}
+            initial={{ opacity: 0, x: "-26%" }}
+            animate={{ opacity: [0, 0.7, 0], x: "26%" }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1], times: [0, 0.5, 1] }}
+            className="absolute inset-[-20%]"
+            style={{ background: `linear-gradient(112deg, transparent 34%, ${pulse.wash} 50%, transparent 66%)` }}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

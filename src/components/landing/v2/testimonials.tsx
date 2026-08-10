@@ -1,49 +1,32 @@
 "use client";
 
 /**
- * Testimonials, the pull-quote beat that closes section 05. Not a card:
- * full bleed on the dotted field, with the attribution up top, one large
- * quote, and the descending staircase of three process facts beneath it.
- * The quote rotates every 10 seconds and stops entirely while the pointer
- * is anywhere over the block, so reading always beats the timer. The dots
- * drive it directly.
+ * Testimonials — Base44's story block, our colours. NOT a card:
+ * full-bleed on the page, with an attribution line up top, a huge bold
+ * quote, and three big stepped stat rectangles at the bottom (the
+ * descending-staircase Base44 uses). No photo. It auto-advances every
+ * 10s with a smooth horizontal slide, pauses while hovered so reading
+ * always wins, and can be driven by the dots.
  *
- * The three facts do not rotate. They are fixed properties of the product,
- * each stated with its definition, and they are the only numbers in this
- * section. No dollar figures, no volumes, no savings claims.
+ * Reset-on-lens-change via keying <Story> on role (no setState-in-effect).
  *
- * AUSTRALIAN CONSUMER LAW, read this before touching TESTIMONIALS.
- * The six quotes in content.ts are self-generated and illustrative. They
- * are not the words of real customers and are not attributable to anyone.
- * They must be replaced with real, permissioned quotes before this page
- * reaches production: presenting invented testimonials as genuine is
- * misleading conduct. Standing instruction from the plan: replace them
- * with verifiable facts (customer since, rounds run, users) the moment
- * real customers permit it, and collect those facts deliberately from day
- * one. No dollar or income claims in any replacement.
+ * CONTENT IS PLACEHOLDER (TESTIMONIALS in content.ts) — real,
+ * attributable quotes + numbers must replace it before deploy (ACCC).
  */
 
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "@/lib/utils";
-import { PROOF_FACTS, TESTIMONIALS } from "./content";
+import { TESTIMONIALS, ROLE_PALETTE, type Role } from "./content";
 import { SectionField } from "./section-field";
+import { useRole } from "./role";
 
-/** Slow enough to read the long quotes. Pauses entirely on hover. */
+/** Slow enough to read the long quotes; pauses entirely on hover. */
 const INTERVAL = 10000;
 
-/** Instrument Serif is reserved: the Build Brief, pull quotes, and the
- *  three process-fact numerals below. Nowhere else on this page. */
-const SERIF = { fontFamily: "var(--font-instrument-serif)" } as const;
-
-/** Descending staircase, bottoms aligned. Heights start at sm: on a
- *  phone the three facts stack as rows so the labels can stay readable. */
-const STEP_H = [
-  "sm:h-[240px] lg:h-[300px]",
-  "sm:h-[205px] lg:h-[250px]",
-  "sm:h-[170px] lg:h-[200px]",
-];
+/** Descending staircase — first tallest, bottoms aligned. */
+const STEP_H = ["h-[128px] sm:h-[240px] lg:h-[300px]", "h-[112px] sm:h-[205px] lg:h-[250px]", "h-[96px] sm:h-[170px] lg:h-[200px]"];
 
 const slide = {
   enter: (d: number) => ({ opacity: 0, x: d * 50 }),
@@ -51,15 +34,24 @@ const slide = {
   exit: (d: number) => ({ opacity: 0, x: d * -50 }),
 };
 
-const TILE_RULE = {
-  background:
-    "linear-gradient(90deg, transparent, var(--color-border-accent), transparent)",
-} as const;
-
 export function Testimonials() {
+  const { role } = useRole();
+  return (
+    <section className="relative overflow-hidden px-5 md:px-10 py-20 lg:py-28 lg:min-h-[100svh] lg:flex lg:items-center">
+      <SectionField variant="dots" />
+      <div className="relative mx-auto w-full max-w-[1180px]">
+        <Story key={role} role={role} />
+      </div>
+    </section>
+  );
+}
+
+function Story({ role }: { role: Role }) {
+  const pal = ROLE_PALETTE[role];
+  const set = TESTIMONIALS[role];
   const [idx, setIdx] = React.useState(0);
   const [dir, setDir] = React.useState(1);
-  // Auto-advance yields to reading: hovering anywhere over the block
+  // Auto-advance yields to reading: hovering anywhere over the story
   // holds the current quote until the pointer leaves.
   const [paused, setPaused] = React.useState(false);
 
@@ -67,105 +59,97 @@ export function Testimonials() {
     if (paused) return;
     const t = window.setTimeout(() => {
       setDir(1);
-      setIdx((i) => (i + 1) % TESTIMONIALS.length);
+      setIdx((i) => (i + 1) % set.length);
     }, INTERVAL);
     return () => window.clearTimeout(t);
-  }, [idx, paused]);
+  }, [idx, set.length, paused]);
 
   const go = (next: number) => {
     setDir(next >= idx ? 1 : -1);
     setIdx(next);
   };
 
-  const t = TESTIMONIALS[idx]!;
+  const t = set[idx]!;
 
   return (
-    <section className="relative overflow-hidden px-5 md:px-10 py-20 lg:py-28">
-      <SectionField variant="dots" />
-      <div className="relative mx-auto w-full max-w-[1180px]">
-        <div
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* popLayout: the outgoing slide is lifted out of flow while the
+          incoming one lands, so the block never collapses to a blank
+          gap mid-rotation (mode="wait" left a ~0.5s hole). */}
+      <AnimatePresence mode="popLayout" custom={dir} initial={false}>
+        <motion.div
+          key={idx}
+          custom={dir}
+          variants={slide}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* popLayout: the outgoing quote is lifted out of flow while the
-              incoming one lands, so the block never collapses to a blank
-              gap mid-rotation. The min-height absorbs the difference
-              between the shortest and longest quote. */}
-          <AnimatePresence mode="popLayout" custom={dir} initial={false}>
-            <motion.figure
-              key={idx}
-              custom={dir}
-              variants={slide}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="min-h-[250px] lg:min-h-[272px]"
-            >
-              <figcaption className="flex items-center gap-3 text-[16px] sm:text-[17px] text-text-muted">
-                <span aria-hidden className="block h-px w-7 bg-accent-light" />
-                {t.who}
-              </figcaption>
+          {/* Attribution line */}
+          <p className="text-[15px] sm:text-[17px] text-text-muted">
+            <span style={{ color: pal.accent }}>—</span> {t.name}
+            <span className="text-text-dim"> · {t.title}</span>
+          </p>
 
-              <blockquote
-                className="mt-6 lg:mt-8 max-w-[980px] text-[clamp(1.75rem,2.6vw+0.7rem,3rem)] leading-[1.12] tracking-[-0.01em] text-text"
-                style={SERIF}
-              >
-                <p>“{t.quote}”</p>
-              </blockquote>
-            </motion.figure>
-          </AnimatePresence>
+          {/* Quote — the hero. Font lives on the sized element so any
+              ch-based measure resolves against the big type, not 16px. */}
+          <blockquote className="mt-6 lg:mt-9 max-w-[880px] lg:max-w-[1080px] font-ui font-semibold tracking-[-0.04em] leading-[1.05] text-[clamp(1.9rem,3.1vw+0.5rem,3.4rem)] text-text">
+            <p>“{t.quote}”</p>
+          </blockquote>
 
-          {/* Process facts. Fixed, not part of the rotation. */}
-          <div className="mt-10 lg:mt-14 grid gap-3 sm:grid-cols-3 sm:items-end sm:gap-4 lg:gap-5">
-            {PROOF_FACTS.map((fact, i) => (
+          {/* Stepped stat rectangles */}
+          <div className="mt-9 sm:mt-12 lg:mt-16 grid grid-cols-3 gap-2 sm:gap-3 lg:gap-5 items-end">
+            {t.stats.map((st, i) => (
               <div
-                key={fact.label}
-                className={cn(
-                  "relative overflow-hidden rounded-xl border border-border-subtle bg-surface-1 card-elev",
-                  "flex items-baseline gap-4 p-5",
-                  "sm:flex-col sm:items-start sm:justify-between sm:p-6 lg:p-7",
-                  STEP_H[i],
-                )}
+                key={st.label}
+                className={cn("relative rounded-xl overflow-hidden flex flex-col justify-between p-3 sm:p-6 lg:p-7", STEP_H[i])}
+                style={{
+                  background: "#ffffff", // white block pops on the dotted field — colour carried by the number
+                  border: "1px solid rgba(24,34,44,0.08)",
+                  boxShadow: "0 2px 10px -4px rgba(24,34,44,0.12)",
+                }}
               >
-                <span aria-hidden className="absolute top-0 inset-x-6 h-px" style={TILE_RULE} />
-                <p
-                  className="leading-none text-[2.4rem] sm:text-[clamp(2.2rem,4vw+0.6rem,3.4rem)] text-accent-light"
-                  style={SERIF}
-                >
-                  {fact.value}
+                <span
+                  aria-hidden
+                  className="absolute top-0 inset-x-6 h-px"
+                  style={{ background: `linear-gradient(90deg, transparent, ${pal.accentSoft}66, transparent)` }}
+                />
+                <p className="font-ui font-semibold tracking-[-0.03em] leading-none text-[clamp(1.25rem,3vw+0.5rem,3.2rem)]" style={{ color: pal.accentSoft }}>
+                  {st.value}
                 </p>
-                <p className="text-[16px] leading-[1.4] text-text-muted">{fact.label}</p>
+                <p className="text-[10.5px] sm:text-[14px] lg:text-[15px] leading-[1.35] text-text-muted">{st.label}</p>
               </div>
             ))}
           </div>
+        </motion.div>
+      </AnimatePresence>
 
-          {/* Dots */}
-          <div className="mt-9 lg:mt-11 flex items-center gap-2">
-            {TESTIMONIALS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Show quote ${i + 1} of ${TESTIMONIALS.length}`}
-                aria-current={i === idx}
-                className="inline-flex h-8 items-center justify-center px-1"
-              >
-                <span
-                  className="block h-[6px] rounded-full transition-all duration-[420ms] ease-[var(--ease-out)]"
-                  style={{
-                    width: i === idx ? 32 : 7,
-                    background:
-                      i === idx
-                        ? "var(--color-accent-light)"
-                        : "var(--color-border-strong)",
-                  }}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Dots */}
+      <div className="mt-8 lg:mt-10 flex items-center gap-2">
+        {set.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => go(i)}
+            aria-label={`Show testimonial ${i + 1}`}
+            aria-current={i === idx}
+            className="group inline-flex items-center justify-center h-8 px-1"
+          >
+            <span
+              className="block h-[6px] rounded-full transition-all duration-[420ms] ease-[var(--ease-out)]"
+              style={{
+                width: i === idx ? 32 : 7,
+                background: i === idx ? pal.accent : "rgba(24,34,44,0.18)",
+                boxShadow: i === idx ? `0 0 10px ${pal.accent}90` : "none",
+              }}
+            />
+          </button>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

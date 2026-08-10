@@ -3,14 +3,14 @@
 /**
  * Client form for /book-a-call.
  *
- * A short qualifier, the whole point of this funnel is LOW friction
+ * A short qualifier — the whole point of this funnel is LOW friction
  * versus the plans-upload flow, so only name/email/phone are required;
  * project type, suburb, state and timeline are optional context that
  * help us line up the right builders before the call.
  *
  * On success the lead is persisted + ops is notified (server action),
  * then we redirect to /book-a-call/confirmed?name=&email= so the Cal.com
- * embed there can prefill, the user picks a slot without retyping.
+ * embed there can prefill — the user picks a slot without retyping.
  *
  * Reuses the /estimate_request_landing_page CSS module so both ad
  * landers share one visual system.
@@ -42,7 +42,7 @@ export function BookCallForm({ styles }: { styles: Styles }) {
   const [invalidField, setInvalidField] = useState<Field | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // Attribution, same shape as the other landers so the leads table
+  // Attribution — same shape as the other landers so the leads table
   // gets comparable values across campaigns.
   const getSource = (): string => {
     const utmSource = searchParams.get("utm_source");
@@ -356,7 +356,7 @@ export function BookCallForm({ styles }: { styles: Styles }) {
               strokeLinejoin="round"
             />
           </svg>
-          Pick a time on the next screen. No cost, no obligation, just a quick
+          Pick a time on the next screen. No cost, no obligation — just a quick
           chat to match you with the right builders.
         </div>
       </form>

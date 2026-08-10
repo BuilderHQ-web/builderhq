@@ -1,5 +1,5 @@
 /**
- * /book-a-call/confirmed, the post-submit page for the "Book a call" funnel.
+ * /book-a-call/confirmed — post-submit page for the "Book a call" funnel.
  *
  * The lead is already captured (server action) + ops notified. This page:
  *   1. Fires the Google Ads conversion (BookConfirmed client island).
@@ -7,7 +7,7 @@
  *      passed in the query string, so the visitor picks a slot in-place.
  *
  * Reuses the /estimate_received chrome (ambient + nav + badge + footer)
- * so the two ad flows feel like one product. Noindex, because it is a
+ * so the two ad flows feel like one product. Noindex — it's a
  * conversion page, not organic content.
  */
 
@@ -16,7 +16,6 @@ import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { companyFooterLine } from "@/lib/company";
 import s from "../../estimate_received/confirmed.module.css";
 import theme from "../../guide/theme.module.css";
 import light from "../light.module.css";
@@ -72,7 +71,7 @@ export default function BookCallConfirmedPage() {
 
       <main className={s.main}>
         <div className={s.container}>
-          {/* Hero badge: clock-in-disc + success tick */}
+          {/* Hero badge — clock-in-disc + success tick */}
           <div className={s.badgeWrap}>
             <div className={s.badge}>
               <div className={s.badgeRing} />
@@ -111,7 +110,7 @@ export default function BookCallConfirmedPage() {
 
           <p className={s.deck}>
             Choose a slot below and we&apos;ll call to match you with vetted
-            builders for your project. It takes 15 minutes, at no cost and no
+            builders for your project. Takes 15 minutes — no cost, no
             obligation.
           </p>
 
@@ -132,23 +131,8 @@ export default function BookCallConfirmedPage() {
       </main>
 
       <footer className={s.footer}>
-        <div className={s.footerLeft} style={{ lineHeight: 1.65 }}>
-          {companyFooterLine()}
-          <br />
-          <span style={{ color: "var(--g-text)" }}>
-            Part of{" "}
-            <Link
-              href="/"
-              style={{
-                color: "inherit",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              BuilderHQ
-            </Link>
-            , the tendering platform for Australian residential construction.
-          </span>
+        <div className={s.footerLeft}>
+          © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
         </div>
         <div className={s.footerLinks}>
           <Link href="https://builderhq.com.au">builderhq.com.au</Link>

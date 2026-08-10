@@ -19,7 +19,6 @@ import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { companyFooterLine } from "@/lib/company";
 import s from "./confirmed.module.css";
 import theme from "../guide/theme.module.css";
 import { ConfirmedConversion } from "./confirmed-conversion";
@@ -39,9 +38,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Your guide is on its way · BuilderHQ",
+  title: "Your Guide is on its way · BuilderHQ",
   description:
-    "Your Melbourne Building Guide is on its way to your inbox. Check your email in the next minute.",
+    "Your Melbourne Build Brief is on its way to your inbox. Check your email in the next minute.",
   robots: { index: false, follow: true },
 };
 
@@ -95,7 +94,7 @@ export default function GuideConfirmedPage() {
                 <h3 className={s.coverTitle}>
                   The
                   <em>Melbourne</em>
-                  Building Guide.
+                  Build Brief.
                 </h3>
                 <p className={s.coverDeck}>
                   Costs · Contracts · Red Flags · Vetting · Tenders
@@ -129,8 +128,8 @@ export default function GuideConfirmedPage() {
           </h1>
 
           <p className={s.deck}>
-            Your Melbourne Building Guide is on its way. It should land in the
-            next 60 seconds. Keep an eye out.
+            Your Melbourne Build Brief is on its way. It should land in the
+            next 60 seconds — keep an eye out.
           </p>
 
           <div className={s.infoGrid}>
@@ -150,7 +149,7 @@ export default function GuideConfirmedPage() {
               <p className={s.infoText}>
                 From <strong>BuilderHQ</strong>,
                 <br />
-                subject &ldquo;Your Melbourne Building Guide is here&rdquo;
+                subject &ldquo;Your Melbourne Build Brief is here&rdquo;
               </p>
             </div>
 
@@ -180,23 +179,8 @@ export default function GuideConfirmedPage() {
       </main>
 
       <footer className={s.footer}>
-        <div className={s.footerLeft} style={{ lineHeight: 1.65 }}>
-          {companyFooterLine()}
-          <br />
-          <span style={{ color: "var(--g-text)" }}>
-            Part of{" "}
-            <Link
-              href="/"
-              style={{
-                color: "inherit",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              BuilderHQ
-            </Link>
-            , the tendering platform for Australian residential construction.
-          </span>
+        <div className={s.footerLeft}>
+          © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
         </div>
         <div className={s.footerLinks}>
           <Link href="https://builderhq.com.au">builderhq.com.au</Link>

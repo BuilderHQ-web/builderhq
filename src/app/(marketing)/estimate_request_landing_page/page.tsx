@@ -18,7 +18,6 @@ import { Fraunces, Inter } from "next/font/google";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { companyFooterLine } from "@/lib/company";
 import s from "./estimate.module.css";
 import theme from "../guide/theme.module.css";
 import { EstimateForm } from "./estimate-form";
@@ -242,23 +241,8 @@ export default function EstimateRequestLandingPage() {
       </main>
 
       <footer className={s.footer}>
-        <div className={s.footerLeft} style={{ lineHeight: 1.65 }}>
-          {companyFooterLine()}
-          <br />
-          <span style={{ color: "var(--g-text)" }}>
-            Part of{" "}
-            <Link
-              href="/"
-              style={{
-                color: "inherit",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-              }}
-            >
-              BuilderHQ
-            </Link>
-            , the tendering platform for Australian residential construction.
-          </span>
+        <div className={s.footerLeft}>
+          © 2026 BuilderHQ Pty Ltd · Melbourne, Australia
         </div>
         <div className={s.footerLinks}>
           <Link href="https://builderhq.com.au">builderhq.com.au</Link>

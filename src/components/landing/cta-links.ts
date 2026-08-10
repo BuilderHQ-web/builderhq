@@ -47,13 +47,3 @@ export async function resolveCtaLinks(): Promise<CtaLinks> {
     secondary: { href: "/signup?role=builder", label: "I'm a builder" },
   };
 }
-
-/**
- * The nav's primary pill is auth-aware on every marketing page: a
- * signed-in visitor gets their dashboard, everyone else gets the
- * page's own call to action. Returns null when signed out.
- */
-export async function resolveNavAuthedHref(): Promise<string | null> {
-  const { primary } = await resolveCtaLinks();
-  return /^\/(owner|builder|admin)/.test(primary.href) ? primary.href : null;
-}

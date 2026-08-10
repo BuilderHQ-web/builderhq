@@ -77,7 +77,7 @@ export function BudgetStep() {
 
       <p className="mt-6 text-text-faint text-[12px] font-body max-w-[520px]">
         Indicative only. Final cost depends on plans, finishes, and the builder you
-        choose. Use this to filter who tenders, you&apos;re not committing to a
+        choose. Use this to filter who tenders — you&apos;re not committing to a
         number.
       </p>
 

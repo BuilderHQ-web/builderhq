@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { resolveNavAuthedHref } from "@/components/landing/cta-links";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -17,12 +16,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/partners/architects" },
 };
 
-export default async function ArchitectPartnersPage() {
-  const navAuthedHref = await resolveNavAuthedHref();
+export default function ArchitectPartnersPage() {
   const partners = PARTNERS.filter((p) => !p.draft && p.kind === "architect");
   return (
     <MarketingPageShell
-      authedHref={navAuthedHref}
       kicker="Our Partners · Design partners"
       title="Design partners worth an introduction."
       sub="Building designers and architects doing considered residential work across Melbourne. We feature them, we refer them, and we introduce them to homeowners planning a build. No fees, either side."

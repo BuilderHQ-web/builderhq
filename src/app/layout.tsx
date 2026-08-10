@@ -40,31 +40,29 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://builderhq.com.au"),
   title: {
-    default:
-      "BuilderHQ · The tendering platform for Australian residential construction",
+    default: "BuilderHQ — Australia's Residential Tender Platform",
     template: "%s · BuilderHQ",
   },
   description:
-    "Upload the plans and BuilderHQ writes the scope of works, line by line. Verified builders price that same list and answer the same structured questions, so every tender comes back comparable and scored.",
+    "Upload your project once. Reach builders ready to tender, compare responses with clarity, and keep every document and conversation in one place.",
   applicationName: "BuilderHQ",
   authors: [{ name: "BuilderHQ" }],
   keywords: [
-    "residential construction tendering",
-    "scope of works",
-    "compare builder tenders",
-    "construction tender evaluation",
+    "residential construction",
+    "tendering",
     "Australian builders",
-    "home building in Australia",
-    "renovations and extensions",
-    "architect run tender rounds",
+    "home builders",
+    "construction marketplace",
+    "renovation",
+    "townhouse development",
+    "project tendering",
   ],
   openGraph: {
     type: "website",
     siteName: "BuilderHQ",
-    title:
-      "BuilderHQ · The tendering platform for Australian residential construction",
+    title: "BuilderHQ — Upload. Compare. Build.",
     description:
-      "One scope of works, priced by every builder, scored side by side. Where projects start.",
+      "Stop chasing builders. Upload your project once and let suitable builders come to you.",
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },

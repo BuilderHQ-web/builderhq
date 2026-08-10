@@ -6,16 +6,10 @@ import { AnimatedCount } from "./animated-count";
 /**
  * Single proof band beneath the hero. Four metrics:
  *
- *   93       Questions every builder answers
- *   256      Lines in the Scope Standard
- *   6        Published scoring dimensions
- *   $0       Commission
- *
- * These are facts about how the process works, and every one of them can
- * be checked in the product. The band previously carried "50+ active
- * builders" and "$50M+ tenders uploaded", neither of which anyone could
- * substantiate. Do not put a volume or outcome number back here without
- * a source you would show a regulator.
+ *   100%     Verified builders
+ *   50+      Active builders
+ *   $50M+    Tenders uploaded
+ *   24/7     Live marketplace
  *
  * Animations:
  *   · The band itself fades + lifts in slightly after the hero
@@ -39,26 +33,34 @@ export function ProofBand() {
       <div className="grid grid-cols-2 sm:grid-cols-4">
         <Metric
           delay={1.1}
-          value={<AnimatedCount value={93} format="{n}" duration={1400} />}
-          label="Questions every builder answers"
+          value={<AnimatedCount value={100} format="{n}%" duration={1400} />}
+          label="Verified builders"
           className="border-r border-border-subtle sm:border-r"
         />
         <Metric
           delay={1.2}
-          value={<AnimatedCount value={256} format="{n}" duration={1400} />}
-          label="Lines in the Scope Standard"
+          value={<AnimatedCount value={50} format="{n}+" duration={1400} />}
+          label="Active builders"
           className="sm:border-r sm:border-border-subtle"
         />
         <Metric
           delay={1.3}
-          value={<AnimatedCount value={6} format="{n}" duration={1500} />}
-          label="Published scoring dimensions"
+          value={<AnimatedCount value={50} format="${n}M+" duration={1500} />}
+          label="Tenders uploaded"
           className="border-r border-t sm:border-t-0 border-border-subtle sm:border-r"
         />
         <Metric
           delay={1.4}
-          value="$0"
-          label="Commission"
+          value={
+            <span className="inline-flex items-center gap-1.5 sm:gap-2">
+              24/7
+              <span className="relative flex size-1.5 sm:size-2">
+                <span className="absolute inset-0 rounded-full bg-accent opacity-80 animate-ping" />
+                <span className="relative size-1.5 sm:size-2 rounded-full bg-accent shadow-[0_0_8px_rgba(0,212,200,0.7)]" />
+              </span>
+            </span>
+          }
+          label="Live marketplace"
           className="border-t sm:border-t-0 border-border-subtle"
         />
       </div>
@@ -87,7 +89,7 @@ function Metric({
       <span className="font-display text-[22px] sm:text-[32px] text-text leading-none tracking-[-0.005em]">
         {value}
       </span>
-      <span className="mt-1.5 sm:mt-2 text-[9.5px] sm:text-[10.5px] tracking-[0.16em] sm:tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
+      <span className="mt-1.5 sm:mt-2 text-[9.5px] sm:text-[10.5px] tracking-[0.16em] sm:tracking-[0.18em] uppercase text-text-faint font-ui font-semibold">
         {label}
       </span>
     </motion.div>

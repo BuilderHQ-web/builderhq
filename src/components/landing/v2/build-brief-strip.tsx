@@ -32,7 +32,7 @@ export function BuildBriefStrip() {
           className="group block rounded-2xl bg-[#fffdf8] ring-1 ring-[#101820]/[0.09] card-elev px-6 py-8 sm:px-12 sm:py-11 transition-all duration-300 hover:-translate-y-1 hover:ring-[#101820]/[0.16]"
         >
           {/* dateline */}
-          <div className="flex items-baseline justify-between gap-4 text-[10px] sm:text-[10.5px] tracking-[0.18em] uppercase font-ui font-semibold text-text-muted">
+          <div className="flex items-baseline justify-between gap-4 text-[10px] sm:text-[10.5px] tracking-[0.18em] uppercase font-ui font-semibold text-text-dim">
             <span>Issue {issueNo(issue)}</span>
             <span className="hidden sm:block">{issue.displayDate}</span>
             <span>Melbourne</span>
@@ -49,7 +49,7 @@ export function BuildBriefStrip() {
           >
             The Build Brief
           </p>
-          <p className="mt-3.5 text-center text-[10px] sm:text-[10.5px] tracking-[0.28em] uppercase text-text-muted font-ui font-semibold">
+          <p className="mt-3.5 text-center text-[10px] sm:text-[10.5px] tracking-[0.28em] uppercase text-text-dim font-ui font-semibold">
             Five minutes on the economics of getting homes built
           </p>
 
@@ -85,7 +85,7 @@ export function BuildBriefStrip() {
             <span className="inline-flex items-center rounded-full bg-[#101820] px-5 py-2.5 text-[12.5px] font-ui font-semibold text-white transition-colors group-hover:bg-[#1b2733]">
               Read Issue {issueNo(issue)} →
             </span>
-            <span className="text-[10.5px] tracking-[0.22em] uppercase text-text-muted font-ui font-semibold">
+            <span className="text-[10.5px] tracking-[0.22em] uppercase text-text-dim font-ui font-semibold">
               Plain · Sourced · Every Friday
             </span>
           </div>

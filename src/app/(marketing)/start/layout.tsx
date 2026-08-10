@@ -2,16 +2,15 @@ import type { Metadata, Viewport } from "next";
 import * as React from "react";
 
 import { Ambient } from "@/components/landing/ambient";
-import { companyFooterLine } from "@/lib/company";
 
 /**
- * /start route group, the conversion funnel layout for Google Ads.
+ * /start route group — conversion funnel layout for Google Ads.
  *
  * Intentionally LIGHTER than the marketing root (`/`):
- *   · No FibreCanvas (heavy WebGL, wastes LCP budget for paid traffic)
+ *   · No FibreCanvas (heavy WebGL — wastes LCP budget for paid traffic)
  *   · No CustomCursor (custom cursors hurt usability metrics)
  *   · No marketing nav (single CTA per page = no escape hatches)
- *   · No footer with broad links, a minimal legal-only footer instead
+ *   · No footer with broad links — minimal legal-only footer instead
  *
  * Keeps the brand backdrop (Ambient gradient + GridOverlay) so the
  * page still feels like BuilderHQ, just stripped of nav distractions.
@@ -20,10 +19,8 @@ import { companyFooterLine } from "@/lib/company";
 export const metadata: Metadata = {
   title: "Upload your project · BuilderHQ",
   description:
-    "Tender your residential project to verified Australian builders. Free for owners.",
-  // The /start landing is the indexable page in this group. The funnel
-  // steps under /start/q and the /start/sent page opt out of indexing in
-  // their own layouts, which override this.
+    "BuilderHQ is the only marketplace where verified Australian builders tender for your residential project. Free for owners. Up to three tenders per project.",
+  // Don't crawl funnel sub-pages; we only want the landing indexed.
   robots: { index: true, follow: true },
 };
 
@@ -45,7 +42,7 @@ export default function StartLayout({
   children: React.ReactNode;
 }) {
   return (
-    // No `overflow-hidden` on the outermost element, because that breaks
+    // No `overflow-hidden` on the outermost element — that breaks
     // position: sticky on every descendant header. The Ambient + grid
     // are themselves `pointer-events-none fixed` so they don't need
     // a clip on the parent.
@@ -66,7 +63,7 @@ export default function StartLayout({
 
 /**
  * Funnel-local grid overlay. The shared marketing GridOverlay has a
- * radial mask centred at 50%/30% of the viewport, which "wanders"
+ * radial mask centred at 50%/30% of the viewport — which "wanders"
  * as the user scrolls past short content (visible as a colour shift
  * on every quiz step). This version uses a much softer, edge-only
  * mask and tighter spacing so the texture stays consistent at every
@@ -94,7 +91,7 @@ function FunnelFooter() {
   return (
     <footer className="px-5 md:px-10 pb-6 pt-4">
       <div className="mx-auto max-w-[1240px] flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-text-faint font-ui">
-        <span>{companyFooterLine({ withLocation: false })}</span>
+        <span>© {new Date().getFullYear()} BuilderHQ Pty Ltd</span>
         <nav className="flex items-center gap-4">
           <a href="/privacy" className="hover:text-text transition-colors">
             Privacy

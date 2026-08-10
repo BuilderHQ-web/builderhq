@@ -21,15 +21,8 @@ export const SITE = "https://builderhq.com.au";
 
 export const SITE_NAME = "BuilderHQ";
 
-/**
- * The canonical description of the product, the first three sentences
- * of the positioning paragraph. This is the string generative engines
- * quote back when asked what BuilderHQ is, so it says what the platform
- * does and nothing it cannot do. Change it here and everywhere that
- * imports it follows.
- */
 export const SITE_DESCRIPTION =
-  "BuilderHQ runs the whole tender for Australian residential construction. Upload the plans and it reads the documents and writes the scope of works, line by line, each line tied to the page it came from. Verified builders price that same list and answer the same structured questions, so every tender arrives comparable.";
+  "BuilderHQ is Australia's residential construction tendering platform. Homeowners and developers list their project once, with full architectural plans, and up to three verified builders price it on the same scope, so quotes are comparable like for like.";
 
 /** Absolute URL for a site-relative path or asset. */
 export function abs(path: string): string {
@@ -61,7 +54,7 @@ export function siteGraph(): Record<string, unknown> {
     image: abs("/icon.png"),
     description: SITE_DESCRIPTION,
     email: "info@builderhq.com.au",
-    slogan: "Where projects start.",
+    slogan: "Upload once. Compare like for like. Build.",
     areaServed: { "@type": "Country", name: "Australia" },
     foundingLocation: {
       "@type": "Place",
@@ -74,13 +67,10 @@ export function siteGraph(): Record<string, unknown> {
     },
     knowsAbout: [
       "Residential construction tendering",
-      "Scope of works preparation",
-      "Comparing builder tenders",
-      "Construction tender evaluation",
+      "Comparing builder quotes",
       "Home building in Australia",
       "Renovations and extensions",
       "Verified residential builders",
-      "Architect run tender rounds",
       "Construction finance",
     ],
     contactPoint: {

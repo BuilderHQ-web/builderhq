@@ -1,19 +1,14 @@
 /**
- * Landing v2 — the composition root for the marketing home page.
+ * Landing v2 — composition root, shared by `/` and `/for/[audience]`.
  *
- * One page, one voice, one surface. The role lens is gone: the three
- * audiences are argued in full on their own pages under /for, and the
- * home page tells the story once, in a professional register, with the
- * homeowner as the default reader.
+ * One continuous canvas (Canvas), whose ambient light shifts per lens.
+ * The page never switches surfaces; content floats on top and re-tunes
+ * when the visitor picks a role in the selector. The dock flight
+ * (FlyingLabel) and the re-light pulse (RoleWash) render above the fold.
  *
- * The order is the argument:
- *   hero → who we work with → 01 the problem → 02 how a round runs →
- *   03 the standards → 04 who it's for → 05 proof → the Build Brief →
- *   06 questions → close.
- *
- * Section ids are the analytics landmarks; SectionTracker holds the
- * list, and the two chapters whose components carry no id of their own
- * get one from the wrappers below.
+ * Narrative: hook (hero) → pick your view (selector) → why (problem) →
+ * how, worry by worry (spine) → the rules (trust) → the people (proof) →
+ * the network → the whole picture (ecosystem) → questions → close.
  */
 
 import {
@@ -21,21 +16,23 @@ import {
   partnerNavTypes,
 } from "@/app/(marketing)/partners/partners-data";
 
-import { Canvas } from "./canvas";
-import { MarketingMotion } from "./role";
+import { Canvas, RoleWash } from "./canvas";
+import { FlyingLabel } from "./flying-label";
 import { ScrollProgress } from "./scroll-progress";
+import type { Role } from "./content";
+import { RoleProvider } from "./role";
 import { LandingNav } from "./nav";
+import { BuildBriefStrip } from "./build-brief-strip";
 import { Hero } from "./hero";
 import { PartnerMarquee } from "./partner-marquee";
+import { RoleSelector } from "./role-selector";
 import { Problem } from "./problem";
 import { Spine } from "./spine";
-/* The standards and the audiences chapters still live in the files they
-   were born in. Aliased so the composition reads as the page does. */
-import { Trust as Standards } from "./trust";
-import { Ecosystem as Audiences } from "./ecosystem";
+import { Trust } from "./trust";
 import { Proof } from "./proof";
+import { Network } from "./network";
+import { Ecosystem } from "./ecosystem";
 import { Testimonials } from "./testimonials";
-import { BuildBriefStrip } from "./build-brief-strip";
 import { FAQ } from "./faq";
 import { Close } from "./close";
 import { Footer } from "./footer";
@@ -43,57 +40,60 @@ import { SectionDivider } from "./section-divider";
 import { PartnerForm } from "./partner-form";
 import { SectionTracker } from "./section-tracker";
 
-export function Landing({ authedHref }: { authedHref: string | null }) {
+export function Landing({
+  initialRole = "homeowner",
+  initialDocked = false,
+  authedHref,
+}: {
+  initialRole?: Role;
+  initialDocked?: boolean;
+  authedHref: string | null;
+}) {
   return (
-    <MarketingMotion>
+    <RoleProvider initialRole={initialRole} initialDocked={initialDocked}>
       <div className="lp-light">
-        <Canvas />
+      <Canvas />
 
-        <LandingNav authedHref={authedHref} partnerNav={partnerNavTypes()} />
+      <LandingNav authedHref={authedHref} partnerNav={partnerNavTypes()} />
 
-        <main className="relative z-10">
-          <Hero authedHref={authedHref} />
-          <PartnerMarquee logos={livePartnerLogos()} />
+      <main className="relative z-10">
+        <Hero authedHref={authedHref} />
+        <PartnerMarquee logos={livePartnerLogos()} />
+        <RoleSelector />
+        <SectionDivider n="01" label="The problem" />
+        <Problem />
+        <SectionDivider n="02" label="How it works" />
+        <Spine authedHref={authedHref} />
+        <SectionDivider n="03" label="Why trust us" />
+        <Trust />
+        <SectionDivider n="04" label="The people" />
+        <Proof />
+        <SectionDivider n="05" label="The network" />
+        <Network />
+        <SectionDivider n="06" label="One platform" />
+        <Ecosystem />
+        <SectionDivider n="07" label="What people say" />
+        <Testimonials />
+        <BuildBriefStrip />
+        <SectionDivider n="08" label="Questions" />
+        <FAQ />
+        <Close authedHref={authedHref} />
+      </main>
 
-          <SectionDivider n="01" label="The problem" />
-          <Problem />
+      <Footer />
 
-          <SectionDivider n="02" label="How it works" />
-          <Spine authedHref={authedHref} />
+      {/* Overlays: reading progress, the re-light pulse, the dock flight. */}
+      <ScrollProgress />
+      <RoleWash />
+      <FlyingLabel />
 
-          <SectionDivider n="03" label="The standards" />
-          <Standards />
+      {/* Partner capture modal — listens for the #join-architect /
+          #join-finance / #request-intro sentinel CTAs. */}
+      <PartnerForm />
 
-          <SectionDivider n="04" label="Who it’s for" />
-          <Audiences />
-
-          <SectionDivider n="05" label="Proof" />
-          <div id="proof">
-            <Proof />
-            <Testimonials />
-          </div>
-          <BuildBriefStrip />
-
-          <SectionDivider n="06" label="Questions" />
-          <FAQ />
-
-          <div id="close">
-            <Close authedHref={authedHref} />
-          </div>
-        </main>
-
-        <Footer />
-
-        {/* Reading progress, above the nav. */}
-        <ScrollProgress />
-
-        {/* Partner capture modal — listens for the #join-network /
-            #join-architect / #request-intro sentinel CTAs. */}
-        <PartnerForm />
-
-        {/* Scroll-depth analytics: one section_viewed per landmark. */}
-        <SectionTracker />
+      {/* Scroll-depth analytics: one section_viewed per landmark. */}
+      <SectionTracker />
       </div>
-    </MarketingMotion>
+    </RoleProvider>
   );
 }
