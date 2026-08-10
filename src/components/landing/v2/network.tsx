@@ -83,10 +83,12 @@ export function Network() {
                 </RoleSwap>
                 <RoleSwap>
                   <h2 className="mt-4 max-w-[20ch] font-ui font-semibold tracking-[-0.03em] text-[clamp(1.9rem,2.6vw+0.5rem,3rem)] leading-[1.1]">
-                    <span className="text-text">{copy.h2a}</span>{" "}
-                    <span style={{ color: pal.accentSoft }}>{copy.h2b}</span>
+                    <span className="block text-text">{copy.h2a}</span>
+                    <span className="block" style={{ color: pal.accentSoft }}>
+                      {copy.h2b}
+                    </span>
                   </h2>
-                  <p className="mt-5 max-w-[52ch] text-[14.5px] lg:text-[15px] leading-[1.72] text-text-muted">
+                  <p className="mt-5 max-w-[52ch] text-pretty text-[14.5px] lg:text-[15px] leading-[1.72] text-text-muted">
                     {copy.body}
                   </p>
 

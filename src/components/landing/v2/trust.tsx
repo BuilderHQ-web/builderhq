@@ -48,12 +48,18 @@ export function Trust() {
           {/* Statement */}
           <Reveal>
             <div className="lg:sticky lg:top-28 self-start text-center lg:text-left">
-              <h2 className="font-ui font-semibold tracking-[-0.035em] text-[clamp(2.2rem,3.2vw+0.5rem,3.6rem)] leading-[1.08]">
-                <span className="text-text">You can check</span>{" "}
-                <span style={{ color: pal.accentSoft }}>everything we say.</span>
+              {/* Block lines, written to fit this narrow column. The old
+                  heading ("You can check everything we say") pointed at
+                  us; the checks point at the builders, which is what a
+                  reader is actually weighing up. */}
+              <h2 className="font-ui font-semibold tracking-[-0.035em] text-[clamp(2.2rem,3.2vw+0.5rem,3.5rem)] leading-[1.08]">
+                <span className="block text-text">{copy.h2a}</span>
+                <span className="block" style={{ color: pal.accentSoft }}>
+                  {copy.h2b}
+                </span>
               </h2>
               <RoleSwap>
-                <p className="mt-5 mx-auto lg:mx-0 max-w-[40ch] text-[14.5px] leading-[1.65] text-text-muted">
+                <p className="mt-5 mx-auto lg:mx-0 max-w-[40ch] text-pretty text-[14.5px] leading-[1.65] text-text-muted">
                   {copy.intro}
                 </p>
               </RoleSwap>
@@ -90,10 +96,10 @@ export function Trust() {
                         </span>
                       </div>
                       <div className="min-w-0 pt-0.5">
-                        <h3 className="font-ui font-bold tracking-[-0.015em] text-[19px] lg:text-[21px] leading-[1.25] text-text">
+                        <h3 className="text-balance font-ui font-bold tracking-[-0.015em] text-[19px] lg:text-[21px] leading-[1.25] text-text">
                           {card.title}
                         </h3>
-                        <p className="mt-2.5 max-w-[54ch] text-[14px] lg:text-[14.5px] leading-[1.72] text-text-muted">
+                        <p className="mt-2.5 max-w-[54ch] text-pretty text-[14px] lg:text-[14.5px] leading-[1.72] text-text-muted">
                           {card.body}
                         </p>
                       </div>

@@ -28,6 +28,7 @@ import { useRole } from "./role";
 const LINKS = [
   { label: "How it Works", href: "#how" },
   { label: "Trust", href: "#trust" },
+  { label: "Pricing", href: "#pricing" },
   { label: "Our Partners", href: "/partners" },
   { label: "Build Brief", href: "/build-brief" },
   { label: "FAQs", href: "#faq" },
@@ -177,8 +178,18 @@ export function LandingNav({
             ) : null}
           </div>
 
-          {/* Centre anchors — desktop */}
-          <ul className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          {/* Centre anchors — desktop.
+              w-max is load bearing. The list is absolutely positioned at
+              left:50% with no right, so its shrink-to-fit width is capped
+              at half the bar: adding a sixth link did not widen the group,
+              it wrapped three of them onto a second line between 1024 and
+              1130px. max-content ignores that cap. */}
+          <ul
+            className={cn(
+              "hidden w-max items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+              docked || flight ? "xl:flex" : "lg:flex",
+            )}
+          >
             {LINKS.map((l) =>
               l.label === "Our Partners" && partnerNav?.length ? (
                 <PartnersDropdown key={l.href} types={partnerNav} />
@@ -217,7 +228,10 @@ export function LandingNav({
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
-            className="lg:hidden size-11 -mr-2 rounded-md text-text hover:text-accent-light transition-colors flex items-center justify-center"
+            className={cn(
+              "size-11 -mr-2 rounded-md text-text hover:text-accent-light transition-colors flex items-center justify-center",
+              docked || flight ? "xl:hidden" : "lg:hidden",
+            )}
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -235,7 +249,7 @@ export function LandingNav({
             transition={{ duration: 0.22 }}
             onClick={() => setMobileOpen(false)}
             aria-hidden
-            className="fixed inset-0 z-30 lg:hidden"
+            className={cn("fixed inset-0 z-30", docked || flight ? "xl:hidden" : "lg:hidden")}
             style={{ background: "rgba(12,18,24,0.32)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
           />
         ) : null}
@@ -246,7 +260,7 @@ export function LandingNav({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-3 top-[78px] z-40 lg:hidden rounded-2xl border border-border-subtle max-h-[calc(100dvh-92px)] overflow-y-auto shadow-[0_30px_70px_-30px_rgba(24,34,44,0.45)]"
+            className={cn("fixed inset-x-3 top-[78px] z-40 rounded-2xl border border-border-subtle max-h-[calc(100dvh-92px)] overflow-y-auto shadow-[0_30px_70px_-30px_rgba(24,34,44,0.45)]", docked || flight ? "xl:hidden" : "lg:hidden")}
             style={{ background: "#faf8f3", paddingBottom: "env(safe-area-inset-bottom)" }}
           >
             <div className="px-5 pt-5 pb-7 flex flex-col">

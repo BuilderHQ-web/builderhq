@@ -22,7 +22,8 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
-import { LENS, ROLE_PALETTE } from "./content";
+import { LENS } from "./content";
+import { SectionHead } from "./section-head";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 import { AppScene } from "./app-scenes";
@@ -38,7 +39,6 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
   const { role } = useRole();
   const copy = LENS[role].spine;
   const hero = LENS[role].hero;
-  const pal = ROLE_PALETTE[role];
   const cta = authedHref
     ? { label: "Open your dashboard", href: authedHref }
     : hero.primary;
@@ -62,15 +62,9 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
     <section id="how" className="relative px-5 md:px-10 py-20 lg:py-28 scroll-mt-16">
       <div className="mx-auto max-w-[1280px]">
         <Reveal>
-          <div className="text-center mb-12 lg:mb-16">
-            <h2 className="mx-auto max-w-[24ch] font-ui font-semibold tracking-[-0.035em] text-[clamp(2.3rem,3.6vw+0.5rem,4rem)] leading-[1.06]">
-              <span className="text-text">Four steps.</span>{" "}
-              <span style={{ color: pal.accentSoft }}>Scope, price, compare, decide.</span>
-            </h2>
-            <RoleSwap className="inline-block">
-              <p className="mt-5 mx-auto max-w-[54ch] text-[15.5px] sm:text-[16.5px] leading-[1.65] text-text-muted">
-                {copy.blurb}
-              </p>
+          <div className="mb-12 lg:mb-16">
+            <RoleSwap>
+              <SectionHead head={copy.head} />
             </RoleSwap>
           </div>
         </Reveal>
@@ -108,10 +102,10 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                       </div>
 
                       <div className="flex-1 flex flex-col justify-center py-8 lg:py-4">
-                        <p className="font-ui font-semibold tracking-[-0.032em] text-[clamp(1.85rem,2.3vw+0.6rem,2.6rem)] leading-[1.1] text-[#12181f] max-w-[19ch]">
+                        <p className="font-ui font-semibold tracking-[-0.032em] text-[clamp(1.85rem,2.3vw+0.6rem,2.6rem)] leading-[1.1] text-[#12181f] max-w-[19ch] text-balance">
                           {step.headline}
                         </p>
-                        <p className="mt-5 lg:mt-6 max-w-[44ch] text-[16px] lg:text-[16.5px] leading-[1.65] text-[#525d67]">
+                        <p className="mt-5 lg:mt-6 max-w-[44ch] text-pretty text-[16px] lg:text-[16.5px] leading-[1.65] text-[#525d67]">
                           {step.body}
                         </p>
                       </div>

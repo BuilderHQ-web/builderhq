@@ -1,36 +1,43 @@
 /**
- * BuildBriefStrip — the publication, introduced rather than reprinted.
+ * BuildBriefStrip — the publication, as a proper chapter.
  *
- * This was a full broadsheet front page: dateline, double rules,
- * nameplate, this week's headline and standfirst, and a three-column
- * index of the edition's statistics. Handsome on its own, but it sat
- * in the middle of a product argument reproducing a different medium,
- * and it read as a separate website wedged into this one.
+ * Two earlier attempts and what was wrong with each. First a full
+ * broadsheet front page: dateline, double rules, nameplate, this
+ * week's headline and a three-column index of statistics. Handsome,
+ * but it reproduced a different medium in the middle of a product
+ * argument and read as a separate website wedged into this one. Then
+ * a compact band in ink, which fixed the reproduction problem by
+ * shouting instead: a black stripe across a cream page, half the
+ * height of every chapter around it, so it read as an advertisement
+ * the page had sold space to.
  *
- * Now it does one job: say what The Build Brief is and offer the way
- * in. The contrast does the work the broadsheet furniture used to do.
- * The whole band drops to ink while the rest of the page is cream, so
- * the eye registers a change of register, a publication rather than a
- * pitch, without a single extra rule or box. Instrument Serif carries
- * the nameplate; it is loaded for the publication anyway and appears
- * nowhere else on the landing, which is exactly why it reads as a
- * masthead here.
+ * This is the publication treated the way every other chapter is
+ * treated. Same cream, same warm field as Problem and Network, same
+ * vertical rhythm, same 1100 measure, same split with a bordered
+ * panel on the right. Two things do the distinguishing, and both are
+ * editorial rather than decorative: Instrument Serif, which appears
+ * nowhere else on the landing and therefore reads as a masthead, and
+ * the panel, which is the current issue rather than a description of
+ * one. A reader can see what they would be reading.
  *
- * Compact by design: this is an interstitial between chapters, not a
- * chapter. Server component, zero client JS.
+ * Brand teal, not the lens hue: this is BuilderHQ publishing, the same
+ * to a homeowner and a builder. Server component, zero client JS.
  */
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import {
   issueNo,
   latestIssue,
 } from "@/app/(marketing)/build-brief/brief-data";
 
+import { SectionField } from "./section-field";
+
 const SERIF = { fontFamily: "var(--font-instrument-serif)" } as const;
 
-/** What the publication actually covers, in the reader's terms. */
+/** What the publication covers, in the reader's terms. Numbered on the
+ *  same rule device the dividers and the Network masthead use. */
 const COVERS = [
   "What building is costing",
   "What the rules now require",
@@ -39,83 +46,106 @@ const COVERS = [
 
 export function BuildBriefStrip() {
   const issue = latestIssue();
+  const no = issueNo(issue);
 
   return (
     <section
+      id="brief"
       aria-label="The Build Brief"
-      className="relative px-5 md:px-10 py-16 lg:py-20"
-      style={{ background: "#101820" }}
+      className="relative overflow-hidden px-5 md:px-10 py-20 lg:py-24 scroll-mt-16 lg:min-h-[100svh] lg:flex lg:items-center"
     >
-      {/* A hairline top and bottom so the band reads as a deliberate
-          change of paper rather than a gap in the page. */}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-px"
-        style={{ background: "rgba(0,212,200,0.28)" }}
-      />
-      <span
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-px"
-        style={{ background: "rgba(0,212,200,0.28)" }}
-      />
+      <SectionField variant="warm" />
 
-      <div className="mx-auto w-full max-w-[1000px] grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        {/* the publication */}
-        <div className="min-w-0">
-          <p className="text-[11px] tracking-[0.24em] uppercase font-ui font-semibold" style={{ color: "#2fd4c8" }}>
-            From BuilderHQ, every Friday
-          </p>
+      <div className="relative mx-auto w-full max-w-[1100px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.88fr] gap-12 lg:gap-16 items-center">
+          {/* The publication */}
+          <div className="text-center lg:text-left">
+            <p className="text-[11px] tracking-[0.24em] uppercase font-ui font-semibold text-accent-light">
+              A BuilderHQ publication
+            </p>
 
-          <p
-            className="mt-3 text-[clamp(2.1rem,3.4vw+0.6rem,3rem)] leading-[1.02] tracking-[-0.01em]"
-            style={{ ...SERIF, color: "#f3ede2" }}
-          >
-            The Build Brief
-          </p>
+            <p
+              className="mt-5 text-[clamp(2.6rem,4.4vw+0.6rem,4.4rem)] leading-[0.98] tracking-[-0.015em] text-text"
+              style={SERIF}
+            >
+              The Build Brief
+            </p>
 
-          <p
-            className="mt-4 max-w-[52ch] text-[15px] sm:text-[16px] leading-[1.65]"
-            style={{ color: "rgba(243,237,226,0.66)" }}
-          >
-            A short weekly read on the economics of getting homes built
-            in Australia. Plain language, every figure sourced, no
-            opinion dressed up as news.
-          </p>
+            <p className="mt-6 mx-auto lg:mx-0 max-w-[46ch] text-pretty text-[15px] sm:text-[16px] leading-[1.7] text-text-muted">
+              A short weekly read on the economics of getting homes built
+              in Australia. Plain language, every figure attributed to its
+              source, and no opinion dressed up as news.
+            </p>
 
-          <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-            {COVERS.map((line) => (
-              <li
-                key={line}
-                className="inline-flex items-center gap-2 text-[13px]"
-                style={{ color: "rgba(243,237,226,0.78)" }}
+            <ul className="mt-8 mx-auto lg:mx-0 max-w-[26rem] flex flex-col gap-3.5">
+              {COVERS.map((line, i) => (
+                <li key={line} className="flex items-center gap-3.5">
+                  <span className="font-mono text-[12px] tabular-nums text-accent-light">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span aria-hidden className="h-px w-6 shrink-0 bg-[rgba(24,34,44,0.14)]" />
+                  <span className="text-[14.5px] leading-[1.45] text-text text-left">
+                    {line}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 sm:gap-5">
+              <Link
+                href={`/build-brief/${issue.slug}`}
+                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[14px] font-semibold transition-colors hover:bg-accent-hover"
               >
-                <span
-                  aria-hidden
-                  className="size-1 rounded-full shrink-0"
-                  style={{ background: "#2fd4c8" }}
-                />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </div>
+                Read issue {no}
+                <ArrowRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                href="/build-brief"
+                className="group inline-flex items-center gap-1.5 h-12 text-[14px] font-medium text-text-muted hover:text-text transition-colors"
+              >
+                Browse every edition
+                <ArrowUpRight className="size-4 opacity-60 transition-all duration-[180ms] group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            </div>
+          </div>
 
-        {/* the way in */}
-        <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
+          {/* The current issue, so the offer is visible rather than
+              described. Same panel language as Pricing and Network. */}
           <Link
             href={`/build-brief/${issue.slug}`}
-            className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-ui font-semibold transition-colors"
-            style={{ background: "#00d4c8", color: "#031118" }}
+            className="group relative block rounded-2xl border border-border bg-white p-7 lg:p-9 overflow-hidden transition-[border-color,transform,box-shadow] duration-[420ms] ease-[var(--ease-out)] hover:-translate-y-1 hover:border-border-accent/60"
+            style={{ boxShadow: "0 24px 60px -34px rgba(0,120,112,0.45)" }}
           >
-            Read issue {issueNo(issue)}
-            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-          <Link
-            href="/build-brief"
-            className="text-[12.5px] font-ui transition-colors hover:opacity-100"
-            style={{ color: "rgba(243,237,226,0.6)" }}
-          >
-            Browse every edition
+            <span
+              aria-hidden
+              className="absolute top-0 inset-x-10 h-px"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(0,170,158,0.55), transparent)" }}
+            />
+
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-accent-light">
+                Issue {no}
+              </span>
+              <span className="text-[11.5px] text-text-dim">
+                {issue.displayDate}
+              </span>
+            </div>
+
+            <p
+              className="mt-6 text-balance text-[clamp(1.5rem,1.5vw+0.9rem,1.95rem)] leading-[1.14] tracking-[-0.01em] text-text"
+              style={SERIF}
+            >
+              {issue.title}
+            </p>
+
+            <p className="mt-5 text-[14px] leading-[1.7] text-text-muted line-clamp-4">
+              {issue.standfirst}
+            </p>
+
+            <span className="mt-7 pt-5 border-t border-border-subtle/70 flex items-center gap-2 text-[13px] font-ui font-semibold text-accent-light">
+              Read this issue
+              <ArrowRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-1" />
+            </span>
           </Link>
         </div>
       </div>

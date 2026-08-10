@@ -14,13 +14,14 @@ import { Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Reveal } from "../reveal";
-import { LENS } from "./content";
+import { LENS, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 
 export function FAQ() {
   const { role } = useRole();
   const faqs = LENS[role].faq;
+  const pal = ROLE_PALETTE[role];
 
   return (
     <section id="faq" className="relative px-5 md:px-10 py-20 lg:py-32 scroll-mt-16">
@@ -29,8 +30,15 @@ export function FAQ() {
           {/* Heading — plain, big, Base44-still */}
           <Reveal>
             <div className="lg:sticky lg:top-28 text-center lg:text-left">
-              <h2 className="font-ui font-semibold tracking-[-0.04em] text-[clamp(2.3rem,3.4vw+0.5rem,3.8rem)] leading-[1.06] text-text max-w-[14ch] mx-auto lg:mx-0">
-                Frequently asked questions
+              {/* Block lines: "Frequently asked questions" wrapped at
+                  this measure to leave "questions" alone on its own
+                  line. Two written lines, second in the lens hue, same
+                  as every other chapter. */}
+              <h2 className="font-ui font-semibold tracking-[-0.04em] text-[clamp(2.3rem,3.4vw+0.5rem,3.8rem)] leading-[1.06] max-w-[18ch] mx-auto lg:mx-0">
+                <span className="block text-text">Your questions,</span>
+                <span className="block" style={{ color: pal.accentSoft }}>
+                  and our answers.
+                </span>
               </h2>
               <p className="mt-6 mx-auto lg:mx-0 max-w-[36ch] text-[14.5px] leading-[1.65] text-text-muted">
                 If yours isn’t here, email{" "}

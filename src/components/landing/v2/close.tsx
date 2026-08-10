@@ -31,8 +31,8 @@ export function Close({ authedHref }: { authedHref: string | null }) {
         <Reveal>
           <RoleSwap>
             <h2 className="font-ui font-semibold tracking-[-0.04em] mx-auto max-w-[22ch] text-[clamp(2.4rem,4.4vw+0.5rem,4.6rem)] leading-[1.05]">
-              <span className="text-text">{copy.h2a}</span>{" "}
-              <span className="text-accent-light">{copy.h2b}</span>
+              <span className="block text-text">{copy.h2a}</span>
+              <span className="block text-accent-light">{copy.h2b}</span>
             </h2>
           </RoleSwap>
         </Reveal>

@@ -26,8 +26,8 @@ const ICONS: Record<Role, LucideIcon> = {
 };
 
 const BLURB: Record<Role, string> = {
-  homeowner: "Planning a build or renovation",
-  builder: "Winning residential work",
+  homeowner: "Building or renovating a home",
+  builder: "Pricing and winning new work",
   architect: "Designing homes for clients",
 };
 
@@ -57,8 +57,7 @@ export function RoleSelector() {
             Pick your <span className="text-accent-light">side of the build.</span>
           </h2>
           <p className="max-w-[46ch] text-[14.5px] sm:text-[16px] leading-[1.6] text-text-muted">
-            The page changes to suit: your questions, your costs, your
-            next step.
+            The page changes to suit your questions and your next step.
           </p>
         </div>
 

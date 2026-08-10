@@ -26,6 +26,7 @@ import { motion } from "motion/react";
 import { Reveal } from "../reveal";
 import { LENS, ROLE_PALETTE } from "./content";
 import { SectionField } from "./section-field";
+import { SectionHead } from "./section-head";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
 
@@ -42,19 +43,11 @@ export function Problem() {
       <div className="relative mx-auto w-full max-w-[1140px]">
         <Reveal>
           <RoleSwap>
-            <div className="text-center">
-              <h2 className="mx-auto max-w-[24ch] font-ui font-semibold tracking-[-0.035em] text-[clamp(2.3rem,3.6vw+0.5rem,4rem)] leading-[1.06]">
-                <span className="text-text">{copy.h2a}</span>{" "}
-                <span style={{ color: pal.accentSoft }}>{copy.h2b}</span>
-              </h2>
-              <p className="mt-5 lg:mt-6 mx-auto max-w-[58ch] text-[15.5px] sm:text-[16.5px] leading-[1.65] text-text-muted">
-                {copy.blurb}
-              </p>
-            </div>
+            <SectionHead head={copy.head} />
           </RoleSwap>
         </Reveal>
 
-        <RoleSwap className="mt-12 lg:mt-20">
+        <RoleSwap className="mt-12 lg:mt-16">
           {/* Three failures, side by side. The hairlines are the only
               structure; everything else is type. */}
           <div className="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-y-0 lg:divide-x divide-[rgba(24,34,44,0.10)]">
@@ -76,26 +69,52 @@ export function Problem() {
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-4 max-w-[18ch] font-ui font-semibold text-[19px] lg:text-[20px] leading-[1.28] tracking-[-0.015em] text-text">
+                <h3 className="mt-4 max-w-[20ch] text-balance font-ui font-semibold text-[19px] lg:text-[20px] leading-[1.28] tracking-[-0.015em] text-text">
                   {point.claim}
                 </h3>
-                <p className="mt-3 max-w-[34ch] text-[15px] leading-[1.65] text-text-muted">
+                <p className="mt-3 max-w-[34ch] text-pretty text-[15px] leading-[1.65] text-text-muted">
                   {point.body}
                 </p>
               </motion.div>
             ))}
           </div>
 
-          {/* One line to hand over to how-it-works. */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.7, ease: EASE, delay: 0.5 }}
-            className="mt-12 lg:mt-16 mx-auto max-w-[52ch] text-center text-[15.5px] sm:text-[16.5px] leading-[1.65] text-text"
-          >
-            {copy.bridge}
-          </motion.p>
+          {/* The turn in the argument. It used to be one more line of
+              body copy at the foot of the section, which is where a
+              reader stops reading. Now a rule descends out of the three
+              failures and gathers into a single statement: the same
+              numbered-rule grammar as the dividers, so the section
+              announces its conclusion rather than muttering it. */}
+          <div className="mt-12 lg:mt-16 flex flex-col items-center text-center">
+            <motion.span
+              aria-hidden
+              className="h-9 w-px origin-top"
+              style={{ background: `linear-gradient(180deg, transparent, ${pal.accent}99)` }}
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
+              viewport={{ once: true, amount: 0.8 }}
+              transition={{ duration: 0.7, ease: EASE }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.6 }}
+              transition={{ duration: 0.8, ease: EASE, delay: 0.25 }}
+            >
+              <span
+                className="mt-4 block font-mono text-[11px] tracking-[0.28em] uppercase"
+                style={{ color: pal.accentSoft }}
+              >
+                {copy.bridge.label}
+              </span>
+              <p className="mt-4 mx-auto max-w-[30ch] font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,1.9vw+0.7rem,2.4rem)] leading-[1.15]">
+                <span className="block text-text">{copy.bridge.a}</span>
+                <span className="block" style={{ color: pal.accentSoft }}>
+                  {copy.bridge.b}
+                </span>
+              </p>
+            </motion.div>
+          </div>
         </RoleSwap>
       </div>
     </section>

@@ -43,8 +43,8 @@ export function Ecosystem() {
                 style={{ background: "var(--color-accent)" }}
               />
               <h2 className="mx-auto lg:mx-0 max-w-[16ch] font-ui font-semibold tracking-[-0.035em] text-[clamp(2.3rem,3.4vw+0.5rem,3.8rem)] leading-[1.06]">
-                <span className="text-text">{ECOSYSTEM.h2a}</span>{" "}
-                <span className="text-accent-light">{ECOSYSTEM.h2b}</span>
+                <span className="block text-text">{ECOSYSTEM.h2a}</span>
+                <span className="block text-accent-light">{ECOSYSTEM.h2b}</span>
               </h2>
               <p className="mt-5 mx-auto lg:mx-0 max-w-[38ch] text-[15.5px] sm:text-[16.5px] leading-[1.65] text-text-muted">
                 {ECOSYSTEM.sub}
