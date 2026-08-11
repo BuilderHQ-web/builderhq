@@ -1,19 +1,25 @@
 /**
- * The drawn project cover — one visual system for every surface that
+ * The project cover band — one visual system for every surface that
  * shows a project as a card or row.
  *
- * Eleven hand-curated monochrome architectural drawings live in
- * public/project-covers. The cover for a listing is picked from its
- * own facts, so the mapping IS the assignment: every project past and
- * future is covered the moment its facts exist, with no upload step.
- * The ink sits on the type's paper tint through a multiply blend, so
- * the one monochrome set carries every type's colour.
+ * The drawn covers are retired for now at the client's direction. The
+ * drawings stay in public/project-covers and the fact mapping below is
+ * kept intact so they can return without rework. What renders today is
+ * the quiet type-set treatment the card family began with: the type's
+ * paper tint, the drafting-sheet grid, and the type's mark oversized
+ * and fading off the sheet.
  *
  * No hooks and no client directive: server pages and client cards
  * both compose it.
  */
 
-import Image from "next/image";
+import {
+  Building,
+  Home,
+  Layers,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { MarketplacePreview } from "@/modules/projects";
@@ -24,7 +30,7 @@ export type CoverFacts = Pick<
   "type" | "floors" | "dwellingCount" | "renovationScope" | "extensionType"
 >;
 
-/** Per-type paper tint — the faint wash the monochrome ink sits on. */
+/** Per-type paper tint — the faint wash the band sits on. */
 export const COVER_TINT: Record<MarketplacePreview["type"], string> = {
   single_dwelling: "from-[rgba(0,212,200,0.22)] to-[rgba(45,99,214,0.12)]",
   multi_dwelling: "from-[rgba(45,99,214,0.19)] to-[rgba(120,180,255,0.13)]",
@@ -32,6 +38,18 @@ export const COVER_TINT: Record<MarketplacePreview["type"], string> = {
   extension: "from-[rgba(10,125,115,0.19)] to-[rgba(0,212,200,0.14)]",
 };
 
+/** The type's mark, ghosted onto the band. */
+const COVER_MARK: Record<MarketplacePreview["type"], LucideIcon> = {
+  single_dwelling: Home,
+  multi_dwelling: Building,
+  renovation: Wrench,
+  extension: Layers,
+};
+
+/**
+ * The fact-to-drawing mapping. Nothing renders it while the covers are
+ * retired; it is kept so the assignment survives their return.
+ */
 export function coverFor(p: CoverFacts): string {
   const base = "/project-covers";
   switch (p.type) {
@@ -58,23 +76,24 @@ export function coverFor(p: CoverFacts): string {
 }
 
 /**
- * The art layer: tinted paper, the drawing multiplied onto it, and an
- * optional legibility scrim for overlaid text. Fills its (relative)
- * parent; the parent owns size, borders and anything drawn on top.
+ * The band layer: tinted paper, the drafting grid, the type's ghosted
+ * mark, and an optional legibility scrim for overlaid text. Fills its
+ * (relative) parent; the parent owns size, borders and anything drawn
+ * on top.
  */
 export function CoverArt({
   facts,
-  sizes,
   scrim = false,
-  imgClassName,
 }: {
   facts: CoverFacts;
-  /** next/image responsive hint, e.g. "(min-width: 1024px) 248px, 100vw". */
-  sizes: string;
-  /** Soft white fade at the foot, for text overlaid on the art. */
+  /** Kept for the covers' return; inert while the band is type-set. */
+  sizes?: string;
+  /** Soft white fade at the foot, for text overlaid on the band. */
   scrim?: boolean;
+  /** Kept for the covers' return; inert while the band is type-set. */
   imgClassName?: string;
 }) {
+  const Mark = COVER_MARK[facts.type];
   return (
     <>
       <span
@@ -84,13 +103,20 @@ export function CoverArt({
           COVER_TINT[facts.type],
         )}
       />
-      <Image
-        src={coverFor(facts)}
-        alt=""
-        fill
-        sizes={sizes}
-        className={cn("object-cover mix-blend-multiply", imgClassName)}
-        style={{ objectPosition: "center 42%" }}
+      {/* the drafting-sheet grid */}
+      <span
+        aria-hidden
+        className="absolute inset-0 opacity-[0.5]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px)",
+        }}
+      />
+      {/* the type, oversized and fading off the sheet */}
+      <Mark
+        aria-hidden
+        strokeWidth={0.9}
+        className="absolute -bottom-4 -right-3 size-[88px] text-text opacity-[0.06] rotate-[-6deg]"
       />
       {scrim ? (
         <span

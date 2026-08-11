@@ -31,21 +31,21 @@ function stepsFor(
       title: "Builders are notified",
       body:
         mode === "private"
-          ? "The builders you invite are notified with a private link to this round."
-          : "Verified builders matching your scope and area are notified when your project goes live.",
+          ? "The builders you invite receive a private link to this round."
+          : "Verified builders in your area are notified when your round goes live.",
       eta: "Live now",
     },
     {
       key: "unlocked",
       title: "Builders join your round",
-      body: `Up to ${cap} builder${cap === 1 ? "" : "s"} take a spot, open your full plans, and can ask questions here. You are notified each time.`,
+      body: `Up to ${cap} builder${cap === 1 ? "" : "s"} take a spot and open your full plans. They can ask questions through messages, and you are notified each time.`,
       eta: "In a few days",
     },
     {
       key: "tendering",
-      title: "Compare and award",
-      body: "Priced, itemised tenders arrive side by side. Compare, message, and award the builder you trust.",
-      eta: "2 to 3 weeks",
+      title: "Compare and shortlist",
+      body: "Tenders arrive priced and itemised, side by side. Compare, shortlist, and award when you are ready. The decision is yours.",
+      eta: "In a few weeks",
     },
   ];
 }
@@ -64,7 +64,7 @@ export function WhatsNextSteps({
   const currentIndex = steps.findIndex((s) => s.key === current);
 
   return (
-    <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
       {steps.map((step, i) => {
         const state =
           i < currentIndex ? "done" : i === currentIndex ? "current" : "upcoming";

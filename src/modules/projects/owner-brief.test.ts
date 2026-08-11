@@ -121,7 +121,7 @@ describe("architect audience", () => {
       selections: "decided",
     });
     expect(rows).toContainEqual({
-      k: "Architect during construction",
+      k: "Designer during construction",
       v: "Contract administration",
     });
     expect(rows).toContainEqual({

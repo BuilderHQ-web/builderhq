@@ -1830,7 +1830,7 @@ function OpeningSlide({
       >
         We are about to build your tender together: {modules.length} short
         modules that turn what you already know into a document that
-        competes properly, presented the way owners and architects expect
+        competes properly, presented the way owners and designers expect
         to read one. Most questions are a single tap, everything saves the
         moment it lands, and you can leave and pick it up whenever suits.
         When the modules are done, you review the finished document and

@@ -229,7 +229,7 @@ const RESTING: S = {
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const SCROLL = { duration: 0.85, ease: [0.22, 1, 0.36, 1] } as const;
 
-/** A palette hex at one of the app's own alphas, so the cover tints
+/** A palette hex at one of the app's own alphas, so the band tints
  *  stay provably the palette rather than a second set of colours. */
 function alpha(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -717,7 +717,7 @@ const PRICE: Record<Kind, number> = {
   multi_dwelling: 199,
 };
 
-/** The paper the drawn cover is multiplied onto, per type. */
+/** The type's paper tint — the wash the band sits on, per type. */
 const TINT: Record<Kind, string> = {
   single_dwelling: `linear-gradient(to bottom right, ${alpha(C.teal, 0.22)}, ${alpha(C.blue, 0.12)})`,
   multi_dwelling: `linear-gradient(to bottom right, ${alpha(C.blue, 0.19)}, ${alpha(C.blue, 0.08)})`,
@@ -731,7 +731,6 @@ type Docket = {
   title: string;
   where: string;
   budget: string;
-  cover: string;
   specs: Array<[string, string]>;
   spots: number;
   taken: number;
@@ -747,7 +746,6 @@ const ALL: Docket[] = [
     title: "Rear extension, Northcote",
     where: "Northcote, VIC",
     budget: "$500k to $1m",
-    cover: "/project-covers/ext-ground.webp",
     specs: [["3", "beds"], ["2", "baths"], ["2", "storeys"]],
     spots: 3,
     taken: 1,
@@ -758,7 +756,6 @@ const ALL: Docket[] = [
     title: "Kitchen and bathroom renovation, Coburg",
     where: "Coburg, VIC",
     budget: "Under $500k",
-    cover: "/project-covers/reno-internal.webp",
     specs: [["4", "beds"], ["2", "baths"], ["1", "storey"]],
     spots: 3,
     taken: 0,
@@ -769,7 +766,6 @@ const ALL: Docket[] = [
     title: PROJECT,
     where: "Pascoe Vale, VIC",
     budget: "$1.5m to $2m",
-    cover: "/project-covers/single-3.webp",
     specs: [["4", "beds"], ["4", "baths"], ["3", "storeys"]],
     spots: 3,
     taken: 1,
@@ -781,7 +777,6 @@ const ALL: Docket[] = [
     title: "Four townhouses, Reservoir",
     where: "Reservoir, VIC",
     budget: "$2m to $3m",
-    cover: "/project-covers/multi-4.webp",
     specs: [["3", "beds"], ["2", "baths"], ["4", "dwellings"]],
     spots: 3,
     taken: 2,
@@ -797,7 +792,6 @@ const FILTERED: Docket[] = [
     title: "New home, Brunswick East",
     where: "Brunswick East, VIC",
     budget: "$1m to $1.5m",
-    cover: "/project-covers/single-2.webp",
     specs: [["4", "beds"], ["3", "baths"], ["2", "storeys"]],
     spots: 3,
     taken: 0,
@@ -808,7 +802,6 @@ const FILTERED: Docket[] = [
     title: "New home, Yarraville",
     where: "Yarraville, VIC",
     budget: "$1m to $1.5m",
-    cover: "/project-covers/single-1.webp",
     specs: [["3", "beds"], ["2", "baths"], ["1", "storey"]],
     spots: 3,
     taken: 1,
@@ -925,9 +918,9 @@ function FilterBar({ picked, hot }: { picked: boolean; hot: string | null }) {
   );
 }
 
-/** One docket: the tinted band with the drawn cover and the budget, the
- *  body, and the state rail. Hovering it lights the whole row and the
- *  open-in arrow arrives, because the row is a link. */
+/** One docket: the type-set tinted band with the budget, the body, and
+ *  the state rail. Hovering it lights the whole row and the open-in
+ *  arrow arrives, because the row is a link. */
 function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?: boolean }) {
   const meta = TYPE_META[d.kind];
   const left = Math.max(0, d.spots - d.taken);
@@ -942,18 +935,26 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
         boxShadow: ELEV,
       }}
     >
-      {/* the band — the type's paper with the ink drawing multiplied on */}
+      {/* the band — the type set on its paper */}
       <div
         className="relative shrink-0 w-[82px] sm:w-[100px] border-r overflow-hidden"
         style={{ borderColor: C.line }}
       >
         <span aria-hidden className="absolute inset-0" style={{ background: TINT[d.kind] }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={d.cover}
-          alt=""
-          className="absolute inset-0 size-full object-cover mix-blend-multiply"
-          style={{ objectPosition: "center 42%" }}
+        {/* the drafting-sheet grid, at scene pitch */}
+        <span
+          aria-hidden
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage: `repeating-linear-gradient(0deg, ${alpha(C.ink, 0.045)} 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, ${alpha(C.ink, 0.045)} 0 1px, transparent 1px 12px)`,
+          }}
+        />
+        {/* the type, oversized and fading off the sheet */}
+        <meta.Icon
+          aria-hidden
+          strokeWidth={0.9}
+          className="absolute -bottom-2 -right-1.5 size-[42px] opacity-[0.06] rotate-[-6deg]"
+          style={{ color: C.ink }}
         />
         <span
           aria-hidden

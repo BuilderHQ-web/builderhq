@@ -990,7 +990,7 @@ export async function sendPartnerInterestOpsEmail(
     .filter(Boolean)
     .join(" ")
     .trim();
-  const netLabel = input.network === "architect" ? "Architect" : "Finance broker";
+  const netLabel = input.network === "architect" ? "Design partner" : "Finance broker";
   const subject = `PARTNER (${netLabel}): ${fullName || input.email} — ${input.firmName}`;
   const props = { ...input };
 
@@ -1049,7 +1049,7 @@ export async function sendPartnerInterestConfirmationEmail(
 ): Promise<Result<{ id: string }>> {
   const netLabel =
     input.network === "architect"
-      ? "Preferred Architect Network"
+      ? "Preferred Design Partner network"
       : "Preferred Finance Partner network";
   const subject = `Received — your interest in the ${netLabel}`;
   const props = {

@@ -65,6 +65,7 @@ const architectNav: NavSection[] = [
     items: [
       { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
       { href: "/architect/projects", label: "Tenders", icon: Folders },
+      { href: "/architect/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {

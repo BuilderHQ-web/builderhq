@@ -54,7 +54,7 @@ const ROLE_LABEL: Record<NonNullable<Role>, string> = {
   project_owner: "Owner",
   builder: "Builder",
   admin: "Admin",
-  architect: "Architect",
+  architect: "Designer",
 };
 
 export function RoleBadge({ role }: { role: Role }) {

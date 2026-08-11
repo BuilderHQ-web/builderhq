@@ -113,11 +113,11 @@ export default async function ScopeReviewPage({
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1020px]">
         <Link
-          href={`${base}/projects/${project.slug}`}
+          href={`${base}/projects`}
           className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4"
         >
           <ArrowLeft className="size-3.5" />
-          Back to project
+          Back to projects
         </Link>
 
         <div className="mb-7">
@@ -135,7 +135,7 @@ export default async function ScopeReviewPage({
                 ? "The re-read pack. Your earlier answers carried forward; review what changed and issue the addendum when you are ready. Builders keep pricing the current schedule until you do."
                 : phase === "ready"
                   ? "Prepared from your documents under the BuilderHQ Scope Standard, and checked line by line by our review team."
-                  : "Your documents, read properly before anything goes to market."}
+                  : "Your documents, read in full before any builder prices."}
           </p>
         </div>
 
@@ -249,10 +249,19 @@ export default async function ScopeReviewPage({
 
 /* ── the read, under way ────────────────────────────────────────────── */
 
+/** The plain promises of the read, in the order they land. */
+const READ_PROMISES = [
+  "Every item of work, written from your documents and referenced to the page it came from.",
+  "Anything your documents leave open, flagged before a builder prices it.",
+  "Tenders you can compare line by line, because every builder prices the same scope.",
+] as const;
+
 /**
- * The waiting state a client should WANT to show someone: the
- * analysis visibly moving, and a plain account of what arrives at the
- * end of it. Confidence comes from specificity, never from promises.
+ * The waiting state a client should WANT to show someone. Two columns
+ * on desktop: the status on the left, breathing, with the three stages
+ * of the read as a quiet timeline; the paper on the right, with the
+ * documents on file and a plain account of what arrives at the end.
+ * Confidence comes from specificity, never from promises.
  */
 function ReadingState({
   runStatus,
@@ -273,58 +282,78 @@ function ReadingState({
     (a, b) => registerImportance(a.kind) - registerImportance(b.kind),
   );
   return (
-    <div className="mx-auto max-w-[560px]">
-      <div className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 sm:px-10 py-10 text-center">
-        <AnalysisTracker runStatus={runStatus} />
-        <h2 className="mt-8 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1] text-text">
+    <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+      {/* the status */}
+      <div className="lg:pt-2">
+        <p className="text-[10px] tracking-[0.24em] uppercase text-text-dim font-ui font-semibold">
+          Preparation under way
+        </p>
+        <h2 className="mt-3 font-display uppercase tracking-[-0.014em] text-[26px] sm:text-[30px] leading-[1] text-text">
           Your documents are being read
         </h2>
-        <p className="mt-2.5 mx-auto max-w-[46ch] text-[13px] leading-[1.7] text-text-muted">
-          Every page is read and turned into a clear scope of works, with
-          each line tied to the page it came from. This usually takes less
+        <p className="mt-4 max-w-[52ch] text-[13.5px] leading-[1.75] text-text-muted">
+          Every page is read and turned into a scope of works, with each
+          line tied to the page it came from. Reading usually takes less
           than a business day. We will tell you the moment it is ready.
         </p>
+        <div className="mt-10">
+          <AnalysisTracker runStatus={runStatus} />
+        </div>
+      </div>
 
+      {/* the paper */}
+      <aside className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 py-7 sm:px-8 sm:py-8">
         {register.length > 0 ? (
-          <div className="mt-8 mx-auto max-w-[420px] text-left border-t border-border-subtle pt-4">
-            <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-              Documents on file
-            </p>
-            <ul className="mt-2 space-y-1.5">
+          <section>
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                Documents on file
+              </h3>
+              {pages > 0 ? (
+                <span className="shrink-0 text-[10.5px] text-text-dim tabular-nums">
+                  {register.length} document{register.length === 1 ? "" : "s"} ·{" "}
+                  {pages} pages
+                </span>
+              ) : null}
+            </div>
+            <ul className="mt-4 divide-y divide-border-subtle border-t border-border-subtle">
               {ordered.map((r) => (
                 <li
                   key={r.documentId}
-                  className="flex items-baseline justify-between gap-3 text-[12px]"
+                  className="flex items-baseline justify-between gap-4 py-2.5 text-[12.5px]"
                 >
-                  <span className="min-w-0 truncate text-text-muted">
+                  <span className="min-w-0 truncate text-text">
                     {names.get(r.documentId) ?? r.docTitle ?? r.filename}
                   </span>
-                  <span className="shrink-0 text-[10.5px] text-text-dim tabular-nums">
+                  <span className="shrink-0 text-[11px] text-text-dim tabular-nums">
                     {r.pageCount ? `${r.pageCount} page${r.pageCount === 1 ? "" : "s"}` : "…"}
                   </span>
                 </li>
               ))}
             </ul>
-            {pages > 0 ? (
-              <p className="mt-2.5 text-[10.5px] text-text-dim">
-                {register.length} document{register.length === 1 ? "" : "s"} ·{" "}
-                {pages} pages
-              </p>
-            ) : null}
-          </div>
+          </section>
         ) : null}
 
-        <div className="mt-8 mx-auto max-w-[420px] text-left border-t border-border-subtle pt-4">
-          <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        <section className={register.length > 0 ? "mt-9" : undefined}>
+          <h3 className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
             What you will get
-          </p>
-          <ul className="mt-2 space-y-1.5 text-[12.5px] leading-[1.6] text-text-muted">
-            <li>· Your scope of works, in plain language</li>
-            <li>· Anything missing, flagged before builders price</li>
-            <li>· Quotes you can compare line by line</li>
+          </h3>
+          <ul className="mt-4 space-y-4 border-t border-border-subtle pt-4">
+            {READ_PROMISES.map((line) => (
+              <li
+                key={line}
+                className="flex gap-3 text-[12.5px] leading-[1.65] text-text-muted"
+              >
+                <span
+                  aria-hidden
+                  className="mt-[7px] size-1 shrink-0 rounded-full bg-accent-light/70"
+                />
+                <span className="min-w-0">{line}</span>
+              </li>
+            ))}
           </ul>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
   );
 }

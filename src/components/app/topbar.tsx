@@ -44,7 +44,7 @@ const roleLabel: Record<NonNullable<TopbarProps["user"]["role"]>, string> = {
   project_owner: "Owner",
   builder: "Builder",
   admin: "Admin",
-  architect: "Architect",
+  architect: "Designer",
 };
 
 export function Topbar({

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * The waiting page's quiet heart: three stages of the read, the
- * current one breathing, over a single slow arc (pure CSS, no
- * timers). The page re-checks in the background, so the stage
- * advances on its own; once the machine is done a small line says a
- * final check is under way, and the moment the pack is ready the
- * whole page becomes it.
+ * The waiting page's quiet heart: three stages of the read as a
+ * vertical timeline, with the motion living in the current stage — a
+ * slow arc turning on its node (pure CSS, no timers). The page
+ * re-checks in the background, so the stage advances on its own; once
+ * the machine is done a small line says a final check is under way,
+ * and the moment the pack is ready the whole page becomes it.
  */
 
 import { useEffect } from "react";
@@ -62,58 +62,55 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
 
   return (
     <div>
-      {/* the mark: one thin ring, one slow arc, a soft centre */}
-      <div className="relative mx-auto size-20" aria-hidden>
-        <span className="absolute inset-0 rounded-full border border-border-subtle" />
-        <span
-          className="absolute inset-0 rounded-full animate-[spin_9s_linear_infinite]"
-          style={{
-            background:
-              "conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(0,166,155,0.7) 350deg, transparent 360deg)",
-            WebkitMask:
-              "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
-            mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
-          }}
-        />
-        <span className="absolute inset-0 m-auto size-2 rounded-full bg-accent/80 animate-pulse" />
-      </div>
-
-      {/* the three stages */}
-      <ol className="mt-8 mx-auto max-w-[380px] text-left">
+      <ol className="max-w-[440px]">
         {STAGES.map((s, i) => {
           const done = i < current;
           const active = i === current;
           return (
-            <li key={s.key} className="relative flex gap-3.5 pb-5 last:pb-0">
+            <li key={s.key} className="relative flex gap-4 pb-9 last:pb-0">
               {i < STAGES.length - 1 ? (
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute left-[9px] top-6 bottom-0 w-px",
+                    "absolute left-[11px] top-[29px] bottom-[6px] w-px",
                     done ? "bg-accent/50" : "bg-border-subtle",
                   )}
                 />
               ) : null}
               <span
                 className={cn(
-                  "relative z-10 mt-0.5 flex size-[19px] shrink-0 items-center justify-center rounded-full border",
+                  "relative z-10 mt-px flex size-[23px] shrink-0 items-center justify-center rounded-full border",
                   done
                     ? "border-transparent bg-accent text-accent-contrast"
                     : active
-                      ? "border-accent bg-[rgba(0,212,200,0.08)]"
+                      ? "border-border-subtle bg-[rgba(0,212,200,0.08)]"
                       : "border-border-subtle bg-surface-1",
                 )}
               >
+                {active ? (
+                  // the mark: one slow arc, turning on the live node
+                  <span
+                    aria-hidden
+                    className="absolute -inset-px rounded-full animate-[spin_2.8s_linear_infinite]"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, transparent 0deg, transparent 250deg, rgba(0,166,155,0.7) 335deg, transparent 360deg)",
+                      WebkitMask:
+                        "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
+                      mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px))",
+                    }}
+                  />
+                ) : null}
                 {done ? (
-                  <Check className="size-2.5" strokeWidth={3.5} />
+                  <Check className="size-3" strokeWidth={3.25} />
                 ) : active ? (
                   <span className="size-1.5 rounded-full bg-accent animate-pulse" />
                 ) : null}
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 pt-0.5">
                 <p
                   className={cn(
-                    "text-[13px] font-ui font-semibold leading-tight",
+                    "text-[13.5px] font-ui font-semibold leading-tight",
                     done || active ? "text-text" : "text-text-dim",
                   )}
                 >
@@ -121,7 +118,7 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 text-[11.5px] leading-[1.55]",
+                    "mt-1 text-[12px] leading-[1.6]",
                     active ? "text-text-muted" : "text-text-dim",
                   )}
                 >
@@ -134,7 +131,7 @@ export function AnalysisTracker({ runStatus }: { runStatus: string }) {
       </ol>
 
       {current >= 3 ? (
-        <p className="mt-5 text-[11.5px] text-text-dim">
+        <p className="mt-6 text-[12px] text-text-dim">
           Reading done. A final check is under way.
         </p>
       ) : null}

@@ -59,7 +59,7 @@ import { unlockPriceFor } from "@/modules/projects/pricing";
 // `unlocks/service.ts` — which is `server-only` — into the client bundle.
 import { UNLOCK_CAP } from "@/modules/unlocks/constants";
 
-/** The type's name and mark; the cover art lives in project-cover. */
+/** The type's name and mark; the band art lives in project-cover. */
 const TYPE_META: Record<
   MarketplacePreview["type"],
   { label: string; Icon: LucideIcon }
@@ -165,7 +165,7 @@ export function ProjectCard({
         "active:translate-y-0 active:duration-[90ms]",
       )}
     >
-      {/* ── the band — the drawn cover on the type's paper ────────── */}
+      {/* ── the band — the type set on its paper ──────────────────── */}
       <div
         className={cn(
           "relative shrink-0 overflow-hidden",
@@ -414,8 +414,8 @@ export function PrivateRoundStubCard({
         "border-border-subtle/70 border-dashed bg-surface-1/60",
       )}
     >
-      {/* band — same rail geometry as the live docket, the type's
-          default drawing ghosted right back: present, not selling */}
+      {/* band — same rail geometry as the live docket, the type band
+          ghosted right back: present, not selling */}
       <div
         className={cn(
           "relative shrink-0 overflow-hidden",

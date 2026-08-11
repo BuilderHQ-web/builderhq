@@ -175,7 +175,7 @@ export default async function BrowsePage({
               ))}
             </div>
             <p className="mt-3 text-[12px] text-text-dim">
-              Owners and architects can run rounds visible only to the builders they invite.
+              Owners and designers can run rounds visible only to the builders they invite.
               If you have been invited to one, the invitation email is your way in.
             </p>
           </div>

@@ -202,7 +202,7 @@ function Row({
         "hover:border-border-strong hover:card-elev-lg hover:-translate-y-px",
       )}
     >
-      {/* the project's drawn cover, at ledger scale */}
+      {/* the project's type band, at ledger scale */}
       {project ? (
         <div className="relative hidden sm:block w-[124px] shrink-0 border-r border-border-subtle/60 overflow-hidden">
           <CoverArt

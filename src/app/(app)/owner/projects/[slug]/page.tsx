@@ -203,7 +203,7 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
-      <div className="mx-auto max-w-[920px]">
+      <div className="mx-auto max-w-[1060px]">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="min-w-0">
@@ -269,7 +269,7 @@ export default async function ProjectDetailPage({
           />
         </Reveal>
 
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5">
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5 lg:gap-x-8">
           {/* Left — details (staggered entrance) */}
           <div className="space-y-5">
             <Reveal immediate delay={0.04}>
@@ -404,8 +404,8 @@ export default async function ProjectDetailPage({
             <Card title={`Tenders · ${tenderCount}`} icon={<FileText className="size-4" />}>
               {tenderCount === 0 ? (
                 <p className="text-[12.5px] text-text-dim">
-                  No tenders yet. Builders who take a spot on your round submit
-                  tenders here, laid out side by side for comparison.
+                  No tenders yet. As builders on your round submit, their
+                  tenders appear here side by side.
                 </p>
               ) : (
                 <p className="text-[12.5px] text-text-muted">
@@ -417,7 +417,7 @@ export default async function ProjectDetailPage({
                 href={`${base}/projects/${project.slug}/tenders`}
                 className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
               >
-                {tenderCount > 0 ? "Compare tenders" : "View tender stream"}
+                {tenderCount > 0 ? "Compare tenders" : "View tenders"}
                 <ArrowUpRight className="size-3" />
               </Link>
             </Card>
@@ -433,7 +433,7 @@ export default async function ProjectDetailPage({
             ) : null}
 
             <Reveal immediate delay={0.24}>
-            <Card title="Lifecycle" icon={<Calendar className="size-4" />}>
+            <Card title="Dates" icon={<Calendar className="size-4" />}>
               <KvGrid>
                 <Kv
                   label="Published"
@@ -512,19 +512,19 @@ function Card({
 }) {
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <header className="px-5 py-3 border-b border-border-subtle/60 flex items-center gap-2">
+      <header className="px-5 sm:px-6 py-3 border-b border-border-subtle/60 flex items-center gap-2">
         <span className="text-accent-light [&_svg]:size-3">{icon}</span>
         <h3 className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
           {title}
         </h3>
       </header>
-      <div className="p-5">{children}</div>
+      <div className="p-5 sm:p-6">{children}</div>
     </section>
   );
 }
 
 function KvGrid({ children }: { children: React.ReactNode }) {
-  return <dl className="grid grid-cols-2 gap-x-5 gap-y-3">{children}</dl>;
+  return <dl className="grid grid-cols-2 gap-x-8 gap-y-3.5">{children}</dl>;
 }
 
 function Kv({

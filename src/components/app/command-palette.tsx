@@ -129,10 +129,15 @@ export function CommandPalette({ role }: Props) {
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  // Reset selection when filter changes.
-  useEffect(() => {
+  // Reset selection when the filter changes. Adjusted during render
+  // (not in an effect) so the old highlight never paints against the
+  // new result list.
+  const filterKey = `${open}|${query}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
     setActive(0);
-  }, [query, open]);
+  }
 
   // Keep selected item scrolled into view.
   useEffect(() => {
@@ -577,7 +582,7 @@ function commandsForRole(role: Role): Command[] {
     {
       id: "go-architect-dashboard",
       label: "Studio dashboard",
-      keywords: "home overview architect studio",
+      keywords: "home overview architect designer studio",
       href: "/architect",
       icon: LayoutDashboard,
       group: "Go to",
@@ -589,6 +594,15 @@ function commandsForRole(role: Role): Command[] {
       keywords: "projects list rounds",
       href: "/architect/projects",
       icon: Folders,
+      group: "Go to",
+      roles: ["architect"],
+    },
+    {
+      id: "go-architect-messages",
+      label: "Messages",
+      keywords: "chat conversations inbox builders",
+      href: "/architect/messages",
+      icon: MessageSquare,
       group: "Go to",
       roles: ["architect"],
     },

@@ -351,7 +351,7 @@ export function briefForBuilders(
   };
   push("funding", "Funding");
   push("planning", "Planning approval");
-  push("role", "Architect during construction");
+  push("role", "Designer during construction");
   push("experience", "The client");
   push("occupancy", "Site during works");
   push("priority", "What they value");

@@ -31,7 +31,6 @@ import {
   MessageSquare,
   Settings,
   Compass,
-  Mail,
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
@@ -106,6 +105,7 @@ const architectNav: NavSection[] = [
     items: [
       { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
       { href: "/architect/projects", label: "Tenders", icon: Folders },
+      { href: "/architect/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {
@@ -189,10 +189,14 @@ export function MobileNav({
   }, []);
 
   // Close on route change so navigating from a link inside the drawer
-  // doesn't leave it stuck open over the new page.
-  useEffect(() => {
+  // doesn't leave it stuck open over the new page. Adjusted during
+  // render (not in an effect) so the drawer never paints open over the
+  // new page.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   // Lock body scroll while open — feels native, prevents background
   // accidental scrolling on iOS Safari.

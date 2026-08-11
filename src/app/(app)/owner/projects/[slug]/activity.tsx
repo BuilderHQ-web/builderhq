@@ -136,8 +136,8 @@ function StatusBanner({
   // fan-out is skipped and builders arrive by invitation only.
   const liveBody =
     tenderMode === "private"
-      ? "Your invited builders have been notified with a private link. Priced tenders usually follow within 3 to 7 days of a builder joining."
-      : `Verified builders ${whereLabel} have been notified. The first builders usually join within a few days, and priced tenders follow within 3 to 7 days.`;
+      ? "Your invited builders have been sent a private link. Once they join, priced tenders usually follow within days."
+      : `Verified builders ${whereLabel} have been notified. The first usually join within a few days, and priced tenders follow soon after.`;
   const cfg = {
     live: {
       kicker: "Live · awaiting builders",
@@ -148,7 +148,7 @@ function StatusBanner({
     unlocked: {
       kicker: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} on your round`,
       title: `${unlockCount} builder${unlockCount === 1 ? "" : "s"} joined your round`,
-      body: "They have your plans and contact details and can message you. Answer their questions to help them price it. Tenders usually follow within days.",
+      body: "They have your full plans and can message you here. Answer their questions to help them price the work. Tenders usually follow within days.",
       cta: canMessage
         ? { label: "Message builders", href: "#messaging" }
         : null,
@@ -156,7 +156,7 @@ function StatusBanner({
     tendering: {
       kicker: `${tenderCount} tender${tenderCount === 1 ? "" : "s"} in`,
       title: `You have ${tenderCount} tender${tenderCount === 1 ? "" : "s"} to compare`,
-      body: "Read them side by side, across price, timeline, and inclusions, then award the builder you trust. You can keep messaging them first.",
+      body: "Read them side by side across price, timeline and inclusions. Message builders with any questions, then award when you are ready.",
       cta: {
         label: "Compare tenders",
         href: `${basePath}/projects/${slug}/tenders`,

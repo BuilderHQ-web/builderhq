@@ -94,7 +94,7 @@ export function SignupForm({
               current={role}
               onSelect={setRole}
               icon={<DraftingCompass className="size-3.5" />}
-              label="Architect"
+              label="Designer"
             />
           </div>
           <input type="hidden" name="role" value={role} />
