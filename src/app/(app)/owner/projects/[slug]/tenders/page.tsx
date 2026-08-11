@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ArrowRight, FileText, Files } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, FileText, Files } from "lucide-react";
 
 import { auth } from "@/modules/auth";
-import { getBySlugForOwner } from "@/modules/projects";
-import { listTendersForOwner, computeTenderAnalytics } from "@/modules/tenders";
+import { projectsBase } from "@/lib/dashboard-route";
+import { getBuilderProfile } from "@/modules/profiles";
 import { countUnlocksForProject } from "@/modules/unlocks";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { TendersComparison } from "./comparison";
+import { ExampleRoundBanner } from "@/components/app/example-round-banner";
+import { ExampleWalkthrough } from "@/components/app/example-walkthrough";
+import { removeSampleAction } from "@/app/(app)/_actions/sample";
+import { loadRound } from "./_lib/load-round";
+import {
+  TenderEvaluationSurface,
+  type BuilderFacts,
+} from "./evaluation-surface";
 
 export const metadata = { title: "Tenders" };
 export const dynamic = "force-dynamic";
@@ -21,48 +28,113 @@ export default async function ProjectTendersPage({
   const { slug } = await params;
   const session = await auth();
   if (!session?.user) redirect(`/login?next=/owner/projects/${slug}/tenders`);
+  const base = projectsBase(session.user.role);
   const userId = session.user.id!;
 
-  const r = await getBySlugForOwner(userId, slug);
+  const r = await loadRound(userId, slug);
   if (!r.ok) {
-    if (r.error.code === "not_found" || r.error.code === "forbidden") notFound();
-    throw new Error(r.error.message);
+    if (r.code === "not_found" || r.code === "forbidden") notFound();
+    throw new Error(r.message);
   }
-  const project = r.value;
+  const {
+    project,
+    access,
+    sharedBy,
+    preparedBy,
+    tenders,
+    analytics,
+    summaries,
+    round,
+    schedule,
+    addenda,
+  } = r.value;
+  const unlockCount = await countUnlocksForProject(project.id);
+  const seatLine =
+    access.kind === "participant"
+      ? `Shared with you by ${sharedBy?.practiceName ?? sharedBy?.name ?? "the project runner"}. You hold a ${access.role === "decider" ? "Deciding" : "Following"} seat on this round.`
+      : null;
 
-  const [tenders, unlockCount] = await Promise.all([
-    listTendersForOwner(project.id),
-    countUnlocksForProject(project.id),
-  ]);
-  // Roll-up analytics computed server-side so the page paints with
-  // numbers ready (no client-side calc flicker on first frame).
-  const analytics = computeTenderAnalytics(tenders, project.publishedAt);
+  // Identity + compliance facts for "About the builders" — ABN,
+  // licences, web presence, straight from the verified profiles.
+  const uniqueBuilderIds = [...new Set(tenders.map((t) => t.builderId))];
+  const bundles = await Promise.all(
+    uniqueBuilderIds.map(async (id) => [id, await getBuilderProfile(id)] as const),
+  );
+  const bundleByBuilder = new Map(bundles);
+  const builderFacts: Record<string, BuilderFacts | null> = {};
+  for (const t of tenders) {
+    const b = bundleByBuilder.get(t.builderId);
+    builderFacts[t.id] = b
+      ? {
+          abn: b.profile.abn,
+          suburb: b.profile.businessSuburb,
+          state: b.profile.businessState,
+          website: b.profile.website,
+          linkedin: b.profile.linkedinUrl,
+          instagram: b.profile.instagramUrl,
+          licences: b.licences.map((l) => ({
+            state: l.state,
+            number: l.licenceNumber,
+            type: l.licenceType,
+            verified: l.verificationStatus === "verified",
+          })),
+        }
+      : null;
+  }
+
+  const isSample = project.isSample === true;
+  const role = base === "/architect" ? "architect" : "owner";
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10">
       <div className="mx-auto max-w-[1400px]">
         <Link
-          href={`/owner/projects/${project.slug}`}
+          href={`${base}/projects/${project.slug}`}
           className="inline-flex items-center gap-1.5 text-[12px] text-text-dim hover:text-text transition-colors mb-4 sm:mb-5"
         >
           <ArrowLeft className="size-3.5" />
           Back to project
         </Link>
 
+        {isSample ? (
+          <>
+            <ExampleRoundBanner removeAction={removeSampleAction} />
+            <ExampleWalkthrough
+              role={role}
+              uploadHref={`${base}/projects/new`}
+            />
+          </>
+        ) : null}
+
         <div className="flex items-start justify-between gap-4 mb-6 sm:mb-7">
           <div className="min-w-0">
-            <span className="text-[10px] tracking-[0.24em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2">
+            <span className="text-[10px] tracking-[0.24em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2">
               <Files className="size-3.5" />
-              Tenders · compare &amp; decide
+              The tender evaluation
             </span>
             <h1 className="mt-2 font-display uppercase tracking-[-0.018em] text-[28px] sm:text-[44px] leading-[0.95] text-text break-words">
               {project.title}
             </h1>
             <p className="mt-2 text-[13px] text-text-muted max-w-[58ch]">
-              Real builders, verified ABNs &amp; licences — every tender below
-              is from someone we&apos;ve confirmed exists and is licensed to
-              build. Pick the one that fits.
+              Every builder tendering here answered the same structured
+              submission, under declaration. The analysis below is read
+              entirely from what they disclosed. Nothing is estimated.
             </p>
+            {preparedBy.practiceName ? (
+              <p className="mt-2 text-[12px] tracking-[0.04em] text-text-dim">
+                Prepared by{" "}
+                <span className="text-text-muted font-medium">
+                  {preparedBy.practiceName}
+                </span>{" "}
+                with BuilderHQ
+              </p>
+            ) : null}
+            {seatLine ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-text-dim">
+                <Eye className="size-3.5 text-accent-light" />
+                {seatLine}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -101,7 +173,7 @@ export default async function ProjectTendersPage({
                   : "Verified builders are reviewing your project now. The first priced tenders usually arrive within 3–7 days of going live, and appear here for side-by-side comparison."}
               </p>
               <Link
-                href={`/owner/projects/${project.slug}`}
+                href={`${base}/projects/${project.slug}`}
                 className={cn(
                   buttonVariants({ variant: "subtle", size: "md" }),
                   "mt-5 gap-1.5",
@@ -113,10 +185,19 @@ export default async function ProjectTendersPage({
             </div>
           </div>
         ) : (
-          <TendersComparison
+          <TenderEvaluationSurface
             tenders={tenders}
+            round={round}
             analytics={analytics}
-            projectTitle={project.title}
+            summaries={summaries}
+            builderFacts={builderFacts}
+            projectSlug={project.slug}
+            canDecide={
+              !isSample &&
+              (access.kind === "runner" || access.role === "decider")
+            }
+            schedule={schedule}
+            addenda={addenda}
           />
         )}
       </div>

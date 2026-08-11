@@ -20,3 +20,13 @@ export function truncate(text: string, max: number): string {
   const base = lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut;
   return base.replace(/[\s,.;:-]+$/, "") + "…";
 }
+
+/**
+ * Pick the form that agrees with the count. Both forms are spelled out
+ * rather than derived: a stat label puts the noun anywhere in the
+ * phrase ("Active tenders", "Projects uploaded", "Decisions waiting"),
+ * so no suffix rule gets all three right.
+ */
+export function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}

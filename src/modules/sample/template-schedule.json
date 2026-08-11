@@ -1,0 +1,1463 @@
+{
+ "items": [
+  {
+   "itemId": "appliances.cooktop",
+   "status": "evidenced",
+   "note": "Cooktop scheduled with RRP.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.dishwasher",
+   "status": "evidenced",
+   "note": "Dishwasher (Bosch) scheduled to kitchen.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.laundry-appliances",
+   "status": "evidenced",
+   "note": "Washer and dryer scheduled with pricing.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.microwave-provision",
+   "status": "gap",
+   "note": "A kitchen this size usually allows for a microwave/appliance recess, but it isn't specified.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.outdoor-kitchen",
+   "status": "evidenced",
+   "note": "Outdoor BBQ and alfresco kitchen island to north decking; BBQ by client.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.oven",
+   "status": "evidenced",
+   "note": "2x ovens (Bosch) scheduled to kitchen.",
+   "label": null
+  },
+  {
+   "itemId": "appliances.rangehood",
+   "status": "evidenced",
+   "note": "Rangehood scheduled to kitchen.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.authority-consents",
+   "status": "evidenced",
+   "note": "Building over easement application required (civil); planning permit MPS/2021/813 conditions endorsed.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.building-permit",
+   "status": "evidenced",
+   "note": "Architectural general notes reference NCC 2019 and building compliance tables; stamped drawings.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.bushfire-compliance",
+   "status": "gap",
+   "note": "No BAL rating is stated; whether bushfire measures apply is unanswered and a builder would need to confirm.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.development-conditions",
+   "status": "gap",
+   "note": "An architect-designed home likely carries planning permit conditions to satisfy, but these aren't documented.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.energy-report",
+   "status": "evidenced",
+   "note": "BCA P2.6.1/P2.6.2 Performance Solution energy report, Climate Zone 6, with insulation and glazing requirements and NatHERS certificate.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.engineering-design",
+   "status": "evidenced",
+   "note": "Full structural drawing set with design loads, concrete grades and member schedules by engineer.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.handover-documentation",
+   "status": "gap",
+   "note": "Handover manuals and warranties will be needed at completion but aren't addressed.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.mandatory-inspections",
+   "status": "evidenced",
+   "note": "Structural notes require 48hr min notice for all stage inspections.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.occupancy-certificate",
+   "status": "gap",
+   "note": "An occupancy certificate will be needed to hand over, but the documents don't address it.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.protection-works",
+   "status": "gap",
+   "note": "Deep piled excavation and shotcrete near boundaries usually trigger adjoining protection works/dilapidation surveys, but nothing covers it.",
+   "label": null
+  },
+  {
+   "itemId": "approvals.soil-geotech",
+   "status": "evidenced",
+   "note": "Slope Stability Assessment (Class P/H2, EMO overlay) endorsing planning permit conditions, with pile embedment, batter and fill compaction criteria; underpinned by Soiltest Melbourne reports.",
+   "label": null
+  },
+  {
+   "itemId": "custom.appliances.integrated-refrigeration-and-wine-storag",
+   "status": "evidenced",
+   "note": "F&P Series 9 integrated fridge/freezer and Vintec/F&P wine storage cabinets scheduled to kitchen and theatre.",
+   "label": "Integrated refrigeration and wine storage cabinets"
+  },
+  {
+   "itemId": "custom.electrical.home-theatre-projector-and-screen",
+   "status": "evidenced",
+   "note": "Theatre projector and screen, client TBC.",
+   "label": "Home theatre projector and screen"
+  },
+  {
+   "itemId": "custom.external-works.outdoor-kitchen-island-and-alfresco-furn",
+   "status": "evidenced",
+   "note": "Nearest Standard item: joinery.island-bench",
+   "label": "Outdoor kitchen island and alfresco furniture"
+  },
+  {
+   "itemId": "custom.external-works.theatre-acoustic-wall-panels-and-acousti",
+   "status": "evidenced",
+   "note": "Nearest Standard item: windows.window-furnishings",
+   "label": "Theatre acoustic wall panels and acoustic curtains"
+  },
+  {
+   "itemId": "custom.external-works.theatre-dry-bar-joinery",
+   "status": "evidenced",
+   "note": "Nearest Standard item: joinery.custom-features",
+   "label": "Theatre dry bar joinery"
+  },
+  {
+   "itemId": "custom.hvac.ducted-radiant-panel-heating",
+   "status": "evidenced",
+   "note": "Radiant panel heater noted in ground floor reflected ceiling plan legend.",
+   "label": "Ducted radiant panel heating"
+  },
+  {
+   "itemId": "custom.joinery.concealed-bin-and-hamper-drawers",
+   "status": "evidenced",
+   "note": "Hailo Cargo kitchen bin drawers, Hideaway pantry bin and Concelo laundry hampers, by builder.",
+   "label": "Concealed bin and hamper drawers"
+  },
+  {
+   "itemId": "custom.joinery.retractable-ironing-board",
+   "status": "evidenced",
+   "note": "Side-mounted retractable folding ironing board to laundry, by builder.",
+   "label": "Retractable ironing board"
+  },
+  {
+   "itemId": "custom.landscaping.firepit",
+   "status": "evidenced",
+   "note": "Firepit shown on landscape surface and first floor plans (DD).",
+   "label": "Firepit"
+  },
+  {
+   "itemId": "custom.landscaping.sauna",
+   "status": "evidenced",
+   "note": "Sauna labelled in western garden area of landscape package (DD).",
+   "label": "Sauna"
+  },
+  {
+   "itemId": "custom.landscaping.sunken-lounge-with-floating-concrete-sea",
+   "status": "evidenced",
+   "note": "Sunken lounge with floating/built-in concrete seats shown in landscape sections (DD).",
+   "label": "Sunken lounge with floating concrete seating"
+  },
+  {
+   "itemId": "custom.painting.marmorino-polished-plaster-wall-finish-s",
+   "status": "evidenced",
+   "note": "Extensive specialist Marmorino polished plaster (Microcement Sydney) to hallways, stairs, handrails, bedrooms and powder rooms.",
+   "label": "Marmorino polished plaster wall/finish system"
+  },
+  {
+   "itemId": "custom.painting.wallpaper-feature-finishes",
+   "status": "evidenced",
+   "note": "Navurban wallpaper to day bed and WIR.",
+   "label": "Wallpaper feature finishes"
+  },
+  {
+   "itemId": "demolition.asbestos-removal",
+   "status": "gap",
+   "note": "An existing older weatherboard dwelling is to be demolished, yet no hazardous materials/asbestos survey is documented.",
+   "label": null
+  },
+  {
+   "itemId": "demolition.full-demolition",
+   "status": "evidenced",
+   "note": "Existing multi-storey weatherboard dwelling to be demolished prior to construction.",
+   "label": null
+  },
+  {
+   "itemId": "demolition.service-disconnections",
+   "status": "gap",
+   "note": "Existing dwelling is being demolished but no service disconnection/abolishment scope is documented.",
+   "label": null
+  },
+  {
+   "itemId": "demolition.tree-removal",
+   "status": "evidenced",
+   "note": "Existing single tree (~10m) to be removed with all roots prior to construction.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.bulk-excavation",
+   "status": "evidenced",
+   "note": "Stage 1 basement excavation 2.0m below existing ground level within piled retention sequence.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.contaminated-soil",
+   "status": "gap",
+   "note": "A demolition/knock-down site may turn up contaminated soil; classification/management isn't addressed.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.detailed-excavation",
+   "status": "gap",
+   "note": "Footing and pier excavation is implied by piers and footings but not separately priced.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.dewatering",
+   "status": "evidenced",
+   "note": "Dewatering limit of 16 litres/second noted for basement construction.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.erosion-control",
+   "status": "gap",
+   "note": "Site sits entirely within the Erosion Management Overlay, yet no sediment/erosion control measures are documented.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.imported-fill",
+   "status": "evidenced",
+   "note": "Max 600mm fill beneath slab; engineered fill in 150mm layers compacted to 95% per AS 3798.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.rock-excavation",
+   "status": "evidenced",
+   "note": "Note flags possible rock breaking equipment if basalt floaters encountered.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.site-strip",
+   "status": "gap",
+   "note": "Topsoil strip precedes bulk earthworks that are evidenced, yet the strip itself isn't documented.",
+   "label": null
+  },
+  {
+   "itemId": "earthworks.spoil-removal",
+   "status": "gap",
+   "note": "Bulk and rock excavation on a steep site generates spoil that must be carted away, but removal isn't addressed.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.ceiling-fans",
+   "status": "evidenced",
+   "note": "Ceiling fans shown in reflected ceiling plan legend.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.data-tv",
+   "status": "evidenced",
+   "note": "Data/TV points shown in electrical legend.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.ev-charger",
+   "status": "not_expected",
+   "note": "No EV charging provision shown anywhere despite a four-car garage; absence appears deliberate.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.fit-off",
+   "status": "gap",
+   "note": "Electrical rough-in is evidenced; the fit-off, testing and certification aren't and would be required.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.home-automation",
+   "status": "gap",
+   "note": "A home of this level often includes automation, but the documents don't confirm it, so it needs answering.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.light-fittings",
+   "status": "evidenced",
+   "note": "Pendants, wall lights and feature fittings (Nook, Articolo) scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.lighting-points",
+   "status": "evidenced",
+   "note": "Downlights and lighting points scheduled (kitchen 9, bedrooms 24) with dimming.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.power-points",
+   "status": "evidenced",
+   "note": "GPOs shown across reflected ceiling/electrical plans.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.rough-in",
+   "status": "evidenced",
+   "note": "Electrical rough-in per reflected ceiling plans with legend and wattage tables.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.security-intercom",
+   "status": "evidenced",
+   "note": "Security/intercom provision in electrical legend; keypad/doorbell at gates.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.smoke-alarms",
+   "status": "evidenced",
+   "note": "240V interconnected smoke alarms per AS3786 referenced.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.solar-pv",
+   "status": "evidenced",
+   "note": "Solar PV shown in basement electrical legend.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.switchboard",
+   "status": "evidenced",
+   "note": "Switchboard/meter box shown in electrical legend.",
+   "label": null
+  },
+  {
+   "itemId": "electrical.underfloor-heating",
+   "status": "evidenced",
+   "note": "Electric underfloor/undertile heating referenced in master ensuite FFE.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.entry-door",
+   "status": "evidenced",
+   "note": "Entry/hallway external door 2700x1500 scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.external-hardware",
+   "status": "gap",
+   "note": "Entry and external doors are evidenced but their locks/hardware aren't specified, so this needs answering.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.garage-door",
+   "status": "evidenced",
+   "note": "Smartech tilt-up SR100 garage door, 2400x6000.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.garage-motor",
+   "status": "gap",
+   "note": "A garage door is evidenced for the four-car garage; the opener/motor isn't addressed and would need pricing.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.hinged-french-doors",
+   "status": "evidenced",
+   "note": "Commercial casement/hinged external door (D01, 1500x2700) scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "external-doors.screen-doors",
+   "status": "evidenced",
+   "note": "Security screen doors (qty 4) listed in shop drawings.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.blockwork",
+   "status": "not_expected",
+   "note": "Block is used in retaining, but rendered blockwork external walls aren't part of the evidenced wall systems.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.brick-veneer",
+   "status": "evidenced",
+   "note": "Brick veneer weatherboard external wall type noted in construction and energy schedules.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.cavity-components",
+   "status": "evidenced",
+   "note": "Cavity components, ties and damp course referenced in general notes.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.control-joints",
+   "status": "evidenced",
+   "note": "Articulation/control joints referenced in general notes.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.double-brick",
+   "status": "not_expected",
+   "note": "Walls are brick veneer, cladding and lightweight panel; double brick is not part of this build.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.eaves-soffits",
+   "status": "evidenced",
+   "note": "Adelaide timber cladding to eaves/soffit lining.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.fc-cladding",
+   "status": "evidenced",
+   "note": "Fibre cement (10mm) clad framed walls with R2.5 insulation.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.feature-stone",
+   "status": "evidenced",
+   "note": "Natural stone cladding to feature walls per landscape mood board (DD, not for construction).",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.lightweight-panel",
+   "status": "evidenced",
+   "note": "Hebel AAC panel with 7mm screed finish in ceiling/wall legends.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.render-systems",
+   "status": "evidenced",
+   "note": "Unitex acrylic render to external walls per material legend.",
+   "label": null
+  },
+  {
+   "itemId": "external-walls.timber-composite-cladding",
+   "status": "evidenced",
+   "note": "Adelaide timber cladding to walls and eaves; Corten steel cladding by others.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.balcony-structures",
+   "status": "evidenced",
+   "note": "Balcony structure on SmartLVL joists (BJ1) with glass balustrade.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.deck",
+   "status": "evidenced",
+   "note": "North decking (Millboard) on structural balcony joists at RL 41.68/43.15.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.driveway",
+   "status": "evidenced",
+   "note": "Driveway/crossover shown on civil and landscape plans.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.external-lighting",
+   "status": "evidenced",
+   "note": "Exterior decklights and up/down wall lights scheduled; garden lighting on landscape plans.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.fencing",
+   "status": "evidenced",
+   "note": "Aluminium batten boundary fence shown on elevations and landscape plans.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.gates",
+   "status": "evidenced",
+   "note": "Motorised telescopic driveway gate and self-closing pedestrian gate with keypad shown.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.letterbox-clothesline",
+   "status": "evidenced",
+   "note": "Parcel and mail box shown on landscape plan.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.paths-paving",
+   "status": "evidenced",
+   "note": "Ecooutdoor paving, limestone crazy pave and pool surround slab per landscape/structural.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.pergola-alfresco",
+   "status": "gap",
+   "note": "An alfresco/pergola with lined ceiling is plausible but not confirmed; a builder would need clarification.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.privacy-screens",
+   "status": "evidenced",
+   "note": "Overlooking/privacy screens toward 36 Wheeler St; Knotwood batten screening.",
+   "label": null
+  },
+  {
+   "itemId": "external-works.retaining-garden",
+   "status": "evidenced",
+   "note": "Garden/low retaining walls with TOW levels; some require engineering input.",
+   "label": null
+  },
+  {
+   "itemId": "fixout.architraves",
+   "status": "gap",
+   "note": "Skirting is evidenced but architraves aren't confirmed; a builder would need the trim scope resolved.",
+   "label": null
+  },
+  {
+   "itemId": "fixout.feature-trim",
+   "status": "evidenced",
+   "note": "Feature wall panelling/trim referenced in finishes (day bed area).",
+   "label": null
+  },
+  {
+   "itemId": "fixout.shelving",
+   "status": "evidenced",
+   "note": "Robe/cupboard shelving shown in joinery details.",
+   "label": null
+  },
+  {
+   "itemId": "fixout.skirting",
+   "status": "evidenced",
+   "note": "Shadowline skirting specified throughout FFE finishes.",
+   "label": null
+  },
+  {
+   "itemId": "fixout.timber-sills-benches",
+   "status": "evidenced",
+   "note": "Day bed / window seat joinery referenced in finishes schedule.",
+   "label": null
+  },
+  {
+   "itemId": "flooring.carpet",
+   "status": "evidenced",
+   "note": "Carpet and underlay to theatre.",
+   "label": null
+  },
+  {
+   "itemId": "flooring.engineered-timber",
+   "status": "evidenced",
+   "note": "Engineered/Mountain ash timber flooring to living areas and bedrooms.",
+   "label": null
+  },
+  {
+   "itemId": "flooring.laminate-hybrid",
+   "status": "not_expected",
+   "note": "Floor finishes are engineered timber, carpet and polished concrete; laminate/hybrid isn't part of this scheme.",
+   "label": null
+  },
+  {
+   "itemId": "flooring.levelling",
+   "status": "gap",
+   "note": "Floor prep/levelling under the finish floors is likely needed but not documented.",
+   "label": null
+  },
+  {
+   "itemId": "flooring.polished-concrete",
+   "status": "evidenced",
+   "note": "Polished concrete/epoxy (Geoshine) floor to garage.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.piers-piles",
+   "status": "evidenced",
+   "note": "Bored piles/piers BP1-BP7 (350-600Ø) to founding depths 1300-3700mm supporting retention, slabs and pool.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.raft-slab",
+   "status": "evidenced",
+   "note": "120mm RC slab SL92 top and bottom on ground-bearing areas with edge/internal beams.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.slab-edge-insulation",
+   "status": "gap",
+   "note": "Slab/edge insulation can be an energy requirement; the documents don't confirm whether it applies.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.slab-setdowns",
+   "status": "evidenced",
+   "note": "Typical slab setdown, rebate and penetration details provided.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.strip-pad-footings",
+   "status": "evidenced",
+   "note": "Pad footings BPF1/BPF2 and edge/internal beams 300x600 with reinforcement scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.subfloor-timber",
+   "status": "not_expected",
+   "note": "Ground floor is a suspended concrete slab, so a timber subfloor is not expected.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.suspended-slab",
+   "status": "evidenced",
+   "note": "Suspended slabs SS1-SS4 (200-350mm, 40MPa) with drop panels and basement columns over garage/basement.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.termite-management",
+   "status": "evidenced",
+   "note": "Termite protection to AS3660.1 referenced where required.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.underslab-drainage",
+   "status": "evidenced",
+   "note": "Typical slab penetration/prelay details shown; drainage design by others.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.vapour-barrier",
+   "status": "evidenced",
+   "note": "0.2mm polythene membrane over 50mm min packing sand under slab.",
+   "label": null
+  },
+  {
+   "itemId": "footings-slab.waffle-slab",
+   "status": "not_expected",
+   "note": "The structure uses bored piers and a suspended reinforced slab, so a waffle pod slab is not expected.",
+   "label": null
+  },
+  {
+   "itemId": "framing.cathedral-raked",
+   "status": "gap",
+   "note": "Raked ceilings are common in architect homes and not confirmed either way; a builder would need this resolved.",
+   "label": null
+  },
+  {
+   "itemId": "framing.engineered-beams",
+   "status": "evidenced",
+   "note": "SmartLVL15 beams (300x42) and stair stringers scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "framing.floor-joists",
+   "status": "evidenced",
+   "note": "Floor joists FJ1/FJ2 400 deep at 300-450 crs scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "framing.hardware-bracing",
+   "status": "evidenced",
+   "note": "Ground and first floor bracing plans, wind rating N1 (34 m/s), plywood and metal brace details; some roof bracing 'by others'.",
+   "label": null
+  },
+  {
+   "itemId": "framing.roof-trusses",
+   "status": "not_expected",
+   "note": "The roof is evidenced as stick/conventional framing, so prefabricated trusses are not expected.",
+   "label": null
+  },
+  {
+   "itemId": "framing.steel-framing",
+   "status": "not_expected",
+   "note": "Upper structure is timber and structural steel beams; light gauge steel framing isn't part of this build.",
+   "label": null
+  },
+  {
+   "itemId": "framing.stick-roof",
+   "status": "evidenced",
+   "note": "Conventional roof framing, rafters 90x45/190x45 MGP10 and treated pine posts.",
+   "label": null
+  },
+  {
+   "itemId": "framing.wall-frames",
+   "status": "evidenced",
+   "note": "90x35 MGP10 studs at 450 crs, max height 2700mm, with framing notes.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.ducted-system",
+   "status": "evidenced",
+   "note": "Ducted reverse-cycle A/C with bulkheads noted on reflected ceiling plans.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.ducted-vacuum",
+   "status": "gap",
+   "note": "A ducted vacuum is a possible inclusion at this level but isn't documented, so it remains an open item.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.exhaust-fans",
+   "status": "evidenced",
+   "note": "Mechanical exhaust ventilation (3400 L/S) with sealed 300mm ceiling penetrations.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.fireplace",
+   "status": "evidenced",
+   "note": "Fireplace to living and studio scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.hydronic-gas-heating",
+   "status": "gap",
+   "note": "Underfloor electric heating is evidenced but hydronic/in-slab heating isn't confirmed, so it stays open.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.split-systems",
+   "status": "gap",
+   "note": "Ducted AC is evidenced, but supplementary splits (e.g. studio/basement) aren't confirmed either way.",
+   "label": null
+  },
+  {
+   "itemId": "hvac.ventilation-systems",
+   "status": "gap",
+   "note": "Whole-home mechanical ventilation may be part of an energy-rated home but isn't documented.",
+   "label": null
+  },
+  {
+   "itemId": "insulation.ceiling",
+   "status": "evidenced",
+   "note": "R5.0 (or R4.0 plus sarking) to roof; R6.0 to habitable ceilings.",
+   "label": null
+  },
+  {
+   "itemId": "insulation.external-walls",
+   "status": "evidenced",
+   "note": "R2.5 wool/polyester batts (total R2.8 with sarking) to external walls.",
+   "label": null
+  },
+  {
+   "itemId": "insulation.internal-acoustic",
+   "status": "evidenced",
+   "note": "R2.5 acoustic insulation to internal wall type 3.",
+   "label": null
+  },
+  {
+   "itemId": "insulation.underfloor",
+   "status": "evidenced",
+   "note": "R2.5 underfloor insulation to timber-lined floors.",
+   "label": null
+  },
+  {
+   "itemId": "insulation.wall-wrap",
+   "status": "evidenced",
+   "note": "Wall wrap/vapour membrane noted in wall build-up and general notes.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.cavity-sliders",
+   "status": "evidenced",
+   "note": "Cavity sliders (2.7m high) detailed and scheduled to wet areas.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.door-hardware",
+   "status": "evidenced",
+   "note": "Door hardware referenced in schedule; several items 'by builder'.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.feature-doors",
+   "status": "evidenced",
+   "note": "Powder room pivot/feature doors with Marmorino finish scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.flush-doors",
+   "status": "evidenced",
+   "note": "Internal door schedule with flush door leaf elevations and openings.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.jambs-stops",
+   "status": "gap",
+   "note": "Internal doors are evidenced but their jambs and stops aren't specified, so this detail is missing.",
+   "label": null
+  },
+  {
+   "itemId": "internal-doors.robe-doors",
+   "status": "evidenced",
+   "note": "Robe sliding/mirror doors shown in bedroom internal elevations.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.benchtops",
+   "status": "evidenced",
+   "note": "Caesarstone/natural stone/dolomite and metal benchtops, 40mm island edge.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.butlers-pantry",
+   "status": "evidenced",
+   "note": "Walk-in pantry (WIP) with benchtops, splashback and overhead shelving.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.custom-features",
+   "status": "evidenced",
+   "note": "Foyer cloak cabinet, entry and custom feature joinery scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.entertainment-study",
+   "status": "evidenced",
+   "note": "TV/fireplace unit, buffet joinery and studio desk joinery with stone tops.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.island-bench",
+   "status": "evidenced",
+   "note": "Kitchen island bench with breakfast bar and stone benchtop.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.kitchen-cabinetry",
+   "status": "evidenced",
+   "note": "Kitchen cabinetry with overheads, LED strip, natural stone and metal benchtops.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.laundry-joinery",
+   "status": "evidenced",
+   "note": "Laundry cabinetry with bench and concealed hampers.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.mirror-cabinets",
+   "status": "gap",
+   "note": "Ensuites often include mirrored shaving cabinets but these aren't specified, so the item is open.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.robe-fitouts",
+   "status": "evidenced",
+   "note": "Walk-in-robe and BIR fitouts to master and bedrooms; standard white melamine internals.",
+   "label": null
+  },
+  {
+   "itemId": "joinery.vanities",
+   "status": "evidenced",
+   "note": "Custom stone-clad vanities to ensuites, powder rooms and master.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.irrigation",
+   "status": "evidenced",
+   "note": "Class 12 polypipe irrigation specified in landscape schedule.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.landscape-plan-compliance",
+   "status": "evidenced",
+   "note": "Garden area 409.85sqm (57.8%) for planning compliance; landscape plan package.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.planter-boxes",
+   "status": "evidenced",
+   "note": "Built planter boxes per engineer detail on landscape sections.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.pool",
+   "status": "evidenced",
+   "note": "Reinforced concrete lap pool, 200mm watertight concrete, 1700mm deep, on bored piers; waterproofing by others.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.pool-fencing",
+   "status": "evidenced",
+   "note": "Pool barrier fence and non-climb gate zone detailed to AS1926.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.pool-plant",
+   "status": "evidenced",
+   "note": "Skimmer box, main drain (40Ø) and suction line (50Ø) to filter and pump; HRV sump.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.soft-landscaping",
+   "status": "evidenced",
+   "note": "Garden beds, 150mm imported topsoil, mulch and planting palette scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.tree-protection",
+   "status": "evidenced",
+   "note": "TPZ and SRZ zones shown for retained trees; trees to be retained and protected.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.turf",
+   "status": "evidenced",
+   "note": "'Sir Walter' Buffalo turf on 100mm underlay.",
+   "label": null
+  },
+  {
+   "itemId": "landscaping.water-features",
+   "status": "evidenced",
+   "note": "Reflection ponds (150mm deep) shown on landscape plans.",
+   "label": null
+  },
+  {
+   "itemId": "lining.access-panels",
+   "status": "gap",
+   "note": "Ceiling access/manholes to roof space are normally required but not shown, leaving this unpriced.",
+   "label": null
+  },
+  {
+   "itemId": "lining.bulkheads-features",
+   "status": "gap",
+   "note": "Bulkheads over joinery are typical in a home this size but aren't documented, so a builder would need this.",
+   "label": null
+  },
+  {
+   "itemId": "lining.ceiling-plasterboard",
+   "status": "evidenced",
+   "note": "Plasterboard ceilings (R6.0 over) per reflected ceiling plans.",
+   "label": null
+  },
+  {
+   "itemId": "lining.cornice",
+   "status": "gap",
+   "note": "Square-set is evidenced in places but cornice to other rooms isn't confirmed either way, so it's an open item.",
+   "label": null
+  },
+  {
+   "itemId": "lining.square-set",
+   "status": "evidenced",
+   "note": "Shadowline/square set finish specified throughout FFE finishes schedule.",
+   "label": null
+  },
+  {
+   "itemId": "lining.wall-plasterboard",
+   "status": "evidenced",
+   "note": "Plasterboard wall linings, ~297m2 internal wall type 1.",
+   "label": null
+  },
+  {
+   "itemId": "lining.wet-area-board",
+   "status": "gap",
+   "note": "Multiple ensuites, bathrooms and powder rooms are drawn but no wet-area lining board is specified.",
+   "label": null
+  },
+  {
+   "itemId": "painting.doors-trim",
+   "status": "evidenced",
+   "note": "Door and trim finishes noted in finishes schedule.",
+   "label": null
+  },
+  {
+   "itemId": "painting.external-painting",
+   "status": "gap",
+   "note": "Rendered and clad external walls will need painting, but external painting isn't addressed.",
+   "label": null
+  },
+  {
+   "itemId": "painting.internal-walls-ceilings",
+   "status": "evidenced",
+   "note": "Internal wall and ceiling paint finishes scheduled in FFE tab.",
+   "label": null
+  },
+  {
+   "itemId": "painting.special-coatings",
+   "status": "gap",
+   "note": "The four-car garage may want an epoxy/floor coating; the documents don't confirm, so it remains open.",
+   "label": null
+  },
+  {
+   "itemId": "painting.timber-metal-finishes",
+   "status": "gap",
+   "note": "Timber cladding and decking usually need stain/clear coats; these finishes aren't specified.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.appliance-connections",
+   "status": "gap",
+   "note": "Dishwasher/fridge/washing machine points are needed given the appliances, but connections aren't documented.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.bathroom-accessories",
+   "status": "evidenced",
+   "note": "Heated towel rails, robe hooks and accessories scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.external-taps",
+   "status": "gap",
+   "note": "Garden taps for a landscaped site are expected but not addressed in the documents.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.fit-off",
+   "status": "evidenced",
+   "note": "Fixture and tapware fit-off implied by FFE fixture schedule.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.floor-wastes",
+   "status": "evidenced",
+   "note": "Grated trenches and floor wastes to wet areas and balconies.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.gas-lines",
+   "status": "not_expected",
+   "note": "Energy report models no gas; cooktop unspecified fuel and no gas service documented.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.hot-water",
+   "status": "evidenced",
+   "note": "Domestic hot water (DHW) systems modelled per zone in energy report.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.rough-in",
+   "status": "evidenced",
+   "note": "Sanitary and drainage rough-in implied by fixture layouts and civil drainage.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.sanitary-fixtures",
+   "status": "evidenced",
+   "note": "WCs, basins, baths scheduled across ensuites, powder rooms and master.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.shower-screens",
+   "status": "evidenced",
+   "note": "Reeded/unframed shower glass and mirrors (by builder) to ensuites.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.tapware",
+   "status": "evidenced",
+   "note": "Mixers, showers and tapware scheduled through FFE.",
+   "label": null
+  },
+  {
+   "itemId": "plumbing.water-filtration",
+   "status": "evidenced",
+   "note": "Zip HydroTap filtered taps to kitchen and theatre.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.craneage",
+   "status": "gap",
+   "note": "Steel beams, suspended slab and a lift on a steep site imply crane/pump needs the documents don't price.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.final-clean",
+   "status": "gap",
+   "note": "Builder's and handover cleans are expected at completion but not mentioned.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.insurances-warranty",
+   "status": "gap",
+   "note": "Domestic building works of this value require home warranty insurance, but no insurance provision is documented.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.scaffolding",
+   "status": "gap",
+   "note": "A three-level home on a slope with a metal roof needs scaffold and edge protection, but the documents are silent.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.site-amenities",
+   "status": "gap",
+   "note": "Site toilet and sheds for a build this size are expected but unpriced in the documents.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.site-establishment",
+   "status": "gap",
+   "note": "A substantial multi-level build on a steep site needs site set-up priced, but the documents don't cover it.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.supervision",
+   "status": "gap",
+   "note": "A project of this scale (basement retention, pool, lift) implies site supervision, but no preliminaries schedule documents it.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.survey-setout",
+   "status": "evidenced",
+   "note": "Plan of Survey records lot 707m2, boundaries, contours, TBM RL 33.11 AHD and easement; some levels could not be attained.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.temporary-fencing",
+   "status": "gap",
+   "note": "Temporary/security fencing to a steep active site is standard and needs pricing, but nothing addresses it.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.temporary-services",
+   "status": "gap",
+   "note": "Temporary power and water for the site are expected but not documented.",
+   "label": null
+  },
+  {
+   "itemId": "preliminaries.waste-management",
+   "status": "gap",
+   "note": "Skip bins and rubbish removal over a long build are needed but not addressed.",
+   "label": null
+  },
+  {
+   "itemId": "retaining.engineered-concrete-block",
+   "status": "evidenced",
+   "note": "Dincel/block retaining walls RW1-RW4 (290-300mm) and shotcrete walls SC1-SC3 with Xypex additive; heights to 3200mm.",
+   "label": null
+  },
+  {
+   "itemId": "retaining.shoring",
+   "status": "evidenced",
+   "note": "Temporary 310 UC 118 shoring between capping beams for basement retention; temporary propping to Dincel walls flagged 'by others'.",
+   "label": null
+  },
+  {
+   "itemId": "retaining.subsoil-drainage",
+   "status": "evidenced",
+   "note": "100Ø AG drains behind retaining walls connected to legal point of discharge; min grade 1:200.",
+   "label": null
+  },
+  {
+   "itemId": "retaining.timber-sleeper",
+   "status": "evidenced",
+   "note": "Concrete sleeper retaining wall RW4 on 150 UB soldier piles, hot-dip galvanised.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.box-gutters",
+   "status": "evidenced",
+   "note": "Box gutters 300mm wide x 100mm deep in Surmist, multiple locations.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.downpipes",
+   "status": "evidenced",
+   "note": "80mm diameter downpipes with catchment areas tabled.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.fascia-gutter",
+   "status": "evidenced",
+   "note": "Fascia and gutters shown on roof plan.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.flashings",
+   "status": "evidenced",
+   "note": "Flashings in Woodland Grey noted on roof plan.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.metal-roof",
+   "status": "evidenced",
+   "note": "Colorbond metal roof 'Woodland Grey' (Longline profile), flat framed metal deck.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.roof-ventilation",
+   "status": "gap",
+   "note": "Roof space ventilation may be specified; the documents don't confirm it, so it remains an open item.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.sarking-battens",
+   "status": "evidenced",
+   "note": "Roof battens and sarking noted; energy report allows R4.0 plus sarking option.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.skylights",
+   "status": "evidenced",
+   "note": "6x VELUX VS ventilating skylights scheduled with U-value/SHGC.",
+   "label": null
+  },
+  {
+   "itemId": "roofing.tile-roof",
+   "status": "not_expected",
+   "note": "The roof is Colorbond metal, so roof tiles are not expected.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.gas-connection",
+   "status": "gap",
+   "note": "A gas connection may be required given a fireplace and cooktop; the documents are silent on the service.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.nbn-provision",
+   "status": "gap",
+   "note": "Telecommunications/NBN lead-in provision is normally needed for a new home but isn't documented.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.onsite-detention",
+   "status": "gap",
+   "note": "A large site with stormwater works may require on-site detention; the documents don't confirm or price it.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.power-connection",
+   "status": "gap",
+   "note": "A new dwelling requires a mains electrical connection, but no consumer mains/point of attachment is documented.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.rainwater-tank",
+   "status": "evidenced",
+   "note": "2000L above-ground rainwater tank for reuse only, on a widened pad; 100Ø overflow.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.septic-treatment",
+   "status": "not_expected",
+   "note": "Sewer connection is evidenced, so on-site wastewater treatment is not expected.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.sewer-connection",
+   "status": "evidenced",
+   "note": "100Ø PVC sewer outlet to existing 150Ø sewer; branch approx 2.83m deep, to be confirmed on site.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.sewer-pump",
+   "status": "gap",
+   "note": "A basement below street level on a steep site may need a sewer pump station; the documents don't confirm.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.stormwater",
+   "status": "evidenced",
+   "note": "Stormwater to kerb LPOD via 100/150Ø UPVC; catchment areas and required invert levels given.",
+   "label": null
+  },
+  {
+   "itemId": "site-services.water-connection",
+   "status": "gap",
+   "note": "A new dwelling requires a water service and meter, but no water connection is documented.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.external-balustrade",
+   "status": "evidenced",
+   "note": "Glass balustrades 1000-1200mm high to balconies/decks per elevations.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.external-stairs",
+   "status": "evidenced",
+   "note": "External stairs at 4 locations with 100mm infill slabs, 190/300 risers/treads, bluestone treads.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.feature-screens",
+   "status": "evidenced",
+   "note": "Knotwood aluminium batten screening with 25% opening to elevations.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.internal-balustrade",
+   "status": "evidenced",
+   "note": "Internal 10x50mm mild steel handrail in clear lacquer / polished plaster finish.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.internal-staircase",
+   "status": "evidenced",
+   "note": "Internal staircase basement/ground/upper with SmartLVL stringers and bluestone treads.",
+   "label": null
+  },
+  {
+   "itemId": "stairs.residential-lift",
+   "status": "evidenced",
+   "note": "Residential lift with pad footing BPF2 and shaft recess; lift supply 'by others'.",
+   "label": null
+  },
+  {
+   "itemId": "steel.beams-columns",
+   "status": "evidenced",
+   "note": "Steel columns, PFC beams, SHS mullions and concrete basement columns scheduled.",
+   "label": null
+  },
+  {
+   "itemId": "steel.connections-fixings",
+   "status": "evidenced",
+   "note": "Extensive connection, base plate and hold-down detailing throughout structural set.",
+   "label": null
+  },
+  {
+   "itemId": "steel.lintels",
+   "status": "evidenced",
+   "note": "PFC/plate lintels and Dincel lintel schedule detailed.",
+   "label": null
+  },
+  {
+   "itemId": "steel.portal-garage-frames",
+   "status": "evidenced",
+   "note": "Portal frames (200/250 PFC) detailed across multiple elevations with base plate connections.",
+   "label": null
+  },
+  {
+   "itemId": "steel.protective-coating",
+   "status": "evidenced",
+   "note": "All soldier-pile steelwork and angles hot-dip galvanised.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.features-niches",
+   "status": "gap",
+   "note": "Feature tiling, niches and mitres are common in this level of home but not specified, so they need answering.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.floor-laying",
+   "status": "evidenced",
+   "note": "Floor tile laying to wet areas per internal elevations.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.floor-tiles-supply",
+   "status": "evidenced",
+   "note": "Floor tiles supplied at ~$85/m2 to wet areas and powder rooms.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.screeds-prep",
+   "status": "gap",
+   "note": "Tiled wet areas need screeds and falls, but these aren't documented, leaving the item unpriced.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.trims-movement",
+   "status": "gap",
+   "note": "Tile trims and movement joints are part of the tiling scope but not addressed in the documents.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.wall-laying",
+   "status": "evidenced",
+   "note": "Wall tiling to ensuites, bathrooms and powder rooms per internal elevations.",
+   "label": null
+  },
+  {
+   "itemId": "tiling.wall-tiles-supply",
+   "status": "evidenced",
+   "note": "Earp Bros 'Rodano Acero' matt wall tiles (11mm) specified.",
+   "label": null
+  },
+  {
+   "itemId": "waterproofing.balconies",
+   "status": "evidenced",
+   "note": "Balcony/external deck waterproofing implied at balcony details.",
+   "label": null
+  },
+  {
+   "itemId": "waterproofing.certification",
+   "status": "gap",
+   "note": "Wet area waterproofing is evidenced; the compliance certification isn't addressed and would be required.",
+   "label": null
+  },
+  {
+   "itemId": "waterproofing.planter-tanking",
+   "status": "evidenced",
+   "note": "Planter box tanking with 0.2mm polyethylene membrane; planters per engineer detail.",
+   "label": null
+  },
+  {
+   "itemId": "waterproofing.shower-systems",
+   "status": "gap",
+   "note": "Multiple ensuites imply shower hobs/niches/falls, but these aren't detailed, so it stays an open item.",
+   "label": null
+  },
+  {
+   "itemId": "waterproofing.wet-areas",
+   "status": "evidenced",
+   "note": "Internal wet area waterproofing referenced to AS3740 in general notes.",
+   "label": null
+  },
+  {
+   "itemId": "windows.aluminium-windows",
+   "status": "evidenced",
+   "note": "Capral aluminium windows/sliding doors, Monument, double-glazed; full shop-drawing schedule with sizes and $99,611 supply price.",
+   "label": null
+  },
+  {
+   "itemId": "windows.bifold-corner-units",
+   "status": "evidenced",
+   "note": "Sliding/servery and special opening units in glazing schedules.",
+   "label": null
+  },
+  {
+   "itemId": "windows.flyscreens",
+   "status": "evidenced",
+   "note": "All openable windows screened; security flyscreens quantified in shop drawings.",
+   "label": null
+  },
+  {
+   "itemId": "windows.glazing-performance",
+   "status": "evidenced",
+   "note": "Double-glazed Low-E units (6-12AR-6mm), U-values 2.06-2.97, SHGC ~0.29-0.36 per NatHERS schedule.",
+   "label": null
+  },
+  {
+   "itemId": "windows.safety-obscure-glass",
+   "status": "evidenced",
+   "note": "All glass tempered to AS2208; obscure/safety glazing noted in shop drawings.",
+   "label": null
+  },
+  {
+   "itemId": "windows.timber-composite-windows",
+   "status": "not_expected",
+   "note": "Windows are double-glazed aluminium, so timber/composite windows are not expected.",
+   "label": null
+  },
+  {
+   "itemId": "windows.window-furnishings",
+   "status": "evidenced",
+   "note": "Sheer/blackout curtains and tracks scheduled, several TBC/site visit needed.",
+   "label": null
+  },
+  {
+   "itemId": "windows.window-reveals",
+   "status": "evidenced",
+   "note": "Timber reveals (100/275) specified with window units.",
+   "label": null
+  }
+ ],
+ "overview": {
+  "storeys": 3,
+  "summary": "A large architect-designed home built into a steeply sloping site, arranged over a basement and two levels above (up to three levels on the slope). The basement holds a four-car garage, theatre and storage; upper levels contain the kitchen, living, dining, studio, master suite and three further bedrooms with ensuites, plus a walk-in-robe and separate studio. Construction is substantial: a piled basement retention system with shotcrete and Dincel/block retaining walls, bored piers and a reinforced suspended concrete slab, timber and steel-framed upper structure, and a Colorbond metal roof with box gutters. Notable features include a reinforced concrete lap pool, a residential lift, extensive polished-plaster (Marmorino) finishes, double-glazed aluminium windows, ducted air-conditioning, a fireplace, and a landscaped garden with sauna, firepit and reflection ponds.",
+  "bedrooms": 4,
+  "bathrooms": 5,
+  "dwellings": null
+ }
+}

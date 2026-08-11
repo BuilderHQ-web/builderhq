@@ -134,7 +134,7 @@ function FbaActiveCard({
 
         <div className="space-y-4">
           <div>
-            <div className="text-[10px] tracking-[0.18em] uppercase text-accent mb-1">
+            <div className="text-[10px] tracking-[0.18em] uppercase text-accent-light mb-1">
               Free unlocks remaining this cycle
             </div>
             <p className="text-[13.5px] text-text-muted leading-[1.55]">
@@ -226,7 +226,7 @@ function FbaInactiveCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(8,22,36,0.55),rgba(4,14,24,0.75))] p-5 sm:p-6 lg:p-7"
+      className="rounded-md border border-border-subtle bg-[linear-gradient(180deg,rgba(24,34,44,0.03),rgba(250,248,243,0.6))] p-5 sm:p-6 lg:p-7"
     >
       <div className="flex items-start gap-3">
         <span className="size-10 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted flex items-center justify-center shrink-0">

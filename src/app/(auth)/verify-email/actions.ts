@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 
 import { resendVerificationEmail } from "@/modules/auth";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
+import { safeInternalPath } from "../_lib/next-path";
 
 export interface ResendActionState {
   ok?: true;
@@ -29,7 +30,8 @@ export async function resendVerificationAction(
     return { throttled: true };
   }
 
-  const result = await resendVerificationEmail({ email });
+  const next = safeInternalPath(String(formData.get("next") ?? ""));
+  const result = await resendVerificationEmail({ email }, next ? { next } : {});
   if (!result.ok) return { error: result.error.message };
 
   return result.value.throttled ? { throttled: true } : { ok: true };

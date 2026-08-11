@@ -14,7 +14,7 @@ import { ArrowUpRight, ArrowDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
-import { HeroVisual } from "./hero-visual";
+import { HeroJourney } from "./hero-journey";
 import { LENS, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
 import { RoleSwap } from "./swap";
@@ -42,7 +42,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
           transition={{ delay: 0.2, duration: 1.0, ease: EASE }}
           className="flex justify-center order-2 mt-7 sm:mt-1 lg:mt-0"
         >
-          <HeroVisual />
+          <HeroJourney />
         </motion.div>
 
         {/* Copy */}
@@ -90,6 +90,12 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             <RoleSwap>
               <p className="mt-3 lg:mt-7 mx-auto lg:mx-0 max-w-[30rem] lg:max-w-[36rem] text-balance sm:text-wrap text-[14.5px] sm:text-[17px] leading-[1.6] text-text-muted">
                 {copy.sub}
+                {/* The second sentence is desktop only. A phone hero has
+                    no room for it, and two sentences there crowd the
+                    CTA off the first screen. */}
+                {copy.subMore ? (
+                  <span className="hidden sm:inline"> {copy.subMore}</span>
+                ) : null}
               </p>
             </RoleSwap>
           </motion.div>

@@ -33,7 +33,7 @@ export function BuilderSectionTabs({
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full border border-border-subtle bg-[rgba(24,34,44,0.45)] shadow-[0_8px_24px_-18px_rgba(15,23,32,0.19)] w-fit">
+    <div className="flex flex-wrap items-center gap-1.5 w-fit">
       {TABS.map((t) => {
         const isActive =
           t.href === "/builder/browse"
@@ -58,7 +58,7 @@ export function BuilderSectionTabs({
               <span
                 className={cn(
                   "tabular-nums text-[10.5px] font-mono",
-                  isActive ? "text-accent" : "text-text-dim",
+                  isActive ? "text-accent-light" : "text-text-dim",
                 )}
               >
                 {count}

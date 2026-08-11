@@ -22,6 +22,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { withInvitationsTab } from "./sidebar";
 import {
   LayoutDashboard,
   Folders,
@@ -32,6 +34,7 @@ import {
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
+  ScanSearch,
   Sparkles,
   Hammer,
   House,
@@ -53,7 +56,7 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   soon?: string;
-  badgeKey?: "messages";
+  badgeKey?: "messages" | "invitations";
 }
 interface NavSection {
   title?: string;
@@ -102,6 +105,7 @@ const architectNav: NavSection[] = [
     items: [
       { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
       { href: "/architect/projects", label: "Tenders", icon: Folders },
+      { href: "/architect/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {
@@ -120,6 +124,7 @@ const adminNav: NavSection[] = [
       { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Later" },
       { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Later" },
       { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Later" },
+      { href: "/admin/scope", label: "Scope engine", icon: ScanSearch },
     ],
   },
   {
@@ -138,6 +143,8 @@ const navByRole: Record<Role, NavSection[]> = {
 };
 
 interface MobileNavProps {
+  /** Builder invitation tallies — same contract as the sidebar's. */
+  invitations?: { total: number; pending: number };
   role: Role;
   initialUnreadMessages?: number;
 }
@@ -152,9 +159,13 @@ export function openMobileNav() {
 
 const POLL_MS = 30_000;
 
-export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
+export function MobileNav({
+  role,
+  initialUnreadMessages = 0,
+  invitations = { total: 0, pending: 0 },
+}: MobileNavProps) {
   const pathname = usePathname();
-  const sections = navByRole[role];
+  const sections = withInvitationsTab(navByRole[role], role, invitations.total);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(initialUnreadMessages);
 
@@ -178,10 +189,14 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
   }, []);
 
   // Close on route change so navigating from a link inside the drawer
-  // doesn't leave it stuck open over the new page.
-  useEffect(() => {
+  // doesn't leave it stuck open over the new page. Adjusted during
+  // render (not in an effect) so the drawer never paints open over the
+  // new page.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   // Lock body scroll while open — feels native, prevents background
   // accidental scrolling on iOS Safari.
@@ -205,7 +220,7 @@ export function MobileNav({ role, initialUnreadMessages = 0 }: MobileNavProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const badges = { messages: unread };
+  const badges = { messages: unread, invitations: invitations.pending };
 
   return (
     <>
@@ -338,7 +353,7 @@ function DrawerLink({
       <Icon
         className={cn(
           "size-[18px] shrink-0 transition-colors",
-          active ? "text-accent" : "text-text-faint",
+          active ? "text-accent-light" : "text-text-faint",
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>
@@ -359,7 +374,12 @@ function DrawerLink({
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === "/owner" || href === "/builder" || href === "/admin") {
+  if (
+    href === "/owner" ||
+    href === "/builder" ||
+    href === "/admin" ||
+    href === "/architect"
+  ) {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(href + "/");

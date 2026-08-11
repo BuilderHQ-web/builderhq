@@ -18,6 +18,7 @@ const SECTION_IDS = [
   "trust",
   "network",
   "ecosystem",
+  "brief",
   "faq",
 ] as const;
 

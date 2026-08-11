@@ -4,6 +4,10 @@ import { Plus, FolderOpen } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { listMine, type Project } from "@/modules/projects";
+import {
+  scopePhaseForProjects,
+  type ProjectScopePhase,
+} from "@/modules/scope-engine";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader, EmptyState } from "@/components/app/page-header";
@@ -23,6 +27,9 @@ export default async function ProjectsPage() {
   if (!session?.user) redirect("/login?next=/owner/projects");
 
   const projects = await listMine(session.user.id!);
+  const phases = await scopePhaseForProjects(
+    projects.filter((p) => p.status === "draft").map((p) => p.id),
+  );
 
   return (
     <>
@@ -72,7 +79,9 @@ export default async function ProjectsPage() {
                   key={p.id}
                   href={
                     p.status === "draft"
-                      ? `/owner/projects/${p.slug}/edit`
+                      ? phases.has(p.id)
+                        ? `/owner/projects/${p.slug}/scope`
+                        : `/owner/projects/${p.slug}/edit`
                       : `/owner/projects/${p.slug}`
                   }
                   className={cn(
@@ -89,8 +98,15 @@ export default async function ProjectsPage() {
                       className="size-1 shrink-0 rounded-full bg-transparent group-hover:bg-accent group-hover:shadow-[0_0_8px_rgba(0,212,200,0.6)] transition-all duration-[140ms]"
                     />
                     <div className="min-w-0">
-                      <div className="text-[14px] font-semibold text-text truncate">
-                        {p.title}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[14px] font-semibold text-text truncate">
+                          {p.title}
+                        </span>
+                        {p.isSample ? (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-sm border border-border-subtle text-[8.5px] tracking-[0.14em] uppercase text-text-dim font-semibold">
+                            Example
+                          </span>
+                        ) : null}
                       </div>
                       <div className="text-[11px] text-text-dim truncate md:hidden">
                         {p.suburb ? `${p.suburb}, ${p.state}` : "Address pending"}
@@ -103,7 +119,7 @@ export default async function ProjectsPage() {
                   <div className="hidden md:block text-[12px] text-text-muted">
                     {TYPE_LABEL[p.type]}
                   </div>
-                  <StatusBadge status={p.status} />
+                  <StatusBadge status={p.status} phase={phases.get(p.id) ?? null} />
                   <div className="hidden md:block text-[11px] text-text-dim text-right tabular-nums">
                     {formatRelative(p.updatedAt)}
                   </div>
@@ -117,21 +133,40 @@ export default async function ProjectsPage() {
   );
 }
 
-function StatusBadge({ status }: { status: Project["status"] }) {
+function StatusBadge({
+  status,
+  phase,
+}: {
+  status: Project["status"];
+  phase: ProjectScopePhase | null;
+}) {
+  const label =
+    status === "draft" && phase === "analysing"
+      ? "Analysing"
+      : status === "draft" && phase === "pack_ready"
+        ? "Pack ready"
+        : status;
   const cls =
-    status === "draft"
-      ? "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]"
-      : status === "published" || status === "tendering"
-      ? "border-border-accent text-accent-light bg-accent-muted/40"
-      : "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]";
+    phase === "analysing"
+      ? "border-[rgba(26,95,212,0.35)] text-[#2a5cae] bg-[rgba(26,95,212,0.06)]"
+      : phase === "pack_ready"
+        ? "border-[rgba(201,148,34,0.4)] text-[#8a6414] bg-[rgba(201,148,34,0.07)]"
+        : status === "draft"
+          ? "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]"
+          : status === "published" || status === "tendering"
+            ? "border-border-accent text-accent-light bg-accent-muted/40"
+            : "border-border-subtle text-text-dim bg-[rgba(24,34,44,0.025)]";
   return (
     <span
       className={cn(
-        "justify-self-start inline-flex items-center px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase",
+        "justify-self-start inline-flex items-center gap-1.5 px-2 py-1 border rounded-sm text-[9.5px] tracking-[0.16em] uppercase",
         cls,
       )}
     >
-      {status}
+      {phase === "analysing" ? (
+        <span aria-hidden className="size-1 rounded-full bg-[#2a5cae] animate-pulse" />
+      ) : null}
+      {label}
     </span>
   );
 }

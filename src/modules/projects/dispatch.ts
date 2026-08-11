@@ -28,15 +28,22 @@
 
 import "server-only";
 import { and, eq, ne, isNull, count, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-import { projects } from "./schema";
+import { projects, projectParticipants } from "./schema";
+import {
+  PARTICIPANT_ROLE_LABEL,
+  PARTICIPANT_INVITE_VALIDITY_DAYS,
+} from "./participants";
+import { tenderBuilderInvites } from "@/modules/tenders/schema";
 import { documents } from "@/modules/documents/schema";
 import { users } from "@/modules/users/schema";
 import {
+  architectProfiles,
   builderProfiles,
   builderServiceAreas,
   projectOwnerProfiles,
@@ -49,7 +56,11 @@ import {
 import {
   sendProjectPublishedOwnerEmail,
   sendProjectPublishedOpsEmail,
+  sendParticipantInviteEmail,
+  sendParticipantJoinedEmail,
 } from "@/modules/email";
+import { recordProjectEvent } from "./audit";
+import { PARTICIPANT_ROLE_LABEL as ROLE_LABEL_FOR_JOIN } from "./participants";
 
 const TYPE_LABEL: Record<string, string> = {
   single_dwelling: "Single dwelling",
@@ -122,11 +133,42 @@ export async function dispatchProjectPublishedEvent(
       }),
     ]);
 
-    // 2. Fan-out to all eligible builders (enqueues to the outbox).
-    await fanOutToBuilders(ctx, builderUrl);
+    // 2. Network fan-out (enqueues to the outbox) — open rounds only
+    // (legacy hybrid rows behave as open). A PRIVATE round never
+    // announces itself to the network; its builders are invited by
+    // hand.
+    if (ctx.project.tenderMode !== "private") {
+      await fanOutToBuilders(ctx, builderUrl);
+    }
+
+    // 3. Invitations created while the project was still a draft were
+    // deferred (an invite email to a closed round reads as a broken
+    // link) — the round is open now, so they go out.
+    const pendingInvites = await db
+      .select({ id: tenderBuilderInvites.id })
+      .from(tenderBuilderInvites)
+      .where(
+        and(
+          eq(tenderBuilderInvites.projectId, projectId),
+          eq(tenderBuilderInvites.status, "invited"),
+        ),
+      );
+    if (pendingInvites.length > 0) {
+      const { dispatchBuilderInvite } = await import(
+        "@/modules/tenders/dispatch"
+      );
+      await Promise.allSettled(
+        pendingInvites.map((inv) => dispatchBuilderInvite(inv.id)),
+      );
+    }
 
     logger.info(
-      { event: "project.dispatch.ok", projectId, kind: "project_published" },
+      {
+        event: "project.dispatch.ok",
+        projectId,
+        kind: "project_published",
+        invitesSent: pendingInvites.length,
+      },
       "project_published dispatch complete",
     );
   } catch (err) {
@@ -147,6 +189,7 @@ interface DispatchContext {
     suburb: string | null;
     state: string | null;
     budgetBand: string | null;
+    tenderMode: "open" | "private" | "hybrid";
     documentCount: number;
   };
   owner: {
@@ -169,6 +212,7 @@ async function gatherContext(
       projectSuburb: projects.suburb,
       projectState: projects.state,
       projectBudgetBand: projects.budgetBand,
+      projectTenderMode: projects.tenderMode,
       ownerId: users.id,
       ownerEmail: users.email,
       ownerName: users.name,
@@ -204,6 +248,7 @@ async function gatherContext(
       suburb: row.projectSuburb,
       state: row.projectState,
       budgetBand: row.projectBudgetBand,
+      tenderMode: row.projectTenderMode,
       documentCount: docs?.value ?? 0,
     },
     owner: {
@@ -359,3 +404,186 @@ async function fanOutToBuilders(
   );
 }
 
+
+// ── participant invitation dispatch ──────────────────────────────────────
+
+/**
+ * Send (or re-send) a participant seat's invitation email. Fired by
+ * the participants actions after `inviteParticipant` /
+ * `resendParticipantInvite`. Internally try/catch'd — a flaky send
+ * never fails the seat creation; the runner can re-send from the
+ * panel.
+ */
+export async function dispatchParticipantInvite(
+  participantId: string,
+): Promise<{ emailed: boolean }> {
+  try {
+    const inviterUsers = alias(users, "inviter_users");
+    const [row] = await db
+      .select({
+        email: projectParticipants.email,
+        name: projectParticipants.name,
+        role: projectParticipants.role,
+        status: projectParticipants.status,
+        inviteToken: projectParticipants.inviteToken,
+        invitedAt: projectParticipants.invitedAt,
+        projectTitle: projects.title,
+        projectSuburb: projects.suburb,
+        projectState: projects.state,
+        inviterName: inviterUsers.name,
+        inviterPractice: architectProfiles.practiceName,
+      })
+      .from(projectParticipants)
+      .innerJoin(projects, eq(projects.id, projectParticipants.projectId))
+      .innerJoin(
+        inviterUsers,
+        eq(inviterUsers.id, projectParticipants.invitedBy),
+      )
+      .leftJoin(
+        architectProfiles,
+        eq(architectProfiles.userId, projectParticipants.invitedBy),
+      )
+      .where(eq(projectParticipants.id, participantId))
+      .limit(1);
+    if (!row || row.status !== "invited") {
+      logger.warn(
+        { event: "participant_invite.dispatch.no_context", participantId },
+        "participant invite dispatch — no sendable context",
+      );
+      return { emailed: false };
+    }
+
+    const inviterName =
+      (row.inviterPractice ?? row.inviterName ?? "The project team").slice(0, 80);
+    const roleLabel = PARTICIPANT_ROLE_LABEL[row.role];
+    const roleLine =
+      row.role === "decider"
+        ? "Your access includes the decision: you can review every tender alongside the evaluation and take part in shortlisting and awarding."
+        : "You can follow the round as it unfolds: the project file, the tenders as they arrive, and the full evaluation.";
+    const expiresOn = new Date(
+      row.invitedAt.getTime() +
+        PARTICIPANT_INVITE_VALIDITY_DAYS * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Australia/Sydney",
+    });
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+
+    const result = await sendParticipantInviteEmail({
+      to: row.email,
+      recipientFirstName: row.name ? (row.name.split(" ")[0] ?? null) : null,
+      inviterName,
+      projectTitle: row.projectTitle.slice(0, 120),
+      projectLocation: row.projectSuburb
+        ? `${row.projectSuburb}, ${row.projectState ?? ""}`.replace(/, $/, "")
+        : null,
+      roleLabel,
+      roleLine,
+      claimUrl: `${base}/invite/p/${row.inviteToken}`,
+      expiresOn,
+    });
+
+    if (result.ok) {
+      logger.info(
+        { event: "participant_invite.dispatch.ok", participantId },
+        "participant invite dispatch completed",
+      );
+    } else {
+      logger.warn(
+        { event: "participant_invite.dispatch.email_failed", participantId },
+        "participant seat created but the email did not send",
+      );
+    }
+    return { emailed: result.ok };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "participant_invite.dispatch.failed", participantId, msg },
+      "participant invite dispatch failed — continuing",
+    );
+    return { emailed: false };
+  }
+}
+
+
+/**
+ * The runner hears the door: bell + a quiet letter when an invited
+ * seat is claimed, plus the audit line. Fired after
+ * `claimParticipantInvite` succeeds. Internally try/catch'd — a flaky
+ * send never fails the claim.
+ */
+export async function dispatchParticipantJoined(
+  participantId: string,
+): Promise<void> {
+  try {
+    const runnerUsers = alias(users, "runner_users");
+    const joinedUsers = alias(users, "joined_users");
+    const [row] = await db
+      .select({
+        projectId: projects.id,
+        projectSlug: projects.slug,
+        projectTitle: projects.title,
+        runnerId: projects.ownerId,
+        runnerEmail: runnerUsers.email,
+        runnerFirstName: runnerUsers.firstName,
+        runnerRole: runnerUsers.role,
+        seatEmail: projectParticipants.email,
+        seatName: projectParticipants.name,
+        seatRole: projectParticipants.role,
+        seatUserId: projectParticipants.userId,
+        joinedName: joinedUsers.name,
+      })
+      .from(projectParticipants)
+      .innerJoin(projects, eq(projects.id, projectParticipants.projectId))
+      .innerJoin(runnerUsers, eq(runnerUsers.id, projects.ownerId))
+      .leftJoin(joinedUsers, eq(joinedUsers.id, projectParticipants.userId))
+      .where(eq(projectParticipants.id, participantId))
+      .limit(1);
+    if (!row) return;
+
+    const participantName =
+      row.joinedName ?? row.seatName ?? row.seatEmail;
+    const roleLabel = ROLE_LABEL_FOR_JOIN[row.seatRole];
+    const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+    const projectPath =
+      row.runnerRole === "architect"
+        ? `/architect/projects/${row.projectSlug}`
+        : `/owner/projects/${row.projectSlug}`;
+
+    await Promise.allSettled([
+      createNotificationsMany([
+        {
+          userId: row.runnerId,
+          kind: "participant_joined",
+          title: `${participantName} joined ${row.projectTitle}`,
+          body: `They hold a ${roleLabel.toLowerCase()} seat on the round.`,
+          actionUrl: `${base}${projectPath}`,
+          projectId: row.projectId,
+        },
+      ]),
+      sendParticipantJoinedEmail({
+        to: row.runnerEmail,
+        runnerFirstName: row.runnerFirstName,
+        participantName,
+        roleLabel,
+        projectTitle: row.projectTitle,
+        projectUrl: `${base}${projectPath}`,
+      }),
+      recordProjectEvent({
+        projectId: row.projectId,
+        actorId: row.seatUserId,
+        kind: "seat.joined",
+        subjectId: participantId,
+        summary: `${participantName} accepted their invitation (${roleLabel}).`,
+      }),
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "participant_joined.dispatch.failed", participantId, msg },
+      "participant joined dispatch failed — continuing",
+    );
+  }
+}

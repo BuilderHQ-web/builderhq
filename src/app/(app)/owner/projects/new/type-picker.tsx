@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Building, Wrench, Layers, ArrowRight, Loader2 } from "lucide-react";
 
 import { createProjectAction } from "@/app/(app)/_actions/projects";
@@ -47,6 +47,10 @@ export function TypePicker() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  // Mounted at /owner/projects/new AND /architect/projects/new — stay
+  // on whichever base the user came in on.
+  const pathname = usePathname();
+  const base = pathname.startsWith("/architect") ? "/architect" : "/owner";
 
   const onContinue = () => {
     if (!picked) return;
@@ -57,7 +61,7 @@ export function TypePicker() {
         setError(r.error.message);
         return;
       }
-      router.push(`/owner/projects/${r.value.slug}/edit`);
+      router.push(`${base}/projects/${r.value.slug}/edit`);
     });
   };
 

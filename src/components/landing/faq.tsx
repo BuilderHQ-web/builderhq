@@ -92,7 +92,7 @@ const QAS: QA[] = [
     a: (
       <>
         Median response time from matched builders is around 24 hours, with
-        full tenders typically landing within 5 to 10 days of publish.
+        full tenders typically landing within 3 to 7 days of publish.
         It&apos;s slower than &quot;phone three mates&quot; but faster than
         you&apos;ll get going through a broker. And the tenders are
         directly comparable when they arrive.

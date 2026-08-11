@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
@@ -11,7 +10,16 @@ import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { isUnlocked, isSaved } from "@/modules/unlocks";
 import { getOwnerContactPublic, getBuilderProfile } from "@/modules/profiles";
 import { getStatus } from "@/modules/credits";
-import { getActiveTenderForBuilder } from "@/modules/tenders";
+import {
+  getActiveTenderForBuilder,
+  getInviterForProject,
+} from "@/modules/tenders";
+import { packSummary } from "@/modules/tenders/schedule";
+import {
+  getProjectSchedule,
+  listAddenda,
+  getRoundContextForBuilders,
+} from "@/modules/scope-engine";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
@@ -35,24 +43,61 @@ export default async function BuilderProjectPage({
   if (!session?.user) redirect(`/login?next=/builder/projects/${slug}`);
   const userId = session.user.id!;
 
-  const previewR = await getMarketplacePreview(slug);
+  // Private rounds never resolve via the marketplace path — fall back
+  // for invited builders, who must hold an unlock to see anything.
+  let previewR = await getMarketplacePreview(slug);
+  if (!previewR.ok) {
+    previewR = await getMarketplacePreview(slug, { includePrivate: true });
+    if (previewR.ok && !(await isUnlocked(userId, previewR.value.id))) {
+      notFound();
+    }
+  }
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
-  const [unlocked, saved] = await Promise.all([
+  const [unlocked, saved, schedule, addenda, roundContext] = await Promise.all([
     isUnlocked(userId, preview.id),
     isSaved(userId, preview.id),
+    getProjectSchedule(preview.id),
+    listAddenda(preview.id),
+    getRoundContextForBuilders(preview.id),
   ]);
+  // The pack, shaped for browsing. Counts travel to everyone. Before
+  // the unlock, a small taste of real items travels too (product
+  // decision 2026-08-07: four true lines sell the spot better than
+  // any summary); the unlocked page reads the full schedule instead,
+  // so it carries no highlights at all.
+  const rawPack = schedule ? packSummary(schedule) : null;
+  const pack = rawPack
+    ? {
+        ...rawPack,
+        highlights: unlocked ? [] : rawPack.highlights.slice(0, 4),
+      }
+    : null;
+  const latestAddendum = addenda[0]
+    ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
+    : null;
 
   // If unlocked, fetch the full row + docs for download + owner contact.
   const fullR = unlocked ? await getFullForUnlockedBuilder(slug) : null;
-  const docs = await listActiveForProjectUnchecked(preview.id);
+  const rawDocs = await listActiveForProjectUnchecked(preview.id);
+  // Before the unlock, filenames stay server-side: consultants name
+  // their files after the street address, and a blur is not a wall.
+  // The list still shows what exists (category, size); the names open
+  // with the spot.
+  const docs = unlocked
+    ? rawDocs
+    : rawDocs.map((d, i) => ({ ...d, filename: `Document ${i + 1}` }));
   const ownerContact =
     unlocked && fullR?.ok
       ? await getOwnerContactPublic(fullR.value.ownerId)
       : null;
   const fbaStatus = await getStatus(userId);
   const priceAud = unlockPriceFor(preview.type);
+  // Provenance: who put this builder's name on the round, if anyone.
+  const invitedBy = unlocked
+    ? await getInviterForProject(userId, preview.id)
+    : null;
   // Existing builder tender for this project (if any) — drives the
   // "Submit tender" / "Edit draft" / "View tender" CTA.
   const myTender = unlocked
@@ -105,6 +150,12 @@ export default async function BuilderProjectPage({
       viewerMode={viewerMode}
       myUserId={userId}
       initialConversations={conversations}
+      pack={pack}
+      latestAddendum={latestAddendum}
+      clientBrief={roundContext.brief}
+      advisories={unlocked ? roundContext.advisories : []}
+      schedule={unlocked ? schedule : null}
+      invitedBy={invitedBy}
     />
   );
 }

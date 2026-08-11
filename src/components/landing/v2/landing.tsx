@@ -6,9 +6,10 @@
  * when the visitor picks a role in the selector. The dock flight
  * (FlyingLabel) and the re-light pulse (RoleWash) render above the fold.
  *
- * Narrative: hook (hero) → pick your view (selector) → why (problem) →
- * how, worry by worry (spine) → the rules (trust) → the people (proof) →
- * the network → the whole picture (ecosystem) → questions → close.
+ * Narrative: hook (hero) → pick your view (selector) → what is wrong
+ * today (problem) → how it works (spine) → the rules (trust) → the
+ * network → the whole picture (ecosystem) → what people say → the
+ * publication → questions → close.
  */
 
 import {
@@ -29,7 +30,6 @@ import { RoleSelector } from "./role-selector";
 import { Problem } from "./problem";
 import { Spine } from "./spine";
 import { Trust } from "./trust";
-import { Proof } from "./proof";
 import { Network } from "./network";
 import { Ecosystem } from "./ecosystem";
 import { Testimonials } from "./testimonials";
@@ -64,16 +64,15 @@ export function Landing({
         <Problem />
         <SectionDivider n="02" label="How it works" />
         <Spine authedHref={authedHref} />
-        <SectionDivider n="03" label="Why trust us" />
+        <SectionDivider n="03" label="The rules" />
         <Trust />
-        <SectionDivider n="04" label="The people" />
-        <Proof />
-        <SectionDivider n="05" label="The network" />
+        <SectionDivider n="04" label="Our partners" />
         <Network />
-        <SectionDivider n="06" label="One platform" />
+        <SectionDivider n="05" label="Who it’s for" />
         <Ecosystem />
-        <SectionDivider n="07" label="What people say" />
+        <SectionDivider n="06" label="What people say" />
         <Testimonials />
+        <SectionDivider n="07" label="The publication" />
         <BuildBriefStrip />
         <SectionDivider n="08" label="Questions" />
         <FAQ />

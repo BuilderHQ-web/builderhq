@@ -85,6 +85,15 @@ const PASSWORD_HASH_OPTS = {
 
 export async function signUp(
   raw: unknown,
+  opts: {
+    /**
+     * Continuation path (already sanitised by the caller — internal
+     * paths only) appended to the verification link so multi-hop
+     * journeys survive the email round-trip. The flagship case: an
+     * invited builder returning to /invite/b/[token] after verifying.
+     */
+    next?: string;
+  } = {},
 ): Promise<Result<{ userId: string; email: string }>> {
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
@@ -147,7 +156,9 @@ export async function signUp(
     expires,
   });
 
-  const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email/${token}`;
+  const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email/${token}${
+    opts.next ? `?next=${encodeURIComponent(opts.next)}` : ""
+  }`;
   const emailRes = await sendVerificationEmail({ to: email, verifyUrl, firstName });
   if (!emailRes.ok) {
     // Don't fail signup — the user account exists. They can request a resend.
@@ -602,6 +613,10 @@ const emailOnlySchema = z.object({
  */
 export async function resendVerificationEmail(
   raw: unknown,
+  opts: {
+    /** Continuation path — same contract as signUp's. */
+    next?: string;
+  } = {},
 ): Promise<Result<{ throttled: boolean }>> {
   const parsed = emailOnlySchema.safeParse(raw);
   if (!parsed.success) {
@@ -659,7 +674,9 @@ export async function resendVerificationEmail(
       .values({ identifier: email, token, purpose: "verification", expires });
   });
 
-  const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email/${token}`;
+  const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email/${token}${
+    opts.next ? `?next=${encodeURIComponent(opts.next)}` : ""
+  }`;
   await sendVerificationEmail({ to: email, verifyUrl, firstName: user.firstName });
 
   logger.info({ event: "auth.verify.resent", userId: user.id }, "verification email resent");

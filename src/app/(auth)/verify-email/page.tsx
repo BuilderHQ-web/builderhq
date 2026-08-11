@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import { AuthHeader } from "../_components/auth-header";
 import { AUTH_CONTAINER_CLS } from "../_lib/auth-styles";
 
+import { safeInternalPath } from "../_lib/next-path";
 import { ResendButton } from "./resend-button";
 
 export const metadata = { title: "Verify your email" };
@@ -11,9 +12,10 @@ export const metadata = { title: "Verify your email" };
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 }) {
-  const { email } = await searchParams;
+  const { email, next: rawNext } = await searchParams;
+  const next = safeInternalPath(rawNext);
 
   return (
     <div className={AUTH_CONTAINER_CLS}>
@@ -53,7 +55,7 @@ export default async function VerifyEmailPage({
         </ul>
       </div>
 
-      {email ? <ResendButton email={email} /> : null}
+      {email ? <ResendButton email={email} next={next ?? ""} /> : null}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 text-[12.5px] text-text-faint">
         <Link

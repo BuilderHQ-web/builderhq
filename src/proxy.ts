@@ -16,7 +16,15 @@
 
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { authConfig } from "@/modules/auth/config";
+
+// Vercel preview: prefer the dev-scoped AUTH_URL so Auth.js's own URL
+// resolution matches the preview host. Harmless (no-op) everywhere
+// else. See the fuller note in lib/env.ts. Runs before NextAuth init.
+if (process.env.VERCEL_ENV === "preview" && process.env.AUTH_URL_DEV) {
+  process.env.AUTH_URL = process.env.AUTH_URL_DEV;
+}
 
 const { auth } = NextAuth(authConfig);
 
@@ -30,6 +38,29 @@ function dashboardForRole(role: string | null | undefined) {
   return "/owner";
 }
 
+/**
+ * Build a redirect URL that stays on the host the request actually
+ * arrived on. On Vercel preview deployments AUTH_URL is pinned to
+ * production, so `req.nextUrl` (as normalised by the auth() wrapper)
+ * carries the prod origin — which would bounce logins off the
+ * preview. We rebuild the origin from the forwarded host so the
+ * redirect stays on the preview. Only engaged on preview; elsewhere
+ * the request URL is already correct.
+ */
+function redirectUrl(req: NextRequest, pathname: string): URL {
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+  if (process.env.VERCEL_ENV === "preview") {
+    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+    if (host) {
+      url.protocol = "https:";
+      url.host = host;
+      url.port = "";
+    }
+  }
+  return url;
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
@@ -40,24 +71,21 @@ export default auth((req) => {
 
   // 1. Unauthenticated → away from /(app)/*
   if (inApp && !session) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
+    const url = redirectUrl(req, "/login");
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
   // 2. Authenticated → away from /(auth)/*
   if (inAuth && session) {
-    const url = req.nextUrl.clone();
-    url.pathname = dashboardForRole(role);
+    const url = redirectUrl(req, dashboardForRole(role));
     url.search = "";
     return NextResponse.redirect(url);
   }
 
   // 3. Non-admin trying to reach /admin/*
   if (pathname.startsWith("/admin") && session && role !== "admin") {
-    const url = req.nextUrl.clone();
-    url.pathname = dashboardForRole(role);
+    const url = redirectUrl(req, dashboardForRole(role));
     return NextResponse.redirect(url);
   }
 

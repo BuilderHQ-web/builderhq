@@ -9,6 +9,7 @@
  * as one premium bordered panel.
  */
 
+import Link from "next/link";
 import { Check, ArrowUpRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
@@ -31,32 +32,25 @@ const META: Record<
   }
 > = {
   homeowner: {
-    kicker: "Preferred Partner Networks",
+    kicker: "Preferred Partner register",
     line: "Trusted partners,",
     accent: "personally chosen.",
-    words: ["Building designers", "Brokers", "Introduced"],
+    words: ["Designers", "Builders", "Brokers"],
     note: "No charge to you. No obligation. Just the right fit.",
   },
   builder: {
-    kicker: "Preferred Partner Networks",
+    kicker: "Preferred Partner register",
     line: "Trusted partners,",
     accent: "personally chosen.",
-    words: ["Building designers", "Brokers", "Introduced"],
+    words: ["Designers", "Brokers", "Introductions"],
     note: "No charge. No obligation. Send us the good ones.",
   },
   architect: {
-    kicker: "Preferred Design Partner Network",
+    kicker: "Preferred Partner register",
     line: "Hand picked practices,",
     accent: "personally spoken with.",
     words: ["Featured", "Promoted", "Referred"],
     note: "No membership fees. No contracts. Opt out with one email.",
-  },
-  finance: {
-    kicker: "Preferred Finance Partner Network",
-    line: "Hand picked brokers,",
-    accent: "personally spoken with.",
-    words: ["Listed", "Featured", "Introduced"],
-    note: "No fees. No lead charges. Opt out with one email.",
   },
 };
 
@@ -90,10 +84,12 @@ export function Network() {
                 </RoleSwap>
                 <RoleSwap>
                   <h2 className="mt-4 max-w-[20ch] font-ui font-semibold tracking-[-0.03em] text-[clamp(1.9rem,2.6vw+0.5rem,3rem)] leading-[1.1]">
-                    <span className="text-text">{copy.h2a}</span>{" "}
-                    <span style={{ color: pal.accentSoft }}>{copy.h2b}</span>
+                    <span className="block text-text">{copy.h2a}</span>
+                    <span className="block" style={{ color: pal.accentSoft }}>
+                      {copy.h2b}
+                    </span>
                   </h2>
-                  <p className="mt-5 max-w-[52ch] text-[14.5px] lg:text-[15px] leading-[1.72] text-text-muted">
+                  <p className="mt-5 max-w-[52ch] text-pretty text-[14.5px] lg:text-[15px] leading-[1.72] text-text-muted">
                     {copy.body}
                   </p>
 
@@ -113,8 +109,18 @@ export function Network() {
                     </ul>
                   ) : null}
 
-                  <div className="mt-8">
+                  <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                     <NetworkCta cta={copy.cta} onSwitch={(r) => setRole(r)} />
+                    {/* Every lens gets a way into the register itself.
+                        The section named it on all three and offered a
+                        door on only one. */}
+                    <Link
+                      href="/partners"
+                      className="group inline-flex items-center gap-1.5 py-2.5 -my-2.5 text-[13.5px] font-medium text-text-muted hover:text-text transition-colors"
+                    >
+                      Browse the register
+                      <ArrowUpRight className="size-4 opacity-60 transition-all duration-[180ms] group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </Link>
                   </div>
                 </RoleSwap>
               </div>

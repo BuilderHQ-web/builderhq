@@ -149,7 +149,7 @@ export function PlanScanAnimation({
           className="relative size-full rounded-[14px] border border-border-strong overflow-hidden"
           style={{
             background:
-              "linear-gradient(180deg, rgba(12,30,48,0.92), rgba(250,248,243,0.96))",
+              "linear-gradient(180deg, #ffffff, rgba(250,248,243,0.96))",
             boxShadow:
               "0 30px 70px -30px rgba(15,23,32,0.24), inset 0 1px 0 rgba(24,34,44,0.05)",
           }}
@@ -251,7 +251,7 @@ export function PlanScanAnimation({
               <span
                 key={i}
                 aria-hidden
-                className={`absolute ${pos} size-2.5 border-accent/40`}
+                className={`absolute ${pos} size-2.5 border-border-accent`}
                 style={{
                   borderTopWidth: pos.includes("top") ? 1 : 0,
                   borderBottomWidth: pos.includes("bottom") ? 1 : 0,

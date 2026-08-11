@@ -13,6 +13,7 @@
 // Schema (DB consumers only).
 export {
   projects,
+  projectParticipants,
   projectTypeEnum,
   projectStatusEnum,
   australianStateEnum,
@@ -34,6 +35,7 @@ export type {
   PublishabilityReport,
   MarketplacePreview,
   MarketplaceFilters,
+  PrivateRoundStub,
 } from "./types";
 
 // Pricing — single source of truth for per-type unlock cost (AUD).
@@ -56,6 +58,7 @@ export {
   softDelete,
   // Marketplace
   listForMarketplace,
+  listPrivateRoundStubs,
   getMarketplacePreview,
   getFullForUnlockedBuilder,
   listByIds,
@@ -70,3 +73,62 @@ export {
   canRead,
 } from "./policies";
 export type { ActorContext } from "./policies";
+
+// Participants — the seat a runner hands to someone who should see
+// the round without running it (flagship case: architect → client).
+export {
+  inviteParticipant,
+  listParticipants,
+  revokeParticipant,
+  setParticipantRole,
+  resendParticipantInvite,
+  getParticipantInviteByToken,
+  claimParticipantInvite,
+  getProjectAccess,
+  getBySlugForViewer,
+  listProjectsSharedWithMe,
+  listParticipantsForRunner,
+  PARTICIPANT_ROLE_LABEL,
+  PARTICIPANT_INVITE_VALIDITY_DAYS,
+} from "./participants";
+export type {
+  ParticipantRole,
+  ProjectAccess,
+  ParticipantInviteResolution,
+  InviteParticipantInput,
+} from "./participants";
+export type { ProjectParticipantRow } from "./schema";
+export { dispatchParticipantInvite, dispatchParticipantJoined } from "./dispatch";
+
+// The audit log — who did what on a round, recorded at the service
+// layer. Writes never throw; reads feed the record surfaces.
+export {
+  recordProjectEvent,
+  listProjectEvents,
+  listEventsForRunner,
+} from "./audit";
+export type { RecordProjectEventInput } from "./audit";
+export type { ProjectAuditEventRow } from "./schema";
+
+// The owner brief (pure definitions) + its write, and the pack's
+// corrections back onto the listing.
+export {
+  OWNER_BRIEF_QUESTIONS,
+  ARCHITECT_BRIEF_QUESTIONS,
+  OWNER_BRIEF_VERSION,
+  questionsForBrief,
+  isOwnerBriefComplete,
+  isOwnerBriefShape,
+  briefLabel,
+  briefForBuilders,
+  rememberedBriefAnswers,
+  type BriefAudience,
+  type OwnerBrief,
+  type OwnerBriefQuestion,
+} from "./owner-brief";
+export {
+  saveOwnerBrief,
+  briefMemoryForRunner,
+  applyPackCorrections,
+  type PackCorrections,
+} from "./service";

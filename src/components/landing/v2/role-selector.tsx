@@ -12,7 +12,7 @@
  */
 
 import * as React from "react";
-import { Home, HardHat, PenTool, Landmark, ArrowUpRight, Check } from "lucide-react";
+import { Home, HardHat, PenTool, ArrowUpRight, Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -23,21 +23,18 @@ const ICONS: Record<Role, LucideIcon> = {
   homeowner: Home,
   builder: HardHat,
   architect: PenTool,
-  finance: Landmark,
 };
 
 const BLURB: Record<Role, string> = {
-  homeowner: "Planning a build or renovation",
-  builder: "Winning residential work",
+  homeowner: "Building or renovating a home",
+  builder: "Pricing and winning new work",
   architect: "Designing homes for clients",
-  finance: "Guiding clients through building finance",
 };
 
 const WORD: Record<Role, string> = {
   homeowner: "Homeowner",
   builder: "Builder",
   architect: "Building Designer",
-  finance: "Finance Broker",
 };
 
 export function RoleSelector() {
@@ -53,19 +50,18 @@ export function RoleSelector() {
         <div className="flex flex-col items-center text-center gap-4 mb-16 lg:mb-24">
           <span className="inline-flex items-center gap-2.5 text-[11px] tracking-[0.28em] uppercase text-text-dim">
             <span className="h-px w-6 bg-text-faint/40" />
-            One platform, every side
+            Choose your view
             <span className="h-px w-6 bg-text-faint/40" />
           </span>
           <h2 className="font-ui font-semibold text-[clamp(2.3rem,3.4vw+0.5rem,3.7rem)] leading-[1.05] tracking-[-0.03em] text-text">
-            See it <span className="text-accent-light">your way.</span>
+            Pick your <span className="text-accent-light">side of the build.</span>
           </h2>
           <p className="max-w-[46ch] text-[14.5px] sm:text-[16px] leading-[1.6] text-text-muted">
-            Choose your side of the build and the page re-tunes: your
-            questions, your numbers, your next step.
+            The page changes to suit your questions and your next step.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
           {ROLE_ORDER.map((r) => (
             <RoleCard
               key={r}

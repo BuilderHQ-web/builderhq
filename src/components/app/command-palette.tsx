@@ -129,10 +129,15 @@ export function CommandPalette({ role }: Props) {
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  // Reset selection when filter changes.
-  useEffect(() => {
+  // Reset selection when the filter changes. Adjusted during render
+  // (not in an effect) so the old highlight never paints against the
+  // new result list.
+  const filterKey = `${open}|${query}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
     setActive(0);
-  }, [query, open]);
+  }
 
   // Keep selected item scrolled into view.
   useEffect(() => {
@@ -355,7 +360,7 @@ export function CommandPalette({ role }: Props) {
                 <Hint label="close" keys={["esc"]} />
               </div>
               <span className="hidden sm:inline-flex items-center gap-1 tracking-[0.04em]">
-                <Sparkles className="size-3 text-accent" />
+                <Sparkles className="size-3 text-accent-light" />
                 BuilderHQ
               </span>
             </div>
@@ -400,7 +405,7 @@ function CommandRow({
         className={cn(
           "size-7 rounded-sm border flex items-center justify-center shrink-0",
           active
-            ? "border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent"
+            ? "border-border-accent bg-[rgba(0,212,200,0.10)] text-accent-light"
             : "border-border-subtle bg-surface-1 text-text-faint group-hover:text-text-muted",
         )}
       >
@@ -417,7 +422,7 @@ function CommandRow({
       <span
         className={cn(
           "shrink-0 transition-[color,opacity] duration-[120ms]",
-          active ? "text-accent opacity-100" : "text-text-faint opacity-0",
+          active ? "text-accent-light opacity-100" : "text-text-faint opacity-0",
         )}
       >
         <CornerDownLeft className="size-3.5" />
@@ -575,6 +580,33 @@ function commandsForRole(role: Role): Command[] {
       roles: ["project_owner"],
     },
     {
+      id: "go-architect-dashboard",
+      label: "Studio dashboard",
+      keywords: "home overview architect designer studio",
+      href: "/architect",
+      icon: LayoutDashboard,
+      group: "Go to",
+      roles: ["architect"],
+    },
+    {
+      id: "go-architect-tenders",
+      label: "Tenders",
+      keywords: "projects list rounds",
+      href: "/architect/projects",
+      icon: Folders,
+      group: "Go to",
+      roles: ["architect"],
+    },
+    {
+      id: "go-architect-messages",
+      label: "Messages",
+      keywords: "chat conversations inbox builders",
+      href: "/architect/messages",
+      icon: MessageSquare,
+      group: "Go to",
+      roles: ["architect"],
+    },
+    {
       id: "go-admin-overview",
       label: "Admin overview",
       keywords: "console root",
@@ -601,6 +633,15 @@ function commandsForRole(role: Role): Command[] {
       icon: House,
       group: "Actions",
       roles: ["project_owner"],
+    },
+    {
+      id: "act-new-tender",
+      label: "New tender",
+      keywords: "create upload start project client",
+      href: "/architect/projects/new",
+      icon: House,
+      group: "Actions",
+      roles: ["architect"],
     },
     {
       id: "act-browse",

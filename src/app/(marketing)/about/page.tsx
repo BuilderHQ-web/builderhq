@@ -2,12 +2,16 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeDollarSign,
-  Hammer,
+  Calculator,
+  ClipboardCheck,
+  Gavel,
   Layers,
   Mail,
+  Percent,
   Phone,
+  Ruler,
+  Scale,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 
 import { MarketingPageShell } from "@/components/landing/page-shell";
@@ -15,17 +19,19 @@ import { MarketingPageShell } from "@/components/landing/page-shell";
 export const metadata = {
   title: "About",
   description:
-    "BuilderHQ is Australia's residential tendering platform, built so owners and builders can find each other on real terms, fast.",
+    "BuilderHQ prepares one scope of works for a residential project, runs the tender on it, and sets out every difference between the prices. Melbourne based.",
 };
 
 export default function AboutPage() {
   return (
     <MarketingPageShell
       kicker="About"
-      title="Built for the residential build."
-      sub="BuilderHQ is the missing layer between Australian project owners and the builders who quote them. We make tendering structured, comparable, and trusted, so the right team gets the job, faster."
+      title="Built for Australian residential construction."
+      sub="BuilderHQ prepares one scope of works for a residential project, runs the tender on it, and sets out every difference between the tenders that come back. Melbourne based, operating Australia wide."
+      meta="Last updated · 11 August 2026"
     >
-      {/* Mission statement */}
+      {/* What we are, plus the problem stated as an industry fact rather
+          than a complaint. The paragraph a homeowner reads first. */}
       <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
@@ -36,57 +42,67 @@ export default function AboutPage() {
           }}
         />
         <span className="relative text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-          Our mission
+          What we are
         </span>
         <h2 className="relative mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
-          To make building a home in Australia
+          One scope of works,
           <br />
-          <span className="text-accent-light">feel less like chasing</span>.
+          <span className="text-accent-light">priced by every builder</span>.
         </h2>
-        <p className="relative mt-6 max-w-[60ch] text-[14.5px] leading-[1.75] text-text-subtle">
-          Tendering a residential build today means three PDFs from three
-          different builders, written in three different formats, with three
-          different scope assumptions buried in the fine print. Owners can&apos;t
-          actually compare. Builders can&apos;t stand out for the right reasons.
-          Architects lose hours relaying messages between the two. We&apos;re fixing that
-          with structured tenders, live verification, and a single workspace
-          everyone can trust.
+        <p className="relative mt-6 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+          You upload the drawings, reports and specifications for your
+          project. Our software reads them and writes out every item of work
+          they cover, in plain language, with each line pointing back to the
+          document, page and revision it came from. On a typical single
+          dwelling that runs to roughly 242 items across 29 trades. Verified
+          builders then price that same list, line by line, and answer the
+          same questions under signature. You see where the prices differ
+          before you choose one.
+        </p>
+        <p className="relative mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+          The reason we exist is a plain fact of the industry. Residential
+          quotes are priced against no shared standard, so three prices for
+          the same house cover three different sets of work and cannot be
+          compared on the number alone. What nobody priced does not go away.
+          It returns during construction as a variation, at a price nobody
+          competed on.
         </p>
       </section>
 
       {/* Pillars */}
       <section className="mb-12 lg:mb-20">
         <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-          What we believe
+          Platform integrity
         </span>
         <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text mb-6 sm:mb-8">
-          Four principles, no compromise.
+          Four principles, every round.
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Pillar
             icon={<ShieldCheck className="size-4" />}
-            title="Verified before tender"
-            body="Every builder runs through live ABR + state-register checks before they tender. Trust shouldn't depend on whether you read the fine print."
+            title="Verified before pricing"
+            body="We check each builder’s ABN against the Australian Business Register, and their licence against the state register where one connects and by our team where it does not. Insurances are declared under signature with the tender."
           />
           <Pillar
             icon={<Layers className="size-4" />}
-            title="Structured by default"
-            body="Tenders use the same scope, fields, and format. When you compare three builders, you're actually comparing the same thing, not three writing styles."
+            title="One shared scope"
+            body="The client approves one scope of works. Every builder prices that same list, marking each item included, provisional sum, excluded or not applicable."
           />
           <Pillar
-            icon={<Hammer className="size-4" />}
-            title="Australian residential only"
-            body="Residential only, Australian only. No commercial crossover, no offshore quoting. Just the builders who build homes here, in your state."
+            icon={<Scale className="size-4" />}
+            title="Open, weighted scoring"
+            body="Six dimensions with fixed weights, published before the round opens and applied to every tender on it. Each score sets out the points earned and the points not earned."
           />
           <Pillar
             icon={<BadgeDollarSign className="size-4" />}
-            title="Free for owners, forever"
-            body="No fees to publish, match, or award. We make money from a small unlock fee builders pay to access private project details. Never from you."
+            title="Free for clients"
+            body="Homeowners and design practices pay nothing. A builder pays a one off fee for a spot on an open round, from $49 for a renovation to $199 for multi dwelling work. Builders you invite pay nothing."
           />
         </div>
       </section>
 
-      {/* Built with industry experts */}
+      {/* How the scope is produced, and the two human gates it passes
+          through before a builder ever sees it. */}
       <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
@@ -99,47 +115,87 @@ export default function AboutPage() {
         <div className="relative">
           <div className="flex items-center gap-2.5">
             <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0">
-              <Users className="size-4" />
+              <ClipboardCheck className="size-4" />
             </span>
             <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-              Built with industry experts
+              How the scope is made
             </span>
           </div>
           <h2 className="mt-5 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
-            Shaped by the people who actually
+            Written from your documents,
             <br />
-            <span className="text-accent-light">build, design, and own</span>.
+            <span className="text-accent-light">checked by two people</span>.
           </h2>
-          <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            Every section, every field, and every workflow on BuilderHQ was
-            reviewed against decades of residential build experience:
-            registered builders running real projects, registered architects
-            who deliver them weekly, owner-builders who&apos;ve been through
-            it themselves, and quantity surveyors who know where tenders
-            quietly diverge.
+          <p className="mt-6 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+            The software reads every drawing, report and specification on the
+            project and drafts the scope of works from them. Every line names
+            the document, page and revision it came from. Anything that cannot
+            be traced back to a document is removed.
           </p>
-          <p className="mt-5 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            We&apos;re still listening. Real-world feedback shapes the
-            roadmap directly, if you&apos;ve been around an Australian
-            residential build and you have a sharper way of doing
-            something, we want to hear it.
+          <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+            Then two people check it. A member of our team reviews every line
+            before it leaves us. The client reviews it after that, and nothing
+            reaches a builder until the client approves it.
           </p>
 
-          {/* Three "shaped by" pills, keeps the prose from being a
-              wall of text and visualises the breadth of input. */}
+          {/* The three stages, so the two gates are visible at a glance
+              rather than buried in the prose above. */}
           <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <ExpertPill role="Registered builders" detail="VIC · NSW · QLD · SA" />
-            <ExpertPill role="Registered architects" detail="Boutique to mid-size" />
-            <ExpertPill
-              role="Owner-builders"
-              detail="First-time + repeat developers"
+            <StagePill
+              label="Drafted from the documents"
+              detail="Every line cited to its source"
+            />
+            <StagePill
+              label="Checked by our team"
+              detail="Line by line, before it goes out"
+            />
+            <StagePill
+              label="Approved by the client"
+              detail="Nothing moves until it is"
             />
           </div>
         </div>
       </section>
 
-      {/* Who's behind it — real people, real particulars. The section a
-          skeptic visits the About page for. */}
+      {/* The refusals. On a tender, what the party running it will not do
+          matters as much as what it does. */}
+      <section className="mb-12 lg:mb-20">
+        <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
+          Where we stop
+        </span>
+        <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.5rem,2.4vw+0.5rem,2.4rem)] leading-[1.05] text-text">
+          What we will not do.
+        </h2>
+        <p className="mt-5 mb-6 sm:mb-8 max-w-[62ch] text-[14.5px] leading-[1.8] text-text-subtle">
+          A tender is only worth running if the party running it has no stake
+          in the result. These are the lines we hold.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Limit
+            icon={<Ruler className="size-4" />}
+            title="We do not measure"
+            body="BuilderHQ takes no quantities off a drawing. The scope lists the work. Each builder measures and prices it themselves."
+          />
+          <Limit
+            icon={<Calculator className="size-4" />}
+            title="We do not estimate"
+            body="We put no cost, rate or allowance against any item. Every figure on your round comes from a builder, not from us."
+          />
+          <Limit
+            icon={<Gavel className="size-4" />}
+            title="We do not recommend"
+            body="We score every tender the same way and set out the differences item by item. We never name a preferred builder and we never choose one for you."
+          />
+          <Limit
+            icon={<Percent className="size-4" />}
+            title="We take no commission"
+            body="The building contract is between the client and the builder. We are not a party to it, we hold no construction funds, and we take nothing from either side."
+          />
+        </div>
+      </section>
+
+      {/* Who’s behind it. Real particulars, the section a sceptic comes
+          to the About page for. */}
       <section className="rounded-xl border border-border-subtle bg-white card-elev px-6 sm:px-7 lg:px-10 py-8 sm:py-10 lg:py-12 mb-12 lg:mb-20 relative overflow-hidden">
         <span
           aria-hidden
@@ -151,20 +207,26 @@ export default function AboutPage() {
         />
         <div className="relative">
           <span className="text-[11px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium">
-            Who&apos;s behind it
+            Who’s behind it
           </span>
           <h2 className="mt-4 font-ui font-semibold tracking-[-0.03em] text-[clamp(1.6rem,2.6vw+0.5rem,2.6rem)] leading-[1.05] text-text">
-            Run by people
+            Australian, and
             <br />
-            <span className="text-accent-light">you can call</span>.
+            <span className="text-accent-light">based in Melbourne</span>.
           </h2>
-          <p className="mt-6 max-w-[60ch] text-[15px] leading-[1.85] text-text-subtle">
-            BuilderHQ is built and run from Melbourne by a small Australian
-            team, led by founder Aryan Vadera. Every builder application is
-            reviewed by a person, every early project is walked through by
-            hand, and the roadmap is shaped by the owners, builders and
-            architects using the platform. If you&apos;d like to talk to us
-            before you sign up, call. A person answers.
+          <p className="mt-6 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+            BuilderHQ is an Australian company, built and run from Melbourne
+            by Aryan Vadera, and working with clients and builders across the
+            country. The platform is made for Australian residential
+            construction: the way homes here are documented, the way state
+            licensing works, and the way a residential contract is signed
+            directly between a client and a builder.
+          </p>
+          <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+            Every builder application is reviewed by a person. Every scope of
+            works is checked by a person before the client sees it. If you
+            would like to speak to someone before you sign up, our details are
+            below.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-2.5">
@@ -196,9 +258,9 @@ export default function AboutPage() {
         <h2 className="font-ui font-semibold tracking-[-0.03em] text-[clamp(2rem,3.6vw+0.5rem,3.6rem)] leading-[1.0] text-text">
           Ready to <span className="text-accent-light">build it</span>?
         </h2>
-        <p className="mt-5 mx-auto max-w-[44ch] text-[14px] leading-[1.7] text-text-subtle">
-          Two minutes to publish your project. Verified builders take it
-          from there.
+        <p className="mt-5 mx-auto max-w-[46ch] text-[14px] leading-[1.7] text-text-subtle">
+          Upload the drawings. We prepare the scope of works, and verified
+          builders price it.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           <Link
@@ -241,10 +303,10 @@ function ContactChip({
   );
 }
 
-function ExpertPill({ role, detail }: { role: string; detail: string }) {
+function StagePill({ label, detail }: { label: string; detail: string }) {
   return (
     <div className="px-4 py-3 rounded-lg border border-border-accent/30 bg-[rgba(0,212,200,0.04)]">
-      <div className="text-[12px] font-semibold text-text">{role}</div>
+      <div className="text-[12px] font-semibold text-text">{label}</div>
       <div className="text-[10.5px] text-text-dim mt-0.5">{detail}</div>
     </div>
   );
@@ -271,6 +333,39 @@ function Pillar({
       />
       <div className="relative flex items-start gap-3">
         <span className="size-9 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light flex items-center justify-center shrink-0">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h3 className="font-ui font-bold text-[15px] tracking-[-0.005em] text-text">
+            {title}
+          </h3>
+          <p className="mt-1.5 text-[13px] leading-[1.65] text-text-subtle">
+            {body}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Same card as Pillar, in a deliberately quieter register: the icon
+ * chip is neutral rather than teal, so the refusals read as statements
+ * of fact rather than features being sold.
+ */
+function Limit({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="relative rounded-xl border border-border-subtle bg-white card-elev px-6 py-6">
+      <div className="flex items-start gap-3">
+        <span className="size-9 rounded-md border border-border-subtle bg-surface-2 text-text-muted flex items-center justify-center shrink-0">
           {icon}
         </span>
         <div className="min-w-0">

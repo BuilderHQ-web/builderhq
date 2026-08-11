@@ -17,6 +17,48 @@
 import { z } from "zod";
 
 /**
+ * Vercel preview override.
+ *
+ * On a preview deployment, production-scoped variables (DATABASE_URL,
+ * AUTH_URL, ...) also apply to the Preview environment, and Vercel
+ * won't let a second variable of the same name cover Preview too — so
+ * a preview points at PRODUCTION by default. To aim a preview branch
+ * at the dev database instead, set `*_DEV` variants in Vercel's
+ * Preview scope; we prefer them here. Runs at module load, before
+ * anything reads `env`. No-op unless VERCEL_ENV === "preview", so
+ * production and local development are never touched.
+ *
+ * THE URLs ARE DERIVED, NEVER CONFIGURED. A Preview-scoped variable
+ * holds ONE value for EVERY branch, so a fixed *_DEV url sent every
+ * preview's magic links and auth callbacks to whichever branch was
+ * current when it was set: sign in on one preview, land on another,
+ * missing the feature you came to see, and incognito cannot help
+ * because the wrong host is baked into the emailed link. Vercel gives
+ * each deployment its own address, so each preview addresses itself.
+ * VERCEL_BRANCH_URL is the stable per-branch alias; VERCEL_URL is the
+ * immutable per-deployment fallback. Every consumer of
+ * NEXT_PUBLIC_APP_URL is server-side, so a runtime override is
+ * enough — nothing here relies on build-time inlining.
+ */
+if (process.env.VERCEL_ENV === "preview") {
+  const prefer = (target: string, devKey: string) => {
+    const v = process.env[devKey];
+    if (v) process.env[target] = v;
+  };
+  prefer("DATABASE_URL", "DATABASE_URL_DEV");
+  prefer("DATABASE_URL_UNPOOLED", "DATABASE_URL_UNPOOLED_DEV");
+  prefer("AUTH_URL", "AUTH_URL_DEV");
+  prefer("NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_APP_URL_DEV");
+
+  const self = process.env.VERCEL_BRANCH_URL || process.env.VERCEL_URL;
+  if (self) {
+    const origin = `https://${self.replace(/^https?:\/\//, "")}`;
+    process.env.AUTH_URL = origin;
+    process.env.NEXT_PUBLIC_APP_URL = origin;
+  }
+}
+
+/**
  * Server-only schema. NEVER expose anything from here to the browser.
  * Things prefixed `NEXT_PUBLIC_` go in the client schema below — Next.js
  * inlines those at build time.
@@ -125,6 +167,12 @@ const serverSchema = z.object({
    *  reject anything else. Optional in dev; auto-injected by Vercel
    *  in production / preview. */
   CRON_SECRET: z.string().min(16).optional(),
+  /** "1"/"true" turns on the scope publish gate: publishing submits
+   *  the project for preparation instead of going live directly. */
+  SCOPE_PUBLISH_GATE: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "true"),
 
   // Verification proxy — Cloudflare Worker fronting ABR + state licence
   // registries. One base URL with two paths: `/?abn=...` for ABR,

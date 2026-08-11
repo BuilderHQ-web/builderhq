@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
+import { projectsBase } from "@/lib/dashboard-route";
 import {
   canRead,
   getById,
@@ -52,6 +53,7 @@ export default async function OwnerMessagesPage({
   return (
     <MessagesShell
       scope="owner"
+      projectBase={projectsBase(session.user.role)}
       meId={userId}
       initialConversations={conversations}
       initialActiveId={resolvedActiveId}

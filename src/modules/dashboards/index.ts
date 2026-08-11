@@ -20,3 +20,8 @@ export {
   type BuilderActivityEvent,
   type TenderStatus,
 } from "./builder";
+
+export {
+  getArchitectDashboardData,
+  type ArchitectDashboardData,
+} from "./architect";

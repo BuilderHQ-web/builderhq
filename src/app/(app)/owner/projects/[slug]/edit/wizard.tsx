@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Home,
   Building,
@@ -31,8 +31,13 @@ import {
   Landmark,
   FileQuestion,
   X,
+  Users,
   type LucideIcon,
 } from "lucide-react";
+
+import { TenderRoundStep } from "./tender-round-step";
+import { OwnerBriefForm } from "../scope/owner-brief-form";
+import type { BriefAudience } from "@/modules/projects/owner-brief";
 
 import {
   updateProjectAction,
@@ -254,13 +259,15 @@ type SaveState = "idle" | "saving" | "saved" | "error";
  *  the owner mid-edit when the next attempt just succeeds — which is why the
  *  status used to flicker save-failed → autosaved even though data persisted. */
 const MAX_SAVE_RETRIES = 4;
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 export function ProjectWizard({
   initialProject,
   initialDocs,
   initialReport,
   flagMissingRequired = false,
+  briefAudience = "owner",
+  rememberedBrief,
 }: {
   initialProject: Project;
   initialDocs: Document[];
@@ -272,8 +279,16 @@ export function ProjectWizard({
    * to add. The flag clears as soon as they edit any field.
    */
   flagMissingRequired?: boolean;
+  /** Which brief the runner answers — homeowner or architect. */
+  briefAudience?: BriefAudience;
+  /** Stable answers carried from the runner's last project. */
+  rememberedBrief?: Record<string, string>;
 }) {
   const router = useRouter();
+  // The wizard mounts at /owner/... and /architect/... — every internal
+  // navigation stays on the base the runner came in on.
+  const pathname = usePathname();
+  const base = pathname.startsWith("/architect") ? "/architect" : "/owner";
   const [project, setProject] = useState<Project>(initialProject);
   const [docs, setDocs] = useState<Document[]>(initialDocs);
   const [report, setReport] = useState<PublishabilityReport | null>(initialReport);
@@ -288,7 +303,7 @@ export function ProjectWizard({
 
   const goStep = useCallback((target: Step) => {
     setStep(target);
-    if (target >= 3) setReachedLast(true);
+    if (target >= 4) setReachedLast(true);
   }, []);
 
   const isPublished = project.status !== "draft";
@@ -379,9 +394,9 @@ export function ProjectWizard({
       !celebratedRef.current
     ) {
       celebratedRef.current = true;
-      router.push(`/owner/projects/${project.slug}/published`);
+      router.push(`${base}/projects/${project.slug}/published`);
     }
-  }, [project.status, project.slug, initialProject.status, router]);
+  }, [project.status, project.slug, initialProject.status, router, base]);
 
   const refreshDocs = useCallback(async () => {
     const r = await listProjectDocumentsAction(project.id);
@@ -404,7 +419,9 @@ export function ProjectWizard({
       (d) => d.category === "architectural" && d.status === "active",
     ).length;
     const step3Done = archCount > 0;
-    return { 1: step1Done, 2: step2Done, 3: step3Done };
+    // Round settings always carry valid defaults (open · 3 spots), so
+    // the step is "done" the moment it exists — its job is the choice.
+    return { 1: step1Done, 2: step2Done, 3: step3Done, 4: true };
   }, [project, docs]);
 
   const allDone = checkpoints[1] && checkpoints[2] && checkpoints[3];
@@ -425,6 +442,17 @@ export function ProjectWizard({
         );
         return;
       }
+      // Under the scope publish gate the project comes back still a
+      // draft, now in preparation — route to the tender pack page
+      // instead of the celebration.
+      if (r.value.status === "draft" && r.value.publishRequestedAt) {
+        toast.success(
+          "Submitted for preparation",
+          "We are reading your documents against the Scope Standard. You will be told when your tender pack is ready.",
+        );
+        router.push(`${base}/projects/${r.value.slug}/scope`);
+        return;
+      }
       // Flip local state to published — the draft→published effect above
       // takes it from here and routes to the celebration. One nav path for
       // both the manual button and an autosave that auto-promotes the draft.
@@ -442,8 +470,8 @@ export function ProjectWizard({
       return;
     }
     toast.message("Draft deleted");
-    router.push("/owner/projects");
-  }, [project.id, router]);
+    router.push(`${base}/projects`);
+  }, [project.id, router, base]);
 
   // ── render ───────────────────────────────────────────────────────────
 
@@ -453,7 +481,7 @@ export function ProjectWizard({
       <header className="border-b border-border-subtle bg-bg-deep/30">
         <div className="px-4 sm:px-6 lg:px-10 py-5 sm:py-6 lg:py-7 flex items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent font-ui font-medium inline-flex items-center gap-2 flex-wrap">
+            <span className="text-[9.5px] tracking-[0.22em] uppercase text-accent-light font-ui font-medium inline-flex items-center gap-2 flex-wrap">
               {TYPE_META[project.type].icon}
               {TYPE_META[project.type].label}
               <span className="text-text-dim/60 mx-1">·</span>
@@ -467,11 +495,13 @@ export function ProjectWizard({
         </div>
 
         {/* Progress tracker */}
+        {/* Steps stay jumpable on live projects: fields lock
+            individually, and the round step keeps its invitation
+            manager active for live rounds. */}
         <ProgressTracker
           step={step}
           checkpoints={checkpoints}
           onJump={goStep}
-          locked={isPublished}
         />
       </header>
 
@@ -495,12 +525,41 @@ export function ProjectWizard({
               disabled={isPublished}
               flagMissingRequired={flagMissingRequired}
             />
-          ) : (
+          ) : step === 3 ? (
             <Step3Documents
               projectId={project.id}
               docs={docs}
               onRefresh={refreshDocs}
             />
+          ) : (
+            <>
+              <TenderRoundStep
+                project={project}
+                setField={setField}
+                disabled={isPublished}
+              />
+              {/* The brief — answered here, at upload time, so the
+                  pack arrives with the builder-facing facts already
+                  in hand. Stable answers carry from the last project.
+                  Locked once the round is live: builders price
+                  against these answers, so mid-round changes go
+                  through the pack, not the wizard. onSaved keeps the
+                  wizard's own copy current so revisiting this step
+                  never shows (or saves) a stale brief. */}
+              <div className="mt-8 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-5">
+                <OwnerBriefForm
+                  projectId={project.id}
+                  projectType={project.type}
+                  audience={briefAudience}
+                  initial={(project.ownerBrief ?? {}) as Record<string, string>}
+                  remembered={rememberedBrief}
+                  readOnly={isPublished}
+                  onSaved={(answers) =>
+                    setProject((p) => ({ ...p, ownerBrief: answers }))
+                  }
+                />
+              </div>
+            </>
           )}
 
           {/* Step navigation */}
@@ -531,10 +590,10 @@ export function ProjectWizard({
               </button>
             ) : <span />}
 
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
-                onClick={() => goStep(Math.min(3, step + 1) as Step)}
+                onClick={() => goStep(Math.min(4, step + 1) as Step)}
                 className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent-muted border border-border-accent text-accent-light text-[12px] font-semibold tracking-[0.04em] hover:bg-accent-muted/70 transition-colors"
               >
                 Next
@@ -549,6 +608,7 @@ export function ProjectWizard({
 
       <PublishBar
         project={project}
+        basePath={base}
         report={report}
         publishing={publishing}
         allDone={allDone}
@@ -625,26 +685,25 @@ function ProgressTracker({
   step,
   checkpoints,
   onJump,
-  locked,
 }: {
   step: Step;
   checkpoints: Record<Step, boolean>;
   onJump: (s: Step) => void;
-  locked: boolean;
 }) {
   const STEPS: Array<{ id: Step; title: string; sub: string; icon: LucideIcon }> = [
     { id: 1, title: "About", sub: "Title + address", icon: Sparkles },
     { id: 2, title: "Build", sub: "Details + budget", icon: Hammer },
     { id: 3, title: "Documents", sub: "Plans + specs", icon: FileText },
+    { id: 4, title: "Tender round", sub: "Who prices it", icon: Users },
   ];
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 pb-6">
-      <div className="mx-auto max-w-[820px] grid grid-cols-3 gap-3 relative">
+      <div className="mx-auto max-w-[820px] grid grid-cols-4 gap-3 relative">
         {/* connecting line */}
         <span
           aria-hidden
-          className="absolute top-5 left-[16.6%] right-[16.6%] h-px bg-border-subtle"
+          className="absolute top-5 left-[12.5%] right-[12.5%] h-px bg-border-subtle"
         />
         {STEPS.map((s) => {
           const isActive = step === s.id;
@@ -653,7 +712,6 @@ function ProgressTracker({
             <button
               key={s.id}
               type="button"
-              disabled={locked}
               onClick={() => onJump(s.id)}
               className="relative group flex flex-col items-center text-center"
             >
@@ -665,7 +723,7 @@ function ProgressTracker({
                     : isDone
                     ? "border-border-accent/60 bg-accent-muted/40 text-accent-light"
                     : "border-border-subtle bg-bg-deep text-text-dim",
-                  !locked && "group-hover:border-border-accent",
+                  "group-hover:border-border-accent",
                 )}
               >
                 {isDone && !isActive ? (
@@ -1464,6 +1522,7 @@ function FileChip({
 
 function PublishBar({
   project,
+  basePath,
   report,
   publishing,
   allDone,
@@ -1471,6 +1530,7 @@ function PublishBar({
   onPublish,
 }: {
   project: Project;
+  basePath: string;
   report: PublishabilityReport | null;
   publishing: boolean;
   allDone: boolean;
@@ -1516,7 +1576,7 @@ function PublishBar({
         </div>
         {isPublished ? (
           <a
-            href={`/owner/projects/${project.slug}`}
+            href={`${basePath}/projects/${project.slug}`}
             className="inline-flex items-center gap-2 h-10 px-4 sm:px-5 rounded-full border border-border-strong text-text text-[12.5px] tracking-[0.04em] hover:bg-surface-1 transition-colors shrink-0"
           >
             <span className="hidden sm:inline">View project</span>
@@ -1589,7 +1649,7 @@ function StatusPill({ status }: { status: Project["status"] }) {
     status === "draft"
       ? "border-border-subtle text-text-dim"
       : status === "published" || status === "tendering"
-      ? "border-border-accent text-accent"
+      ? "border-border-accent text-accent-light"
       : "border-border-subtle text-text-dim";
   return (
     <span
@@ -1685,7 +1745,7 @@ function Field({
         {label}
         {required ? (
           <span
-            className={error ? "text-danger ml-1" : "text-accent ml-1"}
+            className={error ? "text-danger ml-1" : "text-accent-light ml-1"}
           >
             *
           </span>
@@ -1741,7 +1801,7 @@ function RenovationScopeMultiSelect({
               className={[
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 h-9 text-[12.5px] font-ui font-semibold transition-colors disabled:opacity-50",
                 selected
-                  ? "border border-accent bg-accent-muted text-accent-light"
+                  ? "border border-border-accent-strong bg-accent-muted text-accent-light"
                   : "border border-border-strong bg-surface-1/40 text-text hover:border-border-accent",
               ].join(" ")}
             >

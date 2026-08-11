@@ -11,7 +11,9 @@
  */
 
 import "server-only";
-import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+import { and, asc, count, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -21,6 +23,12 @@ import {
   tenderCostLines,
   type TenderRow,
   type TenderCostLineRow,
+} from "./schema";
+import {
+  tenderBuilderInvites,
+  tenderResponses,
+  type TenderBuilderInviteRow,
+  type TenderResponseRow,
 } from "./schema";
 import type {
   CostLineInput,
@@ -32,14 +40,29 @@ import type {
   TenderWithLines,
   UpdateTenderInput,
 } from "./types";
+import type { ChecklistProgress } from "./types";
 
 import { unlocks } from "@/modules/unlocks/schema";
+import { recordProjectEvent } from "@/modules/projects";
 import { projects } from "@/modules/projects/schema";
 import { users } from "@/modules/users";
-import { builderProfiles } from "@/modules/profiles/schema";
+import { builderProfiles, architectProfiles } from "@/modules/profiles/schema";
 import { documents } from "@/modules/documents/schema";
 
-import { dispatchTenderEvent } from "./dispatch";
+import { dispatchTenderEvent, dispatchBuilderInvite } from "./dispatch";
+import {
+  INSTRUMENT_VERSION,
+  getQuestion,
+  requiredQuestionIds,
+  isValidAnswerShape,
+  isAnswerComplete,
+} from "./instrument";
+import { tenderableItems, type TenderSchedule } from "./schedule";
+import {
+  getProjectSchedule,
+  packFactsForProject,
+  type RoundPackFacts,
+} from "@/modules/scope-engine";
 import {
   getOrCreateConversation,
   postTenderSubmittedSystemMessage,
@@ -538,16 +561,60 @@ export async function getProjectOwnerForTender(
   return row?.ownerId ?? null;
 }
 
+/**
+ * Public verification read behind the document seal. Deliberately
+ * minimal: enough to confirm a Tender Document is genuine — who
+ * prepared it, for which project, when, and its current standing —
+ * and nothing of the tender's content. Drafts verify as nothing:
+ * the seal only activates on submission.
+ */
+export async function getTenderVerification(tenderId: string): Promise<{
+  ref: string;
+  builderEntity: string | null;
+  projectTitle: string;
+  status: "submitted" | "shortlisted" | "awarded" | "rejected" | "withdrawn";
+  submittedAt: Date | null;
+} | null> {
+  const [row] = await db
+    .select({
+      id: tenders.id,
+      status: tenders.status,
+      submittedAt: tenders.submittedAt,
+      projectTitle: projects.title,
+      builderEntity: builderProfiles.companyName,
+    })
+    .from(tenders)
+    .innerJoin(projects, eq(projects.id, tenders.projectId))
+    .leftJoin(builderProfiles, eq(builderProfiles.userId, tenders.builderId))
+    .where(and(eq(tenders.id, tenderId), isNull(tenders.deletedAt)))
+    .limit(1);
+  if (!row || row.status === "draft") return null;
+  return {
+    ref: `BHQ-${row.id.slice(0, 8).toUpperCase()}`,
+    builderEntity: row.builderEntity,
+    projectTitle: row.projectTitle,
+    status: row.status as
+      | "submitted"
+      | "shortlisted"
+      | "awarded"
+      | "rejected"
+      | "withdrawn",
+    submittedAt: row.submittedAt,
+  };
+}
+
 // ── readiness / aggregation ──────────────────────────────────────────────
 
 export function computeReadiness(
   t: TenderRow,
   lines: TenderCostLineRow[],
+  checklist?: ChecklistProgress | null,
 ): SubmissionReadiness {
   const missing: SubmissionReadiness["missing"] = [];
   if (!t.totalPriceAud || t.totalPriceAud <= 0) missing.push("total_price");
   if (!t.durationWeeks || t.durationWeeks <= 0) missing.push("duration");
   if (!t.validityDays || t.validityDays <= 0) missing.push("validity");
+  if (checklist && !checklist.complete) missing.push("checklist");
 
   const sum = lines.reduce((s, l) => s + l.amountAud, 0);
   const variance = lines.length === 0 ? null : sum - (t.totalPriceAud ?? 0);
@@ -591,11 +658,40 @@ export async function createDraft(
 
   const [row] = await db
     .insert(tenders)
-    .values({ builderId, projectId, status: "draft" })
+    .values({
+      builderId,
+      projectId,
+      status: "draft",
+      // Every new tender answers the current submission instrument.
+      instrumentVersion: INSTRUMENT_VERSION,
+    })
     .returning();
   if (!row) return fail("internal", "Failed to create tender draft.");
 
   return ok({ ...row, costLines: [] });
+}
+
+/**
+ * Legacy drafts predate the submission instrument. The moment a
+ * builder opens one to keep working, it adopts the current instrument
+ * so every submission from here on carries the checklist. Submitted
+ * and decided tenders are never retro-gated. Idempotent.
+ */
+export async function adoptInstrumentForDraft(
+  builderId: string,
+  tenderId: string,
+): Promise<void> {
+  await db
+    .update(tenders)
+    .set({ instrumentVersion: INSTRUMENT_VERSION })
+    .where(
+      and(
+        eq(tenders.id, tenderId),
+        eq(tenders.builderId, builderId),
+        eq(tenders.status, "draft"),
+        isNull(tenders.instrumentVersion),
+      ),
+    );
 }
 
 /** Patch a tender. Only allowed while draft. */
@@ -744,11 +840,58 @@ export async function submit(
       .where(eq(tenderCostLines.tenderId, tenderId))
       .orderBy(asc(tenderCostLines.sortOrder));
 
-    const readiness = computeReadiness(row, lines);
+    const checklistRows =
+      row.instrumentVersion != null
+        ? await tx
+            .select()
+            .from(tenderResponses)
+            .where(eq(tenderResponses.tenderId, tenderId))
+        : [];
+    // Schedule rounds gate against the client's pack: completeness is
+    // judged line by line, and marks against ids the pack does not
+    // carry refuse the submit rather than printing a phantom line.
+    const schedule =
+      row.instrumentVersion != null
+        ? await getProjectSchedule(row.projectId)
+        : null;
+    if (schedule) {
+      const known = new Set(tenderableItems(schedule).map((i) => i.itemId));
+      const rawSched = checklistRows.find((r) => r.qid === "scope.schedule");
+      const v =
+        rawSched &&
+        typeof rawSched.value === "object" &&
+        rawSched.value !== null &&
+        "v" in rawSched.value
+          ? (rawSched.value as { v: unknown }).v
+          : undefined;
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        const unknown = Object.keys(v as Record<string, unknown>).filter(
+          (id) => !known.has(id),
+        );
+        if (unknown.length > 0) {
+          return fail(
+            "validation",
+            "The tender schedule has changed since some lines were marked. Reopen module 5 and review your marks.",
+          );
+        }
+      }
+    }
+    const packFacts =
+      row.instrumentVersion != null
+        ? await packFactsForProject(row.projectId)
+        : null;
+    const checklist =
+      row.instrumentVersion != null
+        ? checklistProgress(row, checklistRows, schedule, packFacts)
+        : null;
+
+    const readiness = computeReadiness(row, lines, checklist);
     if (!readiness.canSubmit) {
       return fail(
         "validation",
-        "Tender is missing required fields.",
+        readiness.missing.includes("checklist")
+          ? "Complete the submission checklist before submitting."
+          : "Tender is missing required fields.",
         { missing: readiness.missing },
       );
     }
@@ -933,7 +1076,14 @@ async function decisionTransition(
     .where(eq(tenders.id, tenderId));
   if (!row) return fail("not_found", "Tender not found.");
   if (row.projectOwnerId !== ownerId) {
-    return fail("forbidden", "Not your project.");
+    // Not the runner — a joined DECIDER seat carries the decision too
+    // (the architect's client shortlisting and awarding on their own
+    // build). Viewers and everyone else stay out.
+    const { getProjectAccess } = await import("@/modules/projects");
+    const access = await getProjectAccess(row.tender.projectId, ownerId);
+    if (!(access?.kind === "participant" && access.role === "decider")) {
+      return fail("forbidden", "Not your project.");
+    }
   }
   if (!allowedFrom.includes(row.tender.status)) {
     return fail(
@@ -953,9 +1103,19 @@ async function decisionTransition(
 
   // Only the forward-going transitions notify. Roll-backs to "submitted"
   // are silent — the original "submitted" notification was already sent
-  // and a second one would just be confusing.
+  // and a second one would just be confusing. The actor rides along so
+  // the owner-side fan-out can say who decided and skip notifying them.
   if (to === "shortlisted" || to === "awarded" || to === "rejected") {
-    await dispatchTenderEvent(to, tenderId);
+    await dispatchTenderEvent(to, tenderId, { actorId: ownerId });
+  } else if (to === "submitted") {
+    // Silent for inboxes, never for the record.
+    await recordProjectEvent({
+      projectId: row.tender.projectId,
+      actorId: ownerId,
+      kind: "tender.reopened",
+      subjectId: tenderId,
+      summary: `A ${row.tender.status} tender was moved back to submitted.`,
+    });
   }
 
   return ok(updated!);
@@ -994,4 +1154,963 @@ export async function countTendersForProject(
       ),
     );
   return rows[0]?.n ?? 0;
+}
+
+// ── submission checklist (the instrument) ────────────────────────────────
+
+/**
+ * Progress of a tender's structured submission against its instrument
+ * version. Conditional questions (showIf) only count when their gate
+ * answer makes them visible.
+ */
+export function checklistProgress(
+  t: Pick<TenderRow, "instrumentVersion">,
+  responses: Array<Pick<TenderResponseRow, "qid" | "value">>,
+  schedule: TenderSchedule | null = null,
+  packFacts: RoundPackFacts | null = null,
+): ChecklistProgress | null {
+  if (t.instrumentVersion == null) return null;
+  const answers = new Map(responses.map((r) => [r.qid, r.value]));
+  const required = requiredQuestionIds(answers, t.instrumentVersion, {
+    hasSchedule: schedule !== null,
+    soilOnFile: packFacts?.soil.onFile,
+    structuralOnFile: packFacts?.structural.onFile,
+    energyOnFile: packFacts?.energy.onFile,
+  });
+  // An answer only counts when it FULLY answers the question (every
+  // matrix row marked, every items row filled, every schedule line of
+  // the pack answered) — same definition the deck uses, so client
+  // "complete" and the submit gate agree. Callers on the submit path
+  // MUST pass the round's schedule; informational callers may omit it
+  // and accept a lenient read on schedule rounds.
+  const answered = required.filter((qid) => {
+    const q = getQuestion(qid);
+    if (!q) return false;
+    const raw = answers.get(qid);
+    const v =
+      typeof raw === "object" && raw !== null && "v" in raw
+        ? (raw as { v: unknown }).v
+        : raw;
+    return isAnswerComplete(q, v, { schedule });
+  }).length;
+  return {
+    version: t.instrumentVersion,
+    required: required.length,
+    answered,
+    complete: answered >= required.length,
+  };
+}
+
+export async function listResponsesForTender(
+  builderId: string,
+  tenderId: string,
+): Promise<Result<TenderResponseRow[]>> {
+  const [row] = await db
+    .select({ builderId: tenders.builderId })
+    .from(tenders)
+    .where(eq(tenders.id, tenderId))
+    .limit(1);
+  if (!row) return fail("not_found", "Tender not found.");
+  if (row.builderId !== builderId) return fail("forbidden", "Not your tender.");
+
+  const rows = await db
+    .select()
+    .from(tenderResponses)
+    .where(eq(tenderResponses.tenderId, tenderId));
+  return ok(rows);
+}
+
+/**
+ * Upsert a batch of checklist answers. Only the tender's builder can
+ * write, only while the tender is a draft, and only for question ids
+ * the instrument actually defines — unknown ids are rejected so the
+ * response store can never drift from the instrument.
+ */
+export async function saveTenderResponses(
+  builderId: string,
+  tenderId: string,
+  entries: Array<{ qid: string; value: unknown }>,
+): Promise<Result<{ saved: number; checklist: ChecklistProgress | null }>> {
+  if (entries.length === 0) {
+    return fail("validation", "Nothing to save.");
+  }
+  if (entries.length > 200) {
+    return fail("validation", "Too many answers in one batch.");
+  }
+  for (const e of entries) {
+    const q = getQuestion(e.qid);
+    if (!q) {
+      return fail("validation", `Unknown question: ${e.qid}`);
+    }
+    // Shape-check every value against its question type so the
+    // response store only ever holds well-formed answers (partial is
+    // fine — completeness is judged at the submit gate, not here).
+    if (!isValidAnswerShape(q, e.value ?? null)) {
+      return fail("validation", `Invalid answer for ${e.qid}.`);
+    }
+  }
+
+  const [row] = await db
+    .select()
+    .from(tenders)
+    .where(eq(tenders.id, tenderId))
+    .limit(1);
+  if (!row) return fail("not_found", "Tender not found.");
+  if (row.builderId !== builderId) return fail("forbidden", "Not your tender.");
+  if (row.status !== "draft") {
+    return fail("conflict", "The checklist is locked after submission.");
+  }
+
+  const now = new Date();
+  for (const e of entries) {
+    await db
+      .insert(tenderResponses)
+      .values({ tenderId, qid: e.qid, value: { v: e.value }, updatedAt: now })
+      .onConflictDoUpdate({
+        target: [tenderResponses.tenderId, tenderResponses.qid],
+        set: { value: { v: e.value }, updatedAt: now },
+      });
+  }
+
+  const all = await db
+    .select()
+    .from(tenderResponses)
+    .where(eq(tenderResponses.tenderId, tenderId));
+
+  // The deck is the single source of truth for the headline figures,
+  // so mirror them onto the tender row whenever their answers move.
+  // Everything that reads tenders.total_price_aud (owner cards, the
+  // comparison baseline, my-tenders) keeps working without knowing
+  // the instrument exists. The headline stays GST-INCLUSIVE — the
+  // instrument asks ex GST (4.2) plus registration (4.3), and owners
+  // read the number they would actually pay.
+  const MIRROR_QIDS = new Set([
+    "price.total",
+    "commercial.gst_registered",
+    "programme.duration",
+    "price.validity",
+    "programme.start",
+  ]);
+  if (entries.some((e) => MIRROR_QIDS.has(e.qid))) {
+    const unwrap = (qid: string): unknown => {
+      const r = all.find((x) => x.qid === qid);
+      const v = r?.value;
+      return typeof v === "object" && v !== null && "v" in v
+        ? (v as { v: unknown }).v
+        : v;
+    };
+    const num = (x: unknown): number | null =>
+      typeof x === "number" && Number.isFinite(x) ? x : null;
+
+    const priceExGst = num(unwrap("price.total"));
+    const gstRegistered = unwrap("commercial.gst_registered");
+    const duration = num(unwrap("programme.duration"));
+    const validity = num(unwrap("price.validity"));
+    const start = unwrap("programme.start");
+
+    await db
+      .update(tenders)
+      .set({
+        totalPriceAud:
+          priceExGst === null
+            ? null
+            : gstRegistered === false
+              ? priceExGst
+              : Math.round(priceExGst * 1.1),
+        durationWeeks: duration,
+        validityDays: validity,
+        proposedStartMonth:
+          typeof start === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(start)
+            ? start
+            : null,
+        updatedAt: now,
+      })
+      .where(eq(tenders.id, tenderId));
+  }
+
+  // Lenient progress (no schedule or pack facts): callers use it as a
+  // rough gauge; the deck and the submit gate compute the strict one.
+  return ok({ saved: entries.length, checklist: checklistProgress(row, all) });
+}
+
+/**
+ * All instrument responses for a project's decision-visible tenders
+ * (submitted / shortlisted / awarded / rejected) in one query, grouped
+ * by tender. Powers the comparison page — no per-tender N+1.
+ */
+export async function listResponsesForProjectTenders(
+  projectId: string,
+): Promise<Map<string, Array<{ qid: string; value: unknown }>>> {
+  const rows = await db
+    .select({
+      tenderId: tenderResponses.tenderId,
+      qid: tenderResponses.qid,
+      value: tenderResponses.value,
+    })
+    .from(tenderResponses)
+    .innerJoin(tenders, eq(tenders.id, tenderResponses.tenderId))
+    .where(
+      and(
+        eq(tenders.projectId, projectId),
+        isNull(tenders.deletedAt),
+        inArray(tenders.status, [
+          "submitted",
+          "shortlisted",
+          "awarded",
+          "rejected",
+        ]),
+      ),
+    );
+  const byTender = new Map<string, Array<{ qid: string; value: unknown }>>();
+  for (const r of rows) {
+    const arr = byTender.get(r.tenderId) ?? [];
+    arr.push({ qid: r.qid, value: r.value });
+    byTender.set(r.tenderId, arr);
+  }
+  return byTender;
+}
+
+/**
+ * Pending round invitations addressed to an on-platform
+ * builder — the dashboard's "you have been asked to price this" rows.
+ * Unredeemed only: once joined, the project lives in their unlocked
+ * list and the invite has done its job.
+ */
+export async function listInvitesForBuilder(
+  builderUserId: string,
+  opts: {
+    /**
+     * The builder's account email. Off-platform invitations are
+     * addressed to a mailbox and carry no builderUserId until they are
+     * redeemed — matching by email means a freshly signed-up invited
+     * builder sees their invitation without having clicked the link's
+     * accept step yet.
+     */
+    email?: string | null;
+  } = {},
+): Promise<
+  Array<{
+    inviteId: string;
+    inviteToken: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+  }>
+> {
+  const inviterUsers = users;
+  const rows = await db
+    .select({
+      inviteId: tenderBuilderInvites.id,
+      inviteToken: tenderBuilderInvites.inviteToken,
+      projectTitle: projects.title,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    // A builder who already holds a spot (paid, founding, or an earlier
+    // redemption) has nothing pending — the invite row would misstate
+    // their standing.
+    .leftJoin(
+      unlocks,
+      and(
+        eq(unlocks.projectId, tenderBuilderInvites.projectId),
+        eq(unlocks.builderId, builderUserId),
+      ),
+    )
+    .where(
+      and(
+        opts.email
+          ? or(
+              eq(tenderBuilderInvites.builderUserId, builderUserId),
+              sql`lower(${tenderBuilderInvites.email}) = ${opts.email.toLowerCase()}`,
+            )!
+          : eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "invited"),
+        isNull(unlocks.id),
+        isNull(projects.deletedAt),
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  return rows.map((r) => ({
+    inviteId: r.inviteId,
+    inviteToken: r.inviteToken,
+    projectTitle: r.projectTitle,
+    projectSuburb: r.projectSuburb,
+    projectState: r.projectState,
+    inviterName: r.practiceName ?? r.inviterName ?? "A project runner",
+    invitedAt: r.invitedAt,
+  }));
+}
+
+/**
+ * The invitations this builder has accepted, with the project they
+ * opened. One row per project (a re-issued invitation collapses onto
+ * the latest acceptance). Keyed on the joined invite row rather than
+ * the unlock's source, so a spot granted by ops against a standing
+ * invitation still reads as invited.
+ */
+export async function listAcceptedInvitesForBuilder(
+  builderUserId: string,
+): Promise<
+  Array<{
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+    acceptedAt: Date;
+  }>
+> {
+  const inviterUsers = users;
+  const rows = await db
+    .select({
+      projectId: tenderBuilderInvites.projectId,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+      respondedAt: tenderBuilderInvites.respondedAt,
+      unlockedAt: unlocks.unlockedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    // The invitation only reads as accepted while the spot is held.
+    .innerJoin(
+      unlocks,
+      and(
+        eq(unlocks.projectId, tenderBuilderInvites.projectId),
+        eq(unlocks.builderId, builderUserId),
+      ),
+    )
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "joined"),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.respondedAt));
+  const seen = new Set<string>();
+  const out: Array<{
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    projectSuburb: string | null;
+    projectState: string | null;
+    inviterName: string;
+    invitedAt: Date;
+    acceptedAt: Date;
+  }> = [];
+  for (const r of rows) {
+    if (seen.has(r.projectId)) continue;
+    seen.add(r.projectId);
+    out.push({
+      projectId: r.projectId,
+      projectSlug: r.projectSlug,
+      projectTitle: r.projectTitle,
+      projectSuburb: r.projectSuburb,
+      projectState: r.projectState,
+      inviterName: r.practiceName ?? r.inviterName ?? "A project runner",
+      invitedAt: r.invitedAt,
+      acceptedAt: r.respondedAt ?? r.unlockedAt,
+    });
+  }
+  return out;
+}
+
+/**
+ * Who invited this builder onto this project, if anyone — the detail
+ * page's one-line provenance. Null for spots taken from the market.
+ */
+export async function getInviterForProject(
+  builderUserId: string,
+  projectId: string,
+): Promise<string | null> {
+  const inviterUsers = users;
+  const [row] = await db
+    .select({
+      inviterName: inviterUsers.name,
+      practiceName: architectProfiles.practiceName,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(inviterUsers, eq(inviterUsers.id, tenderBuilderInvites.invitedBy))
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.projectId, projectId),
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        eq(tenderBuilderInvites.status, "joined"),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.respondedAt))
+    .limit(1);
+  if (!row) return null;
+  return row.practiceName ?? row.inviterName ?? "A project runner";
+}
+
+/**
+ * Nav-level invitation tallies for a builder. `total` counts every
+ * invitation ever addressed to this account (any status, matched by
+ * userId or email) — the Invitations tab exists once a builder has
+ * ever been invited. `pending` mirrors listInvitesForBuilder's
+ * actionable set and drives the badge.
+ */
+export async function countInvitesForBuilderNav(
+  builderUserId: string,
+  email?: string | null,
+): Promise<{ total: number; pending: number }> {
+  const addressedToMe = email
+    ? or(
+        eq(tenderBuilderInvites.builderUserId, builderUserId),
+        sql`lower(${tenderBuilderInvites.email}) = ${email.toLowerCase()}`,
+      )!
+    : eq(tenderBuilderInvites.builderUserId, builderUserId);
+
+  const [[totalRow], pendingRows] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(tenderBuilderInvites)
+      .where(addressedToMe),
+    listInvitesForBuilder(builderUserId, { email }),
+  ]);
+  return { total: totalRow?.n ?? 0, pending: pendingRows.length };
+}
+
+/**
+ * The builder's unfinished drafts with project context — the desk
+ * queue's "pick this back up" rows.
+ */
+export async function listDraftTendersForBuilder(builderId: string): Promise<
+  Array<{
+    tenderId: string;
+    projectSlug: string;
+    projectTitle: string;
+    updatedAt: Date;
+    totalPriceAud: number | null;
+  }>
+> {
+  const rows = await db
+    .select({
+      tenderId: tenders.id,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      updatedAt: tenders.updatedAt,
+      totalPriceAud: tenders.totalPriceAud,
+    })
+    .from(tenders)
+    .innerJoin(projects, eq(projects.id, tenders.projectId))
+    .where(
+      and(
+        eq(tenders.builderId, builderId),
+        eq(tenders.status, "draft"),
+        isNull(tenders.deletedAt),
+        isNull(projects.deletedAt),
+        // Only rounds still open — a draft on an archived or decided
+        // project is a dead row that would 404 from the dashboard.
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .orderBy(desc(tenders.updatedAt));
+  return rows;
+}
+
+// ── builder invites (every round) ────────────────────────────
+
+export interface CreateBuilderInviteInput {
+  /** On-platform pick from the directory. */
+  builderUserId?: string;
+  /** Off-platform invitee. */
+  email?: string;
+  contactName?: string;
+  company?: string;
+}
+
+/**
+ * Hand-pick a builder for a round. Invitations exist on EVERY round:
+ * on a private round the invite list IS the round; on an open round
+ * invited builders join free alongside the network spots (which is
+ * all "hybrid" ever was — the mode is retired). The runner (the
+ * project's ownerId — owner or architect) is the only one who can
+ * invite. On-platform picks reference a user; off-platform invites
+ * carry the details the runner typed. Every invite mints a single-use
+ * token; the link is shareable from the wizard ("copy invite link").
+ */
+export async function createBuilderInvite(
+  runnerId: string,
+  projectId: string,
+  input: CreateBuilderInviteInput,
+): Promise<
+  Result<
+    TenderBuilderInviteRow & {
+      /** The invitation email went out (allowlist-suppressed counts as sent). */
+      emailed: boolean;
+      /** Project still a draft — the email goes out at publish instead. */
+      deferred: boolean;
+    }
+  >
+> {
+  const [project] = await db
+    .select({
+      id: projects.id,
+      ownerId: projects.ownerId,
+      tenderMode: projects.tenderMode,
+      status: projects.status,
+    })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .limit(1);
+  if (!project) return fail("not_found", "Project not found.");
+  if (project.ownerId !== runnerId) return fail("forbidden", "Not your project.");
+
+  const onPlatform = !!input.builderUserId;
+  if (onPlatform) {
+    // The invite (and its email) must target an approved builder — the
+    // same criteria the directory picker lists. Anything else is an
+    // arbitrary userId handed to the action.
+    const [target] = await db
+      .select({ userId: builderProfiles.userId })
+      .from(builderProfiles)
+      .where(
+        and(
+          eq(builderProfiles.userId, input.builderUserId!),
+          eq(builderProfiles.approvalStatus, "approved"),
+        ),
+      )
+      .limit(1);
+    if (!target) {
+      return fail("validation", "Select an approved builder from the directory.");
+    }
+  } else {
+    const email = (input.email ?? "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return fail("validation", "Enter a valid email for the builder.");
+    }
+    input = { ...input, email };
+  }
+
+  // Hard per-project ceiling across ALL invite rows (any status), so a
+  // revoke-and-recreate loop can't turn one project into an email
+  // cannon. Generous: a 5-spot round never needs more than this.
+  const [inviteTally] = await db
+    .select({ n: count() })
+    .from(tenderBuilderInvites)
+    .where(eq(tenderBuilderInvites.projectId, projectId));
+  if ((inviteTally?.n ?? 0) >= 25) {
+    return fail(
+      "validation",
+      "This project has reached its invitation limit. Contact support if you need more.",
+    );
+  }
+
+  // No duplicate live invites for the same builder / email.
+  const existing = await db
+    .select({ id: tenderBuilderInvites.id })
+    .from(tenderBuilderInvites)
+    .where(
+      and(
+        eq(tenderBuilderInvites.projectId, projectId),
+        inArray(tenderBuilderInvites.status, ["invited", "joined"]),
+        onPlatform
+          ? eq(tenderBuilderInvites.builderUserId, input.builderUserId!)
+          : eq(tenderBuilderInvites.email, input.email!),
+      ),
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    return fail("conflict", "That builder is already invited.");
+  }
+
+  const [row] = await db
+    .insert(tenderBuilderInvites)
+    .values({
+      projectId,
+      invitedBy: runnerId,
+      builderUserId: input.builderUserId ?? null,
+      email: input.email ?? null,
+      contactName: input.contactName?.trim() || null,
+      company: input.company?.trim() || null,
+      inviteToken: randomBytes(32).toString("hex"),
+    })
+    .returning();
+  if (!row) return fail("internal", "Could not create the invitation.");
+
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "invite.sent",
+    subjectId: row.id,
+    summary: `Invited ${row.company ?? row.contactName ?? row.email ?? "a builder"} to tender.`,
+  });
+
+  // Invitation email (+ bell notification for on-platform builders).
+  // Internally try/catch'd: a flaky send never fails the invite. On a
+  // DRAFT project the email is deferred until publish — an invitation
+  // to a round that isn't open yet reads as a broken link.
+  const deferred = project.status === "draft";
+  const emailed = deferred ? false : (await dispatchBuilderInvite(row.id)).emailed;
+
+  return ok({ ...row, emailed, deferred });
+}
+
+export async function listBuilderInvites(
+  runnerId: string,
+  projectId: string,
+): Promise<
+  Result<
+    Array<
+      TenderBuilderInviteRow & {
+        builderName: string | null;
+        /**
+         * True when a JOINED builder's business verification is still
+         * in progress (profile not yet approved). Invited builders get
+         * provisional access on the runner's vouching — the runner
+         * sees an amber mark, not a blocked builder.
+         */
+        verificationPending: boolean;
+      }
+    >
+  >
+> {
+  const [project] = await db
+    .select({ ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!project) return fail("not_found", "Project not found.");
+  if (project.ownerId !== runnerId) return fail("forbidden", "Not your project.");
+
+  const rows = await db
+    .select({
+      invite: tenderBuilderInvites,
+      builderCompany: builderProfiles.companyName,
+      builderTrading: builderProfiles.tradingName,
+      builderApproval: builderProfiles.approvalStatus,
+    })
+    .from(tenderBuilderInvites)
+    .leftJoin(
+      builderProfiles,
+      eq(builderProfiles.userId, tenderBuilderInvites.builderUserId),
+    )
+    .where(
+      and(
+        eq(tenderBuilderInvites.projectId, projectId),
+        inArray(tenderBuilderInvites.status, ["invited", "joined"]),
+      ),
+    )
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+
+  return ok(
+    rows.map((r) => ({
+      ...r.invite,
+      builderName: r.builderTrading ?? r.builderCompany ?? null,
+      verificationPending:
+        r.invite.status === "joined" && r.builderApproval !== "approved",
+    })),
+  );
+}
+
+export async function revokeBuilderInvite(
+  runnerId: string,
+  inviteId: string,
+): Promise<Result<{ ok: true }>> {
+  const [row] = await db
+    .select({
+      id: tenderBuilderInvites.id,
+      projectId: tenderBuilderInvites.projectId,
+      status: tenderBuilderInvites.status,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+    })
+    .from(tenderBuilderInvites)
+    .where(eq(tenderBuilderInvites.id, inviteId))
+    .limit(1);
+  if (!row) return fail("not_found", "Invitation not found.");
+
+  const [project] = await db
+    .select({ ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, row.projectId))
+    .limit(1);
+  if (!project || project.ownerId !== runnerId) {
+    return fail("forbidden", "Not your project.");
+  }
+  if (row.status === "joined") {
+    return fail("conflict", "That builder has already joined the round.");
+  }
+
+  await db
+    .update(tenderBuilderInvites)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(eq(tenderBuilderInvites.id, inviteId));
+  await recordProjectEvent({
+    projectId: row.projectId,
+    actorId: runnerId,
+    kind: "invite.revoked",
+    subjectId: inviteId,
+    summary: `Withdrew the invitation to ${row.company ?? row.contactName ?? row.email ?? "a builder"}.`,
+  });
+  return ok({ ok: true });
+}
+
+/**
+ * Every PENDING builder invitation across a runner's projects in one
+ * query — the practice dashboard's "not answered yet" queue rows.
+ * Live rounds only; an invitation on a closed round asks for nothing.
+ */
+export async function listBuilderInvitesForRunner(runnerId: string): Promise<
+  Array<{
+    inviteId: string;
+    projectId: string;
+    projectSlug: string;
+    projectTitle: string;
+    label: string;
+    invitedAt: Date;
+    remindedAt: Date | null;
+  }>
+> {
+  const rows = await db
+    .select({
+      inviteId: tenderBuilderInvites.id,
+      projectId: projects.id,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+      builderCompany: builderProfiles.companyName,
+      invitedAt: tenderBuilderInvites.invitedAt,
+      remindedAt: tenderBuilderInvites.remindedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, tenderBuilderInvites.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+        inArray(projects.status, ["published", "tendering"]),
+      ),
+    )
+    .leftJoin(
+      builderProfiles,
+      eq(builderProfiles.userId, tenderBuilderInvites.builderUserId),
+    )
+    .where(eq(tenderBuilderInvites.status, "invited"))
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  return rows.map((r) => ({
+    inviteId: r.inviteId,
+    projectId: r.projectId,
+    projectSlug: r.projectSlug,
+    projectTitle: r.projectTitle,
+    label:
+      r.builderCompany ?? r.company ?? r.contactName ?? r.email ?? "A builder",
+    invitedAt: r.invitedAt,
+    remindedAt: r.remindedAt,
+  }));
+}
+
+/**
+ * Every builder this runner has ever invited, across every round —
+ * the practice's own contact book. Deduped by builder account (or by
+ * email when the invitation never matched one), newest first.
+ * Revoked invitations are the one exclusion: a withdrawn invitation
+ * is not a working relationship.
+ */
+export async function listInvitedBuildersForRunner(runnerId: string): Promise<
+  Array<{
+    name: string;
+    email: string | null;
+    abn: string | null;
+    invitedAt: Date;
+  }>
+> {
+  const rows = await db
+    .select({
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+      builderUserId: tenderBuilderInvites.builderUserId,
+      builderCompany: builderProfiles.companyName,
+      accountEmail: users.email,
+      abn: builderProfiles.abn,
+      invitedAt: tenderBuilderInvites.invitedAt,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(
+      projects,
+      and(
+        eq(projects.id, tenderBuilderInvites.projectId),
+        eq(projects.ownerId, runnerId),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .leftJoin(
+      builderProfiles,
+      eq(builderProfiles.userId, tenderBuilderInvites.builderUserId),
+    )
+    .leftJoin(users, eq(users.id, tenderBuilderInvites.builderUserId))
+    .where(ne(tenderBuilderInvites.status, "revoked"))
+    .orderBy(desc(tenderBuilderInvites.invitedAt));
+  // One builder can appear under two identities: an email-only
+  // invitation on one round, a directory pick (account id, no email)
+  // on another. Dedupe on both keys so they collapse to one row.
+  const seen = new Set<string>();
+  const out: Array<{
+    name: string;
+    email: string | null;
+    abn: string | null;
+    invitedAt: Date;
+  }> = [];
+  for (const r of rows) {
+    const userKey = r.builderUserId ?? "";
+    const emailKey = (r.email ?? r.accountEmail ?? "").toLowerCase();
+    if (!userKey && !emailKey) continue;
+    if (
+      (userKey && seen.has(`u:${userKey}`)) ||
+      (emailKey && seen.has(`e:${emailKey}`))
+    ) {
+      continue;
+    }
+    if (userKey) seen.add(`u:${userKey}`);
+    if (emailKey) seen.add(`e:${emailKey}`);
+    out.push({
+      name:
+        r.builderCompany ?? r.company ?? r.contactName ?? r.email ?? "A builder",
+      email: r.email ?? r.accountEmail,
+      abn: r.abn,
+      invitedAt: r.invitedAt,
+    });
+  }
+  return out;
+}
+
+/**
+ * Resolve an invite token to its invite + project (for the redemption
+ * page). Pure read — the redemption route composes this with the
+ * unlock grant, keeping the unlocks module out of this one.
+ */
+export async function getBuilderInviteByToken(token: string): Promise<
+  Result<{
+    invite: TenderBuilderInviteRow;
+    project: {
+      id: string;
+      slug: string;
+      title: string;
+      status: string;
+      /** Preview-tier facts for the landing card — the same fields an
+       *  open marketplace card shows, so the invitation reads as a
+       *  real project, not a mystery link. Never the address. */
+      type: string;
+      suburb: string | null;
+      state: string | null;
+      budgetBand: string | null;
+    };
+    /** Who extended it — practice name preferred. */
+    inviterName: string | null;
+  }>
+> {
+  const inviterUsers = alias(users, "inviter_users");
+  const [row] = await db
+    .select({
+      invite: tenderBuilderInvites,
+      projectId: projects.id,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      projectStatus: projects.status,
+      projectType: projects.type,
+      projectSuburb: projects.suburb,
+      projectState: projects.state,
+      projectBudgetBand: projects.budgetBand,
+      inviterName: inviterUsers.name,
+      inviterPractice: architectProfiles.practiceName,
+    })
+    .from(tenderBuilderInvites)
+    .innerJoin(projects, eq(projects.id, tenderBuilderInvites.projectId))
+    .innerJoin(
+      inviterUsers,
+      eq(inviterUsers.id, tenderBuilderInvites.invitedBy),
+    )
+    .leftJoin(
+      architectProfiles,
+      eq(architectProfiles.userId, tenderBuilderInvites.invitedBy),
+    )
+    .where(eq(tenderBuilderInvites.inviteToken, token))
+    .limit(1);
+  if (!row) return fail("not_found", "This invitation link is not valid.");
+  return ok({
+    invite: row.invite,
+    project: {
+      id: row.projectId,
+      slug: row.projectSlug,
+      title: row.projectTitle,
+      status: row.projectStatus,
+      type: row.projectType,
+      suburb: row.projectSuburb,
+      state: row.projectState,
+      budgetBand: row.projectBudgetBand,
+    },
+    inviterName: row.inviterPractice ?? row.inviterName ?? null,
+  });
+}
+
+/** Mark an invite joined by a builder (called after the unlock grant). */
+export async function markBuilderInviteJoined(
+  inviteId: string,
+  builderUserId: string,
+): Promise<void> {
+  const [row] = await db
+    .update(tenderBuilderInvites)
+    .set({
+      status: "joined",
+      builderUserId,
+      respondedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(tenderBuilderInvites.id, inviteId))
+    .returning({
+      projectId: tenderBuilderInvites.projectId,
+      email: tenderBuilderInvites.email,
+      company: tenderBuilderInvites.company,
+      contactName: tenderBuilderInvites.contactName,
+    });
+  if (row) {
+    const [profile] = await db
+      .select({ companyName: builderProfiles.companyName })
+      .from(builderProfiles)
+      .where(eq(builderProfiles.userId, builderUserId))
+      .limit(1);
+    await recordProjectEvent({
+      projectId: row.projectId,
+      actorId: builderUserId,
+      kind: "invite.joined",
+      subjectId: inviteId,
+      summary: `${profile?.companyName ?? row.company ?? row.contactName ?? row.email ?? "An invited builder"} accepted the invitation and took a spot.`,
+    });
+  }
 }

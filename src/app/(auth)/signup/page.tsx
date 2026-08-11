@@ -1,3 +1,4 @@
+import { safeInternalPath } from "../_lib/next-path";
 import { SignupForm } from "./signup-form";
 
 export const metadata = { title: "Sign up" };
@@ -18,10 +19,12 @@ function resolveInitialRole(raw: string | undefined): Role {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string }>;
+  searchParams: Promise<{ role?: string; next?: string }>;
 }) {
-  const { role } = await searchParams;
+  const { role, next } = await searchParams;
   const initialRole = resolveInitialRole(role);
 
-  return <SignupForm initialRole={initialRole} />;
+  return (
+    <SignupForm initialRole={initialRole} next={safeInternalPath(next) ?? ""} />
+  );
 }

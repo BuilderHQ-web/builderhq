@@ -35,8 +35,12 @@ const initialState: SignupActionState = {};
  */
 export function SignupForm({
   initialRole = "project_owner",
+  next = "",
 }: {
   initialRole?: Role;
+  /** Sanitised continuation path — rides the form so the journey
+   *  (e.g. an invitation link) survives signup + verification. */
+  next?: string;
 } = {}) {
   const [state, formAction] = useActionState(signupAction, initialState);
   const [isPending, startTransition] = useTransition();
@@ -90,10 +94,11 @@ export function SignupForm({
               current={role}
               onSelect={setRole}
               icon={<DraftingCompass className="size-3.5" />}
-              label="Architect"
+              label="Designer"
             />
           </div>
           <input type="hidden" name="role" value={role} />
+          <input type="hidden" name="next" value={next} />
           {fieldError("role") ? <AuthFieldError msg={fieldError("role")!} /> : null}
         </div>
 

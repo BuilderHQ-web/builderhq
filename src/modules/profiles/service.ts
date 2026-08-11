@@ -356,7 +356,56 @@ export async function completeArchitectOnboarding(
   return ok({ ok: true });
 }
 
+// ── Builder directory (for tender round invitations) ─────────────────────
+
+export interface DirectoryBuilder {
+  userId: string;
+  name: string;
+  suburb: string | null;
+  state: string | null;
+  yearsInOperation: number | null;
+}
+
+/**
+ * Approved builders, public identity only — powers the "invite from
+ * the directory" picker on any round. No contact details.
+ */
+export async function listApprovedBuildersPublic(): Promise<DirectoryBuilder[]> {
+  const rows = await db
+    .select({
+      userId: builderProfiles.userId,
+      companyName: builderProfiles.companyName,
+      tradingName: builderProfiles.tradingName,
+      suburb: builderProfiles.businessSuburb,
+      state: builderProfiles.businessState,
+      yearsInOperation: builderProfiles.yearsInOperation,
+    })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.approvalStatus, "approved"))
+    .orderBy(asc(builderProfiles.companyName));
+  return rows.map((r) => ({
+    userId: r.userId,
+    name: r.tradingName ?? r.companyName,
+    suburb: r.suburb,
+    state: r.state,
+    yearsInOperation: r.yearsInOperation,
+  }));
+}
+
 // ── Builder profile ──────────────────────────────────────────────────────
+
+/**
+ * The one-column approval read, for hot paths (the app shell renders
+ * on every authenticated request and only needs the verified badge).
+ */
+export async function isBuilderApproved(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ approvalStatus: builderProfiles.approvalStatus })
+    .from(builderProfiles)
+    .where(eq(builderProfiles.userId, userId))
+    .limit(1);
+  return row?.approvalStatus === "approved";
+}
 
 export interface BuilderProfileBundle {
   profile: BuilderProfile;

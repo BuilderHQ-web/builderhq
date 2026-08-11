@@ -35,6 +35,7 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { users } from "@/modules/users";
 import { projects } from "@/modules/projects";
 import { completeOwnerOnboarding, upsertOwnerProfile } from "@/modules/profiles";
+import { seedSampleRound } from "@/modules/sample";
 
 export const runtime = "nodejs";
 
@@ -508,6 +509,7 @@ export async function POST(request: NextRequest) {
     });
     if (profileResult.ok) {
       await completeOwnerOnboarding(userId);
+      await seedSampleRound(userId);
     } else {
       logger.warn(
         {

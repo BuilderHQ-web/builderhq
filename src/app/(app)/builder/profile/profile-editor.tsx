@@ -54,7 +54,6 @@ import { Field } from "@/components/ui/field";
 import { Reveal } from "@/components/app/reveal";
 import { PageHeader } from "@/components/app/page-header";
 import { PostcodeSuburb } from "@/components/app/postcode-suburb";
-import { FoundingBadge } from "@/components/builder/fba-card";
 import { toast } from "@/components/ui/toast";
 
 import {
@@ -234,7 +233,7 @@ function ProfileHero({ profile }: { profile: ProfileShape }) {
     <PageHeader
       eyebrow="Public profile"
       title="What owners see"
-      description="Your company, address, licences, service areas, and bio — composed into your public BuilderHQ presence. Each section saves on its own; nothing's lost between cards."
+      description="Your company, address, licences, service areas, and bio, composed into your public BuilderHQ profile. Each section saves on its own."
       actions={
         <div className="flex flex-col items-end gap-2">
           <span
@@ -287,7 +286,7 @@ const APPROVAL_META: Record<
   approved: {
     label: "Approved",
     icon: CheckCircle2,
-    cls: "border-border-accent/45 text-accent bg-[rgba(0,212,200,0.06)]",
+    cls: "border-border-accent/45 text-accent-light bg-[rgba(0,212,200,0.06)]",
   },
   rejected: {
     label: "Rejected",
@@ -319,11 +318,11 @@ function SectionCard({
   trailing?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border-subtle overflow-hidden bg-surface-2">
+    <section className="rounded-lg border border-border-subtle overflow-hidden bg-surface-1 card-elev">
       <header className="px-4 sm:px-7 py-4 sm:py-5 flex items-start justify-between gap-3 border-b border-border-subtle/60">
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-medium text-accent">
-            <Icon className="size-3.5" />
+          <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase font-ui font-semibold text-accent-light">
+            <Icon className="size-3" />
             {kicker}
           </span>
           <h2 className="mt-1.5 font-display uppercase tracking-[-0.012em] text-[20px] sm:text-[22px] leading-[1.05] text-text">
@@ -416,11 +415,8 @@ function IdentitySection({
     <SectionCard
       kicker="Identity"
       icon={Sparkles}
-      title="Logo & names"
-      description="Logo lands first when your card hits an owner's feed. Trading name is the marketing label they see; legal entity is the verified anchor from ABR."
-      trailing={
-        profile.approvalStatus === "approved" ? <FoundingBadge size="sm" /> : null
-      }
+      title="Logo and names"
+      description="Your logo and names appear on your public profile and on every tender you submit. The trading name is what owners see; the legal entity is the verified anchor from the ABR."
     >
       <form onSubmit={submit} className="flex flex-col gap-6">
         <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6 items-start">
@@ -447,7 +443,7 @@ function IdentitySection({
               badge={abnLocked ? "Verified · ABR" : undefined}
               hint={
                 abnLocked
-                  ? "Locked — verified against ABR. Contact support to change."
+                  ? "Locked. Verified against the ABR. Contact support to change."
                   : "We'll auto-fill this from ABR after you verify your ABN below."
               }
             >
@@ -559,7 +555,7 @@ function LogoUpload({
         )}
         {pending ? (
           <div className="absolute inset-0 bg-bg/60 backdrop-blur-sm flex items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-accent" />
+            <Loader2 className="size-5 animate-spin text-accent-light" />
           </div>
         ) : null}
       </div>
@@ -656,8 +652,8 @@ function BusinessSection({
     <SectionCard
       kicker="Business"
       icon={Building2}
-      title="Credentials & address"
-      description="ABN is verified live against the Australian Business Register. Once verified it locks — no fakes, no typos, owners trust the badge."
+      title="Credentials and address"
+      description="Your ABN is verified against the Australian Business Register. Once verified it locks, so owners can rely on it."
     >
       <form onSubmit={submit} className="flex flex-col gap-5">
         <AbnVerifyPanel
@@ -672,7 +668,7 @@ function BusinessSection({
             badge={abnLocked ? "Verified · ABR" : "Optional"}
             hint={
               abnLocked
-                ? "Auto-filled from ABR — locked."
+                ? "Auto-filled from the ABR and locked."
                 : "9 digits if registered"
             }
           >
@@ -952,7 +948,7 @@ function CategoriesSection({ initial }: { initial: ProjectType[] }) {
                     className={cn(
                       "size-4 mt-0.5 shrink-0",
                       isOn
-                        ? "text-accent"
+                        ? "text-accent-light"
                         : "text-text-faint group-hover:text-text-muted",
                     )}
                   />
@@ -965,7 +961,7 @@ function CategoriesSection({ initial }: { initial: ProjectType[] }) {
                     </div>
                   </div>
                   {isOn ? (
-                    <Check className="size-3.5 text-accent ml-auto shrink-0" />
+                    <Check className="size-3.5 text-accent-light ml-auto shrink-0" />
                   ) : null}
                 </div>
               </button>
@@ -1124,8 +1120,8 @@ function ServiceAreasSection({ initial }: { initial: ServiceArea[] }) {
                     )}
                   >
                     {isStatewide
-                      ? `Statewide match — projects across all of ${a.state}`
-                      : `Suburb match — ${a.suburb ?? a.state} only`}
+                      ? `Statewide match. Projects across all of ${a.state}.`
+                      : `Suburb match. ${a.suburb ?? a.state} only.`}
                   </div>
                 </li>
               );
@@ -1252,7 +1248,7 @@ function LicencesSection({
       kicker="Licences"
       icon={ShieldCheck}
       title="Builder licences"
-      description="Add every state where you hold a current licence. Owners filter on this — without a licence in their state, your card won't surface for their projects."
+      description="Add every state where you hold a current licence. Owners filter on this. Without a licence in their state, your profile will not surface for their projects."
     >
       <div className="flex flex-col gap-5">
         {licences.length > 0 ? (
@@ -1527,7 +1523,7 @@ function AbnVerifyPanel({
           badge={locked ? "Verified · ABR" : "11 digits"}
           hint={
             locked
-              ? `Locked — ${verification?.matchedName ?? "verified by ABR"}.`
+              ? `Locked. ${verification?.matchedName ? `Verified as ${verification.matchedName}.` : "Verified against the ABR."}`
               : "We'll cross-check this against ABR live and auto-fill the rest."
           }
         >
@@ -1547,7 +1543,7 @@ function AbnVerifyPanel({
           />
         </Field>
         {locked ? (
-          <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent">
+          <span className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-[12px] tracking-[0.04em] text-accent-light">
             <ShieldCheck className="size-3.5" />
             Verified
           </span>
@@ -1575,8 +1571,8 @@ function AbnVerifyPanel({
       {/* Autofill apply prompt — visible after a successful verify if data differs */}
       {pendingAutofill ? (
         <div className="mt-4 rounded-sm border border-border-accent/35 bg-[rgba(0,212,200,0.04)] p-4">
-          <p className="text-[11.5px] tracking-[0.04em] text-accent uppercase font-medium mb-2">
-            ABR pulled the following — apply?
+          <p className="text-[11.5px] tracking-[0.04em] text-accent-light uppercase font-medium mb-2">
+            The ABR returned the following. Apply these details?
           </p>
           <ul className="space-y-1 text-[12.5px] text-text-muted">
             <li>
@@ -1626,7 +1622,7 @@ function AbnVerifyPanel({
               ) : (
                 <Check className="size-3.5" />
               )}
-              Apply &amp; lock
+              Apply and lock
             </Button>
             <button
               type="button"
@@ -1645,9 +1641,9 @@ function AbnVerifyPanel({
 function AbnResultChip({ result }: { result: VerifyAbnResult }) {
   if (result.status === "verified") {
     return (
-      <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-accent">
+      <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] text-accent-light">
         <Check className="size-3" />
-        Verified — {result.matchedName}
+        Verified · {result.matchedName}
       </p>
     );
   }
@@ -1723,7 +1719,7 @@ function LicenceVerifyControl({
         })
       : null;
     return (
-      <span className="inline-flex items-center gap-1.5 text-[10.5px] tracking-[0.16em] uppercase font-medium text-accent">
+      <span className="inline-flex items-center gap-1.5 text-[10.5px] tracking-[0.16em] uppercase font-medium text-accent-light">
         <ShieldCheck className="size-3" />
         Verified
         {expires ? (

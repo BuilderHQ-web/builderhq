@@ -22,7 +22,7 @@ export default async function ArchitectOnboardingPage() {
   return (
     <div className="flex flex-col gap-7 sm:gap-8">
       <header className="flex flex-col gap-3">
-        <Eyebrow>Architect studio · setup</Eyebrow>
+        <Eyebrow>Designer studio · setup</Eyebrow>
         <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.25rem,5vw+1rem,3.75rem)] leading-[0.95]">
           Welcome, {firstName}
         </h1>

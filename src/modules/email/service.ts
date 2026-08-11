@@ -49,6 +49,14 @@ import { TenderShortlistedEmail } from "@/emails/TenderShortlistedEmail";
 import { TenderAwardedEmail } from "@/emails/TenderAwardedEmail";
 import { TenderRejectedEmail } from "@/emails/TenderRejectedEmail";
 import { TenderWithdrawnEmail } from "@/emails/TenderWithdrawnEmail";
+import { BuilderTenderInvitationEmail } from "@/emails/BuilderTenderInvitationEmail";
+import { ParticipantInviteEmail } from "@/emails/ParticipantInviteEmail";
+import { ParticipantJoinedEmail } from "@/emails/ParticipantJoinedEmail";
+import { RoundAwardedNoticeEmail } from "@/emails/RoundAwardedNoticeEmail";
+import { TenderValidityExpiringEmail } from "@/emails/TenderValidityExpiringEmail";
+import { ScopeReadyEmail } from "@/emails/ScopeReadyEmail";
+import { ScopeAddendumEmail } from "@/emails/ScopeAddendumEmail";
+import { ScopeRunOpsEmail } from "@/emails/ScopeRunOpsEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
@@ -982,7 +990,7 @@ export async function sendPartnerInterestOpsEmail(
     .filter(Boolean)
     .join(" ")
     .trim();
-  const netLabel = input.network === "architect" ? "Architect" : "Finance broker";
+  const netLabel = input.network === "architect" ? "Design partner" : "Finance broker";
   const subject = `PARTNER (${netLabel}): ${fullName || input.email} — ${input.firmName}`;
   const props = { ...input };
 
@@ -1041,7 +1049,7 @@ export async function sendPartnerInterestConfirmationEmail(
 ): Promise<Result<{ id: string }>> {
   const netLabel =
     input.network === "architect"
-      ? "Preferred Architect Network"
+      ? "Preferred Design Partner network"
       : "Preferred Finance Partner network";
   const subject = `Received — your interest in the ${netLabel}`;
   const props = {
@@ -2073,6 +2081,417 @@ export async function sendAuthSigninLinkEmail(
   logger.info(
     { event: "email.auth_signin_link.sent", to: input.to, resendId: data.id },
     "sign-in link email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── builder tender invitation (any round) ─────────────────
+
+interface SendBuilderTenderInvitationEmailInput {
+  to: string;
+  contactFirstName: string | null;
+  inviterName: string;
+  projectTitle: string;
+  projectLocation: string | null;
+  inviteUrl: string;
+  onPlatform: boolean;
+}
+
+/**
+ * The formal letter of invitation a hand-picked builder receives for
+ * a tender round. Fired by the tenders dispatch
+ * when a runner creates the invite; the same personal link the
+ * runner can copy from the round step.
+ */
+export async function sendBuilderTenderInvitationEmail(
+  input: SendBuilderTenderInvitationEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Invitation to tender: ${input.projectTitle}`;
+  const props = {
+    contactFirstName: input.contactFirstName,
+    inviterName: input.inviterName,
+    projectTitle: input.projectTitle,
+    projectLocation: input.projectLocation,
+    inviteUrl: input.inviteUrl,
+    onPlatform: input.onPlatform,
+  };
+  const [html, text] = await Promise.all([
+    render(BuilderTenderInvitationEmail(props)),
+    render(BuilderTenderInvitationEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "tender-invitation" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.builder_tender_invitation.failed", to: input.to, code: error.name, message: error.message },
+      "builder_tender_invitation email send failed",
+    );
+    return fail("external_error", "Couldn't send the invitation email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.builder_tender_invitation.sent", to: input.to, resendId: data.id },
+    "builder_tender_invitation email sent",
+  );
+  return ok({ id: data.id });
+}
+
+// ── participant (project sharing) invitation ─────────────────────────────
+
+interface SendParticipantInviteEmailInput {
+  to: string;
+  recipientFirstName: string | null;
+  inviterName: string;
+  projectTitle: string;
+  projectLocation: string | null;
+  /** Warm label: "Following" | "Deciding". */
+  roleLabel: string;
+  /** One sentence describing the seat's powers, already composed. */
+  roleLine: string;
+  claimUrl: string;
+  /** "12 August 2026". */
+  expiresOn: string;
+}
+
+/**
+ * The letter a runner's invitee receives when a project is shared with
+ * them — flagship case: an architect bringing their client into the
+ * tender file. Fired by the projects dispatch when a seat is created
+ * or an invitation is re-sent.
+ */
+export async function sendParticipantInviteEmail(
+  input: SendParticipantInviteEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.inviterName} has shared ${input.projectTitle} with you`;
+  const props = {
+    recipientFirstName: input.recipientFirstName,
+    inviterName: input.inviterName,
+    projectTitle: input.projectTitle,
+    projectLocation: input.projectLocation,
+    roleLabel: input.roleLabel,
+    roleLine: input.roleLine,
+    claimUrl: input.claimUrl,
+    expiresOn: input.expiresOn,
+  };
+  const [html, text] = await Promise.all([
+    render(ParticipantInviteEmail(props)),
+    render(ParticipantInviteEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "participant-invitation" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.participant_invite.failed", to: input.to, code: error.name, message: error.message },
+      "participant_invite email send failed",
+    );
+    return fail("external_error", "Couldn't send the invitation email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.participant_invite.sent", to: input.to, resendId: data.id },
+    "participant_invite email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendParticipantJoinedEmailInput {
+  to: string;
+  runnerFirstName: string | null;
+  participantName: string;
+  roleLabel: string;
+  projectTitle: string;
+  projectUrl: string;
+}
+
+/** Quiet confirmation to the runner when an invited seat is claimed. */
+export async function sendParticipantJoinedEmail(
+  input: SendParticipantJoinedEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.participantName} has joined ${input.projectTitle}`;
+  const props = {
+    runnerFirstName: input.runnerFirstName,
+    participantName: input.participantName,
+    roleLabel: input.roleLabel,
+    projectTitle: input.projectTitle,
+    projectUrl: input.projectUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ParticipantJoinedEmail(props)),
+    render(ParticipantJoinedEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "participant-joined" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.participant_joined.failed", to: input.to, code: error.name, message: error.message },
+      "participant_joined email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.participant_joined.sent", to: input.to, resendId: data.id },
+    "participant_joined email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendRoundAwardedNoticeEmailInput {
+  to: string;
+  recipientFirstName: string | null;
+  actorName: string;
+  builderCompany: string;
+  projectTitle: string;
+  reviewUrl: string;
+}
+
+/** The formal minute of an award, to everyone with a seat on the
+ *  round except the person who clicked it. */
+export async function sendRoundAwardedNoticeEmail(
+  input: SendRoundAwardedNoticeEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.projectTitle} has been awarded`;
+  const props = {
+    recipientFirstName: input.recipientFirstName,
+    actorName: input.actorName,
+    builderCompany: input.builderCompany,
+    projectTitle: input.projectTitle,
+    reviewUrl: input.reviewUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(RoundAwardedNoticeEmail(props)),
+    render(RoundAwardedNoticeEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "round-awarded-notice" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.round_awarded_notice.failed", to: input.to, code: error.name, message: error.message },
+      "round_awarded_notice email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.round_awarded_notice.sent", to: input.to, resendId: data.id },
+    "round_awarded_notice email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendTenderValidityExpiringEmailInput {
+  to: string;
+  recipientFirstName: string | null;
+  builderCompany: string;
+  projectTitle: string;
+  holdsUntil: string;
+  daysLeft: number;
+  reviewUrl: string;
+}
+
+/** Diary note to the runner: a priced tender's validity is closing. */
+export async function sendTenderValidityExpiringEmail(
+  input: SendTenderValidityExpiringEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.builderCompany}'s price on ${input.projectTitle} holds until ${input.holdsUntil}`;
+  const props = {
+    recipientFirstName: input.recipientFirstName,
+    builderCompany: input.builderCompany,
+    projectTitle: input.projectTitle,
+    holdsUntil: input.holdsUntil,
+    daysLeft: input.daysLeft,
+    reviewUrl: input.reviewUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(TenderValidityExpiringEmail(props)),
+    render(TenderValidityExpiringEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "tender-validity" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.tender_validity_expiring.failed", to: input.to, code: error.name, message: error.message },
+      "tender_validity_expiring email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.tender_validity_expiring.sent", to: input.to, resendId: data.id },
+    "tender_validity_expiring email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeReadyEmailInput {
+  to: string;
+  runnerFirstName: string | null;
+  projectTitle: string;
+  evidencedCount: number;
+  gapCount: number;
+  reviewUrl: string;
+}
+
+/** The preparation phase's one letter: the pack is ready to review. */
+export async function sendScopeReadyEmail(
+  input: SendScopeReadyEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `Your tender pack for ${input.projectTitle} is ready`;
+  const props = {
+    runnerFirstName: input.runnerFirstName,
+    projectTitle: input.projectTitle,
+    evidencedCount: input.evidencedCount,
+    gapCount: input.gapCount,
+    reviewUrl: input.reviewUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ScopeReadyEmail(props)),
+    render(ScopeReadyEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-ready" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_ready.failed", to: input.to, code: error.name, message: error.message },
+      "scope_ready email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_ready.sent", to: input.to, resendId: data.id },
+    "scope_ready email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeAddendumEmailInput {
+  to: string;
+  builderFirstName: string | null;
+  projectTitle: string;
+  addendumLabel: string;
+  summary: string;
+  hasTender: boolean;
+  actionUrl: string;
+}
+
+/** The formal letter every tenderer gets when a live pack re-issues. */
+export async function sendScopeAddendumEmail(
+  input: SendScopeAddendumEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `${input.addendumLabel} issued — ${input.projectTitle}`;
+  const props = {
+    builderFirstName: input.builderFirstName,
+    projectTitle: input.projectTitle,
+    addendumLabel: input.addendumLabel,
+    summary: input.summary,
+    hasTender: input.hasTender,
+    actionUrl: input.actionUrl,
+  };
+  const [html, text] = await Promise.all([
+    render(ScopeAddendumEmail(props)),
+    render(ScopeAddendumEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-addendum" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_addendum.failed", to: input.to, code: error.name, message: error.message },
+      "scope_addendum email send failed",
+    );
+    return fail("external_error", "Couldn't send the notification email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_addendum.sent", to: input.to, resendId: data.id },
+    "scope_addendum email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendScopeRunOpsEmailInput {
+  kind: "review" | "failed";
+  projectTitle: string;
+  evidencedCount: number;
+  gapCount: number;
+  estimatedCostUsd: number | null;
+  error: string | null;
+  deskUrl: string;
+}
+
+/** The desk's push: a pack awaits review, or a run needs rescue. */
+export async function sendScopeRunOpsEmail(
+  input: SendScopeRunOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject =
+    input.kind === "review"
+      ? `Pack ready for review — ${input.projectTitle}`
+      : `Extraction failed — ${input.projectTitle}`;
+  const [html, text] = await Promise.all([
+    render(ScopeRunOpsEmail(input)),
+    render(ScopeRunOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [{ name: "category", value: "scope-ops" }],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.scope_ops.failed", code: error.name, message: error.message },
+      "scope_ops email send failed",
+    );
+    return fail("external_error", "Couldn't send the ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.scope_ops.sent", kind: input.kind, resendId: data.id },
+    "scope_ops email sent",
   );
   return ok({ id: data.id });
 }

@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { auth, unstable_update } from "@/modules/auth";
+import { seedSampleRound } from "@/modules/sample";
 import {
   completeArchitectOnboarding,
   upsertArchitectProfile,
@@ -75,6 +76,9 @@ export async function architectOnboardingAction(
 
   const done = await completeArchitectOnboarding(userId);
   if (!done.ok) return { error: done.error.message };
+
+  // The example round: a finished tender waiting on the new desk.
+  await seedSampleRound(userId);
 
   logger.info(
     { event: "onboarding.architect.completed", userId },

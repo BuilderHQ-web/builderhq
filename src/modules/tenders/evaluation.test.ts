@@ -1,0 +1,480 @@
+/**
+ * The evaluation rubric — pinned at both ends.
+ *
+ * The scoring system's whole claim is objectivity: fixed weights,
+ * fixed slot values, and a ledger whose two sides always reconcile.
+ * These tests pin the claim: a tender that discloses everything and
+ * commits to the strongest terms scores EXACTLY 100 on every
+ * disclosure dimension with nothing missed; a tender that discloses
+ * nothing scores 0 with misses accounting for every one of the 100
+ * points; and the weighted composite is plain arithmetic anyone can
+ * check. The ledger invariants themselves (lines sum to the score;
+ * earned plus missed equals the rubric) are asserted inside the
+ * engine in dev, so every test here also exercises them.
+ */
+
+import { describe, expect, test } from "vitest";
+
+import {
+  evaluateTender,
+  evaluateRound,
+  weightedOverall,
+  DIMENSION_WEIGHTS,
+  DIMENSION_LABELS,
+  type DimensionKey,
+  type EvaluationInput,
+} from "./evaluation";
+import { scopeMatrixRows } from "./instrument";
+import { toScheduleItem, type TenderSchedule } from "./schedule";
+
+const KEYS = Object.keys(DIMENSION_LABELS) as DimensionKey[];
+
+function input(answers: Record<string, unknown>, extra?: Partial<EvaluationInput>): EvaluationInput {
+  return {
+    tenderId: "t1",
+    builderName: "Test Constructions",
+    status: "submitted",
+    submittedAt: null,
+    totalPriceAud: null,
+    documentCount: 0,
+    answers,
+    projectState: "VIC",
+    // The fixtures below answer the v2 question set; pin the rubric
+    // to match. v3 has its own tests.
+    instrumentVersion: 2,
+    ...extra,
+  };
+}
+
+/** Every disclosure made, every strongest term committed. */
+function perfectAnswers(): Record<string, unknown> {
+  const matrix: Record<string, string> = {};
+  const amounts: Record<string, number> = {};
+  const rows = scopeMatrixRows();
+  for (const r of rows) matrix[r.id] = "included";
+  for (const r of rows.slice(0, 10)) amounts[r.id] = 50_000;
+  return {
+    "price.total": 1_000_000,
+    "price.fixed": true,
+    "price.escalation": false,
+    "price.validity": 45,
+    "compliance.permit_fees": true,
+    "site.rock": "included",
+    "pcps.basis": "documented",
+    "scope.matrix": matrix,
+    "scope.amounts": amounts,
+    "elig.site_inspection": "inspected",
+    "elig.docs_reviewed": "full_set",
+    "site.soil_report": "site_report",
+    "understand.rfis": "answered",
+    "understand.gaps": true,
+    "understand.gap_items": [{ gap: "north boundary levels" }],
+    "understand.concerns": true,
+    "understand.concern_items": [{ concern: "eaves junction detail" }],
+    "comment.approach": "Staged delivery with the party wall first.",
+    "comment.value_engineering": [{ suggestion: "Reuse spoil on site", saving: 8_000 }],
+    "comment.recommendations": [{ area: "Drainage", recommendation: "Confirm legal point" }],
+    "comment.risk_advice": [{ risk: "Rock", handling: "Priced from bore logs" }],
+    "creds.experience_type": "50_plus",
+    "creds.largest_value": "5m_plus",
+    "team.supervisor_load": "1_2",
+    "programme.concurrent": "0_2",
+    "team.crew_tenure": "3_plus",
+    "creds.whs": "certified",
+    "creds.qa": ["independent", "itp"],
+    "creds.references": [
+      { name: "A Client", link: "https://example.com/a" },
+      { name: "B Client", link: "https://example.com/b" },
+    ],
+    "team.in_house": ["carpentry", "joinery"],
+    "creds.memberships": ["hia"],
+    "team.updates": "weekly",
+    "contract.variations_written": true,
+    "contract.variation_fee": false,
+    "contract.defects_liability": "24",
+    "aftercare.walkthrough": true,
+    "aftercare.response": "48h",
+    "aftercare.manual": true,
+    "programme.weather": true,
+    "programme.weather_days": 15,
+    "programme.ld_amount": 2_000,
+    "prog.lead_time": "4_8",
+    "programme.start": "2026-10",
+    "programme.duration": 40,
+  };
+}
+
+describe("the rubric's two ends", () => {
+  test("full disclosure on the strongest terms scores exactly 100 everywhere", () => {
+    const e = evaluateTender(input(perfectAnswers(), { documentCount: 3 }));
+    for (const d of e.dimensions) {
+      expect(d.score, d.key).toBe(100);
+      // Nothing missed: the misses column is empty at the top.
+      expect(
+        d.receipts.filter((r) => r.kind === "miss"),
+        d.key,
+      ).toEqual([]);
+    }
+    expect(e.overall).toBe(100);
+  });
+
+  test("silence scores 0 on disclosure dimensions, with misses accounting for all 100", () => {
+    const e = evaluateTender(input({}));
+    for (const key of ["preparation", "credentials", "delivery", "programme"] as const) {
+      const d = e.dimensions.find((x) => x.key === key)!;
+      expect(d.score, key).toBe(0);
+      const missed = d.receipts.reduce(
+        (n, r) => n + (r.kind === "miss" ? (r.potential ?? 0) : 0),
+        0,
+      );
+      expect(missed, key).toBe(100);
+    }
+  });
+
+  test("partial credit shows both sides of the slot", () => {
+    // Document review is the graded slot: 16 for the full set, 5 for a
+    // partial read, so 11 of the 100 stay visible as a miss.
+    const e = evaluateTender(
+      input({ ...perfectAnswers(), "elig.docs_reviewed": "partial" }, { documentCount: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(89);
+    const gain = prep.receipts.find((r) => r.label.includes("partially"));
+    expect(gain?.value).toBe(5);
+    const miss = prep.receipts.find((r) => r.kind === "miss");
+    expect(miss?.potential).toBe(11);
+  });
+
+  // Site inspection is all or nothing now: a builder either walked the
+  // site or they did not.
+  test("an uninspected site loses the whole slot, and says so", () => {
+    const e = evaluateTender(
+      input(
+        { ...perfectAnswers(), "elig.site_inspection": "not_inspected" },
+        { documentCount: 3 },
+      ),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(78);
+    expect(
+      prep.receipts.some(
+        (r) => r.kind === "miss" && r.potential === 22,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("weights", () => {
+  test("the weights sum to exactly 100 and cover every dimension", () => {
+    expect(KEYS.every((k) => DIMENSION_WEIGHTS[k] > 0)).toBe(true);
+    expect(KEYS.reduce((n, k) => n + DIMENSION_WEIGHTS[k], 0)).toBe(100);
+  });
+
+  test("the composite is the weighted mean, checkable by hand", () => {
+    const dims = KEYS.map((key) => ({
+      key,
+      label: DIMENSION_LABELS[key],
+      score: key === "firmness" ? 80 : key === "scope" ? 60 : 50,
+      receipts: [],
+    }));
+    // 80×25 + 60×25 + 50×(15+15+12+8) = 2000+1500+2500 = 6000 → 60.
+    expect(weightedOverall(dims)).toBe(60);
+  });
+});
+
+describe("firmness states its helds", () => {
+  test("a firm price shows what it protects, not just an empty ledger", () => {
+    const e = evaluateTender(input(perfectAnswers()));
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(100);
+    const helds = firm.receipts.filter(
+      (r) => r.kind === "note" && r.label.includes("held"),
+    );
+    expect(helds.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("na marks on a schedule round", () => {
+  function pack(): TenderSchedule {
+    const items = [
+      ["framing.wall-frames", "evidenced"],
+      ["roofing.tile-roof", "evidenced"],
+      ["earthworks.site-strip", "evidenced"],
+      ["appliances.oven", "owner_allowance"],
+      ["landscaping.turf", "evidenced"],
+    ].map(([itemId, kind]) =>
+      toScheduleItem({
+        itemId: itemId!,
+        kind: kind as "evidenced" | "owner_allowance",
+        ownerAmountAud: kind === "owner_allowance" ? 5_000 : null,
+        citations: [],
+        note: null,
+      }),
+    );
+    return {
+      runId: "run-1",
+      standardVersion: "1.0.0",
+      items: items.filter((i): i is NonNullable<typeof i> => i !== null),
+    };
+  }
+
+  test("na lines leave the denominator instead of reading as refusals", () => {
+    const sched = pack();
+    const marks = {
+      "framing.wall-frames": { s: "documented" },
+      "roofing.tile-roof": { s: "documented" },
+      "earthworks.site-strip": { s: "documented" },
+      "appliances.oven": { s: "allowance", a: 5_000 },
+      "landscaping.turf": { s: "na", n: "no landscaping in this contract" },
+    };
+    const e = evaluateTender(input({ "scope.schedule": marks }), sched);
+    const scope = e.dimensions.find((d) => d.key === "scope")!;
+    // 3 documented + the client's allowance line carried IN FULL,
+    // over 4 applicable (5 − 1 na). Carrying the client's stated
+    // figure is exactly what the pack asked for.
+    expect(scope.score).toBe(100);
+    expect(e.scope.notApplicable).toBe(1);
+  });
+
+  test("the client's allowances never cost the builder firmness", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "price.total": 1_000_000,
+        "price.fixed": true,
+        "price.escalation": false,
+        "scope.schedule": {
+          "framing.wall-frames": { s: "documented" },
+          "roofing.tile-roof": { s: "documented" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(100);
+    expect(
+      firm.receipts.some(
+        (r) =>
+          r.kind === "note" && r.label.includes("client's stated allowances"),
+      ),
+    ).toBe(true);
+    expect(e.money.exposure).toBe(5_000);
+    expect(e.money.clientAllowanceExGst).toBe(5_000);
+    // No exposure flag either: the movement is the client's choice.
+    expect(e.flags.some((f) => f.id.startsWith("exposure"))).toBe(false);
+  });
+
+  test("the builder's own allowance still costs firmness and reads half on scope", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "price.total": 100_000,
+        "scope.schedule": {
+          "framing.wall-frames": { s: "allowance", a: 10_000 },
+          "roofing.tile-roof": { s: "documented" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    // 10% of the price is the builder's own movement: −20. The
+    // client's $5,000 is carved out.
+    expect(
+      firm.receipts.find((r) => r.kind === "delta" && r.value === -20),
+    ).toBeDefined();
+    const scope = e.dimensions.find((d) => d.key === "scope")!;
+    // 3 documented + 1 client line full + 1 builder allowance at half
+    // over 5 applicable = 90.
+    expect(scope.score).toBe(90);
+  });
+
+  test("three or more na marks raise the round-hygiene flag", () => {
+    const sched = pack();
+    const marks = {
+      "framing.wall-frames": { s: "na" },
+      "roofing.tile-roof": { s: "na" },
+      "earthworks.site-strip": { s: "na" },
+      "appliances.oven": { s: "allowance", a: 5_000 },
+      "landscaping.turf": { s: "documented" },
+    };
+    const e = evaluateTender(input({ "scope.schedule": marks }), sched);
+    expect(e.flags.some((f) => f.id === "na-heavy")).toBe(true);
+  });
+
+  test("round verdicts compare only what each builder left open", () => {
+    const sched = pack();
+    const carryMarks = {
+      "framing.wall-frames": { s: "documented" },
+      "roofing.tile-roof": { s: "documented" },
+      "earthworks.site-strip": { s: "documented" },
+      "landscaping.turf": { s: "documented" },
+      "appliances.oven": { s: "allowance", a: 5_000 },
+    };
+    // A is cheaper but holds $10,000 of its own; B follows the
+    // client's instruction exactly and holds nothing of its own.
+    const a = input({
+      "price.total": 995_000,
+      "scope.schedule": {
+        ...carryMarks,
+        "framing.wall-frames": { s: "allowance", a: 10_000 },
+      },
+    });
+    const b = {
+      ...input({ "price.total": 1_000_000, "scope.schedule": carryMarks }),
+      tenderId: "t2",
+      builderName: "Rival Builds",
+    };
+    const round = evaluateRound([a, b], sched);
+    // B is the certainty leader even though both carry the client's
+    // $5,000: the client's lines can never decide certainty.
+    expect(round.spread?.certaintyId).toBe("t2");
+    // Breakeven tests the saving against A's OWN $10,000 only.
+    expect(round.breakeven).toMatchObject({
+      cheaperId: "t1",
+      rivalId: "t2",
+      savingExGst: 5_000,
+      exposureExGst: 10_000,
+      breakevenPct: 50,
+    });
+    expect(round.priceStory).toContain("of its own choosing");
+    // B carried the client's allowance, so its position says firm
+    // beyond them, never a bare "fully priced" that the cover's
+    // allowance line would contradict.
+    const bEval = round.tenders.find((t) => t.tenderId === "t2")!;
+    expect(bEval.positions).toContain("Firm beyond your allowances");
+  });
+
+  test("na reasons and disclosed prices reach the owner's read", () => {
+    const sched = pack();
+    const e = evaluateTender(
+      input({
+        "scope.schedule": {
+          "framing.wall-frames": { s: "documented", p: 42_000 },
+          "roofing.tile-roof": { s: "na", n: "flat roof per addendum" },
+          "earthworks.site-strip": { s: "documented" },
+          "landscaping.turf": { s: "documented" },
+          "appliances.oven": { s: "allowance", a: 5_000 },
+        },
+      }),
+      sched,
+    );
+    expect(e.scope.notApplicableRows).toEqual([
+      { label: "Roof tiles", note: "flat roof per addendum" },
+    ]);
+    expect(e.scope.disclosedRows).toEqual([
+      { label: "Wall framing", amountAud: 42_000 },
+    ]);
+  });
+
+  test("a split between priced and na surfaces as a round disagreement", () => {
+    const sched = pack();
+    const a = input({
+      "scope.schedule": {
+        "landscaping.turf": { s: "documented" },
+      },
+    });
+    const b = {
+      ...input({
+        "scope.schedule": {
+          "landscaping.turf": { s: "na" },
+        },
+      }),
+      tenderId: "t2",
+      builderName: "Rival Builds",
+    };
+    const round = evaluateRound([a, b], sched);
+    const row = round.scopeDisagreements.find((d) =>
+      d.trade.startsWith("Turf"),
+    );
+    expect(row).toBeDefined();
+    expect(Object.values(row!.states)).toContain("Not applicable");
+  });
+});
+
+describe("the v3 preparation rubric", () => {
+  // v3 retired the clarifications and gaps questions and made soil
+  // document-aware; its redistributed weights must still land exactly
+  // on 100 at the top.
+  function v3Perfect(): Record<string, unknown> {
+    const a = perfectAnswers();
+    delete a["understand.rfis"];
+    delete a["understand.gaps"];
+    delete a["understand.gap_items"];
+    delete a["site.soil_report"];
+    a["site.soil_class_confirm"] = true;
+    // v3's itemisation slot runs to 12 disclosed amounts.
+    const amounts: Record<string, number> = {};
+    for (const r of scopeMatrixRows().slice(0, 12)) amounts[r.id] = 50_000;
+    a["scope.amounts"] = amounts;
+    return a;
+  }
+
+  test("full disclosure scores exactly 100 under v3", () => {
+    const e = evaluateTender(
+      input(v3Perfect(), { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(100);
+    expect(prep.receipts.some((r) => r.kind === "miss")).toBe(false);
+  });
+
+  test("a stated assumed class earns part of the soil slot", () => {
+    const a = v3Perfect();
+    delete a["site.soil_class_confirm"];
+    a["site.soil_class_basis"] = "m";
+    const e = evaluateTender(
+      input(a, { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(94);
+    expect(
+      prep.receipts.some(
+        (r) => r.kind === "miss" && (r.potential ?? 0) === 6,
+      ),
+    ).toBe(true);
+  });
+
+  test("no stated basis loses the whole soil slot and flags the owner", () => {
+    const a = v3Perfect();
+    delete a["site.soil_class_confirm"];
+    a["site.soil_class_basis"] = "not_stated";
+    const e = evaluateTender(
+      input(a, { documentCount: 4, instrumentVersion: 3 }),
+    );
+    const prep = e.dimensions.find((d) => d.key === "preparation")!;
+    expect(prep.score).toBe(84);
+    expect(e.flags.some((f) => f.id === "soil-assumed")).toBe(true);
+  });
+});
+
+describe("the statutory deposit cap", () => {
+  test("a deposit above the cap deducts firmness and flags high", () => {
+    const a = perfectAnswers();
+    a["payments.deposit"] = 20;
+    const e = evaluateTender(input(a, { documentCount: 3 }));
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(88);
+    expect(
+      e.flags.some((f) => f.id === "deposit-cap" && f.severity === "high"),
+    ).toBe(true);
+  });
+
+  test("a lawful deposit holds the ground and says so", () => {
+    const a = perfectAnswers();
+    a["payments.deposit"] = 5;
+    const e = evaluateTender(input(a, { documentCount: 3 }));
+    const firm = e.dimensions.find((d) => d.key === "firmness")!;
+    expect(firm.score).toBe(100);
+    expect(
+      firm.receipts.some(
+        (r) => r.kind === "note" && /statutory cap/.test(r.label),
+      ),
+    ).toBe(true);
+  });
+});

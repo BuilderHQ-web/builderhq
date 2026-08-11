@@ -10,9 +10,11 @@ import {
   MessageSquare,
   Settings,
   Compass,
+  Mail,
   ShieldCheck,
   Users as UsersIcon,
   Receipt,
+  ScanSearch,
   Sparkles,
   Hammer,
   House,
@@ -35,7 +37,7 @@ interface NavItem {
   /** Render as a dimmed, non-clickable stub (feature being retired). */
   disabled?: boolean;
   /** Symbolic badge key — sidebar resolves to a live number. */
-  badgeKey?: "messages";
+  badgeKey?: "messages" | "invitations";
 }
 
 interface NavSection {
@@ -63,6 +65,7 @@ const architectNav: NavSection[] = [
     items: [
       { href: "/architect", label: "Dashboard", icon: LayoutDashboard },
       { href: "/architect/projects", label: "Tenders", icon: Folders },
+      { href: "/architect/messages", label: "Messages", icon: MessageSquare, badgeKey: "messages" },
     ],
   },
   {
@@ -105,6 +108,7 @@ const adminNav: NavSection[] = [
       { href: "/admin/projects", label: "Projects", icon: Folders, soon: "Later" },
       { href: "/admin/tenders", label: "Tenders", icon: FileSpreadsheet, soon: "Later" },
       { href: "/admin/payments", label: "Payments", icon: Receipt, soon: "Later" },
+      { href: "/admin/scope", label: "Scope engine", icon: ScanSearch },
     ],
   },
   {
@@ -123,11 +127,43 @@ const navByRole: Record<Role, NavSection[]> = {
   architect: architectNav,
 };
 
+/**
+ * The Invitations tab is earned, not standard furniture: it appears
+ * only once a builder has ever been invited to a round, and then
+ * stays (an empty invitations page is still their record). Injected
+ * after "My tenders" so the section reads browse → hold → tender →
+ * invited → talk.
+ */
+export function withInvitationsTab(
+  sections: NavSection[],
+  role: Role,
+  totalInvites: number,
+): NavSection[] {
+  if (role !== "builder" || totalInvites <= 0) return sections;
+  return sections.map((section, i) => {
+    if (i !== 0) return section;
+    const items = [...section.items];
+    const at = items.findIndex((it) => it.href === "/builder/messages");
+    items.splice(at === -1 ? items.length : at, 0, {
+      href: "/builder/invitations",
+      label: "Invitations",
+      icon: Mail,
+      badgeKey: "invitations",
+    });
+    return { ...section, items };
+  });
+}
+
 interface SidebarProps {
   role: Role;
   /** Server-rendered unread message count so the badge is correct
    *  on first paint. The component soft-polls from there. */
   initialUnreadMessages?: number;
+  /** Builder invitation tallies. The Invitations tab exists once a
+   *  builder has EVER been invited (total > 0); the badge shows the
+   *  pending count. Server-rendered, not polled — a new invitation
+   *  lands with an email, so freshness-on-navigation is enough. */
+  invitations?: { total: number; pending: number };
   /** Builder holds an active Founding Builder Access grant. FBA is being
    *  retired: the "Founding access" link stays live for grant-holders and
    *  is a dimmed stub for everyone else (new builders never had it). */
@@ -140,9 +176,10 @@ export function Sidebar({
   role,
   initialUnreadMessages = 0,
   fbaActive = false,
+  invitations = { total: 0, pending: 0 },
 }: SidebarProps) {
   const pathname = usePathname();
-  const sections = navByRole[role];
+  const sections = withInvitationsTab(navByRole[role], role, invitations.total);
 
   // Live message-unread count — initialised from server, polled gently.
   const [unreadMessages, setUnreadMessages] = useState(initialUnreadMessages);
@@ -157,6 +194,7 @@ export function Sidebar({
 
   const badges: Record<NonNullable<NavItem["badgeKey"]>, number> = {
     messages: unreadMessages,
+    invitations: invitations.pending,
   };
 
   return (
@@ -248,7 +286,7 @@ function NavLink({
       <Icon
         className={cn(
           "size-4 shrink-0 transition-colors",
-          active ? "text-accent" : "text-text-faint group-hover:text-text-muted",
+          active ? "text-accent-light" : "text-text-faint group-hover:text-text-muted",
         )}
       />
       <span className="flex-1 truncate">{item.label}</span>
@@ -265,7 +303,12 @@ function NavLink({
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === "/owner" || href === "/builder" || href === "/admin") {
+  if (
+    href === "/owner" ||
+    href === "/builder" ||
+    href === "/admin" ||
+    href === "/architect"
+  ) {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(href + "/");

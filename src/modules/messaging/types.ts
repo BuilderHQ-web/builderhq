@@ -26,8 +26,10 @@ export interface ConversationListItem {
     /** Builder company name when applicable; falls back to the user name. */
     displayName: string;
     initials: string;
-    /** "owner" | "builder" — useful for sub-label rendering. */
-    role: "project_owner" | "builder";
+    /** Sub-label rendering. "project_owner" = the round's runner;
+     *  "decider" = a Deciding seat with their own parallel thread —
+     *  the builder's UI labels them as the client on the round. */
+    role: "project_owner" | "builder" | "decider";
     /** When the other side last opened this thread — used as a
      *  best-effort presence signal (UI shows an "active" dot when
      *  this falls inside a recent window). Null if they've never

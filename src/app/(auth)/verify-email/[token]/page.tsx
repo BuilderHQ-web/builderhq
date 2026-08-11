@@ -4,16 +4,20 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { verifyEmail } from "@/modules/auth";
 import { cn } from "@/lib/utils";
+import { safeInternalPath } from "../../_lib/next-path";
 
 export const metadata = { title: "Verify email" };
 export const dynamic = "force-dynamic";
 
 export default async function VerifyEmailTokenPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ next?: string }>;
 }) {
   const { token } = await params;
+  const next = safeInternalPath((await searchParams).next);
   const result = await verifyEmail(token);
 
   if (result.ok) {
@@ -27,10 +31,15 @@ export default async function VerifyEmailTokenPage({
             You&apos;re in
           </h1>
           <p className="text-[14px] sm:text-[15px] leading-[22px] sm:leading-[24px] text-text-muted">
-            Your account is active. Log in to start using BuilderHQ.
+            {next
+              ? "Your account is active. Log in and we will take you straight back to where you left off."
+              : "Your account is active. Log in to start using BuilderHQ."}
           </p>
         </div>
-        <Link href="/login" className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-fit")}>
+        <Link
+          href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+          className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-fit")}
+        >
           Continue to log in
         </Link>
       </div>

@@ -106,9 +106,16 @@ export async function loginAction(
     // Re-send the verification email so the user has a fresh link if the
     // original is buried or expired. resendVerificationEmail() is
     // throttled to one per 60s server-side — repeated unverified logins
-    // won't burn the email quota.
-    await resendVerificationEmail({ email });
-    redirect(`/verify-email?email=${encodeURIComponent(email)}`);
+    // won't burn the email quota. The continuation path rides the fresh
+    // link AND the redirect, so an invited builder's journey survives
+    // this detour too.
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    await resendVerificationEmail({ email }, safeNext ? { next: safeNext } : {});
+    redirect(
+      `/verify-email?email=${encodeURIComponent(email)}${
+        safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""
+      }`,
+    );
   }
 
   // Active user. Resolve target dashboard and hand off to Auth.js.

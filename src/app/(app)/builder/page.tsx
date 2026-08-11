@@ -1,60 +1,49 @@
 /**
- * Builder dashboard — level-10.
+ * Builder dashboard — one column, four summaries.
  *
- * Reading order:
- *
- *   1. Hero                — name, primary CTA (Browse projects)
- *   2. Verification gate   — only when builder isn't approved yet
- *   3. FBA panel           — founding access status (when relevant)
- *   4. Pulse strip         — active tenders / win rate / submitted
- *                            value / FBA balance — the four numbers
- *                            every builder cares about
- *   5. Action needed       — awarded tenders to follow up on,
- *                            shortlisted tenders, expiring validity —
- *                            the "do this now" surface
- *   6. Tender pipeline     — visual breakdown by status, with counts
- *   7. Suggested projects  — service-area + category matches
- *   8. Activity feed       — your tender outcomes + new project events
- *   9. Recently unlocked   — quick re-entry to projects you're working
- *  10. Saved list          — bookmarks
+ * The hero greets, states what is waiting in one sentence, offers the
+ * two ways in (browse, my tenders) and shows three figures with no
+ * commentary. Below it, full-width sections in reading order: the
+ * desk (invitations, drafts and decisions, ranked), suggested
+ * projects (three, with the register behind a View all), and the
+ * tender ledger. Standing lives in the app header as the verified
+ * mark, not in a section. No right rail; rows are white cards on the
+ * canvas and sections separate by a plain ruled header, the same
+ * convention as the architect's desk.
  */
 
 import Link from "next/link";
-import {
-  Compass,
-  ArrowUpRight,
-  Bookmark,
-  Activity,
-  Trophy,
-  Wallet,
-  Sparkles,
-  Hourglass,
-  AlertTriangle,
-  Files,
-  X,
-} from "lucide-react";
-
 import { redirect } from "next/navigation";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  Compass,
+  Sparkles,
+} from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { dashboardForRole } from "@/lib/dashboard-route";
-import { listForMarketplace, listByIds } from "@/modules/projects";
+import { listForMarketplace } from "@/modules/projects";
 import { getBuilderProfile } from "@/modules/profiles";
-import {
-  countMyUnlocks,
-  countMySaved,
-  listMyUnlockedProjectIds,
-  listMySavedProjectIds,
-} from "@/modules/unlocks";
+import { listMySavedProjectIds, listMyUnlockedProjectIds } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import {
+  listInvitesForBuilder,
+  listDraftTendersForBuilder,
+} from "@/modules/tenders";
+import { hasFullVerificationForApproval } from "@/modules/verification";
 import {
   getBuilderDashboardData,
   type BuilderDashboardData,
-  type BuilderActionNeeded,
-  type BuilderActivityEvent,
 } from "@/modules/dashboards";
+import { BuilderHeroIntro } from "@/components/builder/hero-intro";
+import { ProjectCard } from "@/components/builder/project-card";
 import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
+
+export const metadata = { title: "Dashboard" };
+export const dynamic = "force-dynamic";
 
 /** Best-effort wrapper — logs failures and returns the fallback so a
  *  single flaky query doesn't crash the dashboard. */
@@ -71,33 +60,59 @@ async function safe<T>(label: string, p: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-import { SectionKicker } from "@/components/app/section-kicker";
-import { EmptyState } from "@/components/app/empty-state";
-import { Reveal } from "@/components/app/reveal";
-import { ProjectCard } from "@/components/builder/project-card";
-import { BuilderHeroIntro } from "@/components/builder/hero-intro";
-import { FbaCard } from "@/components/builder/fba-card";
-import { hasFullVerificationForApproval } from "@/modules/verification";
-import { VerificationCallout } from "@/components/builder/verification-callout";
+const EMPTY_DASH = (firstName: string): BuilderDashboardData => ({
+  meta: { firstName },
+  pipeline: {
+    draft: 0, submitted: 0, shortlisted: 0, awarded: 0, rejected: 0,
+    withdrawn: 0, active: 0, decided: 0,
+  },
+  performance: { winRate: null, totalSubmittedValueAud: 0, avgDaysToOutcome: null },
+  actionsNeeded: [],
+  activity: [],
+});
 
-export const metadata = { title: "Dashboard" };
-export const dynamic = "force-dynamic";
+/* ── formatting ─────────────────────────────────────────────────────── */
+
+const aud = (n: number) =>
+  new Intl.NumberFormat("en-AU", {
+    style: "currency", currency: "AUD", maximumFractionDigits: 0,
+  }).format(n);
+
+const compactAud = (n: number) =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}m`
+    : n >= 1_000
+      ? `$${Math.round(n / 1_000)}k`
+      : aud(n);
+
+function ago(d: Date): string {
+  const mins = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60000));
+  if (mins < 60) return `${Math.max(1, mins)}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Melbourne",
+  });
+}
+
+/* ── page ───────────────────────────────────────────────────────────── */
 
 export default async function BuilderDashboard() {
   const session = await auth();
-  // Defence-in-depth: only builders belong on this dashboard. An owner/
-  // admin who lands here is bounced to their own dashboard.
   if (session?.user?.role && session.user.role !== "builder") {
     redirect(dashboardForRole(session.user.role));
   }
   const userId = session?.user?.id;
-  const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
+  const firstName = (session?.user?.name ?? "").split(" ")[0] || "Builder";
 
   const profile = userId
     ? await safe("builder_profile", getBuilderProfile(userId), null)
     : null;
 
-  // Per-area service match list (radius >= 50 = statewide).
   const serviceAreaMatch =
     profile?.serviceAreas
       .map((s) => ({
@@ -108,75 +123,191 @@ export default async function BuilderDashboard() {
       .filter((m) => m.statewide || m.suburb !== null) ?? [];
   const matchedCategories = profile?.categories.map((c) => c.category) ?? [];
 
-  // ── parallel data load ────────────────────────────────────────────
-  const [
-    unlockedCount,
-    savedCount,
-    unlockedIds,
-    savedIds,
-    suggested,
-    fbaStatus,
-    dash,
-  ] = await Promise.all([
-    userId ? safe("count_unlocks", countMyUnlocks(userId), 0) : 0,
-    userId ? safe("count_saved", countMySaved(userId), 0) : 0,
-    userId ? safe("list_unlocked_ids", listMyUnlockedProjectIds(userId), []) : [],
-    userId ? safe("list_saved_ids", listMySavedProjectIds(userId), []) : [],
-    safe(
-      "list_marketplace",
-      listForMarketplace({
-        ...(matchedCategories.length === 1
-          ? { type: matchedCategories[0]! }
-          : {}),
-        ...(serviceAreaMatch.length > 0 ? { serviceAreaMatch } : {}),
-        limit: 6,
-      }),
-      [],
-    ),
-    userId
-      ? safe(
-          "fba_status",
-          getFbaStatus(userId),
-          { active: false, reason: "no_grant" } as const,
-        )
-      : Promise.resolve({ active: false, reason: "no_grant" } as const),
-    userId
-      ? safe(
-          "dashboard_rollup",
-          getBuilderDashboardData(userId, firstName),
-          EMPTY_BUILDER_DASH(firstName),
-        )
-      : Promise.resolve(EMPTY_BUILDER_DASH(firstName)),
-  ]);
+  const [dash, openRounds, invites, drafts, savedIds, fbaStatus, unlockedIds] =
+    await Promise.all([
+      userId
+        ? safe("dashboard_rollup", getBuilderDashboardData(userId, firstName), EMPTY_DASH(firstName))
+        : Promise.resolve(EMPTY_DASH(firstName)),
+      safe(
+        "open_rounds",
+        // Over-fetch: rounds the builder already holds are filtered
+        // out below, and three suggestions should survive that.
+        listForMarketplace({
+          ...(matchedCategories.length === 1 ? { type: matchedCategories[0]! } : {}),
+          ...(serviceAreaMatch.length > 0 ? { serviceAreaMatch } : {}),
+          limit: 8,
+        }),
+        [],
+      ),
+      userId
+        ? safe(
+            "builder_invites",
+            listInvitesForBuilder(userId, { email: session?.user?.email }),
+            [],
+          )
+        : [],
+      userId ? safe("draft_tenders", listDraftTendersForBuilder(userId), []) : [],
+      userId ? safe("saved_ids", listMySavedProjectIds(userId), []) : [],
+      userId
+        ? safe("fba_status", getFbaStatus(userId), { active: false, reason: "no_grant" } as const)
+        : Promise.resolve({ active: false, reason: "no_grant" } as const),
+      userId ? safe("unlocked_ids", listMyUnlockedProjectIds(userId), []) : [],
+    ]);
 
-  const recentUnlocks = await safe(
-    "list_recent_unlocks",
-    listByIds(unlockedIds.slice(0, 3)),
-    [],
-  );
-  const savedRecent = await safe(
-    "list_saved_recent",
-    listByIds(savedIds.slice(0, 3)),
-    [],
-  );
-
-  // Verification status callout — only when not approved.
-  const isApproved = profile?.profile?.approvalStatus === "approved";
-  const verificationStatus =
-    userId && !isApproved
-      ? await safe(
-          "verification_for_approval",
-          hasFullVerificationForApproval(userId),
-          { abnVerified: false, anyLicenceVerified: false, reasons: [] },
-        )
-      : null;
-
+  const approvalStatus = profile?.profile?.approvalStatus ?? "incomplete";
+  const isApproved = approvalStatus === "approved";
+  // Fetched for every builder: the "ABN verified" claim is only ever
+  // rendered when the register check actually passed, approved or not.
+  const verification = userId
+    ? await safe(
+        "verification_for_approval",
+        hasFullVerificationForApproval(userId),
+        { abnVerified: false, anyLicenceVerified: false, reasons: [] },
+      )
+    : { abnVerified: false, anyLicenceVerified: false, reasons: [] };
+  const fullyVerified =
+    verification.abnVerified && verification.anyLicenceVerified;
   const unlockedSet = new Set(unlockedIds);
   const savedSet = new Set(savedIds);
+  // Suggested means still open to you: held rounds live on the desk
+  // and under Unlocked, never as a suggestion.
+  const suggested = openRounds
+    .filter((p) => !unlockedSet.has(p.id))
+    .slice(0, 3);
+  const complimentaryUnlocks =
+    fbaStatus.active && fbaStatus.remainingThisCycle > 0;
+
+  // The registration checklist state: not approved, not declined, and
+  // at least one check still outstanding.
+  const needsChecklist =
+    !isApproved &&
+    approvalStatus !== "rejected" &&
+    approvalStatus !== "suspended" &&
+    !fullyVerified;
+
+  // ── the desk queue: one ranked list, every entry NAMED ────────────
+  type DeskTone = "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
+  type DeskRow = {
+    key: string;
+    href: string;
+    tone: DeskTone;
+    chip: string;
+    title: string;
+    line: string;
+    metric: string | null;
+  };
+
+  const queue: DeskRow[] = [];
+  for (const a of dash.actionsNeeded) {
+    if (a.reason === "awarded") {
+      queue.push({
+        key: `awarded-${a.tenderId}`,
+        href: `/builder/projects/${a.projectSlug}/tender`,
+        tone: "win",
+        chip: "Awarded",
+        title: a.projectTitle,
+        line: "Awarded to you. The owner's details are on the tender.",
+        metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
+      });
+    }
+  }
+  for (const inv of invites) {
+    queue.push({
+      key: `invite-${inv.inviteId}`,
+      href: `/invite/b/${inv.inviteToken}`,
+      tone: "invite",
+      chip: "Invitation",
+      title: inv.projectTitle,
+      line: `${inv.inviterName} invited you. Accept to take your spot.`,
+      metric: ago(inv.invitedAt),
+    });
+  }
+  for (const a of dash.actionsNeeded) {
+    if (a.reason === "shortlisted") {
+      queue.push({
+        key: `short-${a.tenderId}`,
+        href: `/builder/projects/${a.projectSlug}/tender`,
+        tone: "neutral",
+        chip: "Shortlisted",
+        title: a.projectTitle,
+        line: "You are in the final comparison.",
+        metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
+      });
+    }
+  }
+  for (const a of dash.actionsNeeded) {
+    if (a.reason === "expiring_soon") {
+      const d = a.daysUntilExpiry;
+      const lapsed = d !== null && d < 0;
+      queue.push({
+        key: `expiry-${a.tenderId}`,
+        href: `/builder/projects/${a.projectSlug}/tender`,
+        // The rollup computes urgency (≤3 days = danger); honour it so
+        // a lapsed price reads at a different weight to "5 days left".
+        tone: lapsed || a.urgency === "danger" ? "danger" : "warn",
+        chip: lapsed ? "Lapsed" : "Expiring",
+        title: a.projectTitle,
+        line: lapsed
+          ? "Your price has lapsed. Withdraw or resubmit."
+          : d === 0
+            ? "Your price ends today."
+            : `Your price holds for ${d} more day${d === 1 ? "" : "s"}.`,
+        metric: a.totalPriceAud !== null ? compactAud(a.totalPriceAud) : null,
+      });
+    }
+  }
+  for (const dr of drafts) {
+    queue.push({
+      key: `draft-${dr.tenderId}`,
+      href: `/builder/projects/${dr.projectSlug}/tender`,
+      tone: "draft",
+      chip: "Draft",
+      title: dr.projectTitle,
+      line: `Pick up where you left off. Last saved ${ago(dr.updatedAt)}.`,
+      metric: dr.totalPriceAud !== null ? compactAud(dr.totalPriceAud) : "Unpriced",
+    });
+  }
+  // Invitations are never truncated: they exist nowhere else in the
+  // app, so hiding one behind a "more in My tenders" link would lose
+  // it. Everything after them trims to the limit.
+  const QUEUE_LIMIT = 7;
+  const inviteRows = queue.filter((q) => q.tone === "invite");
+  const otherRows = queue.filter((q) => q.tone !== "invite");
+  const queueShown = [
+    ...inviteRows,
+    ...otherRows.slice(0, Math.max(0, QUEUE_LIMIT - inviteRows.length)),
+  ];
+  const queueOverflow = queue.length - queueShown.length;
+  const deskUrgent = queue.some((q) => q.tone === "danger" || q.tone === "warn");
+
+  const hasBook =
+    dash.pipeline.active + dash.pipeline.decided + dash.pipeline.draft > 0;
+
+  const heroLine =
+    queue.length > 0
+      ? `${queue.length} item${queue.length === 1 ? "" : "s"} on your desk.`
+      : dash.pipeline.active > 0
+        ? `${dash.pipeline.active} tender${dash.pipeline.active === 1 ? "" : "s"} with owners now.`
+        : "Browse open rounds in your area and take a spot.";
+
+  // The ledger: the four working states always, the two terminal ones
+  // only once they exist.
+  const bookColumns: Array<[string, number]> = [
+    [plural(dash.pipeline.draft, "Draft", "Drafts"), dash.pipeline.draft],
+    ["Submitted", dash.pipeline.submitted],
+    ["Shortlisted", dash.pipeline.shortlisted],
+    ["Awarded", dash.pipeline.awarded],
+    ...(dash.pipeline.rejected > 0
+      ? ([["Rejected", dash.pipeline.rejected]] as Array<[string, number]>)
+      : []),
+    ...(dash.pipeline.withdrawn > 0
+      ? ([["Withdrawn", dash.pipeline.withdrawn]] as Array<[string, number]>)
+      : []),
+  ];
 
   return (
     <div>
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      {/* ── hero — the greeting, the sentence, the way in ─────────── */}
       <section className="relative overflow-hidden border-b border-border-subtle">
         <div
           aria-hidden
@@ -186,17 +317,13 @@ export default async function BuilderDashboard() {
               "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,212,200,0.08), transparent 65%)",
           }}
         />
-        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-16 lg:pt-20 pb-10 sm:pb-14 lg:pb-16">
+        <div className="relative px-4 sm:px-6 lg:px-10 pt-10 sm:pt-14 pb-9 sm:pb-11">
           <div className="mx-auto max-w-[860px] flex flex-col items-center text-center">
             <BuilderHeroIntro firstName={firstName} />
-            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.65] sm:leading-[1.7] text-text-subtle">
-              {dash.actionsNeeded.length > 0
-                ? `${dash.actionsNeeded.length} tender${dash.actionsNeeded.length === 1 ? "" : "s"} need your attention.`
-                : dash.pipeline.active > 0
-                  ? `${dash.pipeline.active} active tender${dash.pipeline.active === 1 ? "" : "s"} in flight. ${suggested.length} new project${suggested.length === 1 ? "" : "s"} matched.`
-                  : "Browse residential projects matched to your service area and specialties. Unlock the ones that fit, tender with confidence."}
+            <p className="mt-5 max-w-[52ch] text-[14px] sm:text-[15px] leading-[1.7] text-text-subtle">
+              {heroLine}
             </p>
-            <div className="mt-7 sm:mt-9 flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link
                 href="/builder/browse"
                 className={cn(
@@ -216,820 +343,428 @@ export default async function BuilderDashboard() {
               >
                 My tenders
               </Link>
-              <Link
-                href="/builder/saved"
-                className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-full border border-border-strong text-text text-[13px] tracking-[0.04em] hover:bg-surface-1 transition-colors"
-              >
-                <Bookmark className="size-3.5" />
-                Saved
-              </Link>
+            </div>
+
+            {/* the three figures — numbers only, no commentary */}
+            <div className="mt-10 flex items-stretch justify-center divide-x divide-border-subtle">
+              <HeroStat
+                label={plural(
+                  dash.pipeline.active,
+                  "Active tender",
+                  "Active tenders",
+                )}
+                value={String(dash.pipeline.active)}
+              />
+              <HeroStat
+                label={plural(
+                  unlockedIds.length,
+                  "Unlocked project",
+                  "Unlocked projects",
+                )}
+                value={String(unlockedIds.length)}
+              />
+              <HeroStat
+                label="Value tendered"
+                value={
+                  dash.performance.totalSubmittedValueAud > 0
+                    ? compactAud(dash.performance.totalSubmittedValueAud)
+                    : "—"
+                }
+              />
             </div>
           </div>
         </div>
       </section>
 
-      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-14 flex flex-col gap-8 sm:gap-10">
-        {/* ── Verification callout ─────────────────────────────────── */}
-        {verificationStatus &&
-        (!verificationStatus.abnVerified ||
-          !verificationStatus.anyLicenceVerified) ? (
-          <Reveal immediate delay={0.02}>
-            <VerificationCallout
-              abnVerified={verificationStatus.abnVerified}
-              anyLicenceVerified={verificationStatus.anyLicenceVerified}
-              approvalStatus={profile?.profile?.approvalStatus ?? "incomplete"}
-            />
-          </Reveal>
-        ) : null}
-
-        {/* ── FBA panel — only for builders with an ACTIVE grant. FBA is
-            being retired, so non-grant-holders (expired / revoked / never had
-            it) see no founding panel on the dashboard at all. */}
-        {fbaStatus.active ? (
-          <Reveal immediate delay={0.04}>
-            <section>
-              <SectionKicker>Founding access</SectionKicker>
-              <div className="mt-5">
-                <FbaCard status={fbaStatus} />
+      {/* ── registration bands — the gate, never below the fold ───── */}
+      {needsChecklist ? (
+        <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+              <div className="min-w-0">
+                <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                  Finish your registration
+                </h2>
+                <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
+                  <ChecklistLine done={verification.abnVerified}>
+                    ABN verified
+                  </ChecklistLine>
+                  <ChecklistLine done={verification.anyLicenceVerified}>
+                    Builder licence verified
+                  </ChecklistLine>
+                </ul>
+                <p className="mt-2 text-[11.5px] leading-[1.55] text-text-dim">
+                  Tendering opens the moment both checks pass.
+                </p>
               </div>
-            </section>
-          </Reveal>
-        ) : null}
-
-        {/* ── Pulse strip ─────────────────────────────────────────── */}
-        <Reveal immediate delay={0.08}>
-          <section>
-            <SectionKicker>Your pipeline</SectionKicker>
-            <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <PulseTile
-                tone="teal"
-                icon={<Activity className="size-4" />}
-                label="Active tenders"
-                value={String(dash.pipeline.active)}
-                sub={
-                  dash.pipeline.active === 0
-                    ? "Submit your first one"
-                    : `${dash.pipeline.shortlisted} shortlisted · ${dash.pipeline.awarded} awarded`
-                }
-              />
-              <PulseTile
-                tone={
-                  dash.performance.winRate != null &&
-                  dash.performance.winRate >= 0.3
-                    ? "teal"
-                    : "blue"
-                }
-                icon={<Trophy className="size-4" />}
-                label="Win rate"
-                value={
-                  dash.performance.winRate != null
-                    ? `${Math.round(dash.performance.winRate * 100)}%`
-                    : "—"
-                }
-                sub={
-                  dash.pipeline.decided === 0
-                    ? "No decisions yet"
-                    : `${dash.pipeline.awarded} of ${dash.pipeline.decided} decided`
-                }
-              />
-              <PulseTile
-                tone="blue"
-                icon={<Wallet className="size-4" />}
-                label="Total submitted"
-                value={
-                  dash.performance.totalSubmittedValueAud > 0
-                    ? formatAudCompact(dash.performance.totalSubmittedValueAud)
-                    : "—"
-                }
-                sub={
-                  dash.pipeline.submitted +
-                    dash.pipeline.shortlisted +
-                    dash.pipeline.awarded >
-                  0
-                    ? "Lifetime tender value"
-                    : "No tenders yet"
-                }
-              />
-              <PulseTile
-                tone={
-                  fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                    ? "teal"
-                    : "rose"
-                }
-                icon={<Sparkles className="size-4" />}
-                label={fbaStatus.active ? "FBA credits" : "Saved projects"}
-                value={
-                  fbaStatus.active
-                    ? String(fbaStatus.remainingThisCycle)
-                    : String(savedCount)
-                }
-                sub={
-                  fbaStatus.active
-                    ? `Free unlocks left this cycle`
-                    : savedCount > 0
-                      ? "Bookmarked"
-                      : "Bookmark a project to compare later"
-                }
-              />
+              <Link
+                href="/builder/profile"
+                className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-accent text-accent-contrast font-ui font-semibold text-[12.5px] hover:bg-accent-hover transition-colors shrink-0"
+              >
+                Complete verification
+                <ArrowRight className="size-3.5" />
+              </Link>
             </div>
-          </section>
-        </Reveal>
+          </div>
+        </section>
+      ) : approvalStatus === "rejected" || approvalStatus === "suspended" ? (
+        <section className="border-b border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="mx-auto max-w-[1200px] flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
+              <div className="min-w-0">
+                <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                  {approvalStatus === "rejected"
+                    ? "Your registration was not approved"
+                    : "Your registration is paused"}
+                </h2>
+                <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted max-w-[64ch]">
+                  {approvalStatus === "rejected"
+                    ? "Tendering is unavailable on this account. Write to us and we will review it with you."
+                    : "Tendering is paused on this account. Write to us if you believe this is a mistake."}
+                </p>
+              </div>
+              <a
+                href="mailto:info@builderhq.com.au"
+                className="inline-flex items-center gap-1 text-[12px] text-accent-light hover:underline shrink-0"
+              >
+                info@builderhq.com.au
+                <ArrowUpRight className="size-3" />
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : !isApproved && fullyVerified ? (
+        <section className="border-b border-border-accent/25 bg-[rgba(0,212,200,0.04)]">
+          <div className="px-4 sm:px-6 lg:px-10 py-4">
+            <div className="mx-auto max-w-[1200px]">
+              <p className="text-[13px] font-ui font-semibold text-text">
+                Checks complete. Your registration is with our team.
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-text-muted">
+                Most reviews finish within one business day.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
-        {/* ── Action needed ─────────────────────────────────────────── */}
-        {dash.actionsNeeded.length > 0 ? (
-          <Reveal immediate delay={0.12}>
-            <ActionNeededCallout actions={dash.actionsNeeded} />
-          </Reveal>
-        ) : null}
-
-        {/* ── Tender pipeline ──────────────────────────────────────── */}
-        {dash.pipeline.active + dash.pipeline.decided > 0 ? (
-          <Reveal immediate delay={0.16}>
-            <section>
-              <SectionHeader
-                title="Tender pipeline"
-                description="Every tender you've ever started, by status."
-                action={
+      {/* ── working area — one column, full width ─────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
+        <div className="mx-auto max-w-[1200px] flex flex-col gap-12">
+          {/* on your desk — the one toned panel on the page */}
+          {queueShown.length > 0 ? (
+            <section
+              className={cn(
+                "relative overflow-hidden rounded-xl border",
+                deskUrgent
+                  ? "border-[rgba(217,164,65,0.4)] bg-[linear-gradient(140deg,rgba(217,164,65,0.06),rgba(250,248,243,0.5)_65%)]"
+                  : "border-border-accent/35 bg-[linear-gradient(140deg,rgba(0,212,200,0.05),rgba(250,248,243,0.5)_65%)]",
+              )}
+            >
+              <div className="relative px-4 sm:px-6 py-5 sm:py-6">
+                <header className="flex items-end justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
+                      On your desk
+                    </h2>
+                    <p className="mt-1 text-[11.5px] text-text-dim">
+                      Invitations, drafts and decisions. Most important first.
+                    </p>
+                  </div>
                   <Link
                     href="/builder/tenders"
-                    className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0 pb-0.5"
                   >
-                    View all
+                    My tenders
+                    <ArrowRight className="size-3" />
+                  </Link>
+                </header>
+
+                <ul className="mt-4 flex flex-col gap-2">
+                  {queueShown.map((row) => (
+                    <li key={row.key}>
+                      <Link
+                        href={row.href}
+                        className="relative flex items-center gap-3.5 pl-4 pr-3.5 sm:pl-5 sm:pr-4 py-3.5 rounded-lg border border-border-subtle bg-surface-1 card-elev overflow-hidden transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:card-elev-lg group"
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute left-0 top-0 bottom-0 w-[3px]",
+                            row.tone === "win" && "bg-accent-light",
+                            row.tone === "invite" &&
+                              "bg-accent shadow-[0_0_8px_rgba(0,212,200,0.45)]",
+                            row.tone === "warn" && "bg-[#c99422]",
+                            row.tone === "danger" && "bg-[#c25550]",
+                            row.tone === "neutral" && "bg-[rgba(24,34,44,0.22)]",
+                            row.tone === "draft" && "bg-[rgba(24,34,44,0.12)]",
+                          )}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2 min-w-0">
+                            <DeskChip tone={row.tone}>{row.chip}</DeskChip>
+                            <span className="font-ui font-medium text-[13.5px] text-text truncate">
+                              {row.title}
+                            </span>
+                          </span>
+                          <span className="block mt-1 text-[12px] leading-[1.5] text-text-muted truncate">
+                            {row.line}
+                          </span>
+                        </span>
+                        {row.metric ? (
+                          <span className="text-[12px] text-text-dim font-mono tabular-nums shrink-0">
+                            {row.metric}
+                          </span>
+                        ) : null}
+                        <ArrowRight className="size-3.5 text-text-dim group-hover:text-text transition-colors shrink-0" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {queueOverflow > 0 ? (
+                  <Link
+                    href="/builder/tenders"
+                    className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-text-muted hover:text-text transition-colors"
+                  >
+                    {queueOverflow} more in My tenders
+                    <ArrowRight className="size-3" />
+                  </Link>
+                ) : null}
+              </div>
+            </section>
+          ) : (
+            <section>
+              <PlainHead
+                title="On your desk"
+                sub="Nothing waiting. Invitations, drafts and decisions land here first."
+                right={
+                  <Link
+                    href="/builder/tenders"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                  >
+                    My tenders
+                    <ArrowRight className="size-3" />
                   </Link>
                 }
               />
-              <PipelineStrip pipeline={dash.pipeline} />
             </section>
-          </Reveal>
-        ) : null}
+          )}
 
-        {/* ── Suggested ────────────────────────────────────────────── */}
-        <Reveal immediate delay={0.20}>
+          {/* suggested projects */}
           <section>
-            <SectionHeader
-              title="Suggested for you"
-              description={
-                matchedCategories.length > 0 || serviceAreaMatch.length > 0
-                  ? "Projects in your service area + categories."
-                  : "Recent published projects."
-              }
-              action={
-                <Link
-                  href="/builder/browse"
-                  className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                >
-                  Browse all
-                </Link>
+            <PlainHead
+              title="Suggested projects"
+              sub={
+                serviceAreaMatch.length > 0
+                  ? "Open rounds matched to your service area."
+                  : "Recent open rounds."
               }
             />
+
             {suggested.length === 0 ? (
-              <div className="rounded-md border border-border-subtle">
-                <EmptyState
-                  icon={<Compass className="size-5" />}
-                  title="No matches yet"
-                  description={
-                    serviceAreaMatch.length > 0 || matchedCategories.length > 0
-                      ? "We're matching to your service area + categories — check back soon, or widen your scope in Settings."
-                      : "Set a service area in Settings to start seeing residential projects matched to where you build."
-                  }
-                  primary={{ label: "Browse all projects", href: "/builder/browse" }}
-                  secondary={{ label: "Update service area", href: "/settings" }}
-                />
+              <div className="mt-5 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center">
+                <p className="font-ui font-semibold text-[13.5px] text-text">
+                  No open rounds match yet
+                </p>
+                <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[46ch] mx-auto">
+                  {serviceAreaMatch.length > 0
+                    ? "New projects in your area appear here the moment they publish."
+                    : "Set a service area in your profile and matched projects appear here."}
+                </p>
+                <Link
+                  href="/builder/browse"
+                  className="mt-4 inline-flex items-center gap-1.5 h-10 px-5 rounded-full border border-border-strong text-text text-[12.5px] hover:bg-surface-1 transition-colors"
+                >
+                  Browse projects
+                  <ArrowRight className="size-3.5" />
+                </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
-                {suggested.map((p) => (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    isSaved={savedSet.has(p.id)}
-                    isUnlocked={unlockedSet.has(p.id)}
-                    fbaActive={
-                      fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className="mt-5 flex flex-col gap-3">
+                  {suggested.map((p) => (
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      isSaved={savedSet.has(p.id)}
+                      isUnlocked={false}
+                      fbaActive={complimentaryUnlocks}
+                    />
+                  ))}
+                </div>
+                <div className="mt-5 flex justify-center">
+                  <Link
+                    href="/builder/browse"
+                    className="inline-flex items-center gap-1.5 h-10 px-6 rounded-full border border-border-strong text-text text-[12.5px] font-ui hover:bg-surface-1 transition-colors"
+                  >
+                    View all projects
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                </div>
+              </>
             )}
           </section>
-        </Reveal>
 
-        {/* ── Activity feed ────────────────────────────────────────── */}
-        {dash.activity.length > 0 ? (
-          <Reveal immediate delay={0.24}>
-            <ActivityFeed events={dash.activity} />
-          </Reveal>
-        ) : null}
-
-        {/* ── Recent unlocks ───────────────────────────────────────── */}
-        {recentUnlocks.length > 0 ? (
-          <Reveal>
+          {/* the tender ledger */}
+          {hasBook ? (
             <section>
-              <SectionHeader
-                title="Recently unlocked"
-                description="Projects you've committed to."
-                action={
-                  unlockedCount > recentUnlocks.length ? (
-                    <Link
-                      href="/builder/unlocked"
-                      className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                    >
-                      See all {unlockedCount}
-                    </Link>
-                  ) : null
+              <PlainHead
+                title="Your tenders"
+                sub="Where every tender stands."
+                right={
+                  <Link
+                    href="/builder/tenders"
+                    className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
+                  >
+                    View all
+                    <ArrowRight className="size-3" />
+                  </Link>
                 }
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
-                {recentUnlocks.map((p) => (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    isSaved={savedSet.has(p.id)}
-                    isUnlocked={true}
-                    fbaActive={
-                      fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          </Reveal>
-        ) : null}
-
-        {/* ── Saved ────────────────────────────────────────────────── */}
-        {savedRecent.length > 0 ? (
-          <Reveal>
-            <section>
-              <SectionHeader
-                title="Your saved list"
-                description="Projects you've bookmarked to revisit."
-                action={
-                  savedCount > savedRecent.length ? (
-                    <Link
-                      href="/builder/saved"
-                      className="text-[10px] tracking-[0.18em] uppercase text-text-dim hover:text-accent-light transition-colors"
-                    >
-                      See all {savedCount}
-                    </Link>
-                  ) : null
-                }
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-3">
-                {savedRecent.map((p) => (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    isSaved={true}
-                    isUnlocked={unlockedSet.has(p.id)}
-                    fbaActive={
-                      fbaStatus.active && fbaStatus.remainingThisCycle > 0
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          </Reveal>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-// ── Pulse tile (KPI card) ───────────────────────────────────────────────
-
-type Tone = "teal" | "blue" | "amber" | "rose";
-
-function PulseTile({
-  tone,
-  icon,
-  label,
-  value,
-  sub,
-}: {
-  tone: Tone;
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  const styles: Record<Tone, { bg: string; ring: string; num: string; glow: string }> = {
-    teal: {
-      bg: "linear-gradient(180deg,rgba(0,212,200,0.06),rgba(250,248,243,0.6))",
-      ring: "border-border-accent/40",
-      num: "text-accent-light",
-      glow: "rgba(0,212,200,0.18)",
-    },
-    blue: {
-      bg: "linear-gradient(180deg,rgba(26,95,212,0.07),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(120,180,255,0.20)]",
-      num: "text-[#bfd6ff]",
-      glow: "rgba(26,95,212,0.20)",
-    },
-    amber: {
-      bg: "linear-gradient(180deg,rgba(251,184,64,0.06),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(251,184,64,0.22)]",
-      num: "text-[#ffd887]",
-      glow: "rgba(251,184,64,0.18)",
-    },
-    rose: {
-      bg: "linear-gradient(180deg,rgba(255,120,150,0.05),rgba(250,248,243,0.6))",
-      ring: "border-[rgba(255,120,150,0.20)]",
-      num: "text-[#ffc0cd]",
-      glow: "rgba(255,120,150,0.16)",
-    },
-  };
-  const t = styles[tone];
-
-  return (
-    <div
-      className={cn(
-        "relative rounded-md border p-4 sm:p-5 overflow-hidden transform-gpu",
-        "shadow-[0_10px_28px_-18px_rgba(15,23,32,0.19)]",
-        t.ring,
-      )}
-      style={{ background: t.bg }}
-    >
-      <span
-        aria-hidden
-        className="absolute -top-12 -right-12 size-40 rounded-full opacity-50 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle, ${t.glow}, transparent 70%)`,
-        }}
-      />
-      <div className="relative flex items-center gap-2 mb-3 text-text-dim">
-        <span className="size-7 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] flex items-center justify-center text-text-muted">
-          {icon}
-        </span>
-        <span className="text-[10px] tracking-[0.18em] uppercase">{label}</span>
-      </div>
-      <div
-        className={cn(
-          "relative font-display tracking-[-0.01em] leading-none tabular-nums text-[28px] sm:text-[36px]",
-          t.num,
-        )}
-      >
-        {value}
-      </div>
-      <div className="relative mt-2 text-[11px] sm:text-[11.5px] text-text-dim leading-[1.4]">
-        {sub}
-      </div>
-    </div>
-  );
-}
-
-// ── Action needed callout ──────────────────────────────────────────────
-
-function ActionNeededCallout({
-  actions,
-}: {
-  actions: BuilderActionNeeded[];
-}) {
-  // Pick a tone based on the strongest signal in the list.
-  const hasAwarded = actions.some((a) => a.reason === "awarded");
-  const hasUrgent = actions.some((a) => a.urgency === "danger");
-  const tone: "celebrate" | "urgent" | "info" = hasAwarded
-    ? "celebrate"
-    : hasUrgent
-      ? "urgent"
-      : "info";
-  const toneCls =
-    tone === "celebrate"
-      ? "border-border-accent/45 bg-[linear-gradient(140deg,rgba(0,212,200,0.06)_0%,rgba(250,248,243,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(0,212,200,0.20)]"
-      : tone === "urgent"
-        ? "border-warning/30 bg-[linear-gradient(140deg,rgba(255,181,71,0.06)_0%,rgba(250,248,243,0.6)_70%)] shadow-[0_18px_44px_-22px_rgba(255,181,71,0.20)]"
-        : "border-border-accent/30 bg-[linear-gradient(140deg,rgba(0,212,200,0.04)_0%,rgba(250,248,243,0.55)_70%)] shadow-[0_12px_32px_-22px_rgba(0,212,200,0.15)]";
-  const haloCls =
-    tone === "urgent"
-      ? "radial-gradient(circle, rgba(255,181,71,0.22), transparent 70%)"
-      : "radial-gradient(circle, rgba(0,212,200,0.20), transparent 70%)";
-
-  return (
-    <section className={cn("relative overflow-hidden rounded-md border", toneCls)}>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full opacity-50"
-        style={{ background: haloCls }}
-      />
-      <div className="relative px-4 sm:px-6 lg:px-7 py-5 sm:py-6 lg:py-7">
-        <div className="flex items-start gap-3 mb-5">
-          <span
-            className={cn(
-              "size-9 rounded-md flex items-center justify-center shrink-0 border",
-              tone === "urgent"
-                ? "border-warning/40 bg-[rgba(255,181,71,0.10)] text-warning"
-                : "border-border-accent/45 bg-[rgba(0,212,200,0.10)] text-accent-light",
-            )}
-          >
-            {tone === "celebrate" ? (
-              <Trophy className="size-4" />
-            ) : tone === "urgent" ? (
-              <Hourglass className="size-4" />
-            ) : (
-              <Sparkles className="size-4" />
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <span
-              className={cn(
-                "text-[10px] tracking-[0.22em] uppercase font-ui font-medium",
-                tone === "urgent" ? "text-warning" : "text-accent",
-              )}
-            >
-              {tone === "celebrate"
-                ? "Wins & follow-ups"
-                : tone === "urgent"
-                  ? "Action needed"
-                  : "On your plate"}
-            </span>
-            <h2 className="mt-1 font-display uppercase tracking-[-0.012em] text-[22px] leading-[1.05] text-text">
-              {actions.length} tender
-              {actions.length === 1 ? "" : "s"} need{actions.length === 1 ? "s" : ""}{" "}
-              your attention
-            </h2>
-          </div>
-        </div>
-
-        <ul className="flex flex-col gap-2">
-          {actions.map((a) => (
-            <ActionRow key={a.tenderId} action={a} />
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function ActionRow({ action }: { action: BuilderActionNeeded }) {
-  const reasonLabel: Record<BuilderActionNeeded["reason"], string> = {
-    awarded: "Awarded — follow up",
-    shortlisted: "Shortlisted — you're in the final round",
-    expiring_soon: "Validity expiring",
-    fresh_submit: "Recently submitted",
-  };
-  const expiryLabel =
-    action.daysUntilExpiry == null
-      ? "—"
-      : action.daysUntilExpiry < 0
-        ? "Expired"
-        : action.daysUntilExpiry === 0
-          ? "Today"
-          : `${action.daysUntilExpiry}d`;
-
-  const urgencyCls =
-    action.urgency === "danger"
-      ? "border-[rgba(255,120,120,0.40)] bg-[rgba(255,120,120,0.06)] text-[rgba(255,160,160,0.95)]"
-      : action.urgency === "warn"
-        ? "border-warning/30 bg-[rgba(255,181,71,0.04)] text-warning"
-        : "border-border-accent/45 bg-[rgba(0,212,200,0.06)] text-accent-light";
-
-  return (
-    <li>
-      <Link
-        href={`/builder/projects/${action.projectSlug}/tender`}
-        className="group grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] hover:border-border-strong hover:bg-[rgba(24,34,44,0.045)] transition-colors"
-      >
-        <div className="min-w-0 col-span-2 sm:col-span-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[13px] font-semibold text-text truncate">
-              {action.projectTitle}
-            </span>
-            <span
-              className={cn(
-                "inline-flex items-center px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.16em] uppercase",
-                action.status === "awarded"
-                  ? "border-border-accent bg-accent-muted/40 text-accent-light"
-                  : action.status === "shortlisted"
-                    ? "border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] text-accent-light"
-                    : "border-border-subtle bg-[rgba(24,34,44,0.035)] text-text-muted",
-              )}
-            >
-              {action.status}
-            </span>
-          </div>
-          <div className="text-[11px] text-text-dim truncate mt-0.5">
-            {reasonLabel[action.reason]}
-          </div>
-        </div>
-        <span className="font-display text-[16px] tabular-nums text-text shrink-0">
-          {action.totalPriceAud != null
-            ? formatAudCompact(action.totalPriceAud)
-            : "—"}
-        </span>
-        {action.reason !== "awarded" ? (
-          <span
-            className={cn(
-              "inline-flex items-center px-2 py-1 rounded-sm border text-[10px] tracking-[0.04em] uppercase tabular-nums shrink-0 justify-self-end",
-              urgencyCls,
-            )}
-          >
-            {expiryLabel}
-          </span>
-        ) : (
-          <span className="px-2 py-1 rounded-sm border border-border-accent bg-accent-muted/40 text-[10px] tracking-[0.04em] uppercase text-accent-light shrink-0 justify-self-end">
-            Won
-          </span>
-        )}
-        <ArrowUpRight className="hidden sm:block size-3.5 text-text-faint group-hover:text-accent-light shrink-0 transition-colors" />
-      </Link>
-    </li>
-  );
-}
-
-// ── Tender pipeline strip ──────────────────────────────────────────────
-
-function PipelineStrip({
-  pipeline,
-}: {
-  pipeline: BuilderDashboardData["pipeline"];
-}) {
-  const stages: Array<{
-    label: string;
-    value: number;
-    tone: "muted" | "accent" | "amber" | "win" | "danger";
-    icon: React.ReactNode;
-  }> = [
-    {
-      label: "Draft",
-      value: pipeline.draft,
-      tone: "muted",
-      icon: <Files className="size-3.5" />,
-    },
-    {
-      label: "Submitted",
-      value: pipeline.submitted,
-      tone: "accent",
-      icon: <Activity className="size-3.5" />,
-    },
-    {
-      label: "Shortlisted",
-      value: pipeline.shortlisted,
-      tone: "accent",
-      icon: <Sparkles className="size-3.5" />,
-    },
-    {
-      label: "Awarded",
-      value: pipeline.awarded,
-      tone: "win",
-      icon: <Trophy className="size-3.5" />,
-    },
-    {
-      label: "Rejected",
-      value: pipeline.rejected,
-      tone: "danger",
-      icon: <X className="size-3.5" />,
-    },
-    {
-      label: "Withdrawn",
-      value: pipeline.withdrawn,
-      tone: "muted",
-      icon: <AlertTriangle className="size-3.5" />,
-    },
-  ];
-
-  const total = stages.reduce((s, st) => s + st.value, 0);
-
-  const toneCls = (tone: (typeof stages)[number]["tone"]) =>
-    tone === "win"
-      ? "border-border-accent bg-accent-muted/40 text-accent-light"
-      : tone === "accent"
-        ? "border-border-accent/45 bg-[rgba(0,212,200,0.04)] text-accent-light"
-        : tone === "amber"
-          ? "border-warning/30 bg-[rgba(255,181,71,0.04)] text-warning"
-          : tone === "danger"
-            ? "border-[rgba(255,120,120,0.30)] bg-[rgba(255,120,120,0.04)] text-[rgba(255,160,160,0.95)]"
-            : "border-border-subtle bg-[rgba(24,34,44,0.03)] text-text-muted";
-
-  return (
-    <div className="rounded-md border border-border-subtle bg-surface-1 card-elev p-4 sm:p-5">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-        {stages.map((st) => {
-          const pct = total > 0 ? Math.round((st.value / total) * 100) : 0;
-          return (
-            <div
-              key={st.label}
-              className={cn(
-                "rounded-sm border px-3.5 py-3 transition-colors",
-                toneCls(st.tone),
-              )}
-            >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                {st.icon}
-                <span className="text-[9.5px] tracking-[0.16em] uppercase">
-                  {st.label}
-                </span>
-              </div>
-              <div className="font-display tabular-nums leading-none text-[26px]">
-                {st.value}
-              </div>
-              <div className="mt-1 text-[10px] tabular-nums opacity-70">
-                {total > 0 ? `${pct}% of pipeline` : "—"}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Activity feed ──────────────────────────────────────────────────────
-
-function ActivityFeed({ events }: { events: BuilderActivityEvent[] }) {
-  return (
-    <Panel
-      title="Recent activity"
-      description="Tender outcomes and submissions, newest first."
-    >
-      <ul className="border-t border-border-subtle/60">
-        {events.map((e, i, arr) => (
-          <li
-            key={i}
-            className={cn(
-              "px-4 sm:px-6 py-3 flex items-center gap-3",
-              i === arr.length - 1 ? "" : "border-b border-border-subtle/60",
-            )}
-          >
-            <ActivityIcon kind={e.kind} />
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] text-text">
-                {e.kind === "submitted" ? (
-                  <>
-                    Submitted tender on{" "}
-                    <span className="font-medium">{e.projectTitle}</span>
-                    {e.totalPriceAud != null ? (
-                      <>
-                        {" "}
-                        ·{" "}
-                        <span className="font-mono tabular-nums text-accent-light">
-                          {formatAudCompact(e.totalPriceAud)}
-                        </span>
-                      </>
-                    ) : null}
-                  </>
-                ) : e.kind === "shortlisted" ? (
-                  <>
-                    Shortlisted on{" "}
-                    <span className="font-medium">{e.projectTitle}</span>
-                  </>
-                ) : e.kind === "awarded" ? (
-                  <>
-                    Awarded{" "}
-                    <span className="font-medium">{e.projectTitle}</span> 🎉
-                  </>
-                ) : (
-                  <>
-                    Decision made on{" "}
-                    <span className="font-medium">{e.projectTitle}</span>
-                  </>
+              <div
+                className={cn(
+                  "mt-5 grid divide-x divide-border-subtle border-y border-border-subtle",
+                  bookColumns.length === 4
+                    ? "grid-cols-2 sm:grid-cols-4"
+                    : bookColumns.length === 5
+                      ? "grid-cols-3 sm:grid-cols-5"
+                      : "grid-cols-3 sm:grid-cols-6",
                 )}
+              >
+                {bookColumns.map(([label, n]) => (
+                  <div key={label} className="px-4 py-4 text-center">
+                    <p className="font-display text-[24px] leading-none text-text tabular-nums">
+                      {n}
+                    </p>
+                    <p className="mt-1.5 text-[10px] tracking-[0.14em] uppercase text-text-dim">
+                      {label}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <div className="text-[10.5px] text-text-dim mt-0.5">
-                {humanAgoFromDate(e.at)}
-              </div>
+            </section>
+          ) : null}
+
+          {/* founding access — one quiet line */}
+          {fbaStatus.active ? (
+            <div className="border-y border-border-subtle py-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <Sparkles className="size-3.5 text-accent-light shrink-0" />
+              <p className="text-[12.5px] text-text-muted">
+                Founding access: {fbaStatus.remainingThisCycle} complimentary
+                unlock{fbaStatus.remainingThisCycle === 1 ? "" : "s"} left this
+                cycle. Refreshes in {fbaStatus.daysToRefresh} day
+                {fbaStatus.daysToRefresh === 1 ? "" : "s"}.
+              </p>
+              <Link
+                href="/builder/access"
+                className="inline-flex items-center gap-1 text-[11.5px] text-accent-light hover:underline"
+              >
+                Details
+                <ArrowUpRight className="size-3" />
+              </Link>
             </div>
-            <Link
-              href={`/builder/projects/${e.projectSlug}/tender`}
-              className="text-[10.5px] text-text-dim hover:text-accent-light transition-colors shrink-0"
-            >
-              View →
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
-function ActivityIcon({ kind }: { kind: BuilderActivityEvent["kind"] }) {
-  if (kind === "awarded") {
-    return (
-      <span className="size-7 rounded-md border border-border-accent bg-accent-muted/40 flex items-center justify-center text-accent-light shrink-0">
-        <Trophy className="size-3.5" />
-      </span>
-    );
-  }
-  if (kind === "rejected") {
-    return (
-      <span className="size-7 rounded-md border border-[rgba(255,120,120,0.30)] bg-[rgba(255,120,120,0.04)] flex items-center justify-center text-[rgba(255,160,160,0.95)] shrink-0">
-        <X className="size-3.5" />
-      </span>
-    );
-  }
-  if (kind === "shortlisted") {
-    return (
-      <span className="size-7 rounded-md border border-[rgba(10,125,115,0.55)] bg-[rgba(10,125,115,0.10)] flex items-center justify-center text-accent-light shrink-0">
-        <Sparkles className="size-3.5" />
-      </span>
-    );
-  }
-  return (
-    <span className="size-7 rounded-md border border-border-accent/45 bg-[rgba(0,212,200,0.06)] flex items-center justify-center text-accent-light shrink-0">
-      <Activity className="size-3.5" />
-    </span>
-  );
-}
-
-// ── shared atoms ───────────────────────────────────────────────────────
-
-function Panel({
-  title,
-  description,
-  action,
-  children,
-}: {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      className={cn(
-        "rounded-md border overflow-hidden border-border-subtle",
-        "bg-surface-1 card-elev",
-        "shadow-[0_12px_32px_-18px_rgba(15,23,32,0.19)]",
-      )}
-    >
-      <header className="px-4 sm:px-6 py-4 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <h2 className="font-ui font-semibold text-[14px] tracking-[-0.005em] text-text">
-            {title}
-          </h2>
-          {description ? (
-            <p className="text-[12px] text-text-dim">{description}</p>
           ) : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </header>
-      {children}
-    </section>
+      </div>
+    </div>
   );
 }
 
-function SectionHeader({
+/* ── hero pieces ────────────────────────────────────────────────────── */
+
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-5 sm:px-14 text-center min-w-0">
+      <p className="font-display text-[32px] sm:text-[36px] leading-none text-text tabular-nums">
+        {value}
+      </p>
+      <p className="mt-2 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ── section header — a title, a quiet line, nothing else ───────────── */
+
+function PlainHead({
   title,
-  description,
-  action,
+  sub,
+  right,
 }: {
   title: string;
-  description?: string;
-  action?: React.ReactNode;
+  sub?: string;
+  right?: React.ReactNode;
 }) {
   return (
-    <header className="mb-5 flex items-end justify-between gap-3">
-      <div>
-        <h2 className="font-ui font-semibold text-[16px] tracking-[-0.005em] text-text">
+    <header className="flex items-end justify-between gap-4 pb-2.5 border-b border-border-subtle">
+      <div className="min-w-0">
+        <h2 className="font-display uppercase tracking-[-0.012em] text-[19px] leading-[1.1] text-text">
           {title}
         </h2>
-        {description ? (
-          <p className="text-[12.5px] text-text-dim mt-0.5">{description}</p>
-        ) : null}
+        {sub ? <p className="mt-1 text-[11.5px] text-text-dim">{sub}</p> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {right ? <span className="shrink-0 pb-0.5">{right}</span> : null}
     </header>
   );
 }
 
-// ── format helpers ─────────────────────────────────────────────────────
-
-function formatAudCompact(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
-  return `$${n}`;
+/** Named chip on every desk row — the event type in words, not a dot. */
+function DeskChip({
+  tone,
+  children,
+}: {
+  tone: "win" | "invite" | "neutral" | "warn" | "danger" | "draft";
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm border text-[8.5px] tracking-[0.14em] uppercase font-ui font-semibold shrink-0",
+        tone === "win" &&
+          "border-border-accent bg-[rgba(0,212,200,0.07)] text-[#0a7d73]",
+        tone === "invite" && "border-border-accent text-[#0a7d73]",
+        tone === "neutral" && "border-border-subtle text-text-muted",
+        tone === "warn" &&
+          "border-[rgba(217,164,65,0.5)] bg-[rgba(217,164,65,0.08)] text-[#8a6414]",
+        tone === "danger" &&
+          "border-[rgba(194,85,80,0.45)] bg-[rgba(194,85,80,0.07)] text-[#a8433e]",
+        tone === "draft" && "border-border-subtle text-text-dim",
+      )}
+    >
+      {tone === "invite" ? (
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,212,200,0.6)]"
+        />
+      ) : null}
+      {children}
+    </span>
+  );
 }
 
-function humanAgoFromDate(d: Date): string {
-  const ms = Date.now() - d.getTime();
-  const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
-}
+/* ── registration pieces ────────────────────────────────────────────── */
 
-function EMPTY_BUILDER_DASH(firstName: string): BuilderDashboardData {
-  return {
-    meta: { firstName },
-    pipeline: {
-      draft: 0,
-      submitted: 0,
-      shortlisted: 0,
-      awarded: 0,
-      rejected: 0,
-      withdrawn: 0,
-      active: 0,
-      decided: 0,
-    },
-    performance: {
-      winRate: null,
-      totalSubmittedValueAud: 0,
-      avgDaysToOutcome: null,
-    },
-    actionsNeeded: [],
-    activity: [],
-  };
+function ChecklistLine({
+  done,
+  children,
+}: {
+  done: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-2 text-[12px] leading-[1.5]">
+      <span
+        className={cn(
+          "mt-[1px] size-[16px] rounded-full flex items-center justify-center shrink-0",
+          done
+            ? "bg-accent text-accent-contrast"
+            : "border border-[rgba(217,164,65,0.5)] text-transparent",
+        )}
+      >
+        <Check className="size-2.5" strokeWidth={3.5} />
+      </span>
+      <span className={done ? "text-text-muted" : "text-text"}>{children}</span>
+    </li>
+  );
 }

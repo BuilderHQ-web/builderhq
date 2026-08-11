@@ -26,6 +26,9 @@ import {
   getTenderForBuilder,
   getProjectOwnerForTender,
   computeReadiness,
+  checklistProgress,
+  listResponsesForTender,
+  saveTenderResponses,
   canCreateTender,
   canEditTender,
   canWithdrawTender,
@@ -33,6 +36,7 @@ import {
   type ActorContext,
   type CostLineInput,
   type SubmissionReadiness,
+  type ChecklistProgress,
   type Tender,
   type TenderWithLines,
   type UpdateTenderInput,
@@ -41,6 +45,8 @@ import {
   listForTenderUnchecked,
   type Document,
 } from "@/modules/documents";
+import { getProjectAccess } from "@/modules/projects";
+import { isSampleTender } from "@/modules/sample";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireActor(): Promise<Result<ActorContext>> {
@@ -244,8 +250,21 @@ async function ownerDecision(
   // policy for clarity + to fail fast.
   const t = await getTenderRowForActor(a.value, tenderId, projectOwner);
   if (!t.ok) return t;
+  // The example round is for reading, never deciding.
+  if (await isSampleTender(tenderId)) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canDecideOnTender(a.value, t.value, projectOwner)) {
-    return fail("forbidden", "Not allowed.");
+    // A joined DECIDER seat decides too — the service re-verifies the
+    // seat before writing, this gate just fails fast for everyone
+    // else. Builders never hold seats (the claim refuses them).
+    const seat =
+      a.value.role !== "builder" && t.value.status !== "withdrawn"
+        ? await getProjectAccess(t.value.projectId, a.value.id)
+        : null;
+    if (!(seat?.kind === "participant" && seat.role === "decider")) {
+      return fail("forbidden", "Not allowed.");
+    }
   }
   return fn(a.value.id, tenderId);
 }
@@ -296,14 +315,62 @@ export async function listActiveTenderDocsForOwnerAction(
 ): Promise<Result<Document[]>> {
   const a = await requireActor();
   if (!a.ok) return a;
-  if (a.value.role !== "project_owner" && a.value.role !== "admin") {
+  // Architects run tenders on their clients' behalf and own those
+  // project rows outright — the ownership check below is the real
+  // gate; the role check just keeps builders out early.
+  if (
+    a.value.role !== "project_owner" &&
+    a.value.role !== "architect" &&
+    a.value.role !== "admin"
+  ) {
     return fail("forbidden", "Not allowed.");
   }
   const projectOwner = await getProjectOwnerForTender(tenderId);
   if (!projectOwner) return fail("not_found", "Tender not found.");
   if (a.value.role !== "admin" && projectOwner !== a.value.id) {
-    return fail("forbidden", "Not your project.");
+    // A joined seat (either role) reads tender documents — the
+    // evaluation's "what they brought" is part of what was shared.
+    const t = await getTenderRowForActor(a.value, tenderId, projectOwner);
+    if (!t.ok) return t;
+    const seat = await getProjectAccess(t.value.projectId, a.value.id);
+    if (seat?.kind !== "participant") {
+      return fail("forbidden", "Not your project.");
+    }
   }
   const docs = await listForTenderUnchecked(tenderId, { activeOnly: true });
   return ok(docs);
+}
+
+
+// ── submission checklist ─────────────────────────────────────────────────
+
+/**
+ * Autosave a batch of checklist answers. Returns fresh checklist
+ * progress so the wizard's rail and the submit gate stay live.
+ */
+export async function saveTenderResponsesAction(
+  tenderId: string,
+  entries: Array<{ qid: string; value: unknown }>,
+): Promise<Result<{ saved: number; checklist: ChecklistProgress | null }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const t = await getTenderForBuilder(a.value.id, tenderId);
+  if (!t) return fail("not_found", "Tender not found.");
+  if (!canEditTender(a.value, t)) {
+    return fail("forbidden", "This tender can no longer be edited.");
+  }
+  return saveTenderResponses(a.value.id, tenderId, entries);
+}
+
+/** Current checklist progress for a tender (for the form's gate card). */
+export async function getTenderChecklistAction(
+  tenderId: string,
+): Promise<Result<ChecklistProgress | null>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const t = await getTenderForBuilder(a.value.id, tenderId);
+  if (!t) return fail("not_found", "Tender not found.");
+  const responses = await listResponsesForTender(a.value.id, tenderId);
+  if (!responses.ok) return responses;
+  return ok(checklistProgress(t, responses.value));
 }

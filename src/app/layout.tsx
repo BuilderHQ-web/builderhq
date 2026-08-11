@@ -40,11 +40,11 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://builderhq.com.au"),
   title: {
-    default: "BuilderHQ — Australia's Residential Tender Platform",
+    default: "BuilderHQ · Australia's residential tendering platform",
     template: "%s · BuilderHQ",
   },
   description:
-    "Upload your project once. Reach builders ready to tender, compare responses with clarity, and keep every document and conversation in one place.",
+    "Upload your plans and we write out the full scope of works. Every builder prices that same scope, so you can see what sits behind each number.",
   applicationName: "BuilderHQ",
   authors: [{ name: "BuilderHQ" }],
   keywords: [
@@ -52,7 +52,8 @@ export const metadata: Metadata = {
     "tendering",
     "Australian builders",
     "home builders",
-    "construction marketplace",
+    "scope of works",
+    "compare builder quotes",
     "renovation",
     "townhouse development",
     "project tendering",
@@ -60,9 +61,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "BuilderHQ",
-    title: "BuilderHQ — Upload. Compare. Build.",
+    title: "BuilderHQ · Upload. Compare. Build.",
     description:
-      "Stop chasing builders. Upload your project once and let suitable builders come to you.",
+      "One scope of works, priced by every builder, so the numbers finally compare. Free for homeowners, and no commission either side.",
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
@@ -70,7 +71,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#f4f1ea",
-  colorScheme: "dark",
+  // Light, and left over from before the theme flip. The CSS
+  // `color-scheme: light` on :root already wins, but this meta tag was
+  // still telling the browser to render form controls, scrollbars and
+  // the default canvas dark.
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   // Extend the page behind the notch and home indicator so the body

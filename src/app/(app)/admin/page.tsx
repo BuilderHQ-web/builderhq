@@ -31,7 +31,7 @@ import { getAdminDashboardData } from "@/modules/admin";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatCard, EmptyState } from "@/components/app/page-header";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import {
   ActionKindBadge,
   RoleBadge,
@@ -88,12 +88,16 @@ export default async function AdminDashboard() {
           <SectionLabel>At a glance</SectionLabel>
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard
-              label="Total users"
+              label={plural(data.totals.users, "Total user", "Total users")}
               value={fmt(data.totals.users)}
-              hint={`${fmt(data.totals.owners)} owners · ${fmt(data.totals.builders)} builders`}
+              hint={`${fmt(data.totals.owners)} ${plural(data.totals.owners, "owner", "owners")} · ${fmt(data.totals.builders)} ${plural(data.totals.builders, "builder", "builders")}`}
             />
             <StatCard
-              label="Approved builders"
+              label={plural(
+                data.builders.approved,
+                "Approved builder",
+                "Approved builders",
+              )}
               value={fmt(data.builders.approved)}
               hint={
                 data.builders.pendingReview > 0
@@ -102,12 +106,20 @@ export default async function AdminDashboard() {
               }
             />
             <StatCard
-              label="Active projects"
+              label={plural(
+                data.totals.activeProjects,
+                "Active project",
+                "Active projects",
+              )}
               value={fmt(data.totals.activeProjects)}
-              hint={`${fmt(data.totals.publishedProjects)} live · ${fmt(data.totals.draftProjects)} drafts`}
+              hint={`${fmt(data.totals.publishedProjects)} live · ${fmt(data.totals.draftProjects)} ${plural(data.totals.draftProjects, "draft", "drafts")}`}
             />
             <StatCard
-              label="Tenders this week"
+              label={plural(
+                data.totals.tendersThisWeek,
+                "Tender this week",
+                "Tenders this week",
+              )}
               value={fmt(data.totals.tendersThisWeek)}
               hint={`${fmt(data.totals.tendersTotal)} all-time · ${audDollars(data.totals.totalQuotedValueAud)} quoted`}
             />
@@ -157,7 +169,7 @@ export default async function AdminDashboard() {
                       href={`/admin/builders/${b.userId}`}
                       className="flex flex-col gap-1 min-w-0"
                     >
-                      <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent">
+                      <span className="font-ui text-[13.5px] text-text truncate group-hover:text-accent-light">
                         {b.companyName ?? b.name ?? b.email}
                       </span>
                       <span className="text-[12px] text-text-dim truncate">

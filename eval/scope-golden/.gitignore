@@ -1,0 +1,3 @@
+# Client documents never enter the repository. Labels do.
+packages/*/docs/*
+!packages/_example/docs/.gitkeep

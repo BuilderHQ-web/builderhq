@@ -1,0 +1,19 @@
+{
+  "_comment": "Format demonstration only, not a real package. Delete once the first real package lands.",
+  "slug": "_example",
+  "projectType": "single_dwelling",
+  "labelledAgainst": "1.0.0",
+  "labelledBy": "format demo",
+  "labelledAt": "2026-07-28",
+  "documents": [
+    { "file": "A01-site-plan.pdf", "kind": "architectural", "revision": "C", "pages": 1 },
+    { "file": "S01-footing-details.pdf", "kind": "structural", "revision": "B", "pages": 4 },
+    { "file": "energy-report.pdf", "kind": "energy", "revision": null, "pages": 12 }
+  ],
+  "items": [
+    { "itemId": "footings-slab.waffle-slab", "citations": [{ "file": "S01-footing-details.pdf", "page": 2 }] },
+    { "itemId": "insulation.ceiling", "citations": [{ "file": "energy-report.pdf", "page": 7 }] }
+  ],
+  "expectedGaps": ["site-services.stormwater", "external-works.driveway"],
+  "notes": "Two items and two gaps only, to show the shape. Real packages carry 40 to 120 items."
+}

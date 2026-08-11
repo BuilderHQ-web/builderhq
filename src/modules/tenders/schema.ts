@@ -204,7 +204,9 @@ export const builderInviteStatusEnum = pgEnum("builder_invite_status", [
 ]);
 
 /**
- * A builder hand-picked for a private or hybrid tender round. Two
+ * A builder hand-picked for a tender round — any mode. On a private
+ * round the invite list IS the round; on an open round invited
+ * builders join free alongside the network spots. Two
  * shapes share the table:
  *
  *   on-platform  — builderUserId set (picked from the directory)
@@ -252,6 +254,9 @@ export const tenderBuilderInvites = pgTable(
       .notNull()
       .defaultNow(),
     respondedAt: timestamp({ mode: "date", withTimezone: true }),
+    /** When the one nudge for a pending invitation went out — the
+     *  daily cron sends exactly one per invitation. */
+    remindedAt: timestamp({ mode: "date", withTimezone: true }),
 
     createdAt: timestamp({ mode: "date", withTimezone: true })
       .notNull()

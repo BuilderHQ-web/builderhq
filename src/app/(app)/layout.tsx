@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/modules/auth";
-import { hasCompletedOnboarding } from "@/modules/profiles";
+import { hasCompletedOnboarding, isBuilderApproved } from "@/modules/profiles";
 import { getStatus as getFbaStatus } from "@/modules/credits";
 import { countUnread as countUnreadNotifications } from "@/modules/notifications";
 import { countUnreadForUser as countUnreadMessages } from "@/modules/messaging";
+import { countInvitesForBuilderNav } from "@/modules/tenders";
 import { logger } from "@/lib/logger";
 import { Sidebar } from "@/components/app/sidebar";
 import { MobileNav } from "@/components/app/mobile-nav";
@@ -75,7 +76,7 @@ export default async function AppLayout({
   // Each of these is wrapped in `safe(...)` so a single flaky query
   // doesn't blow up the entire shell. The fallbacks render the UI in a
   // "no badge / not founding" state rather than 500-ing the whole app.
-  const [isFounding, initialUnreadCount, initialUnreadMessages] =
+  const [isFounding, isVerifiedBuilder, initialUnreadCount, initialUnreadMessages, invitations] =
     await Promise.all([
       role === "builder"
         ? safe(
@@ -84,8 +85,21 @@ export default async function AppLayout({
             false,
           )
         : Promise.resolve(false),
+      // The verified mark beside the builder's name — one column read.
+      role === "builder"
+        ? safe("builder_approved", isBuilderApproved(session.user.id), false)
+        : Promise.resolve(false),
       safe("unread_notifications", countUnreadNotifications(session.user.id), 0),
       safe("unread_messages", countUnreadMessages(session.user.id), 0),
+      // The Invitations tab exists once a builder has EVER been
+      // invited to a round; the badge counts the actionable ones.
+      role === "builder"
+        ? safe(
+            "builder_invite_nav",
+            countInvitesForBuilderNav(session.user.id, session.user.email),
+            { total: 0, pending: 0 },
+          )
+        : Promise.resolve({ total: 0, pending: 0 }),
     ]);
 
   return (
@@ -94,11 +108,16 @@ export default async function AppLayout({
         role={role}
         initialUnreadMessages={initialUnreadMessages}
         fbaActive={isFounding}
+        invitations={invitations}
       />
       {/* Touch-device counterpart to the sidebar. Always mounted so
           the hamburger trigger can open it via custom event; hidden
           at lg+ via internal `lg:hidden`. */}
-      <MobileNav role={role} initialUnreadMessages={initialUnreadMessages} />
+      <MobileNav
+        role={role}
+        initialUnreadMessages={initialUnreadMessages}
+        invitations={invitations}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar
           user={{
@@ -109,6 +128,7 @@ export default async function AppLayout({
             role: session.user.role,
           }}
           isFounding={isFounding}
+          isVerified={isVerifiedBuilder}
           initialUnreadCount={initialUnreadCount}
         />
         <main className="flex-1">{children}</main>

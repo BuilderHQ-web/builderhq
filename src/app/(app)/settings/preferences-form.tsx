@@ -192,7 +192,7 @@ function PrefRow({
       >
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-[160ms]",
+            "absolute top-0.5 size-5 rounded-full bg-surface-1 shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-[160ms]",
             checked ? "translate-x-[18px]" : "translate-x-[2px]",
           )}
         />

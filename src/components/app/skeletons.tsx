@@ -15,44 +15,47 @@
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// ── Project card grid (browse, dashboards, saved, unlocked) ────────────
+// ── Project register rows (browse, saved, unlocked) ────────────────────
 
-export function ProjectCardSkeleton() {
+export function ProjectRowSkeleton() {
   return (
-    <div
-      className={cn(
-        "relative flex flex-col rounded-md border border-border-subtle overflow-hidden",
-        "bg-surface-1 card-elev",
-      )}
-    >
-      {/* Cover band — matches the type-icon hero strip */}
-      <div className="relative h-[140px] bg-[rgba(24,34,44,0.03)] overflow-hidden">
-        <Skeleton className="absolute top-3 left-3 h-5 w-[110px] rounded-sm" />
-        <Skeleton className="absolute top-3 right-3 size-7 rounded-md" />
-      </div>
-      {/* Body */}
-      <div className="p-4 flex flex-col gap-3">
-        <Skeleton className="h-5 w-[70%] rounded-sm" />
-        <Skeleton className="h-3.5 w-[45%] rounded-sm" />
-        <div className="flex items-center gap-3 pt-1">
-          <Skeleton className="h-3.5 w-12 rounded-sm" />
-          <Skeleton className="h-3.5 w-12 rounded-sm" />
-          <Skeleton className="h-3.5 w-12 rounded-sm" />
-        </div>
-        <div className="pt-3 mt-1 border-t border-border-subtle/60 flex items-center justify-between">
-          <Skeleton className="h-3 w-16 rounded-sm" />
-          <Skeleton className="h-7 w-[88px] rounded-full" />
+    <div className="relative flex flex-col lg:flex-row rounded-xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      {/* band */}
+      <div className="shrink-0 lg:w-[232px] lg:min-h-[136px] border-b lg:border-b-0 lg:border-r border-border-subtle/60 bg-[rgba(24,34,44,0.03)] px-4 py-3 lg:py-4 flex flex-row lg:flex-col items-center lg:items-start justify-between gap-3">
+        <Skeleton className="h-6 w-[110px] rounded-sm" />
+        <div className="flex flex-col items-end lg:items-start gap-1.5">
+          <Skeleton className="h-2 w-[76px] rounded-sm" />
+          <Skeleton className="h-5 w-[100px] rounded-sm" />
         </div>
       </div>
+      {/* body */}
+      <div className="min-w-0 flex-1 px-4 sm:px-5 py-4 pr-12 lg:pr-5 flex flex-col justify-center gap-3">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-[55%] rounded-sm" />
+          <Skeleton className="h-3.5 w-[35%] rounded-sm" />
+        </div>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-[84px] rounded-md" />
+          ))}
+        </div>
+      </div>
+      {/* state rail */}
+      <div className="shrink-0 lg:w-[195px] border-t lg:border-t-0 lg:border-l border-border-subtle/60 px-4 sm:px-5 py-3 lg:py-4 flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-2">
+        <Skeleton className="h-3.5 w-[110px] rounded-sm" />
+        <Skeleton className="h-3 w-[80px] rounded-sm" />
+      </div>
+      {/* save */}
+      <Skeleton className="absolute top-3 right-3 size-8 rounded-md" />
     </div>
   );
 }
 
-export function ProjectGridSkeleton({ count = 6 }: { count?: number }) {
+export function ProjectRegisterSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="flex flex-col gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <ProjectCardSkeleton key={i} />
+        <ProjectRowSkeleton key={i} />
       ))}
     </div>
   );

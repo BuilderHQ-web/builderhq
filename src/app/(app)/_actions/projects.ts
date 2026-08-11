@@ -22,7 +22,8 @@ import {
   canDelete,
   type ActorContext,
 } from "@/modules/projects";
-import { fail, type Result } from "@/lib/result";
+import { env } from "@/lib/env";
+import { fail, ok, type Result } from "@/lib/result";
 import { requireActorForProject as resolveActorForProject } from "@/lib/actor";
 import type {
   CreateProjectInput,
@@ -82,6 +83,9 @@ export async function updateProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canEdit(a.value, got.value)) return fail("forbidden", "Not allowed to edit.");
   return update(a.value.id, projectId, patch);
 }
@@ -104,7 +108,24 @@ export async function publishProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canPublish(a.value, got.value)) return fail("forbidden", "Not allowed to publish.");
+
+  // The scope publish gate: when on, publishing becomes a submission
+  // for preparation — the pipeline reads the documents, ops reviews,
+  // the owner answers the gaps, and only then does the round go live
+  // (through this same publish path, called by completeOwnerReview).
+  if (env.SCOPE_PUBLISH_GATE) {
+    const { requestPreparation } = await import("@/modules/scope-engine");
+    const prepared = await requestPreparation(projectId, a.value.id);
+    if (!prepared.ok) return prepared;
+    const fresh = await getByIdForOwner(a.value.id, projectId);
+    if (!fresh.ok) return fresh;
+    return ok(fresh.value);
+  }
+
   return publish(a.value.id, projectId);
 }
 
@@ -115,6 +136,41 @@ export async function softDeleteProjectAction(
   if (!a.ok) return a;
   const got = await getByIdForOwner(a.value.id, projectId);
   if (!got.ok) return got;
+  if (got.value.isSample) {
+    return fail("forbidden", "The example round is read only.");
+  }
   if (!canDelete(a.value, got.value)) return fail("forbidden", "Not allowed to delete.");
   return softDelete(a.value.id, projectId);
+}
+
+/** The runner's pre-tender brief: click answers, saved as they land. */
+export async function saveOwnerBriefAction(
+  projectId: string,
+  brief: unknown,
+): Promise<Result<{ complete: boolean }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const { isSampleProject } = await import("@/modules/sample");
+  if (await isSampleProject(projectId)) {
+    return fail("forbidden", "The example round is read only.");
+  }
+  const { saveOwnerBrief } = await import("@/modules/projects");
+  return saveOwnerBrief(a.value.id, projectId, brief);
+}
+
+/** Apply the pack's read (facts, description) back onto the listing. */
+export async function applyPackCorrectionsAction(
+  projectId: string,
+  input: {
+    description?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    dwellingCount?: number;
+    floors?: number;
+  },
+): Promise<Result<{ applied: string[] }>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  const { applyPackCorrections } = await import("@/modules/projects");
+  return applyPackCorrections(a.value.id, projectId, input);
 }

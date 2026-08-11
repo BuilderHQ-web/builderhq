@@ -22,24 +22,34 @@
 
 import "server-only";
 import { after } from "next/server";
-import { and, desc, eq, gt, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
 
 import { projects, type ProjectRow } from "./schema";
+import { getProjectAccess } from "./participants";
+import { recordProjectEvent } from "./audit";
+import {
+  isOwnerBriefShape,
+  isOwnerBriefComplete,
+  rememberedBriefAnswers,
+  type BriefAudience,
+} from "./owner-brief";
 import type {
   CreateProjectInput,
   MarketplaceFilters,
   MarketplacePreview,
+  PrivateRoundStub,
   Project,
   PublishabilityReport,
   UpdateProjectInput,
 } from "./types";
 
-import { documents } from "@/modules/documents/schema";
-// Cross-module table reads — go through public barrel so we don't
-// drag the unlocks service (and the lib/db chain) into a runtime cycle.
+// Cross-module table reads — go through each public barrel so we don't
+// drag another module's service (and the lib/db chain) into a runtime
+// cycle.
+import { documents } from "@/modules/documents";
 import { unlocks } from "@/modules/unlocks";
 
 // Pricing intentionally not imported here — service.ts only needs it
@@ -396,6 +406,8 @@ export async function listForMarketplace(
     // Private rounds are invisible to the marketplace — only builders
     // the runner invited can reach them (via their invite, not browse).
     ne(projects.tenderMode, "private"),
+    // Example rounds are ghosts outside their own account.
+    eq(projects.isSample, false),
   ];
 
   if (filters.q && filters.q.trim()) {
@@ -478,12 +490,59 @@ export async function listForMarketplace(
   return attachMarketplaceCounts(rows);
 }
 
+/**
+ * Private rounds as marketplace stubs — see `PrivateRoundStub`.
+ *
+ * Filter behaviour is deliberately narrower than the open listing:
+ * stubs match only on fields the stub itself reveals (type, state).
+ * Any finer-grained filter (title search, postcode, budget) returns
+ * no stubs at all — otherwise the filter bar becomes a probe for
+ * details the round chose not to publish.
+ */
+export async function listPrivateRoundStubs(
+  filters: Pick<MarketplaceFilters, "q" | "type" | "state" | "postcode" | "budgets"> = {},
+): Promise<PrivateRoundStub[]> {
+  if (filters.q?.trim()) return [];
+  if (filters.postcode) return [];
+  if (filters.budgets && filters.budgets.length > 0) return [];
+
+  const conds = [
+    inArray(projects.status, ["published", "tendering"]),
+    isNull(projects.deletedAt),
+    eq(projects.tenderMode, "private"),
+    // Example rounds are ghosts outside their own account.
+    eq(projects.isSample, false),
+  ];
+  if (filters.type) conds.push(eq(projects.type, filters.type));
+  if (filters.state) conds.push(eq(projects.state, filters.state));
+
+  return db
+    .select({
+      id: projects.id,
+      type: projects.type,
+      suburb: projects.suburb,
+      state: projects.state,
+      publishedAt: projects.publishedAt,
+    })
+    .from(projects)
+    .where(and(...conds))
+    .orderBy(desc(projects.publishedAt))
+    .limit(12);
+}
+
 /** Fetch a single preview by slug (used by the builder detail page). */
 export async function getMarketplacePreview(
   slug: string,
+  opts: {
+    /**
+     * Resolve private-round projects too. The caller MUST have already
+     * verified (or immediately verify) that the builder holds an unlock
+     * or a live invite — this flag only lifts the marketplace filter,
+     * it does not authorise anything.
+     */
+    includePrivate?: boolean;
+  } = {},
 ): Promise<Result<MarketplacePreview>> {
-  const list = await listForMarketplace({ limit: 1 });
-  // Cheap path: re-run the listForMarketplace query but scoped to slug.
   const [row] = await db
     .select({
       id: projects.id,
@@ -519,12 +578,11 @@ export async function getMarketplacePreview(
         eq(projects.slug, slug),
         inArray(projects.status, ["published", "tendering"]),
         isNull(projects.deletedAt),
-        // Private rounds never resolve via the marketplace path.
-        ne(projects.tenderMode, "private"),
+        // Private rounds never resolve via the marketplace path —
+        // only via includePrivate for invited/unlocked builders.
+        ...(opts.includePrivate ? [] : [ne(projects.tenderMode, "private")]),
       ),
     );
-  // Touch `list` to satisfy lint without using it functionally.
-  void list;
   if (!row) return fail("not_found", "Project not found.");
   const [withCounts] = await attachMarketplaceCounts([row]);
   return ok(withCounts!);
@@ -806,11 +864,37 @@ export function validateSaveReadiness(p: ProjectRow): Record<string, string> {
 function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   const out: string[] = [];
 
+  // Tender round settings — validated here, locked after publish so a
+  // live round's rules can't shift under builders who already unlocked.
+  if (patch.tenderSpots !== undefined && patch.tenderSpots !== null) {
+    if (
+      !Number.isInteger(patch.tenderSpots) ||
+      patch.tenderSpots < 2 ||
+      patch.tenderSpots > 5
+    ) {
+      out.push("Builder spots must be between 2 and 5.");
+    }
+  }
+  if (
+    (patch.tenderMode !== undefined || patch.tenderSpots !== undefined) &&
+    p.status !== "draft"
+  ) {
+    out.push("Tender round settings are locked once the project is live.");
+  }
+
   if (patch.title !== undefined && !patch.title.trim()) {
     out.push("Title can't be empty.");
   }
   if (patch.postcode != null && !/^\d{4}$/.test(patch.postcode)) {
     out.push("Postcode must be 4 digits.");
+  }
+  // Suburb feeds the auto-generated title, which reaches marketplace
+  // cards and now email subject lines — keep it a plain place name.
+  if (patch.suburb != null && patch.suburb.trim() !== "") {
+    const s = patch.suburb.trim();
+    if (s.length > 60 || !/^[A-Za-z][A-Za-z\s'.\-]*$/.test(s)) {
+      out.push("Enter a valid suburb name.");
+    }
   }
   if (
     patch.targetStartMonth != null &&
@@ -854,4 +938,169 @@ function validatePatch(p: ProjectRow, patch: UpdateProjectInput): string[] {
   }
 
   return out;
+}
+
+// ── the owner brief + the pack's corrections ─────────────────────────────
+
+/**
+ * Save the runner's pre-tender brief. Validated against the question
+ * set (partial saves welcome mid-form); stamped complete only when
+ * every question carries a listed answer.
+ */
+export async function saveOwnerBrief(
+  runnerId: string,
+  projectId: string,
+  brief: unknown,
+): Promise<Result<{ complete: boolean }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner answers the brief.");
+  }
+  if (!isOwnerBriefShape(brief)) {
+    return fail("validation", "Those answers don't match the questions.");
+  }
+  const [proj] = await db
+    .select({ type: projects.type, ownerBrief: projects.ownerBrief })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .limit(1);
+  if (!proj) return fail("not_found", "Project not found.");
+  // Merge, never replace: saves are monotonic, so a client holding a
+  // stale snapshot can change answers but can never silently drop
+  // ones it did not know about (or un-complete a completed brief).
+  const merged = {
+    ...(isOwnerBriefShape(proj.ownerBrief)
+      ? (proj.ownerBrief as Record<string, string>)
+      : {}),
+    ...(brief as Record<string, string>),
+  };
+  const complete = isOwnerBriefComplete(merged, proj.type);
+  const [row] = await db
+    .update(projects)
+    .set({
+      ownerBrief: merged,
+      ownerBriefAt: complete ? new Date() : null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .returning({ id: projects.id });
+  if (!row) return fail("not_found", "Project not found.");
+  if (complete) {
+    await recordProjectEvent({
+      projectId,
+      actorId: runnerId,
+      kind: "brief.completed",
+      subjectId: projectId,
+      summary: "Completed the pre-tender brief for builders.",
+    });
+  }
+  return ok({ complete });
+}
+
+/**
+ * MEMORY for the brief: the stable answers from this runner's most
+ * recent completed brief on another project (who they are, an
+ * architect's role) so a repeat runner is never asked twice. The
+ * answers are prefilled and saved on the new project; the pencil
+ * still edits them.
+ */
+export async function briefMemoryForRunner(
+  runnerId: string,
+  excludeProjectId: string,
+  audience: BriefAudience,
+): Promise<Record<string, string>> {
+  const [prior] = await db
+    .select({ ownerBrief: projects.ownerBrief })
+    .from(projects)
+    .where(
+      and(
+        eq(projects.ownerId, runnerId),
+        isNotNull(projects.ownerBriefAt),
+        ne(projects.id, excludeProjectId),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .orderBy(desc(projects.ownerBriefAt))
+    .limit(1);
+  return rememberedBriefAnswers(prior?.ownerBrief ?? null, audience);
+}
+
+export interface PackCorrections {
+  /** Replace the free-form description with the pack's summary. */
+  description?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  dwellingCount?: number;
+  floors?: number;
+}
+
+/**
+ * Apply the pack's read of the project back onto the listing: the
+ * countable facts the documents actually show, and a description
+ * written from the pack. Strictly the marketing fields — never the
+ * address, never the status, never anything the publish path owns.
+ * Runner only, audited per application.
+ */
+export async function applyPackCorrections(
+  runnerId: string,
+  projectId: string,
+  input: PackCorrections,
+): Promise<Result<{ applied: string[] }>> {
+  const access = await getProjectAccess(projectId, runnerId);
+  if (access?.kind !== "runner") {
+    return fail("forbidden", "Only the project runner can update the listing.");
+  }
+
+  const patch: Record<string, unknown> = {};
+  const applied: string[] = [];
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isInteger(v) && v > 0 && v < 100;
+
+  if (typeof input.description === "string") {
+    const text = input.description.trim();
+    if (text.length < 40 || text.length > 2000) {
+      return fail("validation", "The description must be 40 to 2000 characters.");
+    }
+    patch.description = text;
+    applied.push("description");
+  }
+  if (input.bedrooms !== undefined) {
+    if (!num(input.bedrooms)) return fail("validation", "Bedrooms looks wrong.");
+    patch.bedrooms = input.bedrooms;
+    applied.push("bedrooms");
+  }
+  if (input.bathrooms !== undefined) {
+    if (!num(input.bathrooms)) return fail("validation", "Bathrooms looks wrong.");
+    patch.bathrooms = input.bathrooms;
+    applied.push("bathrooms");
+  }
+  if (input.dwellingCount !== undefined) {
+    if (!num(input.dwellingCount)) return fail("validation", "Dwellings looks wrong.");
+    patch.dwellingCount = input.dwellingCount;
+    applied.push("dwellings");
+  }
+  if (input.floors !== undefined) {
+    if (!num(input.floors)) return fail("validation", "Storeys looks wrong.");
+    patch.floors = input.floors;
+    applied.push("storeys");
+  }
+  if (applied.length === 0) {
+    return fail("validation", "Nothing to apply.");
+  }
+
+  const [row] = await db
+    .update(projects)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(and(eq(projects.id, projectId), eq(projects.ownerId, runnerId)))
+    .returning({ id: projects.id });
+  if (!row) return fail("not_found", "Project not found.");
+
+  await recordProjectEvent({
+    projectId,
+    actorId: runnerId,
+    kind: "scope.listing_corrected",
+    subjectId: projectId,
+    summary: `Updated the listing from the pack: ${applied.join(", ")}.`,
+  });
+  return ok({ applied });
 }
