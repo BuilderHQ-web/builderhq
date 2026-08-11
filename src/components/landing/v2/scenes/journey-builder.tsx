@@ -10,40 +10,43 @@
  * through, Meridian Building Co, so the same name and the same figure
  * are on the last screen as on the fifth.
  *
- * THE DIRECTION. Two earlier versions are worth naming. The first
+ * THE DIRECTION. Three earlier versions are worth naming. The first
  * swapped screens on a timer and read as a slideshow, because nothing
  * caused the change. The second gave the pointer real controls to
  * press, which fixed the causing but watched everything from the same
- * chair. This version adds the camera, and with it the grammar every
- * recorded product film uses: detail is watched close, reveals are
- * watched wide, and a navigation is travelled through rather than cut
- * to. On each screen change the camera leans into the control, the
- * pointer presses it, the next screen lands under the zoom, and the
- * pull back to wide IS the reveal of where the session now stands.
- * Scrolls are always taken wide, and the camera rests between moves,
- * because stillness is what makes the pushes land.
+ * chair. The third added a camera and overdid it: it zoomed through
+ * every navigation and leaned on every detail, and at 660px a push
+ * crops as much as it magnifies. This cut is an explainer. Between
+ * acts the frame dissolves to a centred chapter card that says, in one
+ * line, what is about to happen; the next screen mounts underneath it,
+ * and the clear of the card is the reveal, always wide. The card IS
+ * the cut, so the camera no longer travels through navigations at all.
  *
- * WHERE THE CAMERA GOES, act by act. Act one opens wide on the
- * register and saves its first push for the line that earns it: the
- * analysed strip on the Pascoe Vale row, nine documents, 211 pages,
- * 242 items, the product's whole pitch to a builder. Act two reads the
- * project and its document register wide, the scroll included. Act
- * three leans on the footings division and its citation, then pans
- * down the page to the tender bar. Act four is the signature moment,
- * the deepest push in the film: 1.45 on the first schedule line while
- * Included fills teal and the counter and track move, held, then
- * released wide before the schedule walks on. Act five reads the
- * review ledger wide and takes the sealing sentence and both Submit
- * presses close. Act six never moves: a won job is taken in whole. An
- * act caption sits outside the camera at the frame's foot, numbering
- * the acts, because subtitles do not zoom with footage.
+ * THE ZOOM BUDGET, all three pushes named, everything else wide:
+ *
+ *   · 1.2 on the analysed strip in act one — nine documents, 211
+ *     pages, 242 items, the product's whole pitch to a builder, set in
+ *     8.5px type that a wide shot cannot sell. The strip ends inside
+ *     the 550px window the push leaves, so nothing being read crops.
+ *   · 1.3 on the first schedule line in act four, the signature push.
+ *     The line card and all four marks sit inside the window; the
+ *     header counter at the frame's far right does not, so the counter
+ *     holds its move until the pull-back and the wide shot is what
+ *     reveals 18 become 19.
+ *   · 1.25 on the sealing sentence in act five — the one sentence in
+ *     the film that must actually be read, 9.5px at the frame's foot.
+ *     The sentence, both controls and the ledger's tail all fit.
+ *
+ * Scrolls are always taken wide, and the long reads name their
+ * sections with a bottom-centre tag instead of a lean: the document
+ * register and the scope register both carry one while they travel.
  *
  * WHAT THE POINTER PRESSES, in order: the type filter and Apply on the
  * register, the Pascoe Vale row, the "Scope of works" section, "Start
  * your tender" on the project's fixed bar, one Included chip and then
  * "Continue" in the deck footer, "Submit tender" and its confirmation.
  * All of them are controls the app actually renders, and every press
- * keeps the hand: hover first, the hesitation, then the click.
+ * keeps the hand: hover first, the 400ms hesitation, then the click.
  *
  * Two product rules carried over from the kit and easy to break: bright
  * teal is a FILL and never type, and the project reads UNLOCKED from
@@ -85,10 +88,10 @@ import {
 
 import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
-  ActCaption,
   C,
   TONE,
   ELEV,
+  ChapterCard,
   Frame,
   Card,
   Division,
@@ -97,6 +100,7 @@ import {
   Mark,
   Pill,
   ScopeLine,
+  SectionTag,
   TealBtn,
   Track,
   type ToneKey,
@@ -125,31 +129,52 @@ const CRUMB: Record<Screen, string> = {
 };
 
 /**
- * The act captions, one per screen, shown outside the camera at the
- * frame's foot the way a film subtitles its scenes. They carry most of
- * the explaining: each one says what this act IS, so a visitor who
- * reads nothing else still gets the whole story in six short lines.
+ * The chapter cards, one per act. Each title says what the act IS and
+ * each sub carries the claim the footage then proves, so a visitor who
+ * reads nothing else still gets the whole pitch in six short lines.
+ * The film opens on act one's card the way an explainer does.
  */
-const ACT_N: Record<Screen, string> = {
-  browse: "01",
-  project: "02",
-  scope: "03",
-  tender: "04",
-  submit: "05",
-  won: "06",
-};
-
-const ACT_TEXT: Record<Screen, string> = {
-  browse: "Find the round",
-  project: "Everything, unlocked",
-  scope: "The scope, already written",
-  tender: "Mark your price",
-  submit: "One sealed submission",
-  won: "Won, no commission",
+const CARDS: Record<Screen, { n: string; title: string; sub: string }> = {
+  browse: {
+    n: "01",
+    title: "Find the round",
+    sub: "Live projects, budgets and spots, before you pay.",
+  },
+  project: {
+    n: "02",
+    title: "Everything, unlocked",
+    sub: "The full address, every document, real filenames.",
+  },
+  scope: {
+    n: "03",
+    title: "The scope, already written",
+    sub: "228 items from the client’s documents. Nothing to assemble.",
+  },
+  tender: {
+    n: "04",
+    title: "Mark your price",
+    sub: "Included, provisional, excluded. Line by line.",
+  },
+  submit: {
+    n: "05",
+    title: "One sealed submission",
+    sub: "The same questions as everyone, signed.",
+  },
+  won: {
+    n: "06",
+    title: "Won, no commission",
+    sub: "Contract directly with the client. Keep all of it.",
+  },
 };
 
 type S = {
   screen: Screen;
+  /** The chapter card over the canvas, or null while an act plays.
+   *  Setting it together with `screen` is the cut: the new screen
+   *  mounts underneath and the clear is the reveal, always wide. */
+  card: { n: string; title: string; sub?: string } | null;
+  /** The lower-third naming a section while a long surface scrolls. */
+  tag: string | null;
   /** The control under the pointer. Nothing lights unless it is here. */
   hot: string | null;
   /** Browse: the type select carries a value; the query has been re-run.
@@ -164,6 +189,8 @@ type S = {
   /** The open division on the scope screen, and its lit citation. */
   open: string | null;
   cite: boolean;
+  /** The scope register's offset. Negative scrolls it up. */
+  scopeY: number;
   /** The schedule's offset, the lines marked Included, and the deck's
    *  own answered counter, which the 3px track is derived from. */
   schedY: number;
@@ -175,11 +202,14 @@ type S = {
 
 /**
  * Screen one, complete and finished, with nothing having happened yet:
- * the register as it loads, before any filter. This is also exactly
- * what renders under prefers-reduced-motion, so it has to stand alone.
+ * the register as it loads, before any filter, cardless and wide. This
+ * is also exactly what renders under prefers-reduced-motion, so it has
+ * to stand alone.
  */
 const RESTING: S = {
   screen: "browse",
+  card: null,
+  tag: null,
   hot: null,
   picked: false,
   filtered: false,
@@ -187,6 +217,7 @@ const RESTING: S = {
   docY: 0,
   open: null,
   cite: false,
+  scopeY: 0,
   schedY: 0,
   marked: [],
   answered: 18,
@@ -214,165 +245,176 @@ export function BuilderJourney({ active }: { active: boolean }) {
     enabled: active,
     resting: RESTING,
     rootRef: root,
-    loopPause: 2200,
+    loopPause: 2000,
     script: [
+      /* ── The film opens on act one's card, the explainer's cold
+         open: the register already sits underneath it. ──────────── */
+      { set: { card: CARDS.browse } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
+
       /* ── Act 1 · Find the round ───────────────────────────────────
-         Wide open on the register as it loads, and wide it stays for
-         the filter work: the first camera move of the whole film is
-         saved for the one line that earns it. Choosing a type does
-         nothing until Apply, which is the app's own GET-form
-         behaviour and the reason for two presses. */
-      { wait: 950 },
-      { move: "type", ms: 700 },
+         Wide open on the register, and wide it stays for the filter
+         work. Choosing a type does nothing until Apply, which is the
+         app's own GET-form behaviour and the reason for two presses.
+         The film's first push lands only after the re-query, on the
+         analysed strip: at 1.2 the whole strip and the row it sits in
+         are inside the window, so nothing being read is cropped. */
+      { wait: 650 },
+      { move: "type", ms: 630 },
       { set: { hot: "type" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { picked: true, hot: null } },
-      { wait: 550 },
-      { move: "apply", ms: 560 },
+      { wait: 400 },
+      { move: "apply", ms: 500 },
       { set: { hot: "apply" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       // The re-query is a reveal, so it lands on the wide shot.
       { set: { filtered: true, hot: null } },
-      { wait: 1200 },
-      // The first push, onto the product's whole pitch to a builder:
-      // nine documents analysed, 211 pages read, 242 items written.
-      { cam: { focus: "pack", scale: 1.3, ms: 1000 } },
-      { wait: 1200 },
-      // The row is a link and the camera is already leaning on it, so
-      // the press becomes a zoom-through: the project lands under the
-      // zoom and the pull back reveals where the session now stands.
-      { move: "row", ms: 560 },
-      { set: { hot: "row" } },
-      { wait: 420 },
-      { click: true },
-      { set: { screen: "project", hot: null } },
-      { wait: 350 },
+      { wait: 800 },
+      { cam: { focus: "pack", scale: 1.2, ms: 900 } },
+      { wait: 950 },
+      // Back to wide before the boundary: the card always cuts from
+      // a resting camera.
       { cam: "reset" },
-      { wait: 700 },
+      { move: "row", ms: 500 },
+      { set: { hot: "row" } },
+      { wait: 400 },
+      { click: true },
+      { set: { card: CARDS.project, screen: "project", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── Act 2 · Everything, unlocked ─────────────────────────────
          The street address, the fact sheet, then the register of nine
          documents scrolled the way a builder scrolls it. All of it
-         wide: a register filling the frame is the point, and a camera
-         that moved during the scroll would read as seasickness. */
-      { wait: 950 },
-      { move: "doc-1", ms: 780 },
-      { set: { hot: "doc-1" } },
-      { wait: 480 },
-      // Two waypoints, measured against the rendered register: the
-      // second lands it on the last of the nine, which is what gives
-      // the reader a beat at the bottom instead of a list still moving.
-      { set: { hot: null, sec: "documents", docY: -180 } },
-      { wait: 750 },
-      { set: { docY: -374 } },
+         wide; the lower-third names what is rolling past instead of
+         the camera chasing it. The second waypoint lands the list on
+         the last of the nine, so the read ends on a still bottom. */
       { wait: 800 },
-      // The zoom-through to the scope, off the section rail.
-      { cam: { focus: "nav-scope", scale: 1.35, ms: 1000 } },
-      { move: "nav-scope", ms: 620 },
+      { move: "doc-1", ms: 700 },
+      { set: { hot: "doc-1" } },
+      { wait: 400 },
+      { set: { hot: null, sec: "documents", docY: -180, tag: "Nine documents, real filenames" } },
+      { wait: 800 },
+      { set: { docY: -374, tag: "Surveys, soil and town planning" } },
+      { wait: 850 },
+      { set: { tag: null } },
+      { move: "nav-scope", ms: 560 },
       { set: { hot: "nav-scope" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "scope", sec: "scope", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.scope, screen: "scope", sec: "scope", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── Act 3 · The scope, already written ───────────────────────
-         The stats band counts up on the wide shot, then the camera
-         leans on the footings division: the claim on this screen is
-         that every item carries the page it came from, and a citation
-         is detail, which is watched close. Leaving, the camera pans
-         straight down the page to the fixed bar rather than cutting
-         home first, the way a reader's eye actually travels. */
+         The stats band counts to 228 on the wide shot, the builder
+         opens footings and reads a citation, and then the register is
+         scrolled at its real length: fourteen divisions on screen and
+         the tag carrying the claim. No push anywhere in the act — the
+         card already said what this screen is, and the length of the
+         list IS the shot. */
       { wait: 900 },
-      { cam: { focus: "div-footings", scale: 1.3, ms: 1000 } },
-      { move: "div-footings", ms: 620 },
+      { move: "div-footings", ms: 560 },
       { set: { hot: "div-footings" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { open: "footings", hot: null } },
-      { wait: 650 },
-      { move: "cite-footings", ms: 520 },
+      { wait: 400 },
+      // Frame the opened division, then let the scroll settle before
+      // the pointer measures the citation's position.
+      { set: { scopeY: -150 } },
+      { wait: 900 },
+      { move: "cite-footings", ms: 470 },
       { set: { cite: true } },
-      { wait: 1100 },
-      { set: { cite: false } },
-      { cam: { focus: "start-tender", scale: 1.35, ms: 1100 } },
-      { move: "start-tender", ms: 620 },
+      { wait: 900 },
+      // The long read: two legs down the register, each named. The
+      // stops are set against the rendered list so the last division
+      // arrives flush at the frame's foot.
+      { set: { cite: false, tag: "228 items, every line cited", scopeY: -320 } },
+      { wait: 850 },
+      { set: { scopeY: -490, tag: "29 trades, every one covered" } },
+      { wait: 850 },
+      { set: { tag: null } },
+      { move: "start-tender", ms: 560 },
       { set: { hot: "start-tender" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "tender", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.tender, screen: "tender", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── Act 4 · Mark your price ──────────────────────────────────
-         The signature moment, and the deepest push in the film: 1.45
-         on the first schedule line while the pointer hovers Included,
-         the chip fills teal on the press, and the counter and the 3px
-         track move while the camera is still close enough to watch
-         them do it. Held, then released wide with a beat of
-         stillness, and only then does the schedule walk on beneath a
-         still camera. */
-      { wait: 1000 },
-      { cam: { focus: "line-slab", scale: 1.45 } },
-      { move: "slab-included", ms: 620 },
+         The signature push, 1.3 on the first schedule line: the line,
+         its citation and all four marks sit inside the window while
+         Included fills teal. The header counter at the frame's far
+         right does NOT fit at that scale, so it holds its move until
+         the pull-back — the wide shot is what reveals 18 become 19
+         and the track edge on. */
+      { wait: 800 },
+      { cam: { focus: "line-slab", scale: 1.3, ms: 1000 } },
+      { move: "slab-included", ms: 560 },
       { set: { hot: "slab-included" } },
-      { wait: 460 },
+      { wait: 400 },
       { click: true },
-      { set: { marked: ["slab"], answered: 19, hot: null } },
-      { wait: 1400 },
+      { set: { marked: ["slab"], hot: null } },
+      { wait: 950 },
       { cam: "reset" },
-      { wait: 700 },
+      { set: { answered: 19 } },
+      { wait: 900 },
       { set: { schedY: -126 } },
-      { wait: 1000 },
-      { cam: { focus: "continue", scale: 1.35, ms: 1000 } },
-      { move: "continue", ms: 620 },
+      { wait: 900 },
+      { move: "continue", ms: 560 },
       { set: { hot: "continue" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "submit", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.submit, screen: "submit", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── Act 5 · One sealed submission ────────────────────────────
          The cover, the price and the twelve-module ledger are read
-         whole on the wide shot, then the camera drops to the foot of
-         the review for both presses: the sentence that says
-         submitting seals the tender is the one sentence in the film
-         worth reading close. The award lands under the zoom and the
-         pull back is what reveals it. */
-      { wait: 1250 },
-      { cam: { focus: "submit", scale: 1.3, ms: 1000 } },
-      { move: "submit", ms: 620 },
+         whole on the wide shot. The one lean is for the one sentence
+         in the film that must actually be read: submitting seals the
+         tender. The confirmation itself is pressed wide, so the cut
+         to the award comes off a resting camera. */
+      { wait: 1000 },
+      { cam: { focus: "submit", scale: 1.25, ms: 900 } },
+      { move: "submit", ms: 560 },
       { set: { hot: "submit" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { confirm: true, hot: null } },
-      { wait: 1300 },
-      { move: "submit-confirm", ms: 560 },
-      { set: { hot: "submit-confirm" } },
-      { wait: 420 },
-      { click: true },
-      { set: { screen: "won", hot: null } },
-      { wait: 350 },
+      { wait: 1150 },
       { cam: "reset" },
-      { wait: 700 },
+      { move: "submit-confirm", ms: 500 },
+      { set: { hot: "submit-confirm" } },
+      { wait: 400 },
+      { click: true },
+      { set: { card: CARDS.won, screen: "won", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── Act 6 · Won, no commission ───────────────────────────────
-         The end of the session, and the camera never moves again: a
-         won job is taken in whole. The pointer rests on the one thing
-         a builder reaches for here, and only then leaves the screen. */
-      { wait: 1500 },
-      { move: "pdf", ms: 800 },
+         The end of the session, and the camera never moves: a won job
+         is taken in whole. The pointer rests on the one thing a
+         builder reaches for here, and only then leaves the screen. */
+      { wait: 1200 },
+      { move: "pdf", ms: 720 },
       { set: { hot: "pdf" } },
-      { wait: 1300 },
+      { wait: 1100 },
       { set: { hot: null } },
       { cursor: "hide" },
-      { wait: 450 },
+      { wait: 400 },
     ],
   });
 
@@ -382,8 +424,10 @@ export function BuilderJourney({ active }: { active: boolean }) {
   return (
     <div ref={root} className="relative w-full h-full overflow-hidden">
       {/* The cursor rides INSIDE the camera and grows with the zoom,
-          exactly as a recorded cursor would; the act caption sits
-          OUTSIDE it, because subtitles do not zoom with footage. */}
+          exactly as a recorded cursor would. The section tag and the
+          chapter card sit OUTSIDE it: titles do not zoom with footage,
+          and the card must cover the whole frame whatever the camera
+          was doing underneath. */}
       <SceneCamera cam={cam}>
         <Frame
           crumb={CRUMB[screen]}
@@ -450,7 +494,13 @@ export function BuilderJourney({ active }: { active: boolean }) {
               ) : screen === "project" ? (
                 <ProjectScreen sec={state.sec} docY={state.docY} hot={state.hot} />
               ) : screen === "scope" ? (
-                <ScopeScreen sec={state.sec} open={state.open} cite={state.cite} hot={state.hot} />
+                <ScopeScreen
+                  sec={state.sec}
+                  y={state.scopeY}
+                  open={state.open}
+                  cite={state.cite}
+                  hot={state.hot}
+                />
               ) : screen === "tender" ? (
                 <TenderScreen
                   y={state.schedY}
@@ -469,7 +519,8 @@ export function BuilderJourney({ active }: { active: boolean }) {
         <SceneCursor cursor={cursor} clicks={clicks} />
       </SceneCamera>
 
-      <ActCaption n={ACT_N[screen]} text={ACT_TEXT[screen]} />
+      <SectionTag text={state.tag} />
+      <ChapterCard card={state.card} />
     </div>
   );
 }
@@ -944,8 +995,8 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
           ))}
         </div>
         {d.pack ? (
-          // The camera's first push lands here, so the strip carries
-          // its own key even though the pointer never visits it.
+          // The film's only act-one push lands here, so the strip
+          // carries its own key even though the pointer never visits it.
           <p data-cursor="pack" className="flex items-center gap-1 text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
             <BookOpenCheck className="size-[10px] shrink-0" />
             <span className="truncate">{d.pack}</span>
@@ -1126,21 +1177,64 @@ function ProjectScreen({
 
 /* ══ 3 · The scope ══════════════════════════════════════════════════ */
 
-/** Three of the round's twenty nine divisions. Footings is the one the
- *  builder opens here and walks two screens later. */
+/**
+ * Fourteen of the round's twenty nine divisions, the same set the
+ * owner's register scene shows, because it is the same register seen
+ * from the other side. Enough that the list reads as the real 228-item
+ * document rather than a sample of three, and enough that the scroll
+ * has somewhere real to go. Footings is the one the builder opens here
+ * and prices in the next act.
+ */
 const DIVISIONS: Array<{ key: string; label: string; count: string }> = [
+  { key: "prelim", label: "Preliminaries and site establishment", count: "14 items" },
+  { key: "approvals", label: "Approvals, certification and compliance", count: "11 items" },
+  { key: "demolition", label: "Demolition and site clearing", count: "6 items" },
+  { key: "earthworks", label: "Earthworks and excavation", count: "8 items" },
   { key: "footings", label: "Footings and ground floor structure", count: "7 items" },
+  { key: "retaining", label: "Retaining walls and ground structures", count: "4 items" },
   { key: "concrete", label: "Concrete, formwork and reinforcement", count: "9 items" },
   { key: "steel", label: "Structural steel and framing", count: "12 items" },
+  { key: "roofing", label: "Roofing, gutters and downpipes", count: "10 items" },
+  { key: "cladding", label: "External wall cladding and finishes", count: "9 items" },
+  { key: "windows", label: "Windows and external doors", count: "8 items" },
+  { key: "plumbing", label: "Plumbing and drainage", count: "15 items" },
+  { key: "electrical", label: "Electrical, data and lighting", count: "13 items" },
+  { key: "joinery", label: "Joinery and cabinetry", count: "11 items" },
+];
+
+/** The three lines behind the footings division — the same three the
+ *  deck's schedule walks in act four, because the scope a builder
+ *  reads is exactly the scope they price. */
+const FOOTINGS_LINES: Array<{ label: string; plain: string; cite: string }> = [
+  {
+    label: "Waffle pod slab",
+    plain:
+      "A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab.",
+    cite: "Structural S02, page 4, Rev B",
+  },
+  {
+    label: "Piers and screw piles",
+    plain:
+      "Deep supports drilled or screwed down to solid ground where the surface soil cannot carry the home.",
+    cite: "Geotechnical Report, page 11",
+  },
+  {
+    label: "Termite management system",
+    plain:
+      "The barrier or treatment that protects the home from termites, required and certified under the code.",
+    cite: "Specification A1.2, page 9, Rev C",
+  },
 ];
 
 function ScopeScreen({
   sec,
+  y,
   open,
   cite,
   hot,
 }: {
   sec: string;
+  y: number;
   open: string | null;
   cite: boolean;
   hot: string | null;
@@ -1149,12 +1243,7 @@ function ScopeScreen({
     <>
       <SectionRail active={sec} hot={hot} />
 
-      <Ruled label="Scope of works" icon={BookOpenCheck}>
-        <p className="hidden sm:block text-[10px] leading-[1.55] max-w-[62ch]" style={{ color: C.muted }}>
-          We read every document on this round and wrote the scope of works from them. Every
-          builder prices this same list, item by item.
-        </p>
-      </Ruled>
+      <RuleLine label="Scope of works" icon={BookOpenCheck} />
 
       {/* The stats band on the real page: no boxes, centred figures over
           quiet labels, ruled above and below. */}
@@ -1182,32 +1271,40 @@ function ScopeScreen({
         ))}
       </div>
 
+      {/* The register at its real length, clipped and scrolled the way
+          the owner's scene scrolls it: the length of this list is the
+          screen's whole argument. */}
       <div className={LIST}>
-        <div className="flex flex-col gap-1.5">
+        <motion.div
+          className="flex flex-col gap-1.5"
+          initial={false}
+          animate={{ y }}
+          transition={y === 0 ? { duration: 0 } : SCROLL}
+        >
           {DIVISIONS.map((d) => (
             <Division
               key={d.key}
               label={d.label}
               count={d.count}
-              cursorKey={`div-${d.key}`}
-              hot={hot === `div-${d.key}`}
+              cursorKey={d.key === "footings" ? "div-footings" : undefined}
+              hot={d.key === "footings" && hot === "div-footings"}
               open={open === d.key}
             >
-              <ScopeLine
-                label="Waffle pod slab"
-                plain="A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab."
-                cite="Structural S02, page 4, Rev B"
-                citeKey={`cite-${d.key}`}
-                citeHot={cite && open === d.key}
-              />
-              <ScopeLine
-                label="Piers and screw piles"
-                plain="Deep supports drilled or screwed down to solid ground where the surface soil cannot carry the home."
-                cite="Geotechnical Report, page 11"
-              />
+              {d.key === "footings"
+                ? FOOTINGS_LINES.map((l, i) => (
+                    <ScopeLine
+                      key={l.label}
+                      label={l.label}
+                      plain={l.plain}
+                      cite={l.cite}
+                      citeKey={i === 0 ? "cite-footings" : undefined}
+                      citeHot={i === 0 && cite}
+                    />
+                  ))
+                : null}
             </Division>
           ))}
-        </div>
+        </motion.div>
         <ListFade />
       </div>
 
@@ -1335,8 +1432,8 @@ function TenderScreen({
               <Card
                 key={line.id}
                 tone={on ? "accent" : "plain"}
-                // The card is the signature moment's camera target: the
-                // 1.45 push centres the whole line, not just its chip.
+                // The card is the signature push's camera target: the
+                // 1.3 lean frames the whole line and all four marks.
                 cursorKey={`line-${line.id}`}
                 className="px-3 py-3 transition-[background-color,border-color,box-shadow] duration-300"
               >

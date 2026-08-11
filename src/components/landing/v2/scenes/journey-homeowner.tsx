@@ -22,43 +22,47 @@
  *   Tenders           → Compare tenders     (the round panel's CTA)
  *   The tender eval.  → Award               (on the tender's own card)
  *
- * THE CAMERA, which is the direction this file now carries. The script
- * drives a camera as well as a hand, in the grammar of a screen
- * recording: detail is watched close, and every reveal is watched
- * wide. Before the pointer works a control the camera pushes in on it;
- * before a result lands that should be taken in whole, the camera has
- * already pulled back, so no reveal ever happens zoomed. Every
- * navigation is a zoom-through: lean in on the control, press, let the
- * next screen land under the zoom, then pull wide to show where the
- * press went. The pull-back IS the transition, and done every time it
- * gives the film an in-and-out breath. The camera never moves during a
- * scroll and never scrolls while pushed in, and the long reads get a
- * still, wide frame, because stillness is what makes the pushes land.
+ * THE CHAPTER CARD IS THE CUT, and it is what this recut carries. The
+ * film opens on act one's card, the way an explainer does, and every
+ * act boundary after that plays the same way: the pointer presses the
+ * real control, the frame dissolves to a centred card that says what
+ * is about to happen and why it matters, the next screen mounts
+ * beneath it, and the card clears onto a wide reveal. The card does
+ * the job the zoom-throughs used to do, so the zoom-throughs are gone.
+ * The six cards, read in order, are the platform's table of contents,
+ * and each sub-line carries the claim plainly: written from your
+ * documents, cited to the page; capped at three; one shape; six
+ * published weights; no commission.
  *
- * The signature shot is the 242 count-up. The camera arrives on the
- * scope screen still zoomed from the Continue press, re-aims onto the
- * figure at 1.45 while it counts, holds a beat after the number lands,
- * then pulls wide as the register's divisions cascade in behind it:
- * the pull-back that shows how much one number unpacked into. The
- * citation lighting teal and the Award press are the other close-ups;
- * everything else, the scan, the round filling, the three tenders, the
- * decision grid, the awarded banner, plays wide.
+ * THE CAMERA, cut to a budget. Two pushes survive, both earned:
  *
- * Each screen is captioned as an act, film-subtitle style, in the
- * frame's bottom left: a two-digit number and at most five words for
- * what the act IS. The captions sit OUTSIDE the camera, because
- * subtitles do not zoom with footage, and read in order they are the
- * story's table of contents.
+ *   · The signature shot, the 242 count-up, at 1.3. The camera clamps
+ *     to the top-left corner, so the figure, its sentence and the
+ *     trades / pages read / documents strip beneath it are all in
+ *     shot while the number runs, and the pull-back onto the
+ *     register's cascade shows how much one number unpacked into.
+ *   · The citation lighting teal, at 1.2. Nine-pixel type carrying the
+ *     product's central claim is the one thing in the film that is
+ *     genuinely too small to read wide. At 1.2 the whole scope line —
+ *     item, sentence and citation — fits the window.
  *
- * The Frame, its breadcrumb and the pointer sit outside the screen
- * crossfade and never remount, so the pointer never blinks out between
- * two screens, and both ride INSIDE the camera, so a push carries the
- * pointer with it exactly as a recorded zoom would. The breadcrumb
- * changes with every screen, which is the cheapest and most convincing
- * signal that the session actually navigated.
+ * Everything else plays wide, because everything else is a reveal or a
+ * read, and the crop test kills the rest: the weighted-score working
+ * spans the card's full measure, so any push on it cuts either the
+ * dimension labels or their scores. The long reads get a still, wide
+ * frame, and the scrolled surfaces name their sections as they arrive
+ * with a bottom-centre tag instead of being pointed at.
  *
- * Four compressions worth naming, because a later reader will otherwise
- * think they are mistakes:
+ * Act five is where the film now spends its depth. The evaluation
+ * travels six stops, wide, each named by its tag: the computed
+ * overview, the firm-versus-allowance bars for all three tenders, the
+ * six published weights opening under the pointer, the decision grid's
+ * teal cells sweeping in, the significant flag on the cheapest tender
+ * opened and explained, and two of the numbered pre-decision
+ * questions. Then back up to the tender the reading chose, and Award.
+ *
+ * Four compressions worth naming, because a later reader will
+ * otherwise think they are mistakes:
  *
  *   · Screen one puts Continue under the finished scan. In the app the
  *     scan hands you straight to the wizard and Continue belongs to the
@@ -93,6 +97,7 @@ import {
   ChevronDown,
   FileText,
   FileUp,
+  ListChecks,
   Scale,
   ScrollText,
   ShieldCheck,
@@ -101,10 +106,10 @@ import {
 
 import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
-  ActCaption,
   Avatar,
   C,
   Card,
+  ChapterCard,
   Division,
   Frame,
   GhostBtn,
@@ -112,6 +117,7 @@ import {
   ListFade,
   Pill,
   ScopeLine,
+  SectionTag,
   TealBtn,
   TONE,
   VerifyChip,
@@ -127,19 +133,28 @@ const SCROLL = { duration: 0.85, ease: [0.22, 1, 0.36, 1] } as const;
 /** A panel opening or a card growing. */
 const OPEN = { duration: 0.4, ease: EASE } as const;
 
-/** The screen crossfade. The Frame, the breadcrumb and the pointer are
- *  all outside this, so only the body ever changes. */
+/** The screen crossfade. It plays entirely under the chapter card, so
+ *  the viewer never actually sees it; it exists so the new screen has
+ *  settled before the card clears. */
 const CUT = { duration: 0.4, ease: EASE } as const;
 
 /* ── the session's state ─────────────────────────────────────────── */
 
 type Screen = "upload" | "scope" | "round" | "tenders" | "compare" | "award";
 
+/** The interstitial the film cuts on. */
+type Chapter = { n: string; title: string; sub?: string };
+
 type S = {
   screen: Screen;
   /** Which control the pointer is over. One at a time, by design: a
    *  hand is only ever in one place. */
   hot: string | null;
+  /** The chapter card between acts. The screen changes UNDER it, so
+   *  the card is the transition. */
+  card: Chapter | null;
+  /** The lower-third naming the section during act five's long read. */
+  tag: string | null;
   /** Screen one: the three phases of reading a plan set. */
   phase: "drop" | "scan" | "done";
   /** Screen two: whether the register has cascaded in yet (it holds
@@ -151,22 +166,26 @@ type S = {
   scopeY: number;
   /** Screen three: how many of the three spots have gone. */
   spots: 2 | 3;
-  /** Screen five: the evaluation column's offset, the working under one
-   *  tender's weighted overall, and the grid's teal cells. */
+  /** Screen five: the evaluation column's offset, the working under
+   *  Meridian's weighted overall, the significant flag on Corten's
+   *  card, and the grid's teal cells. */
   cmpY: number;
   dims: boolean;
+  flag: boolean;
   lit: boolean;
 };
 
 /**
- * Screen one, complete and finished, with no pointer. This is what the
- * engine restores between loops and what renders under
+ * Screen one, complete and finished, with no pointer and no card. This
+ * is what the engine restores between loops and what renders under
  * prefers-reduced-motion, so it has to be a screen worth looking at
  * rather than a scene caught mid-gesture.
  */
 const RESTING: S = {
   screen: "upload",
   hot: null,
+  card: null,
+  tag: null,
   phase: "drop",
   reg: false,
   open: false,
@@ -175,6 +194,7 @@ const RESTING: S = {
   spots: 2,
   cmpY: 0,
   dims: false,
+  flag: false,
   lit: false,
 };
 
@@ -189,26 +209,36 @@ const CRUMB: Record<Screen, string> = {
   award: "Awarded",
 };
 
-/** The act captions: a film subtitle per screen, and most of the
- *  explanation. Each one says what the act IS, in five words or
- *  fewer, so the six of them read as the platform's table of
- *  contents. */
-const ACT_N: Record<Screen, string> = {
-  upload: "01",
-  scope: "02",
-  round: "03",
-  tenders: "04",
-  compare: "05",
-  award: "06",
-};
-
-const ACT_TEXT: Record<Screen, string> = {
-  upload: "Your plans, read",
-  scope: "One list, every trade",
-  round: "Builders take their spots",
-  tenders: "Three prices, one shape",
-  compare: "Read side by side",
-  award: "Awarded, directly",
+/** The chapter cards: an act number, a title of at most six words, and
+ *  a sub-line that carries the act's claim plainly. Read in order they
+ *  are the platform's table of contents. */
+const CARDS: Record<Screen, Chapter> = {
+  upload: { n: "01", title: "Upload your plans", sub: "Drop in the PDF, we read every page." },
+  scope: {
+    n: "02",
+    title: "One list, every trade",
+    sub: "242 items, written from your documents, cited to the page.",
+  },
+  round: {
+    n: "03",
+    title: "Builders take their spots",
+    sub: "Verified builders only, capped at three.",
+  },
+  tenders: {
+    n: "04",
+    title: "Three prices, one shape",
+    sub: "Every tender answers the same questions, signed.",
+  },
+  compare: {
+    n: "05",
+    title: "Read side by side",
+    sub: "Six published weights, every difference set out.",
+  },
+  award: {
+    n: "06",
+    title: "Awarded, directly",
+    sub: "The contract is yours and your builder's. No commission.",
+  },
 };
 
 /* ── screen one · what the plans gave up ─────────────────────────── */
@@ -222,6 +252,15 @@ const PULLED: Array<[string, string]> = [
 ];
 
 /* ── screen two · the scope register ─────────────────────────────── */
+
+/** What the read covered, printed under the figure the way the wizard
+ *  prints it. Part of the signature shot's crop on purpose: the 242 is
+ *  only impressive next to where it came from. */
+const SCOPE_FACTS: Array<[string, string]> = [
+  ["29", "trades"],
+  ["211", "pages read"],
+  ["9", "documents"],
+];
 
 /** Seventeen of the register's thirty one divisions, in the pack's own
  *  build order. Enough that the list reads as a real register and that
@@ -330,36 +369,61 @@ const FOOT = 36;
 const H = {
   head: 106,
   overview: 228,
+  money: 196,
   tender: 240,
   tenderOpen: 336,
+  tenderFlagOpen: 333,
   grid: 306,
+  agenda: 158,
   record: 64,
 } as const;
 
-/** Where each band's top sits, measured with the first tender card
- *  already open, which is the state the script leaves it in before it
- *  scrolls past. */
+/**
+ * Where each band's top sits at the moment the script scrolls to it.
+ * Meridian's working is open by the time the column passes it, so
+ * everything below Meridian is measured against the open height; the
+ * flag on Corten's card opens only after the grid has been read, so
+ * the grid is measured against the closed card and the agenda against
+ * the open one.
+ */
 const TOP = (() => {
   const overview = H.head + GAP;
-  const meridian = overview + H.overview + GAP;
+  const money = overview + H.overview + GAP;
+  const meridian = money + H.money + GAP;
   const corten = meridian + H.tenderOpen + GAP;
   const grid = corten + H.tender + GAP;
-  const record = grid + H.grid + GAP;
-  return { overview, meridian, corten, grid, record };
+  const agenda = grid + H.grid + GAP + (H.tenderFlagOpen - H.tender);
+  return { overview, money, meridian, corten, grid, agenda };
 })();
 
 /**
  * The column's waypoints, as offsets rather than positions. Each one
- * leaves a deliberate margin above the thing being read, and `award`
+ * leaves a deliberate margin above the thing being read. `agenda` is
+ * pinned so the record band and the tail land flush with the tallest
+ * frame's foot rather than leaving a band of empty canvas, and `award`
  * is chosen so the decision row sits about a hundred pixels down: high
  * enough to be on screen inside the shortest phone frame, low enough
  * that the working which justifies the decision is still above it.
  */
 const AT = {
   overview: 8 - TOP.overview,
-  meridian: -TOP.meridian,
+  money: 10 - TOP.money,
+  meridian: 8 - TOP.meridian,
   grid: 26 - TOP.grid,
+  corten: 10 - TOP.corten,
+  agenda: 181 - TOP.agenda,
   award: 102 - (TOP.meridian + H.tenderOpen - FOOT),
+} as const;
+
+/** The six section tags, in the order the column reaches them. Grammar
+ *  E: a long read names its sections as they arrive. */
+const TAGS = {
+  overview: "The overview",
+  money: "Where the money stands",
+  weights: "Six published weights",
+  grid: "The decision grid",
+  flag: "Every flag, explained",
+  agenda: "Before you decide",
 } as const;
 
 /**
@@ -380,6 +444,24 @@ const STRIP: Array<[string, string, string]> = [
 ];
 
 /**
+ * Where the money stands, tender by tender. `bar` is the tender's
+ * share of the highest price, which is what sets each bar's width, and
+ * `firm` is how much of it is committed in the contract sum. The one
+ * picture that shows why the cheapest number is not the safest one.
+ */
+const MONEY = [
+  {
+    name: "Corten Build Co.",
+    price: "$712,800",
+    bar: 89,
+    firm: 84,
+    note: "$543,000 committed · $105,000 in allowances that can move either way",
+  },
+  { name: "Meridian Building Co", price: "$753,500", bar: 94, firm: 100, note: "Every dollar committed" },
+  { name: "Brightwater Homes", price: "$800,800", bar: 100, firm: 100, note: "Every dollar committed" },
+] as const;
+
+/**
  * The six dimensions in rubric order with their published weights and
  * the points Meridian earned. `leads` is the round leader on that line,
  * which is what turns the bar and the number teal on the real card.
@@ -393,6 +475,24 @@ const DIMS: Array<{ label: string; weight: number; score: number; leads?: boolea
   { label: "Credentials & capacity", weight: 15, score: 80 },
   { label: "Delivery & aftercare", weight: 12, score: 94, leads: true },
   { label: "Programme confidence", weight: 8, score: 60 },
+];
+
+/** One of the two significant flags on the cheapest tender, printed as
+ *  the dossier prints it: what it is, what it means, what to ask. */
+const FLAG = {
+  word: "Significant",
+  label: "16% of the price can still move",
+  detail: "$105,000 sits in provisional sums and prime costs (2 PS, 3 PC).",
+  ask: "Ask which allowances they would fix if the documents were finalised now.",
+};
+
+/** The first two lines of the pre-decision agenda: every line is a
+ *  flag's own question, put in the owner's mouth rather than left as a
+ *  finding. The first one closes the loop the register opened in act
+ *  two, when the soil report came back "not found". */
+const ROUND_ASKS = [
+  "Share the soil report with every builder so all prices rest on the same ground conditions.",
+  "9 trades are treated differently across the round. Confirm each builder priced the same scope before comparing numbers.",
 ];
 
 /** The three tender columns, in price order. */
@@ -452,186 +552,188 @@ export function HomeownerJourney({ active }: { active: boolean }) {
     rootRef: root,
     loopPause: 2200,
     script: [
-      /* ── act 01 · your plans, read ───────────────────────────────
-         The pointer's first two presses, and the camera's first push
-         and pull. By the time the session leaves this screen the
-         visitor has seen the whole grammar once: lean in on a
-         control, press, pull wide for what the press produced. */
-      { wait: 400 },
+      /* ── act 01 · upload your plans ──────────────────────────────
+         The film opens the way an explainer does: on the first card,
+         over the resting screen. The camera is wide here and at every
+         card after it; the card, not the zoom, is the cut. */
+      { set: { card: CARDS.upload } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
       // The first move places rather than travels: the engine fades the
-      // pointer in already standing on its target, so `ms` is moot here.
+      // pointer in already standing on its target.
       { move: "drop" },
-      { cam: { focus: "drop", scale: 1.3, ms: 800 } },
       { set: { hot: "drop" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { phase: "scan", hot: null } },
-      { wait: 300 },
-      // Wide BEFORE the read plays out: the scan is a reveal, and
-      // reveals are watched wide.
-      { cam: "reset" },
-      { wait: 950 },
+      // The scan is a reveal, and reveals are watched wide.
+      { wait: 1050 },
       { set: { phase: "done" } },
-      { wait: 900 },
-      // The first zoom-through. Lean in on Continue, press, and let
-      // the scope screen land under the zoom.
-      { cam: { focus: "continue", scale: 1.35, ms: 800 } },
-      { move: "continue", ms: 620 },
+      { wait: 700 },
+      { move: "continue", ms: 560 },
       { set: { hot: "continue" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "scope", hot: null } },
-      // Longer than the other landings: the crossfade must finish
-      // before the camera can measure the figure it re-aims onto.
-      { wait: 600 },
+      // The cut: the scope screen mounts UNDER the card, so by the
+      // time the card clears the crossfade has long finished.
+      { set: { card: CARDS.scope, screen: "scope", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── act 02 · one list, every trade ──────────────────────────
-         THE SIGNATURE SHOT. The camera arrives still zoomed from the
-         Continue press and re-aims onto the figure at 1.45 while it
-         counts up to 242. It holds a beat after the number lands,
-         then pulls wide as the register's divisions cascade in behind
-         it: the pull-back that shows how much one number unpacked
-         into. */
-      { cam: { focus: "scope-count", scale: 1.45, ms: 900 } },
-      { wait: 1600 },
+         THE SIGNATURE SHOT, the one push kept at 1.3. The camera
+         leans onto the figure block — the count, its sentence, and
+         the trades / pages read / documents strip all inside the
+         window — while the number runs to 242, then pulls wide as
+         the register's divisions cascade in behind it: the pull-back
+         that shows how much one number unpacked into. */
+      { cam: { focus: "scope-count", scale: 1.3, ms: 700 } },
+      { wait: 1700 },
       { set: { reg: true } },
       { cam: "reset" },
-      { wait: 650 },
-      { move: "div-approvals", ms: 800 },
+      { wait: 500 },
+      { move: "div-approvals", ms: 680 },
       { set: { hot: "approvals" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { open: true, hot: null } },
-      { wait: 450 },
+      { wait: 350 },
       // Lift what was just opened to the top before reading it. Every
-      // scroll in this film happens on a wide, motionless camera.
+      // scroll in this film happens on a motionless camera.
       { set: { scopeY: SCOPE_Y.settle } },
-      { wait: 900 },
-      // The second close-up: the citation, watched at 1.3 while it
-      // lights teal. Push first, then let the pointer work it.
-      { cam: { focus: "cite-approvals", scale: 1.3, ms: 800 } },
-      { move: "cite-approvals", ms: 620 },
+      { wait: 750 },
+      // The other push that survived the budget: the citation, at 1.2.
+      // Nine-pixel type carrying the product's claim is the one thing
+      // genuinely too small to read wide, and at 1.2 the whole scope
+      // line — item, sentence, citation — fits the window.
+      { cam: { focus: "cite-approvals", scale: 1.2, ms: 700 } },
+      { move: "cite-approvals", ms: 560 },
       { set: { cite: true } },
-      { wait: 1300 },
+      { wait: 1000 },
       { set: { cite: false } },
       { cam: "reset" },
-      { wait: 250 },
       // Two flicks rather than one long glide, because that is how a
       // register this long actually gets read.
       { set: { scopeY: SCOPE_Y.middle } },
-      { wait: 900 },
+      { wait: 700 },
       { set: { scopeY: SCOPE_Y.bottom } },
-      { wait: 900 },
-      // Zoom-through on Publish.
-      { cam: { focus: "publish", scale: 1.35, ms: 800 } },
-      { move: "publish", ms: 700 },
+      { wait: 700 },
+      { move: "publish", ms: 600 },
       { set: { hot: "publish" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "round", hot: null } },
-      { wait: 350 },
+      { set: { card: CARDS.round, screen: "round", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── act 03 · the builders take the spots ────────────────────
-         A wide act. The third spot filling is a reveal, so the camera
-         pulls back on arrival and does not move again until the
-         exit. */
-      { cam: "reset" },
-      { wait: 700 },
-      { move: "row-corten", ms: 760 },
+         Wide throughout. The third spot filling is a reveal. */
+      { move: "row-corten", ms: 650 },
       { set: { hot: "corten" } },
-      { wait: 650 },
+      { wait: 580 },
       // The last spot goes while the pointer is resting on the first
       // builder. Nobody clicked this: it is the round being live.
       { set: { spots: 3, hot: null } },
-      { wait: 1050 },
-      // Zoom-through on the tender stream link.
-      { cam: { focus: "stream", scale: 1.35, ms: 800 } },
-      { move: "stream", ms: 700 },
+      { wait: 900 },
+      { move: "stream", ms: 600 },
       { set: { hot: "stream" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "tenders", hot: null } },
-      { wait: 350 },
+      { set: { card: CARDS.tenders, screen: "tenders", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── act 04 · three tenders, one shape ───────────────────────
-         The three cards land ON the pull-back, the widest reveal in
-         the film, and the camera stays wide while the eye goes to the
-         cheapest. That it is the cheapest is the whole reason the
-         next screen exists. */
-      { cam: "reset" },
-      { wait: 900 },
-      { move: "card-corten", ms: 760 },
+         The three cards land on the reveal — their entrances are
+         delayed past the chapter card on purpose — and the camera
+         stays wide while the eye goes to the cheapest. That it is
+         the cheapest is the whole reason the next screen exists. */
+      { wait: 650 },
+      { move: "card-corten", ms: 650 },
       { set: { hot: "corten" } },
-      { wait: 700 },
+      { wait: 630 },
       { set: { hot: null } },
-      // Zoom-through on Compare tenders.
-      { cam: { focus: "compare", scale: 1.35, ms: 800 } },
-      { move: "compare", ms: 700 },
+      { move: "compare", ms: 600 },
       { set: { hot: "compare" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "compare", hot: null } },
-      { wait: 350 },
+      { set: { card: CARDS.compare, screen: "compare", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── act 05 · the evaluation, read side by side ──────────────
-         The longest act, and the stillest. The overview paragraph is
-         a long read, so it gets a wide, motionless camera; the one
-         push is on the weighted score as its working opens, and the
-         one after that is the Award press. */
-      { cam: "reset" },
-      { wait: 350 },
-      { set: { cmpY: AT.overview } },
-      { wait: 2250 },
-      { set: { cmpY: AT.meridian } },
-      { wait: 900 },
-      // Push on the score row, then open its working and read the
-      // published weights close.
-      { cam: { focus: "score", scale: 1.3, ms: 800 } },
-      { move: "score", ms: 620 },
+         The longest act, entirely wide: six stops down the surface,
+         each named by its tag as it arrives. The weighted-score push
+         the last cut carried failed the crop test — the working spans
+         the card's full measure, so any push cuts either the labels
+         or the scores — so the working opens wide too. */
+      { set: { cmpY: AT.overview, tag: TAGS.overview } },
+      { wait: 2100 },
+      { set: { cmpY: AT.money, tag: TAGS.money } },
+      { wait: 1500 },
+      { set: { cmpY: AT.meridian, tag: TAGS.weights } },
+      { wait: 800 },
+      // The pointer opens the working under the score, and the six
+      // published weights arrive line by line beside their labels.
+      { move: "score", ms: 500 },
       { set: { hot: "score" } },
       { wait: 400 },
       { click: true },
       { set: { dims: true, hot: null } },
-      { wait: 1200 },
-      // Wide before the grid: the teal cells arriving a row at a time
-      // is a reveal, and it says no single tender wins everything.
-      { cam: "reset" },
-      { set: { cmpY: AT.grid } },
-      { wait: 650 },
-      { set: { lit: true } },
       { wait: 1100 },
-      // Back up to the tender that was chosen, which is what a person
-      // does once they have read the lot.
-      { set: { cmpY: AT.award } },
-      { wait: 900 },
-      // The decision, watched close. Zoom-through on Award.
-      { cam: { focus: "award", scale: 1.35, ms: 800 } },
-      { move: "award", ms: 620 },
-      { set: { hot: "award" } },
-      { wait: 450 },
+      // The teal cells arriving a row at a time is a reveal, and it
+      // says no single tender wins everything.
+      { set: { cmpY: AT.grid, tag: TAGS.grid } },
+      { wait: 550 },
+      { set: { lit: true } },
+      { wait: 1050 },
+      // Back up to the cheapest tender, and open the flag the grid
+      // just put a number to: what it is, what it means, what to ask.
+      { set: { cmpY: AT.corten, tag: TAGS.flag } },
+      { wait: 800 },
+      { move: "flag", ms: 500 },
+      { set: { hot: "flag" } },
+      { wait: 400 },
       { click: true },
-      { set: { screen: "award", hot: null } },
-      { wait: 350 },
+      { set: { flag: true, hot: null } },
+      { wait: 850 },
+      { set: { cmpY: AT.agenda, tag: TAGS.agenda } },
+      { wait: 1400 },
+      // The read is done: the tag comes down, and the column goes back
+      // up to the tender the reading chose.
+      { set: { cmpY: AT.award, tag: null } },
+      { wait: 800 },
+      { move: "award", ms: 500 },
+      { set: { hot: "award" } },
+      { wait: 400 },
+      { click: true },
+      { set: { card: CARDS.award, screen: "award", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── act 06 · the decision ───────────────────────────────────
-         One pull-back onto the awarded banner and then stillness, all
-         the way into the loop pause. The film ends wide, the way it
-         started. */
-      { cam: "reset" },
-      { wait: 1900 },
+         Stillness, all the way into the loop pause. The film ends
+         wide, the way it started. */
+      { wait: 1100 },
       { cursor: "hide" },
-      { wait: 500 },
+      { wait: 450 },
     ],
   });
 
   return (
     <div ref={root} className="relative w-full h-full overflow-hidden">
-      {/* The camera wraps the window AND the pointer, so a push-in
-          carries the pointer with it the way a recorded zoom does. The
+      {/* The camera wraps the window AND the pointer, so the two pushes
+          carry the pointer with them the way a recorded zoom would. The
           Frame and its breadcrumb live outside the crossfade, so the
-          window never remounts and the breadcrumb is the one piece of
-          chrome that tells you the session moved. The act caption sits
-          outside the camera: subtitles do not zoom with footage. */}
+          window never remounts. The section tag and the chapter card
+          sit OUTSIDE the camera: the tag is a lower-third and the card
+          is the cut itself, and neither zooms with footage. */}
       <SceneCamera cam={cam}>
         <Frame crumb={CRUMB[state.screen]}>
           <AnimatePresence mode="wait">
@@ -663,7 +765,8 @@ export function HomeownerJourney({ active }: { active: boolean }) {
         <SceneCursor cursor={cursor} clicks={clicks} />
       </SceneCamera>
 
-      <ActCaption n={ACT_N[state.screen]} text={ACT_TEXT[state.screen]} />
+      <SectionTag text={state.tag} />
+      <ChapterCard card={state.card} />
     </div>
   );
 }
@@ -928,29 +1031,53 @@ function ScopeScreen({ s }: { s: S }) {
           <Check className="size-2.5" strokeWidth={3} /> Approved
         </Pill>
       </div>
-      {/* The figure the whole act zooms on. The camera arrives here
-          still pushed from the Continue press; the count runs up while
-          it is watched at 1.45, and the register cascades in on the
-          pull-back. Visible at every size, because the signature shot
-          has to exist on a phone too. */}
-      <div data-cursor="scope-count" className="shrink-0 flex items-baseline gap-1.5">
-        <CountUp
-          to={242}
-          delay={0.75}
-          className="font-ui font-semibold text-[19px] leading-none tabular-nums"
-          style={{ color: C.ink }}
-        />
-        <p className="text-[10.5px] leading-snug" style={{ color: C.muted }}>
-          items of work, built from your documents.
-          <span className="hidden sm:inline"> Every builder prices this same list.</span>
-        </p>
+      {/* The signature block: the count, its sentence held to a narrow
+          measure so it wraps rather than runs, and the facts strip
+          beneath. All of it inside the 1.3 window, because the crop
+          test says whatever reacts must be in shot, and here the
+          number, the words and the strip all do. */}
+      <div data-cursor="scope-count" className="shrink-0">
+        <div className="flex items-baseline gap-1.5">
+          <CountUp
+            to={242}
+            delay={2.6}
+            className="font-ui font-semibold text-[19px] leading-none tabular-nums"
+            style={{ color: C.ink }}
+          />
+          <p className="text-[10.5px] leading-snug max-w-[44ch]" style={{ color: C.muted }}>
+            items of work, built from your documents.
+            <span className="hidden sm:inline"> Every builder prices this same list.</span>
+          </p>
+        </div>
+        <div
+          className="mt-2 inline-flex items-stretch rounded-lg border overflow-hidden"
+          style={{ borderColor: C.line, background: C.paper }}
+        >
+          {SCOPE_FACTS.map(([v, l], i) => (
+            <div
+              key={l}
+              className="px-3.5 py-1.5 text-center"
+              style={i === 0 ? undefined : { borderLeft: `1px solid ${C.line}` }}
+            >
+              <p
+                className="font-ui font-semibold text-[12px] leading-none tabular-nums"
+                style={{ color: C.ink }}
+              >
+                {v}
+              </p>
+              <p className="mt-0.5 text-[8px] uppercase tracking-[0.12em]" style={{ color: C.dim }}>
+                {l}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* The register itself, clipped, so the scroll beats read as a
           list being scrolled rather than a card changing height. The
           divisions hold back until the script pulls the camera wide
           off the count, then rise in a cascade: the reveal happens on
-          the wide shot, never under the zoom. */}
+          the wide shot, never under the push. */}
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <motion.div
           className="flex flex-col gap-2.5"
@@ -1161,14 +1288,17 @@ function TendersScreen({ s }: { s: S }) {
 
       {/* They arrive in the same shape because they answered the same
           instrument, which is the only reason the numbers below them can
-          be compared at all. */}
+          be compared at all. The entrances are delayed past the chapter
+          card — the screen mounts under it and holds 2.1 seconds before
+          the reveal — so the three land on the wide shot, one after the
+          other, not behind a curtain. */}
       <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col gap-3">
         {TENDERS.map((t, i) => (
           <motion.div
             key={t.key}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.44, delay: 0.06 + i * 0.24, ease: EASE }}
+            transition={{ duration: 0.44, delay: 2.2 + i * 0.22, ease: EASE }}
           >
             <Card
               className="px-3.5 py-3.5 transition-colors duration-200"
@@ -1300,6 +1430,47 @@ function CompareScreen({ s }: { s: S }) {
           </div>
         </Band>
 
+        {/* where the money stands: the one picture that shows why the
+            cheapest number is not the safest one */}
+        <Band h={H.money}>
+          <Card className="h-full overflow-hidden px-3.5 py-3">
+            <Kicker icon={Scale}>Where the money stands</Kicker>
+            <p className="mt-1 text-[9px] leading-[1.45] line-clamp-1" style={{ color: C.muted }}>
+              Each bar is a tender price. The solid part is committed; the lighter tail can still
+              move.
+            </p>
+            <div className="mt-2.5 flex flex-col gap-2">
+              {MONEY.map((m) => (
+                <div key={m.name}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p
+                      className="min-w-0 truncate text-[10px] font-semibold"
+                      style={{ color: C.ink }}
+                    >
+                      {m.name}
+                    </p>
+                    <p
+                      className="shrink-0 font-ui font-semibold text-[11px] leading-none tabular-nums"
+                      style={{ color: C.ink }}
+                    >
+                      {m.price}
+                      <span className="ml-1 text-[8px] font-normal" style={{ color: C.dim }}>
+                        inc GST
+                      </span>
+                    </p>
+                  </div>
+                  <div className="mt-1" style={{ width: `${m.bar}%`, minWidth: "42%" }}>
+                    <FirmSplit firm={m.firm} h={8} />
+                  </div>
+                  <p className="mt-0.5 text-[8.5px] leading-[1.35] truncate" style={{ color: C.muted }}>
+                    {m.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Band>
+
         <TenderBand
           mono="MB"
           name="Meridian Building Co"
@@ -1332,7 +1503,10 @@ function CompareScreen({ s }: { s: S }) {
           flagTone="risk"
           flagWord="2 significant flags"
           attention="6 worth attention"
-          h={H.tender}
+          h={s.flag ? H.tenderFlagOpen : H.tender}
+          flagKey="flag"
+          hotFlag={s.hot === "flag"}
+          openFlag={s.flag}
         />
 
         {/* side by side */}
@@ -1417,6 +1591,50 @@ function CompareScreen({ s }: { s: S }) {
           </Card>
         </Band>
 
+        {/* before you decide: the agenda the evaluation hands back.
+            The first question closes the loop the register opened in
+            act two, when the soil report came back "not found". */}
+        <Band h={H.agenda}>
+          <Card className="h-full overflow-hidden flex flex-col">
+            <div className="px-3.5 pt-2.5 pb-2 border-b" style={{ borderColor: C.line }}>
+              <Kicker icon={ListChecks}>The pre-decision agenda</Kicker>
+              <p
+                className="mt-1 font-ui font-semibold uppercase tracking-[-0.015em] text-[17px] leading-none"
+                style={{ color: C.ink }}
+              >
+                Before you decide
+              </p>
+              <p className="mt-1.5 text-[9px] leading-[1.45] line-clamp-1" style={{ color: C.muted }}>
+                7 questions this round leaves open. Put them to the builders, and the decision
+                usually makes itself.
+              </p>
+            </div>
+            <div className="px-3.5 py-2">
+              <p className="text-[8px] uppercase tracking-[0.16em]" style={{ color: C.dim }}>
+                For the round
+              </p>
+              <ol className="mt-1.5 flex flex-col gap-1.5">
+                {ROUND_ASKS.map((q, i) => (
+                  <li key={q} className="flex items-start gap-2">
+                    <span
+                      className="shrink-0 mt-[1px] inline-flex size-[15px] items-center justify-center rounded-full text-[8px] font-semibold"
+                      style={{ background: TONE.good.bg, color: TONE.good.text }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span
+                      className="min-w-0 text-[9.5px] leading-[1.45] line-clamp-2"
+                      style={{ color: C.ink }}
+                    >
+                      {q}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </Card>
+        </Band>
+
         <Band h={H.record}>
           <Card className="h-full overflow-hidden px-3.5 py-2.5 flex items-center gap-2">
             <span className="min-w-0 flex-1">
@@ -1467,9 +1685,12 @@ function GridRow({ children, h }: { children: React.ReactNode; h?: number }) {
 }
 
 /**
- * One tender, as its card reads on the evaluation. Only the first one
- * carries cursor keys: the pointer opens its working and, once the
- * round has been read to the bottom and back, presses its Award.
+ * One tender, as its card reads on the evaluation. Meridian's carries
+ * the score and Award keys: the pointer opens its working and, once
+ * the round has been read to the bottom and back, presses its Award.
+ * Corten's carries the flag key: the pointer opens the significant
+ * flag, and the card answers with what it is, what it means, and what
+ * to ask.
  */
 function TenderBand({
   mono,
@@ -1487,8 +1708,11 @@ function TenderBand({
   open,
   scoreKey,
   awardKey,
+  flagKey,
   hotScore,
   hotAward,
+  hotFlag,
+  openFlag,
 }: {
   mono: string;
   name: string;
@@ -1505,14 +1729,17 @@ function TenderBand({
   open?: boolean;
   scoreKey?: string;
   awardKey?: string;
+  flagKey?: string;
   hotScore?: boolean;
   hotAward?: boolean;
+  hotFlag?: boolean;
+  openFlag?: boolean;
 }) {
   return (
     <motion.div className="shrink-0" initial={false} animate={{ height: h }} transition={OPEN}>
       <Card
         className="h-full overflow-hidden flex flex-col px-3.5 pt-3"
-        style={hotScore || hotAward ? { borderColor: C.tealLine } : undefined}
+        style={hotScore || hotAward || hotFlag ? { borderColor: C.tealLine } : undefined}
       >
         <div className="flex items-center gap-3">
           <Mono txt={mono} size={24} />
@@ -1606,12 +1833,51 @@ function TenderBand({
           </motion.div>
         </div>
 
-        <p className="mt-2.5 text-[9.5px] leading-tight">
+        <p
+          data-cursor={flagKey}
+          className="mt-2.5 rounded px-1 -mx-1 text-[9.5px] leading-tight transition-colors duration-200"
+          style={{ background: hotFlag && flagKey ? C.tealWash : undefined }}
+        >
           <span className="font-semibold" style={{ color: TONE[flagTone].text }}>
             {flagWord}
           </span>
           <span style={{ color: C.muted }}> · {attention}</span>
         </p>
+
+        {/* The flag, opened: what it is, what it means, what to ask.
+            Printed as the dossier prints it, in the surface's own risk
+            tone. Height animated for the same lockstep reason as the
+            working above. */}
+        <motion.div
+          className="overflow-hidden"
+          initial={false}
+          animate={{ height: openFlag ? 85 : 0 }}
+          transition={OPEN}
+        >
+          <div
+            className="mt-2 rounded-md border px-2 py-1.5"
+            style={{ borderColor: TONE.risk.border, background: TONE.risk.bg }}
+          >
+            <p
+              className="text-[8px] uppercase tracking-[0.14em] font-semibold"
+              style={{ color: TONE.risk.text }}
+            >
+              {FLAG.word}
+            </p>
+            <p className="mt-0.5 text-[10.5px] font-semibold leading-snug" style={{ color: C.ink }}>
+              {FLAG.label}
+            </p>
+            <p className="mt-1 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+              {FLAG.detail}
+            </p>
+            <p className="mt-1 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+              <span className="font-semibold" style={{ color: TONE.risk.text }}>
+                Before you decide:
+              </span>{" "}
+              {FLAG.ask}
+            </p>
+          </div>
+        </motion.div>
 
         {/* The decision sits on the card, where the app puts it. */}
         <div
@@ -1822,10 +2088,12 @@ function Press({ k, hot, children }: { k: string; hot: boolean; children: React.
 
 /**
  * The register's headline figure, counted rather than printed. It runs
- * once, on mount, delayed so the camera is already standing on it when
- * the number starts to move. It writes textContent through a ref
- * rather than state: the count renders ninety-odd frames and none of
- * them needs React.
+ * once, on mount. The delay is choreography: the screen mounts under
+ * act two's chapter card, which holds 2.1 seconds, and the camera's
+ * push takes 0.7 more, so the count starts just as the camera settles
+ * on it and lands with time left to rest. It writes textContent
+ * through a ref rather than state: the count renders ninety-odd frames
+ * and none of them needs React.
  */
 function CountUp({
   to,

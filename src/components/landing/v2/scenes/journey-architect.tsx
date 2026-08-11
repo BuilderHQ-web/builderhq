@@ -19,27 +19,41 @@
  * into the tender stream, the Side by side nav pill, Back to project,
  * Share the project, Send the invitation.
  *
- * OVER THAT, A CAMERA. The scene plays under SceneCamera, directed in
- * the grammar of a recorded product film: detail is watched close, and
- * every reveal is watched wide. Before the pointer works a control the
- * camera leans in on it; before a result that should be taken in whole
- * lands (the round filling, three tenders arriving, the client's seat)
- * the camera has already pulled back, so the reveal happens on a wide
- * shot. Every screen change is a zoom-through: lean in on the button,
- * press, the next screen lands under the zoom, and the pull wide IS the
- * transition, which is what makes the film breathe in and out with each
- * navigation. The signature moment is the Open / Private choice, pushed
- * to 1.4 while the panel below rewrites, then pulled wide on the
- * consequence so the whole round setup is seen at once. The camera
- * never moves during a scroll and never scrolls while pushed in; the
- * register and the decision grid are read wide and still. Two or three
- * camera moves per screen, no more, because stillness is what makes the
- * pushes land.
+ * THE CHAPTER CARD IS THE CUT. This is the explainer-video grammar that
+ * replaced the zoom-through cut. Every act boundary plays the same way:
+ * the pointer hovers the real control, presses, and a centred chapter
+ * card dissolves over the frame while the next screen mounts beneath
+ * it — act number, one short line for what is about to happen, one
+ * sub-line carrying the claim plainly. The card is read for a beat and
+ * clears onto a wide shot, so every act opens on a reveal that has
+ * already been introduced. The film itself opens on act one's card, the
+ * way an explainer does; the resting state stays cardless and wide.
  *
- * An act caption sits in the frame's bottom left, outside the camera,
- * numbering the seven acts and naming what each one is. Subtitles do
- * not zoom with the footage, and their stillness is what makes the
- * camera's motion read.
+ * THE CAMERA IS RATIONED. Because the card now does the telling, the
+ * footage no longer zooms around pointing at things. Two pushes survive
+ * on this journey, and only two:
+ *
+ *   · the signature: the Open / Private choice at 1.3. The clamp pins
+ *     the frame's corner, so the shot holds both option cards, the
+ *     helper text under Open, and the spot count and rewritten
+ *     invitation subtitle arriving below as the press lands.
+ *   · the citation at 1.2, because "cited to the page" is the claim
+ *     worth watching close, and at 1.2 the whole line — item, plain
+ *     sentence and the citation that lights — sits inside the window.
+ *
+ * Everything else, including every navigation, plays wide. The camera
+ * never moves during a scroll, and it is back at rest before every
+ * chapter card.
+ *
+ * THE LONG READ IS NAMED, NOT ZOOMED. Act six travels the comparison
+ * machinery the way the evaluation page actually lays it out — the
+ * alignment lede, the schedule alignment with its count resolving, the
+ * differ table's state chips, the decision grid's teal cells, and the
+ * conditions behind the number — wide and still, with a bottom-centre
+ * section tag naming each stop as it arrives. The bands and their
+ * strings are the ones the comparison surfaces render
+ * (instrument-compare.tsx, evaluation-surface.tsx), sized to declared
+ * heights so a waypoint can never drift onto the middle of a row.
  *
  * One scene, one pointer. Nothing here is mounted or unmounted from
  * outside, because that is what used to make the cursor blink out
@@ -49,18 +63,18 @@
  * there is that the session navigated.
  *
  * Two surfaces are genuinely scrolled rather than quietly re-rendered
- * shorter: the scope register and the decision grid. Both translate a
- * column inside a fixed viewport, to waypoints hard coded from declared
+ * shorter: the scope register and the comparison column. Both translate
+ * inside a fixed viewport, to waypoints hard coded from declared
  * heights, because a scene that measures itself drifts the first time a
- * font loads late. The grid holds its three column headings still while
- * the rows travel under them; a table whose headings scroll away is a
- * table whose numbers stop meaning anything.
+ * font loads late.
  *
- * The whole script runs about fifty five seconds, which is deliberate.
- * Seven surfaces cannot be read in twenty, and the camera beats take
- * the time they need rather than being paid for out of the dwells.
+ * The whole script runs about fifty two seconds including the cards,
+ * which is the previous cut sped up by roughly a tenth: the dwells and
+ * post-reveal waits were multiplied by 0.9, the hover hesitations and
+ * the card reads were not, because a hand that stops hesitating stops
+ * reading as a hand.
  *
- * Four compressions worth naming, because a later reader will otherwise
+ * Compressions worth naming, because a later reader will otherwise
  * think they are mistakes:
  *
  *   · The scope register and the round settings are one route apart in
@@ -78,6 +92,11 @@
  *     project page, but invitations stay live after publish
  *     (tender-round-step.tsx:16-18) and the practice's builder joining
  *     its own invitation is the whole point of the step.
+ *   · Act six folds the schedule's Rock excavation line — the client's
+ *     provisional sum against one builder's firm figure — into the
+ *     conditions band. On the page it sits in the schedule alignment,
+ *     but it IS a condition behind Corten's number, and the five stops
+ *     read better when the money story lands last.
  *   · The last screen puts the sharing panel, which lives on the project
  *     page, beside the decision and the authorship line, which live on
  *     the evaluation. They are one press apart and they are the same
@@ -99,9 +118,11 @@ import {
   ArrowUpRight,
   Award,
   Check,
+  ChevronDown,
   FileDown,
   FileUp,
   Files,
+  GitCompareArrows,
   Globe2,
   Lock,
   Mail,
@@ -117,10 +138,10 @@ import type { LucideIcon } from "lucide-react";
 
 import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
-  ActCaption,
   Avatar,
   C,
   Card,
+  ChapterCard,
   Division,
   ELEV,
   Frame,
@@ -129,9 +150,9 @@ import {
   ListFade,
   Pill,
   ScopeLine,
+  SectionTag,
   TONE,
   TealBtn,
-  Track,
   VerifyChip,
   WashRow,
 } from "./kit";
@@ -153,6 +174,13 @@ type S = {
    *  screen can never leave a stale highlight behind it. */
   hot: string | null;
 
+  /** The chapter card over the frame, or nothing. The screen change
+   *  happens under it, so the card is the cut. */
+  card: { n: string; title: string; sub?: string } | null;
+
+  /** The lower-third naming the section of a long read, or nothing. */
+  tag: string | null;
+
   /* upload */
   phase: "drop" | "scanning" | "read";
 
@@ -171,10 +199,10 @@ type S = {
   /* the evaluation's section nav, as an index into NAV */
   sec: number;
 
-  /* side by side */
-  gridY: number;
+  /* the comparison column */
+  cmpY: number;
+  counted: boolean;
   lit: boolean;
-  scored: boolean;
 
   /* your client */
   form: boolean;
@@ -184,14 +212,16 @@ type S = {
 };
 
 /**
- * Screen one, finished and waiting, with no pointer on it. This is what
- * renders under prefers-reduced-motion, and it is what the loop returns
- * to before it starts again, so it has to be the state the first press
- * acts on rather than the state after it.
+ * Screen one, finished and waiting, with no pointer, no card and the
+ * camera wide. This is what renders under prefers-reduced-motion, and
+ * it is what the loop returns to before it starts again, so it has to
+ * be the state the first press acts on rather than the state after it.
  */
 const RESTING: S = {
   screen: "upload",
   hot: null,
+  card: null,
+  tag: null,
   phase: "drop",
   open: null,
   cite: false,
@@ -199,9 +229,9 @@ const RESTING: S = {
   mode: "private",
   joined: false,
   sec: 2,
-  gridY: 0,
+  cmpY: 0,
+  counted: false,
   lit: false,
-  scored: false,
   form: false,
   decider: false,
   seated: false,
@@ -219,28 +249,49 @@ const CRUMB: Record<ScreenKey, string> = {
   client: "Single dwelling · Pascoe Vale, VIC",
 };
 
-/** The act numbers and titles for the caption in the frame's bottom
- *  left. The captions are the story told in order: each one says what
- *  this act IS, in five words or fewer, and together they read as the
- *  practice's whole journey. */
-const ACT_N: Record<ScreenKey, string> = {
-  upload: "01",
-  scope: "02",
-  who: "03",
-  join: "04",
-  tenders: "05",
-  compare: "06",
-  client: "07",
-};
-
-const ACT_TEXT: Record<ScreenKey, string> = {
-  upload: "Upload for your client",
-  scope: "The list, written",
-  who: "Choose who prices it",
-  join: "The round fills",
-  tenders: "Same shape, three times",
-  compare: "Line against line",
-  client: "Handed over, on record",
+/**
+ * The chapter cards — the explainer track of the film. Each one plays
+ * at the act boundary, over the screen change, and the sub-line is
+ * where the claim lives, plainly: what the product just did, whose
+ * name is on it, what did not have to be done by hand. Titles hold to
+ * six words, subs to fourteen, Australian English, no em dashes.
+ */
+const CARDS: Record<ScreenKey, { n: string; title: string; sub: string }> = {
+  upload: {
+    n: "01",
+    title: "Upload for your client",
+    sub: "Your drawings, read page by page.",
+  },
+  scope: {
+    n: "02",
+    title: "The list, written",
+    sub: "Every item cited. Your client approves it.",
+  },
+  who: {
+    n: "03",
+    title: "Choose who prices it",
+    sub: "Your builders, the verified network, or both.",
+  },
+  join: {
+    n: "04",
+    title: "The round fills",
+    sub: "Invited builders join free, verified on the way in.",
+  },
+  tenders: {
+    n: "05",
+    title: "Same shape, three times",
+    sub: "Every builder answers the same submission. Nothing to normalise afterwards.",
+  },
+  compare: {
+    n: "06",
+    title: "Line against line",
+    sub: "Every difference surfaced before you advise.",
+  },
+  client: {
+    n: "07",
+    title: "Handed over, on record",
+    sub: "Your name on it. Your client decides.",
+  },
 };
 
 /* ── the curves ──────────────────────────────────────────────────── */
@@ -250,15 +301,15 @@ const ACT_TEXT: Record<ScreenKey, string> = {
 const SCROLL = { duration: 0.85, ease: [0.22, 1, 0.36, 1] } as const;
 /** The app's entrance curve, for anything that opens in place. */
 const OPEN = { duration: 0.38, ease: [0.16, 1, 0.3, 1] } as const;
-/** The screen change itself. Never a cut. */
+/** The screen change itself. Never a cut, and always under the card. */
 const SWAP = { duration: 0.4, ease: [0.16, 1, 0.3, 1] } as const;
 
 /* ── the round, as every surface downstream reads it ─────────────── */
 
 const TENDERS = [
-  { mono: "CB", name: "Corten Build Co.", price: "$712,800", weighted: 47 },
-  { mono: "MB", name: "Meridian Building Co", price: "$753,500", weighted: 86 },
-  { mono: "BH", name: "Brightwater Homes", price: "$800,800", weighted: 94 },
+  { mono: "CB", name: "Corten Build Co.", price: "$712,800" },
+  { mono: "MB", name: "Meridian Building Co", price: "$753,500" },
+  { mono: "BH", name: "Brightwater Homes", price: "$800,800" },
 ] as const;
 
 /** The round strip at the head of the evaluation. */
@@ -292,183 +343,184 @@ export function ArchitectJourney({ active }: { active: boolean }) {
     rootRef: root,
     loopPause: 2400,
     script: [
-      /* ── 01 · the plans go in. The camera leans in on the drop
-             zone before it is pressed, holds close while the read
-             begins, and has pulled wide again before "Got it" lands,
-             so the result is a reveal rather than a caption. ─────── */
-      { wait: 250 },
-      { move: "drop", ms: 700 },
-      { cam: { focus: "drop", scale: 1.3, ms: 850 } },
+      /* ── the film opens the way an explainer does: act one's card
+             over the resting screen, then the reveal, wide. ────────── */
+      { set: { card: CARDS.upload } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
+
+      /* ── 01 · the plans go in. Watched wide the whole way: the card
+             has already said what this act is, and the drop zone, the
+             scan and "Got it" all fit one resting shot. ────────────── */
+      { move: "drop", ms: 630 },
       { set: { hot: "drop" } },
       { wait: 400 },
       { click: true },
       { set: { phase: "scanning", hot: null } },
-      { wait: 550 },
-      { cam: "reset" },
-      { wait: 100 },
+      { wait: 1000 },
       { set: { phase: "read" } },
-      { wait: 650 },
-      /* zoom-through → the scope */
-      { move: "upload-continue", ms: 550 },
-      { cam: { focus: "upload-continue", scale: 1.35, ms: 850 } },
+      { wait: 550 },
+      /* the cut → 02, played by the card */
+      { move: "upload-continue", ms: 480 },
       { set: { hot: "upload-continue" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "scope", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.scope, screen: "scope", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── 02 · the list that comes out, and where each line came
-             from. The division opens wide; the camera pushes in for
-             the citation alone, because the claim worth watching
-             close is that a line traces back to a drawn sheet. The
-             register then scrolls, and it scrolls wide: the camera
-             never moves during a scroll. ─────────────────────────── */
-      { move: "div-earthworks", ms: 600 },
+             from. The one push this act keeps is the citation, at 1.2:
+             the claim worth watching close is that a line traces back
+             to a drawn sheet, and at that scale the item, its plain
+             sentence and the citation that lights all sit inside the
+             window. The register then scrolls, and it scrolls wide:
+             the camera never moves during a scroll. ─────────────────── */
+      { move: "div-earthworks", ms: 540 },
       { set: { hot: "div-earthworks" } },
       { wait: 360 },
       { click: true },
       { set: { open: "earthworks", hot: null } },
-      { wait: 400 },
-      { cam: { focus: "cite-earthworks", scale: 1.35, ms: 850 } },
-      { move: "cite-earthworks", ms: 450 },
+      { wait: 350 },
+      { cam: { focus: "cite-earthworks", scale: 1.2, ms: 850 } },
+      { move: "cite-earthworks", ms: 380 },
       { set: { cite: true } },
-      { wait: 650 },
+      { wait: 600 },
       { set: { cite: false } },
       { cam: "reset" },
       { set: { scopeY: -140 } },
-      { wait: 700 },
-      /* zoom-through → who can tender */
-      { move: "scope-continue", ms: 550 },
-      { cam: { focus: "scope-continue", scale: 1.35, ms: 850 } },
+      { wait: 600 },
+      /* the cut → 03 */
+      { move: "scope-continue", ms: 480 },
       { set: { hot: "scope-continue" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "who", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.who, screen: "who", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
-      /* ── 03 · the signature moment. The one screen only a practice
-             sees, so it is the one watched closest: push to 1.4 as
-             the pointer hovers Open, the card takes the teal skin on
-             the press, and the panel below rewrites while the camera
-             is still close, because the spot count only exists on an
-             open round and it should be seen arriving. Then pull
-             wide on the consequence, and hold still: the whole round
-             setup, seen at once. ─────────────────────────────────── */
-      { wait: 150 },
-      { move: "mode-open", ms: 650 },
-      { cam: { focus: "mode-open", scale: 1.4, ms: 1000 } },
+      /* ── 03 · the signature push, and the only one on the journey
+             with a press inside it. The one screen only a practice
+             sees, so it is the one watched closest: 1.3 on the Open
+             card. The clamp pins the frame's corner, which is what
+             keeps the whole consequence in shot — both option cards,
+             the helper text under Open, the spot count mounting and
+             the invitation subtitle rewriting below it. Then pull
+             wide and hold still. ────────────────────────────────────── */
+      { wait: 100 },
+      { move: "mode-open", ms: 590 },
+      { cam: { focus: "mode-open", scale: 1.3, ms: 900 } },
       { set: { hot: "mode-open" } },
       { wait: 400 },
       { click: true },
       { set: { mode: "open", hot: null } },
-      { wait: 1000 },
+      { wait: 850 },
       { cam: "reset" },
-      { wait: 800 },
-      /* zoom-through → the round */
-      { move: "publish", ms: 600 },
-      { cam: { focus: "publish", scale: 1.35, ms: 850 } },
+      { wait: 600 },
+      /* the cut → 04 */
+      { move: "publish", ms: 500 },
       { set: { hot: "publish" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "join", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.join, screen: "join", hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── 04 · the round fills, and it fills WIDE. Builders
              arriving is the one event the practice does not click,
              and it is a reveal, so the camera stands still and lets
              all three rows be taken in whole. ────────────────────── */
-      { wait: 400 },
+      { wait: 300 },
       { set: { joined: true } },
-      { wait: 1000 },
-      /* zoom-through → the evaluation */
-      { move: "stream", ms: 650 },
-      { cam: { focus: "stream", scale: 1.35, ms: 850 } },
+      { wait: 850 },
+      /* the cut → 05 */
+      { move: "stream", ms: 560 },
       { set: { hot: "stream" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "tenders", sec: 2, hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.tenders, screen: "tenders", sec: 2, hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
       /* ── 05 · three tenders, in the same shape, landing wide so
              all three are seen answering the same three fields. ──── */
-      { wait: 400 },
-      { move: "card-meridian", ms: 650 },
+      { wait: 300 },
+      { move: "card-meridian", ms: 560 },
       { set: { hot: "card-meridian" } },
-      { wait: 600 },
+      { wait: 500 },
       // The card unlights as the pointer starts to leave it, not when it
       // arrives somewhere else. A hover that outlives the pointer is the
       // tell that nothing here is really being hovered.
       { set: { hot: null } },
-      /* zoom-through → side by side */
-      { move: "nav-3", ms: 550 },
-      { cam: { focus: "nav-3", scale: 1.35, ms: 850 } },
+      /* the cut → 06 */
+      { move: "nav-3", ms: 480 },
       { set: { hot: "nav-3" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "compare", sec: 3, hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.compare, screen: "compare", sec: 3, hot: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
-      /* ── 06 · the argument, in one table. The longest read on the
-             journey, watched wide and still: the teal cells sweep,
-             then the grid scrolls in two stages, and a scroll is
-             never watched through a moving camera. ───────────────── */
-      { wait: 300 },
-      { set: { lit: true } },
-      { wait: 950 },
-      { set: { gridY: GRID_AT.mid } },
-      { wait: 850 },
-      { set: { gridY: GRID_AT.foot, scored: true } },
-      { wait: 1050 },
-      /* zoom-through → the handover */
-      { move: "back", ms: 650 },
-      { cam: { focus: "back", scale: 1.35, ms: 850 } },
+      /* ── 06 · the argument, band by band. The longest read on the
+             journey, and it is read wide, still, and NAMED: the
+             column travels the comparison machinery in five stops and
+             the section tag says what each one is. The differing-line
+             count resolves at the second stop, the grid's teal cells
+             sweep at the fourth, and the client's provisional sum
+             meets a builder's firm figure at the last. ─────────────── */
+      { set: { tag: "Same questions, every builder" } },
+      { wait: 1350 },
+      { set: { cmpY: CMP_AT.sched, tag: "228 lines, 9 differ" } },
+      { wait: 350 },
+      { set: { counted: true } },
+      { wait: 1550 },
+      { set: { cmpY: CMP_AT.differ, tag: "Line against line" } },
+      { wait: 1900 },
+      { set: { cmpY: CMP_AT.grid, tag: "The decision grid", lit: true } },
+      { wait: 2200 },
+      { set: { cmpY: CMP_AT.terms, tag: "The conditions behind the number" } },
+      { wait: 2100 },
+      /* the cut → 07, and the tag leaves with its act */
+      { move: "back", ms: 560 },
       { set: { hot: "back" } },
       { wait: 400 },
       { click: true },
-      { set: { screen: "client", hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { wait: 700 },
+      { set: { card: CARDS.client, screen: "client", hot: null, tag: null } },
+      { wait: 1600 },
+      { set: { card: null } },
+      { wait: 500 },
 
-      /* ── 07 · the handover. The form opens wide; the camera
-             pushes in for the Deciding press, because which seat the
-             client is handed is the decision on this screen; then it
-             has pulled wide again before the seat lands, so the
-             arrival and the practice's name on the record are both
-             read on a wide, resting shot. ────────────────────────── */
-      { wait: 200 },
-      { move: "share", ms: 550 },
+      /* ── 07 · the handover, watched wide from start to finish. The
+             form opens, the practice presses Deciding — the decision
+             on this screen, and the form is compact enough that both
+             seats and their subs read on the resting shot — then the
+             seat lands and the practice's name goes on the record. ── */
+      { move: "share", ms: 500 },
       { set: { hot: "share" } },
       { wait: 360 },
       { click: true },
       { set: { form: true, hot: null } },
-      { wait: 350 },
-      { cam: { focus: "role-decider", scale: 1.35, ms: 850 } },
+      { wait: 300 },
       { move: "role-decider", ms: 450 },
       { set: { hot: "role-decider" } },
       { wait: 360 },
       { click: true },
       { set: { decider: true, hot: null } },
-      { wait: 350 },
-      { cam: "reset" },
-      { move: "send", ms: 550 },
+      { wait: 300 },
+      { move: "send", ms: 480 },
       { set: { hot: "send" } },
       { wait: 360 },
       { click: true },
       { set: { form: false, seated: true, hot: null } },
-      { wait: 800 },
+      { wait: 700 },
       { set: { record: true } },
-      { wait: 1100 },
+      { wait: 950 },
       { cursor: "hide" },
     ],
   });
@@ -504,9 +556,13 @@ export function ArchitectJourney({ active }: { active: boolean }) {
         <SceneCursor cursor={cursor} clicks={clicks} />
       </SceneCamera>
 
-      {/* The subtitle. Outside the camera, because subtitles do not
-          zoom with the footage. */}
-      <ActCaption n={ACT_N[state.screen]} text={ACT_TEXT[state.screen]} />
+      {/* The lower-third. Outside the camera, bottom centre, naming
+          the section of the long read as it arrives. */}
+      <SectionTag text={state.tag} />
+
+      {/* The chapter card, last so it sits over everything. Outside
+          the camera: the cut plays wide by construction. */}
+      <ChapterCard card={state.card} />
     </div>
   );
 }
@@ -626,7 +682,7 @@ function EvalNav({ sec, hot }: { sec: number; hot: string | null }) {
   );
 }
 
-/** The round strip, shared by the two evaluation screens. */
+/** The round strip at the head of the tenders screen. */
 function RoundStrip() {
   return (
     <Card className="shrink-0 grid grid-cols-3 overflow-hidden">
@@ -1538,22 +1594,79 @@ function TendersInScreen({ s }: { s: S }) {
 
 /* ── 6 · Compare ─────────────────────────────────────────────────── */
 
-/** One grid for every band, exactly as the comparison surface does it. */
+/** One grid for every band, exactly as the comparison surface does it
+ *  (instrument-compare.tsx:75). That single rule is the whole claim:
+ *  schedule marks, state chips, grid values and conditions land on the
+ *  same three columns because they were answered to the same list. */
 const COLS = "minmax(0,1.05fr) repeat(3, minmax(0,1fr))";
+
+/* — the schedule alignment — */
+
+type SchedState = "documented" | "allowance" | "excluded" | "na";
+
+/** SCHED_META at instrument-compare.tsx:593. The gate-round vocabulary,
+ *  which is not the coverage matrix's: a line the client priced is a
+ *  provisional sum here and an allowance there. */
+const SCHED: Record<SchedState, { label: string; dot: string; text: string }> = {
+  documented: { label: "As documented", dot: C.tealInk, text: C.tealInk },
+  allowance: { label: "Provisional sum", dot: TONE.warn.text, text: TONE.warn.text },
+  excluded: { label: "Excluded", dot: TONE.risk.text, text: TONE.risk.text },
+  na: { label: "Not applicable", dot: C.line3, text: C.dim },
+};
+
+/** Six of the nine lines the builders part ways on, in the pack's own
+ *  build order. Rock excavation, the client's own provisional sum, is
+ *  held back for the conditions band at the foot of the travel. */
+const ALIGN: Array<{ label: string; cells: [SchedState, SchedState, SchedState] }> = [
+  { label: "Bulk excavation, cut and fill", cells: ["allowance", "documented", "documented"] },
+  {
+    label: "Engineered concrete and block retaining walls",
+    cells: ["allowance", "documented", "documented"],
+  },
+  { label: "Sub-soil drainage behind walls", cells: ["na", "documented", "documented"] },
+  { label: "Timber and composite decks", cells: ["excluded", "documented", "documented"] },
+  { label: "Fencing", cells: ["excluded", "documented", "documented"] },
+  { label: "Driveway", cells: ["excluded", "documented", "documented"] },
+];
+
+/* — where the tenders differ — */
+
+type ScopeState = "included" | "allowance" | "excluded" | "na";
+
+/** STATE_TONE at evaluation-surface.tsx:1518. Chips, not dots, because
+ *  this table exists to be read down a column. */
+const SCOPE: Record<ScopeState, { label: string; tone: keyof typeof TONE }> = {
+  included: { label: "Included", tone: "good" },
+  allowance: { label: "Allowance", tone: "warn" },
+  excluded: { label: "Excluded", tone: "risk" },
+  na: { label: "Not applicable", tone: "ink" },
+};
+
+/** The nine scope items the round treats differently, in the trade
+ *  order of modules/tenders/trades.ts. Two of the columns are identical
+ *  the whole way down, which is not a flaw in the example: they priced
+ *  the same scope, and only one builder moved money into allowances. */
+const DIFFER: Array<{ trade: string; s: [ScopeState, ScopeState, ScopeState] }> = [
+  { trade: "Ground works", s: ["allowance", "included", "included"] },
+  { trade: "Concrete work", s: ["allowance", "included", "included"] },
+  { trade: "Stonework", s: ["na", "included", "included"] },
+  { trade: "Joinery", s: ["allowance", "included", "included"] },
+  { trade: "Tiling", s: ["allowance", "included", "included"] },
+  { trade: "External finishes", s: ["excluded", "included", "included"] },
+  { trade: "Painting", s: ["allowance", "included", "included"] },
+  { trade: "Fixtures & fittings", s: ["allowance", "included", "included"] },
+  { trade: "External works", s: ["excluded", "included", "included"] },
+];
+
+/* — the decision grid — */
 
 type GridRow = { label: string; v: [string, string, string]; best?: number[] };
 
-/**
- * The decision grid, its labelled groups and the app's own rule for the
- * strongest position on a line. A row where every column wins is a row
- * where nobody does, so those are left untinted.
- *
- * The column is taller than the viewport by design: the two waypoints
- * below are hard coded from the declared row heights rather than
- * measured, because a scene that measures itself drifts the first time
- * a font loads late.
- */
-const GRID: Array<{ title: string; rows: GridRow[] }> = [
+/** GRID at evaluation-surface.tsx:1229, the money and the programme.
+ *  `best` is the app's own rule: the strongest position on the line,
+ *  suppressed where every column would win, because a row where
+ *  everyone wins is a row where nobody does. */
+const DECISION: Array<{ title: string; rows: GridRow[] }> = [
   {
     title: "The money",
     rows: [
@@ -1578,45 +1691,66 @@ const GRID: Array<{ title: string; rows: GridRow[] }> = [
       },
     ],
   },
-  {
-    title: "Scope",
-    rows: [
-      { label: "Trades in the price", v: ["14 of 22", "23 of 23", "23 of 23"], best: [1, 2] },
-      { label: "Excluded scope items", v: ["2", "0", "0"], best: [1, 2] },
-    ],
-  },
 ];
 
-/** The declared geometry the waypoints are computed from. */
-const G = { head: 38, label: 22, row: 34, weighted: 44, foot: 26 } as const;
+/* — the conditions behind the number — */
 
-/** Everything that scrolls beneath the pinned column header. */
-const GRID_BODY =
-  GRID.reduce((h, g) => h + G.label + g.rows.length * G.row, 0) + G.label + G.weighted + G.foot;
+/** The disclosures that decide what the headline figure is worth,
+ *  opening on the schedule's own money story: the client's provisional
+ *  sum for rock, one builder's firm figure against it, one holding the
+ *  allowance, one not carrying the line at all. The prompts are the
+ *  instrument's (v3), as the example round answered them. */
+const CONDITIONS: Array<{ q: string; v: [string, string, string] }> = [
+  {
+    q: "Does the contract contain a rise and fall or cost escalation clause?",
+    v: ["Yes", "No", "No"],
+  },
+  { q: "How long does this price hold?", v: ["45 days", "30 days", "60 days"] },
+  { q: "Builder's margin applied to variations", v: ["18%", "15%", "20%"] },
+];
+
+/* — the travel — */
 
 /**
- * The viewport those rows travel through at the 528px frame: 442 of
- * canvas, less the back link, the section nav and their gaps, less the
- * card's own head, less the header row that now holds the top.
- * Measured against the rendered scene rather than guessed.
+ * Enforced band heights, and the waypoints as arithmetic off them.
+ * Hard numbers rather than a measurement pass: five scroll stops that
+ * always land on the same pixel are worth more than five that are
+ * theoretically perfect and occasionally a row out. Content is written
+ * to sit inside these with slack, so a wider or narrower panel spends
+ * the difference as whitespace, never as a shifted waypoint.
  */
-const GRID_VIEW = 237;
-
-/** Two stops: into the middle of the money, then the foot of the
- *  table, where the weighted overall is. */
-const GRID_AT = { mid: -90, foot: -(GRID_BODY - GRID_VIEW) } as const;
+const CMP_GAP = 12;
+const CMP_H = { lede: 88, sched: 300, differ: 324, grid: 360, terms: 258 } as const;
 
 /**
- * The whole argument for a practice, in one table: three submissions on
- * one grid, so there is nothing to reconcile before they can be read.
- * The longest read on the journey, because it is the only screen with
- * something to actually study.
- *
- * Two things arrive rather than being asserted. The teal cells sweep in
- * a row at a time, which is how a reader sees that no single tender
- * wins everything; and the weighted overall fills last, because it is
- * scored under a fixed rubric applied identically to every tender and
- * so is the conclusion, not the premise.
+ * The viewport those bands travel through at the 528px frame: the
+ * canvas less the back link, the section nav and their gaps. Measured
+ * against the rendered scene rather than guessed; a shorter frame
+ * simply sees less of each stop, under the same fade.
+ */
+const CMP_VIEW = 380;
+
+const CMP_TOTAL =
+  CMP_H.lede + CMP_H.sched + CMP_H.differ + CMP_H.grid + CMP_H.terms + 4 * CMP_GAP;
+
+/** The four stops after the lede: each lands a band's head at the top
+ *  of the viewport, except the last, which bottoms the column out so
+ *  the conditions are read whole. */
+const CMP_AT = {
+  sched: -(CMP_H.lede + CMP_GAP),
+  differ: -(CMP_H.lede + CMP_H.sched + 2 * CMP_GAP),
+  grid: -(CMP_H.lede + CMP_H.sched + CMP_H.differ + 3 * CMP_GAP),
+  terms: -(CMP_TOTAL - CMP_VIEW),
+} as const;
+
+/**
+ * The whole argument for a practice, travelled rather than sampled:
+ * the comparison machinery in five named stops, every one of them
+ * wide. This is the longest read on the journey because it is the only
+ * screen with something to actually study, and it is the screen the
+ * section tags exist for — a lower-third names each band as it
+ * arrives, so the film explains the surface without ever leaning on
+ * the camera.
  */
 function CompareScreen({ s }: { s: S }) {
   return (
@@ -1624,185 +1758,501 @@ function CompareScreen({ s }: { s: S }) {
       <BackRow hot={s.hot === "back"} />
       <EvalNav sec={s.sec} hot={s.hot} />
 
-      <Card className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        <div className="shrink-0 px-3.5 pt-3 pb-2.5">
-          <Kicker icon={Scale}>Side by side</Kicker>
-          <p
-            className="mt-1.5 font-ui text-[15px] font-semibold uppercase tracking-[-0.015em] leading-none"
-            style={{ color: C.ink }}
-          >
-            The decision grid
-          </p>
-          <p
-            className="mt-1.5 hidden sm:block line-clamp-2 max-w-[64ch] text-[9.5px] leading-[1.5]"
-            style={{ color: C.muted }}
-          >
-            Every row is the builders&apos; own answers, lined up. A teal cell holds the strongest
-            position on that line.
-          </p>
-        </div>
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <motion.div
+          className="absolute inset-x-0 top-0 flex flex-col"
+          style={{ gap: CMP_GAP }}
+          initial={false}
+          animate={{ y: s.cmpY }}
+          transition={SCROLL}
+        >
+          <div style={{ height: CMP_H.lede }}>
+            <LedeBand />
+          </div>
+          <div style={{ height: CMP_H.sched }}>
+            <ScheduleBand counted={s.counted} />
+          </div>
+          <div style={{ height: CMP_H.differ }}>
+            <DifferBand />
+          </div>
+          <div style={{ height: CMP_H.grid }}>
+            <DecisionBand lit={s.lit} />
+          </div>
+          <div style={{ height: CMP_H.terms }}>
+            <ConditionsBand />
+          </div>
+        </motion.div>
+        <ListFade />
+      </div>
+    </>
+  );
+}
 
-        <div className="relative flex-1 min-h-0 overflow-hidden">
-          {/* The three columns hold the top of the viewport while the
-              rows travel under them. A grid whose headings scroll away
-              is a grid whose numbers stop meaning anything, and the
-              scroll is the whole point of this screen. */}
-          <div
-            className="absolute inset-x-0 top-0 z-10 border-t"
-            style={{
-              borderColor: C.line,
-              background: C.paper,
-              display: "grid",
-              gridTemplateColumns: COLS,
-              height: G.head,
-            }}
+/** The alignment lede: why any of the bands below can exist at all. */
+function LedeBand() {
+  return (
+    <div>
+      <Kicker icon={Scale}>The like-for-like read</Kicker>
+      <p
+        className="mt-1.5 font-ui text-[14px] font-semibold tracking-[-0.015em]"
+        style={{ color: C.ink }}
+      >
+        Same questions, every builder
+      </p>
+      <p
+        className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[64ch]"
+        style={{ color: C.muted }}
+      >
+        Each tender below answered the BuilderHQ submission standard, so price, scope and
+        conditions compare on the same terms. Differences surface first.
+      </p>
+    </div>
+  );
+}
+
+/** The column heads. Repeated per band rather than pinned, exactly as
+ *  the app repeats them, so any band read on its own still names its
+ *  columns. */
+function NameRow() {
+  return (
+    <div
+      className="h-[22px] border-t items-center"
+      style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+    >
+      <span />
+      {TENDERS.map((t) => (
+        <span
+          key={t.name}
+          className="min-w-0 border-l px-2 text-[9px] font-semibold truncate"
+          style={{ borderColor: C.line, color: C.muted }}
+        >
+          {t.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The schedule alignment, with the differing-line count resolving as
+ *  the band arrives: a figure already on screen reads as a claim, one
+ *  that resolves reads as the product having just done the work. */
+function ScheduleBand({ counted }: { counted: boolean }) {
+  return (
+    <Card className="h-full overflow-hidden">
+      <div className="px-3 pt-2.5 pb-2">
+        <p
+          className="h-[22px] line-clamp-2 text-[9px] tracking-[0.16em] uppercase font-semibold"
+          style={{ color: C.dim }}
+        >
+          The schedule alignment
+        </p>
+        <p
+          className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[62ch]"
+          style={{ color: C.muted }}
+        >
+          Every builder answered the same 228-line tender schedule. They part ways on{" "}
+          <span className="font-ui font-semibold tabular-nums" style={{ color: C.ink }}>
+            <Tick key={counted ? "run" : "idle"} to={9} run={counted} /> lines
+          </span>
+          . That is where the price difference lives.
+        </p>
+        <div className="mt-1.5 h-[22px] overflow-hidden flex flex-wrap items-center gap-x-3 gap-y-1">
+          {(Object.keys(SCHED) as SchedState[]).map((k) => (
+            <span
+              key={k}
+              className="inline-flex items-center gap-1.5 text-[8.5px]"
+              style={{ color: C.dim }}
+            >
+              <span className="size-[5px] rounded-full" style={{ background: SCHED[k].dot }} />
+              {SCHED[k].label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <NameRow />
+
+      {ALIGN.map((row) => (
+        <div
+          key={row.label}
+          className="h-[22px] border-t"
+          style={{
+            borderColor: C.line,
+            display: "grid",
+            gridTemplateColumns: COLS,
+            background: C.tealWash,
+          }}
+        >
+          <div className="flex items-center gap-1.5 px-3 min-w-0">
+            <span className="size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
+            <span className="truncate text-[9.5px] font-medium" style={{ color: C.ink }}>
+              {row.label}
+            </span>
+          </div>
+          {row.cells.map((cell, j) => (
+            <div
+              key={j}
+              className="min-w-0 border-l px-2 flex items-center"
+              style={{ borderColor: C.line }}
+            >
+              <span className="inline-flex items-center gap-1.5 min-w-0">
+                <span
+                  className="size-[5px] rounded-full shrink-0"
+                  style={{ background: SCHED[cell].dot }}
+                />
+                <span
+                  className="truncate text-[9.5px] font-semibold"
+                  style={{ color: SCHED[cell].text }}
+                >
+                  {SCHED[cell].label}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <div
+        className="h-[24px] border-t flex items-center justify-center gap-1 text-[9.5px]"
+        style={{ borderColor: C.line, color: C.muted }}
+      >
+        Show the 219 lines the builders agree on
+        <ChevronDown className="size-3" strokeWidth={2.2} />
+      </div>
+    </Card>
+  );
+}
+
+/** Where the tenders differ: nine lines, three state chips each, read
+ *  down a column. Every row on this table differs, so every row
+ *  carries the tint. */
+function DifferBand() {
+  return (
+    <Card className="h-full overflow-hidden">
+      <div className="px-3 py-2.5">
+        <Kicker icon={GitCompareArrows}>The same project, read differently</Kicker>
+        <p
+          className="mt-1 font-ui text-[13px] font-semibold tracking-[-0.015em]"
+          style={{ color: C.ink }}
+        >
+          Where the tenders differ
+        </p>
+        <p
+          className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[64ch]"
+          style={{ color: C.muted }}
+        >
+          9 scope items are treated differently across these tenders. Until each builder prices
+          the same scope, their totals are not the same number.
+        </p>
+      </div>
+
+      <div
+        className="h-[22px] border-t items-center"
+        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+      >
+        <span className="px-3 text-[8.5px] tracking-[0.16em] uppercase truncate" style={{ color: C.dim }}>
+          Scope item
+        </span>
+        {TENDERS.map((t) => (
+          <span
+            key={t.name}
+            className="min-w-0 border-l px-2 text-[8.5px] tracking-[0.16em] uppercase truncate"
+            style={{ borderColor: C.line, color: C.dim }}
           >
-            <span />
-            {TENDERS.map((t) => (
+            {t.name}
+          </span>
+        ))}
+      </div>
+
+      {DIFFER.map((row) => (
+        <div
+          key={row.trade}
+          className="h-[22px] border-t"
+          style={{
+            borderColor: C.line,
+            display: "grid",
+            gridTemplateColumns: COLS,
+            background: C.tealWash,
+          }}
+        >
+          <div className="flex items-center gap-1.5 px-3 min-w-0">
+            <span className="size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
+            <span className="truncate text-[9.5px]" style={{ color: C.ink }}>
+              {row.trade}
+            </span>
+          </div>
+          {row.s.map((state, j) => {
+            const t = TONE[SCOPE[state].tone];
+            return (
               <div
-                key={t.name}
-                className="min-w-0 border-l px-2 flex items-center gap-1.5"
+                key={j}
+                className="min-w-0 border-l px-2 flex items-center"
                 style={{ borderColor: C.line }}
               >
                 <span
-                  className="size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7px] font-bold"
-                  style={{ background: C.tealMuted, color: C.tealInk }}
+                  className="inline-flex max-w-full items-center rounded-full px-1.5 h-[15px] text-[8.5px] font-medium truncate"
+                  style={{ color: t.text, background: t.bg }}
                 >
-                  {t.mono}
-                </span>
-                <span className="min-w-0">
-                  <span
-                    className="block truncate text-[9.5px] font-semibold leading-tight"
-                    style={{ color: C.ink }}
-                  >
-                    {t.name}
-                  </span>
-                  <span
-                    className="block truncate text-[8.5px] tabular-nums"
-                    style={{ color: C.muted }}
-                  >
-                    {t.price} inc GST
-                  </span>
+                  {SCOPE[state].label}
                 </span>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      ))}
+    </Card>
+  );
+}
 
-          <motion.div
-            className="absolute inset-x-0"
-            style={{ top: G.head }}
-            initial={false}
-            animate={{ y: s.gridY }}
-            transition={SCROLL}
+/** The decision grid's money and programme groups. The teal cells
+ *  sweep in a row at a time once `lit`, which is how a reader sees
+ *  that no single tender wins everything. */
+function DecisionBand({ lit }: { lit: boolean }) {
+  return (
+    <Card className="h-full overflow-hidden">
+      <div className="px-3 pt-2.5 pb-2">
+        <Kicker icon={Scale}>Side by side</Kicker>
+        <p
+          className="mt-1 font-ui text-[13px] font-semibold tracking-[-0.015em]"
+          style={{ color: C.ink }}
+        >
+          The decision grid
+        </p>
+      </div>
+
+      <div
+        className="h-[36px] border-t"
+        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+      >
+        <span />
+        {TENDERS.map((t) => (
+          <div
+            key={t.name}
+            className="min-w-0 border-l px-2 flex items-center gap-1.5"
+            style={{ borderColor: C.line }}
           >
-            {GRID.map((group, gi) => (
-              <div key={group.title}>
-                <p
-                  className="flex items-end px-3 pb-[4px] text-[8.5px] tracking-[0.2em] uppercase"
-                  style={{ color: C.dim, height: G.label }}
-                >
-                  {group.title}
-                </p>
-                {group.rows.map((row, ri) => {
-                  const meaningful = !!row.best && row.best.length < 3;
+            <span
+              className="size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7px] font-bold"
+              style={{ background: C.tealMuted, color: C.tealInk }}
+            >
+              {t.mono}
+            </span>
+            <span className="min-w-0">
+              <span
+                className="block truncate text-[9.5px] font-semibold leading-tight"
+                style={{ color: C.ink }}
+              >
+                {t.name}
+              </span>
+              <span className="block truncate text-[8.5px] tabular-nums" style={{ color: C.muted }}>
+                {t.price} inc GST
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {DECISION.map((group, gi) => (
+        <div key={group.title}>
+          <p
+            className="h-[20px] flex items-end px-3 pb-[3px] text-[8.5px] tracking-[0.2em] uppercase"
+            style={{ color: C.dim }}
+          >
+            {group.title}
+          </p>
+          {group.rows.map((row, ri) => {
+            // A row where every column wins is a row where nobody does.
+            const meaningful = !!row.best && row.best.length < 3;
+            return (
+              <div
+                key={row.label}
+                className="h-[34px] border-t"
+                style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+              >
+                <div className="flex items-center px-3 min-w-0">
+                  <span className="line-clamp-2 text-[9.5px] leading-[1.35]" style={{ color: C.dim }}>
+                    {row.label}
+                  </span>
+                </div>
+                {row.v.map((value, j) => {
+                  const win = lit && meaningful && row.best!.includes(j);
                   return (
                     <div
-                      key={row.label}
-                      className="border-t"
+                      key={j}
+                      className="min-w-0 border-l px-2 flex items-center transition-colors duration-500"
                       style={{
                         borderColor: C.line,
-                        display: "grid",
-                        gridTemplateColumns: COLS,
-                        height: G.row,
+                        background: win ? TONE.good.bg : undefined,
+                        transitionDelay: `${(gi * 4 + ri) * 90}ms`,
                       }}
                     >
-                      <div className="flex items-center px-3 min-w-0">
-                        <span
-                          className="line-clamp-2 text-[9.5px] leading-[1.35]"
-                          style={{ color: C.dim }}
-                        >
-                          {row.label}
-                        </span>
-                      </div>
-                      {row.v.map((value, j) => {
-                        const win = s.lit && meaningful && row.best!.includes(j);
-                        return (
-                          <div
-                            key={j}
-                            className="min-w-0 border-l px-2 flex items-center transition-colors duration-500"
-                            style={{
-                              borderColor: C.line,
-                              background: win ? TONE.good.bg : undefined,
-                              transitionDelay: `${(gi * 4 + ri) * 90}ms`,
-                            }}
-                          >
-                            <span
-                              className="block line-clamp-2 text-[9.5px] leading-[1.35]"
-                              style={
-                                win ? { color: TONE.good.text, fontWeight: 600 } : { color: C.ink }
-                              }
-                            >
-                              {value}
-                            </span>
-                          </div>
-                        );
-                      })}
+                      <span
+                        className="block line-clamp-2 text-[9.5px] leading-[1.35]"
+                        style={win ? { color: TONE.good.text, fontWeight: 600 } : { color: C.ink }}
+                      >
+                        {value}
+                      </span>
                     </div>
                   );
                 })}
               </div>
-            ))}
-
-            <p
-              className="flex items-end px-3 pb-[4px] text-[8.5px] tracking-[0.2em] uppercase"
-              style={{ color: C.dim, height: G.label }}
-            >
-              The six dimensions
-            </p>
-            <div
-              className="border-t"
-              style={{
-                borderColor: C.line,
-                display: "grid",
-                gridTemplateColumns: COLS,
-                height: G.weighted,
-              }}
-            >
-              <div className="flex items-center px-3 min-w-0">
-                <span className="truncate text-[9.5px] font-semibold" style={{ color: C.ink }}>
-                  Weighted overall
-                </span>
-              </div>
-              {TENDERS.map((t) => (
-                <div
-                  key={t.name}
-                  className="min-w-0 border-l px-2 flex flex-col justify-center gap-1.5"
-                  style={{ borderColor: C.line }}
-                >
-                  <span
-                    className="font-ui font-semibold text-[14px] leading-none tabular-nums"
-                    style={{ color: C.ink }}
-                  >
-                    {t.weighted}
-                  </span>
-                  <Track pct={s.scored ? t.weighted : 0} h={4} />
-                </div>
-              ))}
-            </div>
-
-            <p
-              className="flex items-center border-t px-3 text-[8.5px] truncate"
-              style={{ borderColor: C.line, color: C.dim, height: G.foot }}
-            >
-              Open any builder&apos;s full evaluation to see the working behind their dimension
-              scores.
-            </p>
-          </motion.div>
-          <ListFade />
+            );
+          })}
         </div>
-      </Card>
-    </>
+      ))}
+
+      <p
+        className="h-[24px] flex items-center border-t px-3 text-[8.5px] truncate"
+        style={{ borderColor: C.line, color: C.dim }}
+      >
+        Open any builder&apos;s full evaluation to see the working behind their dimension scores.
+      </p>
+    </Card>
   );
+}
+
+/** The conditions behind the number, ending on the money story the
+ *  role exists for: the client's provisional sum for rock against one
+ *  builder's firm figure. */
+function ConditionsBand() {
+  return (
+    <Card className="h-full overflow-hidden">
+      <div className="px-3 pt-2.5 pb-2">
+        <p
+          className="h-[22px] line-clamp-2 text-[9px] tracking-[0.16em] uppercase font-semibold"
+          style={{ color: C.dim }}
+        >
+          The conditions behind the number
+        </p>
+        <p
+          className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[60ch]"
+          style={{ color: C.muted }}
+        >
+          Ground risk, insurance, programme, payments, contract terms and the team. Answered by
+          the builders themselves, in the same order.
+        </p>
+      </div>
+
+      <NameRow />
+
+      {/* The schedule's own money story, kept for the foot of the
+          travel: three treatments of one line, which no set of three
+          builder PDFs can ever be made to show. */}
+      <div
+        className="h-[39px] border-t"
+        style={{
+          borderColor: C.line,
+          display: "grid",
+          gridTemplateColumns: COLS,
+          background: C.tealWash,
+        }}
+      >
+        <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+          <span className="mt-[4px] size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
+          <span className="min-w-0">
+            <span
+              className="block truncate text-[9.5px] font-medium leading-[1.35]"
+              style={{ color: C.ink }}
+            >
+              Rock excavation
+            </span>
+            <span className="block text-[8.5px] leading-[1.3] line-clamp-2" style={{ color: C.dim }}>
+              Earthworks and excavation · your provisional sum $18,000
+            </span>
+          </span>
+        </div>
+        {(
+          [
+            { s: "excluded" as const },
+            { s: "documented" as const, text: "$26,000 firm" },
+            { s: "allowance" as const, text: "$18,000" },
+          ] as Array<{ s: SchedState; text?: string }>
+        ).map((cell, j) => (
+          <div
+            key={j}
+            className="min-w-0 border-l px-2 flex items-center"
+            style={{ borderColor: C.line }}
+          >
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              <span
+                className="size-[5px] rounded-full shrink-0"
+                style={{ background: SCHED[cell.s].dot }}
+              />
+              <span
+                className="truncate text-[9.5px] font-semibold"
+                style={{ color: SCHED[cell.s].text }}
+              >
+                {cell.text ?? SCHED[cell.s].label}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {CONDITIONS.map((row) => (
+        <div
+          key={row.q}
+          className="h-[36px] border-t"
+          style={{
+            borderColor: C.line,
+            display: "grid",
+            gridTemplateColumns: COLS,
+            background: C.tealWash,
+          }}
+        >
+          <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+            <span className="mt-[4px] size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
+            <span
+              className="text-[9px] leading-[1.45] line-clamp-2"
+              style={{ color: C.ink, fontWeight: 500 }}
+            >
+              {row.q}
+            </span>
+          </div>
+          {row.v.map((value, j) => (
+            <div key={j} className="min-w-0 border-l px-2 py-[4px]" style={{ borderColor: C.line }}>
+              <span
+                className="block text-[9px] leading-[1.45] font-medium line-clamp-2"
+                style={{ color: C.ink }}
+              >
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+/**
+ * The differing-line count, arriving rather than printed. A figure
+ * already on screen reads as a claim; one that resolves reads as the
+ * product having just done the work. Settles on the real count, which
+ * is also what it shows at rest and under reduced motion.
+ *
+ * Remounted by its key when the run flag turns over, so the reset lives
+ * in the initialiser rather than in an effect that would set state
+ * synchronously and flash the finished figure for a frame first.
+ */
+function Tick({ to, run }: { to: number; run: boolean }) {
+  const [n, setN] = React.useState(run ? 0 : to);
+
+  React.useEffect(() => {
+    if (!run) return;
+    const started = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - started) / 1100);
+      // Ease out cubic, so it decelerates onto the figure.
+      setN(Math.round(to * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [to, run]);
+
+  return <>{n}</>;
 }
 
 /* ── 7 · Your client ─────────────────────────────────────────────── */

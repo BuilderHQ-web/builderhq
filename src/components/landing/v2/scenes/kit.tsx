@@ -482,35 +482,103 @@ export function WashRow({
 }
 
 /**
- * The act caption — a film subtitle, not a progress bar. It sits inside
- * the frame's bottom left, names the act ("02 · One list, from your
- * documents"), and swaps with a small rise as the story moves on. It
- * lives OUTSIDE the camera on purpose: subtitles do not zoom with the
- * footage, and their stillness is what makes the camera's motion read.
+ * The chapter card — the explainer-video device. Between acts the frame
+ * dissolves to a centred title over the canvas: a small act number, one
+ * short line for what is about to happen, an optional sub-line, and a
+ * teal rule that draws itself. Then it clears and the act plays.
+ *
+ * This replaces the bottom-left caption, and it also replaces most of
+ * the camera work: when a card has just TOLD the viewer what they are
+ * about to see, the footage no longer needs to zoom around pointing at
+ * it. The card sits outside the camera and always plays wide.
  */
-export function ActCaption({ n, text }: { n: string; text: string | null }) {
+export function ChapterCard({
+  card,
+}: {
+  card: { n: string; title: string; sub?: string } | null;
+}) {
   return (
-    <div aria-hidden className="absolute left-3 bottom-3 z-20 pointer-events-none">
+    <AnimatePresence>
+      {card ? (
+        <motion.div
+          key={card.n + card.title}
+          aria-hidden
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center px-8 text-center"
+          style={{ background: "rgba(244,241,234,0.96)", backdropFilter: "blur(5px)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <motion.p
+            className="font-mono text-[10px] tracking-[0.3em] font-bold"
+            style={{ color: C.tealInk }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {card.n}
+          </motion.p>
+          <motion.p
+            className="mt-3 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[26px] leading-[1.15] max-w-[24ch]"
+            style={{ color: C.ink }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {card.title}
+          </motion.p>
+          <motion.span
+            aria-hidden
+            className="mt-4 h-[2px] w-10 rounded-full origin-center"
+            style={{ background: C.teal }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          />
+          {card.sub ? (
+            <motion.p
+              className="mt-4 text-[12px] leading-[1.6] max-w-[40ch]"
+              style={{ color: C.muted }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {card.sub}
+            </motion.p>
+          ) : null}
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+/**
+ * The section tag — a lower-third for the long reads. While a tall
+ * surface scrolls past (the evaluation especially), this names the
+ * section under the pointer's attention: "Where the money stands",
+ * "Every score shows its working". Bottom centre, outside the camera,
+ * small enough to never compete with the footage.
+ */
+export function SectionTag({ text }: { text: string | null }) {
+  return (
+    <div aria-hidden className="absolute inset-x-0 bottom-3 z-10 flex justify-center pointer-events-none">
       <AnimatePresence mode="wait">
         {text ? (
           <motion.div
             key={text}
-            className="flex items-center gap-2 rounded-full border pl-2.5 pr-3.5 py-1.5"
+            className="rounded-full border px-3.5 py-1.5"
             style={{
               borderColor: C.line,
-              background: "rgba(251,249,244,0.92)",
+              background: "rgba(251,249,244,0.94)",
               backdropFilter: "blur(6px)",
               boxShadow: "0 10px 26px -14px rgba(24,34,44,0.35)",
             }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="font-mono text-[9px] tabular-nums font-bold" style={{ color: C.tealInk }}>
-              {n}
-            </span>
-            <span aria-hidden className="h-2.5 w-px" style={{ background: C.line2 }} />
             <span className="text-[10.5px] font-semibold whitespace-nowrap" style={{ color: C.ink }}>
               {text}
             </span>
