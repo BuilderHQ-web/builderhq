@@ -88,6 +88,7 @@ export function useSceneScript<S extends object>({
   script,
   rootRef,
   loopPause = 1400,
+  startDelay = 520,
 }: {
   enabled: boolean;
   /** The scene with nothing having happened yet. Also the reduced-motion render. */
@@ -95,6 +96,10 @@ export function useSceneScript<S extends object>({
   script: Array<Beat<S>>;
   rootRef: React.RefObject<HTMLElement | null>;
   loopPause?: number;
+  /** Beat before the first beat. The deck cards want a moment to settle
+   *  at the pin; a hero film wants none, because its first beat raises
+   *  the title card and any delay shows the bare screen first. */
+  startDelay?: number;
 }): { state: S; cursor: Cursor; clicks: number; cam: Cam } {
   const reduced = useReducedMotion();
   const [state, setState] = React.useState<S>(resting);
@@ -224,15 +229,15 @@ export function useSceneScript<S extends object>({
       timer = window.setTimeout(step, hold);
     };
 
-    // A beat late, so the card has settled at the pin before the
-    // pointer appears and the first measurement is taken.
-    timer = window.setTimeout(step, 520);
+    // A beat late by default, so a deck card has settled at the pin
+    // before the pointer appears and the first measurement is taken.
+    timer = window.setTimeout(step, startDelay);
 
     return () => {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [enabled, reduced, rootRef, loopPause]);
+  }, [enabled, reduced, rootRef, loopPause, startDelay]);
 
   return { state, cursor, clicks, cam };
 }
@@ -250,13 +255,39 @@ export function useSceneScript<S extends object>({
  * its time decelerating reads as a person leaning in.
  */
 export function SceneCamera({ cam, children }: { cam: Cam; children: React.ReactNode }) {
+  // The soft second after a push-in is a rasterisation artefact, not a
+  // rendering bug: a promoted layer is rasterised once at its current
+  // scale and the compositor then stretches that texture, so a zoom
+  // magnifies pixels until something invalidates the layer. `will-change`
+  // is what pins it, so it is held only while the camera is actually
+  // moving and dropped the instant it stops, which forces an immediate
+  // re-raster at the final scale. Softness while moving reads as motion;
+  // softness once parked reads as a bug.
+  const [moving, setMoving] = React.useState(false);
+  const first = React.useRef(true);
+
+  React.useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    setMoving(true);
+  }, [cam.x, cam.y, cam.scale]);
+
   return (
     <motion.div
-      className="absolute inset-0 will-change-transform"
-      style={{ transformOrigin: "0 0" }}
+      className="absolute inset-0"
+      style={{
+        transformOrigin: "0 0",
+        willChange: moving ? "transform" : "auto",
+        // Text rendered through a scaled layer benefits from being
+        // composited on an opaque backdrop rather than blended.
+        backfaceVisibility: "hidden",
+      }}
       initial={false}
       animate={{ x: cam.x, y: cam.y, scale: cam.scale }}
       transition={{ duration: cam.ms / 1000, ease: [0.3, 0.9, 0.25, 1] }}
+      onAnimationComplete={() => setMoving(false)}
     >
       {children}
     </motion.div>

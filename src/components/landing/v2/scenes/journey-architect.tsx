@@ -264,8 +264,8 @@ const CARDS: Record<ScreenKey, { n: string; title: string; sub: string }> = {
   },
   scope: {
     n: "02",
-    title: "The list, written",
-    sub: "Every item cited. Your client approves it.",
+    title: "We read the plans",
+    sub: "Every item of work identified and cited. Your client approves it.",
   },
   who: {
     n: "03",
@@ -274,22 +274,22 @@ const CARDS: Record<ScreenKey, { n: string; title: string; sub: string }> = {
   },
   join: {
     n: "04",
-    title: "The round fills",
-    sub: "Invited builders join free, verified on the way in.",
+    title: "Vetted builders join",
+    sub: "Builders matched to the project enter the round. Spots are capped.",
   },
   tenders: {
     n: "05",
-    title: "Same shape, three times",
-    sub: "Every builder answers the same submission. Nothing to normalise afterwards.",
+    title: "All tenders, one format",
+    sub: "Every builder prices the same scope and answers the same questions.",
   },
   compare: {
     n: "06",
-    title: "Line against line",
-    sub: "Every difference surfaced before you advise.",
+    title: "Tenders side by side",
+    sub: "Read every one against the same scope, before you advise.",
   },
   client: {
     n: "07",
-    title: "Handed over, on record",
+    title: "A simple handover",
     sub: "Your name on it. Your client decides.",
   },
 };
@@ -342,6 +342,9 @@ export function ArchitectJourney({ active }: { active: boolean }) {
     resting: RESTING,
     rootRef: root,
     loopPause: 2400,
+    // The first beat raises act one's card, so any settle before it
+    // shows the bare screen for a moment first.
+    startDelay: 0,
     script: [
       /* ── the film opens the way an explainer does: act one's card
              over the resting screen, then the reveal, wide. ────────── */

@@ -213,31 +213,31 @@ const CRUMB: Record<Screen, string> = {
  *  a sub-line that carries the act's claim plainly. Read in order they
  *  are the platform's table of contents. */
 const CARDS: Record<Screen, Chapter> = {
-  upload: { n: "01", title: "Upload your plans", sub: "Drop in the PDF, we read every page." },
+  upload: { n: "01", title: "Upload your plans", sub: "Drop in your drawings. We read every page." },
   scope: {
     n: "02",
-    title: "One list, every trade",
-    sub: "242 items, written from your documents, cited to the page.",
+    title: "We read them all",
+    sub: "242 items of work identified, each one cited to the page it came from.",
   },
   round: {
     n: "03",
-    title: "Builders take their spots",
-    sub: "Verified builders only, capped at three.",
+    title: "Verified builders access it",
+    sub: "Checked before they price. Spots are capped at three.",
   },
   tenders: {
     n: "04",
-    title: "Three prices, one shape",
-    sub: "Every tender answers the same questions, signed.",
+    title: "Tenders against one scope",
+    sub: "Every builder prices the same list and answers the same questions.",
   },
   compare: {
     n: "05",
-    title: "Read side by side",
-    sub: "Six published weights, every difference set out.",
+    title: "Read them side by side",
+    sub: "Six published weights, and every difference set out for you.",
   },
   award: {
     n: "06",
-    title: "Awarded, directly",
-    sub: "The contract is yours and your builder's. No commission.",
+    title: "Award your builder",
+    sub: "The contract is between you and them. We take no commission.",
   },
 };
 
@@ -551,6 +551,9 @@ export function HomeownerJourney({ active }: { active: boolean }) {
     resting: RESTING,
     rootRef: root,
     loopPause: 2200,
+    // The first beat raises act one's card, so any settle before it
+    // shows the bare screen for a moment first.
+    startDelay: 0,
     script: [
       /* ── act 01 · upload your plans ──────────────────────────────
          The film opens the way an explainer does: on the first card,
@@ -582,18 +585,15 @@ export function HomeownerJourney({ active }: { active: boolean }) {
       { set: { card: null } },
       { wait: 500 },
 
-      /* ── act 02 · one list, every trade ──────────────────────────
-         THE SIGNATURE SHOT, the one push kept at 1.3. The camera
-         leans onto the figure block — the count, its sentence, and
-         the trades / pages read / documents strip all inside the
-         window — while the number runs to 242, then pulls wide as
-         the register's divisions cascade in behind it: the pull-back
-         that shows how much one number unpacked into. */
-      { cam: { focus: "scope-count", scale: 1.3, ms: 700 } },
-      { wait: 1700 },
+      /* ── act 02 · we read them all ───────────────────────────────
+         Wide, throughout. A push onto the figure cropped the register
+         underneath it, which is the half that proves what the number
+         means, and holding the register back until the pull-back made
+         the screen arrive in two pieces. Now the count runs and the
+         divisions cascade under it in one continuous move: one number,
+         and the list it unpacked into, in a single shot. */
       { set: { reg: true } },
-      { cam: "reset" },
-      { wait: 500 },
+      { wait: 1750 },
       { move: "div-approvals", ms: 680 },
       { set: { hot: "approvals" } },
       { wait: 400 },
@@ -604,16 +604,13 @@ export function HomeownerJourney({ active }: { active: boolean }) {
       // scroll in this film happens on a motionless camera.
       { set: { scopeY: SCOPE_Y.settle } },
       { wait: 750 },
-      // The other push that survived the budget: the citation, at 1.2.
-      // Nine-pixel type carrying the product's claim is the one thing
-      // genuinely too small to read wide, and at 1.2 the whole scope
-      // line — item, sentence, citation — fits the window.
-      { cam: { focus: "cite-approvals", scale: 1.2, ms: 700 } },
+      // The scope act plays wide from end to end. A push onto the
+      // citation cropped the register it is meant to prove, and the
+      // citation lighting teal under the pointer is legible without one.
       { move: "cite-approvals", ms: 560 },
       { set: { cite: true } },
-      { wait: 1000 },
+      { wait: 1150 },
       { set: { cite: false } },
-      { cam: "reset" },
       // Two flicks rather than one long glide, because that is how a
       // register this long actually gets read.
       { set: { scopeY: SCOPE_Y.middle } },
@@ -1040,7 +1037,7 @@ function ScopeScreen({ s }: { s: S }) {
         <div className="flex items-baseline gap-1.5">
           <CountUp
             to={242}
-            delay={2.6}
+            delay={0.35}
             className="font-ui font-semibold text-[19px] leading-none tabular-nums"
             style={{ color: C.ink }}
           />
@@ -1090,7 +1087,7 @@ function ScopeScreen({ s }: { s: S }) {
               key={d.key}
               initial={false}
               animate={{ opacity: s.reg ? 1 : 0, y: s.reg ? 0 : 14 }}
-              transition={{ duration: 0.5, ease: EASE, delay: s.reg ? i * 0.045 : 0 }}
+              transition={{ duration: 0.44, ease: EASE, delay: s.reg ? 0.28 + i * 0.03 : 0 }}
             >
               <Division
                 label={d.label}

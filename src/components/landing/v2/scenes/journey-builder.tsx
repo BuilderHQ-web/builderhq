@@ -137,33 +137,33 @@ const CRUMB: Record<Screen, string> = {
 const CARDS: Record<Screen, { n: string; title: string; sub: string }> = {
   browse: {
     n: "01",
-    title: "Find the round",
-    sub: "Live projects, budgets and spots, before you pay.",
+    title: "Find projects that fit",
+    sub: "Live rounds in your area, with spots capped so you know the field.",
   },
   project: {
     n: "02",
-    title: "Everything, unlocked",
-    sub: "The full address, every document, real filenames.",
+    title: "Access all project details",
+    sub: "The full address and every document, exactly as the client filed them.",
   },
   scope: {
     n: "03",
-    title: "The scope, already written",
-    sub: "228 items from the client’s documents. Nothing to assemble.",
+    title: "We lay out the scope",
+    sub: "228 items from the client’s documents. Nothing for you to assemble.",
   },
   tender: {
     n: "04",
     title: "Mark your price",
-    sub: "Included, provisional, excluded. Line by line.",
+    sub: "Included, provisional sum, excluded. Line by line.",
   },
   submit: {
     n: "05",
-    title: "One sealed submission",
-    sub: "The same questions as everyone, signed.",
+    title: "We prepare your submission",
+    sub: "The same questions as everyone, answered once and signed.",
   },
   won: {
     n: "06",
-    title: "Won, no commission",
-    sub: "Contract directly with the client. Keep all of it.",
+    title: "Win with confidence",
+    sub: "Contract directly with the client and keep all of it.",
   },
 };
 
@@ -246,6 +246,9 @@ export function BuilderJourney({ active }: { active: boolean }) {
     resting: RESTING,
     rootRef: root,
     loopPause: 2000,
+    // The first beat raises act one's card, so any settle before it
+    // shows the bare screen for a moment first.
+    startDelay: 0,
     script: [
       /* ── The film opens on act one's card, the explainer's cold
          open: the register already sits underneath it. ──────────── */
@@ -275,11 +278,10 @@ export function BuilderJourney({ active }: { active: boolean }) {
       // The re-query is a reveal, so it lands on the wide shot.
       { set: { filtered: true, hot: null } },
       { wait: 800 },
-      { cam: { focus: "pack", scale: 1.2, ms: 900 } },
+      // No push here. Leaning on the analysed strip cropped the
+      // register either side of it, and the strip is the reason to
+      // read the row, not a detail to hunt for.
       { wait: 950 },
-      // Back to wide before the boundary: the card always cuts from
-      // a resting camera.
-      { cam: "reset" },
       { move: "row", ms: 500 },
       { set: { hot: "row" } },
       { wait: 400 },
@@ -359,16 +361,17 @@ export function BuilderJourney({ active }: { active: boolean }) {
          the pull-back — the wide shot is what reveals 18 become 19
          and the track edge on. */
       { wait: 800 },
-      { cam: { focus: "line-slab", scale: 1.3, ms: 1000 } },
+      // Wide. The mark and the counter it moves sit at opposite ends of
+      // the frame, so any push that held the chips lost the counter,
+      // which is the half that proves the schedule is closing.
       { move: "slab-included", ms: 560 },
       { set: { hot: "slab-included" } },
       { wait: 400 },
       { click: true },
       { set: { marked: ["slab"], hot: null } },
-      { wait: 950 },
-      { cam: "reset" },
+      { wait: 500 },
       { set: { answered: 19 } },
-      { wait: 900 },
+      { wait: 950 },
       { set: { schedY: -126 } },
       { wait: 900 },
       { move: "continue", ms: 560 },
