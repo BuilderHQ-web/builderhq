@@ -10,21 +10,36 @@
  * Everything between those is the same product the homeowner uses, so it
  * is shown at the same fidelity and no faster than it can be read.
  *
- * HOW THIS RUNS, which is the part that changed.
- *
- * The first version mounted a screen, played one entrance, and replaced
- * it on a timer. It was choppy for a reason worth writing down: nothing
- * CAUSED the change. A screen simply became the next screen, which reads
- * as a slideshow of screenshots however nicely it crossfades.
- *
- * So there is now one script for the whole journey, run by the same
- * timeline engine the deck cards use, and every navigation is motivated.
- * The pointer reaches for a real control, the control lights under it,
- * the pointer hesitates for a beat, presses, and only then does the app
- * go somewhere. The controls are the product's own: the drop zone, the
+ * HOW THIS RUNS. One script for the whole journey, run by the timeline
+ * engine the deck cards use, and every navigation is motivated. The
+ * pointer reaches for a real control, the control lights under it, the
+ * pointer hesitates for a beat, presses, and only then does the app go
+ * somewhere. The controls are the product's own: the drop zone, the
  * pack rail's Continue, the Open card, Publish, the project page's link
  * into the tender stream, the Side by side nav pill, Back to project,
  * Share the project, Send the invitation.
+ *
+ * OVER THAT, A CAMERA. The scene plays under SceneCamera, directed in
+ * the grammar of a recorded product film: detail is watched close, and
+ * every reveal is watched wide. Before the pointer works a control the
+ * camera leans in on it; before a result that should be taken in whole
+ * lands (the round filling, three tenders arriving, the client's seat)
+ * the camera has already pulled back, so the reveal happens on a wide
+ * shot. Every screen change is a zoom-through: lean in on the button,
+ * press, the next screen lands under the zoom, and the pull wide IS the
+ * transition, which is what makes the film breathe in and out with each
+ * navigation. The signature moment is the Open / Private choice, pushed
+ * to 1.4 while the panel below rewrites, then pulled wide on the
+ * consequence so the whole round setup is seen at once. The camera
+ * never moves during a scroll and never scrolls while pushed in; the
+ * register and the decision grid are read wide and still. Two or three
+ * camera moves per screen, no more, because stillness is what makes the
+ * pushes land.
+ *
+ * An act caption sits in the frame's bottom left, outside the camera,
+ * numbering the seven acts and naming what each one is. Subtitles do
+ * not zoom with the footage, and their stillness is what makes the
+ * camera's motion read.
  *
  * One scene, one pointer. Nothing here is mounted or unmounted from
  * outside, because that is what used to make the cursor blink out
@@ -41,9 +56,9 @@
  * the rows travel under them; a table whose headings scroll away is a
  * table whose numbers stop meaning anything.
  *
- * The whole script runs about forty five seconds, which is deliberate.
- * Seven surfaces cannot be read in twenty, and the reason the first
- * version felt rushed was not only that nothing caused it.
+ * The whole script runs about fifty five seconds, which is deliberate.
+ * Seven surfaces cannot be read in twenty, and the camera beats take
+ * the time they need rather than being paid for out of the dwells.
  *
  * Four compressions worth naming, because a later reader will otherwise
  * think they are mistakes:
@@ -100,8 +115,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { SceneCursor, useSceneScript } from "../scene-motion";
+import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
+  ActCaption,
   Avatar,
   C,
   Card,
@@ -203,6 +219,30 @@ const CRUMB: Record<ScreenKey, string> = {
   client: "Single dwelling · Pascoe Vale, VIC",
 };
 
+/** The act numbers and titles for the caption in the frame's bottom
+ *  left. The captions are the story told in order: each one says what
+ *  this act IS, in five words or fewer, and together they read as the
+ *  practice's whole journey. */
+const ACT_N: Record<ScreenKey, string> = {
+  upload: "01",
+  scope: "02",
+  who: "03",
+  join: "04",
+  tenders: "05",
+  compare: "06",
+  client: "07",
+};
+
+const ACT_TEXT: Record<ScreenKey, string> = {
+  upload: "Upload for your client",
+  scope: "The list, written",
+  who: "Choose who prices it",
+  join: "The round fills",
+  tenders: "Same shape, three times",
+  compare: "Line against line",
+  client: "Handed over, on record",
+};
+
 /* ── the curves ──────────────────────────────────────────────────── */
 
 /** Slow enough to read as a list being scrolled rather than a list
@@ -246,169 +286,227 @@ const NAV = [
 export function ArchitectJourney({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
-  const { state, cursor, clicks } = useSceneScript<S>({
+  const { state, cursor, clicks, cam } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
     rootRef: root,
-    loopPause: 1800,
+    loopPause: 2400,
     script: [
-      /* ── 1 · the plans go in ───────────────────────────────────── */
-      { wait: 500 },
-      { move: "drop", ms: 800 },
+      /* ── 01 · the plans go in. The camera leans in on the drop
+             zone before it is pressed, holds close while the read
+             begins, and has pulled wide again before "Got it" lands,
+             so the result is a reveal rather than a caption. ─────── */
+      { wait: 250 },
+      { move: "drop", ms: 700 },
+      { cam: { focus: "drop", scale: 1.3, ms: 850 } },
       { set: { hot: "drop" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { phase: "scanning", hot: null } },
-      { wait: 1150 },
+      { wait: 550 },
+      { cam: "reset" },
+      { wait: 100 },
       { set: { phase: "read" } },
-      { wait: 700 },
-      { move: "upload-continue", ms: 700 },
+      { wait: 650 },
+      /* zoom-through → the scope */
+      { move: "upload-continue", ms: 550 },
+      { cam: { focus: "upload-continue", scale: 1.35, ms: 850 } },
       { set: { hot: "upload-continue" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "scope", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 2 · the list that comes out, and where each line came
-             from. The register is longer than the viewport, so it is
-             genuinely scrolled rather than re-rendered shorter. ──── */
-      { wait: 600 },
-      { move: "div-earthworks", ms: 700 },
+      /* ── 02 · the list that comes out, and where each line came
+             from. The division opens wide; the camera pushes in for
+             the citation alone, because the claim worth watching
+             close is that a line traces back to a drawn sheet. The
+             register then scrolls, and it scrolls wide: the camera
+             never moves during a scroll. ─────────────────────────── */
+      { move: "div-earthworks", ms: 600 },
       { set: { hot: "div-earthworks" } },
-      { wait: 420 },
+      { wait: 360 },
       { click: true },
       { set: { open: "earthworks", hot: null } },
-      { wait: 600 },
-      { move: "cite-earthworks", ms: 600 },
+      { wait: 400 },
+      { cam: { focus: "cite-earthworks", scale: 1.35, ms: 850 } },
+      { move: "cite-earthworks", ms: 450 },
       { set: { cite: true } },
-      { wait: 950 },
-      { set: { cite: false, scopeY: -140 } },
-      { wait: 800 },
-      { move: "scope-continue", ms: 700 },
+      { wait: 650 },
+      { set: { cite: false } },
+      { cam: "reset" },
+      { set: { scopeY: -140 } },
+      { wait: 700 },
+      /* zoom-through → who can tender */
+      { move: "scope-continue", ms: 550 },
+      { cam: { focus: "scope-continue", scale: 1.35, ms: 850 } },
       { set: { hot: "scope-continue" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "who", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 3 · the one screen only a practice sees. Choosing Open
-             does what it does in the product: the spot count only
-             exists on an open round, so it arrives as a consequence
-             of the press rather than as a second animation. ─────── */
-      { wait: 800 },
-      { move: "mode-open", ms: 750 },
+      /* ── 03 · the signature moment. The one screen only a practice
+             sees, so it is the one watched closest: push to 1.4 as
+             the pointer hovers Open, the card takes the teal skin on
+             the press, and the panel below rewrites while the camera
+             is still close, because the spot count only exists on an
+             open round and it should be seen arriving. Then pull
+             wide on the consequence, and hold still: the whole round
+             setup, seen at once. ─────────────────────────────────── */
+      { wait: 150 },
+      { move: "mode-open", ms: 650 },
+      { cam: { focus: "mode-open", scale: 1.4, ms: 1000 } },
       { set: { hot: "mode-open" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { mode: "open", hot: null } },
-      { wait: 1300 },
-      { move: "publish", ms: 750 },
+      { wait: 1000 },
+      { cam: "reset" },
+      { wait: 800 },
+      /* zoom-through → the round */
+      { move: "publish", ms: 600 },
+      { cam: { focus: "publish", scale: 1.35, ms: 850 } },
       { set: { hot: "publish" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "join", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 4 · the round fills. The third builder is the practice's
-             own, joining on its invitation, which is the only event
-             on this journey the practice does not click. ────────── */
-      { wait: 1200 },
+      /* ── 04 · the round fills, and it fills WIDE. Builders
+             arriving is the one event the practice does not click,
+             and it is a reveal, so the camera stands still and lets
+             all three rows be taken in whole. ────────────────────── */
+      { wait: 400 },
       { set: { joined: true } },
-      { wait: 1300 },
-      { move: "stream", ms: 800 },
+      { wait: 1000 },
+      /* zoom-through → the evaluation */
+      { move: "stream", ms: 650 },
+      { cam: { focus: "stream", scale: 1.35, ms: 850 } },
       { set: { hot: "stream" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "tenders", sec: 2, hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 5 · three tenders, in the same shape ──────────────────── */
-      { wait: 1200 },
-      { move: "card-meridian", ms: 750 },
+      /* ── 05 · three tenders, in the same shape, landing wide so
+             all three are seen answering the same three fields. ──── */
+      { wait: 400 },
+      { move: "card-meridian", ms: 650 },
       { set: { hot: "card-meridian" } },
-      { wait: 800 },
+      { wait: 600 },
       // The card unlights as the pointer starts to leave it, not when it
       // arrives somewhere else. A hover that outlives the pointer is the
       // tell that nothing here is really being hovered.
       { set: { hot: null } },
-      { move: "nav-3", ms: 700 },
+      /* zoom-through → side by side */
+      { move: "nav-3", ms: 550 },
+      { cam: { focus: "nav-3", scale: 1.35, ms: 850 } },
       { set: { hot: "nav-3" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "compare", sec: 3, hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 6 · the argument, in one table. The longest read on the
-             journey, so the grid is scrolled in two stages with the
-             teal cells arriving between them. ───────────────────── */
-      { wait: 900 },
+      /* ── 06 · the argument, in one table. The longest read on the
+             journey, watched wide and still: the teal cells sweep,
+             then the grid scrolls in two stages, and a scroll is
+             never watched through a moving camera. ───────────────── */
+      { wait: 300 },
       { set: { lit: true } },
-      { wait: 1200 },
+      { wait: 950 },
       { set: { gridY: GRID_AT.mid } },
-      { wait: 1100 },
+      { wait: 850 },
       { set: { gridY: GRID_AT.foot, scored: true } },
-      { wait: 1400 },
-      { move: "back", ms: 800 },
+      { wait: 1050 },
+      /* zoom-through → the handover */
+      { move: "back", ms: 650 },
+      { cam: { focus: "back", scale: 1.35, ms: 850 } },
       { set: { hot: "back" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "client", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 7 · the handover. Two presses, because that is what it
-             takes in the product, and then the practice's name on
-             the record settles under the seat it just handed out. ─ */
-      { wait: 900 },
-      { move: "share", ms: 750 },
+      /* ── 07 · the handover. The form opens wide; the camera
+             pushes in for the Deciding press, because which seat the
+             client is handed is the decision on this screen; then it
+             has pulled wide again before the seat lands, so the
+             arrival and the practice's name on the record are both
+             read on a wide, resting shot. ────────────────────────── */
+      { wait: 200 },
+      { move: "share", ms: 550 },
       { set: { hot: "share" } },
-      { wait: 420 },
+      { wait: 360 },
       { click: true },
       { set: { form: true, hot: null } },
-      { wait: 800 },
-      { move: "role-decider", ms: 600 },
+      { wait: 350 },
+      { cam: { focus: "role-decider", scale: 1.35, ms: 850 } },
+      { move: "role-decider", ms: 450 },
       { set: { hot: "role-decider" } },
       { wait: 360 },
       { click: true },
       { set: { decider: true, hot: null } },
-      { wait: 650 },
-      { move: "send", ms: 650 },
+      { wait: 350 },
+      { cam: "reset" },
+      { move: "send", ms: 550 },
       { set: { hot: "send" } },
-      { wait: 420 },
+      { wait: 360 },
       { click: true },
       { set: { form: false, seated: true, hot: null } },
-      { wait: 1300 },
+      { wait: 800 },
       { set: { record: true } },
-      { wait: 1500 },
+      { wait: 1100 },
       { cursor: "hide" },
     ],
   });
 
   return (
-    <div ref={root} className="relative w-full h-full">
-      {/* The frame, its breadcrumb and the pointer sit outside the
+    <div ref={root} className="relative w-full h-full overflow-hidden">
+      {/* The camera carries the whole app and the pointer with it, so a
+          push-in grows the cursor exactly as a recorded zoom would. The
+          frame, its breadcrumb and the pointer sit outside the
           crossfade and never remount. Only the body is replaced. */}
-      <Frame crumb={CRUMB[state.screen]} avatar="SN">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={state.screen}
-            className="flex-1 min-h-0 flex flex-col gap-2.5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={SWAP}
-          >
-            {state.screen === "upload" ? <UploadScreen s={state} /> : null}
-            {state.screen === "scope" ? <ScopeScreen s={state} /> : null}
-            {state.screen === "who" ? <WhoPricesScreen s={state} /> : null}
-            {state.screen === "join" ? <BuildersJoinScreen s={state} /> : null}
-            {state.screen === "tenders" ? <TendersInScreen s={state} /> : null}
-            {state.screen === "compare" ? <CompareScreen s={state} /> : null}
-            {state.screen === "client" ? <YourClientScreen s={state} /> : null}
-          </motion.div>
-        </AnimatePresence>
-      </Frame>
+      <SceneCamera cam={cam}>
+        <Frame crumb={CRUMB[state.screen]} avatar="SN">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={state.screen}
+              className="flex-1 min-h-0 flex flex-col gap-2.5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={SWAP}
+            >
+              {state.screen === "upload" ? <UploadScreen s={state} /> : null}
+              {state.screen === "scope" ? <ScopeScreen s={state} /> : null}
+              {state.screen === "who" ? <WhoPricesScreen s={state} /> : null}
+              {state.screen === "join" ? <BuildersJoinScreen s={state} /> : null}
+              {state.screen === "tenders" ? <TendersInScreen s={state} /> : null}
+              {state.screen === "compare" ? <CompareScreen s={state} /> : null}
+              {state.screen === "client" ? <YourClientScreen s={state} /> : null}
+            </motion.div>
+          </AnimatePresence>
+        </Frame>
 
-      <SceneCursor cursor={cursor} clicks={clicks} />
+        <SceneCursor cursor={cursor} clicks={clicks} />
+      </SceneCamera>
+
+      {/* The subtitle. Outside the camera, because subtitles do not
+          zoom with the footage. */}
+      <ActCaption n={ACT_N[state.screen]} text={ACT_TEXT[state.screen]} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Builder · the whole story, six screens, one pair of hands.
+ * Builder · the whole story, six acts, one pair of hands, one camera.
  *
  * The hero plays a builder's week end to end: the register they browse
  * on a Tuesday night, the project they hold a spot on, the scope that
@@ -10,22 +10,40 @@
  * through, Meridian Building Co, so the same name and the same figure
  * are on the last screen as on the fifth.
  *
- * WHY THIS FILE WAS REWRITTEN. The first version swapped screens on a
- * timer. It read as a slideshow of screenshots however nicely it
- * crossfaded, and for one reason worth writing down: nothing CAUSED the
- * change. So there is no step array here any more and no per-screen
- * clock. There is ONE script, on the deck's own timeline engine, and
- * every navigation is motivated: the pointer reaches a real control,
- * the control lights the way a real hover lights, the pointer presses
- * it, and only then does the app go somewhere. The frame, its topbar
- * and the pointer live outside the crossfade and never remount, so the
- * hand never blinks out between two screens.
+ * THE DIRECTION. Two earlier versions are worth naming. The first
+ * swapped screens on a timer and read as a slideshow, because nothing
+ * caused the change. The second gave the pointer real controls to
+ * press, which fixed the causing but watched everything from the same
+ * chair. This version adds the camera, and with it the grammar every
+ * recorded product film uses: detail is watched close, reveals are
+ * watched wide, and a navigation is travelled through rather than cut
+ * to. On each screen change the camera leans into the control, the
+ * pointer presses it, the next screen lands under the zoom, and the
+ * pull back to wide IS the reveal of where the session now stands.
+ * Scrolls are always taken wide, and the camera rests between moves,
+ * because stillness is what makes the pushes land.
+ *
+ * WHERE THE CAMERA GOES, act by act. Act one opens wide on the
+ * register and saves its first push for the line that earns it: the
+ * analysed strip on the Pascoe Vale row, nine documents, 211 pages,
+ * 242 items, the product's whole pitch to a builder. Act two reads the
+ * project and its document register wide, the scroll included. Act
+ * three leans on the footings division and its citation, then pans
+ * down the page to the tender bar. Act four is the signature moment,
+ * the deepest push in the film: 1.45 on the first schedule line while
+ * Included fills teal and the counter and track move, held, then
+ * released wide before the schedule walks on. Act five reads the
+ * review ledger wide and takes the sealing sentence and both Submit
+ * presses close. Act six never moves: a won job is taken in whole. An
+ * act caption sits outside the camera at the frame's foot, numbering
+ * the acts, because subtitles do not zoom with footage.
  *
  * WHAT THE POINTER PRESSES, in order: the type filter and Apply on the
  * register, the Pascoe Vale row, the "Scope of works" section, "Start
- * your tender" on the project's fixed bar, two Included chips and then
+ * your tender" on the project's fixed bar, one Included chip and then
  * "Continue" in the deck footer, "Submit tender" and its confirmation.
- * All six are controls the app actually renders.
+ * All of them are controls the app actually renders, and every press
+ * keeps the hand: hover first, the hesitation, then the click.
  *
  * Two product rules carried over from the kit and easy to break: bright
  * teal is a FILL and never type, and the project reads UNLOCKED from
@@ -65,8 +83,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { SceneCursor, useSceneScript } from "../scene-motion";
+import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
+  ActCaption,
   C,
   TONE,
   ELEV,
@@ -103,6 +122,30 @@ const CRUMB: Record<Screen, string> = {
   tender: "Tender · the schedule",
   submit: "Review and submit",
   won: "Your tender",
+};
+
+/**
+ * The act captions, one per screen, shown outside the camera at the
+ * frame's foot the way a film subtitles its scenes. They carry most of
+ * the explaining: each one says what this act IS, so a visitor who
+ * reads nothing else still gets the whole story in six short lines.
+ */
+const ACT_N: Record<Screen, string> = {
+  browse: "01",
+  project: "02",
+  scope: "03",
+  tender: "04",
+  submit: "05",
+  won: "06",
+};
+
+const ACT_TEXT: Record<Screen, string> = {
+  browse: "Find the round",
+  project: "Everything, unlocked",
+  scope: "The scope, already written",
+  tender: "Mark your price",
+  submit: "One sealed submission",
+  won: "Won, no commission",
 };
 
 type S = {
@@ -167,135 +210,169 @@ function alpha(hex: string, a: number): string {
 export function BuilderJourney({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
-  const { state, cursor, clicks } = useSceneScript<S>({
+  const { state, cursor, clicks, cam } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
     rootRef: root,
     loopPause: 2200,
     script: [
-      /* ── 1 · Browse ───────────────────────────────────────────────
-         The register as it loads, then the filter a builder actually
-         uses. Choosing a type does nothing until Apply, which is the
-         app's own GET-form behaviour and the reason for two presses. */
-      { wait: 1100 },
-      { move: "type", ms: 760 },
+      /* ── Act 1 · Find the round ───────────────────────────────────
+         Wide open on the register as it loads, and wide it stays for
+         the filter work: the first camera move of the whole film is
+         saved for the one line that earns it. Choosing a type does
+         nothing until Apply, which is the app's own GET-form
+         behaviour and the reason for two presses. */
+      { wait: 950 },
+      { move: "type", ms: 700 },
       { set: { hot: "type" } },
       { wait: 420 },
       { click: true },
       { set: { picked: true, hot: null } },
-      { wait: 700 },
-      { move: "apply", ms: 620 },
+      { wait: 550 },
+      { move: "apply", ms: 560 },
       { set: { hot: "apply" } },
       { wait: 420 },
       { click: true },
+      // The re-query is a reveal, so it lands on the wide shot.
       { set: { filtered: true, hot: null } },
-      { wait: 1400 },
-      // The row is a link. Pressing it is what opens the project.
-      { move: "row", ms: 820 },
+      { wait: 1200 },
+      // The first push, onto the product's whole pitch to a builder:
+      // nine documents analysed, 211 pages read, 242 items written.
+      { cam: { focus: "pack", scale: 1.3, ms: 1000 } },
+      { wait: 1200 },
+      // The row is a link and the camera is already leaning on it, so
+      // the press becomes a zoom-through: the project lands under the
+      // zoom and the pull back reveals where the session now stands.
+      { move: "row", ms: 560 },
       { set: { hot: "row" } },
-      { wait: 460 },
+      { wait: 420 },
       { click: true },
       { set: { screen: "project", hot: null } },
-      { wait: 1000 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 2 · The project ──────────────────────────────────────────
-         Unlocked from the first frame. The register of nine documents
-         is scrolled the way a builder scrolls it, and the rail follows
-         the reading before the pointer navigates on. */
-      { wait: 1300 },
+      /* ── Act 2 · Everything, unlocked ─────────────────────────────
+         The street address, the fact sheet, then the register of nine
+         documents scrolled the way a builder scrolls it. All of it
+         wide: a register filling the frame is the point, and a camera
+         that moved during the scroll would read as seasickness. */
+      { wait: 950 },
       { move: "doc-1", ms: 780 },
       { set: { hot: "doc-1" } },
-      { wait: 520 },
+      { wait: 480 },
       // Two waypoints, measured against the rendered register: the
       // second lands it on the last of the nine, which is what gives
       // the reader a beat at the bottom instead of a list still moving.
       { set: { hot: null, sec: "documents", docY: -180 } },
-      { wait: 900 },
+      { wait: 750 },
       { set: { docY: -374 } },
-      { wait: 950 },
-      { move: "nav-scope", ms: 800 },
+      { wait: 800 },
+      // The zoom-through to the scope, off the section rail.
+      { cam: { focus: "nav-scope", scale: 1.35, ms: 1000 } },
+      { move: "nav-scope", ms: 620 },
       { set: { hot: "nav-scope" } },
-      { wait: 440 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "scope", sec: "scope", hot: null } },
-      { wait: 950 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 3 · The scope ────────────────────────────────────────────
-         The claim on this screen is that every item was written from
-         the documents and carries the page it came from, so the
-         pointer opens a division and then reads a citation. */
-      { wait: 1300 },
-      { move: "div-footings", ms: 760 },
+      /* ── Act 3 · The scope, already written ───────────────────────
+         The stats band counts up on the wide shot, then the camera
+         leans on the footings division: the claim on this screen is
+         that every item carries the page it came from, and a citation
+         is detail, which is watched close. Leaving, the camera pans
+         straight down the page to the fixed bar rather than cutting
+         home first, the way a reader's eye actually travels. */
+      { wait: 900 },
+      { cam: { focus: "div-footings", scale: 1.3, ms: 1000 } },
+      { move: "div-footings", ms: 620 },
       { set: { hot: "div-footings" } },
-      { wait: 440 },
+      { wait: 420 },
       { click: true },
       { set: { open: "footings", hot: null } },
-      { wait: 800 },
-      { move: "cite-footings", ms: 560 },
+      { wait: 650 },
+      { move: "cite-footings", ms: 520 },
       { set: { cite: true } },
       { wait: 1100 },
       { set: { cite: false } },
-      { move: "start-tender", ms: 820 },
+      { cam: { focus: "start-tender", scale: 1.35, ms: 1100 } },
+      { move: "start-tender", ms: 620 },
       { set: { hot: "start-tender" } },
-      { wait: 460 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "tender", hot: null } },
-      { wait: 1000 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 4 · Your tender ──────────────────────────────────────────
-         The whole job is to say what your price does with each line.
-         One mark, then the schedule is scrolled on and the line at the
-         bottom is marked too, so the counter and the track move twice
-         and the scroll has a reason to exist. */
-      { wait: 1200 },
-      { move: "slab-included", ms: 800 },
+      /* ── Act 4 · Mark your price ──────────────────────────────────
+         The signature moment, and the deepest push in the film: 1.45
+         on the first schedule line while the pointer hovers Included,
+         the chip fills teal on the press, and the counter and the 3px
+         track move while the camera is still close enough to watch
+         them do it. Held, then released wide with a beat of
+         stillness, and only then does the schedule walk on beneath a
+         still camera. */
+      { wait: 1000 },
+      { cam: { focus: "line-slab", scale: 1.45 } },
+      { move: "slab-included", ms: 620 },
       { set: { hot: "slab-included" } },
       { wait: 460 },
       { click: true },
       { set: { marked: ["slab"], answered: 19, hot: null } },
-      { wait: 1300 },
+      { wait: 1400 },
+      { cam: "reset" },
+      { wait: 700 },
       { set: { schedY: -126 } },
       { wait: 1000 },
-      { move: "termite-included", ms: 720 },
-      { set: { hot: "termite-included" } },
-      { wait: 440 },
-      { click: true },
-      { set: { marked: ["slab", "termite"], answered: 20, hot: null } },
-      { wait: 1400 },
-      { move: "continue", ms: 800 },
+      { cam: { focus: "continue", scale: 1.35, ms: 1000 } },
+      { move: "continue", ms: 620 },
       { set: { hot: "continue" } },
-      { wait: 440 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "submit", hot: null } },
-      { wait: 1000 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 5 · Submit ───────────────────────────────────────────────
-         Two steps, because the app has two: submitting seals the
-         tender, and the sentence that says so is worth reading. */
-      { wait: 1400 },
-      { move: "submit", ms: 800 },
+      /* ── Act 5 · One sealed submission ────────────────────────────
+         The cover, the price and the twelve-module ledger are read
+         whole on the wide shot, then the camera drops to the foot of
+         the review for both presses: the sentence that says
+         submitting seals the tender is the one sentence in the film
+         worth reading close. The award lands under the zoom and the
+         pull back is what reveals it. */
+      { wait: 1250 },
+      { cam: { focus: "submit", scale: 1.3, ms: 1000 } },
+      { move: "submit", ms: 620 },
       { set: { hot: "submit" } },
-      { wait: 440 },
+      { wait: 420 },
       { click: true },
       { set: { confirm: true, hot: null } },
-      { wait: 1500 },
-      { move: "submit-confirm", ms: 600 },
+      { wait: 1300 },
+      { move: "submit-confirm", ms: 560 },
       { set: { hot: "submit-confirm" } },
       { wait: 420 },
       { click: true },
       { set: { screen: "won", hot: null } },
-      { wait: 1000 },
+      { wait: 350 },
+      { cam: "reset" },
+      { wait: 700 },
 
-      /* ── 6 · Won ──────────────────────────────────────────────────
-         The end of the session. The pointer rests on the one thing a
-         builder reaches for here, and only then leaves the screen. */
-      { wait: 1800 },
-      { move: "pdf", ms: 820 },
-      { set: { hot: "pdf" } },
+      /* ── Act 6 · Won, no commission ───────────────────────────────
+         The end of the session, and the camera never moves again: a
+         won job is taken in whole. The pointer rests on the one thing
+         a builder reaches for here, and only then leaves the screen. */
       { wait: 1500 },
+      { move: "pdf", ms: 800 },
+      { set: { hot: "pdf" } },
+      { wait: 1300 },
       { set: { hot: null } },
       { cursor: "hide" },
-      { wait: 400 },
+      { wait: 450 },
     ],
   });
 
@@ -303,90 +380,96 @@ export function BuilderJourney({ active }: { active: boolean }) {
   const onProjectPage = screen === "project" || screen === "scope";
 
   return (
-    <div ref={root} className="relative w-full h-full">
-      <Frame
-        crumb={CRUMB[screen]}
-        avatar="MB"
-        // The page-level bars are chrome, not content: the project's
-        // tender bar is fixed to the foot of the real page and the
-        // deck's controls are ruled off at the foot of the real deck.
-        // Keeping them out here means the bar survives the project to
-        // scope move without remounting, exactly as it does in the app.
-        overlay={
-          <AnimatePresence mode="wait" initial={false}>
-            {onProjectPage ? (
-              <FootBar key="cta" tone="cta">
-                <div className="min-w-0 flex items-center gap-2">
-                  <span
-                    className="shrink-0 inline-flex size-6 items-center justify-center rounded-md border"
-                    style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
-                  >
-                    <FileText className="size-3" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[10.5px] font-semibold leading-tight truncate" style={{ color: C.ink }}>
-                      Ready to tender on this project?
-                    </p>
-                    <p className="mt-[1px] text-[8.5px] leading-tight truncate" style={{ color: C.dim }}>
-                      Twelve short modules, about thirty minutes.
-                    </p>
+    <div ref={root} className="relative w-full h-full overflow-hidden">
+      {/* The cursor rides INSIDE the camera and grows with the zoom,
+          exactly as a recorded cursor would; the act caption sits
+          OUTSIDE it, because subtitles do not zoom with footage. */}
+      <SceneCamera cam={cam}>
+        <Frame
+          crumb={CRUMB[screen]}
+          avatar="MB"
+          // The page-level bars are chrome, not content: the project's
+          // tender bar is fixed to the foot of the real page and the
+          // deck's controls are ruled off at the foot of the real deck.
+          // Keeping them out here means the bar survives the project to
+          // scope move without remounting, exactly as it does in the app.
+          overlay={
+            <AnimatePresence mode="wait" initial={false}>
+              {onProjectPage ? (
+                <FootBar key="cta" tone="cta">
+                  <div className="min-w-0 flex items-center gap-2">
+                    <span
+                      className="shrink-0 inline-flex size-6 items-center justify-center rounded-md border"
+                      style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
+                    >
+                      <FileText className="size-3" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10.5px] font-semibold leading-tight truncate" style={{ color: C.ink }}>
+                        Ready to tender on this project?
+                      </p>
+                      <p className="mt-[1px] text-[8.5px] leading-tight truncate" style={{ color: C.dim }}>
+                        Twelve short modules, about thirty minutes.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <Press k="start-tender" hot={state.hot === "start-tender"}>
-                  <TealBtn>Start your tender</TealBtn>
-                </Press>
-              </FootBar>
-            ) : screen === "tender" ? (
-              <FootBar key="deck" tone="deck">
-                <span className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: C.dim }}>
-                  <ArrowLeft className="size-3" />
-                  Back
-                </span>
-                <Press k="continue" hot={state.hot === "continue"}>
-                  <TealBtn>
-                    Continue
-                    <ArrowRight className="size-3" />
-                  </TealBtn>
-                </Press>
-              </FootBar>
-            ) : null}
+                  <Press k="start-tender" hot={state.hot === "start-tender"}>
+                    <TealBtn>Start your tender</TealBtn>
+                  </Press>
+                </FootBar>
+              ) : screen === "tender" ? (
+                <FootBar key="deck" tone="deck">
+                  <span className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: C.dim }}>
+                    <ArrowLeft className="size-3" />
+                    Back
+                  </span>
+                  <Press k="continue" hot={state.hot === "continue"}>
+                    <TealBtn>
+                      Continue
+                      <ArrowRight className="size-3" />
+                    </TealBtn>
+                  </Press>
+                </FootBar>
+              ) : null}
+            </AnimatePresence>
+          }
+        >
+          {/* The only thing that crossfades is the screen body. The
+              topbar, the foot bar and the pointer sit outside it. */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={screen}
+              className="flex-1 min-h-0 flex flex-col gap-2.5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.4, ease: EASE }}
+            >
+              {screen === "browse" ? (
+                <BrowseScreen picked={state.picked} filtered={state.filtered} hot={state.hot} />
+              ) : screen === "project" ? (
+                <ProjectScreen sec={state.sec} docY={state.docY} hot={state.hot} />
+              ) : screen === "scope" ? (
+                <ScopeScreen sec={state.sec} open={state.open} cite={state.cite} hot={state.hot} />
+              ) : screen === "tender" ? (
+                <TenderScreen
+                  y={state.schedY}
+                  marked={state.marked}
+                  answered={state.answered}
+                  hot={state.hot}
+                />
+              ) : screen === "submit" ? (
+                <SubmitScreen confirm={state.confirm} hot={state.hot} />
+              ) : (
+                <WonScreen hot={state.hot} />
+              )}
+            </motion.div>
           </AnimatePresence>
-        }
-      >
-        {/* The only thing that crossfades is the screen body. The
-            topbar, the foot bar and the pointer sit outside it. */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={screen}
-            className="flex-1 min-h-0 flex flex-col gap-2.5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.4, ease: EASE }}
-          >
-            {screen === "browse" ? (
-              <BrowseScreen picked={state.picked} filtered={state.filtered} hot={state.hot} />
-            ) : screen === "project" ? (
-              <ProjectScreen sec={state.sec} docY={state.docY} hot={state.hot} />
-            ) : screen === "scope" ? (
-              <ScopeScreen sec={state.sec} open={state.open} cite={state.cite} hot={state.hot} />
-            ) : screen === "tender" ? (
-              <TenderScreen
-                y={state.schedY}
-                marked={state.marked}
-                answered={state.answered}
-                hot={state.hot}
-              />
-            ) : screen === "submit" ? (
-              <SubmitScreen confirm={state.confirm} hot={state.hot} />
-            ) : (
-              <WonScreen hot={state.hot} />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </Frame>
+        </Frame>
+        <SceneCursor cursor={cursor} clicks={clicks} />
+      </SceneCamera>
 
-      <SceneCursor cursor={cursor} clicks={clicks} />
+      <ActCaption n={ACT_N[screen]} text={ACT_TEXT[screen]} />
     </div>
   );
 }
@@ -861,7 +944,9 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
           ))}
         </div>
         {d.pack ? (
-          <p className="flex items-center gap-1 text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
+          // The camera's first push lands here, so the strip carries
+          // its own key even though the pointer never visits it.
+          <p data-cursor="pack" className="flex items-center gap-1 text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
             <BookOpenCheck className="size-[10px] shrink-0" />
             <span className="truncate">{d.pack}</span>
           </p>
@@ -1250,6 +1335,9 @@ function TenderScreen({
               <Card
                 key={line.id}
                 tone={on ? "accent" : "plain"}
+                // The card is the signature moment's camera target: the
+                // 1.45 push centres the whole line, not just its chip.
+                cursorKey={`line-${line.id}`}
                 className="px-3 py-3 transition-[background-color,border-color,box-shadow] duration-300"
               >
                 <p className="text-[11px] sm:text-[11.5px] font-ui font-semibold leading-[1.35]" style={{ color: C.ink }}>

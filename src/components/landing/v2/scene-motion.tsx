@@ -46,10 +46,28 @@ export type Beat<S> =
   /** Hold. */
   | { wait: number }
   /** Take the cursor off the scene (used before a loop restarts). */
-  | { cursor: "hide" | "show" };
+  | { cursor: "hide" | "show" }
+  /**
+   * The camera. `focus` pushes in on a `data-cursor` target so it sits
+   * centred at `scale`; "reset" pulls back to the full screen. This is
+   * the screen-recording grammar every polished product film uses:
+   * detail is watched close, and every reveal is watched wide. The
+   * cursor rides inside the camera, so it grows with the zoom exactly
+   * as a recorded cursor would.
+   */
+  | { cam: { focus: string; scale?: number; ms?: number } | "reset" };
 
 /** How long each beat occupies the timeline. */
-const DUR = { move: 620, click: 260, set: 0, cursor: 220 } as const;
+const DUR = { move: 620, click: 260, set: 0, cursor: 220, cam: 1150 } as const;
+
+/**
+ * Where the camera stands. `x`/`y` are the translation applied before
+ * `scale` with the origin at the scene's top left, so a target point t
+ * stays put when x = vw/2 - t.x * scale.
+ */
+export type Cam = { x: number; y: number; scale: number; ms: number };
+
+const RESTING_CAM: Cam = { x: 0, y: 0, scale: 1, ms: 1150 };
 
 export type Cursor = {
   x: number;
@@ -77,11 +95,15 @@ export function useSceneScript<S extends object>({
   script: Array<Beat<S>>;
   rootRef: React.RefObject<HTMLElement | null>;
   loopPause?: number;
-}): { state: S; cursor: Cursor; clicks: number } {
+}): { state: S; cursor: Cursor; clicks: number; cam: Cam } {
   const reduced = useReducedMotion();
   const [state, setState] = React.useState<S>(resting);
   const [cursor, setCursor] = React.useState<Cursor>(RESTING_CURSOR);
   const [clicks, setClicks] = React.useState(0);
+  const [cam, setCam] = React.useState<Cam>(RESTING_CAM);
+  // The camera the timeline has already committed to, needed to
+  // un-transform measurements taken while pushed in.
+  const camRef = React.useRef<Cam>(RESTING_CAM);
 
   // The script is written inline at the call site, so a fresh array
   // arrives on every render. Hold it in a ref and key the timeline on
@@ -101,6 +123,8 @@ export function useSceneScript<S extends object>({
     if (!enabled || reduced) {
       setState(restingRef.current);
       setCursor(RESTING_CURSOR);
+      setCam(RESTING_CAM);
+      camRef.current = RESTING_CAM;
       return;
     }
 
@@ -111,13 +135,44 @@ export function useSceneScript<S extends object>({
     // each loop can place rather than travel.
     const shownRef = { current: false };
 
+    // Scene-space centre of a target. Rects are measured through the
+    // camera's transform, so divide it back out: the cursor and the
+    // camera both work in unscaled scene coordinates.
     const centreOf = (key: string): { x: number; y: number } | null => {
       const root = rootRef.current;
       const el = root?.querySelector<HTMLElement>(`[data-cursor="${key}"]`);
       if (!root || !el) return null;
       const r = el.getBoundingClientRect();
       const b = root.getBoundingClientRect();
-      return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 };
+      const c = camRef.current;
+      return {
+        x: (r.left - b.left + r.width / 2 - c.x) / c.scale,
+        y: (r.top - b.top + r.height / 2 - c.y) / c.scale,
+      };
+    };
+
+    const runCam = (want: { focus: string; scale?: number; ms?: number } | "reset"): number => {
+      const root = rootRef.current;
+      if (!root) return 0;
+      if (want === "reset") {
+        const next = { ...RESTING_CAM, ms: 1150 };
+        camRef.current = next;
+        setCam(next);
+        return DUR.cam;
+      }
+      const at = centreOf(want.focus);
+      if (!at) return 0;
+      const b = root.getBoundingClientRect();
+      const scale = Math.min(2, Math.max(1, want.scale ?? 1.35));
+      // Centre the target, then clamp so the camera never shows past the
+      // screen's own edges: an app zoomed onto its margin breaks the
+      // recording illusion instantly.
+      const x = Math.min(0, Math.max(b.width * (1 - scale), b.width / 2 - at.x * scale));
+      const y = Math.min(0, Math.max(b.height * (1 - scale), b.height / 2 - at.y * scale));
+      const next = { x, y, scale, ms: want.ms ?? DUR.cam };
+      camRef.current = next;
+      setCam(next);
+      return next.ms;
     };
 
     const step = () => {
@@ -158,6 +213,8 @@ export function useSceneScript<S extends object>({
         setState((s) => ({ ...s, ...beat.set }));
       } else if ("wait" in beat) {
         hold = beat.wait;
+      } else if ("cam" in beat) {
+        hold = runCam(beat.cam);
       } else {
         setCursor((c) => ({ ...c, shown: beat.cursor === "show" }));
         if (beat.cursor === "hide") shownRef.current = false;
@@ -177,7 +234,33 @@ export function useSceneScript<S extends object>({
     };
   }, [enabled, reduced, rootRef, loopPause]);
 
-  return { state, cursor, clicks };
+  return { state, cursor, clicks, cam };
+}
+
+/* ── The camera mount ────────────────────────────────────────────── */
+
+/**
+ * Wrap the whole scene, cursor included, so a push-in carries the
+ * pointer with it the way a recorded zoom does. Origin stays at the top
+ * left and the translation does the aiming, because animating
+ * transform-origin mid-flight jumps.
+ *
+ * The ease matters more than anything else in this file: a camera that
+ * moves at constant speed reads as software, one that spends most of
+ * its time decelerating reads as a person leaning in.
+ */
+export function SceneCamera({ cam, children }: { cam: Cam; children: React.ReactNode }) {
+  return (
+    <motion.div
+      className="absolute inset-0 will-change-transform"
+      style={{ transformOrigin: "0 0" }}
+      initial={false}
+      animate={{ x: cam.x, y: cam.y, scale: cam.scale }}
+      transition={{ duration: cam.ms / 1000, ease: [0.3, 0.9, 0.25, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 /* ── The pointer ─────────────────────────────────────────────────── */

@@ -481,6 +481,46 @@ export function WashRow({
   );
 }
 
+/**
+ * The act caption — a film subtitle, not a progress bar. It sits inside
+ * the frame's bottom left, names the act ("02 · One list, from your
+ * documents"), and swaps with a small rise as the story moves on. It
+ * lives OUTSIDE the camera on purpose: subtitles do not zoom with the
+ * footage, and their stillness is what makes the camera's motion read.
+ */
+export function ActCaption({ n, text }: { n: string; text: string | null }) {
+  return (
+    <div aria-hidden className="absolute left-3 bottom-3 z-20 pointer-events-none">
+      <AnimatePresence mode="wait">
+        {text ? (
+          <motion.div
+            key={text}
+            className="flex items-center gap-2 rounded-full border pl-2.5 pr-3.5 py-1.5"
+            style={{
+              borderColor: C.line,
+              background: "rgba(251,249,244,0.92)",
+              backdropFilter: "blur(6px)",
+              boxShadow: "0 10px 26px -14px rgba(24,34,44,0.35)",
+            }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span className="font-mono text-[9px] tabular-nums font-bold" style={{ color: C.tealInk }}>
+              {n}
+            </span>
+            <span aria-hidden className="h-2.5 w-px" style={{ background: C.line2 }} />
+            <span className="text-[10.5px] font-semibold whitespace-nowrap" style={{ color: C.ink }}>
+              {text}
+            </span>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /** The bottom fade that says a list keeps going. */
 export function ListFade() {
   return (

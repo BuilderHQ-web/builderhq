@@ -10,14 +10,7 @@
  * intention. Every screen is a miniature of a surface the app already
  * renders, at the figures of the example round it ships with.
  *
- * WHAT CHANGED, AND WHY. The first version of this file exported an
- * array of screens that the shell mounted and replaced on a timer. It
- * was choppy for a reason worth writing down: nothing CAUSED the screen
- * to change. A slideshow of screenshots reads as a slideshow of
- * screenshots however nicely it crossfades, and mounting each screen
- * from outside meant there was nowhere for a pointer to live.
- *
- * So this is now ONE scene running ONE script on the deck's timeline
+ * THE HAND. One scene running one script on the deck's timeline
  * engine. A pointer moves to a real control, the control lights the way
  * a real hover would, the pointer hesitates for a beat, presses, and
  * only then does the app go somewhere. Five navigations, each earned by
@@ -29,12 +22,40 @@
  *   Tenders           → Compare tenders     (the round panel's CTA)
  *   The tender eval.  → Award               (on the tender's own card)
  *
- * The Frame, its breadcrumb and the pointer sit OUTSIDE the screen
+ * THE CAMERA, which is the direction this file now carries. The script
+ * drives a camera as well as a hand, in the grammar of a screen
+ * recording: detail is watched close, and every reveal is watched
+ * wide. Before the pointer works a control the camera pushes in on it;
+ * before a result lands that should be taken in whole, the camera has
+ * already pulled back, so no reveal ever happens zoomed. Every
+ * navigation is a zoom-through: lean in on the control, press, let the
+ * next screen land under the zoom, then pull wide to show where the
+ * press went. The pull-back IS the transition, and done every time it
+ * gives the film an in-and-out breath. The camera never moves during a
+ * scroll and never scrolls while pushed in, and the long reads get a
+ * still, wide frame, because stillness is what makes the pushes land.
+ *
+ * The signature shot is the 242 count-up. The camera arrives on the
+ * scope screen still zoomed from the Continue press, re-aims onto the
+ * figure at 1.45 while it counts, holds a beat after the number lands,
+ * then pulls wide as the register's divisions cascade in behind it:
+ * the pull-back that shows how much one number unpacked into. The
+ * citation lighting teal and the Award press are the other close-ups;
+ * everything else, the scan, the round filling, the three tenders, the
+ * decision grid, the awarded banner, plays wide.
+ *
+ * Each screen is captioned as an act, film-subtitle style, in the
+ * frame's bottom left: a two-digit number and at most five words for
+ * what the act IS. The captions sit OUTSIDE the camera, because
+ * subtitles do not zoom with footage, and read in order they are the
+ * story's table of contents.
+ *
+ * The Frame, its breadcrumb and the pointer sit outside the screen
  * crossfade and never remount, so the pointer never blinks out between
- * two screens. It is taken off the scene exactly once, at the end,
- * before the loop restarts. The breadcrumb changes with every screen,
- * which is the cheapest and most convincing signal that the session
- * actually navigated.
+ * two screens, and both ride INSIDE the camera, so a push carries the
+ * pointer with it exactly as a recorded zoom would. The breadcrumb
+ * changes with every screen, which is the cheapest and most convincing
+ * signal that the session actually navigated.
  *
  * Four compressions worth naming, because a later reader will otherwise
  * think they are mistakes:
@@ -64,7 +85,7 @@
  */
 
 import * as React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { animate, AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowUpRight,
   Award,
@@ -78,8 +99,9 @@ import {
   Star,
 } from "lucide-react";
 
-import { SceneCursor, useSceneScript } from "../scene-motion";
+import { SceneCamera, SceneCursor, useSceneScript } from "../scene-motion";
 import {
+  ActCaption,
   Avatar,
   C,
   Card,
@@ -120,8 +142,10 @@ type S = {
   hot: string | null;
   /** Screen one: the three phases of reading a plan set. */
   phase: "drop" | "scan" | "done";
-  /** Screen two: the opened division, its lit citation, the register's
-   *  own offset. */
+  /** Screen two: whether the register has cascaded in yet (it holds
+   *  back until the camera pulls wide off the 242 count), the opened
+   *  division, its lit citation, the register's own offset. */
+  reg: boolean;
   open: boolean;
   cite: boolean;
   scopeY: number;
@@ -144,6 +168,7 @@ const RESTING: S = {
   screen: "upload",
   hot: null,
   phase: "drop",
+  reg: false,
   open: false,
   cite: false,
   scopeY: 0,
@@ -162,6 +187,28 @@ const CRUMB: Record<Screen, string> = {
   tenders: "Tenders",
   compare: "The tender evaluation",
   award: "Awarded",
+};
+
+/** The act captions: a film subtitle per screen, and most of the
+ *  explanation. Each one says what the act IS, in five words or
+ *  fewer, so the six of them read as the platform's table of
+ *  contents. */
+const ACT_N: Record<Screen, string> = {
+  upload: "01",
+  scope: "02",
+  round: "03",
+  tenders: "04",
+  compare: "05",
+  award: "06",
+};
+
+const ACT_TEXT: Record<Screen, string> = {
+  upload: "Your plans, read",
+  scope: "One list, every trade",
+  round: "Builders take their spots",
+  tenders: "Three prices, one shape",
+  compare: "Read side by side",
+  award: "Awarded, directly",
 };
 
 /* ── screen one · what the plans gave up ─────────────────────────── */
@@ -399,163 +446,224 @@ const OTHERS = [
 export function HomeownerJourney({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
-  const { state, cursor, clicks } = useSceneScript<S>({
+  const { state, cursor, clicks, cam } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
     rootRef: root,
     loopPause: 2200,
     script: [
-      /* ── one · the plans go in ───────────────────────────────────
-         Two presses on the first screen, which is deliberate: by the
-         time the session leaves it the visitor has already watched the
-         pointer behave like a hand twice. */
-      { wait: 500 },
+      /* ── act 01 · your plans, read ───────────────────────────────
+         The pointer's first two presses, and the camera's first push
+         and pull. By the time the session leaves this screen the
+         visitor has seen the whole grammar once: lean in on a
+         control, press, pull wide for what the press produced. */
+      { wait: 400 },
       // The first move places rather than travels: the engine fades the
       // pointer in already standing on its target, so `ms` is moot here.
       { move: "drop" },
+      { cam: { focus: "drop", scale: 1.3, ms: 800 } },
       { set: { hot: "drop" } },
-      { wait: 460 },
+      { wait: 420 },
       { click: true },
       { set: { phase: "scan", hot: null } },
-      { wait: 1600 },
+      { wait: 300 },
+      // Wide BEFORE the read plays out: the scan is a reveal, and
+      // reveals are watched wide.
+      { cam: "reset" },
+      { wait: 950 },
       { set: { phase: "done" } },
-      { wait: 1000 },
-      { move: "continue", ms: 780 },
+      { wait: 900 },
+      // The first zoom-through. Lean in on Continue, press, and let
+      // the scope screen land under the zoom.
+      { cam: { focus: "continue", scale: 1.35, ms: 800 } },
+      { move: "continue", ms: 620 },
       { set: { hot: "continue" } },
-      { wait: 440 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "scope", hot: null } },
-      { wait: 900 },
+      // Longer than the other landings: the crossfade must finish
+      // before the camera can measure the figure it re-aims onto.
+      { wait: 600 },
 
-      /* ── two · one list, written from the documents ───────────── */
-      { wait: 500 },
-      { move: "div-approvals", ms: 820 },
+      /* ── act 02 · one list, every trade ──────────────────────────
+         THE SIGNATURE SHOT. The camera arrives still zoomed from the
+         Continue press and re-aims onto the figure at 1.45 while it
+         counts up to 242. It holds a beat after the number lands,
+         then pulls wide as the register's divisions cascade in behind
+         it: the pull-back that shows how much one number unpacked
+         into. */
+      { cam: { focus: "scope-count", scale: 1.45, ms: 900 } },
+      { wait: 1600 },
+      { set: { reg: true } },
+      { cam: "reset" },
+      { wait: 650 },
+      { move: "div-approvals", ms: 800 },
       { set: { hot: "approvals" } },
-      { wait: 440 },
+      { wait: 420 },
       { click: true },
       { set: { open: true, hot: null } },
-      { wait: 700 },
-      // Lift what was just opened to the top before reading it.
+      { wait: 450 },
+      // Lift what was just opened to the top before reading it. Every
+      // scroll in this film happens on a wide, motionless camera.
       { set: { scopeY: SCOPE_Y.settle } },
-      { wait: 500 },
+      { wait: 900 },
+      // The second close-up: the citation, watched at 1.3 while it
+      // lights teal. Push first, then let the pointer work it.
+      { cam: { focus: "cite-approvals", scale: 1.3, ms: 800 } },
       { move: "cite-approvals", ms: 620 },
       { set: { cite: true } },
-      { wait: 1600 },
+      { wait: 1300 },
       { set: { cite: false } },
+      { cam: "reset" },
       { wait: 250 },
       // Two flicks rather than one long glide, because that is how a
       // register this long actually gets read.
       { set: { scopeY: SCOPE_Y.middle } },
-      { wait: 1000 },
+      { wait: 900 },
       { set: { scopeY: SCOPE_Y.bottom } },
-      { wait: 1300 },
-      { move: "publish", ms: 820 },
+      { wait: 900 },
+      // Zoom-through on Publish.
+      { cam: { focus: "publish", scale: 1.35, ms: 800 } },
+      { move: "publish", ms: 700 },
       { set: { hot: "publish" } },
-      { wait: 460 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "round", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
 
-      /* ── three · the builders take the spots ──────────────────── */
-      { wait: 1000 },
+      /* ── act 03 · the builders take the spots ────────────────────
+         A wide act. The third spot filling is a reveal, so the camera
+         pulls back on arrival and does not move again until the
+         exit. */
+      { cam: "reset" },
+      { wait: 700 },
       { move: "row-corten", ms: 760 },
       { set: { hot: "corten" } },
-      { wait: 800 },
+      { wait: 650 },
       // The last spot goes while the pointer is resting on the first
       // builder. Nobody clicked this: it is the round being live.
       { set: { spots: 3, hot: null } },
-      { wait: 1300 },
-      { move: "stream", ms: 800 },
+      { wait: 1050 },
+      // Zoom-through on the tender stream link.
+      { cam: { focus: "stream", scale: 1.35, ms: 800 } },
+      { move: "stream", ms: 700 },
       { set: { hot: "stream" } },
-      { wait: 440 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "tenders", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
 
-      /* ── four · three tenders, one shape ──────────────────────── */
-      { wait: 1600 },
-      // The eye goes to the cheapest first. That it is the cheapest is
-      // the whole reason the next screen exists.
+      /* ── act 04 · three tenders, one shape ───────────────────────
+         The three cards land ON the pull-back, the widest reveal in
+         the film, and the camera stays wide while the eye goes to the
+         cheapest. That it is the cheapest is the whole reason the
+         next screen exists. */
+      { cam: "reset" },
+      { wait: 900 },
       { move: "card-corten", ms: 760 },
       { set: { hot: "corten" } },
-      { wait: 800 },
+      { wait: 700 },
       { set: { hot: null } },
-      { move: "compare", ms: 780 },
+      // Zoom-through on Compare tenders.
+      { cam: { focus: "compare", scale: 1.35, ms: 800 } },
+      { move: "compare", ms: 700 },
       { set: { hot: "compare" } },
-      { wait: 440 },
+      { wait: 400 },
       { click: true },
       { set: { screen: "compare", hot: null } },
-      { wait: 900 },
+      { wait: 350 },
 
-      /* ── five · read the round ────────────────────────────────── */
-      { wait: 1200 },
+      /* ── act 05 · the evaluation, read side by side ──────────────
+         The longest act, and the stillest. The overview paragraph is
+         a long read, so it gets a wide, motionless camera; the one
+         push is on the weighted score as its working opens, and the
+         one after that is the Award press. */
+      { cam: "reset" },
+      { wait: 350 },
       { set: { cmpY: AT.overview } },
-      { wait: 2400 },
+      { wait: 2250 },
       { set: { cmpY: AT.meridian } },
       { wait: 900 },
-      { move: "score", ms: 700 },
+      // Push on the score row, then open its working and read the
+      // published weights close.
+      { cam: { focus: "score", scale: 1.3, ms: 800 } },
+      { move: "score", ms: 620 },
       { set: { hot: "score" } },
-      { wait: 420 },
+      { wait: 400 },
       { click: true },
       { set: { dims: true, hot: null } },
-      { wait: 1400 },
-      { set: { cmpY: AT.grid } },
-      { wait: 800 },
-      // The teal cells arrive a row at a time, which is how a reader
-      // sees that no single tender wins everything.
-      { set: { lit: true } },
       { wait: 1200 },
+      // Wide before the grid: the teal cells arriving a row at a time
+      // is a reveal, and it says no single tender wins everything.
+      { cam: "reset" },
+      { set: { cmpY: AT.grid } },
+      { wait: 650 },
+      { set: { lit: true } },
+      { wait: 1100 },
       // Back up to the tender that was chosen, which is what a person
       // does once they have read the lot.
       { set: { cmpY: AT.award } },
-      { wait: 1100 },
-      { move: "award", ms: 720 },
+      { wait: 900 },
+      // The decision, watched close. Zoom-through on Award.
+      { cam: { focus: "award", scale: 1.35, ms: 800 } },
+      { move: "award", ms: 620 },
       { set: { hot: "award" } },
-      { wait: 520 },
+      { wait: 450 },
       { click: true },
       { set: { screen: "award", hot: null } },
-      { wait: 1000 },
+      { wait: 350 },
 
-      /* ── six · the decision ───────────────────────────────────── */
-      { wait: 2800 },
+      /* ── act 06 · the decision ───────────────────────────────────
+         One pull-back onto the awarded banner and then stillness, all
+         the way into the loop pause. The film ends wide, the way it
+         started. */
+      { cam: "reset" },
+      { wait: 1900 },
       { cursor: "hide" },
-      { wait: 800 },
+      { wait: 500 },
     ],
   });
 
   return (
-    <div ref={root} className="relative w-full h-full">
-      {/* The Frame and its breadcrumb live outside the crossfade, so the
+    <div ref={root} className="relative w-full h-full overflow-hidden">
+      {/* The camera wraps the window AND the pointer, so a push-in
+          carries the pointer with it the way a recorded zoom does. The
+          Frame and its breadcrumb live outside the crossfade, so the
           window never remounts and the breadcrumb is the one piece of
-          chrome that tells you the session moved. */}
-      <Frame crumb={CRUMB[state.screen]}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.screen}
-            className="flex-1 min-h-0 flex flex-col gap-3"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={CUT}
-          >
-            {state.screen === "upload" ? (
-              <UploadScreen s={state} />
-            ) : state.screen === "scope" ? (
-              <ScopeScreen s={state} />
-            ) : state.screen === "round" ? (
-              <RoundScreen s={state} />
-            ) : state.screen === "tenders" ? (
-              <TendersScreen s={state} />
-            ) : state.screen === "compare" ? (
-              <CompareScreen s={state} />
-            ) : (
-              <AwardScreen />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </Frame>
+          chrome that tells you the session moved. The act caption sits
+          outside the camera: subtitles do not zoom with footage. */}
+      <SceneCamera cam={cam}>
+        <Frame crumb={CRUMB[state.screen]}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={state.screen}
+              className="flex-1 min-h-0 flex flex-col gap-3"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={CUT}
+            >
+              {state.screen === "upload" ? (
+                <UploadScreen s={state} />
+              ) : state.screen === "scope" ? (
+                <ScopeScreen s={state} />
+              ) : state.screen === "round" ? (
+                <RoundScreen s={state} />
+              ) : state.screen === "tenders" ? (
+                <TendersScreen s={state} />
+              ) : state.screen === "compare" ? (
+                <CompareScreen s={state} />
+              ) : (
+                <AwardScreen />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </Frame>
 
-      <SceneCursor cursor={cursor} clicks={clicks} />
+        <SceneCursor cursor={cursor} clicks={clicks} />
+      </SceneCamera>
+
+      <ActCaption n={ACT_N[state.screen]} text={ACT_TEXT[state.screen]} />
     </div>
   );
 }
@@ -820,12 +928,29 @@ function ScopeScreen({ s }: { s: S }) {
           <Check className="size-2.5" strokeWidth={3} /> Approved
         </Pill>
       </div>
-      <p className="shrink-0 hidden sm:block text-[10.5px] leading-snug" style={{ color: C.muted }}>
-        242 items of work, built from your documents. Every builder prices this same list.
-      </p>
+      {/* The figure the whole act zooms on. The camera arrives here
+          still pushed from the Continue press; the count runs up while
+          it is watched at 1.45, and the register cascades in on the
+          pull-back. Visible at every size, because the signature shot
+          has to exist on a phone too. */}
+      <div data-cursor="scope-count" className="shrink-0 flex items-baseline gap-1.5">
+        <CountUp
+          to={242}
+          delay={0.75}
+          className="font-ui font-semibold text-[19px] leading-none tabular-nums"
+          style={{ color: C.ink }}
+        />
+        <p className="text-[10.5px] leading-snug" style={{ color: C.muted }}>
+          items of work, built from your documents.
+          <span className="hidden sm:inline"> Every builder prices this same list.</span>
+        </p>
+      </div>
 
       {/* The register itself, clipped, so the scroll beats read as a
-          list being scrolled rather than a card changing height. */}
+          list being scrolled rather than a card changing height. The
+          divisions hold back until the script pulls the camera wide
+          off the count, then rise in a cascade: the reveal happens on
+          the wide shot, never under the zoom. */}
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <motion.div
           className="flex flex-col gap-2.5"
@@ -833,32 +958,38 @@ function ScopeScreen({ s }: { s: S }) {
           animate={{ y: s.scopeY }}
           transition={SCROLL}
         >
-          {DIVISIONS.map((d) => (
-            <Division
+          {DIVISIONS.map((d, i) => (
+            <motion.div
               key={d.key}
-              label={d.label}
-              count={d.count}
-              cursorKey={`div-${d.key}`}
-              hot={s.hot === d.key}
-              open={d.key === "approvals" && s.open}
+              initial={false}
+              animate={{ opacity: s.reg ? 1 : 0, y: s.reg ? 0 : 14 }}
+              transition={{ duration: 0.5, ease: EASE, delay: s.reg ? i * 0.045 : 0 }}
             >
-              {/* Only the one division the pointer opens carries lines.
-                  The rest are headers, which is all the register shows
-                  until you ask it for more. */}
-              {d.key === "approvals"
-                ? APPROVAL_LINES.map((l, i) => (
-                    <ScopeLine
-                      key={l.label}
-                      label={l.label}
-                      plain={l.plain}
-                      cite={l.cite}
-                      citeKey={i === 0 ? "cite-approvals" : undefined}
-                      citeHot={i === 0 && s.cite}
-                      gap={l.gap}
-                    />
-                  ))
-                : null}
-            </Division>
+              <Division
+                label={d.label}
+                count={d.count}
+                cursorKey={`div-${d.key}`}
+                hot={s.hot === d.key}
+                open={d.key === "approvals" && s.open}
+              >
+                {/* Only the one division the pointer opens carries lines.
+                    The rest are headers, which is all the register shows
+                    until you ask it for more. */}
+                {d.key === "approvals"
+                  ? APPROVAL_LINES.map((l, li) => (
+                      <ScopeLine
+                        key={l.label}
+                        label={l.label}
+                        plain={l.plain}
+                        cite={l.cite}
+                        citeKey={li === 0 ? "cite-approvals" : undefined}
+                        citeHot={li === 0 && s.cite}
+                        gap={l.gap}
+                      />
+                    ))
+                  : null}
+              </Division>
+            </motion.div>
           ))}
         </motion.div>
         <ListFade />
@@ -1685,6 +1816,51 @@ function Press({ k, hot, children }: { k: string; hot: boolean; children: React.
       }}
     >
       {children}
+    </span>
+  );
+}
+
+/**
+ * The register's headline figure, counted rather than printed. It runs
+ * once, on mount, delayed so the camera is already standing on it when
+ * the number starts to move. It writes textContent through a ref
+ * rather than state: the count renders ninety-odd frames and none of
+ * them needs React.
+ */
+function CountUp({
+  to,
+  delay,
+  className,
+  style,
+}: {
+  to: number;
+  delay: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = React.useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotion();
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reduced) {
+      el.textContent = String(to);
+      return;
+    }
+    el.textContent = "0";
+    const run = animate(0, to, {
+      delay,
+      duration: 1.5,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => {
+        el.textContent = String(Math.round(v));
+      },
+    });
+    return () => run.stop();
+  }, [to, delay, reduced]);
+  return (
+    <span ref={ref} className={className} style={style}>
+      0
     </span>
   );
 }
