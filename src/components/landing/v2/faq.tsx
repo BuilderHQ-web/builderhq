@@ -44,7 +44,7 @@ export function FAQ() {
                 If yours isn’t here, email{" "}
                 <a
                   href="mailto:info@builderhq.com.au"
-                  className="text-accent-light underline underline-offset-2 hover:text-accent transition-colors"
+                  className="inline-block py-1.5 -my-1.5 text-accent-light underline underline-offset-2 hover:text-accent transition-colors"
                 >
                   info@builderhq.com.au
                 </a>{" "}

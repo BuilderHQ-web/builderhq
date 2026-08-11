@@ -116,7 +116,7 @@ export function Network() {
                         door on only one. */}
                     <Link
                       href="/partners"
-                      className="group inline-flex items-center gap-1.5 text-[13.5px] font-medium text-text-muted hover:text-text transition-colors"
+                      className="group inline-flex items-center gap-1.5 py-2.5 -my-2.5 text-[13.5px] font-medium text-text-muted hover:text-text transition-colors"
                     >
                       Browse the register
                       <ArrowUpRight className="size-4 opacity-60 transition-all duration-[180ms] group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

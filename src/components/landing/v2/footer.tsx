@@ -64,17 +64,17 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
             {/* Talk to a person — the trust signal almost no marketplace
                 offers. Real numbers, real reply. */}
             <p className="text-[13px] leading-[1.8] text-text-muted">
-              <a href="tel:0416926380" className="hover:text-text transition-colors">
+              <a href="tel:0416926380" className="inline-block py-2 -my-2 hover:text-text transition-colors">
                 0416 926 380
               </a>
               <span aria-hidden className="mx-2 text-text-faint">·</span>
-              <a href="tel:0452280062" className="hover:text-text transition-colors">
+              <a href="tel:0452280062" className="inline-block py-2 -my-2 hover:text-text transition-colors">
                 0452 280 062
               </a>
               <span aria-hidden className="mx-2 text-text-faint">·</span>
               <a
                 href="mailto:info@builderhq.com.au"
-                className="hover:text-text transition-colors"
+                className="inline-block py-2 -my-2 hover:text-text transition-colors"
               >
                 info@builderhq.com.au
               </a>
@@ -90,11 +90,11 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                 </p>
                 {col.links.map((l) =>
                   l.href.startsWith("/") ? (
-                    <Link key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
+                    <Link key={l.label} href={resolve(l.href)} className="inline-block py-2 -my-2 text-[14px] text-text-muted hover:text-text transition-colors">
                       {l.label}
                     </Link>
                   ) : (
-                    <a key={l.label} href={resolve(l.href)} className="text-[14px] text-text-muted hover:text-text transition-colors">
+                    <a key={l.label} href={resolve(l.href)} className="inline-block py-2 -my-2 text-[14px] text-text-muted hover:text-text transition-colors">
                       {l.label}
                     </a>
                   ),
