@@ -126,6 +126,11 @@ export interface Partner {
   /** Industry recognition, rendered as a gold plaque strip under the
    *  identity band. Lead with the biggest honour; keep to three. */
   awards?: { label: string; sub?: string }[];
+  /** Further placings, listed quietly beneath the plaques where a
+   *  partner's record runs past three. Keeps the panel's hierarchy
+   *  while letting the full record show. One line each, already
+   *  formatted. */
+  awardsMore?: string[];
   /** A quieter recognition, shown on a compact dark strip rather than the
    *  gold honours board — for a platform or service accolade (e.g. Best of
    *  Houzz) that is not a formal design or industry award. */
@@ -4358,7 +4363,7 @@ export const PARTNERS: Partner[] = [
     google: { rating: 5, reviews: 231 },
     why: "Tristina is the kind of broker people want beside them when their situation is not straightforward. Her years at Bendigo Bank were not only spent lending: she coached and accredited the managers and lenders coming through, so she has taught other people how a lending decision gets made. That is an unusual vantage point for a broker to work from.\n\nIt shows most in the awkward cases: self-employed income, construction lending, a property decision made in the middle of a separation. She explains the process clearly, handles difficult conversations with discretion and looks for a practical way forward rather than listing the obstacles. The practice behind her was founded by Deanna Ezzy, one of the most decorated brokers in the ACT, who now mentors its brokers rather than writing loans herself.",
     about:
-      "Tristina Haines is a mortgage broker with More Than Mortgages in Deakin, three years with the practice. She started out as a bank teller and loans officer before moving into lending, and holds a Diploma in Finance and Broking. She was named among Specialist Finance Group’s Top 20 High Achievers across the ACT and New South Wales for 2025 and 2026. An experienced client partner and processing team work alongside her, carrying each application from preparation through to settlement.",
+      "Tristina Haines is a mortgage broker with More Than Mortgages in Deakin, three years with the practice. She started out as a bank teller and loans officer before moving into lending, and holds a Diploma in Finance and Broking. An experienced client partner and processing team work alongside her, carrying each application from preparation through to settlement.",
     aboutLabel: "About Tristina",
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "231 reviews, More Than Mortgages" },
@@ -4366,11 +4371,23 @@ export const PARTNERS: Partner[] = [
       { label: "On your file", value: "3", sub: "broker, partner, processor" },
     ],
     awards: [
-      { label: "Regional Broker of the Year", sub: "finalist · Australian Broking Awards 2025" },
       {
-        label: "Innovator of the Year",
-        sub: "finalist · Broker Innovation Awards, 2025 and 2026",
+        label: "Top 20 High Achiever, ACT and New South Wales",
+        sub: "Specialist Finance Group · 2026",
       },
+      {
+        label: "ACT Broker of the Year",
+        sub: "finalist · Specialist Finance Group, 2024 and 2025",
+      },
+      {
+        label: "Regional Broker of the Year",
+        sub: "finalist · Australian Broking Awards 2025",
+      },
+    ],
+    awardsMore: [
+      "Innovator of the Year, Metro Broker · finalist, Broker Innovation Awards 2026",
+      "Innovator of the Year, Regional Broker · finalist, Broker Innovation Awards 2025",
+      "ACT Brokerage of the Year · winner, Specialist Finance Group 2024 and 2025, as More Than Mortgages",
     ],
     accolade: {
       label: "Deanna Ezzy, founder and mentor",

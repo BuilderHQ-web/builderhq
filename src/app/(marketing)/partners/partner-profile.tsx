@@ -92,6 +92,7 @@ export function PartnerProfileSections({
 
   // Honours board data: the first award is the headline, the rest support.
   const awards = partner.awards ?? [];
+  const awardsMore = partner.awardsMore ?? [];
   const heroAward = awards[0];
 
   return (
@@ -277,6 +278,17 @@ export function PartnerProfileSections({
                   </div>
                 ))}
               </div>
+              {/* Further placings, set quietly so the plaques above keep
+                  their weight. */}
+              {awardsMore.length ? (
+                <ul className="relative mx-auto mt-7 flex max-w-[600px] flex-col gap-2 border-t border-[rgba(224,166,60,0.16)] pt-5">
+                  {awardsMore.map((a) => (
+                    <li key={a} className="text-[11.5px] leading-snug text-white/45">
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </>
           ) : null}
         </section>
