@@ -35,12 +35,15 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the mobile menu whenever we navigate away. usePathname
-  // updates on route change, so this handler clears the panel without
-  // any extra wiring on every Link.
-  React.useEffect(() => {
+  // Close the mobile menu whenever we navigate away. Derived during
+  // render from the path the panel was opened on, rather than set from
+  // an effect: setting state in an effect runs a second render pass and
+  // lets the stale panel paint once on the new route first.
+  const [openedAt, setOpenedAt] = React.useState(pathname);
+  if (openedAt !== pathname) {
+    setOpenedAt(pathname);
     setMobileOpen(false);
-  }, [pathname]);
+  }
 
   // Lock body scroll while the mobile menu is open so the user
   // can't accidentally scroll the page underneath it.
