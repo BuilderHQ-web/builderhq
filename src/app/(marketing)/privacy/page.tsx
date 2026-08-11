@@ -10,230 +10,434 @@ import {
 export const metadata = {
   title: "Privacy Policy",
   description:
-    "How BuilderHQ collects, uses, stores, and shares your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.",
+    "What BuilderHQ collects, why we hold it, who we give it to, and what you can ask us to do with it. Written to the Privacy Act 1988 (Cth) and the Australian Privacy Principles.",
 };
 
 /**
  * /privacy — long-form privacy policy. Layout mirrors /terms (sticky
- * TOC + readable prose column). Content was supplied by the BuilderHQ
- * team, polished against APP and OAIC NDB scheme references, and
- * structured into numbered sections for easy citation.
+ * TOC + readable prose column).
+ *
+ * Rewritten 11 August 2026 for the tendering product as it stands
+ * today. The previous version described the earlier lead marketplace,
+ * where builders bought homeowner contact details, and was materially
+ * wrong about what the platform now collects and discloses.
+ *
+ * Every factual claim here is checked against the codebase: argon2
+ * password hashing, presigned (short-lived) R2 document links, the
+ * unlock gate on the street address in the builder project page,
+ * Anthropic extraction of uploaded documents, Vercel Web Analytics,
+ * and the Google Ads / GA4 tag on the marketing confirmation pages.
+ * If any of those change, this page changes with them.
  */
 
 const SECTIONS = [
   {
-    id: "intro",
+    id: "about",
     title: "1. About this policy",
     body: (
       <>
         <P>
-          BuilderHQ Technologies Pty Ltd (ABN 33 612 815 139, &quot;we&quot;,
-          &quot;us&quot;, &quot;BuilderHQ&quot;) operates a marketplace that
-          connects project owners and licensed builders, and provides tools
-          for tender submissions and comparison.
+          BuilderHQ Technologies Pty Ltd (ABN 33 612 815 139) operates
+          BuilderHQ, a tendering platform for Australian residential
+          construction. In this policy, “we”, “us” and “our” mean BuilderHQ.
+          We are based in Melbourne and operate across Australia.
         </P>
         <P>
-          We respect your privacy and handle personal information in
-          accordance with the Privacy Act 1988 (Cth) and the Australian
-          Privacy Principles (APPs). This policy explains what we collect,
-          why we collect it, how we use it, and your rights.
+          This policy explains what personal information we collect, why we
+          hold it, who we give it to, how we protect it, and what you can ask
+          us to do with it. It covers our website, our web application, our
+          mobile app and the emails we send. We handle personal information in
+          accordance with the Privacy Act 1988 (Cth) and the 13 Australian
+          Privacy Principles.
+        </P>
+        <P>
+          <Strong>How the platform works, in short.</Strong> A client, either
+          a homeowner or a building designer, uploads the drawings, reports and
+          specifications for a residential project. Our software reads those
+          documents and drafts a scope of works: a register of the items of
+          work, each written in plain language and cited to the document, page
+          and revision it came from. A BuilderHQ reviewer checks every line,
+          then the client approves it. A tender round opens, either to our
+          verified builder network, or privately to builders the client
+          invites, or both. Each builder prices the same schedule and answers
+          the same questions under signature. The client shortlists and awards.
+          The building contract is between the client and the builder.
+          BuilderHQ is not a party to it, does not hold construction funds, and
+          takes no commission from either side.
+        </P>
+        <P>
+          BuilderHQ is intended for adults acting in a business capacity or as
+          the owner of a property. We do not knowingly collect personal
+          information from anyone under 18. If you believe we hold information
+          about a person under 18, please contact us and we will remove it.
         </P>
       </>
     ),
   },
   {
-    id: "what-we-collect",
+    id: "collect",
     title: "2. What we collect",
     body: (
       <>
         <P>
-          We collect personal information that enables you to use the
-          platform and for us to operate it safely and lawfully. This may
-          include:
+          What we collect depends on who you are and what you use the platform
+          for.
+        </P>
+        <P>
+          <Strong>If you are a client</Strong>, meaning a homeowner or a design
+          practice running a project:
         </P>
         <Ul>
           <li>
-            <Strong>Identity &amp; contact:</Strong> name, company name,
-            ABN/ACN, phone number, email, postal address.
+            Your name, email address and phone number, and the name of your
+            practice if you have one.
           </li>
           <li>
-            <Strong>Account &amp; profile:</Strong> role (builder / project
-            owner), licence numbers and state/territory, insurance
-            attestations (Public Liability, Workers&apos; Compensation),
-            verification artifacts.
+            The project address, including the street address, and the details
+            of the project itself: the type of work, the stage it is at, your
+            budget range and your timing.
           </li>
           <li>
-            <Strong>Tender &amp; project data:</Strong> project descriptions,
-            budgets, timelines, uploaded files (e.g., PDFs),
-            inclusions/exclusions, messages, and clarifications exchanged via
-            the platform.
+            The documents you upload. Architectural and engineering drawings,
+            soil and site reports, energy and sustainability reports,
+            specifications, schedules, planning approvals and any other project
+            material you choose to add.
           </li>
           <li>
-            <Strong>Payments &amp; billing:</Strong> transaction tokens and
-            limited card data handled by our payment providers (e.g., Stripe).
-            We do not store full card numbers.
+            Everything derived from those documents. The scope of works, the
+            breakdown by trade, the citation recorded against each item, and
+            the notes and revisions made to it.
           </li>
           <li>
-            <Strong>Usage &amp; device:</Strong> logs, IP address,
-            device/browser type, pages viewed, session and event metadata,
-            cookies or similar technologies.
+            The decisions you take on a round. Who you invite, who you
+            shortlist, who you award, and the messages you exchange with
+            builders through the platform.
+          </li>
+          <li>Your enquiries to our team, and any complaint you make.</li>
+        </Ul>
+        <P>
+          <Strong>If you are a builder</Strong>:
+        </P>
+        <Ul>
+          <li>
+            Your business name and trading name, your ABN, and your ACN if you
+            hold one.
           </li>
           <li>
-            <Strong>Support:</Strong> enquiries, feedback, and complaint
-            details.
+            A contact name, email address, phone number and business address,
+            and the details you choose to publish on your profile, such as the
+            areas you work in and a link to your website.
+          </li>
+          <li>
+            Your builder licence or registration number and the state or
+            territory that issued it.
+          </li>
+          <li>
+            Your declarations about insurance, including public liability and
+            workers compensation, made under signature. We record what you
+            declare. See section 5 for what we check and what we do not.
+          </li>
+          <li>
+            The tender you submit. Your mark against every line of the schedule
+            as included, a provisional sum, excluded or not applicable, your
+            pricing, your answers to the structured questions, and any document
+            you attach.
+          </li>
+          <li>
+            Payment records for a spot on an open round. Card details go
+            directly to Stripe. We never see or hold a full card number.
           </li>
         </Ul>
         <P>
-          We generally collect information directly from you. We may also
-          receive information from third-party services you connect (for
-          example, payment processors) or, where lawful, from public sources
-          and verification vendors (e.g., the Australian Business Register
-          and state-register lookups).
+          <Strong>If you are a partner</Strong>, meaning a designer, builder or
+          finance broker on our Preferred Partner register, or someone who has
+          completed the partner interest form: your business name, contact
+          name, email address, phone number, the areas and services you cover,
+          and the material you ask us to publish about your practice.
         </P>
         <P>
-          <Strong>Information you provide about others.</Strong> Project
-          runners can invite people to a tender round: builders they wish to
-          tender, and clients or collaborators they share the project with.
-          When you enter someone&apos;s name and email address for an
-          invitation, we use those details only to deliver that invitation
-          (and, if it goes unanswered, up to one reminder), to show you the
-          invitation&apos;s status, and to keep the round&apos;s record of
-          who was invited and who accepted. Invitation links are personal,
-          expire, and can be withdrawn by the person who sent them. Actions
-          taken on a shared round (for example, shortlisting or awarding a
-          tender) are recorded with the name of the person who took them, and
-          that record is visible to the others on the round. By entering
-          someone&apos;s details, you confirm you are entitled to share them
-          with us for this purpose. If we hold your details from an
-          invitation and you would like them removed, contact us at{" "}
-          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>.
+          <Strong>If you are a visitor</Strong>: standard server and
+          application logs, which include your IP address, your browser and
+          device type, the pages you view and the time of each request. If you
+          subscribe to The Build Brief or request a guide, your name and email
+          address.
+        </P>
+        <P>
+          <Strong>From everyone with an account</Strong>: the email address you
+          sign in with, your role on the platform, and your password. Your
+          password is stored only as a one way cryptographic hash. We cannot
+          read it and we will never ask you for it.
+        </P>
+        <P>
+          We collect most of this directly from you. We also receive
+          information from the Australian Business Register and from state and
+          territory licence registers when we run the checks described in
+          section 5, and from Stripe when it confirms a payment.
         </P>
       </>
     ),
   },
   {
-    id: "why-we-collect",
-    title: "3. Why we collect it",
+    id: "documents",
+    title: "3. Your project documents",
+    body: (
+      <>
+        <P>
+          The documents you upload are the most sensitive thing we hold, so we
+          set out plainly what happens to them.
+        </P>
+        <P>
+          <Strong>They are read by our software and by our team.</Strong> That
+          is the purpose of the platform. Our software reads each document to
+          draft the scope of works, and a BuilderHQ reviewer reads every line of
+          that draft against the source document before it goes anywhere.
+          Nothing is measured off a drawing, and BuilderHQ never estimates a
+          cost.
+        </P>
+        <P>
+          <Strong>To read them, we send them to Anthropic.</Strong> Uploaded
+          documents are passed to Anthropic’s Claude models through Anthropic’s
+          commercial application programming interface, which is the software
+          that drafts the scope of works. Under Anthropic’s commercial terms,
+          material sent through that interface is not used to train its models.
+        </P>
+        <P>
+          <Strong>They are disclosed to builders who hold a spot on your
+          round.</Strong> A builder who holds a spot can view and download the
+          project documents, so they can price the work. A builder who does not
+          hold a spot cannot open them. Document links are generated on demand
+          and expire after a short time, so they cannot be forwarded and reused.
+        </P>
+        <P>
+          <Strong>Your street address is withheld until a builder holds a
+          spot.</Strong> Before that point, a builder sees the suburb, the type
+          and size of the work, the budget range and the timing. They do not see
+          the street address, your name or your contact details. Those become
+          visible to a builder only once that builder holds a spot on your
+          round. On an open round a spot is paid for. On a private round, spots
+          go to the builders you invite, and they pay nothing.
+        </P>
+        <P>
+          Do not upload material that is more sensitive than the project needs.
+          If a document contains personal information about someone else, please
+          remove or redact it before you upload it.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: "use",
+    title: "4. How we use your information",
     body: (
       <>
         <P>We use personal information to:</P>
         <Ul>
           <li>
-            Create and manage accounts; verify eligibility (e.g., licences),
-            and provide access to project details.
+            Create and run your account, and give you access to the projects and
+            rounds you are part of.
           </li>
           <li>
-            Facilitate tender submission, comparison, shortlisting,
-            messaging, and award workflows.
+            Draft the scope of works from your documents, review it, and record
+            the citation behind each item.
           </li>
           <li>
-            Process payments and issue tax invoices (including GST, where
-            applicable).
+            Run tender rounds, whether open to the verified network, private to
+            builders you invite, or both, and manage the spots on each round.
           </li>
           <li>
-            Provide support, resolve disputes, improve platform performance
-            and security, and develop new features (including AI-assisted
-            insights).
+            Verify builders before they price work, as set out in section 5.
           </li>
           <li>
-            Send important service communications (e.g., changes to terms,
-            security notices, tender outcomes).
+            Score and compare tenders on our six published dimensions with fixed
+            weights, raise flags, and set out the differences between tenders
+            item by item. BuilderHQ never recommends a builder and never picks
+            one. That decision is the client’s alone.
           </li>
           <li>
-            Conduct lawful direct marketing with consent and easy opt-out
-            controls.
+            Carry messages between a client and the builders on their round.
+          </li>
+          <li>
+            Send notifications about your account and your rounds, as set out in
+            section 13.
+          </li>
+          <li>
+            Take payment from builders for spots on open rounds, and issue tax
+            invoices. The platform is free for homeowners and for design
+            practices.
+          </li>
+          <li>
+            Answer your enquiries, investigate problems and disputes, and keep
+            the platform secure and available.
+          </li>
+          <li>
+            Improve the product. We look at how features are used, and we review
+            scope drafts and tenders internally to improve the accuracy of the
+            drafting. We do not publish your project material and we do not use
+            it to promote the platform without asking you first.
+          </li>
+          <li>
+            Meet our obligations under Australian law, including tax and record
+            keeping obligations.
           </li>
         </Ul>
         <P>
-          We will only use or disclose personal information for the primary
-          purpose of collection, or for a reasonably expected related
-          secondary purpose — or with your consent, or as otherwise
-          permitted by law.
+          We use or disclose personal information for the purpose we collected
+          it for, for a related purpose you would reasonably expect, or where
+          you have consented or the law permits or requires it.
         </P>
       </>
     ),
   },
   {
-    id: "ai",
-    title: "4. AI features",
+    id: "verification",
+    title: "5. Verification checks",
     body: (
       <>
         <P>
-          We provide optional AI-assisted summaries and prompts (e.g.,
-          potential scope gaps, tender PDF auto-fill). AI outputs are
-          generated from the data you choose to provide and are{" "}
-          <Strong>for information only</Strong>; they may be incomplete or
-          inaccurate and are not professional advice. You should verify any
-          insights before relying on them.
+          Before a builder can price work on the platform, we check the
+          following. We are specific about this because it affects what we
+          collect, and because a client should know exactly what a verification
+          badge means.
         </P>
-      </>
-    ),
-  },
-  {
-    id: "cookies",
-    title: "5. Cookies & analytics",
-    body: (
-      <>
+        <Ul>
+          <li>
+            <Strong>ABN.</Strong> We check the ABN against the Australian
+            Business Register, which is a public register, and record what it
+            returns.
+          </li>
+          <li>
+            <Strong>Licence.</Strong> We check the builder licence or
+            registration against the register of the state or territory that
+            issued it, automatically where that register offers a connection,
+            and by hand by the BuilderHQ team where it does not.
+          </li>
+          <li>
+            <Strong>Insurance.</Strong> Insurance is declared by the builder
+            under signature. We record the declaration. We do not independently
+            verify it, and a declaration is not a warranty by BuilderHQ that
+            cover is in place.
+          </li>
+        </Ul>
         <P>
-          We use cookies and similar technologies to keep you signed in,
-          remember preferences, understand feature usage, and measure
-          performance. You can control cookies through your browser
-          settings; however, essential cookies are required for core
-          functionality such as authentication.
-        </P>
-      </>
-    ),
-  },
-  {
-    id: "marketing",
-    title: "6. Direct marketing",
-    body: (
-      <>
-        <P>
-          We may send information about features, updates, or opportunities
-          relevant to your role on the platform. We only do this in line
-          with the Spam Act 2003 (Cth). You can unsubscribe at any time
-          using the link in the message or by contacting us.
-        </P>
-        <P>
-          Operational emails (e.g., tender outcomes, account receipts,
-          password resets) are not marketing — they&apos;re part of using
-          the service and continue regardless of marketing preference.
+          A check reflects the position at the time it was made. Licences and
+          insurance can lapse afterwards. Clients should satisfy themselves
+          about a builder’s standing before entering a building contract.
         </P>
       </>
     ),
   },
   {
     id: "disclosure",
-    title: "7. Disclosing your information",
+    title: "6. Who we give it to",
     body: (
       <>
-        <P>We may disclose personal information to:</P>
+        <P>
+          <Strong>The other side of a round.</Strong> The platform works by
+          putting the right information in front of the right party at the right
+          time.
+        </P>
         <Ul>
           <li>
-            <Strong>Other users</Strong> where necessary for platform
-            workflows (e.g., a builder&apos;s tender visible to the relevant
-            project owner once submitted).
+            To a builder who holds a spot on a round: the project documents, the
+            scope of works, the street address, and the client’s name and
+            contact details.
           </li>
           <li>
-            <Strong>Service providers</Strong> under contract who support
-            our operations — payment processing, cloud hosting, analytics,
-            communications, identity / verification.
+            To the client running the round: the builder’s business details, ABN
+            and licence, verification status, insurance declarations, and the
+            full tender including pricing and answers.
           </li>
           <li>
-            <Strong>Professional advisers</Strong> (legal, accounting),
-            regulators, and law enforcement where required or authorised by
-            law.
-          </li>
-          <li>
-            <Strong>Parties to business transactions</Strong> (e.g., merger
-            or acquisition), subject to confidentiality protections.
+            To others you have invited onto a round, such as a colleague or your
+            designer: the project and round record, and a note of the actions
+            each person takes on it, so the round has a single history.
           </li>
         </Ul>
         <P>
-          We require service providers to protect personal information and
-          use it only for our purposes — never their own marketing.
+          <Strong>Our service providers.</Strong> We use a small number of
+          established providers to run the platform. Each receives only what it
+          needs to do its job.
         </P>
+        <Ul>
+          <li>
+            <Strong>Neon</Strong> hosts our database, which holds account
+            records, project records, scopes of works and tenders.
+          </li>
+          <li>
+            <Strong>Cloudflare R2</Strong> stores uploaded documents and the
+            documents the platform generates.
+          </li>
+          <li>
+            <Strong>Anthropic</Strong> provides the Claude models that read
+            uploaded documents so the scope of works can be drafted.
+          </li>
+          <li>
+            <Strong>Stripe</Strong> takes payment from builders for spots on
+            open rounds and handles card details directly.
+          </li>
+          <li>
+            <Strong>Resend</Strong> delivers our email, including notifications,
+            invitations, receipts and password resets.
+          </li>
+          <li>
+            <Strong>Inngest</Strong> runs background jobs, such as processing
+            documents after upload and sending scheduled notifications.
+          </li>
+          <li>
+            <Strong>Vercel</Strong> hosts the website and the application and
+            provides aggregate website analytics.
+          </li>
+          <li>
+            <Strong>Google</Strong> receives advertising and analytics events
+            from a small number of marketing pages, as set out in section 12.
+            This does not include project documents or account data.
+          </li>
+        </Ul>
+        <P>
+          We require our providers to protect personal information, to use it
+          only to provide their service to us, and never for their own
+          marketing.
+        </P>
+        <P>
+          <Strong>Others.</Strong> We may also disclose personal information to
+          our professional advisers, to regulators, courts and law enforcement
+          where the law requires or authorises it, and to a buyer or successor
+          if the business is sold or restructured, subject to confidentiality
+          and to this policy.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: "not-do",
+    title: "7. What we do not do",
+    body: (
+      <>
+        <Ul>
+          <li>
+            <Strong>We do not sell personal information.</Strong> Not to
+            builders, not to suppliers, not to advertisers, not to anyone.
+          </li>
+          <li>
+            <Strong>We do not sell or share contact details as leads.</Strong>{" "}
+            An earlier version of BuilderHQ worked that way. It does not now.
+            When a builder pays for a spot on an open round, they are paying for
+            a place in a competitive tender process, not for a homeowner’s
+            contact details.
+          </li>
+          <li>
+            <Strong>We do not take a commission</Strong> on any building
+            contract, from either side, and we do not hold construction funds.
+          </li>
+          <li>
+            <Strong>We do not show your project to builders who do not hold a
+            spot</Strong> on that round.
+          </li>
+          <li>
+            <Strong>We do not use your project documents to advertise</Strong>{" "}
+            to you or to anyone else.
+          </li>
+        </Ul>
       </>
     ),
   },
@@ -243,12 +447,36 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          Some service providers or data stores may be located outside
-          Australia. When we disclose personal information overseas, we
-          take reasonable steps to ensure the recipient handles it in
-          accordance with the APPs (for example, by using contractual
-          safeguards). Under APP 8, we remain accountable for overseas
-          disclosures in most cases.
+          Some of the providers named in section 6 store or process information
+          outside Australia. Neon, Cloudflare, Anthropic, Stripe, Resend,
+          Inngest, Vercel and Google are all United States companies, and their
+          infrastructure may hold or route data in the United States and in
+          other countries.
+        </P>
+        <P>
+          Before we disclose personal information to an overseas recipient we
+          take steps that are reasonable in the circumstances, as Australian
+          Privacy Principle 8 requires. Those steps are:
+        </P>
+        <Ul>
+          <li>
+            We choose established providers that publish their security and
+            privacy practices.
+          </li>
+          <li>
+            We enter each provider’s data processing terms, which bind them to
+            handle personal information only on our instructions, to keep it
+            confidential and secure, and to impose the same obligations on
+            anyone they engage.
+          </li>
+          <li>
+            We limit what each provider receives to what it needs for its part
+            of the service.
+          </li>
+        </Ul>
+        <P>
+          Under Australian Privacy Principle 8 we generally remain accountable
+          for personal information we disclose overseas.
         </P>
       </>
     ),
@@ -259,118 +487,284 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          We take reasonable steps to protect personal information from
-          misuse, interference, loss, and unauthorised access, modification,
-          or disclosure — through technical, organisational, and
-          contractual measures (e.g., access controls, encryption in
-          transit, role-based permissions). However, no method is 100%
-          secure.
+          We take reasonable steps to protect personal information from misuse,
+          interference and loss, and from unauthorised access, modification or
+          disclosure. In practice that means:
+        </P>
+        <Ul>
+          <li>
+            Access controls tied to your role and to the projects and rounds you
+            are actually part of, so nobody sees a project they are not on.
+          </li>
+          <li>
+            Encryption of data in transit, and encryption at rest by our
+            database and storage providers.
+          </li>
+          <li>
+            Document links that are generated on demand and expire after a short
+            time, rather than public addresses that can be forwarded.
+          </li>
+          <li>
+            Passwords stored only as one way cryptographic hashes, and sign in
+            sessions that expire.
+          </li>
+          <li>
+            Access to production systems limited to the BuilderHQ staff who need
+            it.
+          </li>
+        </Ul>
+        <P>
+          No system is perfectly secure. We cannot guarantee the security of
+          information transmitted over the internet, and we do not hold any
+          security certification such as ISO 27001 or SOC 2. If you become aware
+          of a security issue, please tell us at{" "}
+          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>.
         </P>
       </>
     ),
   },
   {
     id: "retention",
-    title: "10. Data retention",
+    title: "10. How long we keep it",
     body: (
       <>
         <P>
-          We keep personal information only as long as needed for the
-          purposes described above, to meet legal, tax, and accounting
-          requirements, and to resolve disputes. When no longer required,
-          we take reasonable steps to de-identify or securely destroy it.
+          We keep personal information only for as long as we need it for the
+          purposes in this policy, to meet our legal obligations, and to resolve
+          any dispute.
+        </P>
+        <P>
+          <Strong>When a round closes.</Strong> Closing a round does not delete
+          the project or its documents. The scope of works, the tenders lodged
+          against it and the documents they were priced from are the record of
+          what was asked and what was offered, and both the client and the
+          builders may need to rely on that record long after the round ends. It
+          stays in the platform while the account is open. A builder who held a
+          spot keeps access to the record of the project they priced.
+        </P>
+        <P>
+          <Strong>When you delete your account.</Strong> Tell us and we will
+          close your account and delete or de-identify the personal information
+          we hold about you, with two exceptions. First, we keep financial and
+          tax records for at least five years, as Australian tax law requires.
+          Second, we cannot unilaterally remove records that another party to a
+          round also relies on, such as a tender a builder lodged with a client,
+          or a scope of works a builder priced. Where that applies we
+          de-identify your details as far as we are able and keep only what the
+          record needs.
+        </P>
+        <P>
+          <Strong>Backups.</Strong> Deleted material may remain in encrypted
+          backups for a short period before those backups are cycled and
+          overwritten.
+        </P>
+        <P>
+          When we no longer need personal information, we take reasonable steps
+          to destroy it or to de-identify it.
         </P>
       </>
     ),
   },
   {
     id: "access",
-    title: "11. Access & correction",
+    title: "11. Access, correction and deletion",
     body: (
       <>
         <P>
-          You may request access to the personal information we hold about
-          you and request corrections where it is inaccurate, out of date,
-          incomplete, irrelevant, or misleading. We will respond within a
-          reasonable period and, where lawful, provide reasons if we refuse
-          access or correction and how to complain (APPs 12–13).
+          You can ask us for a copy of the personal information we hold about
+          you, ask us to correct it, or ask us to delete it. Email{" "}
+          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>. To
+          request deletion you can also use our{" "}
+          <A href="/delete_account">account deletion page</A>.
+        </P>
+        <P>
+          Much of your information you can correct yourself while signed in,
+          including your contact details, your business details and your
+          profile. Where you cannot, ask us and we will correct it.
+        </P>
+        <P>
+          We will ask you to verify your identity, then respond within 30 days.
+          There is no fee for making a request. If a request is unusually large
+          we may charge a reasonable cost of giving access, and we will tell you
+          what it is before we do any work.
+        </P>
+        <P>
+          If we refuse access or correction, we will tell you why in writing and
+          how to complain, as Australian Privacy Principles 12 and 13 require.
         </P>
       </>
     ),
   },
   {
-    id: "ndb",
-    title: "12. Notifiable Data Breaches scheme",
+    id: "cookies",
+    title: "12. Cookies and analytics",
     body: (
       <>
         <P>
-          If a data breach is likely to result in serious harm, we will
-          assess and, if the breach is an eligible data breach under the
-          NDB scheme, notify affected individuals and the Office of the
-          Australian Information Commissioner (OAIC) — including
-          recommendations for steps individuals should take.
+          <Strong>Cookies we need.</Strong> We set cookies to sign you in, keep
+          you signed in, and hold your place while you work through a form.
+          These are necessary. If you block them you will not be able to use the
+          platform.
+        </P>
+        <P>
+          <Strong>Website analytics.</Strong> We use Vercel Web Analytics to
+          count page views and measure how the site performs. It reports in
+          aggregate and does not use cookies to follow you between websites.
+        </P>
+        <P>
+          <Strong>Advertising measurement.</Strong> We advertise, and on a small
+          number of marketing pages, chiefly the confirmation page shown after
+          you request a guide or book a call, we load Google’s tag so that
+          Google Ads and Google Analytics can record that the enquiry happened.
+          Google sets its own cookies through that tag and may use the
+          information for advertising measurement. These tags are not present in
+          the signed in application, and they never receive your project
+          documents or your account data. You can control this through your
+          browser settings and through your Google ad settings.
+        </P>
+        <P>
+          We do not sell audience data to advertisers or to data brokers.
         </P>
       </>
     ),
   },
   {
-    id: "children",
-    title: "13. Children",
+    id: "email",
+    title: "13. Email and notifications",
     body: (
       <>
         <P>
-          BuilderHQ is designed for use by adults in a business context. We
-          do not knowingly collect personal information from individuals
-          under 18. If you believe a minor has provided personal
-          information, please contact us so we can take appropriate action.
+          <Strong>Service messages</Strong> are part of using the platform.
+          Invitations, notice that a round has opened or closed, notice that a
+          tender has arrived, messages from the other side of a round, receipts,
+          and password resets. These continue while your account is open,
+          because they carry information you need.
+        </P>
+        <P>
+          <Strong>Publications and marketing</Strong> are separate. We send The
+          Build Brief and occasional updates to people who asked for them and to
+          people who use the platform, in line with the Spam Act 2003 (Cth).
+          Every one carries an unsubscribe link and we act on it promptly. You
+          can also unsubscribe by emailing us.
+        </P>
+        <P>
+          If we telephone you, we comply with the Do Not Call Register Act 2006
+          (Cth). We do not make unsolicited sales calls to numbers on the Do Not
+          Call Register.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: "breach",
+    title: "14. Data breaches",
+    body: (
+      <>
+        <P>
+          If we suspect a data breach we assess it promptly. If it is an
+          eligible data breach under the Notifiable Data Breaches scheme,
+          meaning it is likely to result in serious harm, we notify the affected
+          individuals and the Office of the Australian Information Commissioner,
+          and we set out what happened, what information was involved, and the
+          steps we recommend you take.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: "others",
+    title: "15. Information you give us about other people",
+    body: (
+      <>
+        <P>
+          The platform lets you invite people. A client can invite builders to a
+          private round, and can invite a colleague or their designer onto a
+          project. When you enter someone’s name and email address for an
+          invitation, we use those details to deliver that invitation, to send
+          up to one reminder if it goes unanswered, to show you whether it was
+          accepted, and to keep the round’s record of who was invited.
+        </P>
+        <P>
+          Invitation links are personal, they expire, and the person who sent
+          one can withdraw it. Actions taken on a shared round, such as
+          shortlisting or awarding a tender, are recorded against the name of
+          the person who took them and are visible to the others on that round.
+        </P>
+        <P>
+          By entering someone’s details you confirm you are entitled to give
+          them to us for this purpose. If we hold your details because someone
+          invited you and you would like them removed, email{" "}
+          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>.
         </P>
       </>
     ),
   },
   {
     id: "third-party",
-    title: "14. Third-party links & integrations",
+    title: "16. Other websites and services",
     body: (
       <>
         <P>
-          The platform may link to third-party websites or integrate with
-          third-party services. Their privacy practices are governed by
-          their own policies; we are not responsible for their content,
-          security, or practices.
+          The platform links to other websites, including builder and partner
+          websites, public registers and our providers. Once you leave
+          BuilderHQ, the site you arrive at handles your information under its
+          own privacy policy, not this one. We are not responsible for the
+          practices of those sites.
         </P>
       </>
     ),
   },
   {
     id: "changes",
-    title: "15. Changes to this policy",
+    title: "17. Changes to this policy",
     body: (
       <>
         <P>
-          We may update this Privacy Policy from time to time. If changes
-          are material, we will provide reasonable notice (e.g., email or
-          in-app banner). The updated policy takes effect on the date it is
-          posted.
+          We update this policy when the platform changes or the law does. The
+          version on this page is always the current one, and the date it took
+          effect is shown at the top.
+        </P>
+        <P>
+          If a change is material, for example a new category of information, a
+          new provider that receives your data, or a new disclosure, we will
+          give you reasonable notice before it takes effect, by email to the
+          address on your account or by a notice in the application. Continuing
+          to use the platform after that date means the updated policy applies.
         </P>
       </>
     ),
   },
   {
-    id: "contact",
-    title: "16. Contact us",
+    id: "complaints",
+    title: "18. Complaints and contact",
     body: (
       <>
         <P>
-          If you have questions or wish to access or correct the personal
-          information we hold about you, contact our Privacy Officer:
+          If you think we have mishandled your personal information or breached
+          the Australian Privacy Principles, tell us first. Email{" "}
+          <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A> with
+          the subject line “Privacy complaint” and set out what happened. We
+          will acknowledge your complaint within 5 business days and give you a
+          written response within 30 days. If we need longer we will tell you
+          why and when to expect an answer.
         </P>
         <P>
-          Privacy Officer — BuilderHQ Technologies Pty Ltd
+          If you are not satisfied with our response, you can take the matter to
+          the Office of the Australian Information Commissioner. The OAIC can be
+          reached at{" "}
+          <A href="https://www.oaic.gov.au">www.oaic.gov.au</A> or on 1300 363
+          992. The OAIC will usually expect you to have raised the matter with
+          us first.
+        </P>
+        <P>
+          BuilderHQ Technologies Pty Ltd
+          <br />
+          ABN 33 612 815 139
+          <br />
+          Melbourne, Victoria, Australia
           <br />
           Email:{" "}
           <A href="mailto:info@builderhq.com.au">info@builderhq.com.au</A>
-          <br />
-          Address: Melbourne, Victoria, Australia
         </P>
       </>
     ),
@@ -382,8 +776,8 @@ export default function PrivacyPage() {
     <MarketingPageShell
       kicker="Legal"
       title="Privacy policy."
-      sub="How we collect, use, and protect your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles."
-      meta="Last updated · 10 May 2026"
+      sub="What we collect, why we hold it, who we give it to, and what you can ask us to do with it. Written to the Privacy Act 1988 (Cth) and the Australian Privacy Principles."
+      meta="Last updated · 11 August 2026"
     >
       <LegalDocument sections={SECTIONS} />
     </MarketingPageShell>

@@ -138,37 +138,37 @@ export const LENS: Record<Role, LensCopy> = {
   homeowner: {
     hero: {
       badge: "Residential tendering · Australia wide",
-      h1a: "One scope.",
-      h1b: "Three prices.",
-      sub: "Upload your plans. Every builder prices the same list of works.",
-      subMore: "You approve that list before a single builder sees it.",
+      h1a: "See beyond",
+      h1b: "the price.",
+      sub: "Upload your plans. We read every line and write out the full scope of works.",
+      subMore: "Every builder prices that same scope, so you can see what sits behind each number.",
       primary: { label: "Start your project", href: "/signup?role=owner" },
       secondary: { label: "See how it works", href: "#how" },
       facts: ["Free for homeowners", "You approve the scope", "Verified builders only"],
     },
     problem: {
       head: {
-        h2a: "What is wrong with how",
-        h2b: "homes get priced today.",
-        lead: "Three builders price three different jobs.",
+        h2a: "Residential quotes",
+        h2b: "have no standard.",
+        lead: "Every builder prices to their own assumptions, so no two quotes cover the same work."
       },
       points: [
         {
-          claim: "Every builder prices a different job",
+          claim: "Each quote covers different work",
           body: "One allows for the retaining wall. One leaves it out. One sets aside a rough figure.",
         },
         {
-          claim: "The three quotes never line up",
+          claim: "The numbers cannot be compared",
           body: "Three formats, three sets of inclusions, and no way to tell which number is complete.",
         },
         {
           claim: "What nobody priced becomes a variation",
-          body: "The cheapest quote is often the one that left the most out. The rest arrives later.",
+          body: "The cheapest quote is usually the one that left the most out. The rest arrives later, at a price nobody competed on.",
         },
       ],
       bridge: {
         label: "The fix",
-        a: "One list of works,",
+        a: "One scope of works,",
         b: "priced by every builder.",
       },
     },
@@ -176,51 +176,51 @@ export const LENS: Record<Role, LensCopy> = {
       head: {
         h2a: "From your plans",
         h2b: "to your builder.",
-        lead: "Four steps, and you only do the first one.",
+        lead: "Four steps. You do the first one, we do the rest.",
       },
       steps: [
         {
           title: "Upload",
           headline: "Start with your plans.",
-          body: "Your drawings, your reports, whatever the designer gave you. A few details about the project, and your part is done.",
+          body: "Your drawings, your reports, whatever your designer gave you. Add a few details about the project and that is your part done. Everything after this is ours.",
         },
         {
           title: "Your scope of works",
-          headline: "Your plans become one list.",
-          body: "We read every drawing, report and specification, and write out every item of work they cover. Plain English, and every line points at the page it came from. You approve it before anyone sees it.",
+          headline: "Your plans become one scope.",
+          body: "We read every drawing, report and specification, and write out every item of work they cover. Every scope item points at the page it came from. You approve it before any builder sees it.",
         },
         {
           title: "The same list, priced",
-          headline: "Every builder prices that list.",
-          body: "Verified builders take a spot on your round and walk your list line by line, then answer the same questions under signature. What comes back is the same shape from all of them.",
+          headline: "Every builder prices that scope.",
+          body: "Verified builders walk your scope line by line and answer the same questions under signature. Nobody quietly leaves an item out, and nothing turns up later as a variation you never agreed to.",
         },
         {
           title: "The comparison",
           headline: "See what each price actually covers.",
-          body: "Six published weights, every flag raised, and every difference between the tenders set out item by item. You shortlist, you award, and the contract is yours.",
+          body: "We read every tender in full and set out where they differ, item by item: what each one has allowed for, what it has left out, and where the money can still move. Then you choose.",
         },
       ],
     },
     trust: {
       h2a: "Every builder",
-      h2b: "is checked.",
+      h2b: "is vetted.",
       intro:
-        "Nobody prices your job anonymously, and every rule they price under is published before the round opens.",
+        "Nobody prices your job anonymously. Every builder is vetted before they see it, and the rules they price under are published before the round opens.",
       cards: [
         {
           icon: "shield",
-          title: "Every builder is checked",
+          title: "Every builder is vetted",
           body: "We check each builder’s ABN against the Australian Business Register, and their licence against the state register where one connects and by our team where it does not. A builder takes a spot on an open round only once both have passed. Insurances are declared under signature with the tender.",
         },
         {
           icon: "file",
-          title: "Every line names its source",
+          title: "Every scope item is referenced",
           body: "Each line points to the document, page and revision it came from, and anything we cannot trace is removed. The pack cannot be approved while anything is unread, and nothing reaches a builder until you approve it.",
         },
         {
           icon: "scale",
           title: "Every tender is scored the same way",
-          body: "Six published dimensions with fixed weights, applied to every tender on your round. Each score sets out the points earned and the points not earned, so you can see why one tender sits above another.",
+          body: "Every tender is read against the same six things: how firm the price is, how much of the scope it covers, how well it is prepared, who the builder is, how they deliver, and how believable the programme is. Each one shows its working, so you can see why one tender sits above another.",
         },
       ],
       footer:
@@ -255,14 +255,14 @@ export const LENS: Record<Role, LensCopy> = {
       },
     ],
     close: {
-      h2a: "Your build starts",
-      h2b: "with the scope.",
-      sub: "One scope, priced by every builder. Your decision.",
+      h2a: "See beyond",
+      h2b: "the price.",
+      sub: "Upload your plans and find out what each builder has actually allowed for.",
       primary: { label: "Start your project", href: "/signup?role=owner" },
       trio: [
-        "Free for homeowners",
-        "You approve the scope first",
-        "No commission on your build",
+        "One scope, priced by every builder",
+        "You approve it before anyone sees it",
+        "Free, and no commission",
       ],
     },
   },
@@ -274,27 +274,31 @@ export const LENS: Record<Role, LensCopy> = {
     hero: {
       badge: "Live tender rounds",
       h1a: "Find work",
-      h1b: "worth pricing.",
-      sub: "Real projects, with the drawings in and the scope already written.",
-      subMore: "Everyone on the round prices the same list, and the spots are capped.",
+      h1b: "that fits your pipeline.",
+      sub: "Live tenders in your area, with the drawings in and the scope of works already written.",
+      subMore: "We read the client’s documents and lay out every item, so you price instead of investigating.",
       primary: { label: "Pick your next project", href: "/signup?role=builder" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["Scope already written", "Capped rounds", "One off fee, no subscription"],
+      facts: [
+        "Detailed scope of works provided",
+        "Limited spots on every tender",
+        "Priced properly, read properly",
+      ],
     },
     problem: {
       head: {
         h2a: "What is wrong with how",
-        h2b: "work is won today.",
+        h2b: "tenders are awarded today.",
         lead: "Price every detail and you look expensive.",
       },
       points: [
         {
-          claim: "Days of work before you price a thing",
-          body: "Every tender starts by working out what the documents actually cover.",
+          claim: "The good jobs are hard to find",
+          body: "Real opportunities sit behind agents, referrals and lead sites, and the ones that reach you are rarely worth the hours.",
         },
         {
-          claim: "Doing it properly reads as a higher price",
-          body: "Allow for the difficult ground, and the honest number reads worse than a vague one.",
+          claim: "Every tender starts from scratch",
+          body: "Days of work just establishing what the documents actually cover, before a single rate goes in.",
         },
         {
           claim: "Nobody reads past the bottom line",
@@ -304,58 +308,58 @@ export const LENS: Record<Role, LensCopy> = {
       bridge: {
         label: "The fix",
         a: "The scope arrives written,",
-        b: "and the whole tender is read.",
+        b: "and every tender is read in full.",
       },
     },
     spine: {
       head: {
-        h2a: "From the round you pick",
-        h2b: "to the job you win.",
-        lead: "Four steps, and the estimating groundwork is already done.",
+        h2a: "From finding the job",
+        h2b: "to winning it.",
+        lead: "Four steps, and the hardest part is already done for you.",
       },
       steps: [
         {
           title: "Find your next project",
-          headline: "Real projects, ready to price.",
-          body: "Browse live rounds in your patch. The type, the suburb, the budget and how many spots are left, all visible before you spend a dollar.",
+          headline: "Live tenders, ready to price.",
+          body: "Browse open rounds in your area. The type, the suburb, the budget and how many spots are left, so you can pick the jobs that suit the work you want.",
         },
         {
           title: "The scope is written",
-          headline: "Nothing to assemble.",
-          body: "Every item is written from the client’s documents and cited to the page it came from. You walk the list and mark each line, instead of losing two days working out what the drawings actually cover.",
+          headline: "A detailed scope of works, provided.",
+          body: "We read the client’s documents and lay out the full scope of works for you, every scope item referenced to the page it came from. You walk the list and mark each line, instead of losing days working out what the drawings actually cover.",
         },
         {
           title: "Priced on more than the number",
-          headline: "The lowest price does not win by default.",
-          body: "Everyone prices the same list and answers the same questions, so your exclusions read as diligence rather than gaps. Six published weights, each one showing its working.",
+          headline: "A careful price is finally seen as one.",
+          body: "Everyone prices the same scope and answers the same questions, so an exclusion you have stated plainly reads as diligence rather than a gap. Every tender is read the same way, and every score shows its working.",
         },
         {
           title: "Win the work",
-          headline: "Win it, and keep all of it.",
-          body: "One submission, one format, signed. If the client picks you, you contract with them directly. BuilderHQ takes no commission on the job, ever.",
+          headline: "Win the job, on your terms.",
+          body: "One submission, one format, signed. If the client picks you, you contract with them directly and BuilderHQ takes no commission on the job.",
         },
       ],
     },
     trust: {
       h2a: "Every builder",
-      h2b: "is checked.",
+      h2b: "is vetted.",
       intro:
-        "Everyone at the table is checked, and every rule the round runs on is published before it opens.",
+        "Everyone pricing your job has been vetted first, and everyone works to the same published rules.",
       cards: [
         {
           icon: "shield",
-          title: "Every builder is checked",
+          title: "Every builder is vetted",
           body: "ABN against the Australian Business Register, licence against the state register where one connects and by our team where it does not. A spot on an open round opens only once both have passed, for you and for everyone you are priced against.",
         },
         {
           icon: "file",
-          title: "Every line names its source",
+          title: "Every scope item is referenced",
           body: "Each line you price points to the document, page and revision it came from. Nothing is measured off a drawing. If the scope changes mid round, a numbered addendum goes to every builder at once.",
         },
         {
           icon: "scale",
           title: "Every tender is scored the same way",
-          body: "Six published dimensions with fixed weights, applied to every tender on the round. Each score shows its working, so you could read your own evaluation without feeling ambushed.",
+          body: "The same six measures for every tender on the round, published before it opens. Each score shows its working, so you could read your own evaluation and know exactly where it came from.",
         },
       ],
       footer:
@@ -378,7 +382,7 @@ export const LENS: Record<Role, LensCopy> = {
       },
       {
         q: "How is my tender assessed?",
-        a: "On six published dimensions with fixed weights, the same for every builder. Every score shows its working, and an honest exclusion never reads worse than a vague inclusion.",
+        a: "On the same six measures for every builder, published before the round opens. Every score shows its working, and an honest exclusion never reads worse than a vague inclusion.",
       },
       {
         q: "What do I need to be approved?",
@@ -390,14 +394,14 @@ export const LENS: Record<Role, LensCopy> = {
       },
     ],
     close: {
-      h2a: "Your next round is",
-      h2b: "already open.",
-      sub: "Prepared scope, capped rounds, tenders read in full.",
+      h2a: "Your next job",
+      h2b: "is already live.",
+      sub: "Real tenders, with the scope of works already written for you.",
       primary: { label: "Pick your next project", href: "/signup?role=builder" },
       trio: [
-        "Free to browse every round",
-        "Pay only when you tender",
-        "No commission on what you win",
+        "Detailed scope of works provided",
+        "Limited spots on every tender",
+        "Every tender read in full",
       ],
     },
   },
@@ -410,11 +414,15 @@ export const LENS: Record<Role, LensCopy> = {
       badge: "For architects and designers",
       h1a: "Run the tender.",
       h1b: "Skip the admin.",
-      sub: "Run your client’s tender, with your builders or ours.",
-      subMore: "Every submission comes back in the same shape, under your practice’s name.",
+      sub: "Run your client’s tender with the builders you trust, or ours.",
+      subMore: "Every submission comes back priced against one defined scope, under your practice’s name.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: ["Free for practices", "Your builders or ours", "Your name on the evaluation"],
+      facts: [
+        "Invite your own builders",
+        "One scope, priced by all",
+        "Your name on the recommendation",
+      ],
     },
     problem: {
       head: {
@@ -446,7 +454,7 @@ export const LENS: Record<Role, LensCopy> = {
       head: {
         h2a: "From your drawings",
         h2b: "to your recommendation.",
-        lead: "Four steps, none of them evenings.",
+        lead: "Four steps, and the practice keeps the judgement throughout.",
       },
       steps: [
         {
@@ -455,42 +463,42 @@ export const LENS: Record<Role, LensCopy> = {
           body: "Your drawings, reports and specifications go up in one place. No brief to write, no pack to assemble, no builders to chase for a price.",
         },
         {
-          title: "The list, and who prices it",
-          headline: "We write the list. You choose who sees it.",
-          body: "Every item is drafted from your documents and cited to its page, then your client approves it. Keep the round to builders you trust, open it to the verified network, or run both at once.",
+          title: "The scope, and who prices it",
+          headline: "We identify the scope. You choose who prices it.",
+          body: "We read your documents and lay out the full scope of works, every item referenced to its page, then your client approves it. Keep the round to builders you trust, open it to the verified network, or run both at once.",
         },
         {
           title: "The same list, priced",
-          headline: "Every submission in the same shape.",
-          body: "Same list, same questions, answered under signature. Nothing to normalise afterwards, and no evening spent lining up three documents that were never written to match.",
+          headline: "Every submission against one scope.",
+          body: "Every builder prices the same scope and answers the same questions under signature. There is nothing left to reconcile, and no risk that one submission quietly excluded what another included.",
         },
         {
           title: "Your recommendation",
           headline: "Hand your client the answer.",
-          body: "The scoring, the flags and every difference between the tenders are already set out on six published weights. You add the judgement, your practice’s name goes on it, and it holds up long after the round closes.",
+          body: "The scoring, the flags and every difference between the tenders are already set out for you. You add the judgement, your practice’s name goes on it, and the whole record holds up long after the round closes.",
         },
       ],
     },
     trust: {
       h2a: "Every builder",
-      h2b: "is checked.",
+      h2b: "is vetted.",
       intro:
         "Nobody prices your client’s job anonymously, and every rule is published before the round opens.",
       cards: [
         {
           icon: "shield",
-          title: "Every builder is checked",
+          title: "Every builder is vetted",
           body: "ABN against the Australian Business Register, licence against the state register where one connects and by our team where it does not. A builder joins an open round only once both have passed. A builder you invite joins on your say so, and their verification status is shown on the round either way.",
         },
         {
           icon: "file",
-          title: "Every line names its source",
+          title: "Every scope item is referenced",
           body: "Each line names the document, page and revision it came from. Anything we cannot trace is removed before your client sees it, and a revised pack goes to every builder at once as a numbered addendum.",
         },
         {
           icon: "scale",
           title: "Every tender is scored the same way",
-          body: "Six dimensions, fixed weights, the same for every tender on the round. Each score shows the points earned and the points available and not earned, so any line of it can be defended.",
+          body: "The same six measures for every tender on the round, published in advance. Each score shows what was earned and what was not, so any line of your recommendation can be defended.",
         },
       ],
       footer:
@@ -532,14 +540,14 @@ export const LENS: Record<Role, LensCopy> = {
       },
     ],
     close: {
-      h2a: "The tender,",
-      h2b: "without the admin.",
-      sub: "Run the round. Keep the judgement.",
+      h2a: "Give your client",
+      h2b: "an answer they trust.",
+      sub: "One scope, priced by every builder, and a recommendation that holds up.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       trio: [
-        "Free for practices",
-        "Open or private rounds",
-        "No commission, either side",
+        "One scope, priced by all",
+        "Open rounds or your own builders",
+        "Your name on the recommendation",
       ],
     },
   },

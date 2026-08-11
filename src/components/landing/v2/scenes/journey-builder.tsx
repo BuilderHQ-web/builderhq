@@ -1511,13 +1511,19 @@ const MODULES: Array<[string, string, string]> = [
 function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }) {
   return (
     <>
+      {/* Every measure of air on this screen is added at `sm` and again
+          at `lg`, which are the two heights the frame actually takes
+          (476 and 528). Below `sm` the frame is a 460px scene cropped to
+          272, and a single millimetre of new spacing up here would push
+          the submit control under the crop's fade. So the phone's stack
+          is left exactly as it was, to the pixel. */}
       <div className="shrink-0">
         <Track pct={100} />
-        <div className="mt-1.5">
+        <div className="mt-1.5 lg:mt-2">
           <Kicker>Review and submit</Kicker>
         </div>
         <p
-          className="hidden sm:block mt-1 text-[13px] font-ui font-semibold leading-tight tracking-[-0.015em]"
+          className="hidden sm:block mt-1 lg:mt-2 text-[13px] lg:text-[14px] font-ui font-semibold leading-tight lg:leading-[1.3] tracking-[-0.015em]"
           style={{ color: C.ink }}
         >
           Your tender is ready. It reads well.
@@ -1527,51 +1533,94 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
       {/* The cover is the document object, not a section. The app prints
           it on white; the kit has no white, so it is the paper with the
           2px ink rule and a lift, which is what makes it read as a page
-          rather than another card. */}
-      <div className="shrink-0 rounded-[4px] px-3 py-2" style={{ background: C.paper, boxShadow: ELEV }}>
+          rather than another card. It is given the margins a printed
+          cover has: the rule sits clear of the masthead, the project and
+          the price sit clear of the rule, and from `sm` up the smallest
+          type on it is 7px rather than 6.5, because a cover that has to
+          be squinted at is not one you would be proud to send. */}
+      <div
+        className="shrink-0 rounded-[4px] px-3 py-2 sm:px-3.5 sm:py-2.5 lg:px-4 lg:py-3.5"
+        style={{ background: C.paper, boxShadow: ELEV }}
+      >
         <div className="flex items-center justify-between gap-3">
-          <span className="font-ui font-bold text-[10px] tracking-[-0.01em]" style={{ color: C.ink }}>
+          <span className="font-ui font-bold text-[10px] lg:text-[11px] tracking-[-0.01em]" style={{ color: C.ink }}>
             BuilderHQ
           </span>
-          <span className="text-[6.5px] uppercase font-semibold tracking-[0.28em]" style={{ color: C.dim }}>
+          <span
+            className="text-[6.5px] sm:text-[7px] uppercase font-semibold tracking-[0.28em]"
+            style={{ color: C.dim }}
+          >
             Tender submission
           </span>
         </div>
-        <div className="mt-1 h-[2px]" style={{ background: TONE.ink.text }} />
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div className="mt-1 sm:mt-1.5 lg:mt-2 h-[2px]" style={{ background: TONE.ink.text }} />
+        <div className="mt-2 sm:mt-2.5 lg:mt-3.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <div className="min-w-0">
-            <p className="font-ui text-[11.5px] leading-[1.15] truncate" style={{ color: C.ink }}>
+            <p
+              className="font-ui text-[11.5px] sm:text-[12px] lg:text-[13px] leading-[1.15] truncate"
+              style={{ color: C.ink }}
+            >
               {PROJECT}
             </p>
-            <p className="hidden sm:block mt-0.5 text-[8px] leading-tight truncate" style={{ color: C.muted }}>
+            <p
+              className="hidden sm:block mt-0.5 lg:mt-1 text-[8.5px] lg:text-[9px] leading-tight truncate"
+              style={{ color: C.muted }}
+            >
               {US}
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[6.5px] leading-tight uppercase font-semibold tracking-[0.18em]" style={{ color: C.dim }}>
+            <p
+              className="text-[6.5px] sm:text-[7px] leading-tight uppercase font-semibold tracking-[0.18em]"
+              style={{ color: C.dim }}
+            >
               Price ex GST
             </p>
-            <p className="font-ui font-semibold text-[14px] leading-none tabular-nums" style={{ color: C.ink }}>
+            <p
+              className="font-ui font-semibold text-[14px] sm:text-[15px] lg:text-[17px] leading-none tabular-nums"
+              style={{ color: C.ink }}
+            >
               $685,000
             </p>
-            <p className="hidden sm:block text-[8px] leading-tight tabular-nums" style={{ color: C.muted }}>
+            <p
+              className="hidden sm:block mt-0.5 lg:mt-1 text-[8.5px] lg:text-[9px] leading-tight tabular-nums"
+              style={{ color: C.muted }}
+            >
               $753,500 inc GST
             </p>
           </div>
         </div>
       </div>
 
-      {/* The ledger stands down on a phone. Everything else on this
-          screen can be clipped; the control the pointer presses cannot,
-          so the ledger yields its space rather than the footer. */}
+      {/* The contents of the submission.
+          Twelve rows at 19px filled the hole to the last pixel and were
+          cut mid-row at the foot, which is most of why the screen read
+          as a form. The rows now carry the height that makes them
+          legible and the register runs on under the fade instead, the
+          same way the document register and the scope register do
+          earlier in this film. Five modules read clean and the sixth is
+          going; the fade is the honest signal that there are twelve.
+          The ledger stands down on a phone: everything else here can be
+          cropped, the control the pointer presses cannot, so the ledger
+          yields its space rather than the footer. */}
       <div className="hidden sm:block relative flex-1 min-h-0 overflow-hidden">
         <div className="border-t" style={{ borderColor: C.line }}>
           {MODULES.map(([n, title, count]) => (
-            <div key={n} className="flex items-center gap-2 py-[2px] border-b" style={{ borderColor: C.line }}>
-              <span className="w-3.5 shrink-0 font-mono text-[8px] tabular-nums" style={{ color: C.dim }}>
+            <div
+              key={n}
+              className="flex items-center gap-2 lg:gap-2.5 py-[4px] lg:py-[5px] border-b"
+              style={{ borderColor: C.line }}
+            >
+              <span
+                className="w-3.5 shrink-0 font-mono text-[8px] lg:text-[8.5px] tabular-nums"
+                style={{ color: C.dim }}
+              >
                 {n}
               </span>
-              <span className="min-w-0 shrink truncate text-[9.5px]" style={{ color: C.ink }}>
+              <span
+                className="min-w-0 shrink truncate text-[9.5px] lg:text-[10px] leading-tight"
+                style={{ color: C.ink }}
+              >
                 {title}
               </span>
               <span
@@ -1579,11 +1628,11 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
                 className="flex-1 min-w-[10px] border-b border-dotted translate-y-[3px]"
                 style={{ borderColor: C.line2 }}
               />
-              <span className="shrink-0 text-[8.5px] tabular-nums" style={{ color: C.dim }}>
+              <span className="shrink-0 text-[8.5px] lg:text-[9px] tabular-nums" style={{ color: C.dim }}>
                 {count}
               </span>
               <span
-                className="size-[12px] shrink-0 rounded-full inline-flex items-center justify-center"
+                className="size-[12px] lg:size-[13px] shrink-0 rounded-full inline-flex items-center justify-center"
                 style={{ background: C.teal, color: C.onTeal }}
               >
                 <Check className="size-[8px]" strokeWidth={3.5} />
@@ -1614,7 +1663,10 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.28, ease: EASE }}
             >
-              <p className="text-[9px] sm:text-[9.5px] leading-[1.45] line-clamp-2 max-w-[56ch]" style={{ color: C.ink }}>
+              <p
+                className="text-[9px] sm:text-[9.5px] leading-[1.45] lg:leading-[1.6] line-clamp-2 max-w-[56ch]"
+                style={{ color: C.ink }}
+              >
                 Submitting seals your tender for this round. The owner receives it exactly as this
                 review reads, and it can only change by withdrawing.
               </p>

@@ -9,6 +9,7 @@
  * as one premium bordered panel.
  */
 
+import Link from "next/link";
 import { Check, ArrowUpRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
@@ -108,8 +109,18 @@ export function Network() {
                     </ul>
                   ) : null}
 
-                  <div className="mt-8">
+                  <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                     <NetworkCta cta={copy.cta} onSwitch={(r) => setRole(r)} />
+                    {/* Every lens gets a way into the register itself.
+                        The section named it on all three and offered a
+                        door on only one. */}
+                    <Link
+                      href="/partners"
+                      className="group inline-flex items-center gap-1.5 text-[13.5px] font-medium text-text-muted hover:text-text transition-colors"
+                    >
+                      Browse the register
+                      <ArrowUpRight className="size-4 opacity-60 transition-all duration-[180ms] group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </Link>
                   </div>
                 </RoleSwap>
               </div>
