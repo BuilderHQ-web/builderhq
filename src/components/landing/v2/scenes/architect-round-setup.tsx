@@ -204,7 +204,9 @@ export function ArchitectRoundSetupScene({ active }: { active: boolean }) {
             gets one dim line and none of the animation. */}
         <div className="shrink-0">
           <Kicker icon={BookOpenCheck}>The tender pack</Kicker>
-          <div className="mt-1.5 flex items-baseline justify-between gap-3">
+          {/* At 303px the two halves of this line cannot share it; the
+              note wraps under the title rather than eating it. */}
+          <div className="mt-1.5 flex max-sm:flex-wrap items-baseline justify-between gap-3">
             <p
               className="min-w-0 truncate text-[14.5px] font-ui font-semibold tracking-[-0.015em]"
               style={{ color: C.ink }}
@@ -381,7 +383,10 @@ export function ArchitectRoundSetupScene({ active }: { active: boolean }) {
                       className="mt-2.5 rounded-md border p-2.5"
                       style={{ borderColor: C.line, background: C.wash }}
                     >
-                      <div className="relative">
+                      {/* Decoration, and 36px of height the mobile fold
+                          cannot spare: hiding it is what keeps the
+                          Invite button the pointer clicks on screen. */}
+                      <div className="relative max-sm:hidden">
                         <Search
                           className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 size-3"
                           style={{ color: C.dim }}
@@ -526,7 +531,10 @@ function ModeOption({
       <p className="mt-2 text-[11.5px] font-ui font-semibold" style={{ color: C.ink }}>
         {title}
       </p>
-      <p className="mt-0.5 text-[9px] leading-[1.5] line-clamp-2" style={{ color: C.dim }}>
+      {/* At half of a 303px column the clamp leaves a fragment, not a
+          sentence. The flow card directly below narrates each mode, so
+          on mobile the option is icon, title and the check. */}
+      <p className="mt-0.5 text-[9px] leading-[1.5] line-clamp-2 max-sm:hidden" style={{ color: C.dim }}>
         {sub}
       </p>
     </div>
@@ -564,8 +572,10 @@ function InviteRow({ name, detail }: { name: string; detail: string }) {
       >
         Invited
       </span>
+      {/* On mobile the link control gives its width back to the
+          builder's name, which must never truncate. */}
       <span
-        className="shrink-0 inline-flex items-center gap-1 h-[22px] px-2 rounded-md border text-[9px]"
+        className="max-sm:hidden shrink-0 inline-flex items-center gap-1 h-[22px] px-2 rounded-md border text-[9px]"
         style={{ borderColor: C.line, color: C.muted }}
       >
         <Link2 className="size-2.5" strokeWidth={2.2} />

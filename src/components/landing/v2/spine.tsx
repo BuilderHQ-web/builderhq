@@ -156,11 +156,16 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                     </div>
 
                     {/* ── Product side — the real UI, edge to edge.
-                        Capped on the phone: without a ceiling the taller
-                        scenes grew the panel to 800px and the card ate
-                        the whole screen. The scenes all clip to their own
-                        fade, so a cap costs nothing. ── */}
-                    <div className="relative min-h-[340px] max-h-[440px] overflow-hidden lg:max-h-none lg:min-h-0 lg:h-full border-t lg:border-t-0 lg:border-l border-[rgba(255,255,255,0.08)]">
+                        A phone gets a fixed portrait panel: 340px cut
+                        every scene off at the waist, and most of them
+                        keep their payoff below it. The scenes compose
+                        themselves for this box with max-sm rules.
+                        Tablet keeps the old floor/ceiling; desktop
+                        keeps the card's own height. ── */}
+                    <div
+                      data-stage={`deck-${i}`}
+                      className="relative h-[420px] sm:h-auto sm:min-h-[340px] sm:max-h-[440px] overflow-hidden lg:max-h-none lg:min-h-0 lg:h-full border-t lg:border-t-0 lg:border-l border-[rgba(255,255,255,0.08)]"
+                    >
                       <AppScene role={role} step={i} active={active === i} />
                     </div>
                   </article>

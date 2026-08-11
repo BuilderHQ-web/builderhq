@@ -25,7 +25,7 @@ import { motion } from "motion/react";
 import { ArrowRight, Check, ChevronDown, Download, Gauge } from "lucide-react";
 
 import { SceneCursor, useSceneScript } from "../scene-motion";
-import { C, Card, Frame, Kicker, ListFade, Pill, TealBtn, TONE, Track } from "./kit";
+import { C, Card, Frame, Kicker, ListFade, Pill, TealBtn, TONE, Track, useCompact } from "./kit";
 
 type S = {
   /** The last required answer has landed, so the review is submittable. */
@@ -139,7 +139,7 @@ export function BuilderWinScene({ active }: { active: boolean }) {
           {state.sealed ? (
             <Sealed settled={state.settled} />
           ) : (
-            <div className="absolute inset-0 flex flex-col gap-2">
+            <div className="absolute inset-0 flex flex-col gap-1.5 sm:gap-2">
               {/* The deck's completion rail, which on the real screen is
                   full bleed under the sub-header. */}
               <div className="shrink-0">
@@ -162,7 +162,7 @@ export function BuilderWinScene({ active }: { active: boolean }) {
               {/* Scorecard and ledger are one scroll on the real slide,
                   so they are one clipped column here. */}
               <div className="relative flex-1 min-h-0 overflow-hidden">
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5 sm:gap-2">
                   <Scorecard />
                   <Ledger complete={state.complete} />
                 </div>
@@ -209,7 +209,7 @@ function Cover() {
       </div>
       <div className="mt-1.5 h-[2px]" style={{ background: TONE.ink.text }} />
 
-      <div className="mt-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+      <div className="mt-1.5 flex flex-wrap max-sm:flex-nowrap items-end justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <p className="font-ui text-[13px] leading-[1.15] truncate" style={{ color: C.ink }}>
             {DOC.title}
@@ -238,7 +238,7 @@ function Cover() {
       </div>
 
       <div
-        className="mt-1.5 pt-1 border-t flex items-center justify-between gap-3"
+        className="mt-1.5 pt-1 border-t flex items-center justify-between gap-3 max-sm:hidden"
         style={{ borderColor: C.line }}
       >
         <span className="font-mono text-[8px] leading-none tracking-[0.05em]" style={{ color: C.dim }}>
@@ -260,14 +260,16 @@ function Cover() {
 
 /** The client's published rubric, run on the draft before it is sent.
  *  A builder seeing their own score before submitting is the unusual
- *  part, so the explainer sentence stays. */
+ *  part, so the explainer sentence stays — on the portrait mobile stage
+ *  it yields its two lines so the ledger's resolving row can make the
+ *  fold. */
 function Scorecard() {
   return (
-    <Card className="px-3 py-2">
+    <Card className="px-3 py-1.5 sm:py-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Kicker icon={Gauge}>How your tender reads</Kicker>
-          <p className="mt-0.5 text-[8.5px] leading-[1.45]" style={{ color: C.muted }}>
+          <p className="mt-0.5 text-[8.5px] leading-[1.45] max-sm:hidden" style={{ color: C.muted }}>
             This is the same scoring the client sees, run on your answers before you submit.
           </p>
         </div>
@@ -288,17 +290,24 @@ function Scorecard() {
       </div>
 
       <div className="mt-1.5 flex flex-col gap-[4px]">
+        {/* On the 303px stage the fixed 92px label column pushes the row
+            past the card and the label clips at the left, so the row
+            re-lays as a grid: label · score · chevron, then the track on
+            its own full-width line. sm+ keeps the single-line flex row. */}
         {DIMS.map((d) => (
-          <div key={d.label} className="flex items-center gap-2">
+          <div
+            key={d.label}
+            className="flex items-center gap-2 max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto_auto] max-sm:gap-y-1"
+          >
             <span
-              className="w-[92px] shrink-0 truncate text-[9px] leading-none"
+              className="w-[92px] max-sm:w-auto shrink-0 truncate text-[9px] leading-none"
               style={{ color: C.muted }}
             >
               {d.label}
               <span style={{ color: C.dim }}> · {d.weight}%</span>
             </span>
             <span
-              className="flex-1 block h-[3px] rounded-full overflow-hidden"
+              className="flex-1 block h-[3px] rounded-full overflow-hidden max-sm:order-last max-sm:col-span-3"
               style={{ background: C.line }}
             >
               <span
@@ -397,13 +406,15 @@ function Ledger({ complete }: { complete: boolean }) {
 /* ── Submit ──────────────────────────────────────────────────────── */
 
 /** Three states in one measured box, so the confirmation band growing
- *  does not shove the ledger about. */
+ *  does not shove the ledger about. On the narrow mobile stage the
+ *  confirmation copy runs a third line, so the measured box takes it. */
 function SubmitBlock({ complete, confirm }: { complete: boolean; confirm: boolean }) {
+  const compact = useCompact();
   return (
     <motion.div
       className="relative shrink-0 overflow-hidden"
       initial={false}
-      animate={{ height: confirm ? 86 : complete ? 34 : 30 }}
+      animate={{ height: confirm ? (compact ? 94 : 86) : complete ? 34 : 30 }}
       transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
     >
       <motion.div
@@ -415,7 +426,7 @@ function SubmitBlock({ complete, confirm }: { complete: boolean; confirm: boolea
       >
         {confirm ? (
           <div className="border-t pt-2" style={{ borderColor: C.line }}>
-            <p className="text-[9px] leading-[1.5] max-w-[52ch]" style={{ color: C.ink }}>
+            <p className="text-[9px] leading-[1.5] max-w-[52ch] max-sm:max-w-none" style={{ color: C.ink }}>
               Submitting seals your tender for this round. The owner receives it exactly as this
               review reads, and it can only change by withdrawing.
             </p>

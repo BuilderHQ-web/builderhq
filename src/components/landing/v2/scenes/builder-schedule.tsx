@@ -161,7 +161,7 @@ export function BuilderScheduleScene({ active }: { active: boolean }) {
           >
             Footings and ground floor structure
           </h2>
-          <p className="mt-1.5 text-[10.5px] leading-[1.5] max-w-[58ch]" style={{ color: C.muted }}>
+          <p className="mt-1.5 text-[10.5px] leading-[1.5] max-w-[58ch] max-sm:hidden" style={{ color: C.muted }}>
             3 lines from the client&rsquo;s documents. Mark what your price does with each one.
           </p>
         </div>
@@ -169,7 +169,7 @@ export function BuilderScheduleScene({ active }: { active: boolean }) {
         {/* Clipped, because the figure field grows the second line and
             the slide must not push the card open underneath it. */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
             {LINES.map((line, i) => (
               <LineCard
                 key={line.id}
@@ -211,19 +211,19 @@ function LineCard({
   return (
     <Card
       tone={mark ? "accent" : "plain"}
-      className="px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-300"
+      className="px-3 py-2 sm:py-2.5 transition-[background-color,border-color,box-shadow] duration-300"
     >
       <p className="text-[11.5px] font-ui font-semibold leading-[1.35]" style={{ color: C.ink }}>
         {line.label}
       </p>
-      <p className="mt-1 text-[10px] leading-[1.45] line-clamp-2 max-w-[56ch]" style={{ color: C.muted }}>
+      <p className="mt-1 text-[10px] leading-[1.45] line-clamp-2 max-w-[56ch] max-sm:hidden" style={{ color: C.muted }}>
         {line.plain}
       </p>
       <p className="mt-1 text-[9px] truncate" style={{ color: C.dim }}>
         {line.cite}
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="mt-1.5 sm:mt-2 flex flex-wrap items-center gap-1.5">
         {MARKS.map((m) => (
           <Mark
             key={m.key}
@@ -254,7 +254,7 @@ function SumField({ amount, focus }: { amount: string; focus: boolean }) {
       transition={{ duration: 0.28, ease: EASE }}
       className="overflow-hidden"
     >
-      <motion.div initial={{ y: 8 }} animate={{ y: 0 }} transition={{ duration: 0.28, ease: EASE }} className="pt-2.5">
+      <motion.div initial={{ y: 8 }} animate={{ y: 0 }} transition={{ duration: 0.28, ease: EASE }} className="pt-1.5 sm:pt-2.5">
         <p className="text-[9.5px] leading-tight" style={{ color: C.muted }}>
           Provisional sum in your price for this line
         </p>

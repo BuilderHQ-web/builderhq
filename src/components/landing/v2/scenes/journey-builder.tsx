@@ -103,6 +103,7 @@ import {
   SectionTag,
   TealBtn,
   Track,
+  useCompact,
   type ToneKey,
 } from "./kit";
 
@@ -566,7 +567,7 @@ function Press({ k, hot, children }: { k: string; hot: boolean; children: React.
 function FootBar({ tone, children }: { tone: "cta" | "deck"; children: React.ReactNode }) {
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-[228px] sm:bottom-0 z-20 border-t px-3 h-[44px] flex items-center justify-between gap-2"
+      className="absolute inset-x-0 bottom-0 z-20 border-t px-3 h-[44px] flex items-center justify-between gap-2"
       style={
         tone === "cta"
           ? { borderColor: C.tealLine, background: C.paper }
@@ -583,11 +584,12 @@ function FootBar({ tone, children }: { tone: "cta" | "deck"; children: React.Rea
 }
 
 /** The spacer that keeps a list from running beneath the foot bar, the
- *  way the real page keeps a pb-32 under its fixed one. On a phone the
- *  column already runs past the fold, so reserving the full bar there
- *  would only push more of the list out of sight. */
+ *  way the real page keeps a pb-32 under its fixed one. On the portrait
+ *  phone stage the bar sits at the frame's foot like everywhere else,
+ *  so the column reserves the bar's 44px less the frame's own 16px of
+ *  bottom padding: h-7. From `sm` up the full h-11 stands as it was. */
 function BarSpacer() {
-  return <div aria-hidden className="shrink-0 h-3 sm:h-11" />;
+  return <div aria-hidden className="shrink-0 h-7 sm:h-11" />;
 }
 
 /** A section's rule: teal label, then a hairline to the right edge.
@@ -628,11 +630,11 @@ function Ruled({
 /**
  * The floor a scrolling list keeps on a phone.
  *
- * The frame is 250 to 272px tall there, and a column of shrink-0 blocks
- * will happily squeeze a flex-1 list to nothing, which reads as a
- * broken screen rather than a small one. Below `sm` the list holds a
- * floor and the tail of the column runs under the shell's deliberate
- * bottom peek instead; from `sm` up there is room and the list simply
+ * The portrait stage bottoms out at 360px on short phones, and a column
+ * of shrink-0 blocks will happily squeeze a flex-1 list to nothing,
+ * which reads as a broken screen rather than a small one. Below `sm`
+ * the list holds a floor and the tail of the column runs under the
+ * ListFade instead; from `sm` up there is room and the list simply
  * fills what is left.
  */
 const LIST = "relative flex-1 min-h-[92px] sm:min-h-0 overflow-hidden";
@@ -918,9 +920,40 @@ function FilterBar({ picked, hot }: { picked: boolean; hot: string | null }) {
   );
 }
 
+/** The beds/baths/storeys chips, shared by the docket body (from `sm`
+ *  up) and the phone's state strip, so the two renders cannot drift. */
+function SpecChips({ specs }: { specs: Array<[string, string]> }) {
+  return (
+    <>
+      {specs.map(([v, l]) => (
+        <span
+          key={l}
+          className="inline-flex items-center gap-1 h-[18px] px-1.5 rounded-md border whitespace-nowrap"
+          style={{ borderColor: C.line, background: C.wash }}
+        >
+          <span className="font-ui font-semibold text-[9px] leading-none tabular-nums" style={{ color: C.ink }}>
+            {v}
+          </span>
+          <span className="text-[6.5px] tracking-[0.12em] uppercase" style={{ color: C.dim }}>
+            {l}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
 /** One docket: the type-set tinted band with the budget, the body, and
  *  the state rail. Hovering it lights the whole row and the open-in
- *  arrow arrives, because the row is a link. */
+ *  arrow arrives, because the row is a link.
+ *
+ *  On the phone the three-column row cannot hold 303px — the title fell
+ *  to ten characters and the chips clipped mid-glyph — so the row
+ *  restacks: band + title + suburb on one line, then the chips, the
+ *  spots and the fee on a strip beneath. The spots and the fee are the
+ *  act's point, so they are never the thing that yields. From `sm` up
+ *  the wrapper is display:contents and the row renders exactly as it
+ *  always has. */
 function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?: boolean }) {
   const meta = TYPE_META[d.kind];
   const left = Math.max(0, d.spots - d.taken);
@@ -928,13 +961,14 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
   return (
     <div
       data-cursor={cursorKey}
-      className="flex rounded-xl border overflow-hidden transition-colors duration-200"
+      className="flex max-sm:flex-col rounded-xl border overflow-hidden transition-colors duration-200"
       style={{
         borderColor: hot ? C.tealLine : C.line,
         background: hot ? C.tealWash : C.paper,
         boxShadow: ELEV,
       }}
     >
+      <div className="flex min-w-0 sm:contents">
       {/* the band — the type set on its paper */}
       <div
         className="relative shrink-0 w-[82px] sm:w-[100px] border-r overflow-hidden"
@@ -995,37 +1029,33 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
           <MapPin className="size-[10px] shrink-0" style={{ color: C.dim }} />
           <span className="truncate">{d.where}</span>
         </p>
-        <div className="flex items-center gap-1 overflow-hidden">
-          {d.specs.map(([v, l]) => (
-            <span
-              key={l}
-              className="inline-flex items-center gap-1 h-[18px] px-1.5 rounded-md border whitespace-nowrap"
-              style={{ borderColor: C.line, background: C.wash }}
-            >
-              <span className="font-ui font-semibold text-[9px] leading-none tabular-nums" style={{ color: C.ink }}>
-                {v}
-              </span>
-              <span className="text-[6.5px] tracking-[0.12em] uppercase" style={{ color: C.dim }}>
-                {l}
-              </span>
-            </span>
-          ))}
+        {/* On the phone the chips live on the state strip below. */}
+        <div className="max-sm:hidden flex items-center gap-1 overflow-hidden">
+          <SpecChips specs={d.specs} />
         </div>
         {d.pack ? (
           // The film's only act-one push lands here, so the strip
           // carries its own key even though the pointer never visits it.
+          // On the phone the strip wraps to two lines rather than
+          // truncating the pitch to its first clause.
           <p data-cursor="pack" className="flex items-center gap-1 text-[8.5px] min-w-0" style={{ color: C.tealInk }}>
             <BookOpenCheck className="size-[10px] shrink-0" />
-            <span className="truncate">{d.pack}</span>
+            <span className="truncate max-sm:whitespace-normal">{d.pack}</span>
           </p>
         ) : null}
       </div>
+      </div>
 
-      {/* the state rail — the dots first, the fee after */}
+      {/* the state rail — the dots first, the fee after. On the phone
+          it is a full-width strip under the row: the chips take the
+          first line, the spots and the fee share the second. */}
       <div
-        className="shrink-0 w-[86px] sm:w-[102px] border-l px-1.5 py-2 overflow-hidden flex flex-col items-end justify-center gap-1"
+        className="shrink-0 w-[86px] sm:w-[102px] border-l px-1.5 py-2 overflow-hidden flex flex-col items-end justify-center gap-1 max-sm:w-full max-sm:border-l-0 max-sm:border-t max-sm:px-2.5 max-sm:py-1.5 max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-x-2 max-sm:gap-y-1"
         style={{ borderColor: C.line }}
       >
+        <span className="sm:hidden flex w-full items-center gap-1">
+          <SpecChips specs={d.specs} />
+        </span>
         <span className="inline-flex items-center gap-1">
           <span aria-hidden className="inline-flex items-center gap-[2px]">
             {Array.from({ length: d.spots }).map((_, i) => (
@@ -1047,8 +1077,11 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
         <span className="text-[8px] tabular-nums" style={{ color: C.dim }}>
           ${PRICE[d.kind]} to enter
         </span>
+        {/* The hover tell stands down on the phone strip — the row's
+            teal wash already carries the hover, and a fourth item
+            would crowd the fee off the line. */}
         <motion.span
-          className="inline-flex items-center gap-1 text-[8px] font-semibold"
+          className="max-sm:hidden inline-flex items-center gap-1 text-[8px] font-semibold"
           style={{ color: C.tealInk }}
           initial={false}
           animate={{ opacity: hot ? 1 : 0 }}
@@ -1243,6 +1276,29 @@ const FOOTINGS_LINES: Array<{ label: string; plain: string; cite: string }> = [
   },
 ];
 
+/**
+ * The script's scope offsets are desktop pixels, re-derived for the
+ * portrait phone stage. The arithmetic:
+ *
+ *   Desktop viewport ≈ 444 content − rail 19 − rule 13 − stats 64 −
+ *   spacer 44 − four gaps 40 ≈ 264, and −490 lands the register flush
+ *   at the foot, so the rendered register ≈ 264 + 490 ≈ 754 tall.
+ *
+ *   At 303px each of footings' three plain sentences wraps one line
+ *   taller (collapsed rows truncate, so only the open panel grows):
+ *   register ≈ 754 + 3·15 ≈ 799. The phone viewport ≈ 340 content −
+ *   rail 19 − rule 13 − stats 62 − spacer 28 − gaps 40 ≈ 178.
+ *
+ *   Flush foot: −(799 − 178) ≈ −620. The mid-read −320 sits 65% of the
+ *   way down on desktop (320/490), so 0.65 · 620 ≈ −400. The first stop
+ *   −150 holds: the four collapsed rows above footings keep their
+ *   height at 303px, so the opened division tops the frame unchanged.
+ */
+const SCOPE_Y_COMPACT: Record<number, number> = {
+  [-320]: -400,
+  [-490]: -620,
+};
+
 function ScopeScreen({
   sec,
   y,
@@ -1256,6 +1312,8 @@ function ScopeScreen({
   cite: boolean;
   hot: string | null;
 }) {
+  const compact = useCompact();
+  const yy = compact ? (SCOPE_Y_COMPACT[y] ?? y) : y;
   return (
     <>
       <SectionRail active={sec} hot={hot} />
@@ -1295,8 +1353,8 @@ function ScopeScreen({
         <motion.div
           className="flex flex-col gap-1.5"
           initial={false}
-          animate={{ y }}
-          transition={y === 0 ? { duration: 0 } : SCROLL}
+          animate={{ y: yy }}
+          transition={yy === 0 ? { duration: 0 } : SCROLL}
         >
           {DIVISIONS.map((d) => (
             <Division
@@ -1402,6 +1460,16 @@ function TenderScreen({
   answered: number;
   hot: string | null;
 }) {
+  const compact = useCompact();
+  /* The script's −126 is a desktop pixel. The arithmetic: the three
+   * line cards measure ≈ 126 + 140 + 126 + two gaps 16 ≈ 408 on every
+   * stage — the plain sentences cap at max-w-[56ch] ≈ 250px, narrower
+   * than the phone's 277px measure, so nothing rewraps. The desktop
+   * viewport ≈ 444 − header 26 − heading 61 − spacer 44 − gaps 30 ≈
+   * 283, and −126 lands the register flush (126 + 283 ≈ 408). The
+   * phone viewport ≈ 340 − header 26 − heading 37 − spacer 28 − gaps
+   * 30 ≈ 219, so flush is −(408 − 219) ≈ −190. */
+  const yy = compact && y !== 0 ? -190 : y;
   return (
     <>
       <div className="shrink-0">
@@ -1440,8 +1508,8 @@ function TenderScreen({
         <motion.div
           className="flex flex-col gap-2"
           initial={false}
-          animate={{ y }}
-          transition={y === 0 ? { duration: 0 } : SCROLL}
+          animate={{ y: yy }}
+          transition={yy === 0 ? { duration: 0 } : SCROLL}
         >
           {LINES.map((line) => {
             const on = marked.includes(line.id);
@@ -1513,11 +1581,11 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
   return (
     <>
       {/* Every measure of air on this screen is added at `sm` and again
-          at `lg`, which are the two heights the frame actually takes
-          (476 and 528). Below `sm` the frame is a 460px scene cropped to
-          272, and a single millimetre of new spacing up here would push
-          the submit control under the crop's fade. So the phone's stack
-          is left exactly as it was, to the pixel. */}
+          at `lg`, which are the two heights the frame takes from 640px
+          up (476 and 528). Below `sm` the portrait stage gives the
+          stack ~340px whole: the cover, the ledger under its fade and
+          both submit presses all sit inside it, so the phone keeps the
+          tightest spacing tier. */}
       <div className="shrink-0">
         <Track pct={100} />
         <div className="mt-1.5 lg:mt-2">
@@ -1601,10 +1669,12 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
           same way the document register and the scope register do
           earlier in this film. Five modules read clean and the sixth is
           going; the fade is the honest signal that there are twelve.
-          The ledger stands down on a phone: everything else here can be
-          cropped, the control the pointer presses cannot, so the ledger
-          yields its space rather than the footer. */}
-      <div className="hidden sm:block relative flex-1 min-h-0 overflow-hidden">
+          The phone gets the same treatment: the portrait stage leaves
+          the ledger ~137px after the cover and the submit block take
+          theirs, which is five clean rows and the fade — the register
+          IS the act's proof that everything was answered, so it plays
+          on every stage. */}
+      <div className="relative flex-1 min-h-0 overflow-hidden">
         <div className="border-t" style={{ borderColor: C.line }}>
           {MODULES.map(([n, title, count]) => (
             <div
@@ -1646,12 +1716,12 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
 
       {/* The two-step submit, inline where the app puts it. The block
           holds one height for both states, so the ledger above it never
-          reflows while the controls change. */}
-      {/* Stood up under the cover below sm: on a phone the frame crops
-          this scene from the top, and mt-auto put both submit presses
-          under the fade. */}
+          reflows while the controls change. On the phone the sealing
+          sentence runs three lines at 303px (it caps near 250px wide
+          from `sm` up), so the block carries the extra line's height:
+          3·13 + gap 6 + button 32 ≈ 77. */}
       <div
-        className="shrink-0 mt-1 sm:mt-auto relative border-t h-[52px] sm:h-[72px]"
+        className="shrink-0 mt-1 sm:mt-auto relative border-t h-[78px] sm:h-[72px]"
         style={{ borderColor: C.line }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -1665,7 +1735,7 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
               transition={{ duration: 0.28, ease: EASE }}
             >
               <p
-                className="text-[9px] sm:text-[9.5px] leading-[1.45] lg:leading-[1.6] line-clamp-2 max-w-[56ch]"
+                className="text-[9px] sm:text-[9.5px] leading-[1.45] lg:leading-[1.6] line-clamp-2 max-sm:line-clamp-3 max-w-[56ch]"
                 style={{ color: C.ink }}
               >
                 Submitting seals your tender for this round. The owner receives it exactly as this
@@ -1737,9 +1807,10 @@ function WonScreen({ hot }: { hot: string | null }) {
         </p>
       </div>
 
-      {/* Held back on a phone, the way SubmitScreen stands its ledger
-          down, so the closing hover clears the crop. */}
-      <div className="hidden sm:block flex-1 min-h-0 overflow-hidden">
+      {/* On every stage now: "no commission" is the reason this act
+          exists, and the whole screen sums ≈246px against the phone's
+          340 — header ≈96, this block ≈98, the PDF row 32, two gaps. */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <div className="border-y py-3" style={{ borderColor: C.tealLine }}>
           <p className="text-[8.5px] tracking-[0.16em] uppercase font-semibold" style={{ color: C.tealInk }}>
             Your client

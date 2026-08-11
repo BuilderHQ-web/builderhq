@@ -19,7 +19,7 @@ import { motion } from "motion/react";
 import { Check } from "lucide-react";
 
 import { SceneCursor, useSceneScript } from "../scene-motion";
-import { C, Division, Frame, ListFade, Pill, ScopeLine } from "./kit";
+import { C, Division, Frame, ListFade, Pill, ScopeLine, useCompact } from "./kit";
 
 type S = { open: string | null; hot: string | null; cite: boolean; shift: number };
 
@@ -93,6 +93,12 @@ const LINES: Record<string, Array<{ label: string; plain: string; cite: string; 
 export function OwnerScopeScene({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
+  // On the portrait stage the register viewport is ~271px and every
+  // plain sentence wraps to two lines, so joinery sits ~220px lower in
+  // the column than it does on the wide stage. The scroll beat has to
+  // travel further for the opened division to land inside the fold.
+  const compact = useCompact();
+
   const { state, cursor, clicks } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
@@ -110,7 +116,7 @@ export function OwnerScopeScene({ active }: { active: boolean }) {
       { wait: 1250 },
       { set: { cite: false } },
       // Beat three: scroll the register on and open another.
-      { set: { shift: -430 } },
+      { set: { shift: compact ? -650 : -430 } },
       { wait: 520 },
       { move: "div-joinery" },
       { set: { hot: "joinery" } },

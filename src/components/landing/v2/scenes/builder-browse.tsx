@@ -259,7 +259,7 @@ export function BuilderBrowseScene({ active }: { active: boolean }) {
           {detail ? (
             <motion.div
               key="detail"
-              className="flex-1 min-h-0 flex flex-col gap-3"
+              className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, transition: { duration: 0.18 } }}
@@ -396,7 +396,10 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
   return (
     <div
       data-cursor={cursorKey}
-      className="flex rounded-xl border overflow-hidden transition-colors duration-200"
+      // 303px cannot hold band | body | rail side by side, so the docket
+      // restacks on the phone: the band becomes a short strip across the
+      // top, the body reads full width, the rail becomes a footer row.
+      className="flex max-sm:flex-col rounded-xl border overflow-hidden transition-colors duration-200"
       style={{
         borderColor: hot ? C.line3 : C.line,
         background: C.paper,
@@ -405,7 +408,7 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
     >
       {/* the band — the type set on its paper */}
       <div
-        className="relative shrink-0 w-[96px] sm:w-[112px] border-r overflow-hidden"
+        className="relative shrink-0 w-[96px] sm:w-[112px] max-sm:w-full max-sm:h-11 border-r max-sm:border-r-0 max-sm:border-b overflow-hidden"
         style={{ borderColor: C.line }}
       >
         <span aria-hidden className="absolute inset-0" style={{ background: TINT[d.kind] }} />
@@ -438,7 +441,7 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
           <meta.Icon className="size-[8px] sm:size-[9px]" style={{ color: C.tealInk }} strokeWidth={2.2} />
           {meta.label}
         </span>
-        <div className="absolute left-1.5 bottom-1.5">
+        <div className="absolute left-1.5 bottom-1.5 max-sm:left-auto max-sm:right-1.5">
           <p className="text-[6.5px] tracking-[0.18em] uppercase font-semibold" style={{ color: C.muted }}>
             Project budget
           </p>
@@ -488,7 +491,7 @@ function DocketRow({ d, cursorKey, hot }: { d: Docket; cursorKey?: string; hot?:
 
       {/* the state rail — the dots first, the fee after */}
       <div
-        className="shrink-0 w-[108px] sm:w-[122px] border-l px-1.5 sm:px-2 py-2 overflow-hidden flex flex-col items-end justify-center gap-1"
+        className="shrink-0 w-[108px] sm:w-[122px] max-sm:w-full border-l max-sm:border-l-0 max-sm:border-t px-1.5 sm:px-2 max-sm:px-2.5 py-2 max-sm:py-1.5 overflow-hidden flex flex-col max-sm:flex-row items-end max-sm:items-center justify-center max-sm:justify-between gap-1"
         style={{ borderColor: C.line }}
       >
         <span className="inline-flex items-center gap-1">
@@ -535,11 +538,11 @@ function Preview() {
   return (
     <>
       <div className="shrink-0">
-        <span className="inline-flex items-center gap-1 text-[9px]" style={{ color: C.dim }}>
+        <span className="inline-flex items-center gap-1 text-[9px] max-sm:hidden" style={{ color: C.dim }}>
           <ArrowLeft className="size-[11px]" />
           Back to browse
         </span>
-        <div className="mt-1.5 flex items-start justify-between gap-3">
+        <div className="mt-1.5 max-sm:mt-0 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <span
               className="inline-flex items-center gap-1 text-[8.5px] tracking-[0.22em] uppercase font-semibold"
@@ -549,7 +552,7 @@ function Preview() {
               You hold a spot
             </span>
             <p
-              className="mt-1 font-ui font-semibold uppercase text-[19px] leading-[0.95] tracking-[-0.018em]"
+              className="mt-1 font-ui font-semibold uppercase text-[15px] sm:text-[19px] leading-[0.95] tracking-[-0.018em]"
               style={{ color: C.ink }}
             >
               Single dwelling · Pascoe Vale, VIC
@@ -565,7 +568,7 @@ function Preview() {
             </p>
           </div>
           <span
-            className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[9.5px] tracking-[0.04em]"
+            className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[9.5px] tracking-[0.04em] max-sm:hidden"
             style={{ borderColor: C.line3, color: C.ink }}
           >
             <Bookmark className="size-3" />
@@ -637,8 +640,9 @@ function Preview() {
       </div>
 
       {/* The app keeps a pb-32 spacer under the fixed bar; the mini
-          keeps its own so the register never runs beneath it. */}
-      <div aria-hidden className="shrink-0" style={{ height: 52 }} />
+          keeps its own so the register never runs beneath it. The bar
+          stacks taller on the phone, so the spacer stacks with it. */}
+      <div aria-hidden className="shrink-0 h-[88px] sm:h-[52px]" />
     </>
   );
 }
@@ -674,10 +678,13 @@ function Section({
  *  what it opens. The price is the real one for a single dwelling. */
 function UnlockBar() {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5">
+    // On the phone the bar stacks: the offer line, then a full-width
+    // plate. The price reads twice (line and button) so nothing is lost
+    // hiding the reassurance lines the 303px stage has no room for.
+    <div className="flex max-sm:flex-col items-center max-sm:items-stretch justify-between gap-3 max-sm:gap-1.5 px-4 sm:px-5 py-2.5 max-sm:py-2">
       <div className="min-w-0 flex items-start gap-2">
         <span
-          className="shrink-0 inline-flex size-8 items-center justify-center rounded-md border"
+          className="shrink-0 inline-flex size-8 items-center justify-center rounded-md border max-sm:hidden"
           style={{ borderColor: C.tealLine, background: C.tealWash, color: C.tealInk }}
         >
           <Lock className="size-3.5" />
@@ -697,10 +704,10 @@ function UnlockBar() {
               · 2 of 3 spots open
             </span>
           </div>
-          <p className="mt-0.5 text-[9.5px] truncate" style={{ color: C.dim }}>
+          <p className="mt-0.5 text-[9.5px] truncate max-sm:hidden" style={{ color: C.dim }}>
             Exact address · owner contact · 9 documents · message the owner
           </p>
-          <p className="mt-0.5 flex items-center gap-1 text-[9px] truncate" style={{ color: C.dim }}>
+          <p className="mt-0.5 flex items-center gap-1 text-[9px] truncate max-sm:hidden" style={{ color: C.dim }}>
             <ShieldCheck className="size-[10px] shrink-0" style={{ color: C.tealInk }} />
             Secure checkout by Stripe · card, Apple Pay and Google Pay
           </p>

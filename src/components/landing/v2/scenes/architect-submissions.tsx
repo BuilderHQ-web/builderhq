@@ -38,14 +38,21 @@ import {
 } from "lucide-react";
 
 import { SceneCursor, useSceneScript } from "../scene-motion";
-import { C, TONE, Card, Frame, Kicker, ListFade } from "./kit";
+import { C, TONE, Card, Frame, Kicker, ListFade, useCompact } from "./kit";
 
 type S = { y: number; counted: boolean; hot: boolean; diffOnly: boolean };
 
 const RESTING: S = { y: 0, counted: false, hot: false, diffOnly: false };
 
-/** One grid for every band, as the real surface does it. */
-const COLS = "minmax(0,1.1fr) repeat(3, minmax(0,1fr))";
+/**
+ * One grid for every band, as the real surface does it. Below sm the
+ * portrait stage is 303px across, which is ~74px a tender column — not
+ * enough for "Provisional sum", let alone a builder's name — so every
+ * row restacks: the label takes a full-width line of its own
+ * (max-sm:col-span-3 on the label cell) and the three tender cells sit
+ * under it on thirds. Nothing truncates; the row reads in full.
+ */
+const GRID = "grid grid-cols-[minmax(0,1.1fr)_repeat(3,minmax(0,1fr))] max-sm:grid-cols-3";
 
 /** The three tenders in price order, as the column heads read them. */
 const TENDERS = [
@@ -65,10 +72,20 @@ const TENDERS = [
  */
 const GAP = 14;
 const H = [168, 384, 366, 790, 702] as const;
-const TOP = H.reduce<number[]>((acc, _h, i) => {
-  acc.push(i === 0 ? 0 : acc[i - 1]! + H[i - 1]! + GAP);
-  return acc;
-}, []);
+/**
+ * The same five bands with every grid row restacked for the portrait
+ * mobile stage. Slightly generous on purpose: each Card clips its own
+ * overflow, so slack spends itself as whitespace at a band's foot,
+ * never as a waypoint drifted onto the middle of a row.
+ */
+const H_COMPACT = [168, 528, 536, 900, 820] as const;
+const tops = (hs: readonly number[]): number[] =>
+  hs.reduce<number[]>((acc, _h, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1]! + hs[i - 1]! + GAP);
+    return acc;
+  }, []);
+const TOP = tops(H);
+const TOP_COMPACT = tops(H_COMPACT);
 
 /* ── the schedule alignment ──────────────────────────────────────── */
 
@@ -168,7 +185,15 @@ const TARGET = 5;
 
 /* ── the decision grid ───────────────────────────────────────────── */
 
-type GridRow = { label: string; info?: boolean; v: [string, string, string]; best?: number[] };
+type GridRow = {
+  label: string;
+  info?: boolean;
+  v: [string, string, string];
+  best?: number[];
+  /** Dropped below sm, where restacked rows cost three times the height
+   *  and the least load-bearing line pays for the rest. */
+  mobileHide?: boolean;
+};
 
 /**
  * GRID at evaluation-surface.tsx:1229, its five labelled groups and
@@ -225,7 +250,9 @@ const DECISION: Array<{ title: string; rows: GridRow[] }> = [
       // sections agree with each other and with the $105,000.
       { label: "Trades in the price", info: true, v: ["14 of 22", "23 of 23", "23 of 23"], best: [1, 2] },
       { label: "Excluded scope items", info: true, v: ["2", "0", "0"], best: [1, 2] },
-      { label: "Written exclusions", info: true, v: ["2", "0", "0"] },
+      // Near-duplicate of the line above; the first row a phone can
+      // afford to give up.
+      { label: "Written exclusions", info: true, v: ["2", "0", "0"], mobileHide: true },
     ],
   },
   {
@@ -256,7 +283,14 @@ const DECISION: Array<{ title: string; rows: GridRow[] }> = [
 
 /* ── the conditions behind the number ────────────────────────────── */
 
-type Answer = { q: string; v: [string, string, string]; same?: boolean };
+type Answer = {
+  q: string;
+  v: [string, string, string];
+  same?: boolean;
+  /** Dropped below sm so the identical answer — the one the filter
+   *  collapses, which is the act's payoff — stays inside the fold. */
+  mobileHide?: boolean;
+};
 
 /** The instrument's own sections and prompts, v3, which is the version
  *  the example round answered. An identical answer is kept on screen
@@ -275,7 +309,7 @@ const TERMS: Array<{ title: string; differ: number; rows: Answer[] }> = [
         q: "Does the contract contain a rise and fall or cost escalation clause?",
         v: ["Yes", "No", "No"],
       },
-      { q: "Builder's margin applied to variations", v: ["18%", "15%", "20%"] },
+      { q: "Builder's margin applied to variations", v: ["18%", "15%", "20%"], mobileHide: true },
       { q: "Is your price fixed, rather than an estimate?", v: ["Yes", "Yes", "Yes"], same: true },
     ],
   },
@@ -320,6 +354,13 @@ const TERMS: Array<{ title: string; differ: number; rows: Answer[] }> = [
 export function ArchitectSubmissionsScene({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
+  // The portrait stage restacks every grid row, so the bands are taller
+  // and the waypoints move with them. Numeric forks only: the layout
+  // itself forks on max-sm classes.
+  const compact = useCompact();
+  const bandH = compact ? H_COMPACT : H;
+  const top = compact ? TOP_COMPACT : TOP;
+
   const { state, cursor, clicks } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
@@ -331,15 +372,17 @@ export function ArchitectSubmissionsScene({ active }: { active: boolean }) {
       // glide rather than after it: it has to reset to zero before it
       // can resolve, and the reset is invisible while the band is still
       // moving. It then settles a beat after the band does.
-      { set: { y: -TOP[1]! } },
+      { set: { y: -top[1]! } },
       { wait: 400 },
       { set: { counted: true } },
       { wait: 2600 },
 
       // Where the tenders differ, and the read across one row. The
       // travel from the label to the last column is the gesture the
-      // whole scene exists for.
-      { set: { y: -TOP[2]! } },
+      // whole scene exists for. On the portrait stage the restacked
+      // rows put the target row past the fold, so the stop slides 120
+      // deeper to hold it mid-view.
+      { set: { y: -(top[2]! + (compact ? 120 : 0)) } },
       { wait: 1100 },
       { move: "row" },
       { set: { hot: true } },
@@ -349,14 +392,16 @@ export function ArchitectSubmissionsScene({ active }: { active: boolean }) {
       { cursor: "hide" },
 
       // The decision grid, in two stops: the money and the programme,
-      // then the scope, delivery and the people underneath.
-      { set: { y: -TOP[3]!, hot: false } },
+      // then the scope, delivery and the people underneath. The second
+      // stop reaches further on the portrait stage, where the restacked
+      // rows spend the height faster.
+      { set: { y: -top[3]!, hot: false } },
       { wait: 2400 },
-      { set: { y: -(TOP[3]! + 250) } },
+      { set: { y: -(top[3]! + (compact ? 430 : 250)) } },
       { wait: 2300 },
 
       // The conditions, and the one control the pointer touches.
-      { set: { y: -TOP[4]! } },
+      { set: { y: -top[4]! } },
       { wait: 1000 },
       { move: "diffonly" },
       { wait: 200 },
@@ -386,20 +431,20 @@ export function ArchitectSubmissionsScene({ active }: { active: boolean }) {
             animate={{ y: state.y }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div style={{ height: H[0] }}>
+            <div style={{ height: bandH[0] }}>
               <HeadBand />
             </div>
-            <div style={{ height: H[1] }}>
+            <div style={{ height: bandH[1] }}>
               <ScheduleBand counted={state.counted} />
             </div>
-            <div style={{ height: H[2] }}>
+            <div style={{ height: bandH[2] }}>
               <DifferBand hot={state.hot} />
             </div>
-            <div style={{ height: H[3] }}>
+            <div style={{ height: bandH[3] }}>
               <DecisionBand />
             </div>
-            <div style={{ height: H[4] }}>
-              <TermsBand diffOnly={state.diffOnly} />
+            <div style={{ height: bandH[4] }}>
+              <TermsBand diffOnly={state.diffOnly} compact={compact} />
             </div>
           </motion.div>
 
@@ -485,7 +530,10 @@ function ScheduleBand({ counted }: { counted: boolean }) {
             </span>
             . That is where the price difference lives.
           </p>
-          <div className="mt-1.5 h-[22px] overflow-hidden flex flex-wrap items-center gap-x-3 gap-y-1">
+          {/* Redundant on mobile: every cell below prints its state
+              beside its dot, and one wrapped legend line would be
+              clipped to two entries by the fixed height anyway. */}
+          <div className="mt-1.5 h-[22px] overflow-hidden flex flex-wrap items-center gap-x-3 gap-y-1 max-sm:hidden">
             {(Object.keys(SCHED) as SchedState[]).map((k) => (
               <span key={k} className="inline-flex items-center gap-1.5 text-[8.5px]" style={{ color: C.dim }}>
                 <span className="size-[5px] rounded-full" style={{ background: SCHED[k].dot }} />
@@ -494,7 +542,12 @@ function ScheduleBand({ counted }: { counted: boolean }) {
             ))}
           </div>
         </div>
-        <Toggle on>Differences first</Toggle>
+        {/* Static here (the animated one lives on the conditions band),
+            so on mobile it hands its width to the count sentence, which
+            is this stop's payoff. */}
+        <Toggle on className="max-sm:hidden">
+          Differences first
+        </Toggle>
       </div>
 
       <NameRow />
@@ -502,16 +555,14 @@ function ScheduleBand({ counted }: { counted: boolean }) {
       {SCHEDULE.map((row) => (
         <div
           key={row.label}
-          className="border-t"
-          style={{
-            borderColor: C.line,
-            display: "grid",
-            gridTemplateColumns: COLS,
-            background: C.tealWash,
-            height: row.sub ? 39 : 22,
-          }}
+          className={
+            "border-t max-sm:content-center " +
+            (row.sub ? "h-[39px] max-sm:h-[52px] " : "h-[22px] max-sm:h-10 ") +
+            GRID
+          }
+          style={{ borderColor: C.line, background: C.tealWash }}
         >
-          <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+          <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0 max-sm:col-span-3">
             <span className="mt-[4px] size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
             <span className="min-w-0">
               <span className="block truncate text-[9.5px] font-medium leading-[1.35]" style={{ color: C.ink }}>
@@ -527,7 +578,9 @@ function ScheduleBand({ counted }: { counted: boolean }) {
           {row.cells.map((cell, j) => (
             <div
               key={j}
-              className="min-w-0 border-l px-2 flex items-center"
+              className={
+                "min-w-0 border-l px-2 flex items-center" + (j === 0 ? " max-sm:border-l-0" : "")
+              }
               style={{ borderColor: C.line }}
             >
               <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -575,16 +628,19 @@ function DifferBand({ hot }: { hot: boolean }) {
       </div>
 
       <div
-        className="h-[22px] border-t items-center"
-        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+        className={"h-[22px] max-sm:h-8 border-t items-center " + GRID}
+        style={{ borderColor: C.line }}
       >
-        <span className="px-3 text-[8.5px] tracking-[0.16em] uppercase truncate" style={{ color: C.dim }}>
+        <span className="px-3 text-[8.5px] tracking-[0.16em] uppercase truncate max-sm:hidden" style={{ color: C.dim }}>
           Scope item
         </span>
-        {TENDERS.map((t) => (
+        {TENDERS.map((t, i) => (
           <span
             key={t.name}
-            className="min-w-0 border-l px-2 text-[8.5px] tracking-[0.16em] uppercase truncate"
+            className={
+              "min-w-0 border-l px-2 text-[8.5px] tracking-[0.16em] uppercase truncate max-sm:whitespace-normal max-sm:line-clamp-2" +
+              (i === 0 ? " max-sm:border-l-0" : "")
+            }
             style={{ borderColor: C.line, color: C.dim }}
           >
             {t.name}
@@ -597,11 +653,9 @@ function DifferBand({ hot }: { hot: boolean }) {
         return (
           <div
             key={row.trade}
-            className="h-[22px] border-t transition-colors duration-200"
+            className={"h-[22px] max-sm:h-10 max-sm:content-center border-t transition-colors duration-200 " + GRID}
             style={{
               borderColor: C.line,
-              display: "grid",
-              gridTemplateColumns: COLS,
               // Every row on this table differs, so every row carries the
               // tint. The read-across is a ring around the whole row, so
               // the three answers come up together rather than one cell
@@ -612,7 +666,7 @@ function DifferBand({ hot }: { hot: boolean }) {
           >
             <div
               data-cursor={i === TARGET ? "row" : undefined}
-              className="flex items-center gap-1.5 px-3 min-w-0"
+              className="flex items-center gap-1.5 px-3 min-w-0 max-sm:col-span-3"
             >
               <span className="size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
               <span
@@ -628,7 +682,9 @@ function DifferBand({ hot }: { hot: boolean }) {
                 <div
                   key={j}
                   data-cursor={i === TARGET && j === 2 ? "rowend" : undefined}
-                  className="min-w-0 border-l px-2 flex items-center"
+                  className={
+                    "min-w-0 border-l px-2 flex items-center" + (j === 0 ? " max-sm:border-l-0" : "")
+                  }
                   style={{ borderColor: C.line }}
                 >
                   <span
@@ -682,24 +738,32 @@ function DecisionBand() {
       </div>
 
       <div
-        className="h-[36px] border-t"
-        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+        className={"h-[36px] max-sm:h-[46px] border-t " + GRID}
+        style={{ borderColor: C.line }}
       >
-        <span />
-        {TENDERS.map((t) => (
+        <span className="max-sm:hidden" />
+        {TENDERS.map((t, i) => (
           <div
             key={t.name}
-            className="min-w-0 border-l px-2 flex items-center gap-1.5"
+            className={
+              "min-w-0 border-l px-2 flex items-center gap-1.5" + (i === 0 ? " max-sm:border-l-0" : "")
+            }
             style={{ borderColor: C.line }}
           >
+            {/* On a ~100px mobile column the disc's 24px is the
+                difference between the name wrapping whole and the name
+                losing its tail; the initials repeat what the name says. */}
             <span
-              className="size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7.5px] font-bold"
+              className="size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7.5px] font-bold max-sm:hidden"
               style={{ background: C.tealMuted, color: C.tealInk }}
             >
               {t.mono}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-[9.5px] font-semibold leading-tight" style={{ color: C.ink }}>
+              <span
+                className="block truncate max-sm:whitespace-normal max-sm:line-clamp-2 text-[9.5px] font-semibold leading-tight"
+                style={{ color: C.ink }}
+              >
                 {t.name}
               </span>
               <span className="block truncate text-[8.5px] tabular-nums" style={{ color: C.muted }}>
@@ -724,10 +788,14 @@ function DecisionBand() {
             return (
               <div
                 key={row.label}
-                className="h-[34px] border-t"
-                style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+                className={
+                  "h-[34px] max-sm:h-auto max-sm:py-1 border-t " +
+                  GRID +
+                  (row.mobileHide ? " max-sm:hidden" : "")
+                }
+                style={{ borderColor: C.line }}
               >
-                <div className="flex items-center gap-1 px-3 min-w-0">
+                <div className="flex items-center gap-1 px-3 min-w-0 max-sm:col-span-3">
                   <span className="text-[9px] leading-[1.35] line-clamp-2" style={{ color: C.dim }}>
                     {row.label}
                   </span>
@@ -738,11 +806,16 @@ function DecisionBand() {
                   return (
                     <div
                       key={j}
-                      className="min-w-0 border-l px-2 flex items-center"
+                      className={
+                        "min-w-0 border-l px-2 flex items-center" + (j === 0 ? " max-sm:border-l-0" : "")
+                      }
                       style={{ borderColor: C.line, background: win ? TONE.good.bg : undefined }}
                     >
+                      {/* Three lines on mobile, because the experience
+                          answers run 54 characters and a third of 303px
+                          holds ~20 a line. */}
                       <span
-                        className="block text-[9px] leading-[1.35] line-clamp-2"
+                        className="block text-[9px] leading-[1.35] line-clamp-2 max-sm:line-clamp-3"
                         style={win ? { color: TONE.good.text, fontWeight: 600 } : { color: C.ink }}
                       >
                         {value}
@@ -768,7 +841,7 @@ function DecisionBand() {
 
 /* ── band 5 · the conditions behind the number ───────────────────── */
 
-function TermsBand({ diffOnly }: { diffOnly: boolean }) {
+function TermsBand({ diffOnly, compact }: { diffOnly: boolean; compact: boolean }) {
   return (
     <Card className="h-full overflow-hidden">
       <div className="flex items-start justify-between gap-3 px-3 pt-2.5 pb-2">
@@ -779,8 +852,11 @@ function TermsBand({ diffOnly }: { diffOnly: boolean }) {
           >
             The conditions behind the number
           </p>
+          {/* Beside the toggle — which must stay, the pointer clicks it —
+              this would wrap to four lines and clip mid-sentence on
+              mobile. Secondary prose; the section titles carry it. */}
           <p
-            className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[60ch]"
+            className="mt-1 h-[43px] overflow-hidden text-[9.5px] leading-[1.5] max-w-[60ch] max-sm:hidden"
             style={{ color: C.muted }}
           >
             Ground risk, insurance, programme, payments, contract terms and the team. Answered by
@@ -817,24 +893,22 @@ function TermsBand({ diffOnly }: { diffOnly: boolean }) {
           {section.rows.map((row) => (
             <motion.div
               key={row.q}
-              className="overflow-hidden"
+              className={"overflow-hidden" + (row.mobileHide ? " max-sm:hidden" : "")}
               initial={false}
               animate={{
-                height: row.same && diffOnly ? 0 : 37,
+                height: row.same && diffOnly ? 0 : compact ? 52 : 37,
                 opacity: row.same && diffOnly ? 0 : 1,
               }}
               transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
             >
               <div
-                className="h-[36px] border-t"
+                className={"h-[36px] max-sm:h-[51px] max-sm:content-center border-t " + GRID}
                 style={{
                   borderColor: C.line,
-                  display: "grid",
-                  gridTemplateColumns: COLS,
                   background: row.same ? undefined : C.tealWash,
                 }}
               >
-                <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+                <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0 max-sm:col-span-3">
                   <span
                     className="mt-[4px] size-1.5 rounded-full shrink-0"
                     style={{ background: row.same ? "transparent" : C.teal }}
@@ -849,7 +923,9 @@ function TermsBand({ diffOnly }: { diffOnly: boolean }) {
                 {row.v.map((value, j) => (
                   <div
                     key={j}
-                    className="min-w-0 border-l px-2 py-[4px]"
+                    className={
+                      "min-w-0 border-l px-2 py-[4px]" + (j === 0 ? " max-sm:border-l-0" : "")
+                    }
                     style={{ borderColor: C.line }}
                   >
                     <span className="block text-[9px] leading-[1.45] font-medium line-clamp-2" style={{ color: C.ink }}>
@@ -901,14 +977,19 @@ function TermsBand({ diffOnly }: { diffOnly: boolean }) {
 function NameRow() {
   return (
     <div
-      className="h-[22px] border-t items-center"
-      style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+      className={"h-[22px] max-sm:h-8 border-t items-center " + GRID}
+      style={{ borderColor: C.line }}
     >
-      <span />
-      {TENDERS.map((t) => (
+      {/* The label column does not exist on mobile: the three names
+          take the thirds and wrap to two lines rather than truncate. */}
+      <span className="max-sm:hidden" />
+      {TENDERS.map((t, i) => (
         <span
           key={t.name}
-          className="min-w-0 border-l px-2 text-[9px] font-semibold truncate"
+          className={
+            "min-w-0 border-l px-2 text-[9px] font-semibold truncate max-sm:whitespace-normal max-sm:line-clamp-2" +
+            (i === 0 ? " max-sm:border-l-0" : "")
+          }
           style={{ borderColor: C.line, color: C.muted }}
         >
           {t.name}
@@ -924,15 +1005,21 @@ function Toggle({
   children,
   on,
   cursorKey,
+  className = "",
 }: {
   children: React.ReactNode;
   on?: boolean;
   cursorKey?: string;
+  /** Mobile-only visibility, e.g. "max-sm:hidden" for the static one. */
+  className?: string;
 }) {
   return (
     <span
       data-cursor={cursorKey}
-      className="shrink-0 inline-flex items-center gap-1.5 h-[22px] px-2 rounded-full border text-[9px] whitespace-nowrap transition-colors duration-200"
+      className={
+        "shrink-0 inline-flex items-center gap-1.5 h-[22px] px-2 rounded-full border text-[9px] whitespace-nowrap transition-colors duration-200 " +
+        className
+      }
       style={{
         borderColor: on ? C.tealLine : C.line2,
         background: on ? C.tealWash : "transparent",

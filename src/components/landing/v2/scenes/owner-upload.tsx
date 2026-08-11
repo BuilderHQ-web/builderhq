@@ -129,7 +129,7 @@ export function OwnerUploadScene({ active }: { active: boolean }) {
                 transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
               >
                 <ScanSheet />
-                <div className="mt-4 flex items-center gap-1.5">
+                <div className="mt-3 sm:mt-4 flex items-center gap-1.5">
                   {[0, 1, 2].map((i) => (
                     <motion.span
                       key={i}
@@ -297,7 +297,7 @@ function ScanSheet() {
         style={{ background: "radial-gradient(circle, rgba(0,212,200,0.28), transparent 70%)" }}
       />
       <div
-        className="relative w-[168px] h-[212px] rounded-[12px] border overflow-hidden px-4 py-4"
+        className="relative w-[168px] h-[186px] sm:h-[212px] rounded-[12px] border overflow-hidden px-4 py-4"
         style={{
           borderColor: C.line3,
           background: "linear-gradient(180deg, #ffffff, rgba(250,248,243,0.96))",

@@ -139,7 +139,7 @@ export function BuilderStandoutScene({ active }: { active: boolean }) {
         <div className="shrink-0 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Kicker icon={ScrollText}>The read, in six dimensions</Kicker>
-            <div className="mt-2 flex items-center gap-2 min-w-0">
+            <div className="mt-1.5 sm:mt-2 flex items-center gap-2 min-w-0">
               <span
                 className="shrink-0 size-[26px] rounded-full inline-flex items-center justify-center text-[9.5px] font-bold"
                 style={{ background: MONO, color: C.paper }}
@@ -149,9 +149,13 @@ export function BuilderStandoutScene({ active }: { active: boolean }) {
               <span className="text-[13px] font-semibold truncate" style={{ color: C.ink }}>
                 Meridian Building Co
               </span>
-              <Pill tone="ink">Submitted</Pill>
+              {/* At 303px the pill would truncate the builder's name to
+                  half; the name is the identity, the pill is status. */}
+              <span className="max-sm:hidden sm:contents">
+                <Pill tone="ink">Submitted</Pill>
+              </span>
             </div>
-            <p className="mt-1.5 text-[9.5px] truncate" style={{ color: C.dim }}>
+            <p className="mt-1.5 text-[9.5px] truncate max-sm:hidden" style={{ color: C.dim }}>
               $753,500 inc GST · fully priced, no allowances · 34 weeks
             </p>
           </div>
@@ -325,7 +329,7 @@ function DimensionRow({
           </span>
         </div>
         <span
-          className="mt-1.5 block h-[5px] w-full overflow-hidden rounded-full"
+          className="mt-1 sm:mt-1.5 block h-[5px] w-full overflow-hidden rounded-full"
           style={{ background: C.line }}
         >
           <motion.span
@@ -361,7 +365,7 @@ function DimensionRow({
 function WorkingPanel() {
   return (
     <div
-      className="mt-2 rounded-[3px] border px-3 py-2.5"
+      className="mt-1.5 sm:mt-2 rounded-[3px] border px-2.5 sm:px-3 py-2 sm:py-2.5"
       style={{ borderColor: C.line, background: C.wash }}
     >
       <p
@@ -388,7 +392,7 @@ function WorkingPanel() {
               </motion.p>
             ) : null}
             <motion.div
-              className="flex items-baseline gap-2.5 py-[2px]"
+              className="flex items-baseline gap-2.5 py-[2px] max-sm:py-px"
               style={
                 r.kind === "base"
                   ? { borderBottom: `1px solid ${C.line}`, paddingBottom: 5, marginBottom: 4 }
@@ -482,7 +486,9 @@ function CompareStrip({ open, conclusion }: { open: boolean; conclusion: boolean
                 }}
               />
             </span>
-            <p className="mt-0.5 text-[9px] truncate" style={{ color: C.dim }}>
+            {/* The counts are the verdict, so on the narrow stage the
+                line wraps instead of losing them to an ellipsis. */}
+            <p className="mt-0.5 text-[9px] truncate max-sm:whitespace-normal" style={{ color: C.dim }}>
               {t.price}
               {t.note ? ` · ${t.note}` : ""} · {t.reason}
             </p>

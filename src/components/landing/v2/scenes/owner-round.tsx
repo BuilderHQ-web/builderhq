@@ -160,7 +160,7 @@ export function OwnerRoundScene({ active }: { active: boolean }) {
               >
                 <Activity className="size-3 shrink-0" strokeWidth={2.2} /> What happens next
               </p>
-              <ol className="mt-2 grid grid-cols-3 gap-2">
+              <ol className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {STEPS.map((s) => (
                   <Step key={s.n} {...s} />
                 ))}
@@ -197,7 +197,7 @@ function BuilderRow({
   index: number;
 }) {
   return (
-    <WashRow className="px-3 py-2">
+    <WashRow className="px-3 py-1.5 sm:py-2">
       <div className="flex items-center gap-2.5">
         <Avatar txt={initials} size={30} />
         <div className="min-w-0 flex-1">

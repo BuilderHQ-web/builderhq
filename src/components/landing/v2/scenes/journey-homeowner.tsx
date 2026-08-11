@@ -120,6 +120,7 @@ import {
   SectionTag,
   TealBtn,
   TONE,
+  useCompact,
   VerifyChip,
   WashRow,
 } from "./kit";
@@ -322,6 +323,31 @@ const APPROVAL_LINES: Array<{ label: string; plain: string; cite: string; gap?: 
  *           column runs out and leaves a band of empty canvas.
  */
 const SCOPE_Y = { settle: -50, middle: -260, bottom: -520 } as const;
+
+/**
+ * The same three waypoints on the portrait mobile stage (<640px), where
+ * the register's usable measure is ~279px and its viewport ~180px
+ * rather than ~285px. The arithmetic, from the row heights in this
+ * file and kit.tsx:
+ *
+ *   settle  unchanged at -50. Collapsed division headers truncate to a
+ *           single line on every stage, so the 31px row + 10px gap
+ *           pitch ABOVE the opened division is identical and the lift
+ *           that puts the approvals header at the top still lands.
+ *   middle  -310. Below the opened division the column stretches: the
+ *           two approval lines' plain sentences (~90-95 chars at 10px)
+ *           wrap 1 → 2 lines (+15px each) and the amber gap advisory
+ *           wraps 1 → 2 lines (+13px), so the open division runs ~215px
+ *           against ~167px on desktop and everything under it sits
+ *           ~50px lower: -260 - 50 = -310.
+ *   bottom  -600. The full column is 16 collapsed rows × 31 + the open
+ *           division ~215 + 16 gaps × 10 ≈ 870, and the mobile register
+ *           viewport is ~180, so the deepest offset that cannot run out
+ *           is ≈ -(870 - 180) = -690. -600 reads as far through the
+ *           list as desktop's -520 does and keeps ~90px in hand for
+ *           wrap estimates that come in short.
+ */
+const SCOPE_Y_COMPACT = { settle: -50, middle: -310, bottom: -600 } as const;
 
 /* ── screen three · the round ────────────────────────────────────── */
 
@@ -546,6 +572,13 @@ const OTHERS = [
 export function HomeownerJourney({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
+  // Numeric fork only (kit rule): the register wraps taller on the
+  // portrait stage, so its scroll offsets differ. The engine re-reads
+  // the script every render, and useCompact settles before the first
+  // scroll beat, so the fork is safe mid-loop.
+  const compact = useCompact();
+  const SY = compact ? SCOPE_Y_COMPACT : SCOPE_Y;
+
   const { state, cursor, clicks, cam } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
@@ -602,7 +635,7 @@ export function HomeownerJourney({ active }: { active: boolean }) {
       { wait: 350 },
       // Lift what was just opened to the top before reading it. Every
       // scroll in this film happens on a motionless camera.
-      { set: { scopeY: SCOPE_Y.settle } },
+      { set: { scopeY: SY.settle } },
       { wait: 750 },
       // The scope act plays wide from end to end. A push onto the
       // citation cropped the register it is meant to prove, and the
@@ -613,9 +646,9 @@ export function HomeownerJourney({ active }: { active: boolean }) {
       { set: { cite: false } },
       // Two flicks rather than one long glide, because that is how a
       // register this long actually gets read.
-      { set: { scopeY: SCOPE_Y.middle } },
+      { set: { scopeY: SY.middle } },
       { wait: 700 },
-      { set: { scopeY: SCOPE_Y.bottom } },
+      { set: { scopeY: SY.bottom } },
       { wait: 700 },
       { move: "publish", ms: 600 },
       { set: { hot: "publish" } },
@@ -842,13 +875,13 @@ function UploadScreen({ s }: { s: S }) {
               transition={{ duration: 0.32, ease: EASE }}
             >
               <span
-                className="hidden sm:inline-flex size-10 items-center justify-center rounded-full"
+                className="inline-flex size-10 items-center justify-center rounded-full"
                 style={{ background: C.tealMuted, color: C.tealInk }}
               >
                 <Check className="size-5" strokeWidth={2.6} />
               </span>
               <p
-                className="mt-0 sm:mt-3.5 font-ui font-semibold text-[15px] sm:text-[16.5px]"
+                className="mt-2.5 sm:mt-3.5 font-ui font-semibold text-[15px] sm:text-[16.5px]"
                 style={{ color: C.ink }}
               >
                 Got it.
@@ -857,7 +890,11 @@ function UploadScreen({ s }: { s: S }) {
                 Pulled 14 details from your plans
               </p>
 
-              <div className="mt-4 hidden sm:block w-full max-w-[330px]">
+              {/* The pulled-details card IS this act's payoff, so it
+                  plays on the portrait stage too. Mobile "done" budget:
+                  header 40 + gap 12 + circle 40 + heading 29 + line 21
+                  + this card ~83 + Continue 46 ≈ 271 of the 340 box. */}
+              <div className="mt-3 sm:mt-4 w-full max-w-[330px]">
                 <WashRow className="px-3.5 py-2.5 text-left">
                   <p className="text-[11.5px] font-semibold" style={{ color: C.ink }}>
                     Single dwelling · Pascoe Vale, VIC
@@ -1220,8 +1257,16 @@ function RoundScreen({ s }: { s: S }) {
                         {b.line}
                       </p>
                     </div>
-                    <div className="hidden sm:flex shrink-0 items-center gap-1.5">
-                      <VerifyChip label="ABN" />
+                    {/* Verification is this act's claim ("checked
+                        before they price"), so the chips survive the
+                        portrait stage. One chip, not two: at 303px the
+                        pair leaves ~118px for the name column and
+                        truncates "Meridian Building Co"; the Licence
+                        chip alone leaves ~163px and every name fits. */}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="hidden sm:inline-flex">
+                        <VerifyChip label="ABN" />
+                      </span>
                       <VerifyChip label="Licence" />
                     </div>
                   </div>
@@ -1321,7 +1366,16 @@ function TendersScreen({ s }: { s: S }) {
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-[8px] uppercase tracking-[0.16em]" style={{ color: C.dim }}>
+                  {/* At 303px this ~114px label steals the name column
+                      ("Meridian Building Co" truncates) and pushes the
+                      three cards past the height budget. It repeats on
+                      every card and again on the evaluation, so on
+                      mobile the price stands alone: 3 cards × 63 + two
+                      12px gaps ≈ 213 in a ~243px slot. */}
+                  <p
+                    className="max-sm:hidden text-[8px] uppercase tracking-[0.16em]"
+                    style={{ color: C.dim }}
+                  >
                     Tender price inc GST
                   </p>
                   <p
@@ -1522,7 +1576,14 @@ function CompareScreen({ s }: { s: S }) {
               >
                 The decision grid
               </p>
-              <p className="mt-2 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+              {/* One line on mobile: at ~275px this wraps to two,
+                  which inside the fixed 306px band would push the last
+                  grid row out of the card's clip. The band height and
+                  its AT waypoint stay untouched. */}
+              <p
+                className="mt-2 text-[9px] leading-[1.45] line-clamp-1 sm:line-clamp-2"
+                style={{ color: C.muted }}
+              >
                 Every row is the builders&apos; own answers, lined up. A teal cell holds the
                 strongest position on that line.
               </p>
@@ -1612,7 +1673,14 @@ function CompareScreen({ s }: { s: S }) {
               </p>
             </div>
             <div className="px-3.5 py-2">
-              <p className="text-[8px] uppercase tracking-[0.16em]" style={{ color: C.dim }}>
+              {/* Both asks wrap to two clamped lines at ~256px, which
+                  costs ~26px inside the fixed 158px band; this scoping
+                  label is the tertiary row that pays for them. Band
+                  height and AT.agenda stay untouched. */}
+              <p
+                className="max-sm:hidden text-[8px] uppercase tracking-[0.16em]"
+                style={{ color: C.dim }}
+              >
                 For the round
               </p>
               <ol className="mt-1.5 flex flex-col gap-1.5">
@@ -1869,7 +1937,16 @@ function TenderBand({
             <p className="mt-0.5 text-[10.5px] font-semibold leading-snug" style={{ color: C.ink }}>
               {FLAG.label}
             </p>
-            <p className="mt-1 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+            {/* The panel's 85px reveal is budgeted for a one-line
+                detail (desktop): word 10 + label 13 + detail 13 + ask
+                26 + margins/padding ≈ 84. At ~257px the detail wraps to
+                two lines and the ask's second line would clip
+                mid-glyph, so the detail truncates instead — the ask is
+                the line the act exists to show. */}
+            <p
+              className="mt-1 text-[9px] leading-[1.45] line-clamp-1 sm:line-clamp-2"
+              style={{ color: C.muted }}
+            >
               {FLAG.detail}
             </p>
             <p className="mt-1 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
@@ -1928,7 +2005,7 @@ function AwardScreen() {
           screen so it reads as the consequence of the press rather than
           as furniture that was already there. */}
       <motion.div
-        className="shrink-0 flex items-center gap-3 rounded-lg border px-3.5 py-3"
+        className="shrink-0 flex items-center gap-3 rounded-lg border px-3.5 py-2.5 sm:py-3"
         style={{ borderColor: TONE.good.border, background: TONE.good.bg }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1987,7 +2064,7 @@ function AwardScreen() {
           34 weeks · Fully priced, no allowances
         </p>
 
-        <div className="mt-3 border-t pt-2.5" style={{ borderColor: C.line }}>
+        <div className="mt-2 sm:mt-3 border-t pt-2 sm:pt-2.5" style={{ borderColor: C.line }}>
           <div className="flex items-center gap-2.5" style={{ height: 16 }}>
             <span
               className="w-[92px] sm:w-[118px] shrink-0 truncate text-[9.5px] font-semibold"
@@ -2030,8 +2107,12 @@ function AwardScreen() {
           taken stay Submitted: declining them is a separate choice the
           owner makes inside the award dialog. */}
       <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col gap-2">
+        {/* Mobile budget: banner ~85 + awarded card ~185 + two 12px
+            gaps ≈ 294 of 340, leaving ~46 here. Hiding this tertiary
+            note is what lets the first leftover tender's price row
+            land whole above the fade instead of a crushed sliver. */}
         <motion.p
-          className="shrink-0 text-[9.5px] leading-[13px]"
+          className="max-sm:hidden shrink-0 text-[9.5px] leading-[13px]"
           style={{ color: C.dim }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

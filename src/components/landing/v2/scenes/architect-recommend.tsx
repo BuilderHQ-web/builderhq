@@ -111,19 +111,23 @@ export function ArchitectRecommendScene({ active }: { active: boolean }) {
               className={"px-2.5 py-1.5 min-w-0 " + (i ? "border-l" : "")}
               style={{ borderColor: C.line }}
             >
+              {/* A ~100px mobile cell cannot hold these on one line, and
+                  an ellipsis through "inc GST" or a price is worse than a
+                  wrap; the sub line goes entirely rather than showing a
+                  price cut in half. */}
               <p
-                className="text-[8px] uppercase tracking-[0.11em] truncate"
+                className="text-[8px] uppercase tracking-[0.11em] truncate max-sm:whitespace-normal max-sm:line-clamp-2"
                 style={{ color: C.dim }}
               >
                 {s.label}
               </p>
               <p
-                className="mt-0.5 font-ui font-semibold text-[17px] leading-none tabular-nums truncate"
+                className="mt-0.5 font-ui font-semibold text-[17px] max-sm:text-[15px] leading-none tabular-nums truncate"
                 style={{ color: C.ink }}
               >
                 {s.value}
               </p>
-              <p className="mt-1 text-[8.5px] leading-none truncate" style={{ color: C.muted }}>
+              <p className="mt-1 text-[8.5px] leading-none truncate max-sm:hidden" style={{ color: C.muted }}>
                 {s.sub}
               </p>
             </div>
@@ -149,7 +153,10 @@ export function ArchitectRecommendScene({ active }: { active: boolean }) {
                 </p>
                 <p className="mt-0.5 text-[10.5px] leading-tight truncate tabular-nums" style={{ color: C.muted }}>
                   $753,500 inc GST
-                  <span style={{ color: C.dim }}> · 36 weeks · keys Jul – Aug 2027</span>
+                  {/* Beside the pill the mobile line holds ~150px: the
+                      price survives whole, the programme tail does not,
+                      and a price cut mid-figure is the one crime here. */}
+                  <span className="max-sm:hidden" style={{ color: C.dim }}> · 36 weeks · keys Jul – Aug 2027</span>
                 </p>
               </div>
               <span className="shrink-0">
@@ -160,8 +167,11 @@ export function ArchitectRecommendScene({ active }: { active: boolean }) {
               Fully priced, no allowances · No significant flags
             </p>
           </div>
+          {/* The practice's name is the record; squeezed beside the two
+              buttons it folds into 84px of drivel. On mobile it takes
+              the full width and the buttons drop to their own row. */}
           <div
-            className="flex items-center justify-between gap-2 border-t px-3 py-1.5"
+            className="flex max-sm:flex-wrap items-center justify-between gap-2 border-t px-3 py-1.5"
             style={{ borderColor: C.line }}
           >
             <p
@@ -174,7 +184,7 @@ export function ArchitectRecommendScene({ active }: { active: boolean }) {
               </span>{" "}
               with BuilderHQ
             </p>
-            <span className="flex shrink-0 items-center gap-1.5">
+            <span className="flex shrink-0 items-center gap-1.5 max-sm:ml-auto">
               <GhostBtn cursorKey="shortlist" hot={state.rec || state.hot === "shortlist"}>
                 <Star className="size-3 shrink-0" strokeWidth={2.2} fill={state.rec ? "currentColor" : "none"} />
                 {state.rec ? "Shortlisted" : "Shortlist"}
@@ -206,7 +216,9 @@ export function ArchitectRecommendScene({ active }: { active: boolean }) {
                 Share the project
               </GhostBtn>
             </div>
-            <p className="mt-1.5 text-[9.5px] leading-[1.5] line-clamp-2" style={{ color: C.muted }}>
+            {/* Secondary prose, and the 35px that decide whether the
+                seat row — the payoff — clears the mobile fold. */}
+            <p className="mt-1.5 text-[9.5px] leading-[1.5] line-clamp-2 max-sm:hidden" style={{ color: C.muted }}>
               Give your client a seat at the round. A seat sees the project and the evaluation; a
               Deciding seat can also shortlist and award.
             </p>

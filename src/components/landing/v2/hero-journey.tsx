@@ -91,7 +91,7 @@ function Frame({ role }: { role: Role }) {
   const Journey = JOURNEY[role];
 
   return (
-    <div ref={box} className="relative w-full max-w-[94%] sm:max-w-[560px] lg:max-w-[660px]">
+    <div ref={box} className="relative w-full sm:max-w-[560px] lg:max-w-[660px]">
       {/* Role-hued bloom behind the frame — re-lights per lens. */}
       <div
         aria-hidden
@@ -116,7 +116,9 @@ function Frame({ role }: { role: Role }) {
           className="relative flex items-center px-4 h-10 sm:h-11 border-b"
           style={{ borderColor: "rgba(24,34,44,0.08)", background: "#fbfaf6" }}
         >
-          <span className="flex items-center gap-1.5" aria-hidden>
+          {/* Traffic lights are a desktop browser's furniture; a phone
+              shows only the address pill, so the mock does too. */}
+          <span className="hidden sm:flex items-center gap-1.5" aria-hidden>
             <span className="size-[9px] rounded-full bg-[#f6b9b3]" />
             <span className="size-[9px] rounded-full bg-[#f3d9a4]" />
             <span className="size-[9px] rounded-full bg-[#bfe3c0]" />
@@ -131,28 +133,21 @@ function Frame({ role }: { role: Role }) {
         </div>
 
         {/* One height for the whole session, so the frame never resizes
-            under the reader and the pointer's coordinates stay honest. */}
+            under the reader and the pointer's coordinates stay honest.
+
+            A phone used to get 270px of a 460px scene, cropped from the
+            top with a fade over the wound. That read as a broken layout,
+            not a deliberate crop, because the acts kept playing below
+            the cut. So on a phone the frame is now portrait — the shape
+            a phone screen actually is — and the scene gets ALL of it:
+            every screen composes itself for this box with max-sm rules
+            rather than being amputated by it. */}
         <div
-          className="relative h-[max(250px,calc(100svh-540px))] sm:h-[476px] lg:h-[528px] overflow-hidden"
+          data-stage="hero"
+          className="relative h-[clamp(360px,calc(100svh-330px),446px)] sm:h-[476px] lg:h-[528px] overflow-hidden"
           style={{ background: C.canvas }}
         >
-          {/* A phone gives this box about 270px, which is not enough
-              room for a screen designed around 480: the scenes that pin
-              a bar to their own foot were landing it on top of their own
-              content. So on a phone the scene keeps its real height and
-              the frame crops it from the top, which is what looking at a
-              screenshot of a taller screen actually looks like. The fade
-              below marks the crop as deliberate. */}
-          <div className="absolute inset-x-0 top-0 h-[460px] sm:relative sm:h-full">
-            <Journey active={active} />
-          </div>
-
-          {/* Mobile keeps the deliberate bottom peek. */}
-          <div
-            aria-hidden
-            className="sm:hidden absolute bottom-0 inset-x-0 h-14 pointer-events-none"
-            style={{ background: `linear-gradient(180deg, rgba(244,241,234,0), ${C.canvas})` }}
-          />
+          <Journey active={active} />
         </div>
       </div>
     </div>

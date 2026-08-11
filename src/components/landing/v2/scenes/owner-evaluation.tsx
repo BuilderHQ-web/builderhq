@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 
 import { SceneCursor, useSceneScript } from "../scene-motion";
-import { C, TONE, Card, Frame, Kicker, ListFade } from "./kit";
+import { C, TONE, Card, Frame, Kicker, ListFade, useCompact } from "./kit";
 
 type Hot = "score" | "flag" | null;
 type S = {
@@ -106,32 +106,46 @@ const NAV_TOP = 136;
  *  This is the app's own `scroll-mt-28`, at scene scale. */
 const NAV_H = 36;
 
+/** The flag panel's animated height. On the portrait stage its detail
+ *  and ask lines wrap to two, so the compact panel is taller — and the
+ *  open corten card grows by exactly the same amount. */
+const FLAG_OPEN = 85;
+const FLAG_OPEN_COMPACT = 112;
+const CORTEN_OPEN_COMPACT = H.corten + FLAG_OPEN_COMPACT;
+
 /**
  * Where each section's top sits, measured with both tender cards
  * already open, which is the state the script leaves them in before it
- * scrolls past them.
+ * scrolls past them — folded into the waypoint each section resolves
+ * to. Parameterised on the corten card's open height (taller on the
+ * compact stage) and a per-tender extra push: on a 340px-tall viewport
+ * the two acts that happen INSIDE a card need the card scrolled a
+ * little further, so the dimensions and the flag panel land above the
+ * bottom fade rather than under it. Desktop passes zero push and the
+ * original height, so its waypoints are bit-identical to before.
  */
-const TOP = (() => {
+const geo = (cortenOpen: number, push: { meridian: number; corten: number }) => {
   const overview = H.head + GAP;
   const money = overview + H.overview + GAP;
   const meridian = money + H.money + GAP;
   const corten = meridian + H.meridianOpen + GAP;
-  const grid = corten + H.cortenOpen + GAP;
+  const grid = corten + cortenOpen + GAP;
   const differ = grid + H.grid + GAP;
   const agenda = differ + H.differ + GAP;
-  return { overview, money, meridian, corten, grid, differ, agenda };
-})();
+  return {
+    overview: { y: NAV_H - overview, sec: 1 },
+    money: { y: NAV_H - money, sec: 1 },
+    meridian: { y: NAV_H - meridian - push.meridian, sec: 2 },
+    corten: { y: NAV_H - corten - push.corten, sec: 2 },
+    grid: { y: NAV_H - grid, sec: 3 },
+    differ: { y: NAV_H - differ, sec: 3 },
+    agenda: { y: NAV_H - agenda, sec: 5 },
+  } as const;
+};
 
-/** A waypoint: where the column sits and which pill that lights. */
-const AT = {
-  overview: { y: NAV_H - TOP.overview, sec: 1 },
-  money: { y: NAV_H - TOP.money, sec: 1 },
-  meridian: { y: NAV_H - TOP.meridian, sec: 2 },
-  corten: { y: NAV_H - TOP.corten, sec: 2 },
-  grid: { y: NAV_H - TOP.grid, sec: 3 },
-  differ: { y: NAV_H - TOP.differ, sec: 3 },
-  agenda: { y: NAV_H - TOP.agenda, sec: 5 },
-} as const;
+/** The waypoints, one set per stage. */
+const AT = geo(H.cortenOpen, { meridian: 0, corten: 0 });
+const AT_COMPACT = geo(CORTEN_OPEN_COMPACT, { meridian: 28, corten: 30 });
 
 /** The canvas at 92%, which is what the app's sticky nav sits on.
  *  Derived rather than written out, so the palette stays in kit.tsx. */
@@ -290,6 +304,9 @@ const CORTEN_ASKS = [
 export function OwnerEvaluationScene({ active }: { active: boolean }) {
   const root = React.useRef<HTMLDivElement>(null);
 
+  const compact = useCompact();
+  const at = compact ? AT_COMPACT : AT;
+
   const { state, cursor, clicks } = useSceneScript<S>({
     enabled: active,
     resting: RESTING,
@@ -300,14 +317,14 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
 
       // The overview. Everything else on the page is evidence; this is
       // the finding, so it gets the longest hold in the loop.
-      { set: AT.overview },
+      { set: at.overview },
       { wait: 4000 },
 
-      { set: AT.money },
+      { set: at.money },
       { wait: 1700 },
 
       // One tender, read in full. The pointer opens the working.
-      { set: AT.meridian },
+      { set: at.meridian },
       { wait: 900 },
       { move: "score" },
       { set: { hot: "score" } },
@@ -317,7 +334,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
       { wait: 1500 },
 
       // The cheapest tender, and what its price is hiding.
-      { set: AT.corten },
+      { set: at.corten },
       { wait: 900 },
       { move: "flag" },
       { set: { hot: "flag" } },
@@ -329,15 +346,15 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
       // The grid. Its teal cells arrive a row at a time, which is how a
       // reader sees that no single tender wins everything.
       { cursor: "hide" },
-      { set: AT.grid },
+      { set: at.grid },
       { wait: 700 },
       { set: { lit: true } },
       { wait: 2000 },
 
-      { set: AT.differ },
+      { set: at.differ },
       { wait: 1400 },
 
-      { set: AT.agenda },
+      { set: at.agenda },
       { wait: 1800 },
 
       // Out before the rewind. Two and a half thousand pixels travelling
@@ -512,7 +529,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
               score={47}
               flags={<span className="font-semibold" style={{ color: TONE.risk.text }}>2 significant flags</span>}
               attention="6 worth attention"
-              h={state.flag ? H.cortenOpen : H.corten}
+              h={state.flag ? (compact ? CORTEN_OPEN_COMPACT : H.cortenOpen) : H.corten}
               flagKey="flag"
               hot={state.hot === "flag"}
               openFlag={state.flag}
@@ -526,6 +543,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                   kicker="Side by side"
                   title="The decision grid"
                   lede="Every row is the builders' own answers, lined up. A teal cell holds the strongest position on that line."
+                  ledeHiddenCompact
                 />
                 <div className="px-3 py-1.5 border-b" style={{ borderColor: C.line }}>
                   <Row>
@@ -551,15 +569,18 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                 <div className="px-3 min-h-0">
                   {GRID.map((group, gi) => (
                     <div key={group.title}>
+                      {/* On the portrait stage the group labels give
+                          their ~60px back to the rows themselves, so
+                          every priced line sits above the bottom fade. */}
                       <p
-                        className="pt-2 pb-[3px] text-[8px] uppercase tracking-[0.18em]"
+                        className="max-sm:hidden pt-2 pb-[3px] text-[8px] uppercase tracking-[0.18em]"
                         style={{ color: C.dim }}
                       >
                         {group.title}
                       </p>
                       {group.rows.map((r, ri) => (
                         <div key={r.label} className="border-t" style={{ borderColor: C.line }}>
-                          <Row h={22}>
+                          <Row h={compact ? 20 : 22}>
                             <span className="truncate text-[9px] pr-1" style={{ color: C.muted }}>
                               {r.label}
                             </span>
@@ -588,7 +609,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                 </div>
 
                 <p
-                  className="mt-auto border-t px-3 py-1.5 text-[8px] leading-[1.3]"
+                  className="max-sm:hidden mt-auto border-t px-3 py-1.5 text-[8px] leading-[1.3]"
                   style={{ borderColor: C.line, color: C.dim }}
                 >
                   Open any builder&apos;s full evaluation to see the working behind their dimension
@@ -659,6 +680,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                   kicker="The pre-decision agenda"
                   title="Before you decide"
                   lede="7 questions this round leaves open. Put them to the builders, and the decision usually makes itself."
+                  ledeHiddenCompact
                   right={
                     <span
                       className="shrink-0 inline-flex items-center gap-1 rounded-[5px] px-2 py-[5px] text-[9px] font-semibold"
@@ -669,7 +691,7 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                     </span>
                   }
                 />
-                <div className="px-3.5 py-2">
+                <div className="px-3.5 py-1.5 sm:py-2">
                   <p className="flex items-center gap-1.5">
                     <Sparkles className="size-2.5" style={{ color: TONE.good.text }} />
                     <span
@@ -681,14 +703,18 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                   </p>
                   <Agenda items={ROUND_ASKS} from={1} tone="good" />
                 </div>
-                <div className="px-3.5 py-2 border-t" style={{ borderColor: C.line }}>
+                <div className="px-3.5 py-1.5 sm:py-2 border-t" style={{ borderColor: C.line }}>
                   <p className="flex items-center gap-1.5">
                     <Mono txt="CB" />
                     <span className="text-[9.5px] font-semibold" style={{ color: C.ink }}>
                       For Corten Build Co.
                     </span>
                   </p>
-                  <Agenda items={CORTEN_ASKS} from={3} tone="ink" />
+                  {/* Five questions wrap to ~280px of list on the
+                      portrait stage; three keep the block above the
+                      bottom fade. The numbering still says 3, 4, 5 of
+                      the agenda's 7, which stays honest. */}
+                  <Agenda items={compact ? CORTEN_ASKS.slice(0, 3) : CORTEN_ASKS} from={3} tone="ink" />
                 </div>
               </Card>
             </Band>
@@ -747,8 +773,11 @@ export function OwnerEvaluationScene({ active }: { active: boolean }) {
                   style={{ background: `linear-gradient(90deg, transparent, ${GLASS})` }}
                 />
               </div>
+              {/* Below sm the pill rail has ~130px left after the two
+                  buttons; giving this one back keeps the lit section
+                  pill on screen through most of the scroll. */}
               <span
-                className="shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-[3px] text-[8.5px] font-semibold"
+                className="max-sm:hidden shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-[3px] text-[8.5px] font-semibold"
                 style={{ borderColor: C.line2, color: C.muted }}
               >
                 <FileDown className="size-2.5" />
@@ -801,19 +830,23 @@ function Row({ children, h }: { children: React.ReactNode; h?: number }) {
   );
 }
 
-/** A card's header: kicker, display heading, one line of why. */
+/** A card's header: kicker, display heading, one line of why.
+ *  `ledeHiddenCompact` drops the lede below sm, for the two sections
+ *  whose row content otherwise cannot fit the portrait fold. */
 function SectionHead({
   icon,
   kicker,
   title,
   lede,
   right,
+  ledeHiddenCompact,
 }: {
   icon: React.ComponentProps<typeof Kicker>["icon"];
   kicker: string;
   title: string;
   lede: string;
   right?: React.ReactNode;
+  ledeHiddenCompact?: boolean;
 }) {
   return (
     <div className="px-3.5 pt-2.5 pb-2.5 border-b flex items-start gap-2" style={{ borderColor: C.line }}>
@@ -825,7 +858,12 @@ function SectionHead({
         >
           {title}
         </p>
-        <p className="mt-1.5 text-[9px] leading-[1.45] line-clamp-2" style={{ color: C.muted }}>
+        <p
+          className={
+            (ledeHiddenCompact ? "max-sm:hidden " : "") + "mt-1.5 text-[9px] leading-[1.45] line-clamp-2"
+          }
+          style={{ color: C.muted }}
+        >
           {lede}
         </p>
       </div>
@@ -895,6 +933,9 @@ function TenderCard({
   open?: boolean;
   openFlag?: boolean;
 }) {
+  // The flag panel's lines wrap to two on the narrow stage, so the
+  // animated reveal is taller there; the card's own `h` grows to match.
+  const compact = useCompact();
   return (
     <motion.div
       className="shrink-0"
@@ -1008,7 +1049,7 @@ function TenderCard({
         <motion.div
           className="overflow-hidden"
           initial={false}
-          animate={{ height: openFlag ? 85 : 0 }}
+          animate={{ height: openFlag ? (compact ? FLAG_OPEN_COMPACT : FLAG_OPEN) : 0 }}
           transition={OPEN}
         >
           <div

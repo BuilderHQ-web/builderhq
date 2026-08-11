@@ -155,6 +155,7 @@ import {
   TealBtn,
   VerifyChip,
   WashRow,
+  useCompact,
 } from "./kit";
 
 /* ── the state the script drives ─────────────────────────────────── */
@@ -617,12 +618,19 @@ function PrimaryBtn({
   );
 }
 
-/** The evaluation page's back link, and the pointer's way off it. */
-function BackRow({ hot }: { hot: boolean }) {
+/** The evaluation page's back link, and the pointer's way off it.
+ *  `className` exists for the tenders screen, which hides it on mobile:
+ *  the "back" press happens on the compare screen, where the row must
+ *  stay visible, but on the tenders screen it is 25px of chrome the
+ *  stacked cards need. */
+function BackRow({ hot, className = "" }: { hot: boolean; className?: string }) {
   return (
     <span
       data-cursor="back"
-      className="shrink-0 self-start inline-flex items-center gap-1.5 rounded px-1 -mx-1 text-[10px] transition-colors duration-200"
+      className={
+        "shrink-0 self-start inline-flex items-center gap-1.5 rounded px-1 -mx-1 text-[10px] transition-colors duration-200 " +
+        className
+      }
       style={{ color: hot ? C.tealInk : C.dim, background: hot ? C.tealWash : undefined }}
     >
       <ArrowLeft className="size-3 shrink-0" strokeWidth={2.2} />
@@ -648,7 +656,10 @@ function EvalNav({ sec, hot }: { sec: number; hot: string | null }) {
             <span
               key={label}
               data-cursor={`nav-${i}`}
-              className="shrink-0 rounded-full px-2 py-[4px] text-[9.5px] transition-colors duration-200"
+              // max-sm:px-1.5 buys the ~16px that keep "Side by side"
+              // (nav-3, a move-then-click target) clear of the right fade
+              // on the 303px measure.
+              className="shrink-0 rounded-full px-2 max-sm:px-1.5 py-[4px] text-[9.5px] transition-colors duration-200"
               style={
                 on
                   ? { color: TONE.good.text, background: TONE.good.bg, fontWeight: 600 }
@@ -685,26 +696,37 @@ function EvalNav({ sec, hot }: { sec: number; hot: string | null }) {
   );
 }
 
-/** The round strip at the head of the tenders screen. */
+/** The round strip at the head of the tenders screen. On mobile the
+ *  three columns become label-and-figure rows: at a third of 303px the
+ *  prices clip mid-glyph, and a cut price is the one thing this strip
+ *  must never show. The flags column stands down there too — it is the
+ *  strip's tertiary line, and its 33px belong to the tender cards. */
 function RoundStrip() {
   return (
-    <Card className="shrink-0 grid grid-cols-3 overflow-hidden">
+    <Card className="shrink-0 grid grid-cols-1 sm:grid-cols-3 overflow-hidden">
       {STRIP.map(([label, value, sub], i) => (
         <div
           key={label}
-          className={"min-w-0 px-3 py-2 " + (i ? "border-l" : "")}
+          className={
+            "min-w-0 px-3 py-2 max-sm:flex max-sm:items-baseline max-sm:gap-2 " +
+            (i === 2 ? "max-sm:hidden " : "") +
+            (i ? "border-t sm:border-t-0 sm:border-l" : "")
+          }
           style={{ borderColor: C.line }}
         >
           <p className="truncate text-[8px] uppercase tracking-[0.12em]" style={{ color: C.dim }}>
             {label}
           </p>
           <p
-            className="mt-1 truncate font-ui font-semibold text-[17px] leading-none tabular-nums"
+            className="mt-1 max-sm:mt-0 truncate font-ui font-semibold text-[17px] leading-none tabular-nums"
             style={{ color: C.ink }}
           >
             {value}
           </p>
-          <p className="mt-1 truncate text-[8.5px] leading-none" style={{ color: C.muted }}>
+          <p
+            className="max-sm:hidden mt-1 truncate text-[8.5px] leading-none"
+            style={{ color: C.muted }}
+          >
             {sub}
           </p>
         </div>
@@ -736,8 +758,11 @@ function UploadScreen({ s }: { s: S }) {
         >
           Upload your plans
         </p>
+        {/* Mobile: the drop zone's own label carries the instruction, and
+            the ~40px this paragraph costs is what keeps the scan sheet and
+            its "Pulled 14 details" line inside the 340px budget. */}
         <p
-          className="mt-1.5 line-clamp-2 max-w-[54ch] text-[10.5px] leading-[1.6]"
+          className="max-sm:hidden mt-1.5 line-clamp-2 max-w-[54ch] text-[10.5px] leading-[1.6]"
           style={{ color: C.muted }}
         >
           Drop in your architectural plans as a PDF. Our AI reads them and fills out your project
@@ -961,6 +986,15 @@ const OPEN_LINES: Array<{ label: string; plain: string; cite: string }> = [
  * show that there is a great deal more of it.
  */
 function ScopeScreen({ s }: { s: S }) {
+  const compact = useCompact();
+  /**
+   * The script's -140 was budgeted on the desktop measure. On the 277px
+   * mobile measure the two open plain sentences wrap 1 → 2 lines
+   * (2 × ~14.5px = +29), so the open earthworks division is ~29px taller
+   * and the desktop offset under-shoots by that much:
+   * -140 - 29 ≈ -170.
+   */
+  const y = compact && s.scopeY !== 0 ? -170 : s.scopeY;
   return (
     <>
       <div className="shrink-0 flex items-baseline justify-between gap-3">
@@ -982,7 +1016,7 @@ function ScopeScreen({ s }: { s: S }) {
         <motion.div
           className="flex flex-col gap-2"
           initial={false}
-          animate={{ y: s.scopeY }}
+          animate={{ y }}
           transition={SCROLL}
         >
           {DIVISIONS.map((d) => (
@@ -1059,8 +1093,14 @@ function WhoPricesScreen({ s }: { s: S }) {
           which wizard step this is, and the 24px it would cost are the
           24px that keep the invitation itself out from under the fade. */}
       <div className="relative flex-1 min-h-0 overflow-hidden">
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 max-sm:gap-2">
           <StepCard icon={Globe2} title="Who can tender" sub="Pick how builders come to this round.">
+            {/* The pair stays side by side on mobile — the binary choice IS
+                the act — but at 133px a column cannot also hold a two-line
+                sub, so the subs stand down inside the cards and Open's
+                helper line (the one the push is framed on) re-renders at
+                full width beneath the pair instead. Same copy, one column
+                of it. */}
             <div className="grid grid-cols-2 gap-2.5">
               {MODES.map((m) => (
                 <ModeOption
@@ -1074,6 +1114,12 @@ function WhoPricesScreen({ s }: { s: S }) {
                 />
               ))}
             </div>
+            <p
+              className="sm:hidden mt-2 line-clamp-2 text-[9.5px] leading-[1.5]"
+              style={{ color: C.dim }}
+            >
+              {MODES.find((m) => m.id === "open")?.sub}
+            </p>
           </StepCard>
 
           {/* Spots are an open-round idea, so this card is the product's
@@ -1097,7 +1143,7 @@ function WhoPricesScreen({ s }: { s: S }) {
                     {[2, 3, 4, 5].map((n) => (
                       <span
                         key={n}
-                        className="h-7 w-10 rounded-md border grid place-items-center text-[11.5px] font-ui font-semibold tabular-nums"
+                        className="h-7 max-sm:h-6 w-10 rounded-md border grid place-items-center text-[11.5px] font-ui font-semibold tabular-nums"
                         style={
                           n === 3
                             ? { borderColor: C.tealLine, background: C.tealWash, color: C.ink }
@@ -1132,8 +1178,17 @@ function WhoPricesScreen({ s }: { s: S }) {
                 product. They are left off here because at every frame
                 height the journey runs at they would land under the
                 fade, and 40px of height nobody can read is 40px the
-                invitation itself needs. */}
-            <InviteRow name="Brightwater Homes" detail="BuilderHQ builder" status="Invited" />
+                invitation itself needs. On mobile the row itself stands
+                down too: the count line above and this card's subtitle are
+                the two things that rewrite on the press, and they are what
+                the 340px budget keeps in shot. The row returns on the next
+                screen. */}
+            <InviteRow
+              name="Brightwater Homes"
+              detail="BuilderHQ builder"
+              status="Invited"
+              className="max-sm:hidden"
+            />
           </StepCard>
         </div>
         <ListFade />
@@ -1195,7 +1250,7 @@ function StepCard({
           </p>
         </div>
       </header>
-      <div className="px-3 py-2">{children}</div>
+      <div className="px-3 py-2 max-sm:py-1.5">{children}</div>
     </section>
   );
 }
@@ -1221,7 +1276,7 @@ function ModeOption({
   return (
     <div
       data-cursor={cursorKey}
-      className="rounded-md border px-2.5 py-2 transition-colors duration-300"
+      className="rounded-md border px-2.5 py-2 max-sm:py-1.5 transition-colors duration-300"
       style={{
         borderColor: active || hot ? C.tealLine : C.line,
         background: active ? C.tealWash : C.wash,
@@ -1259,7 +1314,12 @@ function ModeOption({
           ) : null}
         </AnimatePresence>
       </div>
-      <p className="mt-1.5 line-clamp-2 text-[9.5px] leading-[1.5]" style={{ color: C.dim }}>
+      {/* Hidden on mobile: at half of 277px the sub truncates to nothing.
+          Open's sentence re-renders at full width under the pair instead. */}
+      <p
+        className="max-sm:hidden mt-1.5 line-clamp-2 text-[9.5px] leading-[1.5]"
+        style={{ color: C.dim }}
+      >
         {sub}
       </p>
     </div>
@@ -1275,15 +1335,17 @@ function InviteRow({
   name,
   detail,
   status,
+  className = "",
 }: {
   name: string;
   detail: string;
   status: "Invited" | "Joined";
+  className?: string;
 }) {
   const joined = status === "Joined";
   return (
     <div
-      className="flex items-center gap-2.5 rounded-md border px-2.5 py-2"
+      className={"flex items-center gap-2.5 rounded-md border px-2.5 py-2 " + className}
       style={{ borderColor: joined ? C.tealLine : C.line, background: C.wash }}
     >
       <span
@@ -1395,13 +1457,16 @@ function BuildersJoinScreen({ s }: { s: S }) {
             <div className="flex items-center gap-2 px-3 pt-2.5">
               <Kicker icon={Mail}>Invited builders</Kicker>
             </div>
+            {/* Mobile: secondary prose. The joined row and its pending
+                pill are the beat; the sentence already played on the
+                previous screen's subtitle. */}
             <p
-              className="px-3 pt-1.5 pb-2 line-clamp-2 text-[10px] leading-[1.5]"
+              className="max-sm:hidden px-3 pt-1.5 pb-2 line-clamp-2 text-[10px] leading-[1.5]"
               style={{ color: C.muted }}
             >
               These builders join free. Remaining spots open to the network.
             </p>
-            <div className="px-3 pb-3">
+            <div className="px-3 pb-3 max-sm:pt-2">
               <InviteRow
                 name="Brightwater Homes"
                 detail="BuilderHQ builder"
@@ -1422,8 +1487,11 @@ function BuildersJoinScreen({ s }: { s: S }) {
         >
           <Card className="overflow-hidden px-3 py-2.5">
             <Kicker icon={Files}>Tenders · 0</Kicker>
+            {/* Mobile: secondary prose. The kicker's count and the link the
+                pointer is about to press carry the card; the sentence is
+                the 37px that kept the link under the fade. */}
             <p
-              className="mt-1.5 line-clamp-2 text-[10px] leading-[1.55]"
+              className="max-sm:hidden mt-1.5 line-clamp-2 text-[10px] leading-[1.55]"
               style={{ color: C.muted }}
             >
               No tenders yet. Builders who take a spot on your round submit tenders here, laid out
@@ -1504,7 +1572,7 @@ const SUBMITTED: Array<{
 function TendersInScreen({ s }: { s: S }) {
   return (
     <>
-      <BackRow hot={s.hot === "back"} />
+      <BackRow hot={s.hot === "back"} className="max-sm:hidden" />
       <EvalNav sec={s.sec} hot={s.hot} />
       <p
         className="shrink-0 hidden sm:block line-clamp-2 max-w-[68ch] text-[9.5px] leading-[1.55]"
@@ -1518,15 +1586,19 @@ function TendersInScreen({ s }: { s: S }) {
       <div className="relative flex-1 min-h-0 overflow-hidden">
         {/* The cards take the full height of the frame's remainder, as
             they do on the real page, rather than sitting in a band with
-            dead canvas under them. */}
-        <div className="grid h-full grid-cols-3 gap-2.5">
+            dead canvas under them. On mobile the three columns cannot fit
+            303px — a third of it clips "$712,800" mid-glyph — so each card
+            lies down as a row: identity left, the same three answers
+            (price, weeks, firm bar) right, which is still the act's
+            claim read three times in the same shape. */}
+        <div className="grid h-full grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
           {SUBMITTED.map((t, i) => {
             const hot = s.hot === `card-${t.key}`;
             return (
               <motion.div
                 key={t.name}
                 data-cursor={`card-${t.key}`}
-                className="flex h-full flex-col rounded-lg border overflow-hidden transition-colors duration-200"
+                className="flex h-full flex-col max-sm:flex-row max-sm:items-center rounded-lg border overflow-hidden transition-colors duration-200"
                 style={{
                   borderColor: hot ? C.tealLine : C.line,
                   background: hot ? C.tealWash : C.paper,
@@ -1536,7 +1608,7 @@ function TendersInScreen({ s }: { s: S }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.44, delay: 0.16 * i, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="flex items-center gap-1.5 px-2.5 pt-2.5">
+                <div className="flex items-center gap-1.5 px-2.5 pt-2.5 max-sm:flex-1 max-sm:min-w-0 max-sm:py-2">
                   <span
                     className="size-[20px] shrink-0 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
                     style={{ background: C.tealMuted, color: C.tealInk }}
@@ -1547,12 +1619,12 @@ function TendersInScreen({ s }: { s: S }) {
                     {t.name}
                   </p>
                 </div>
-                <div className="px-2.5 pt-3">
-                  <p className="text-[7.5px] uppercase tracking-[0.14em]" style={{ color: C.dim }}>
+                <div className="px-2.5 pt-3 max-sm:shrink-0 max-sm:py-1.5">
+                  <p className="max-sm:hidden text-[7.5px] uppercase tracking-[0.14em]" style={{ color: C.dim }}>
                     Tender price inc GST
                   </p>
                   <p
-                    className="mt-1 truncate font-ui font-semibold text-[16px] leading-none tabular-nums"
+                    className="mt-1 max-sm:mt-0 truncate font-ui font-semibold text-[16px] leading-none tabular-nums"
                     style={{ color: C.ink }}
                   >
                     {t.price}
@@ -1576,13 +1648,16 @@ function TendersInScreen({ s }: { s: S }) {
                     />
                   </span>
                 </div>
+                {/* On mobile the firm bar above carries this sentence and
+                    the status is the same word three times: both stand
+                    down so three whole rows fit the 340px budget. */}
                 <p
-                  className="mt-auto line-clamp-2 border-t px-2.5 py-2 text-[9px] leading-[1.45]"
+                  className="max-sm:hidden mt-auto line-clamp-2 border-t px-2.5 py-2 text-[9px] leading-[1.45]"
                   style={{ borderColor: C.line, color: C.dim }}
                 >
                   {t.firm}
                 </p>
-                <div className="border-t px-2.5 py-2" style={{ borderColor: C.line }}>
+                <div className="max-sm:hidden border-t px-2.5 py-2" style={{ borderColor: C.line }}>
                   <Pill tone="ink">Submitted</Pill>
                 </div>
               </motion.div>
@@ -1600,8 +1675,16 @@ function TendersInScreen({ s }: { s: S }) {
 /** One grid for every band, exactly as the comparison surface does it
  *  (instrument-compare.tsx:75). That single rule is the whole claim:
  *  schedule marks, state chips, grid values and conditions land on the
- *  same three columns because they were answered to the same list. */
-const COLS = "minmax(0,1.05fr) repeat(3, minmax(0,1fr))";
+ *  same three columns because they were answered to the same list.
+ *
+ *  On mobile the label column cannot share 303px with three builder
+ *  columns, so every band row restacks the same way: the label takes a
+ *  full-width line (`max-sm:col-span-3` on the label cell) and the three
+ *  builder cells sit under it on thirds. All three builders stay in
+ *  shot — the act's claim is the comparison itself — which is why the
+ *  rows grow taller rather than losing a column. */
+const COLS_CLS =
+  "grid grid-cols-3 sm:grid-cols-[minmax(0,1.05fr)_repeat(3,minmax(0,1fr))]";
 
 /* — the schedule alignment — */
 
@@ -1725,6 +1808,28 @@ const CONDITIONS: Array<{ q: string; v: [string, string, string] }> = [
 const CMP_GAP = 12;
 const CMP_H = { lede: 88, sched: 300, differ: 324, grid: 360, terms: 258 } as const;
 
+/**
+ * The same declared heights, on the 303px mobile measure, where every
+ * band row restacks (label line over three builder cells) and so grows.
+ * Walked top to bottom like the desktop set, band by band:
+ *
+ *   lede   88: unchanged — the intro paragraph's 43px box already holds
+ *              its three wrapped lines (3 × 14.25 = 42.75).
+ *   sched 408: header 10+22+4+43+6+34+8 = 127 (legend 22 → 34, it wraps
+ *              to two rows), names 22, 6 rows at 38 (was 22) = 228,
+ *              footer 24, card border 2 → 403, +5 slack.
+ *   differ 360: header 104, head row 22, SIX rows at 38 = 228 (the list
+ *              is sliced 9 → 6 on mobile; the three below the fold were
+ *              never reachable before the next stop), border 2 → 356,
+ *              +4 slack.
+ *   grid  424: header 54, head 36, "The money" 20 + 4×44 = 196 (rows
+ *              34 → 44 for the wrapped value line), "The programme"
+ *              20 + 2×44 = 108, footer 24, border 2 → 420, +4 slack.
+ *   terms 322: header 87, names 22, rock row 50 (was 39), 3 rows at 52
+ *              (was 36) = 156, border 2 → 317, +5 slack.
+ */
+const CMP_H_M = { lede: 88, sched: 408, differ: 360, grid: 424, terms: 322 } as const;
+
 /** The four stops after the lede. Every one lands a band's head at the
  *  top of the viewport, INCLUDING the last: bottoming the column out
  *  instead put the film's closing argument, the client's provisional
@@ -1738,6 +1843,16 @@ const CMP_AT = {
   terms: -(CMP_H.lede + CMP_H.sched + CMP_H.differ + CMP_H.grid + 4 * CMP_GAP),
 } as const;
 
+/** The same stops off the mobile heights. The script keeps setting the
+ *  desktop values into state; CompareScreen maps each one onto its
+ *  mobile twin at render, so the beats and their timings never fork. */
+const CMP_AT_M = {
+  sched: -(CMP_H_M.lede + CMP_GAP),
+  differ: -(CMP_H_M.lede + CMP_H_M.sched + 2 * CMP_GAP),
+  grid: -(CMP_H_M.lede + CMP_H_M.sched + CMP_H_M.differ + 3 * CMP_GAP),
+  terms: -(CMP_H_M.lede + CMP_H_M.sched + CMP_H_M.differ + CMP_H_M.grid + 4 * CMP_GAP),
+} as const;
+
 /**
  * The whole argument for a practice, travelled rather than sampled:
  * the comparison machinery in five named stops, every one of them
@@ -1748,6 +1863,17 @@ const CMP_AT = {
  * the camera.
  */
 function CompareScreen({ s }: { s: S }) {
+  const compact = useCompact();
+  const H = compact ? CMP_H_M : CMP_H;
+  // The script writes the desktop waypoints into state. On the mobile
+  // measure every band is taller, so the same stop lives at a deeper
+  // offset: find which desktop stop the state holds and swap in its
+  // mobile twin. At rest (cmpY 0) there is no stop and nothing to map.
+  const stop = (Object.keys(CMP_AT) as Array<keyof typeof CMP_AT>).find(
+    (k) => CMP_AT[k] === s.cmpY,
+  );
+  const y = compact && stop ? CMP_AT_M[stop] : s.cmpY;
+
   return (
     <>
       <BackRow hot={s.hot === "back"} />
@@ -1758,22 +1884,22 @@ function CompareScreen({ s }: { s: S }) {
           className="absolute inset-x-0 top-0 flex flex-col"
           style={{ gap: CMP_GAP }}
           initial={false}
-          animate={{ y: s.cmpY }}
+          animate={{ y }}
           transition={SCROLL}
         >
-          <div style={{ height: CMP_H.lede }}>
+          <div style={{ height: H.lede }}>
             <LedeBand />
           </div>
-          <div style={{ height: CMP_H.sched }}>
+          <div style={{ height: H.sched }}>
             <ScheduleBand counted={s.counted} />
           </div>
-          <div style={{ height: CMP_H.differ }}>
+          <div style={{ height: H.differ }}>
             <DifferBand />
           </div>
-          <div style={{ height: CMP_H.grid }}>
+          <div style={{ height: H.grid }}>
             <DecisionBand lit={s.lit} />
           </div>
-          <div style={{ height: CMP_H.terms }}>
+          <div style={{ height: H.terms }}>
             <ConditionsBand />
           </div>
         </motion.div>
@@ -1810,15 +1936,15 @@ function LedeBand() {
  *  columns. */
 function NameRow() {
   return (
-    <div
-      className="h-[22px] border-t items-center"
-      style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
-    >
-      <span />
-      {TENDERS.map((t) => (
+    <div className={"h-[22px] border-t items-center " + COLS_CLS} style={{ borderColor: C.line }}>
+      <span className="max-sm:hidden" />
+      {TENDERS.map((t, j) => (
         <span
           key={t.name}
-          className="min-w-0 border-l px-2 text-[9px] font-semibold truncate"
+          className={
+            "min-w-0 border-l px-2 max-sm:px-1 text-[9px] font-semibold truncate " +
+            (j === 0 ? "max-sm:border-l-0" : "")
+          }
           style={{ borderColor: C.line, color: C.muted }}
         >
           {t.name}
@@ -1851,7 +1977,10 @@ function ScheduleBand({ counted }: { counted: boolean }) {
           </span>
           . That is where the price difference lives.
         </p>
-        <div className="mt-1.5 h-[22px] overflow-hidden flex flex-wrap items-center gap-x-3 gap-y-1">
+        {/* max-sm:h-[34px]: on the 279px measure the four legend items
+            wrap to a second row (15+4+15), and a legend missing its
+            fourth state reads as a mistake. */}
+        <div className="mt-1.5 h-[22px] max-sm:h-[34px] overflow-hidden flex flex-wrap items-center gap-x-3 gap-y-1">
           {(Object.keys(SCHED) as SchedState[]).map((k) => (
             <span
               key={k}
@@ -1870,15 +1999,13 @@ function ScheduleBand({ counted }: { counted: boolean }) {
       {ALIGN.map((row) => (
         <div
           key={row.label}
-          className="h-[22px] border-t"
+          className={"h-[22px] max-sm:h-[38px] border-t " + COLS_CLS}
           style={{
             borderColor: C.line,
-            display: "grid",
-            gridTemplateColumns: COLS,
             background: C.tealWash,
           }}
         >
-          <div className="flex items-center gap-1.5 px-3 min-w-0">
+          <div className="flex items-center gap-1.5 px-3 min-w-0 max-sm:col-span-3">
             <span className="size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
             <span className="truncate text-[9.5px] font-medium" style={{ color: C.ink }}>
               {row.label}
@@ -1887,7 +2014,10 @@ function ScheduleBand({ counted }: { counted: boolean }) {
           {row.cells.map((cell, j) => (
             <div
               key={j}
-              className="min-w-0 border-l px-2 flex items-center"
+              className={
+                "min-w-0 border-l px-2 max-sm:px-1 flex items-center " +
+                (j === 0 ? "max-sm:border-l-0" : "")
+              }
               style={{ borderColor: C.line }}
             >
               <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -1922,6 +2052,11 @@ function ScheduleBand({ counted }: { counted: boolean }) {
  *  down a column. Every row on this table differs, so every row
  *  carries the tint. */
 function DifferBand() {
+  const compact = useCompact();
+  // Mobile shows six of the nine: at 38px a row, the seventh onward sat
+  // below what the viewport could ever reach before the next stop, and
+  // CMP_H_M.differ is budgeted on six (104+22+6×38+2 = 356).
+  const rows = DIFFER.slice(0, compact ? 6 : DIFFER.length);
   return (
     <Card className="h-full overflow-hidden">
       <div className="px-3 py-2.5">
@@ -1942,16 +2077,22 @@ function DifferBand() {
       </div>
 
       <div
-        className="h-[22px] border-t items-center"
-        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+        className={"h-[22px] border-t items-center " + COLS_CLS}
+        style={{ borderColor: C.line }}
       >
-        <span className="px-3 text-[8.5px] tracking-[0.16em] uppercase truncate" style={{ color: C.dim }}>
+        <span
+          className="max-sm:hidden px-3 text-[8.5px] tracking-[0.16em] uppercase truncate"
+          style={{ color: C.dim }}
+        >
           Scope item
         </span>
-        {TENDERS.map((t) => (
+        {TENDERS.map((t, j) => (
           <span
             key={t.name}
-            className="min-w-0 border-l px-2 text-[8.5px] tracking-[0.16em] uppercase truncate"
+            className={
+              "min-w-0 border-l px-2 max-sm:px-1 text-[8.5px] tracking-[0.16em] uppercase truncate " +
+              (j === 0 ? "max-sm:border-l-0" : "")
+            }
             style={{ borderColor: C.line, color: C.dim }}
           >
             {t.name}
@@ -1959,18 +2100,16 @@ function DifferBand() {
         ))}
       </div>
 
-      {DIFFER.map((row) => (
+      {rows.map((row) => (
         <div
           key={row.trade}
-          className="h-[22px] border-t"
+          className={"h-[22px] max-sm:h-[38px] border-t " + COLS_CLS}
           style={{
             borderColor: C.line,
-            display: "grid",
-            gridTemplateColumns: COLS,
             background: C.tealWash,
           }}
         >
-          <div className="flex items-center gap-1.5 px-3 min-w-0">
+          <div className="flex items-center gap-1.5 px-3 min-w-0 max-sm:col-span-3">
             <span className="size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
             <span className="truncate text-[9.5px]" style={{ color: C.ink }}>
               {row.trade}
@@ -1981,7 +2120,10 @@ function DifferBand() {
             return (
               <div
                 key={j}
-                className="min-w-0 border-l px-2 flex items-center"
+                className={
+                  "min-w-0 border-l px-2 max-sm:px-1 flex items-center " +
+                  (j === 0 ? "max-sm:border-l-0" : "")
+                }
                 style={{ borderColor: C.line }}
               >
                 <span
@@ -2015,19 +2157,22 @@ function DecisionBand({ lit }: { lit: boolean }) {
         </p>
       </div>
 
-      <div
-        className="h-[36px] border-t"
-        style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
-      >
-        <span />
-        {TENDERS.map((t) => (
+      <div className={"h-[36px] border-t " + COLS_CLS} style={{ borderColor: C.line }}>
+        <span className="max-sm:hidden" />
+        {TENDERS.map((t, j) => (
           <div
             key={t.name}
-            className="min-w-0 border-l px-2 flex items-center gap-1.5"
+            className={
+              "min-w-0 border-l px-2 max-sm:px-1 flex items-center gap-1.5 " +
+              (j === 0 ? "max-sm:border-l-0" : "")
+            }
             style={{ borderColor: C.line }}
           >
+            {/* The monogram stands down on mobile: its 24px are the
+                difference between "Meridian Building Co" and
+                "Meridian Bu…" on a 100px column. */}
             <span
-              className="size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7px] font-bold"
+              className="max-sm:hidden size-[18px] shrink-0 rounded-full inline-flex items-center justify-center text-[7px] font-bold"
               style={{ background: C.tealMuted, color: C.tealInk }}
             >
               {t.mono}
@@ -2061,10 +2206,10 @@ function DecisionBand({ lit }: { lit: boolean }) {
             return (
               <div
                 key={row.label}
-                className="h-[34px] border-t"
-                style={{ borderColor: C.line, display: "grid", gridTemplateColumns: COLS }}
+                className={"h-[34px] max-sm:h-[44px] border-t " + COLS_CLS}
+                style={{ borderColor: C.line }}
               >
-                <div className="flex items-center px-3 min-w-0">
+                <div className="flex items-center px-3 min-w-0 max-sm:col-span-3">
                   <span className="line-clamp-2 text-[9.5px] leading-[1.35]" style={{ color: C.dim }}>
                     {row.label}
                   </span>
@@ -2074,7 +2219,10 @@ function DecisionBand({ lit }: { lit: boolean }) {
                   return (
                     <div
                       key={j}
-                      className="min-w-0 border-l px-2 flex items-center transition-colors duration-500"
+                      className={
+                        "min-w-0 border-l px-2 max-sm:px-1 flex items-center transition-colors duration-500 " +
+                        (j === 0 ? "max-sm:border-l-0" : "")
+                      }
                       style={{
                         borderColor: C.line,
                         background: win ? TONE.good.bg : undefined,
@@ -2134,15 +2282,13 @@ function ConditionsBand() {
           travel: three treatments of one line, which no set of three
           builder PDFs can ever be made to show. */}
       <div
-        className="h-[39px] border-t"
+        className={"h-[39px] max-sm:h-[50px] border-t " + COLS_CLS}
         style={{
           borderColor: C.line,
-          display: "grid",
-          gridTemplateColumns: COLS,
           background: C.tealWash,
         }}
       >
-        <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+        <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0 max-sm:col-span-3">
           <span className="mt-[4px] size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
           <span className="min-w-0">
             <span
@@ -2165,7 +2311,10 @@ function ConditionsBand() {
         ).map((cell, j) => (
           <div
             key={j}
-            className="min-w-0 border-l px-2 flex items-center"
+            className={
+              "min-w-0 border-l px-2 max-sm:px-1 flex items-center " +
+              (j === 0 ? "max-sm:border-l-0" : "")
+            }
             style={{ borderColor: C.line }}
           >
             <span className="inline-flex items-center gap-1.5 min-w-0">
@@ -2187,15 +2336,13 @@ function ConditionsBand() {
       {CONDITIONS.map((row) => (
         <div
           key={row.q}
-          className="h-[36px] border-t"
+          className={"h-[36px] max-sm:h-[52px] border-t " + COLS_CLS}
           style={{
             borderColor: C.line,
-            display: "grid",
-            gridTemplateColumns: COLS,
             background: C.tealWash,
           }}
         >
-          <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0">
+          <div className="flex items-start gap-1.5 px-3 py-[4px] min-w-0 max-sm:col-span-3">
             <span className="mt-[4px] size-1.5 rounded-full shrink-0" style={{ background: C.teal }} />
             <span
               className="text-[9px] leading-[1.45] line-clamp-2"
@@ -2205,7 +2352,14 @@ function ConditionsBand() {
             </span>
           </div>
           {row.v.map((value, j) => (
-            <div key={j} className="min-w-0 border-l px-2 py-[4px]" style={{ borderColor: C.line }}>
+            <div
+              key={j}
+              className={
+                "min-w-0 border-l px-2 max-sm:px-1 py-[4px] " +
+                (j === 0 ? "max-sm:border-l-0" : "")
+              }
+              style={{ borderColor: C.line }}
+            >
               <span
                 className="block text-[9px] leading-[1.45] font-medium line-clamp-2"
                 style={{ color: C.ink }}
@@ -2266,12 +2420,18 @@ function Tick({ to, run }: { to: number; run: boolean }) {
 function YourClientScreen({ s }: { s: S }) {
   return (
     <>
-      {/* The decision. Stood down on a phone: at 304px of frame the
-          choice is between showing the recommendation and showing the
-          handover the pointer is about to perform, and the handover is
-          what this screen is for. */}
+      {/* The decision. The old cropped stage stood this down on phones;
+          the portrait stage restores it, because the verdict is what the
+          whole film was building to. Two mobile concessions keep the
+          form's Send button — a click target — inside the 340px budget:
+          the Shortlisted/Award footer stands down (the pill above says
+          Shortlisted already), and while the invitation form is open the
+          verdict yields the frame entirely, returning for the closing
+          shot the record line lands on. */}
       <Card
-        className="hidden sm:block shrink-0 overflow-hidden"
+        className={
+          (s.form ? "max-sm:hidden " : "") + "shrink-0 overflow-hidden"
+        }
         style={{ borderColor: C.tealLine, background: C.tealWash }}
       >
         <div className="px-3 pt-2.5 pb-2">
@@ -2298,7 +2458,7 @@ function YourClientScreen({ s }: { s: S }) {
           </p>
         </div>
         <div
-          className="flex items-center justify-end gap-2 border-t px-3 py-2"
+          className="max-sm:hidden flex items-center justify-end gap-2 border-t px-3 py-2"
           style={{ borderColor: C.line }}
         >
           <GhostBtn hot>
@@ -2371,7 +2531,13 @@ function YourClientScreen({ s }: { s: S }) {
             ) : (
               <motion.div
                 key="empty"
-                className="shrink-0 rounded-md border border-dashed px-3 py-2.5 text-center"
+                // Mobile, form open: "Not shared with anyone yet" above
+                // the form that is sharing it is 45px of stating the
+                // obvious, and those are the Send button's 45px.
+                className={
+                  (s.form ? "max-sm:hidden " : "") +
+                  "shrink-0 rounded-md border border-dashed px-3 py-2.5 text-center"
+                }
                 style={{ borderColor: C.line2 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -2512,7 +2678,10 @@ function SeatOption({
       <p className="text-[10.5px] font-ui font-semibold" style={{ color: C.ink }}>
         {title}
       </p>
-      <p className="mt-0.5 line-clamp-2 text-[9px] leading-[1.4]" style={{ color: C.dim }}>
+      {/* Hidden on mobile: at half of 255px the sub clips mid-clause, and
+          the sharing panel's own header sentence already says what each
+          seat can do. */}
+      <p className="max-sm:hidden mt-0.5 line-clamp-2 text-[9px] leading-[1.4]" style={{ color: C.dim }}>
         {sub}
       </p>
     </div>
