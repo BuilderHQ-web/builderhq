@@ -37,7 +37,7 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          BuilderHQ Technologies Pty Ltd (ABN 33 612 815 139) operates
+          BuilderHQ Pty Ltd (ABN 70 697 584 722) operates
           BuilderHQ, a tendering platform for Australian residential
           construction. In this policy, “we”, “us” and “our” mean BuilderHQ.
           We are based in Melbourne and operate across Australia.
@@ -757,9 +757,9 @@ const SECTIONS = [
           us first.
         </P>
         <P>
-          BuilderHQ Technologies Pty Ltd
+          BuilderHQ Pty Ltd
           <br />
-          ABN 33 612 815 139
+          ABN 70 697 584 722
           <br />
           Melbourne, Victoria, Australia
           <br />

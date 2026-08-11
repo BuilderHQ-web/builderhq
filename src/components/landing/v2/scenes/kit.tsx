@@ -93,7 +93,7 @@ export type HeroStep = {
  */
 export function Frame({
   crumb,
-  avatar = "AV",
+  avatar = "JC",
   right,
   children,
   overlay,

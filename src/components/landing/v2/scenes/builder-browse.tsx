@@ -28,6 +28,7 @@ import {
   ArrowUpRight,
   BookOpenCheck,
   Bookmark,
+  Check,
   Building,
   ChevronDown,
   Compass,
@@ -185,7 +186,7 @@ const FILTERED: Docket[] = [
  *  order while the rows are grouped by category, so they are out of
  *  sequence within a group on purpose. */
 const DOCS: Array<[string, Array<[string, string]>]> = [
-  ["Architectural plans", [["Document 1", "8.4 MB"], ["Document 4", "3.1 MB"]]],
+  ["Architectural plans", [["Architectural Drawings Rev D.pdf", "8.4 MB"], ["Site and Roof Plan Rev C.pdf", "3.1 MB"]]],
   ["Structural engineering", [["Document 2", "5.7 MB"]]],
 ];
 
@@ -543,8 +544,8 @@ function Preview() {
               className="inline-flex items-center gap-1 text-[8.5px] tracking-[0.22em] uppercase font-semibold"
               style={{ color: C.dim }}
             >
-              <Lock className="size-[10px]" />
-              Preview
+              <Check className="size-[10px]" strokeWidth={3} />
+              You hold a spot
             </span>
             <p
               className="mt-1 font-ui font-semibold uppercase text-[19px] leading-[0.95] tracking-[-0.018em]"
@@ -555,9 +556,9 @@ function Preview() {
             <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] min-w-0" style={{ color: C.muted }}>
               <MapPin className="size-3 shrink-0" style={{ color: C.tealInk }} />
               <span className="truncate">
-                Pascoe Vale, VIC 3044
+                18 Miller Street, Pascoe Vale, VIC 3044
                 <span className="ml-1.5 text-[9px]" style={{ color: C.dim }}>
-                  Street address opens with your spot
+                  Full address, released with your spot
                 </span>
               </span>
             </p>
@@ -592,7 +593,7 @@ function Preview() {
       <div className="relative flex-1 min-h-0 overflow-hidden flex flex-col">
         <Section label="Documents · 9" icon={FileText}>
           <div className="relative">
-            <div className="flex flex-col gap-2" style={{ filter: "blur(5px)" }} aria-hidden>
+            <div className="flex flex-col gap-2">
               {DOCS.map(([cat, files]) => (
                 <div key={cat}>
                   <p className="text-[8px] tracking-[0.18em] uppercase mb-1" style={{ color: C.dim }}>
@@ -615,7 +616,7 @@ function Preview() {
                         </div>
                         <span
                           className="shrink-0 inline-flex items-center justify-center size-6 rounded-sm border"
-                          style={{ borderColor: C.line, color: C.muted, opacity: 0.4 }}
+                          style={{ borderColor: C.tealLine, color: C.tealInk, background: C.tealWash }}
                         >
                           <Download className="size-3" />
                         </span>
@@ -626,28 +627,9 @@ function Preview() {
               ))}
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span aria-hidden className="absolute inset-0" style={{ background: C.canvas, opacity: 0.5 }} />
-              <div
-                className="relative flex items-center gap-2 rounded-md border px-3 py-2"
-                style={{ borderColor: C.tealLine, background: C.paper2, boxShadow: ELEV }}
-              >
-                <span
-                  className="shrink-0 inline-flex size-6 items-center justify-center rounded-md border"
-                  style={{ borderColor: C.tealLine, background: C.tealMuted, color: C.tealInk }}
-                >
-                  <FileText className="size-3" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold" style={{ color: C.ink }}>
-                    Unlock to download documents
-                  </p>
-                  <p className="mt-0.5 text-[9px]" style={{ color: C.dim }}>
-                    9 files attached across 9 categories.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <p className="mt-2 text-[9px]" style={{ color: C.dim }}>
+              9 files attached across 9 categories.
+            </p>
           </div>
         </Section>
         <ListFade />

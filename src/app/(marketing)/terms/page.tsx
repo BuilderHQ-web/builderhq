@@ -38,8 +38,8 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          These terms are an agreement between you and BuilderHQ
-          Technologies Pty Ltd (ABN 33 612 815 139), referred to here as
+          These terms are an agreement between you and BuilderHQ Pty
+          Ltd (ABN 70 697 584 722), referred to here as
           BuilderHQ, we or us. They govern your use of the BuilderHQ
           website, platform and services, referred to here as the
           Platform.
@@ -891,9 +891,9 @@ const SECTIONS = [
     body: (
       <>
         <P>
-          BuilderHQ Technologies Pty Ltd
+          BuilderHQ Pty Ltd
           <br />
-          ABN 33 612 815 139
+          ABN 70 697 584 722
           <br />
           Melbourne, Victoria, Australia
           <br />

@@ -127,7 +127,7 @@ export function BuilderWinScene({ active }: { active: boolean }) {
     <div ref={root} className="relative w-full h-full">
       <Frame
         crumb="Tender submission"
-        avatar="SW"
+        avatar="BH"
         right={
           <span className="inline-flex items-center gap-1 text-[9.5px]" style={{ color: C.dim }}>
             <Check className="size-2.5" strokeWidth={3} style={{ color: C.tealInk }} />
