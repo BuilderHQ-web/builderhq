@@ -148,7 +148,7 @@ const CARDS: Record<Screen, { n: string; title: string; sub: string }> = {
   scope: {
     n: "03",
     title: "We lay out the scope",
-    sub: "228 items from the client’s documents. Nothing for you to assemble.",
+    sub: "242 items from the client’s documents. Nothing for you to assemble.",
   },
   tender: {
     n: "04",
@@ -298,9 +298,14 @@ export function BuilderJourney({ active }: { active: boolean }) {
          the camera chasing it. The second waypoint lands the list on
          the last of the nine, so the read ends on a still bottom. */
       { wait: 800 },
-      { move: "doc-1", ms: 700 },
-      { set: { hot: "doc-1" } },
+      // Press the rail rather than hovering a row and having the page
+      // move on its own. A 400ms hesitation that is not followed by a
+      // click is the hand's full tell of a press with no press: the one
+      // beat in this film where something happened that nothing caused.
+      { move: "nav-documents", ms: 700 },
+      { set: { hot: "nav-documents" } },
       { wait: 400 },
+      { click: true },
       { set: { hot: null, sec: "documents", docY: -180, tag: "Nine documents, real filenames" } },
       { wait: 800 },
       { set: { docY: -374, tag: "Surveys, soil and town planning" } },
@@ -316,7 +321,7 @@ export function BuilderJourney({ active }: { active: boolean }) {
       { wait: 500 },
 
       /* ── Act 3 · The scope, already written ───────────────────────
-         The stats band counts to 228 on the wide shot, the builder
+         The stats band counts to 242 on the wide shot, the builder
          opens footings and reads a citation, and then the register is
          scrolled at its real length: fourteen divisions on screen and
          the tag carrying the claim. No push anywhere in the act — the
@@ -339,7 +344,7 @@ export function BuilderJourney({ active }: { active: boolean }) {
       // The long read: two legs down the register, each named. The
       // stops are set against the rendered list so the last division
       // arrives flush at the frame's foot.
-      { set: { cite: false, tag: "228 items, every line cited", scopeY: -320 } },
+      { set: { cite: false, tag: "242 items, every line cited", scopeY: -320 } },
       { wait: 850 },
       { set: { scopeY: -490, tag: "29 trades, every one covered" } },
       { wait: 850 },
@@ -561,7 +566,7 @@ function Press({ k, hot, children }: { k: string; hot: boolean; children: React.
 function FootBar({ tone, children }: { tone: "cta" | "deck"; children: React.ReactNode }) {
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-0 z-20 border-t px-3 h-[44px] flex items-center justify-between gap-2"
+      className="absolute inset-x-0 bottom-[228px] sm:bottom-0 z-20 border-t px-3 h-[44px] flex items-center justify-between gap-2"
       style={
         tone === "cta"
           ? { borderColor: C.tealLine, background: C.paper }
@@ -652,11 +657,19 @@ function SectionRail({ active, hot }: { active: string; hot: string | null }) {
     <div className="relative shrink-0 flex items-center gap-1 overflow-hidden">
       {SECTIONS.map((s) => {
         const on = s.key === active;
-        const lit = s.key === "scope" && hot === "nav-scope";
+        const lit =
+          (s.key === "scope" && hot === "nav-scope") ||
+          (s.key === "documents" && hot === "nav-documents");
         return (
           <span
             key={s.key}
-            data-cursor={s.key === "scope" ? "nav-scope" : undefined}
+            data-cursor={
+              s.key === "scope"
+                ? "nav-scope"
+                : s.key === "documents"
+                  ? "nav-documents"
+                  : undefined
+            }
             className={
               "shrink-0 rounded-full px-2 py-[3px] text-[8.5px] sm:text-[9px] whitespace-nowrap transition-colors duration-200 " +
               (s.phone ? "inline-flex" : "hidden sm:inline-flex")
@@ -1252,7 +1265,7 @@ function ScopeScreen({
           quiet labels, ruled above and below. */}
       <div className="shrink-0 grid grid-cols-3 border-y py-3" style={{ borderColor: C.line }}>
         {[
-          ["Scope items", 228],
+          ["Scope items", 242],
           ["Trades", 29],
           ["Pages read", 211],
         ].map(([l, v], i) => (
@@ -1530,7 +1543,7 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
             <p className="font-ui text-[11.5px] leading-[1.15] truncate" style={{ color: C.ink }}>
               {PROJECT}
             </p>
-            <p className="mt-0.5 text-[8px] leading-tight truncate" style={{ color: C.muted }}>
+            <p className="hidden sm:block mt-0.5 text-[8px] leading-tight truncate" style={{ color: C.muted }}>
               {US}
             </p>
           </div>
@@ -1541,7 +1554,7 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
             <p className="font-ui font-semibold text-[14px] leading-none tabular-nums" style={{ color: C.ink }}>
               $685,000
             </p>
-            <p className="text-[8px] leading-tight tabular-nums" style={{ color: C.muted }}>
+            <p className="hidden sm:block text-[8px] leading-tight tabular-nums" style={{ color: C.muted }}>
               $753,500 inc GST
             </p>
           </div>
@@ -1584,8 +1597,11 @@ function SubmitScreen({ confirm, hot }: { confirm: boolean; hot: string | null }
       {/* The two-step submit, inline where the app puts it. The block
           holds one height for both states, so the ledger above it never
           reflows while the controls change. */}
+      {/* Stood up under the cover below sm: on a phone the frame crops
+          this scene from the top, and mt-auto put both submit presses
+          under the fade. */}
       <div
-        className="shrink-0 mt-auto relative border-t h-[62px] sm:h-[72px]"
+        className="shrink-0 mt-1 sm:mt-auto relative border-t h-[52px] sm:h-[72px]"
         style={{ borderColor: C.line }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -1668,7 +1684,9 @@ function WonScreen({ hot }: { hot: string | null }) {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      {/* Held back on a phone, the way SubmitScreen stands its ledger
+          down, so the closing hover clears the crop. */}
+      <div className="hidden sm:block flex-1 min-h-0 overflow-hidden">
         <div className="border-y py-3" style={{ borderColor: C.tealLine }}>
           <p className="text-[8.5px] tracking-[0.16em] uppercase font-semibold" style={{ color: C.tealInk }}>
             Your client

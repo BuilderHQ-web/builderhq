@@ -701,9 +701,14 @@ export function HomeownerJourney({ active }: { active: boolean }) {
       { wait: 850 },
       { set: { cmpY: AT.agenda, tag: TAGS.agenda } },
       { wait: 1400 },
-      // The read is done: the tag comes down, and the column goes back
-      // up to the tender the reading chose.
-      { set: { cmpY: AT.award, tag: null } },
+      // The read is done. Before the decision, go back and look at the
+      // tender the reading chose: AT.award alone crops Meridian's name,
+      // its price and half its working above the frame, leaving Corten's
+      // cheaper headline as the biggest thing on screen at the exact
+      // moment the film awards somebody else.
+      { set: { cmpY: AT.meridian, tag: null } },
+      { wait: 1600 },
+      { set: { cmpY: AT.award } },
       { wait: 800 },
       { move: "award", ms: 500 },
       { set: { hot: "award" } },
@@ -1295,7 +1300,7 @@ function TendersScreen({ s }: { s: S }) {
             key={t.key}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.44, delay: 2.2 + i * 0.22, ease: EASE }}
+            transition={{ duration: 0.44, delay: 1.7 + i * 0.22, ease: EASE }}
           >
             <Card
               className="px-3.5 py-3.5 transition-colors duration-200"
@@ -1927,7 +1932,7 @@ function AwardScreen() {
         style={{ borderColor: TONE.good.border, background: TONE.good.bg }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.22, ease: EASE }}
+        transition={{ duration: 0.5, delay: 1.75, ease: EASE }}
       >
         <span
           className="flex size-9 shrink-0 items-center justify-center rounded-full"
@@ -1962,7 +1967,7 @@ function AwardScreen() {
             style={{ background: C.tealInk, color: C.paper }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.42, ease: EASE }}
+            transition={{ duration: 0.4, delay: 1.95, ease: EASE }}
           >
             <Award className="size-2.5" />
             Awarded
@@ -2030,7 +2035,7 @@ function AwardScreen() {
           style={{ color: C.dim }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.6 }}
+          transition={{ duration: 0.4, delay: 2.15 }}
         >
           The record below stays exactly as it stood on decision day.
         </motion.p>

@@ -761,7 +761,7 @@ function UploadScreen({ s }: { s: S }) {
                 {read ? "Got it." : "Reading your plans"}
               </p>
               <p className="mt-1 text-[10px]" style={{ color: C.muted }}>
-                {read ? "Pulled 24 details from your plans" : "Reading the title block…"}
+                {read ? "Pulled 14 details from your plans" : "Reading the title block…"}
               </p>
             </motion.div>
           ) : (
@@ -968,7 +968,7 @@ function ScopeScreen({ s }: { s: S }) {
           Scope of works
         </p>
         <p className="shrink-0 text-[10px] tabular-nums" style={{ color: C.dim }}>
-          228 lines · 29 trades
+          242 items · 29 trades
         </p>
       </div>
       <p
@@ -1725,25 +1725,17 @@ const CONDITIONS: Array<{ q: string; v: [string, string, string] }> = [
 const CMP_GAP = 12;
 const CMP_H = { lede: 88, sched: 300, differ: 324, grid: 360, terms: 258 } as const;
 
-/**
- * The viewport those bands travel through at the 528px frame: the
- * canvas less the back link, the section nav and their gaps. Measured
- * against the rendered scene rather than guessed; a shorter frame
- * simply sees less of each stop, under the same fade.
- */
-const CMP_VIEW = 380;
-
-const CMP_TOTAL =
-  CMP_H.lede + CMP_H.sched + CMP_H.differ + CMP_H.grid + CMP_H.terms + 4 * CMP_GAP;
-
-/** The four stops after the lede: each lands a band's head at the top
- *  of the viewport, except the last, which bottoms the column out so
- *  the conditions are read whole. */
+/** The four stops after the lede. Every one lands a band's head at the
+ *  top of the viewport, INCLUDING the last: bottoming the column out
+ *  instead put the film's closing argument, the client's provisional
+ *  sum against the builder's firm figure, underneath the viewport's own
+ *  fade and the section tag riding above it. A band pinned to its head
+ *  clears both, and clears them at the shorter frame too. */
 const CMP_AT = {
   sched: -(CMP_H.lede + CMP_GAP),
   differ: -(CMP_H.lede + CMP_H.sched + 2 * CMP_GAP),
   grid: -(CMP_H.lede + CMP_H.sched + CMP_H.differ + 3 * CMP_GAP),
-  terms: -(CMP_TOTAL - CMP_VIEW),
+  terms: -(CMP_H.lede + CMP_H.sched + CMP_H.differ + CMP_H.grid + 4 * CMP_GAP),
 } as const;
 
 /**
