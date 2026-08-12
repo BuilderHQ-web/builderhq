@@ -13,16 +13,10 @@
  * both compose it.
  */
 
-import {
-  Building,
-  Home,
-  Layers,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import type { MarketplacePreview } from "@/modules/projects";
+
+import { PlanMark } from "./plan-marks";
 
 /** The listing facts the cover mapping reads. */
 export type CoverFacts = Pick<
@@ -36,14 +30,6 @@ export const COVER_TINT: Record<MarketplacePreview["type"], string> = {
   multi_dwelling: "from-[rgba(45,99,214,0.19)] to-[rgba(120,180,255,0.13)]",
   renovation: "from-[rgba(201,148,34,0.19)] to-[rgba(194,85,80,0.10)]",
   extension: "from-[rgba(10,125,115,0.19)] to-[rgba(0,212,200,0.14)]",
-};
-
-/** The type's mark, ghosted onto the band. */
-const COVER_MARK: Record<MarketplacePreview["type"], LucideIcon> = {
-  single_dwelling: Home,
-  multi_dwelling: Building,
-  renovation: Wrench,
-  extension: Layers,
 };
 
 /**
@@ -76,10 +62,10 @@ export function coverFor(p: CoverFacts): string {
 }
 
 /**
- * The band layer: tinted paper, the drafting grid, the type's ghosted
- * mark, and an optional legibility scrim for overlaid text. Fills its
- * (relative) parent; the parent owns size, borders and anything drawn
- * on top.
+ * The band layer: tinted paper, the drafting grid, the drafted
+ * vignette for the project's facts, and an optional legibility scrim
+ * for overlaid text. Fills its (relative) parent; the parent owns
+ * size, borders and anything drawn on top.
  */
 export function CoverArt({
   facts,
@@ -93,7 +79,6 @@ export function CoverArt({
   /** Kept for the covers' return; inert while the band is type-set. */
   imgClassName?: string;
 }) {
-  const Mark = COVER_MARK[facts.type];
   return (
     <>
       <span
@@ -112,12 +97,8 @@ export function CoverArt({
             "repeating-linear-gradient(0deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, rgba(24,34,44,0.045) 0 1px, transparent 1px 22px)",
         }}
       />
-      {/* the type, oversized and fading off the sheet */}
-      <Mark
-        aria-hidden
-        strokeWidth={0.9}
-        className="absolute -bottom-4 -right-3 size-[88px] text-text opacity-[0.06] rotate-[-6deg]"
-      />
+      {/* the project, drafted from its own facts */}
+      <PlanMark facts={facts} />
       {scrim ? (
         <span
           aria-hidden
