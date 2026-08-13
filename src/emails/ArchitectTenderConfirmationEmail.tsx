@@ -29,7 +29,7 @@ export function ArchitectTenderConfirmationEmail({
 
   return (
     <EmailShell
-      preview={`Received — onboarding ${projectAddress}. Aryan will be in touch within 24 hours.`}
+      preview={`Received — onboarding ${projectAddress}. We will be in touch within 24 hours.`}
       kicker="Received"
       heading="Your project is being onboarded."
       whyReceiving="You're receiving this because you confirmed onboarding for a project on builderhq.com.au/architect-tender. If you didn't do this, ignore this email — no further action is taken without your reply."

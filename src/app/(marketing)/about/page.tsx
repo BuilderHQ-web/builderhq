@@ -215,16 +215,19 @@ export default function AboutPage() {
             <span className="text-accent-light">based in Melbourne</span>.
           </h2>
           <p className="mt-6 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
-            BuilderHQ is an Australian company, built and run from Melbourne
-            by Aryan Vadera, and working with clients and builders across the
-            country. The platform is made for Australian residential
-            construction: the way homes here are documented, the way state
-            licensing works, and the way a residential contract is signed
-            directly between a client and a builder.
+            BuilderHQ is an Australian company, built and run from Melbourne,
+            and working with clients and builders across the country. It was
+            built by people who have worked in residential construction and
+            saw the same problem from the inside: three quotes for one job,
+            none of them covering the same work. The platform is made for
+            Australian residential construction: the way homes here are
+            documented, the way state licensing works, and the way a
+            residential contract is signed directly between a client and a
+            builder.
           </p>
           <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
-            BuilderHQ is a partner of the Housing Industry Association, the
-            peak body for Australia&rsquo;s residential building industry.
+            BuilderHQ is a partner of the Housing Industry Association,
+            Australia&rsquo;s peak body for residential building.
           </p>
           <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
             Every builder application is reviewed by a person. Every scope of

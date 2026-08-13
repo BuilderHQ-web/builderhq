@@ -4,6 +4,7 @@
  * the right, one hairline, one quiet copyright line. Nothing else.
  */
 
+import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 
@@ -79,6 +80,25 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                 info@builderhq.com.au
               </a>
             </p>
+
+            {/* The HIA mark, as an accreditation lockup at the foot of
+                the brand column: small, in colour, above the rule. The
+                badge is close to square, so 34px reads at the weight of
+                a line of body text beside it rather than shouting. */}
+            <div className="mt-1 flex items-center gap-3">
+              <Image
+                src="/Homepage_logos/hia-badge.png"
+                alt=""
+                width={414}
+                height={468}
+                className="h-[34px] w-auto shrink-0"
+              />
+              <span className="text-[12px] leading-[1.45] text-text-dim text-left">
+                In partnership with the
+                <br />
+                Housing Industry Association
+              </span>
+            </div>
           </div>
 
           {/* Link columns */}
@@ -107,9 +127,6 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
         <div className="mt-14 pt-6 border-t border-border-subtle/70 flex flex-col lg:flex-row items-center lg:items-baseline justify-between gap-2">
           <p className="text-[12.5px] text-text-dim text-center lg:text-left">
             © {new Date().getFullYear()} BuilderHQ · ABN 70 697 584 722
-          </p>
-          <p className="text-[12.5px] text-text-dim text-center">
-            In partnership with the Housing Industry Association
           </p>
           <p className="text-[12.5px] text-text-dim text-center lg:text-right">
             Melbourne, Victoria, Australia
