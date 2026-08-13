@@ -56,6 +56,12 @@ export function siteGraph(): Record<string, unknown> {
     email: "info@builderhq.com.au",
     slogan: "Upload once. Compare like for like. Build.",
     areaServed: { "@type": "Country", name: "Australia" },
+    // The HIA partnership, stated where the entity graphs read it.
+    memberOf: {
+      "@type": "Organization",
+      name: "Housing Industry Association",
+      url: "https://hia.com.au",
+    },
     foundingLocation: {
       "@type": "Place",
       address: {

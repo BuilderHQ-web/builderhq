@@ -89,7 +89,9 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
     };
   }, []);
 
-  if (logos.length < 4) return null;
+  // The register loop needs enough marks to read as a network; the
+  // majors tier above it does not, and must never disappear with it.
+  const marquee = logos.length >= 4;
 
   const woven = weave(logos);
   // Two passes of the run per half keeps every half wider than any
@@ -99,70 +101,104 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
   return (
     <section
       aria-label="Trusted partner network"
-      className="relative px-5 md:px-10 py-12 lg:py-0 lg:min-h-[32svh] lg:flex lg:flex-col lg:justify-center"
+      className="relative px-5 md:px-10 py-12 lg:py-16 lg:min-h-[32svh] lg:flex lg:flex-col lg:justify-center"
     >
       <div className="mx-auto w-full max-w-[1180px]">
-        <p className="flex items-center justify-center gap-2.5 mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim text-center">
-          <span aria-hidden className="h-px w-6 bg-text-faint/40" />
-          A network of trusted industry partners
-          <span aria-hidden className="h-px w-6 bg-text-faint/40" />
-        </p>
-
-        <div
-          className="relative overflow-hidden"
-          onPointerEnter={(e) => {
-            // Mouse only — on touch, a tap must never latch the pause.
-            if (e.pointerType === "mouse") hovering.current = true;
-          }}
-          onPointerLeave={() => {
-            hovering.current = false;
-          }}
-          style={{
-            maskImage:
-              "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
-          }}
-        >
-          <div ref={trackRef} className="flex w-max will-change-transform">
-            {[0, 1].map((copy) => (
-              <div
-                key={copy}
-                ref={copy === 0 ? halfRef : undefined}
-                aria-hidden={copy === 1}
-                className="flex items-center"
-              >
-                {half.map((l, i) => (
-                  <Link
-                    key={`${copy}-${i}-${l.slug}`}
-                    href={`/partners/${l.slug}`}
-                    tabIndex={copy === 1 ? -1 : undefined}
-                    className="mx-6 sm:mx-9 flex h-16 shrink-0 items-center justify-center transition-transform duration-300 hover:-translate-y-0.5"
-                  >
-                    <Image
-                      src={l.src}
-                      alt={copy === 0 ? `${l.name} logo` : ""}
-                      width={230}
-                      height={52}
-                      // A curated `scale` bumps individual marks whose
-                      // artwork reads optically small at the row height.
-                      style={
-                        l.scale ? { height: Math.round(52 * l.scale) } : undefined
-                      }
-                      className={`h-12 sm:h-[52px] w-auto max-w-[200px] sm:max-w-[228px] object-contain ${
-                        l.norm
-                          ? ""
-                          : l.dark
-                            ? "grayscale invert mix-blend-multiply opacity-70"
-                            : "grayscale mix-blend-multiply opacity-70"
-                      }`}
-                    />
-                  </Link>
-                ))}
-              </div>
-            ))}
+        {/* ── The majors: institutions BuilderHQ is partnered with.
+            A static tier above the register marquee, in full colour,
+            built as a row so the next mark can simply join it. These
+            are relationships, not register listings, so nothing here
+            links away from the page. ── */}
+        <div className="mb-12 lg:mb-14 text-center">
+          <p className="flex items-center justify-center gap-2.5 text-[11px] tracking-[0.28em] uppercase text-text-dim">
+            <span aria-hidden className="h-px w-6 bg-text-faint/40" />
+            In partnership with
+            <span aria-hidden className="h-px w-6 bg-text-faint/40" />
+          </p>
+          <div className="mt-8 flex flex-wrap items-start justify-center gap-x-16 gap-y-10">
+            <figure className="flex flex-col items-center">
+              <Image
+                src="/Homepage_logos/hia-badge.png"
+                alt=""
+                width={414}
+                height={468}
+                className="h-20 sm:h-[92px] w-auto"
+              />
+              <figcaption className="mt-4">
+                <span className="block text-[12.5px] font-medium text-text-muted">
+                  Housing Industry Association
+                </span>
+                <span className="block mt-1 text-[11.5px] text-text-dim">
+                  Australia&rsquo;s peak residential building industry body
+                </span>
+              </figcaption>
+            </figure>
           </div>
         </div>
+
+        {marquee ? (
+          <>
+            <p className="mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim text-center">
+              A network of trusted industry partners
+            </p>
+
+            <div
+              className="relative overflow-hidden"
+              onPointerEnter={(e) => {
+                // Mouse only — on touch, a tap must never latch the pause.
+                if (e.pointerType === "mouse") hovering.current = true;
+              }}
+              onPointerLeave={() => {
+                hovering.current = false;
+              }}
+              style={{
+                maskImage:
+                  "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent, black 12%, black 88%, transparent)",
+              }}
+            >
+              <div ref={trackRef} className="flex w-max will-change-transform">
+                {[0, 1].map((copy) => (
+                  <div
+                    key={copy}
+                    ref={copy === 0 ? halfRef : undefined}
+                    aria-hidden={copy === 1}
+                    className="flex items-center"
+                  >
+                    {half.map((l, i) => (
+                      <Link
+                        key={`${copy}-${i}-${l.slug}`}
+                        href={`/partners/${l.slug}`}
+                        tabIndex={copy === 1 ? -1 : undefined}
+                        className="mx-6 sm:mx-9 flex h-16 shrink-0 items-center justify-center transition-transform duration-300 hover:-translate-y-0.5"
+                      >
+                        <Image
+                          src={l.src}
+                          alt={copy === 0 ? `${l.name} logo` : ""}
+                          width={230}
+                          height={52}
+                          // A curated `scale` bumps individual marks whose
+                          // artwork reads optically small at the row height.
+                          style={
+                            l.scale ? { height: Math.round(52 * l.scale) } : undefined
+                          }
+                          className={`h-12 sm:h-[52px] w-auto max-w-[200px] sm:max-w-[228px] object-contain ${
+                            l.norm
+                              ? ""
+                              : l.dark
+                                ? "grayscale invert mix-blend-multiply opacity-70"
+                                : "grayscale mix-blend-multiply opacity-70"
+                          }`}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
     </section>
   );

@@ -223,6 +223,10 @@ export default function AboutPage() {
             directly between a client and a builder.
           </p>
           <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
+            BuilderHQ is a partner of the Housing Industry Association, the
+            peak body for Australia&rsquo;s residential building industry.
+          </p>
+          <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
             Every builder application is reviewed by a person. Every scope of
             works is checked by a person before the client sees it. If you
             would like to speak to someone before you sign up, our details are

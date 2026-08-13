@@ -108,6 +108,9 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
           <p className="text-[12.5px] text-text-dim text-center lg:text-left">
             © {new Date().getFullYear()} BuilderHQ · ABN 70 697 584 722
           </p>
+          <p className="text-[12.5px] text-text-dim text-center">
+            In partnership with the Housing Industry Association
+          </p>
           <p className="text-[12.5px] text-text-dim text-center lg:text-right">
             Melbourne, Victoria, Australia
           </p>
