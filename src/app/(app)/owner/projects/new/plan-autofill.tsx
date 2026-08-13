@@ -66,6 +66,9 @@ function countExtracted(x: ProjectExtraction): number {
 
 function buildPatch(x: ProjectExtraction): UpdateProjectInput {
   const p: UpdateProjectInput = {};
+  // The draft is created before the plan is read now, so the type the
+  // model reads arrives in the patch rather than at creation.
+  if (x.type) p.type = x.type as UpdateProjectInput["type"];
   if (x.title) p.title = x.title;
   if (x.description) p.description = x.description;
   if (x.addressLine1) p.addressLine1 = x.addressLine1;
@@ -92,7 +95,22 @@ function buildPatch(x: ProjectExtraction): UpdateProjectInput {
 }
 
 /** Best-effort attach of the scanned plan as the architectural document. */
-async function attachPlan(project: Project, file: File): Promise<void> {
+/**
+ * Put the plan in R2 and return its document id.
+ *
+ * This is the ONLY way the plan can reach the server. A request body
+ * over 4.5MB is rejected by Vercel at the platform edge, before the
+ * function runs, so posting the PDF to the extract route failed for
+ * every real plan set. The presigned PUT goes browser → R2 directly and
+ * has no such ceiling; the route then reads the object by id.
+ *
+ * Returns null when the upload fails, so the caller can say so plainly
+ * rather than blaming the file.
+ */
+async function attachPlan(
+  project: Project,
+  file: File,
+): Promise<string | null> {
   try {
     const init = await initUploadAction({
       projectId: project.id,
@@ -101,16 +119,17 @@ async function attachPlan(project: Project, file: File): Promise<void> {
       sizeBytes: file.size,
       category: "architectural",
     });
-    if (!init.ok) return;
+    if (!init.ok) return null;
     const put = await fetch(init.value.uploadUrl, {
       method: "PUT",
       headers: init.value.uploadHeaders,
       body: file,
     });
-    if (!put.ok) return;
+    if (!put.ok) return null;
     await completeUploadAction(init.value.documentId);
+    return init.value.documentId;
   } catch {
-    /* non-fatal - the wizard's documents step lets them add it */
+    return null;
   }
 }
 
@@ -152,18 +171,43 @@ export function PlanAutofill({
     void runScan(f);
   }
 
+  /**
+   * Draft first, then the plan straight to R2, then read it there.
+   *
+   * The order is forced by the platform: the PDF cannot travel through
+   * the extract route (see attachPlan), and a presigned upload is scoped
+   * to a project, so the draft has to exist before the plan can land.
+   * The type the model reads is applied afterwards in the patch.
+   */
   async function runScan(file: File) {
     setPhase("scanning");
     setScanComplete(false);
     setError(null);
     try {
+      const created = await createProjectAction({ type: "single_dwelling" });
+      if (!created.ok) {
+        setError(created.error.message);
+        setPhase("error");
+        return;
+      }
+      const project = created.value;
+
+      const documentId = await attachPlan(project, file);
+      if (!documentId) {
+        setError(
+          "We couldn't upload those plans. Check your connection and try again, or enter the details manually.",
+        );
+        setPhase("error");
+        return;
+      }
+
       // Run the scan and a minimum-duration timer together, so the animation
       // always plays for at least MIN_SCAN_MS however fast the API returns.
       const [res] = await Promise.all([
         fetch("/api/projects/extract", {
           method: "POST",
-          headers: { "content-type": "application/pdf" },
-          body: file,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ documentId }),
         }),
         sleep(MIN_SCAN_MS),
       ]);
@@ -186,8 +230,8 @@ export function PlanAutofill({
       setScanComplete(true); // animation shows the tick + "pulled N details"
       await sleep(1300); // let the success beat land
 
-      // Build the draft, pre-fill it, attach the plan, then into the wizard.
-      await finalize(sugg, file, count);
+      // The plan is already attached — apply the read fields and go.
+      await finalize(project, sugg, count);
     } catch {
       await sleep(700);
       setError(
@@ -197,20 +241,18 @@ export function PlanAutofill({
     }
   }
 
-  async function finalize(x: ProjectExtraction, file: File, count: number) {
-    // 1 - create the draft with the read (or default) type.
-    const type = (x.type ?? "single_dwelling") as Project["type"];
-    const created = await createProjectAction({ type });
-    if (!created.ok) {
-      setError(created.error.message);
-      setPhase("error");
-      return;
-    }
-    const project = created.value;
-
-    // 2 - apply the read fields. Setting the title regenerates a draft's
-    //     slug, so we must redirect to the slug the UPDATE returns, not the
-    //     create one (that was the 404). No arch plan yet, so it stays a draft.
+  /**
+   * Apply what the model read to the draft that already holds the plan.
+   *
+   * Setting the title regenerates a draft's slug, so the redirect uses
+   * the slug the UPDATE returns, not the one creation gave us — that
+   * mismatch was the old 404.
+   */
+  async function finalize(
+    project: Project,
+    x: ProjectExtraction,
+    count: number,
+  ) {
     let slug = project.slug;
     const patch = buildPatch(x);
     if (Object.keys(patch).length > 0) {
@@ -218,10 +260,7 @@ export function PlanAutofill({
       if (upd.ok) slug = upd.value.slug;
     }
 
-    // 3 - attach the very PDF they scanned as the architectural doc.
-    await attachPlan(project, file);
-
-    // 4 - into the normal wizard, pre-filled, with the review banner.
+    // Into the normal wizard, pre-filled, with the review banner.
     router.push(
       `${base}/projects/${slug}/edit?from=autofill&filled=${count}`,
     );

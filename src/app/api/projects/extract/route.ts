@@ -19,12 +19,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "@/modules/auth";
+import { getObjectBytes, getOwnedObject } from "@/modules/documents";
 import { extractProjectFromPdf, isExtractionEnabled } from "@/modules/extraction";
 import { limiters } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+/**
+ * A real plan set takes its time: a 23MB, 3-page architectural set
+ * measured at ~30s end to end (R2 read, base64, then the model). 60s
+ * left almost no headroom for a heavier set, and a timeout returns a
+ * platform error page rather than JSON, which the client can only
+ * report as a generic failure. 300 is the ceiling on Vercel Pro.
+ */
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -57,12 +65,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Read the PDF bytes - raw body or multipart "file".
+  // Read the PDF bytes.
+  //
+  // Preferred path: `{ documentId }`. The client has already uploaded the
+  // plan straight to R2 with a presigned PUT, so we fetch the object
+  // server-side and the bytes never travel through this function.
+  //
+  // This is not a preference, it is the only path that works for a real
+  // plan set. Vercel rejects any request body over 4.5MB at the platform
+  // edge with a plain-text FUNCTION_PAYLOAD_TOO_LARGE, before the handler
+  // runs — which is not JSON, so the client could not even read the
+  // reason and fell back to "try a clearer PDF". Architectural sets are
+  // almost always larger than that, so auto-fill failed for everything.
+  //
+  // The raw-body path stays for the small files it can still carry, and
+  // because the mobile client uses it.
   let bytes: Uint8Array;
   let filename = "plans.pdf";
   const reqContentType = request.headers.get("content-type") ?? "";
   try {
-    if (!reqContentType.includes("multipart/form-data")) {
+    if (reqContentType.includes("application/json")) {
+      const body = (await request.json()) as { documentId?: unknown };
+      const documentId =
+        typeof body?.documentId === "string" ? body.documentId : null;
+      if (!documentId) {
+        return NextResponse.json(
+          { error: { code: "validation", message: 'Send a "documentId".' } },
+          { status: 400 },
+        );
+      }
+      // Ownership is checked in the service, not trusted from the id.
+      const doc = await getOwnedObject(userId, documentId);
+      if (!doc) {
+        return NextResponse.json(
+          { error: { code: "not_found", message: "We couldn't find that upload. Try again." } },
+          { status: 404 },
+        );
+      }
+      filename = doc.filename || filename;
+      const object = await getObjectBytes(doc.objectKey);
+      bytes = object.bytes;
+    } else if (!reqContentType.includes("multipart/form-data")) {
       bytes = new Uint8Array(await request.arrayBuffer());
     } else {
       const form = await request.formData();
@@ -76,7 +119,19 @@ export async function POST(request: NextRequest) {
       filename = file.name || filename;
       bytes = new Uint8Array(await file.arrayBuffer());
     }
-  } catch {
+  } catch (err) {
+    // Log the real reason. This catch used to swallow it, so an R2 read
+    // failing server-side surfaced to the owner as "couldn't read that
+    // file, try uploading it again" — blaming their PDF for our fault,
+    // and leaving nothing behind to diagnose it from.
+    logger.error(
+      {
+        event: "extraction.project.source_failed",
+        userId,
+        msg: err instanceof Error ? err.message : String(err),
+      },
+      "couldn't obtain the plan bytes",
+    );
     return NextResponse.json(
       { error: { code: "validation", message: "Couldn't read that file. Try uploading it again." } },
       { status: 400 },

@@ -249,6 +249,31 @@ export async function getDownloadUrl(
   return ok({ url, filename: row.filename });
 }
 
+/**
+ * The object key behind a document the caller owns, for server-side reads.
+ *
+ * Plan auto-fill needs the bytes, not a URL: the client uploads the plan
+ * straight to R2 (a request body over 4.5MB never reaches a Vercel
+ * function) and then sends only the id, so the route fetches the object
+ * itself. Ownership is checked here rather than trusted from the id.
+ *
+ * Accepts a pending document as well as an active one, because auto-fill
+ * reads the plan the moment it lands, before the upload is finalised.
+ */
+export async function getOwnedObject(
+  ownerId: string,
+  documentId: string,
+): Promise<{ objectKey: string; filename: string } | null> {
+  const [row] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), isNull(documents.deletedAt)));
+  if (!row) return null;
+  if (row.ownerId !== ownerId) return null;
+  if (row.objectKey === "pending") return null;
+  return { objectKey: row.objectKey, filename: row.filename };
+}
+
 /** List the active + pending documents the caller owns, newest first. */
 export async function listMyDocuments(ownerId: string): Promise<Document[]> {
   const rows = await db

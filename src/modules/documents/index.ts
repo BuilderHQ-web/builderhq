@@ -29,6 +29,7 @@ export {
   initUpload,
   completeUpload,
   getDownloadUrl,
+  getOwnedObject,
   listMyDocuments,
   listForProject,
   listActiveForProjectUnchecked,
