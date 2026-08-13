@@ -116,7 +116,7 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
               to share a 335px line. */}
           <p className="flex items-center justify-center gap-3 text-[11px] sm:text-[13px] tracking-[0.28em] sm:tracking-[0.3em] uppercase font-medium text-text-muted">
             <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
-            In partnership with
+            In association with
             <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
           </p>
           <div className="mt-8 sm:mt-9 flex flex-wrap items-start justify-center gap-x-16 gap-y-10">

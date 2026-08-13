@@ -94,7 +94,7 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                 className="h-[34px] w-auto shrink-0"
               />
               <span className="text-[12px] leading-[1.45] text-text-dim text-left">
-                In partnership with the
+                In association with the
                 <br />
                 Housing Industry Association
               </span>

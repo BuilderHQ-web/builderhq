@@ -226,8 +226,8 @@ export default function AboutPage() {
             builder.
           </p>
           <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
-            BuilderHQ is a partner of the Housing Industry Association,
-            Australia&rsquo;s peak body for residential building.
+            BuilderHQ is in association with the Housing Industry
+            Association, Australia&rsquo;s peak body for residential building.
           </p>
           <p className="mt-5 max-w-[62ch] text-[15px] leading-[1.85] text-text-subtle">
             Every builder application is reviewed by a person. Every scope of
