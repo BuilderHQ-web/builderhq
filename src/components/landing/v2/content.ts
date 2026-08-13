@@ -307,8 +307,8 @@ export const LENS: Record<Role, LensCopy> = {
       ],
       bridge: {
         label: "The fix",
-        a: "The scope arrives written,",
-        b: "and every tender is read in full.",
+        a: "We write the scope for you.",
+        b: "Your whole tender gets read.",
       },
     },
     spine: {
@@ -341,14 +341,14 @@ export const LENS: Record<Role, LensCopy> = {
       ],
     },
     trust: {
-      h2a: "Every builder",
-      h2b: "is vetted.",
+      h2a: "You know the rules",
+      h2b: "before you price.",
       intro:
-        "Everyone pricing your job has been vetted first, and everyone works to the same published rules.",
+        "Everyone pricing the same job has been checked first, and everyone works to the same rules.",
       cards: [
         {
           icon: "shield",
-          title: "Every builder is vetted",
+          title: "Everyone here is verified",
           body: "ABN against the Australian Business Register, licence against the state register where one connects and by our team where it does not. A spot on an open round opens only once both have passed, for you and for everyone you are priced against.",
         },
         {
@@ -358,12 +358,12 @@ export const LENS: Record<Role, LensCopy> = {
         },
         {
           icon: "scale",
-          title: "Every tender is scored the same way",
+          title: "You see how you were scored",
           body: "The same six measures for every tender on the round, published before it opens. Each score shows its working, so you could read your own evaluation and know exactly where it came from.",
         },
       ],
       footer:
-        "Your details are never sold or passed around. Rounds are capped, and you see the cap before you commit.",
+        "Your details stay private. Every round is capped, and you see the cap before you enter.",
     },
     network: {
       h2a: "The people your",
@@ -446,8 +446,8 @@ export const LENS: Record<Role, LensCopy> = {
       ],
       bridge: {
         label: "The fix",
-        a: "The round runs here.",
-        b: "The judgement stays with you.",
+        a: "We run the round.",
+        b: "You advise your client.",
       },
     },
     spine: {
@@ -480,14 +480,14 @@ export const LENS: Record<Role, LensCopy> = {
       ],
     },
     trust: {
-      h2a: "Every builder",
-      h2b: "is vetted.",
+      h2a: "Your recommendation",
+      h2b: "can be defended.",
       intro:
-        "Nobody prices your client’s job anonymously, and every rule is published before the round opens.",
+        "Every builder is checked before they price, and every rule is set before the round opens.",
       cards: [
         {
           icon: "shield",
-          title: "Every builder is vetted",
+          title: "Every builder is checked first",
           body: "ABN against the Australian Business Register, licence against the state register where one connects and by our team where it does not. A builder joins an open round only once both have passed. A builder you invite joins on your say so, and their verification status is shown on the round either way.",
         },
         {
@@ -497,7 +497,7 @@ export const LENS: Record<Role, LensCopy> = {
         },
         {
           icon: "scale",
-          title: "Every tender is scored the same way",
+          title: "Every score can be defended",
           body: "The same six measures for every tender on the round, published in advance. Each score shows what was earned and what was not, so any line of your recommendation can be defended.",
         },
       ],
