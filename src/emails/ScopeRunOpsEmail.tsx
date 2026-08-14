@@ -1,8 +1,9 @@
 /**
  * ScopeRunOpsEmail — to the ops desk when an extraction run needs a
- * human. Two moods, one letter: the pack is synthesised and waiting
- * for review, or the run failed and a runner is waiting on a promise
- * the platform made them.
+ * human, or is about to. Three moods, one letter: a run has started
+ * (the heartbeat — if the review email never follows it, something is
+ * stuck), the pack is synthesised and waiting for review, or the run
+ * failed and a runner is waiting on a promise the platform made them.
  */
 
 import {
@@ -16,7 +17,7 @@ import {
 } from "./_shell";
 
 interface ScopeRunOpsEmailProps {
-  kind: "review" | "failed";
+  kind: "started" | "review" | "failed";
   projectTitle: string;
   evidencedCount: number;
   gapCount: number;
@@ -35,21 +36,35 @@ export function ScopeRunOpsEmail({
   deskUrl,
 }: ScopeRunOpsEmailProps) {
   const review = kind === "review";
+  const started = kind === "started";
   return (
     <EmailShell
       preview={
-        review
-          ? `Pack ready for review: ${projectTitle}`
-          : `Extraction failed: ${projectTitle}`
+        started
+          ? `Analysis started: ${projectTitle}`
+          : review
+            ? `Pack ready for review: ${projectTitle}`
+            : `Extraction failed: ${projectTitle}`
       }
       kicker="Scope engine"
       heading={
-        review ? "A pack is waiting for review" : "An extraction run failed"
+        started
+          ? "An analysis run has started"
+          : review
+            ? "A pack is waiting for review"
+            : "An extraction run failed"
       }
       whyReceiving="You are receiving this because you run the BuilderHQ ops desk."
     >
       <BodyText>
-        {review ? (
+        {started ? (
+          <>
+            The documents on <Strong>{projectTitle}</Strong> have gone in
+            for analysis. A second email follows when the pack is ready
+            for review; if it has not arrived within the hour, the run is
+            stuck and the desk should look.
+          </>
+        ) : review ? (
           <>
             The documents on <Strong>{projectTitle}</Strong> have been read
             and synthesised. Nothing reaches the client until every line
@@ -65,9 +80,11 @@ export function ScopeRunOpsEmail({
         )}
       </BodyText>
 
-      <MetaCard title={review ? "The pack" : "The failure"}>
+      <MetaCard title={started ? "The run" : review ? "The pack" : "The failure"}>
         <MetaRow label="Project" value={projectTitle} />
-        {review ? (
+        {started ? (
+          <MetaRow label="Documents in" value={String(evidencedCount)} />
+        ) : review ? (
           <>
             <MetaRow label="Documented items" value={String(evidencedCount)} />
             <MetaRow label="Open gaps" value={String(gapCount)} />
@@ -84,13 +101,15 @@ export function ScopeRunOpsEmail({
       </MetaCard>
 
       <PrimaryButton href={deskUrl}>
-        {review ? "Review the pack" : "Open the run"}
+        {started ? "Watch the run" : review ? "Review the pack" : "Open the run"}
       </PrimaryButton>
 
       <Caption>
-        {review
-          ? "Every verdict you give is recorded and becomes training data for the reader."
-          : "Runs are resumable. A restart re-reads only what did not finish."}
+        {started
+          ? "No action needed yet. This email exists so a silent failure cannot hide."
+          : review
+            ? "Every verdict you give is recorded and becomes training data for the reader."
+            : "Runs are resumable. A restart re-reads only what did not finish."}
       </Caption>
     </EmailShell>
   );

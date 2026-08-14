@@ -31,6 +31,7 @@ import {
 import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { CoverArt } from "@/components/builder/project-cover";
 import { SampleRoundCard } from "@/components/app/sample-round-card";
+import { StatCount } from "@/components/app/stat-count";
 import { getSampleForUser } from "@/modules/sample";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
@@ -401,21 +402,40 @@ export default async function OwnerDashboard({
                       </span>
                     }
                   />
-                  <ul className="mt-5 flex flex-col gap-2">
-                    {data.pulses.map((pulse) => (
-                      <ProjectFileRow key={pulse.project.id} pulse={pulse} />
-                    ))}
-                    {data.projects.list
-                      .filter((p) => p.status === "draft")
-                      .map((p) => (
-                        <PlainProjectRow key={p.id} p={p} />
-                      ))}
-                    {data.pulses.length === 0 && data.projects.draft === 0
-                      ? data.projects.recent.map((p) => (
-                          <PlainProjectRow key={p.id} p={p} />
-                        ))
-                      : null}
-                  </ul>
+                  {/* Five rows, then the door to the rest. The column
+                      used to render every project it knew about, which
+                      buried the sections beneath it once an account had
+                      history. */}
+                  {(() => {
+                    const drafts = data.projects.list.filter((p) => p.status === "draft");
+                    const rows: React.ReactNode[] = [
+                      ...data.pulses.map((pulse) => (
+                        <ProjectFileRow key={pulse.project.id} pulse={pulse} />
+                      )),
+                      ...drafts.map((p) => <PlainProjectRow key={p.id} p={p} />),
+                      ...(data.pulses.length === 0 && drafts.length === 0
+                        ? data.projects.recent.map((p) => (
+                            <PlainProjectRow key={p.id} p={p} />
+                          ))
+                        : []),
+                    ];
+                    const shown = rows.slice(0, 5);
+                    const hidden = rows.length - shown.length;
+                    return (
+                      <>
+                        <ul className="mt-5 flex flex-col gap-2">{shown}</ul>
+                        {hidden > 0 ? (
+                          <Link
+                            href="/owner/projects"
+                            className="mt-3 flex items-center justify-center gap-1.5 w-full rounded-lg border border-border-subtle bg-surface-1 py-2.5 text-[12.5px] font-medium text-text-muted hover:text-text hover:border-border-strong transition-colors"
+                          >
+                            View {hidden} more {hidden === 1 ? "project" : "projects"}
+                            <ArrowRight className="size-3.5" />
+                          </Link>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </section>
 
                 {/* Shared with you — seats other runners handed this
@@ -431,46 +451,86 @@ export default async function OwnerDashboard({
                   <section>
                     <PlainHead
                       title="Your tenders"
-                      sub="Every tender received, by status."
-                      right={
-                        <Link
-                          href="/owner/tenders"
-                          className="text-[11.5px] text-text-muted hover:text-text transition-colors inline-flex items-center gap-1 shrink-0"
-                        >
-                          View all
-                          <ArrowRight className="size-3" />
-                        </Link>
-                      }
+                      sub={`Across ${data.tenders.projectsWithTenders} ${plural(data.tenders.projectsWithTenders, "project", "projects")}, read side by side.`}
                     />
-                    <div
-                      className={cn(
-                        "mt-5 grid divide-x divide-border-subtle border-y border-border-subtle",
-                        data.tenders.byStatus.rejected > 0
-                          ? "grid-cols-2 sm:grid-cols-4"
-                          : "grid-cols-3",
-                      )}
-                    >
-                      {(
-                        [
-                          ["Submitted", data.tenders.byStatus.submitted],
-                          ["Shortlisted", data.tenders.byStatus.shortlisted],
-                          ["Awarded", data.tenders.byStatus.awarded],
-                          ...(data.tenders.byStatus.rejected > 0
-                            ? ([["Declined", data.tenders.byStatus.rejected]] as Array<
-                                [string, number]
-                              >)
-                            : []),
-                        ] as Array<[string, number]>
-                      ).map(([label, n]) => (
-                        <div key={label} className="px-4 py-4 text-center">
-                          <p className="font-display text-[24px] leading-none text-text tabular-nums">
-                            {n}
+                    {/* One panel that actually says something: the money
+                        on the table, what is waiting on the reader, and
+                        how the round is tracking — then the door. The
+                        old strip was four bare integers. */}
+                    <div className="mt-5 rounded-xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border-subtle">
+                        <div className="px-5 py-4">
+                          <p className="text-[10px] tracking-[0.14em] uppercase text-text-dim">
+                            Tenders received
                           </p>
-                          <p className="mt-1.5 text-[10px] tracking-[0.14em] uppercase text-text-dim">
-                            {label}
+                          <p className="mt-1.5 font-display text-[26px] leading-none text-text tabular-nums">
+                            <StatCount value={data.tenders.total} />
+                          </p>
+                          <p className="mt-1.5 text-[11.5px] text-text-muted">
+                            {data.tenders.awaitingDecision > 0
+                              ? `${data.tenders.awaitingDecision} ${plural(data.tenders.awaitingDecision, "tender", "tenders")} awaiting your decision`
+                              : "Nothing waiting on you"}
                           </p>
                         </div>
-                      ))}
+                        <div className="px-5 py-4">
+                          <p className="text-[10px] tracking-[0.14em] uppercase text-text-dim">
+                            Combined quoted value
+                          </p>
+                          <p className="mt-1.5 font-display text-[26px] leading-none text-text tabular-nums">
+                            <StatCount
+                              value={Math.round(data.tenders.totalQuotedValueAud)}
+                              format={(n) =>
+                                new Intl.NumberFormat("en-AU", {
+                                  style: "currency",
+                                  currency: "AUD",
+                                  maximumFractionDigits: 0,
+                                }).format(n)
+                              }
+                            />
+                          </p>
+                          <p className="mt-1.5 text-[11.5px] text-text-muted">
+                            Every price on the table, ex GST
+                          </p>
+                        </div>
+                        <div className="px-5 py-4">
+                          <p className="text-[10px] tracking-[0.14em] uppercase text-text-dim">
+                            {data.tenders.avgDaysToDecisionAwarded != null
+                              ? "Days to a decision"
+                              : "Shortlisted"}
+                          </p>
+                          <p className="mt-1.5 font-display text-[26px] leading-none text-text tabular-nums">
+                            {data.tenders.avgDaysToDecisionAwarded != null ? (
+                              <StatCount value={Math.round(data.tenders.avgDaysToDecisionAwarded)} />
+                            ) : (
+                              <StatCount value={data.tenders.byStatus.shortlisted} />
+                            )}
+                          </p>
+                          <p className="mt-1.5 text-[11.5px] text-text-muted">
+                            {data.tenders.avgDaysToDecisionAwarded != null
+                              ? "Average, across awarded rounds"
+                              : "Marked as front-runners"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle bg-[rgba(24,34,44,0.02)] px-5 py-3">
+                        <p className="text-[11.5px] text-text-dim">
+                          {[
+                            `${data.tenders.byStatus.submitted} submitted`,
+                            `${data.tenders.byStatus.shortlisted} shortlisted`,
+                            `${data.tenders.byStatus.awarded} awarded`,
+                            ...(data.tenders.byStatus.rejected > 0
+                              ? [`${data.tenders.byStatus.rejected} declined`]
+                              : []),
+                          ].join(" · ")}
+                        </p>
+                        <Link
+                          href="/owner/tenders"
+                          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-light hover:underline"
+                        >
+                          Review your tenders
+                          <ArrowRight className="size-3.5" />
+                        </Link>
+                      </div>
                     </div>
                   </section>
                 ) : null}

@@ -2452,7 +2452,7 @@ export async function sendScopeAddendumEmail(
 }
 
 interface SendScopeRunOpsEmailInput {
-  kind: "review" | "failed";
+  kind: "started" | "review" | "failed";
   projectTitle: string;
   evidencedCount: number;
   gapCount: number;
@@ -2466,9 +2466,11 @@ export async function sendScopeRunOpsEmail(
   input: SendScopeRunOpsEmailInput,
 ): Promise<Result<{ id: string }>> {
   const subject =
-    input.kind === "review"
-      ? `Pack ready for review — ${input.projectTitle}`
-      : `Extraction failed — ${input.projectTitle}`;
+    input.kind === "started"
+      ? `Analysis started — ${input.projectTitle}`
+      : input.kind === "review"
+        ? `Pack ready for review — ${input.projectTitle}`
+        : `Extraction failed — ${input.projectTitle}`;
   const [html, text] = await Promise.all([
     render(ScopeRunOpsEmail(input)),
     render(ScopeRunOpsEmail(input), { plainText: true }),

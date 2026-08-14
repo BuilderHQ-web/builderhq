@@ -111,6 +111,35 @@ export const MAX_RUN_DOCUMENTS = 30;
  *  over it, the run stops BEFORE the spend and ops decides. */
 export const MAX_RUN_PAGES = 800;
 
+/**
+ * What each stage refuses to start below.
+ *
+ * These are floors, not estimates: a stage returns `moreWork: true`
+ * rather than begin work it cannot finish inside the invocation. That
+ * makes them SUCCESS returns, which is why a budget too small to clear
+ * them fails silently — the caller sees ok, logs nothing, and the run
+ * never moves. It is exactly how the production queue sat frozen while
+ * every dev script (which passes 240_000) worked perfectly.
+ */
+const STAGE_FLOOR = {
+  classify: 30_000,
+  extract: 60_000,
+  synthesise: 90_000,
+} as const;
+
+/**
+ * The smallest budget that can carry a run through EVERY stage. Any
+ * caller handing a tick less than this can, at best, classify.
+ */
+export const MIN_TICK_BUDGET_MS = STAGE_FLOOR.synthesise + 10_000;
+
+/**
+ * What real callers pass. Both the cron route and the admin desk run on
+ * functions declared `maxDuration = 300`, so this leaves the platform
+ * twenty seconds of headroom to return cleanly.
+ */
+export const TICK_BUDGET_MS = 280_000;
+
 /** The shape stored beside extraction findings so later runs can
  *  prove the work is reusable: same pipeline version, same bytes. */
 interface FindingsMeta {
@@ -373,6 +402,14 @@ export async function processRunTick(
     .where(eq(scopeRuns.id, runId))
     .limit(1);
   if (!run) return fail("not_found", "Run not found.");
+  // A budget under the floor cannot advance past classification, and
+  // says so cheerfully. Shout, so it can never rot quietly again.
+  if (budgetMs < MIN_TICK_BUDGET_MS) {
+    logger.error(
+      { event: "scope.tick.budget_too_small", runId, budgetMs, needed: MIN_TICK_BUDGET_MS },
+      "tick budget is below the synthesis floor — this run cannot finish",
+    );
+  }
   if (["review", "approved", "failed", "superseded"].includes(run.status)) {
     return ok({ status: run.status, moreWork: false });
   }
@@ -403,7 +440,7 @@ export async function processRunTick(
     if (run.status === "pending" || run.status === "classifying") {
       await bump("classifying");
       for (;;) {
-        if (timeLeft() < 30_000) return ok({ status: "classifying", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.classify) return ok({ status: "classifying", moreWork: true });
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -448,7 +485,7 @@ export async function processRunTick(
         return ok({ status: "failed", moreWork: false });
       }
       for (;;) {
-        if (timeLeft() < 60_000) return ok({ status: "extracting", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.extract) return ok({ status: "extracting", moreWork: true });
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -465,7 +502,7 @@ export async function processRunTick(
     }
 
     // Stage 3 — synthesis over everything extracted.
-    if (timeLeft() < 90_000) return ok({ status: "extracting", moreWork: true });
+    if (timeLeft() < STAGE_FLOOR.synthesise) return ok({ status: "extracting", moreWork: true });
     await bump("synthesising");
 
     const docRows = await db
@@ -933,7 +970,7 @@ export async function processRunTick(
 /** Bell-free ops push: the pack needs eyes (or the run needs rescue). */
 async function dispatchScopeRunOps(
   runId: string,
-  kind: "review" | "failed",
+  kind: "started" | "review" | "failed",
 ): Promise<void> {
   try {
     const { sendScopeRunOpsEmail } = await import("@/modules/email");
@@ -951,21 +988,35 @@ async function dispatchScopeRunOps(
       .limit(1);
     if (!row) return;
 
-    const [tally] = await db
-      .select({
-        evidenced: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'evidenced')`.mapWith(Number),
-        gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap')`.mapWith(Number),
-      })
-      .from(scopeRunItems)
-      .where(eq(scopeRunItems.runId, runId));
+    let evidenced = 0;
+    let gaps = 0;
+    if (kind === "started") {
+      // No items exist yet — the run has only just been born. The
+      // heartbeat email carries the document count instead.
+      const [docs] = await db
+        .select({ n: sql<number>`count(*)`.mapWith(Number) })
+        .from(scopeRunDocuments)
+        .where(eq(scopeRunDocuments.runId, runId));
+      evidenced = docs?.n ?? 0;
+    } else {
+      const [tally] = await db
+        .select({
+          evidenced: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'evidenced')`.mapWith(Number),
+          gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap')`.mapWith(Number),
+        })
+        .from(scopeRunItems)
+        .where(eq(scopeRunItems.runId, runId));
+      evidenced = tally?.evidenced ?? 0;
+      gaps = tally?.gaps ?? 0;
+    }
 
     const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
     const usage = row.usage as { estimatedCostUsd?: number } | null;
     await sendScopeRunOpsEmail({
       kind,
       projectTitle: row.projectTitle,
-      evidencedCount: tally?.evidenced ?? 0,
-      gapCount: tally?.gaps ?? 0,
+      evidencedCount: evidenced,
+      gapCount: gaps,
       estimatedCostUsd: usage?.estimatedCostUsd ?? null,
       error: row.error,
       deskUrl: `${base}/admin/scope/${runId}`,
@@ -993,6 +1044,12 @@ export async function tickQueuedRuns(budgetMs = 50_000): Promise<{
 }> {
   const started = Date.now();
   const timeLeft = () => budgetMs - (Date.now() - started);
+  if (budgetMs < MIN_TICK_BUDGET_MS) {
+    logger.error(
+      { event: "scope.queue.budget_too_small", budgetMs, needed: MIN_TICK_BUDGET_MS },
+      "queue budget is below the synthesis floor — runs will not advance",
+    );
+  }
 
   const queued = await db
     .select({ id: scopeRuns.id })
@@ -1013,9 +1070,19 @@ export async function tickQueuedRuns(budgetMs = 50_000): Promise<{
   for (const run of queued) {
     // A tick needs room to finish at least one model call; below the
     // floor we stop and leave the rest to the next beat.
-    if (timeLeft() < 20_000) break;
+    // Stop before a slice too thin to clear the stage floors, rather
+    // than burning the call on a run that will only bounce.
+    if (timeLeft() < MIN_TICK_BUDGET_MS) break;
     const r = await processRunTick(run.id, timeLeft());
-    if (!r.ok) continue;
+    if (!r.ok) {
+      // A failed tick used to vanish here. It is the other half of why
+      // a stuck queue looked healthy.
+      logger.error(
+        { event: "scope.queue.tick_failed", runId: run.id, error: r.error },
+        "a run tick failed inside the queue",
+      );
+      continue;
+    }
     ticked++;
     if (r.value.status === "review") reachedReview++;
     if (r.value.status === "failed") failed++;
@@ -2433,6 +2500,11 @@ export async function requestPreparation(
   }
   const run = await startRun(projectId, runnerId);
   if (!run.ok) return run;
+
+  // The heartbeat: ops hears that a run has STARTED, so a review email
+  // that never follows is a visible absence rather than pure silence.
+  // Fire-and-forget — a mail hiccup must never block the submission.
+  void dispatchScopeRunOps(run.value.id, "started").catch(() => undefined);
 
   await db
     .update(projects)

@@ -166,7 +166,7 @@ export default async function ArchitectDashboard() {
   const sortedProjects = [...data.projects.list].sort(
     (a, b) => PHASE_RANK[phaseOf(a)] - PHASE_RANK[phaseOf(b)],
   );
-  const projectsShown = sortedProjects.slice(0, 4);
+  const projectsShown = sortedProjects.slice(0, 5);
 
   const buildersShown = data.builders.slice(0, 8);
 
@@ -393,10 +393,16 @@ export default async function ArchitectDashboard() {
                     ))}
                   </ul>
                   {sortedProjects.length > projectsShown.length ? (
-                    <p className="mt-3 text-[11.5px] text-text-dim">
-                      {sortedProjects.length - projectsShown.length} more under
-                      View all.
-                    </p>
+                    <Link
+                      href="/architect/projects"
+                      className="mt-3 flex items-center justify-center gap-1.5 w-full rounded-lg border border-border-subtle bg-surface-1 py-2.5 text-[12.5px] font-medium text-text-muted hover:text-text hover:border-border-strong transition-colors"
+                    >
+                      View {sortedProjects.length - projectsShown.length} more{" "}
+                      {sortedProjects.length - projectsShown.length === 1
+                        ? "project"
+                        : "projects"}
+                      <ArrowRight className="size-3.5" />
+                    </Link>
                   ) : null}
                 </section>
 

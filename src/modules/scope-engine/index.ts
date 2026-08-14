@@ -38,6 +38,8 @@ export {
   startRun,
   processRunTick,
   tickQueuedRuns,
+  TICK_BUDGET_MS,
+  MIN_TICK_BUDGET_MS,
   listRuns,
   listAddendaForOps,
   getRunForReview,

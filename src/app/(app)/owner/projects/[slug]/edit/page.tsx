@@ -7,6 +7,7 @@ import {
   briefMemoryForRunner,
 } from "@/modules/projects";
 import { listForProject } from "@/modules/documents";
+import { env } from "@/lib/env";
 import { ProjectWizard } from "./wizard";
 
 export const metadata = { title: "Edit project" };
@@ -65,6 +66,7 @@ export default async function EditProjectPage({
       flagMissingRequired={flagMissingRequired}
       briefAudience={briefAudience}
       rememberedBrief={rememberedBrief}
+      scopeGate={env.SCOPE_PUBLISH_GATE}
     />
   );
 }

@@ -268,6 +268,7 @@ export function ProjectWizard({
   flagMissingRequired = false,
   briefAudience = "owner",
   rememberedBrief,
+  scopeGate = false,
 }: {
   initialProject: Project;
   initialDocs: Document[];
@@ -283,6 +284,10 @@ export function ProjectWizard({
   briefAudience?: BriefAudience;
   /** Stable answers carried from the runner's last project. */
   rememberedBrief?: Record<string, string>;
+  /** True when SCOPE_PUBLISH_GATE is on: the CTA submits the project
+   *  for preparation and review rather than putting it live, and its
+   *  wording says so. */
+  scopeGate?: boolean;
 }) {
   const router = useRouter();
   // The wizard mounts at /owner/... and /architect/... — every internal
@@ -304,6 +309,9 @@ export function ProjectWizard({
   const goStep = useCallback((target: Step) => {
     setStep(target);
     if (target >= 4) setReachedLast(true);
+    // A step change is a page turn: start the reader at the top of it,
+    // not wherever the last step's Next button happened to sit.
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const isPublished = project.status !== "draft";
@@ -614,6 +622,7 @@ export function ProjectWizard({
         allDone={allDone}
         reviewed={reachedLast}
         onPublish={onPublish}
+        scopeGate={scopeGate}
       />
     </div>
   );
@@ -1528,6 +1537,7 @@ function PublishBar({
   allDone,
   reviewed,
   onPublish,
+  scopeGate,
 }: {
   project: Project;
   basePath: string;
@@ -1536,6 +1546,7 @@ function PublishBar({
   allDone: boolean;
   reviewed: boolean;
   onPublish: () => void | Promise<void>;
+  scopeGate: boolean;
 }) {
   const isPublished = project.status !== "draft";
   return (
@@ -1560,7 +1571,9 @@ function PublishBar({
               <ArrowRight className="size-3.5 text-accent-light shrink-0 mt-0.5" />
               <span className="min-w-0">
                 <span className="text-text font-medium">
-                  Review each step to publish.
+                  {scopeGate
+                    ? "Review each step to continue."
+                    : "Review each step to publish."}
                 </span>{" "}
                 <span className="text-text-dim">
                   You can add more plans in the Documents step.
@@ -1570,7 +1583,7 @@ function PublishBar({
           ) : (
             <div className="text-[13px] text-accent-light flex items-center gap-2">
               <Check className="size-4" />
-              Ready to publish
+              {scopeGate ? "Ready to send for review" : "Ready to publish"}
             </div>
           )}
         </div>
@@ -1601,7 +1614,13 @@ function PublishBar({
             )}
           >
             {publishing ? <Loader2 className="size-4 animate-spin" /> : null}
-            {publishing ? "Publishing…" : "Publish"}
+            {scopeGate
+              ? publishing
+                ? "Submitting…"
+                : "Submit for review"
+              : publishing
+                ? "Publishing…"
+                : "Publish"}
           </button>
         )}
       </div>

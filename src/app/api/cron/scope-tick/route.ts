@@ -23,10 +23,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { tickQueuedRuns } from "@/modules/scope-engine";
+import { TICK_BUDGET_MS, tickQueuedRuns } from "@/modules/scope-engine";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+/**
+ * 300s, the Pro ceiling. It was 60, which could never satisfy the
+ * extraction floor (60s) or the synthesis floor (90s), so every tick
+ * returned "more work to do" and the queue froze while reporting ok.
+ */
+export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await tickQueuedRuns(50_000);
+    const result = await tickQueuedRuns(TICK_BUDGET_MS);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

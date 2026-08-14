@@ -173,6 +173,15 @@ export function CommandPalette({ role }: Props) {
         setOpen((v) => !v);
         return;
       }
+      // Esc closes from anywhere while open. The input has its own
+      // handler; this one catches the case where focus has wandered
+      // (a click on the list, the scrollbar), which used to strand
+      // the dialog open.
+      if (k === "escape" && open) {
+        e.preventDefault();
+        setOpen(false);
+        return;
+      }
       // "/" focuses the palette when nothing else is typing
       if (
         k === "/" &&
@@ -250,19 +259,19 @@ export function CommandPalette({ role }: Props) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.16 }}
           className="fixed inset-0 z-[150] flex items-start justify-center pt-[12vh] px-4 sm:px-6"
-          onMouseDown={(e) => {
-            // Click outside to close — mousedown on the backdrop only,
-            // not bubbled clicks from inside the panel.
-            if (e.target === e.currentTarget) close();
-          }}
         >
-          {/* Backdrop */}
+          {/* Backdrop. The close handler lives HERE, not on the wrapper:
+              the backdrop covers the wrapper completely, so a wrapper-level
+              target check could never match and outside clicks did
+              nothing. The panel is a later sibling, so its clicks never
+              reach this handler. */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
             aria-hidden
+            onMouseDown={close}
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
           />
 

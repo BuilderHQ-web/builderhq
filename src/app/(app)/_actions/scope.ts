@@ -13,6 +13,7 @@ import { fail, ok, type Result } from "@/lib/result";
 import {
   startRun,
   processRunTick,
+  TICK_BUDGET_MS,
   reviewItem,
   addItem,
   promoteCapture,
@@ -49,13 +50,16 @@ export async function startScopeRunAction(
 }
 
 /** One bounded slice of work — the client loops while moreWork. The
- *  budget stays under the serverless action ceiling. */
+ *  budget stays under the serverless action ceiling (the desk page
+ *  declares maxDuration = 300). It was 50_000, below the synthesis
+ *  floor, so the desk's re-tick button could never finish a run
+ *  either — the same defect the cron carried. */
 export async function tickScopeRunAction(
   runId: string,
 ): Promise<Result<{ status: string; moreWork: boolean }>> {
   const a = await requireAdmin();
   if (!a.ok) return a;
-  return processRunTick(runId, 50_000);
+  return processRunTick(runId, TICK_BUDGET_MS);
 }
 
 export async function reviewScopeItemAction(
