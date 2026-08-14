@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -139,6 +139,21 @@ export const MIN_TICK_BUDGET_MS = STAGE_FLOOR.synthesise + 10_000;
  * twenty seconds of headroom to return cleanly.
  */
 export const TICK_BUDGET_MS = 280_000;
+
+/**
+ * How long one tick owns a run.
+ *
+ * MUST exceed TICK_BUDGET_MS, or a lease can expire while its own tick
+ * is still working and a second tick will start the same stage. The
+ * margin is the platform's shutdown grace.
+ *
+ * This exists because raising the tick budget to 280s made ticks longer
+ * than the cron's own minute, so four or five invocations worked the
+ * same run at once: each synthesised independently, each wrote its own
+ * item set, and each emailed ops that the pack was ready. Four emails,
+ * four different counts.
+ */
+export const LEASE_MS = TICK_BUDGET_MS + 40_000;
 
 /** The shape stored beside extraction findings so later runs can
  *  prove the work is reusable: same pipeline version, same bytes. */
@@ -395,6 +410,43 @@ export async function processRunTick(
 ): Promise<Result<{ status: string; moreWork: boolean }>> {
   const started = Date.now();
   const timeLeft = () => budgetMs - (Date.now() - started);
+
+  // Claim the run before touching it. One statement, so concurrent
+  // ticks cannot both win: Postgres serialises the row, and the loser
+  // re-evaluates the predicate against the winner's committed row.
+  //
+  //   · a `pending` run is claimed by advancing it to `classifying`,
+  //     which is what makes the first claim single-winner;
+  //   · a run already in flight is claimed only once its lease has
+  //     expired, which is how a crashed tick self-heals;
+  //   · a terminal run matches nothing and is left alone.
+  const claimed = await db
+    .update(scopeRuns)
+    .set({
+      status: sql`case when ${scopeRuns.status} = 'pending' then 'classifying' else ${scopeRuns.status} end`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(scopeRuns.id, runId),
+        inArray(scopeRuns.status, ["pending", "classifying", "extracting", "synthesising"]),
+        or(
+          eq(scopeRuns.status, "pending"),
+          lt(scopeRuns.updatedAt, new Date(Date.now() - LEASE_MS)),
+        ),
+      ),
+    )
+    .returning({ id: scopeRuns.id });
+  if (claimed.length === 0) {
+    // Either another tick holds the lease, or the run is already done.
+    const [current] = await db
+      .select({ status: scopeRuns.status })
+      .from(scopeRuns)
+      .where(eq(scopeRuns.id, runId))
+      .limit(1);
+    if (!current) return fail("not_found", "Run not found.");
+    return ok({ status: current.status, moreWork: false });
+  }
 
   const [run] = await db
     .select()
@@ -929,7 +981,11 @@ export async function processRunTick(
     }
 
     const cost = estimateCostUsd(usage);
-    await db
+    // Conditional on purpose: only the tick that actually moves the run
+    // INTO review may announce it. Belt and braces behind the lease —
+    // an unconditional write here is what sent ops four "pack ready"
+    // emails for one pack.
+    const promoted = await db
       .update(scopeRuns)
       .set({
         status: "review",
@@ -937,7 +993,15 @@ export async function processRunTick(
         usage: { ...usage, estimatedCostUsd: cost, analysis } as object,
         updatedAt: new Date(),
       })
-      .where(eq(scopeRuns.id, runId));
+      .where(and(eq(scopeRuns.id, runId), ne(scopeRuns.status, "review")))
+      .returning({ id: scopeRuns.id });
+    if (promoted.length === 0) {
+      logger.warn(
+        { event: "scope.run.review_already_announced", runId },
+        "another tick reached review first — not re-announcing",
+      );
+      return ok({ status: "review", moreWork: false });
+    }
     logger.info(
       {
         event: "scope.run.ready_for_review",
