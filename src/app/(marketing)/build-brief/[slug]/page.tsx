@@ -283,6 +283,14 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
 
       <TakesGrid takes={signal.takes} />
       <SourceLine>{signal.source}</SourceLine>
+      {signal.weekend ? (
+        <p
+          className="mt-6 border-t border-border-subtle/70 pt-5 text-[15px] leading-[1.5] text-text-muted"
+          style={SERIF}
+        >
+          {signal.weekend}
+        </p>
+      ) : null}
     </BriefCard>
   );
 }
@@ -472,6 +480,9 @@ export default async function BriefIssuePage({
                 ? [{ label: "Project of the Week", href: "#project" }]
                 : []),
               ...(issue.voices ? [{ label: "Voices", href: "#voices" }] : []),
+              ...(issue.podcast
+                ? [{ label: "The Podcast", href: "#podcast" }]
+                : []),
               ...(issue.bps
                 ? [{ label: "The Standard", href: "#bps" }]
                 : []),
@@ -854,6 +865,55 @@ export default async function BriefIssuePage({
           {/* The BuilderHQ Procurement Standard — an editorial section
               on the problem the Standard addresses. It names an
               industry-wide practice, never a party at fault. */}
+          {issue.podcast ? (
+            <BriefCard id="podcast">
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.podcast.kicker}
+              </BriefKicker>
+              <AccentHeadline
+                text={issue.podcast.headline}
+                accent={issue.podcast.headlineAccent}
+                className={`max-w-[26ch] ${SECTION_H2}`}
+              />
+              {issue.podcast.standfirst ? (
+                <p
+                  className="mt-4 max-w-[52ch] text-[clamp(1.15rem,1.1vw+0.9rem,1.45rem)] leading-[1.4] text-text-muted"
+                  style={SERIF}
+                >
+                  {issue.podcast.standfirst}
+                </p>
+              ) : null}
+              {/* The photograph carries the announcement: full column
+                  width, the room where it is being made. */}
+              <div className="relative mt-8 overflow-hidden rounded-xl border border-border-subtle">
+                <Image
+                  src={issue.podcast.image.src}
+                  alt={issue.podcast.image.alt}
+                  width={2000}
+                  height={1125}
+                  sizes="(min-width: 1024px) 720px, 100vw"
+                  className="w-full h-auto"
+                />
+              </div>
+              <div className="mt-8 flex flex-col gap-4 max-w-[64ch]">
+                {issue.podcast.paragraphs.map((para, i) => (
+                  <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                    <InlineText text={para} />
+                  </p>
+                ))}
+              </div>
+              {issue.podcast.cta ? (
+                <a
+                  href={issue.podcast.cta.href}
+                  className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-border-strong px-5 py-2.5 text-[13px] font-ui font-semibold text-text hover:border-accent-light hover:text-accent-light transition-colors"
+                >
+                  {issue.podcast.cta.label}
+                  <span aria-hidden>→</span>
+                </a>
+              ) : null}
+            </BriefCard>
+          ) : null}
+
           {issue.bps ? (
             <BriefCard id="bps">
               <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>

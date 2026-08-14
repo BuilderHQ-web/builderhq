@@ -17,6 +17,7 @@
  * token (3.9:1).
  */
 
+import { Fragment } from "react";
 import type { CSSProperties } from "react";
 
 export interface BriefBarDatum {
@@ -122,13 +123,30 @@ export interface BriefRelationSpec {
   steps?: string[];
 }
 
+/** Two-column comparison — two definitions of the same thing set side
+ *  by side, row by row. For arguments where the story is a distinction,
+ *  not a distribution. Issue 006 onward (zoned vs feasible capacity). */
+export interface BriefCompareSpec {
+  kind: "compare";
+  title: string;
+  desc: string;
+  /** Row labels down the left margin. */
+  rowLabels: string[];
+  /** The muted column. */
+  left: { heading: string; cells: string[] };
+  /** The accent column — the one the argument lands on. */
+  right: { heading: string; cells: string[] };
+  footnote?: string;
+}
+
 export type BriefChartSpec =
   | BriefBarsSpec
   | BriefSlopeSpec
   | BriefStripSpec
   | BriefFiguresSpec
   | BriefDivergingSpec
-  | BriefRelationSpec;
+  | BriefRelationSpec
+  | BriefCompareSpec;
 
 const MONO: CSSProperties = { fontFamily: "var(--font-jetbrains-mono)" };
 
@@ -662,11 +680,72 @@ export function BriefRelation({ spec }: { spec: BriefRelationSpec }) {
   );
 }
 
+export function BriefCompare({ spec }: { spec: BriefCompareSpec }) {
+  return (
+    <figure aria-label={`Comparison: ${spec.title}. ${spec.desc}`}>
+      <figcaption className="text-[12.5px] font-ui font-semibold text-text">
+        {spec.title}
+      </figcaption>
+      <div
+        aria-hidden
+        className="mt-4 overflow-hidden rounded-lg border border-[#101820]/[0.08]"
+      >
+        <div className="grid grid-cols-[minmax(88px,0.8fr)_1fr_1fr] gap-px bg-[#101820]/[0.08]">
+          <div className="bg-white px-3 py-3" />
+          <div className="bg-white px-3 py-3">
+            <p className="text-[11px] tracking-[0.14em] uppercase font-ui font-semibold text-text-muted">
+              {spec.left.heading}
+            </p>
+          </div>
+          <div className="bg-white px-3 py-3">
+            <p className="text-[11px] tracking-[0.14em] uppercase font-ui font-semibold text-accent-light">
+              {spec.right.heading}
+            </p>
+          </div>
+          {spec.rowLabels.map((label, i) => (
+            <Fragment key={label}>
+              <div className="bg-white px-3 py-3.5">
+                <p className="text-[11px] leading-[1.4] font-ui font-semibold text-text-dim">
+                  {label}
+                </p>
+              </div>
+              <div className="bg-white px-3 py-3.5">
+                <p className="text-[12.5px] leading-[1.5] text-text-muted">
+                  {spec.left.cells[i]}
+                </p>
+              </div>
+              <div className="bg-white px-3 py-3.5">
+                <p className="text-[12.5px] leading-[1.5] text-text">
+                  {spec.right.cells[i]}
+                </p>
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      {spec.footnote ? (
+        <p className="mt-3 text-[12px] leading-[1.5] text-text-muted">
+          {spec.footnote}
+        </p>
+      ) : null}
+      <SrTable
+        caption={spec.title}
+        valueHeading={spec.right.heading}
+        rows={spec.rowLabels.map((label, i) => ({
+          label: `${label}: ${spec.left.heading}`,
+          display: `${spec.left.cells[i]} / ${spec.right.heading}: ${spec.right.cells[i]}`,
+        }))}
+      />
+    </figure>
+  );
+}
+
 export function BriefChart({ spec }: { spec: BriefChartSpec }) {
   if (spec.kind === "bars") return <BriefBars spec={spec} />;
   if (spec.kind === "slope") return <BriefSlope spec={spec} />;
   if (spec.kind === "figures") return <BriefFigures spec={spec} />;
   if (spec.kind === "diverging") return <BriefDiverging spec={spec} />;
   if (spec.kind === "relation") return <BriefRelation spec={spec} />;
+  if (spec.kind === "compare") return <BriefCompare spec={spec} />;
   return <BriefStrip spec={spec} />;
 }

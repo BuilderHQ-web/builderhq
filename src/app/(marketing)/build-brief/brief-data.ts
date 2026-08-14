@@ -53,6 +53,10 @@ export interface BriefSignal {
    *  it survives a skim. Issue 005 onward. */
   callout?: { kicker: string; title: string; paragraphs: string[] };
   source: string;
+  /** One short closing line, set apart in italic at the signal's foot.
+   *  Ran unrendered in the copy decks of Issues 004 and 005; settled
+   *  as a permanent fixture from Issue 006. */
+  weekend?: string;
   takes: BriefTakes;
 }
 
@@ -183,6 +187,20 @@ export interface BriefIssue {
     pullQuote?: string;
     source?: string;
     takes?: BriefTakes;
+  };
+  /**
+   * The podcast announcement. An announcement, not a signal: renders
+   * with the weight of Partner Corner, photograph first. Issue 006
+   * onward.
+   */
+  podcast?: {
+    kicker: string;
+    headline: string;
+    headlineAccent?: string;
+    standfirst?: string;
+    image: { src: string; alt: string };
+    paragraphs: string[];
+    cta?: { label: string; href: string };
   };
   /** Absent = the section does not render (content pending). */
   partnerCorner?: {
@@ -1744,6 +1762,458 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "the Building and Plumbing Commission",
       "Master Builders Australia",
       "the Housing Industry Association",
+    ],
+  },
+  {
+    slug: "issue-006",
+    number: 6,
+    date: "2026-08-14",
+    displayDate: "Friday, 14 August 2026",
+    title:
+      "Almost 70% of apartments approved since 2020 have never started, and Victoria rewrote the building contract.",
+    standfirst:
+      "A Reuters analysis found almost 70% of apartments approved across Australia since 2020 have never started construction. The Reserve Bank held the cash rate and forecast home building to shrink. Sydney has a 20 year plan built on feasible capacity. And Victoria's new building contract rules start 1 December.",
+    seoTitle:
+      "The Build Brief 006: 62% of Melbourne Apartments Never Started | BuilderHQ",
+    seoDescription:
+      "Almost two thirds of Melbourne apartments approved since 2020 have never broken ground. The Reserve Bank held rates but expects home building to shrink. And Sydney has a new 20 year plan.",
+    keywords: [
+      "apartment approvals not started australia",
+      "how long to build an apartment australia",
+      "rba august 2026 hold",
+      "dwelling investment forecast",
+      "sydney plan 800000 homes",
+      "domestic building contracts amendment act victoria",
+      "stalled apartment projects melbourne",
+      "feasible housing capacity",
+      "building contract changes december 2026",
+      "victoria progress payments",
+      "the build brief podcast",
+      "apartment build time 33 months",
+      "national housing accord progress",
+      "developer contracts victoria",
+      "building contract variations process",
+      "residential construction news australia",
+    ],
+    ogImage: "/build-brief/og-issue-006.jpg",
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading: "Approved is not the same as built. This week we found out by how much.",
+      paragraphs: [
+        "A Reuters analysis on Wednesday put a number on something the industry has felt for years. Almost 70% of apartments approved across Australia since 2020 have never started construction. In Melbourne it is 62%.",
+        "Not cancelled. Not refused. Approved, and then nothing.",
+        "The same analysis found an apartment now takes 33 months to build, up from 21 a decade ago. A house takes 11.5 months, up from 8.6.",
+        "On Tuesday the Reserve Bank held the cash rate at 4.35%. It also published new forecasts showing home building going backwards over the next two years. The Board discussed raising rates. It did not discuss cutting them.",
+        "Then on Thursday, New South Wales released a 20 year plan for Sydney with one idea worth borrowing. Councils will have to keep 30 years of housing capacity that is feasible, not just zoned. Given how many approved projects never get built, that word is doing a lot of work.",
+        "One thread runs through all three. Getting a project approved is no longer the hard part. [Last week's edition](/build-brief/issue-005) counted the projects lost between signature and slab. This week is about the ones lost before anyone signs at all.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "The Number",
+        headline: "Almost two thirds of Melbourne's approved apartments have never",
+        headlineAccent: "broken ground.",
+        stat: {
+          value: "62%",
+          label: "Melbourne apartments approved since 2020 that have not started construction",
+          sub: "national figure close to 70%",
+        },
+        chart: {
+          kind: "bars",
+          title: "Approved since 2020, never started",
+          desc: "The share of apartments approved since 2020 that have not started construction: Gold Coast 83%, Sydney 64%, Melbourne 62%. The national figure is close to 70%.",
+          valueHeading: "Share not started",
+          max: 100,
+          bars: [
+            { label: "Gold Coast", value: 83, display: "83%" },
+            { label: "Sydney", value: 64, display: "64%" },
+            { label: "Melbourne", value: 62, display: "62%", accent: true },
+          ],
+        },
+        body: [
+          "Reuters published an analysis on Wednesday using data from consultancy Urbis. It found that almost 70% of apartments approved across Australia since 2020 have never started construction. The Gold Coast is worst at 83%, then Sydney at 64% and Melbourne at 62%.",
+          "Urbis housing sector lead Mark Dawson puts it down to feasibility. Higher costs for materials, labour and finance have made a lot of approved projects unviable to start.",
+          "Build times have stretched too. Master Builders Australia says an apartment now takes 33 months to finish, up from 21 months a decade ago. A house takes 11.5 months, up from 8.6.",
+          "Two years into the National Housing Accord, completions are running 27% below the roughly 60,000 homes a quarter needed to hit the target. The Housing Industry Association expects Australia to finish about 15% short by 2029.",
+          "The pattern is the same everywhere. Approval is the easy part now. The distance between a permit and a finished home is where the target is being lost. That distance is also where cost certainty matters most, which is why we built a way to [get a preliminary estimate](/estimate_request_landing_page) before the planning money is spent, and to [compare tenders side by side](/) when it is time to build.",
+        ],
+        source:
+          "Reuters, 12 August 2026, using data from Urbis, Master Builders Australia and the Housing Industry Association",
+        weekend: "A permit is permission. It is not a home.",
+        takes: {
+          owners:
+            "Cost is what stops projects, not approval. Test the build cost before you spend on the planning path.",
+          designers:
+            "A scheme that cannot be built does not get past documentation. Early cost input protects the project.",
+          builders:
+            "A long approvals pipeline is not a live pipeline. Check a project is funded and ready before you hold capacity for it.",
+          brokers:
+            "Longer builds mean longer facilities. A 33 month apartment carries interest a 21 month one did not.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "Market Mood",
+        headline: "Rates held. The Bank's own forecast has home building",
+        headlineAccent: "going backwards.",
+        stat: {
+          value: "4.35%",
+          label: "cash rate, held for a second meeting in a row",
+          sub: "dwelling investment forecast to turn negative by late 2027",
+        },
+        chart: {
+          kind: "diverging",
+          title: "The Bank's own home building forecast",
+          desc: "The Reserve Bank forecasts dwelling investment growth of 3.6% in June 2026, minus 0.7% by December 2027 and minus 0.8% by June 2028.",
+          valueHeading: "Dwelling investment growth forecast",
+          zeroLabel: "no growth",
+          bars: [
+            { label: "June 2026", value: 3.6, display: "+3.6%", accent: true },
+            { label: "December 2027", value: -0.7, display: "-0.7%" },
+            { label: "June 2028", value: -0.8, display: "-0.8%" },
+          ],
+          footnote:
+            "Reserve Bank forecast, August 2026 Statement on Monetary Policy.",
+        },
+        body: [
+          "The Reserve Bank held the cash rate at 4.35% on Tuesday. The decision was unanimous and everyone expected it. The forecasts released with it are the part worth reading.",
+          "The Bank expects dwelling investment growth to fall from 3.6% in June 2026 to minus 0.7% by December 2027 and minus 0.8% by June 2028. That is the Reserve Bank forecasting that home building will shrink.",
+          "Governor Michele Bullock also explained why. When prices for established homes fall while build costs stay high, building something new stops stacking up. That is the same problem behind the number in our first signal.",
+          "At the press conference Bullock confirmed the Board discussed raising rates at this meeting, having not discussed it at the last one. A cut was not on the table. The arguments for a rise were that inflation is still too high, and that a longer Middle East conflict raises the risk of businesses building cost increases into their prices.",
+          "The Bank does not expect inflation back near the middle of its target band until late 2027. The next decision is in late September.",
+        ],
+        source:
+          "Reserve Bank of Australia, Monetary Policy Decision and Statement on Monetary Policy, 11 August 2026; Governor's media conference, 11 August 2026",
+        weekend: "A hold is not relief. It is a pause with the door open.",
+        takes: {
+          owners:
+            "Borrowing costs stay where they are for now. The Bank has not ruled out another rise.",
+          designers:
+            "Clients who paused on rate uncertainty may come back. The projects that stalled on cost will not.",
+          builders:
+            "Price validity periods still matter. The Board discussed a rise this month.",
+          brokers:
+            "The Bank's own horizon for inflation near target is late 2027. Test facilities against that, not against a cut.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "The Plan",
+        headline: "Sydney's new plan asks councils for capacity that is",
+        headlineAccent: "feasible, not just zoned.",
+        stat: {
+          value: "30",
+          label: "years of feasible housing capacity councils must hold in their planning controls",
+          sub: "800,000 homes needed by 2046",
+        },
+        chart: {
+          kind: "compare",
+          title: "Zoned capacity and feasible capacity are different tests",
+          desc: "Zoned capacity counts what planning rules allow and ignores build cost, finance and viability, producing approvals that never start. Feasible capacity counts what the market can deliver, and is the test New South Wales is now applying.",
+          rowLabels: ["What it counts", "What it ignores", "Result"],
+          left: {
+            heading: "Zoned capacity",
+            cells: [
+              "What planning rules allow",
+              "Build cost, finance, viability",
+              "Approvals that never start",
+            ],
+          },
+          right: {
+            heading: "Feasible capacity",
+            cells: [
+              "What the market can deliver",
+              "Nothing on that list",
+              "The test NSW is now applying",
+            ],
+          },
+        },
+        body: [
+          "New South Wales finalised its 20 year Sydney Plan on Thursday. Sydney grows from 5.3 million people to 6.6 million by 2046, which means at least 800,000 more homes and 950,000 more jobs. Housing goes east, close to jobs and transport. Jobs go west, around the new airport and the Aerotropolis.",
+          "One part is worth borrowing regardless of which state you build in. Councils will have to keep at least 30 years of feasible housing capacity in their planning controls at any time, as a rolling obligation.",
+          "The word feasible is the point. The stated aim is to move away from planning for just enough capacity and toward capacity that matches what the market can actually deliver. Zoning land for housing is not the same as land where housing is worth building.",
+          "Read that beside [our first signal](#market-watch). Australia does not have a shortage of approved apartments. It has a shortage of approved apartments anyone can afford to start. A capacity test that includes feasibility is at least aimed at the right problem.",
+          "Whether it works is a separate question, and one for 2046 rather than this year. But it is the first plan we have seen that measures capacity by whether a project stacks up, rather than by whether it is allowed.",
+        ],
+        source:
+          "NSW Government, The Sydney Plan, 13 August 2026; NSW Department of Planning, Feasible Housing Capacity Policy",
+        weekend: "Zoned is not the same as worth building.",
+        takes: {
+          owners:
+            "A site being zoned for something does not mean the numbers work. Run the feasibility first.",
+          designers:
+            "Capacity policy is starting to account for cost. Buildability is becoming a planning question, not just a design one.",
+          builders:
+            "More land held ready means less waiting on rezoning when demand returns.",
+          brokers:
+            "A longer pipeline of ready land makes development lending easier to plan around.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "Victoria rewrote the building contract. It starts",
+      headlineAccent: "1 December.",
+      standfirst:
+        "The Domestic Building Contracts Amendment Act changes deposits, progress payments, variations and who the Act applies to. It only binds contracts signed after it starts, which makes the next three months the window to get ready.",
+      paragraphs: [
+        "Victoria's building reforms have come in three waves. First resort Home Warranty and ten year rectification orders started on 1 July. The Building and Plumbing Administration and Enforcement Act followed in May. The third wave changes the paperwork on every job. [The reforms we covered in July](/build-brief/issue-002) were about who regulates the industry. This one is about the contract itself.",
+        "The Domestic Building Contracts Amendment Act starts on 1 December 2026 unless it is proclaimed earlier. It applies only to contracts signed after that date, so existing contracts carry on under the current rules. Industry reaction to this package has been warmer than to the first one.",
+      ],
+      sections: [
+        {
+          heading: "A new category for developer contracts",
+          paragraphs: [
+            "The Act adds a definition of \"developer\". It means someone who contracts for building work on two or more homes intended for sale.",
+            "When a builder contracts with a developer rather than a homeowner, only part of the Act applies. The list of things a contract must contain drops from 21 items to four. Several consumer protections fall away, including deposit limits and the restrictions on cost plus contracts and cost escalation clauses. Implied warranties, registration requirements and the duty to get foundations information all stay.",
+            "The reasoning is that a developer building homes to sell is a commercial party and does not need protections designed for someone building a home to live in. The practical effect is that two contracts for identical work will sit under different rules depending on who signs.",
+          ],
+        },
+        {
+          heading: "One process for variations",
+          paragraphs: [
+            "The Act replaces the current split between builder variations and owner variations with a single process for changes to plans and specifications.",
+            "This is the change most likely to cut disputes. The current split is a common source of argument about who owed whom notice. One process, applied the same way every time, is worth building into your templates now rather than in November. It is also the logic behind [our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard): one process, applied the same way every time, is what makes work comparable.",
+          ],
+        },
+        {
+          heading: "Deposits and progress payments move to regulations",
+          paragraphs: [
+            "Limits on deposits and progress payments come out of the Act and into regulations, so they can be updated without going back to Parliament. Progress payment stages and limits will be set by regulation.",
+            "One provision matters for anyone watching offsite construction. Progress payment limits will be able to change where part of the work uses a modern method of construction, such as modular or prefabrication. That answers the mismatch we wrote about in [Issue 003](/build-brief/issue-003), where most of a prefabricated home is built before it reaches the site while payment schedules still assume on-site stages.",
+          ],
+        },
+        {
+          heading: "What has not changed",
+          paragraphs: [
+            "An owner can still end the contract if the price rises 15% or more, or if the build time blows out by 50% or more. Increases from prime cost items, provisional sums and owner requested variations do not count toward those thresholds.",
+          ],
+        },
+        {
+          heading: "A note for design practices",
+          paragraphs: [
+            "Under the amendments, preparing plans and specifications is excluded from the definition of domestic building work for the purposes of the Act. Where an architect or building designer does that work, it sits outside the Act.",
+            "For everyone contracting in Victoria after 1 December, the steps are the same. Review your contract templates, your variation process and your progress claim schedule, and check which set of rules your next job falls under. The [HIA's explainer on the changes](https://hia.com.au/resources-and-advice/dealing-with-contracts/key-changes-to-domestic-building-contracts-explained) and [Planning Victoria's building reform page](https://www.planning.vic.gov.au/guides-and-resources/building-policy/building-reform) are the places to start.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The dates",
+        rows: [
+          { k: "Act starts", v: "1 December 2026, unless proclaimed earlier" },
+          { k: "Applies to", v: "Contracts signed after it starts" },
+          { k: "Developer contracts", v: "Required contents drop from 21 items to 4" },
+          { k: "Variations", v: "One process replaces the builder and owner split" },
+          { k: "Deposits and progress payments", v: "Limits move into regulations" },
+          { k: "Owner termination rights", v: "Unchanged at +15% price or +50% time" },
+        ],
+      },
+      pullQuote:
+        "Two contracts for identical work will sit under different rules depending on who signs.",
+      source:
+        "Domestic Building Contracts Amendment Act; analysis by Norton Rose Fulbright, HIA, the Architects Registration Board of Victoria and Planning Victoria. General information only, correct at the date of publication. Get advice for your own situation.",
+      takes: {
+        owners:
+          "If you sign after 1 December you sign under the new rules. Check which category your contract falls into.",
+        designers:
+          "Preparing plans and specifications sits outside the Act's definition of building work. Worth understanding what that means for your engagement.",
+        builders:
+          "Templates, variation processes and progress claims all need a review before December.",
+        brokers:
+          "Progress payment rules move into regulation and will flex for offsite construction. Drawdown schedules should follow.",
+      },
+    },
+    podcast: {
+      kicker: "Coming soon",
+      headline: "The Build Brief is becoming a",
+      headlineAccent: "podcast.",
+      standfirst:
+        "Conversations shaping residential construction. The first episode lands in the coming weeks.",
+      image: {
+        src: "/build-brief/issue-006/podcast-recording.webp",
+        alt: "Recording the first episode of The Build Brief podcast.",
+      },
+      paragraphs: [
+        "We have started recording. The Build Brief podcast is the next part of this publication, and it does what the written editions do: takes one part of residential construction and looks at it properly.",
+        "Episode one is with **Dominic Bagnato**. He is a registered architect, a licensed builder and a property developer, which is a combination almost nobody has, and he has spent more than 30 years in the industry. He co-founded Bagnato Architects in Melbourne in 2007. To 64,000 people online he is [The Invisible Architect](https://www.instagram.com/theinvisiblearchitect/), where he teaches buyers, investors and developers how to find value in property.",
+        "Most of the conversation is about pricing. Why three builders can price the same house and come back hundreds of thousands of dollars apart. Whether the cheapest quote is ever the cheapest job. What usually turns into a variation later. And whether the current process rewards the builder who reads every document, or the one who stays vague.",
+        "Dominic has sat in all three seats, so he can answer those questions from the architect's side, the builder's side and the developer's side. That is the reason we asked him first.",
+        "The episode drops in the coming weeks. Subscribers to The Build Brief will hear about it first.",
+      ],
+      cta: {
+        label: "Get it when it lands",
+        href: "mailto:info@builderhq.com.au?subject=Subscribe%20to%20The%20Build%20Brief",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "quorum-studios",
+      headline:
+        "Meet Quorum Studios, the Brisbane practice that stays from first sketch to final site visit.",
+      principal: "Manny and Vanessa Pedro",
+      principalRole: "Founders, Quorum Studios",
+      showLogo: true,
+      logo: "/partners/quorum-studios/logo.png",
+      deck: "Design that stays with the build.",
+      stats: [
+        { value: "5.0", label: "Google rating, 18 reviews", star: true },
+        { value: "2023", label: "Studio founded in Brisbane" },
+        { value: "6279", label: "Board of Architects Queensland registration" },
+      ],
+      why: "This edition is about the distance between approval and a finished home, and that distance is where a design practice earns its keep. Quorum Studios works the way that problem needs. Manny Pedro is a registered architect who leads the design; Vanessa Pedro directs the business and brings the interiors eye that runs alongside it. Every project opens with a single question about how a client wants to live, and the studio stays with it from the first sketch to the final site visit rather than stepping away once documentation is issued.",
+      practice:
+        "A Brisbane architecture studio founded in 2023, working on residential projects from luxury new homes through to traditional character dwellings. Beside its bespoke commissions it offers a range of pre-designed house plans, which puts the same thinking within reach at a lower entry point. Recent work includes a home at Coorparoo, the Villa Palma residence and a pavilion on the Gold Coast.",
+      welcome:
+        "In a week where feasibility is the whole story, a practice that stays with a project all the way to site is exactly who this platform exists to put in front of owners early.",
+    },
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    faq: [
+      {
+        q: "How many approved apartments in Australia have never started construction?",
+        a: "A Reuters analysis published on 12 August 2026, using data from consultancy Urbis, found almost 70% of apartments approved across Australia since 2020 have never started construction. The Gold Coast is highest at 83%, then Sydney at 64% and Melbourne at 62%. The figures cover apartments approved since 2020, not all dwellings.",
+      },
+      {
+        q: "Why do approved apartment projects not get built?",
+        a: "Urbis housing sector lead Mark Dawson attributes it to feasibility. Higher costs for materials, labour and finance have made many approved projects unviable to start. The approval is granted, but the numbers no longer stack up by the time construction would begin.",
+      },
+      {
+        q: "How long does it take to build an apartment in Australia?",
+        a: "Master Builders Australia says an apartment now takes 33 months to finish, up from 21 months a decade ago. A house takes 11.5 months, up from 8.6 months over the same period.",
+      },
+      {
+        q: "Is Australia on track for the National Housing Accord target?",
+        a: "Two years in, completions are running 27% below the roughly 60,000 homes a quarter needed to hit the target. The Housing Industry Association expects Australia to finish about 15% short by 2029.",
+      },
+      {
+        q: "What did the Reserve Bank decide in August 2026?",
+        a: "The Board held the cash rate at 4.35% on 11 August 2026, the second hold in a row, and the decision was unanimous. Governor Michele Bullock confirmed the Board discussed raising rates at this meeting and did not discuss a cut. The Bank does not expect inflation back near the middle of its target band until late 2027. The next decision is in late September.",
+      },
+      {
+        q: "What is the Reserve Bank's forecast for home building?",
+        a: "The August 2026 Statement on Monetary Policy forecasts dwelling investment growth falling from 3.6% in June 2026 to minus 0.7% by December 2027 and minus 0.8% by June 2028. That is the Reserve Bank forecasting that home building will shrink over the next two years.",
+      },
+      {
+        q: "What is the Sydney Plan?",
+        a: "New South Wales finalised its 20 year Sydney Plan on 13 August 2026. It plans for Sydney growing from 5.3 million people to 6.6 million by 2046, which means at least 800,000 more homes and 950,000 more jobs, with housing concentrated east close to jobs and transport, and jobs growing west around the new airport and the Aerotropolis.",
+      },
+      {
+        q: "What is feasible housing capacity?",
+        a: "Under the Sydney Plan, councils with a five year housing target will have to keep at least 30 years of housing capacity in their planning controls that is feasible, not just zoned, as a rolling obligation. The aim is to count capacity by what the market can actually deliver rather than what planning rules allow. It is a New South Wales policy and does not apply in other states.",
+      },
+      {
+        q: "When do Victoria's new building contract rules start?",
+        a: "The Domestic Building Contracts Amendment Act starts on 1 December 2026 unless it is proclaimed earlier. It applies only to contracts signed after it starts, so existing contracts carry on under the current rules.",
+      },
+      {
+        q: "What counts as a developer under Victoria's new building contract rules?",
+        a: "The Act defines a developer as someone who contracts for building work on two or more homes intended for sale. When a builder contracts with a developer rather than a homeowner, only part of the Act applies: the required contract contents drop from 21 items to four, and several consumer protections fall away, including deposit limits and restrictions on cost plus contracts. Implied warranties, registration requirements and the duty to get foundations information all stay.",
+      },
+      {
+        q: "How do variations change under the Victorian amendments?",
+        a: "The Act replaces the current split between builder variations and owner variations with a single process for changes to plans and specifications, applied the same way every time. The current split is a common source of disputes about who owed whom notice.",
+      },
+      {
+        q: "Can an owner still end a building contract if the price rises?",
+        a: "Yes. An owner can still end the contract if the price rises 15% or more, or if the build time blows out by 50% or more. Increases from prime cost items, provisional sums and owner requested variations do not count toward those thresholds.",
+      },
+      {
+        q: "Who is the first guest on The Build Brief podcast?",
+        a: "Dominic Bagnato, a registered architect, licensed builder and property developer with more than 30 years in the industry. He co-founded Bagnato Architects in Melbourne in 2007, and online he is The Invisible Architect, with an audience of 64,000. The first episode is about pricing: why three builders can price the same house and come back far apart, and whether the cheapest quote is ever the cheapest job.",
+      },
+    ],
+    share:
+      "Almost 70% of apartments approved since 2020 have never started. The RBA expects home building to shrink. And Victoria rewrote the building contract. This week's Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      { label: "Issue 005: projects are being lost after the contract is signed", href: "/build-brief/issue-005" },
+      { label: "Issue 004: what a new house costs before it is built", href: "/build-brief/issue-004" },
+      { label: "Issue 003: the cost base restarts and the failure rate turns", href: "/build-brief/issue-003" },
+      {
+        label: "Perspective: Australian construction has a procurement problem",
+        href: "/build-brief/perspectives/construction-procurement-standard",
+      },
+    ],
+    sourceGroups: [
+      {
+        heading: "Stalled approvals and build times",
+        links: [
+          {
+            label: "Reuters, Australia promised 1.2 million new homes, but builders are at their limits",
+            href: "https://www.investing.com/news/economy-news/analysisaustralia-promised-12-million-new-homes-but-builders-are-at-their-limits-4853559",
+          },
+        ],
+      },
+      {
+        heading: "The Reserve Bank",
+        links: [
+          {
+            label: "RBA, Statement by the Monetary Policy Board, 11 August 2026",
+            href: "https://www.rba.gov.au/media-releases/2026/mr-26-19.html",
+          },
+          {
+            label: "RBA, Media Conference: Monetary Policy Decision, 11 August 2026",
+            href: "https://www.rba.gov.au/speeches/2026/mc-gov-2026-08-11.html",
+          },
+          {
+            label: "Domain, RBA interest rates decision August 2026",
+            href: "https://www.domain.com.au/news/rba-august-2026-1541698/",
+          },
+        ],
+      },
+      {
+        heading: "The Sydney Plan",
+        links: [
+          {
+            label: "NSW Government, Minns Labor Government finalises 20-year Sydney Plan",
+            href: "https://www.nsw.gov.au/ministerial-releases/twenty-year-sydney-plan-finalised",
+          },
+          {
+            label: "NSW Department of Planning, The Sydney Plan, frequently asked questions",
+            href: "https://www.planning.nsw.gov.au/plans-in-nsw/the-sydney-plan/frequently-asked-questions",
+          },
+          {
+            label: "Elite Agent, The Sydney Plan: 800,000 new homes",
+            href: "https://eliteagent.com/the-sydney-plan-800-000-new-homes-jobs-blueprint/",
+          },
+        ],
+      },
+      {
+        heading: "Victoria's Domestic Building Contracts Amendment Act",
+        links: [
+          {
+            label: "Norton Rose Fulbright, Welcome domestic building reforms for Victoria",
+            href: "https://www.nortonrosefulbright.com/en/knowledge/publications/aed79307/welcome-domestic-building-reforms-for-victoria",
+          },
+          {
+            label: "ARBV, How the overhaul of Victoria's building regulation laws may impact architects",
+            href: "https://www.arbv.vic.gov.au/how-overhaul-victorias-building-regulation-laws-may-impact-architects-and-their-work",
+          },
+          {
+            label: "HIA, Key changes to domestic building contracts explained",
+            href: "https://hia.com.au/resources-and-advice/dealing-with-contracts/key-changes-to-domestic-building-contracts-explained",
+          },
+          {
+            label: "Planning Victoria, Building reform",
+            href: "https://www.planning.vic.gov.au/guides-and-resources/building-policy/building-reform",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from Reuters, Urbis, Master Builders Australia, the Housing Industry Association, the Reserve Bank of Australia, the New South Wales Government and Planning Victoria. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "Reuters",
+      "Urbis",
+      "Master Builders Australia",
+      "the Housing Industry Association",
+      "the Reserve Bank of Australia",
+      "the New South Wales Government",
+      "Planning Victoria",
     ],
   },
   {
