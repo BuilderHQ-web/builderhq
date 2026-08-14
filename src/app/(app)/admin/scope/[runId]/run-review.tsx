@@ -573,6 +573,10 @@ function Selection({
         (r.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR
       ),
   ).length;
+  // The tail the ordinary sweep refuses: evidenced lines the model
+  // scored below the floor. They block approval, so leaving them as
+  // the only path meant confirming them one at a time.
+  const lowConfidence = pending - sweepable;
 
   const apply = (updated: ItemRow) =>
     setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
@@ -593,7 +597,7 @@ function Selection({
             >
               {pending > 0 ? `${pending} awaiting verdict` : "All reviewed"}
             </span>
-            {pending > 0 ? (
+            {sweepable > 0 ? (
               <ConfirmAll
                 runId={runId}
                 pending={sweepable}
@@ -608,6 +612,21 @@ function Selection({
                         r.status === "evidenced" &&
                         (r.confidence ?? 0) < SCOPE_CONFIDENCE_FLOOR
                       )
+                        ? { ...r, opsStatus: "confirmed" }
+                        : r,
+                    ),
+                  )
+                }
+              />
+            ) : null}
+            {lowConfidence > 0 ? (
+              <ConfirmLowConfidence
+                runId={runId}
+                count={lowConfidence}
+                onDone={() =>
+                  setRows((prev) =>
+                    prev.map((r) =>
+                      r.opsStatus === "pending"
                         ? { ...r, opsStatus: "confirmed" }
                         : r,
                     ),
@@ -690,6 +709,68 @@ function ConfirmAll({
         <Check className="size-3" />
       )}
       Confirm all {pending}
+    </button>
+  );
+}
+
+/**
+ * The low-confidence tail, swept in one act.
+ *
+ * The ordinary sweep refuses evidenced lines the model scored below
+ * the floor: the model was unsure, so a person decides. But those
+ * lines also block approval, which left the reviewer confirming them
+ * one at a time — sixty-seven clicks on a real run.
+ *
+ * This is that person deciding once. It is a separate button, in the
+ * warn tone, labelled with what it confirms, so it reads as the
+ * deliberate act it is rather than as the safe sweep beside it.
+ */
+function ConfirmLowConfidence({
+  runId,
+  count,
+  onDone,
+}: {
+  runId: string;
+  count: number;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const sweep = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await bulkConfirmScopeAction(runId, true);
+      if (!r.ok) {
+        toast.error("Could not confirm", r.error.message);
+        return;
+      }
+      toast.success(
+        `${r.value.confirmed} low confidence ${r.value.confirmed === 1 ? "line" : "lines"} confirmed.`,
+      );
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={sweep}
+      title="Confirm the evidenced lines the model scored below the confidence floor"
+      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full border text-[11px] font-ui transition-colors disabled:opacity-60"
+      style={{
+        borderColor: "rgba(217,164,65,0.45)",
+        background: "rgba(217,164,65,0.10)",
+        color: "#8a6414",
+      }}
+    >
+      {busy ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : (
+        <Check className="size-3" />
+      )}
+      Confirm {count} low confidence
     </button>
   );
 }

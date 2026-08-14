@@ -120,10 +120,14 @@ export async function approveScopeRunAction(
 /** Sweep every line still awaiting a verdict to confirmed. */
 export async function bulkConfirmScopeAction(
   runId: string,
+  /** Also confirm evidenced lines the model scored below the
+   *  confidence floor. The desk asks for this deliberately, from its
+   *  own button, and the sweep is recorded as having included them. */
+  includeLowConfidence = false,
 ): Promise<Result<{ confirmed: number }>> {
   const a = await requireAdmin();
   if (!a.ok) return a;
-  return bulkConfirmPending(a.value, runId);
+  return bulkConfirmPending(a.value, runId, { includeLowConfidence });
 }
 
 // ── owner-side (runner) actions — the review desk's writes ──────────────

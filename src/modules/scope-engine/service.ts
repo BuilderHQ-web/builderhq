@@ -3454,6 +3454,7 @@ export async function scopePhaseForProjects(
 export async function bulkConfirmPending(
   actorId: string,
   runId: string,
+  opts: { includeLowConfidence?: boolean } = {},
 ): Promise<Result<{ confirmed: number }>> {
   const [run] = await db
     .select({ id: scopeRuns.id, status: scopeRuns.status })
@@ -3464,10 +3465,15 @@ export async function bulkConfirmPending(
   if (run.status !== "review") {
     return fail("conflict", "Only runs in review can be swept.");
   }
-  // Confirm all confirms EVERYTHING — gaps and not-expected lines
-  // included. The one exception the sweep never makes: an evidenced
-  // line below the confidence floor stays pending until a person
-  // looks at it, and approval stays blocked until they do.
+  // The ordinary sweep confirms EVERYTHING — gaps and not-expected
+  // lines included — except an evidenced line below the confidence
+  // floor, which waits for a person because the model was unsure.
+  //
+  // `includeLowConfidence` is that person, deciding in one act instead
+  // of sixty-seven. It is a separate call with its own button and its
+  // own audit entry precisely so it can never happen by accident: the
+  // ordinary sweep still refuses those lines.
+  const holdsLowConfidence = !opts.includeLowConfidence;
   const updated = await db
     .update(scopeRunItems)
     .set({ opsStatus: "confirmed", editedBy: actorId, editedAt: new Date() })
@@ -3475,21 +3481,33 @@ export async function bulkConfirmPending(
       and(
         eq(scopeRunItems.runId, runId),
         eq(scopeRunItems.opsStatus, "pending"),
-        or(
-          ne(scopeRunItems.status, "evidenced"),
-          // Both sides cast to real so the boundary resolves the same
-          // way here, in the desk badge, and in any ad-hoc query: a
-          // line AT the floor sweeps; strictly below it waits.
-          sql`coalesce(${scopeRunItems.confidence}, 0)::real >= ${SCOPE_CONFIDENCE_FLOOR}::real`,
-        ),
+        ...(holdsLowConfidence
+          ? [
+              or(
+                ne(scopeRunItems.status, "evidenced"),
+                // Both sides cast to real so the boundary resolves the
+                // same way here, in the desk badge, and in any ad-hoc
+                // query: a line AT the floor sweeps; strictly below it
+                // waits.
+                sql`coalesce(${scopeRunItems.confidence}, 0)::real >= ${SCOPE_CONFIDENCE_FLOOR}::real`,
+              ),
+            ]
+          : []),
       ),
     )
     .returning({ id: scopeRunItems.id });
   await recordReview(runId, "run", "run.bulk_confirmed", actorId, null, {
     confirmed: updated.length,
+    includedLowConfidence: opts.includeLowConfidence === true,
   });
   logger.info(
-    { event: "scope.run.bulk_confirmed", runId, actorId, confirmed: updated.length },
+    {
+      event: "scope.run.bulk_confirmed",
+      runId,
+      actorId,
+      confirmed: updated.length,
+      includedLowConfidence: opts.includeLowConfidence === true,
+    },
     "remaining verdicts bulk-confirmed",
   );
   return ok({ confirmed: updated.length });
