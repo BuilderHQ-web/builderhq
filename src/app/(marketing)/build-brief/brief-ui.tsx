@@ -176,14 +176,21 @@ export function BriefCard({
   children,
   className = "",
   id,
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
   id?: string;
+  /** Background override for a card that is not one of the weekly
+   *  sections — inline rather than a class, because the base sets
+   *  bg-white and utility order in the stylesheet, not in the
+   *  attribute, decides which one wins. */
+  style?: React.CSSProperties;
 }) {
   return (
     <section
       id={id}
+      style={style}
       className={`relative rounded-2xl bg-white ring-1 ring-[#101820]/[0.06] card-elev px-6 py-8 sm:px-10 sm:py-10 scroll-mt-28 ${className}`}
     >
       {children}
