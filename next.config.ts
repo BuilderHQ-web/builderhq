@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  images: {
+    /**
+     * Next 16 changed `images.qualities` to default to [75] ONLY, and
+     * any other value on an <Image quality> prop is silently ignored
+     * rather than erroring. A dark photograph re-encoded at 75 on top
+     * of its own compression bands badly, which is what pixelated the
+     * Build Brief podcast frame. 92 is the photographic step; 75 stays
+     * for everything that does not need more.
+     */
+    qualities: [75, 90, 92],
+  },
   // The Tender Document route renders PDFs with react-pdf, which reads
   // the brand TTFs and the logo off disk at runtime — trace them into
   // the serverless bundle or the route works locally and breaks deployed.

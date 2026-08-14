@@ -889,9 +889,14 @@ export default async function BriefIssuePage({
                 <Image
                   src={issue.podcast.image.src}
                   alt={issue.podcast.image.alt}
-                  width={2000}
-                  height={1125}
-                  sizes="(min-width: 1024px) 720px, 100vw"
+                  width={2400}
+                  height={1350}
+                  sizes="(min-width: 1024px) 900px, 100vw"
+                  // Next re-encodes at its default 75, which on a dark
+                  // studio frame lands on top of the source's own
+                  // compression and bands the shadows. This is a
+                  // photograph, so it pays for the quality.
+                  quality={92}
                   className="w-full h-auto"
                 />
               </div>
@@ -1111,12 +1116,22 @@ export default async function BriefIssuePage({
                             : ""
                         }
                       >
+                        {/* Sized by role, not by habit. Under a
+                            portrait the mark is a secondary credit and
+                            stays at 64px; standing alone it IS the
+                            column's subject, and a square mark at 64px
+                            reads as an afterthought. */}
                         <Image
                           src={practiceMark}
                           alt={`${practiceName} logo`}
-                          width={320}
-                          height={120}
-                          className="h-16 w-auto object-contain object-left"
+                          width={512}
+                          height={512}
+                          quality={90}
+                          className={
+                            pc.portrait
+                              ? "h-16 w-auto object-contain object-left"
+                              : "h-auto w-full max-w-[190px] object-contain object-left"
+                          }
                         />
                         {partner ? (
                           <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
