@@ -17,12 +17,18 @@ import { useInView, useReducedMotion } from "motion/react";
 
 export function StatCount({
   value,
-  format,
+  format = "number",
   className,
 }: {
   value: number;
-  /** Formats each frame's value — e.g. currency. Defaults to en-AU grouping. */
-  format?: (n: number) => string;
+  /**
+   * How to render each frame's value. A NAME, not a function: this is
+   * a client component, and a function prop crossing the server
+   * boundary throws "Functions cannot be passed directly to Client
+   * Components" at runtime — which typecheck cannot see and dev does
+   * not reproduce. Add a case here rather than a callback there.
+   */
+  format?: "number" | "currency";
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -50,10 +56,18 @@ export function StatCount({
     return () => cancelAnimationFrame(raf);
   }, [inView, reduced, value]);
 
-  const fmt = format ?? ((n: number) => new Intl.NumberFormat("en-AU").format(n));
+  const text =
+    format === "currency"
+      ? new Intl.NumberFormat("en-AU", {
+          style: "currency",
+          currency: "AUD",
+          maximumFractionDigits: 0,
+        }).format(shown)
+      : new Intl.NumberFormat("en-AU").format(shown);
+
   return (
     <span ref={ref} className={className}>
-      {fmt(shown)}
+      {text}
     </span>
   );
 }

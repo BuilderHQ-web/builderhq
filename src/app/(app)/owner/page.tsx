@@ -479,13 +479,7 @@ export default async function OwnerDashboard({
                           <p className="mt-1.5 font-display text-[26px] leading-none text-text tabular-nums">
                             <StatCount
                               value={Math.round(data.tenders.totalQuotedValueAud)}
-                              format={(n) =>
-                                new Intl.NumberFormat("en-AU", {
-                                  style: "currency",
-                                  currency: "AUD",
-                                  maximumFractionDigits: 0,
-                                }).format(n)
-                              }
+                              format="currency"
                             />
                           </p>
                           <p className="mt-1.5 text-[11.5px] text-text-muted">
