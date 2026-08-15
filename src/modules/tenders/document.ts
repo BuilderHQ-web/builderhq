@@ -32,7 +32,11 @@ import {
   deriveNotApplicable,
   ownerExcludedItems,
   readScheduleAnswer,
+  clientAllowanceGroups,
+  groupedAllowanceItems,
   SCHEDULE_STATE_LABEL,
+  type ClientAllowanceGroup,
+  type ScheduleEntry,
   type TenderSchedule,
 } from "./schedule";
 
@@ -499,9 +503,17 @@ function scheduleBlocks(
   answers: Answers,
 ): DocBlock[] {
   const answer = readScheduleAnswer(answers["scope.schedule"]);
-  const divisions = scheduleDivisions(schedule).filter(
-    (d) => d.items.length > 0,
-  );
+  // The client's provisional sum packages print whole — a member
+  // line's split share is bookkeeping, and printing it would read as
+  // real per-line prices the client never set.
+  const grouped = groupedAllowanceItems(schedule);
+  const groups = clientAllowanceGroups(schedule);
+  const divisions = scheduleDivisions(schedule)
+    .map((d) => ({
+      ...d,
+      items: d.items.filter((i) => !grouped.has(i.itemId)),
+    }))
+    .filter((d) => d.items.length > 0);
   const blocks: DocBlock[] = [];
 
   blocks.push({
@@ -554,6 +566,18 @@ function scheduleBlocks(
     first = false;
   }
 
+  if (groups.length > 0) {
+    blocks.push({
+      kind: "table",
+      ref: first ? q.ref : undefined,
+      title: "Client provisional sum packages",
+      columns: ["Package", "In this price", "Amount ex GST"],
+      align: ["l", "l", "r"],
+      rows: groups.map((g) => packageRow(g, answer)),
+    });
+    first = false;
+  }
+
   const t = scheduleTallies(schedule, answers["scope.schedule"]);
   blocks.push({
     kind: "table",
@@ -586,6 +610,46 @@ function scheduleBlocks(
   return blocks;
 }
 
+/**
+ * One printed row for a client package: the member lines named in the
+ * label, the state derived from their marks, the figure summed whole.
+ */
+function packageRow(
+  g: ClientAllowanceGroup,
+  answer: Record<string, ScheduleEntry>,
+): string[] {
+  const entries = g.items.map((i) => answer[i.itemId]);
+  const marked = entries.filter((e): e is ScheduleEntry => !!e);
+  const states = new Set(marked.map((e) => e.s));
+  const uniform =
+    marked.length === g.items.length && states.size === 1
+      ? marked[0]!.s
+      : null;
+  let state = "Not marked";
+  let amount = "—";
+  if (uniform === "allowance") {
+    const sum = marked.reduce((n, e) => n + (e.a ?? 0), 0);
+    const carried = g.items.every(
+      (i) => answer[i.itemId]?.a === i.ownerAmountAud,
+    );
+    state = carried
+      ? "Provisional sum, client's figure"
+      : "Provisional sum, builder's figure";
+    amount = formatAud(sum);
+  } else if (uniform) {
+    state = SCHEDULE_STATE_LABEL.get(uniform) ?? uniform;
+  } else if (marked.length > 0) {
+    state = "Mixed marks, see the provisional sum schedule";
+  }
+  const comment = marked.find(
+    (e) => typeof e.c === "string" && e.c.length > 0,
+  )?.c;
+  const label = `${g.label} · covers ${g.items
+    .map((i) => i.label)
+    .join("; ")}${comment ? ` · ${comment}` : ""}`;
+  return [label, state, amount];
+}
+
 /** Module 7 on a schedule round: the derived allowance schedule. */
 function allowanceScheduleBlock(
   q: InstrumentQuestion,
@@ -603,22 +667,61 @@ function allowanceScheduleBlock(
     };
   }
   const total = rows.reduce((n, r) => n + r.amountAud, 0);
+  // Client packages print as one line each: the figure whole, the
+  // member lines named without figures of their own.
+  const grouped = groupedAllowanceItems(schedule);
+  type PrintRow = { label: string; source: string; amountAud: number };
+  const printed: PrintRow[] = [];
+  const byGroup = new Map<string, PrintRow>();
+  const wholly = new Map<string, boolean>();
+  const memberNames = new Map<string, string[]>();
+  for (const r of rows) {
+    const g = grouped.get(r.itemId);
+    if (!g) {
+      printed.push({
+        label: `${r.label} (${r.divisionLabel})`,
+        source:
+          r.source === "client_schedule"
+            ? r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud
+              ? "Client schedule, carried"
+              : "Client schedule, repriced"
+            : "Builder",
+        amountAud: r.amountAud,
+      });
+      continue;
+    }
+    let row = byGroup.get(g.key);
+    if (!row) {
+      row = { label: "", source: "", amountAud: 0 };
+      byGroup.set(g.key, row);
+      wholly.set(g.key, true);
+      memberNames.set(g.key, []);
+      printed.push(row);
+    }
+    row.amountAud += r.amountAud;
+    memberNames.get(g.key)!.push(r.label);
+    if (!(r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud)) {
+      wholly.set(g.key, false);
+    }
+  }
+  const groupsByKey = new Map(
+    clientAllowanceGroups(schedule).map((g) => [g.key, g]),
+  );
+  for (const [key, row] of byGroup) {
+    const g = groupsByKey.get(key)!;
+    row.label = `${g.label} · covers ${memberNames.get(key)!.join("; ")}`;
+    row.source = wholly.get(key)
+      ? "Client schedule, carried"
+      : "Client schedule, repriced";
+  }
   return {
     kind: "table",
     ref: q.ref,
     title: "Provisional sum schedule",
     columns: ["Provisional sum", "Source", "Amount ex GST"],
     align: ["l", "l", "r"],
-    rows: rows.map((r) => [
-      `${r.label} (${r.divisionLabel})`,
-      r.source === "client_schedule"
-        ? r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud
-          ? "Client schedule, carried"
-          : "Client schedule, repriced"
-        : "Builder",
-      formatAud(r.amountAud),
-    ]),
-    footer: [`${rows.length} provisional sum${rows.length === 1 ? "" : "s"}`, "", formatAud(total)],
+    rows: printed.map((r) => [r.label, r.source, formatAud(r.amountAud)]),
+    footer: [`${printed.length} provisional sum${printed.length === 1 ? "" : "s"}`, "", formatAud(total)],
   };
 }
 

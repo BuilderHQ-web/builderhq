@@ -21,6 +21,7 @@ import {
 
 import {
   scheduleDivisions,
+  groupedAllowanceItems,
   formatCitation,
   type TenderSchedule,
   type TenderScheduleItem,
@@ -59,6 +60,23 @@ export function ScheduleBrowser({
   pdfHref?: string | null;
 }) {
   const divisions = useMemo(() => scheduleDivisions(schedule), [schedule]);
+  // Client packages carry ONE nominated figure; the first member line
+  // of each package wears it, and the rest read as part of the
+  // package — never as split per-line prices the client did not set.
+  const packageTag = useMemo(() => {
+    const grouped = groupedAllowanceItems(schedule);
+    const first = new Set<string>();
+    const tags = new Map<string, string>();
+    for (const [itemId, g] of grouped) {
+      if (!first.has(g.key)) {
+        first.add(g.key);
+        tags.set(itemId, `${formatAud(g.totalAud)} · ${g.label} package`);
+      } else {
+        tags.set(itemId, `Part of the ${g.label} package`);
+      }
+    }
+    return tags;
+  }, [schedule]);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
 
@@ -184,7 +202,11 @@ export function ScheduleBrowser({
               {expanded ? (
                 <ul className="border-t border-border-subtle/60 divide-y divide-border-subtle/40">
                   {d.items.map((item) => (
-                    <BrowserLine key={item.itemId} item={item} />
+                    <BrowserLine
+                      key={item.itemId}
+                      item={item}
+                      packageTag={packageTag.get(item.itemId) ?? null}
+                    />
                   ))}
                   {d.locked.map((item) => (
                     <li
@@ -209,7 +231,15 @@ export function ScheduleBrowser({
   );
 }
 
-function BrowserLine({ item }: { item: TenderScheduleItem }) {
+function BrowserLine({
+  item,
+  packageTag,
+}: {
+  item: TenderScheduleItem;
+  /** Set for client-package members: the whole figure on the first
+   *  line of the package, "part of" on the rest. */
+  packageTag: string | null;
+}) {
   const cite = item.citations[0] ? formatCitation(item.citations[0]) : null;
   return (
     <li className="px-4 py-2.5">
@@ -244,7 +274,12 @@ function BrowserLine({ item }: { item: TenderScheduleItem }) {
             <p className="mt-0.5 text-[10.5px] text-text-dim">{cite}</p>
           ) : null}
         </div>
-        {item.kind === "owner_allowance" && item.ownerAmountAud !== null ? (
+        {packageTag ? (
+          <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-ui font-medium text-[#8a6414]">
+            <Landmark className="size-3" />
+            {packageTag}
+          </span>
+        ) : item.kind === "owner_allowance" && item.ownerAmountAud !== null ? (
           <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-ui font-medium text-[#8a6414]">
             <Landmark className="size-3" />
             {formatAud(item.ownerAmountAud)} provisional sum

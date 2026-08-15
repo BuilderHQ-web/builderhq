@@ -1755,33 +1755,35 @@ function AllowancePackageCard({
         this package
       </button>
       {detailOpen ? (
-        <ul className="mt-1.5 pl-4 flex flex-col gap-1">
-          {pack.itemIds.map((id) => {
-            const item = getScopeItem(id);
-            const r = resolved.get(id);
-            return (
-              <li
-                key={id}
-                className="flex items-baseline justify-between gap-3 text-[11.5px]"
-              >
-                <span className="text-text-muted min-w-0 truncate">
-                  {item?.label ?? id}
-                  {gapByItemId.get(id)?.note ? (
-                    <span className="text-text-dim">
-                      {" "}
-                      · {gapByItemId.get(id)!.note}
-                    </span>
-                  ) : null}
-                </span>
-                {r?.resolution === "allowance" ? (
-                  <span className="shrink-0 tabular-nums text-text">
-                    ${(r.amountAud ?? 0).toLocaleString("en-AU")}
+        <>
+          {/* The member lines, named without figures: the budget lives
+              on the package as a whole. The split behind it only keeps
+              the builders' schedules comparable line by line. */}
+          <ul className="mt-1.5 pl-4 flex flex-col gap-1">
+            {pack.itemIds.map((id) => {
+              const item = getScopeItem(id);
+              return (
+                <li key={id} className="text-[11.5px]">
+                  <span className="text-text-muted min-w-0">
+                    {item?.label ?? id}
+                    {gapByItemId.get(id)?.note ? (
+                      <span className="text-text-dim">
+                        {" "}
+                        · {gapByItemId.get(id)!.note}
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+          {lockedTotal > 0 && pack.itemIds.length > 1 ? (
+            <p className="mt-1.5 pl-4 text-[11px] leading-[1.55] text-text-dim max-w-[60ch]">
+              Your budget covers this package as a whole. Builders price
+              against the one figure, not line by line.
+            </p>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

@@ -54,6 +54,9 @@ import {
 import {
   tenderableItems,
   readScheduleAnswer,
+  groupedAllowanceItems,
+  type ClientAllowanceGroup,
+  type ScheduleEntry,
   type TenderSchedule,
   type ScheduleState,
 } from "@/modules/tenders/schedule";
@@ -641,13 +644,91 @@ function ScheduleAlignment({
         readScheduleAnswer(summaries[t.id]!.answers["scope.schedule"]),
       ]),
     );
-    const all = tenderableItems(schedule).map((item) => {
-      const cells = tenders.map((t) => marks.get(t.id)![item.itemId] ?? null);
-      const differs =
-        tenders.length > 1 &&
-        new Set(cells.map((e) => e?.s ?? "∅")).size > 1;
-      return { item, cells, differs };
-    });
+    // A client package reads as ONE row: the client set one figure for
+    // it, so five member lines would compare five split shares that
+    // were never real prices. The member lines are named beneath the
+    // package title; each builder's cell sums their package answer.
+    const grouped = groupedAllowanceItems(schedule);
+    const packageCell = (
+      m: Record<string, ScheduleEntry>,
+      g: ClientAllowanceGroup,
+    ): { s: ScheduleState | null; text: string } | null => {
+      const entries = g.items.map((i) => m[i.itemId]);
+      const marked = entries.filter((e): e is ScheduleEntry => !!e);
+      if (marked.length === 0) return null;
+      const states = new Set(marked.map((e) => e.s));
+      if (marked.length < g.items.length || states.size > 1) {
+        return { s: null, text: "Mixed marks" };
+      }
+      const st = marked[0]!.s;
+      if (st === "allowance") {
+        const sum = marked.reduce((n, e) => n + (e.a ?? 0), 0);
+        return { s: st, text: formatAud(sum) };
+      }
+      return { s: st, text: SCHED_META[st].label };
+    };
+    const seen = new Set<string>();
+    const all: Array<{
+      key: string;
+      label: string;
+      subLabel: string;
+      cells: Array<{ s: ScheduleState | null; text: string; title?: string } | null>;
+      differs: boolean;
+    }> = [];
+    for (const item of tenderableItems(schedule)) {
+      const g = grouped.get(item.itemId);
+      if (g) {
+        if (seen.has(g.key)) continue;
+        seen.add(g.key);
+        const cells = tenders.map((t) => packageCell(marks.get(t.id)!, g));
+        all.push({
+          key: `pkg-${g.key}`,
+          label: g.label,
+          subLabel: `your provisional sum ${formatAud(g.totalAud)} · covers ${g.items
+            .map((i) => i.label)
+            .join(" · ")}`,
+          cells,
+          differs:
+            tenders.length > 1 &&
+            new Set(cells.map((c) => c?.text ?? "∅")).size > 1,
+        });
+        continue;
+      }
+      const cells = tenders.map((t) => {
+        const e = marks.get(t.id)![item.itemId] ?? null;
+        if (!e) return null;
+        const text =
+          e.s === "allowance" && typeof e.a === "number"
+            ? formatAud(e.a)
+            : e.s === "documented" && typeof e.p === "number"
+              ? `${formatAud(e.p)} firm`
+              : SCHED_META[e.s].label;
+        return {
+          s: e.s as ScheduleState,
+          text:
+            typeof e.c === "string" && e.c.length > 0
+              ? `${text} · ${e.c}`
+              : text,
+          title:
+            typeof e.c === "string" && e.c.length > 0
+              ? `Builder's comment: ${e.c}`
+              : undefined,
+        };
+      });
+      all.push({
+        key: item.itemId,
+        label: item.label,
+        subLabel:
+          item.divisionLabel +
+          (item.kind === "owner_allowance" && item.ownerAmountAud !== null
+            ? ` · your provisional sum ${formatAud(item.ownerAmountAud)}`
+            : ""),
+        cells,
+        differs:
+          tenders.length > 1 &&
+          new Set(cells.map((c) => c?.s ?? "∅")).size > 1,
+      });
+    }
     if (!diffFirst) return all;
     return [...all.filter((r) => r.differs), ...all.filter((r) => !r.differs)];
   }, [tenders, summaries, schedule, diffFirst]);
@@ -735,7 +816,7 @@ function ScheduleAlignment({
       <ul>
         {visible.map((row, i) => (
           <li
-            key={row.item.itemId}
+            key={row.key}
             style={colStyle(tenders.length)}
             className={cn(
               "border-t border-border-subtle/30",
@@ -764,14 +845,13 @@ function ScheduleAlignment({
                       : "text-text-muted",
                   )}
                 >
-                  {row.item.label}
+                  {row.label}
                 </span>
-                <span className="block text-[10px] text-text-dim truncate">
-                  {row.item.divisionLabel}
-                  {row.item.kind === "owner_allowance" &&
-                  row.item.ownerAmountAud !== null
-                    ? ` · your provisional sum ${formatAud(row.item.ownerAmountAud)}`
-                    : ""}
+                <span
+                  className="block text-[10px] text-text-dim truncate"
+                  title={row.subLabel}
+                >
+                  {row.subLabel}
                 </span>
               </span>
             </div>
@@ -784,31 +864,18 @@ function ScheduleAlignment({
                   <span
                     className={cn(
                       "inline-flex items-center gap-1.5 text-[11px] font-ui min-w-0",
-                      SCHED_META[e.s].cls,
+                      e.s ? SCHED_META[e.s].cls : "text-text-muted",
                       row.differs && "font-semibold",
                     )}
-                    title={
-                      typeof e.c === "string" && e.c.length > 0
-                        ? `Builder's comment: ${e.c}`
-                        : undefined
-                    }
+                    title={e.title}
                   >
                     <span
                       className={cn(
                         "size-2 rounded-full shrink-0",
-                        SCHED_META[e.s].dot,
+                        e.s ? SCHED_META[e.s].dot : "bg-[rgba(24,34,44,0.25)]",
                       )}
                     />
-                    <span className="truncate">
-                      {e.s === "allowance" && typeof e.a === "number"
-                        ? formatAud(e.a)
-                        : e.s === "documented" && typeof e.p === "number"
-                          ? `${formatAud(e.p)} firm`
-                          : SCHED_META[e.s].label}
-                      {typeof e.c === "string" && e.c.length > 0
-                        ? ` · ${e.c}`
-                        : ""}
-                    </span>
+                    <span className="truncate">{e.text}</span>
                   </span>
                 ) : (
                   <span className="text-[11px] text-text-dim/60">

@@ -68,12 +68,17 @@ import {
   deriveNotApplicable,
   ownerExcludedItems,
   formatCitation,
+  clientAllowanceGroups,
+  groupedAllowanceItems,
+  collapseGroupedLabels,
+  type ClientAllowanceGroup,
   type ScheduleDivision,
   type ScheduleEntry,
   type ScheduleState,
   type TenderSchedule,
   type TenderScheduleItem,
 } from "@/modules/tenders/schedule";
+import { splitPackageAmount } from "@/modules/scope";
 import { NoteHint } from "../note-hint";
 import { BuilderScorecard, useSelfEvaluation } from "./scorecard";
 import {
@@ -106,6 +111,32 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 type AnswerPatch = unknown | ((prev: unknown) => unknown);
 
 const MATRIX_ROWS = scopeMatrixRows();
+
+/**
+ * The closing stop of the schedule walk: the client's provisional sum
+ * packages, answered whole. Member lines leave their trade divisions
+ * (their split figures are bookkeeping, not five real prices) and are
+ * marked in one decision per package.
+ */
+const CLIENT_PS_DIVISION = "__client_ps";
+
+function deckDivisions(schedule: TenderSchedule): ScheduleDivision[] {
+  const grouped = groupedAllowanceItems(schedule);
+  const out = scheduleDivisions(schedule).map((d) => ({
+    ...d,
+    items: d.items.filter((i) => !grouped.has(i.itemId)),
+  }));
+  const groups = clientAllowanceGroups(schedule);
+  if (groups.length > 0) {
+    out.push({
+      divisionId: CLIENT_PS_DIVISION,
+      label: "The client's provisional sums",
+      items: groups.flatMap((g) => g.items),
+      locked: [],
+    });
+  }
+  return out;
+}
 
 /** The slide easing every movement in the journey shares. */
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -283,7 +314,7 @@ export function TenderJourney({
   const SCHED_DIVISIONS = useMemo<ScheduleDivision[]>(
     () =>
       hasSchedule
-        ? scheduleDivisions(schedule!).filter((d) => d.items.length > 0)
+        ? deckDivisions(schedule!).filter((d) => d.items.length > 0)
         : [],
     [hasSchedule, schedule],
   );
@@ -511,7 +542,7 @@ export function TenderJourney({
   const [cursor, setCursor] = useState(() => {
     const init = Object.fromEntries(initialAnswers.map((a) => [a.qid, a.v]));
     const initDivisions = hasSchedule
-      ? scheduleDivisions(schedule!).filter((d) => d.items.length > 0)
+      ? deckDivisions(schedule!).filter((d) => d.items.length > 0)
       : [];
     let i = 0;
     for (const m of buildModules(instrumentVersion, {
@@ -797,9 +828,26 @@ export function TenderJourney({
         return;
       }
       const i = slideIndex.byQ.get(q.id);
-      if (i !== undefined) jumpTo(i);
+      if (i !== undefined) {
+        jumpTo(i);
+        return;
+      }
+      // Inline and gated questions have no slide of their own; land
+      // the deck at the start of their module so the answer is one
+      // screen away rather than nowhere.
+      const mIdx = MODULES.findIndex(
+        (m) =>
+          m.kind === "questions" &&
+          m.section.questions.some((x) => x.id === q.id),
+      );
+      if (mIdx >= 0) {
+        const j = deck.findIndex(
+          (sl) => sl.kind !== "review" && sl.mIdx === mIdx,
+        );
+        if (j >= 0) jumpTo(j);
+      }
     },
-    [slideIndex, jumpTo, SCHED_DIVISIONS, divisionDone],
+    [slideIndex, jumpTo, SCHED_DIVISIONS, divisionDone, MODULES, deck],
   );
 
   // Jump helper: first not-done slide of a module, else its start.
@@ -1170,6 +1218,19 @@ export function TenderJourney({
                     docs={docs}
                     onDocsChange={setDocs}
                   />
+                ) : slide.kind === "division" &&
+                  slide.division.divisionId === CLIENT_PS_DIVISION &&
+                  schedule ? (
+                  <PackagesSlide
+                    q={slide.q}
+                    schedule={schedule}
+                    dIdx={slide.dIdx}
+                    total={SCHED_DIVISIONS.length}
+                    marks={readScheduleAnswer(answers[slide.q.id])}
+                    onMark={(item, entry) =>
+                      markScheduleItem(slide.q, item, entry)
+                    }
+                  />
                 ) : slide.kind === "division" ? (
                   <DivisionSlide
                     q={slide.q}
@@ -1509,7 +1570,7 @@ const INTRO_BEATS = [
     key: "why",
     kicker: "Why this exists",
     headline: "Your quote, presented properly.",
-    body: "Owners usually compare quotes that all look different. Here, every tender follows the same clear format, so yours is judged on what matters: your price, your scope and your record.",
+    body: "Every builder here answers the same questions, so you are compared on substance, not presentation. Your whole tender gets read, and you are judged on what matters: your price, your scope and your record.",
     cta: "Continue",
   },
   {
@@ -2876,6 +2937,323 @@ function ScheduleItemRow({
   );
 }
 
+/* ── the client's provisional sum packages (the walk's last stop) ───── */
+
+/**
+ * The client set ONE figure per selections package; the builder
+ * answers each package as one decision. The member lines are listed
+ * unnumbered — the per-line split behind them keeps every tender
+ * comparable, but it is bookkeeping, never five real prices.
+ */
+function PackagesSlide({
+  q,
+  schedule,
+  dIdx,
+  total,
+  marks,
+  onMark,
+}: {
+  q: InstrumentQuestion;
+  schedule: TenderSchedule;
+  dIdx: number;
+  total: number;
+  marks: Record<string, ScheduleEntry>;
+  onMark: (item: TenderScheduleItem, entry: ScheduleEntry) => void;
+}) {
+  const groups = useMemo(() => clientAllowanceGroups(schedule), [schedule]);
+  return (
+    <div>
+      <p className="text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold tabular-nums">
+        {q.ref ? <span className="text-accent-light">{q.ref}</span> : null}
+        {q.ref ? " · " : ""}
+        The tender schedule · {dIdx + 1} of {total}
+      </p>
+      <h2 className="mt-2.5 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.25] text-text">
+        The client&rsquo;s provisional sums
+      </h2>
+      <p className="mt-2.5 text-[13.5px] leading-[1.65] text-text-muted max-w-[58ch]">
+        The client set one figure for each of these packages, and every
+        builder carries the same figures, so the round compares fairly.
+        Mark what your price does with each package as a whole.
+      </p>
+
+      <ul className="mt-5 space-y-3">
+        {groups.map((g) => (
+          <PackageRow key={g.key} group={g} marks={marks} onMark={onMark} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * One package, one decision: carry the client's figure, price the
+ * work firm, set your own figure, or leave it out. Every choice lands
+ * on all the member lines, so the per-line schedule the round
+ * compares on stays complete without the builder ever touching a
+ * split figure.
+ */
+function PackageRow({
+  group,
+  marks,
+  onMark,
+}: {
+  group: ClientAllowanceGroup;
+  marks: Record<string, ScheduleEntry>;
+  onMark: (item: TenderScheduleItem, entry: ScheduleEntry) => void;
+}) {
+  const entries = group.items.map((i) => marks[i.itemId]);
+  const allMarked = entries.every((e) => !!e);
+  const anyMarked = entries.some((e) => !!e);
+  const stateSet = new Set(
+    entries.filter((e): e is ScheduleEntry => !!e).map((e) => e.s),
+  );
+  const uniform = allMarked && stateSet.size === 1 ? entries[0]!.s : null;
+  const mixed = anyMarked && (!allMarked || stateSet.size > 1);
+  const carried =
+    uniform === "allowance" &&
+    group.items.every((i) => marks[i.itemId]?.a === i.ownerAmountAud);
+  const ownFigure =
+    uniform === "allowance" && !carried
+      ? entries.reduce((n, e) => n + (e?.a ?? 0), 0)
+      : null;
+
+  const [ownOpen, setOwnOpen] = useState(false);
+  const [commentOpen, setCommentOpen] = useState(false);
+  const first = group.items[0]!;
+  const firstEntry = marks[first.itemId];
+  const comment = firstEntry?.c ?? null;
+  const showComment =
+    !!uniform &&
+    (commentOpen || (typeof comment === "string" && comment.length > 0));
+  const naReason = uniform === "na" ? (firstEntry?.n ?? null) : null;
+
+  // Every write keeps each line's own comment; states change,
+  // comments stay — same contract as a single line's mark.
+  const writeAll = (
+    make: (item: TenderScheduleItem) => Omit<ScheduleEntry, "c">,
+  ) => {
+    for (const item of group.items) {
+      onMark(item, { ...make(item), c: marks[item.itemId]?.c ?? null });
+    }
+  };
+  const carry = () => {
+    setOwnOpen(false);
+    writeAll((i) => ({ s: "allowance", a: i.ownerAmountAud }));
+  };
+  const priceFirm = () => {
+    setOwnOpen(false);
+    writeAll(() => ({ s: "documented" }));
+  };
+  const openOwn = () => {
+    setOwnOpen(true);
+    writeAll(() => ({ s: "allowance", a: null }));
+  };
+  const exclude = () => {
+    setOwnOpen(false);
+    writeAll(() => ({ s: "excluded" }));
+  };
+  const notApplicable = () => {
+    setOwnOpen(false);
+    writeAll(() => ({ s: "na", n: firstEntry?.n ?? null }));
+  };
+  const setOwnFigure = (total: number | null) => {
+    if (typeof total !== "number" || !(total >= group.items.length)) {
+      writeAll(() => ({ s: "allowance", a: null }));
+      return;
+    }
+    const parts = splitPackageAmount(
+      group.key,
+      group.items.map((i) => i.itemId),
+      Math.round(total),
+    );
+    const byId = new Map(parts.map((x) => [x.itemId, x.amountAud]));
+    writeAll((i) => ({
+      s: "allowance",
+      a: Math.max(1, byId.get(i.itemId) ?? 1),
+    }));
+  };
+  const setNaReason = (v: string) => {
+    writeAll(() => ({ s: "na", n: v || null }));
+  };
+  const setComment = (v: string) => {
+    if (!firstEntry) return;
+    onMark(first, { ...firstEntry, c: v || null });
+  };
+
+  const ownActive = ownOpen || (uniform === "allowance" && !carried);
+  const chip = (on: boolean, tone: "accent" | "red" | "grey" = "accent") =>
+    cn(
+      "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+      on
+        ? tone === "red"
+          ? "border-transparent bg-[#a8433e] text-white font-semibold"
+          : tone === "grey"
+            ? "border-transparent bg-[#5c574b] text-white font-semibold"
+            : "border-transparent bg-accent text-accent-contrast font-semibold"
+        : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
+    );
+
+  return (
+    <li
+      className={cn(
+        "rounded-lg border px-4 py-4 transition-colors",
+        uniform
+          ? uniform === "na"
+            ? "border-border-strong bg-[rgba(24,34,44,0.03)]"
+            : "border-border-accent/60 bg-[rgba(0,212,200,0.04)]"
+          : "border-border-subtle bg-surface-1 card-elev",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[14.5px] font-ui font-semibold text-text leading-[1.35]">
+            {group.label}
+          </p>
+          <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[58ch]">
+            Covers: {group.items.map((i) => i.label).join(" · ")}
+          </p>
+          <p className="mt-1.5 text-[11.5px] text-[#8a6414]">
+            The client&rsquo;s schedule carries {formatAud(group.totalAud)}{" "}
+            for this package as a whole.
+          </p>
+          {mixed ? (
+            <p className="mt-1.5 text-[11.5px] text-[#8a6414]">
+              Lines in this package carry mixed marks from an earlier
+              draft. One tap below marks the package as a whole.
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={carry}
+          aria-pressed={carried && !ownOpen}
+          className={cn(
+            "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+            carried && !ownOpen
+              ? "border-transparent bg-accent text-accent-contrast font-semibold"
+              : "border-border-strong text-text hover:border-border-accent",
+          )}
+        >
+          Carry {formatAud(group.totalAud)}
+        </button>
+        <button
+          type="button"
+          onClick={priceFirm}
+          aria-pressed={uniform === "documented"}
+          className={chip(uniform === "documented")}
+        >
+          Included
+        </button>
+        <button
+          type="button"
+          onClick={openOwn}
+          aria-pressed={ownActive}
+          className={chip(ownActive)}
+        >
+          My own figure
+        </button>
+        <button
+          type="button"
+          onClick={exclude}
+          aria-pressed={uniform === "excluded"}
+          className={chip(uniform === "excluded", "red")}
+        >
+          Excluded
+        </button>
+        <button
+          type="button"
+          onClick={notApplicable}
+          aria-pressed={uniform === "na"}
+          className={chip(uniform === "na", "grey")}
+        >
+          N/A
+        </button>
+        <button
+          type="button"
+          disabled={!uniform}
+          onClick={() => setCommentOpen((o) => !o)}
+          aria-pressed={showComment}
+          title={uniform ? undefined : "Mark the package first"}
+          className={cn(
+            "h-8 px-3 rounded-full border text-[12px] font-ui transition-colors",
+            !uniform
+              ? "border-border-subtle text-text-faint cursor-default"
+              : showComment
+                ? "border-border-accent text-text"
+                : "border-border-subtle text-text-muted hover:border-border-strong hover:text-text",
+          )}
+        >
+          Comment
+        </button>
+      </div>
+
+      {ownActive ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Your provisional sum for this package as a whole
+          </p>
+          <CurrencyBox
+            value={ownFigure}
+            onChange={(v) => setOwnFigure(v)}
+          />
+        </motion.div>
+      ) : null}
+
+      {uniform === "na" ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Optional. One line on why this package does not apply.
+          </p>
+          <input
+            type="text"
+            maxLength={200}
+            value={naReason ?? ""}
+            onChange={(e) => setNaReason(e.target.value)}
+            placeholder="Arranged by the client separately..."
+            className="h-11 w-full max-w-[420px] rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3 text-[13px] text-text outline-none focus:border-border-accent transition-colors"
+          />
+        </motion.div>
+      ) : null}
+
+      {showComment && uniform ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: EASE }}
+          className="mt-3"
+        >
+          <p className="text-[11.5px] text-text-muted mb-1.5">
+            Optional. Your comment prints beside this package on your
+            tender.
+          </p>
+          <input
+            type="text"
+            maxLength={280}
+            value={comment ?? ""}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Allowed for the standard of finish the drawings show..."
+            className="h-11 w-full max-w-[420px] rounded-md border border-border-subtle bg-[rgba(24,34,44,0.035)] px-3 text-[13px] text-text outline-none focus:border-border-accent transition-colors"
+          />
+        </motion.div>
+      ) : null}
+    </li>
+  );
+}
+
 /**
  * The soil classification, read off the round's own report and shown
  * back big: the builder confirms the class the price rests on, and
@@ -2988,25 +3366,77 @@ function DerivedAllowances({
     );
   }
   const total = rows.reduce((n, r) => n + r.amountAud, 0);
+  // The client's packages read whole: one row, one figure, the member
+  // lines named beneath it without figures of their own.
+  const grouped = groupedAllowanceItems(schedule);
+  type Line = {
+    key: string;
+    label: string;
+    sub: string;
+    members: string[] | null;
+    amountAud: number;
+  };
+  const lines: Line[] = [];
+  const byGroup = new Map<string, Line>();
+  const carriedWhole = new Map<string, boolean>();
+  for (const r of rows) {
+    const g = grouped.get(r.itemId);
+    if (!g) {
+      lines.push({
+        key: r.itemId,
+        label: r.label,
+        sub: `${r.divisionLabel} · ${
+          r.source === "client_schedule"
+            ? r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud
+              ? "Client's schedule, carried at the stated figure"
+              : "Client's schedule, your figure"
+            : "Your provisional sum"
+        }`,
+        members: null,
+        amountAud: r.amountAud,
+      });
+      continue;
+    }
+    let line = byGroup.get(g.key);
+    if (!line) {
+      line = {
+        key: `pkg-${g.key}`,
+        label: g.label,
+        sub: "",
+        members: [],
+        amountAud: 0,
+      };
+      byGroup.set(g.key, line);
+      carriedWhole.set(g.key, true);
+      lines.push(line);
+    }
+    line.amountAud += r.amountAud;
+    line.members!.push(r.label);
+    if (!(r.ownerAmountAud !== null && r.amountAud === r.ownerAmountAud)) {
+      carriedWhole.set(g.key, false);
+    }
+  }
+  for (const [k, line] of byGroup) {
+    line.sub = carriedWhole.get(k)
+      ? "Client's package, carried at the stated figure"
+      : "Client's package, your figure";
+  }
   return (
     <div className="mt-6 border-y border-border-subtle">
       <ul className="divide-y divide-border-subtle/60">
-        {rows.map((r) => (
+        {lines.map((r) => (
           <li
-            key={r.itemId}
+            key={r.key}
             className="py-3 flex items-baseline justify-between gap-3"
           >
             <div className="min-w-0">
               <p className="text-[13px] font-ui text-text">{r.label}</p>
-              <p className="mt-0.5 text-[11px] text-text-dim">
-                {r.divisionLabel} ·{" "}
-                {r.source === "client_schedule"
-                  ? r.ownerAmountAud !== null &&
-                    r.amountAud === r.ownerAmountAud
-                    ? "Client's schedule, carried at the stated figure"
-                    : "Client's schedule, your figure"
-                  : "Your provisional sum"}
-              </p>
+              <p className="mt-0.5 text-[11px] text-text-dim">{r.sub}</p>
+              {r.members ? (
+                <p className="mt-0.5 text-[11px] leading-[1.55] text-text-dim">
+                  Covers: {r.members.join(" · ")}
+                </p>
+              ) : null}
             </div>
             <span className="text-[13.5px] font-display tabular-nums text-text shrink-0">
               {formatAud(r.amountAud)}
@@ -3077,12 +3507,20 @@ function DerivedExclusions({
     : [];
   const clientOut = schedule ? ownerExcludedItems(schedule) : [];
   const m = (answers["scope.matrix"] ?? {}) as Record<string, string>;
-  const excluded = fromSchedule
-    ? fromSchedule.map((r) => ({ id: r.itemId, label: r.label }))
-    : MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
-  const allowance = scheduleAllowances
-    ? scheduleAllowances.map((r) => ({ id: r.itemId, label: r.label }))
-    : MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
+  const excluded =
+    fromSchedule && schedule
+      ? collapseGroupedLabels(schedule, fromSchedule).map((label) => ({
+          id: label,
+          label,
+        }))
+      : MATRIX_ROWS.filter((r) => m[r.id] === "excluded");
+  const allowance =
+    scheduleAllowances && schedule
+      ? collapseGroupedLabels(schedule, scheduleAllowances).map((label) => ({
+          id: label,
+          label,
+        }))
+      : MATRIX_ROWS.filter((r) => m[r.id] === "allowance");
   const extraRows = Array.isArray(answers["scope.exclusions_list"])
     ? (answers["scope.exclusions_list"] as Record<string, unknown>[])
     : [];
@@ -3584,6 +4022,29 @@ function ReviewSlide({
     instrumentVersion,
   });
 
+  // Scorecard lines carry the question they read from; resolve those
+  // anchors against THIS deck's modules so a jump can never point at
+  // a question the draft's instrument version does not ask.
+  const questionById = useMemo(() => {
+    const m = new Map<string, InstrumentQuestion>();
+    for (const mod of modules) {
+      if (mod.kind !== "questions") continue;
+      for (const q of mod.section.questions) m.set(q.id, q);
+    }
+    return m;
+  }, [modules]);
+  const jumpFromScorecard = useCallback(
+    (qid: string) => {
+      if (qid === "__docs") {
+        onJumpDocs();
+        return;
+      }
+      const q = questionById.get(qid);
+      if (q) onJumpQuestion(q);
+    },
+    [questionById, onJumpDocs, onJumpQuestion],
+  );
+
   return (
     <div>
       <p className="text-[10px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
@@ -3603,7 +4064,11 @@ function ReviewSlide({
       <CoverCard model={model} onPreview={onPreview} />
 
       <div className="mt-5">
-        <BuilderScorecard ev={selfRead} mode="draft" />
+        <BuilderScorecard
+          ev={selfRead}
+          mode="draft"
+          onJump={jumpFromScorecard}
+        />
       </div>
 
       <ModuleLedger

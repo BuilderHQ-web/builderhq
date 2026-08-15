@@ -18,6 +18,9 @@ import {
   deriveNotApplicable,
   deriveDisclosedPrices,
   deriveAllowanceRows,
+  clientAllowanceGroups,
+  groupedAllowanceItems,
+  collapseGroupedLabels,
   toScheduleItem,
   type TenderSchedule,
 } from "./schedule";
@@ -277,5 +280,76 @@ describe("metrics fold", () => {
     expect(m.itemisedCount).toBe(2);
     expect(m.itemisedTotal).toBe(50_000);
     expect(m.allowanceExposure).toBe(5_000);
+  });
+});
+
+describe("client allowance packages", () => {
+  /** Two appliance lines set by one package budget, one lone PC line. */
+  function packagedFixture(): TenderSchedule {
+    const items = [
+      toScheduleItem({
+        itemId: "framing.wall-frames",
+        kind: "evidenced",
+        ownerAmountAud: null,
+        citations: [],
+        note: null,
+      }),
+      toScheduleItem({
+        itemId: "appliances.oven",
+        kind: "owner_allowance",
+        ownerAmountAud: 3_000,
+        citations: [],
+        note: null,
+      }),
+      toScheduleItem({
+        itemId: "appliances.cooktop",
+        kind: "owner_allowance",
+        ownerAmountAud: 2_000,
+        citations: [],
+        note: null,
+      }),
+      toScheduleItem({
+        itemId: "flooring.carpet",
+        kind: "owner_allowance",
+        ownerAmountAud: 4_000,
+        citations: [],
+        note: null,
+      }),
+    ].filter((i): i is NonNullable<typeof i> => i !== null);
+    expect(items).toHaveLength(4);
+    return { runId: "run-2", standardVersion: "1.0.0", items };
+  }
+
+  test("groups form only from two or more member lines, whole figure exact", () => {
+    const schedule = packagedFixture();
+    const groups = clientAllowanceGroups(schedule);
+    expect(groups).toHaveLength(1);
+    const g = groups[0]!;
+    expect(g.key).toBe("appliances");
+    expect(g.label).toBe("Appliances");
+    expect(g.totalAud).toBe(5_000);
+    expect(g.items.map((i) => i.itemId)).toEqual([
+      "appliances.oven",
+      "appliances.cooktop",
+    ]);
+  });
+
+  test("membership map covers members and nothing else", () => {
+    const schedule = packagedFixture();
+    const m = groupedAllowanceItems(schedule);
+    expect(m.get("appliances.oven")?.key).toBe("appliances");
+    expect(m.get("appliances.cooktop")?.key).toBe("appliances");
+    expect(m.has("flooring.carpet")).toBe(false);
+    expect(m.has("framing.wall-frames")).toBe(false);
+  });
+
+  test("labels collapse to the package title, singles keep their own", () => {
+    const schedule = packagedFixture();
+    const labels = collapseGroupedLabels(schedule, [
+      { itemId: "appliances.oven", label: "Oven" },
+      { itemId: "appliances.cooktop", label: "Cooktop" },
+      { itemId: "flooring.carpet", label: "Carpet and underlay" },
+    ]);
+    expect(labels).toEqual(["Appliances", "Carpet and underlay"]);
   });
 });

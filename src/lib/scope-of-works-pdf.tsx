@@ -25,6 +25,7 @@ import {
 
 import {
   scheduleDivisions,
+  groupedAllowanceItems,
   formatCitation,
   SCOPE_PDF_NOTE,
   type TenderSchedule,
@@ -162,6 +163,20 @@ export interface ScopePdfArgs {
 
 function ScopeDoc({ projectTitle, projectMeta, schedule, now }: ScopePdfArgs) {
   const divisions = scheduleDivisions(schedule);
+  // Client packages carry one nominated figure; it prints once, on
+  // the package's first line, and the other member lines read as part
+  // of the package rather than as split per-line prices.
+  const grouped = groupedAllowanceItems(schedule);
+  const firstOfPackage = new Set<string>();
+  const packageTag = new Map<string, string>();
+  for (const [itemId, g] of grouped) {
+    if (!firstOfPackage.has(g.key)) {
+      firstOfPackage.add(g.key);
+      packageTag.set(itemId, `Provisional sum ${aud(g.totalAud)} · ${g.label} package`);
+    } else {
+      packageTag.set(itemId, `Part of the ${g.label} package`);
+    }
+  }
   const total = schedule.items.filter((i) => i.kind !== "owner_excluded").length;
   const dateLine = now.toLocaleDateString("en-AU", {
     day: "numeric",
@@ -207,7 +222,11 @@ function ScopeDoc({ projectTitle, projectMeta, schedule, now }: ScopePdfArgs) {
                 <View key={item.itemId} style={s.line} wrap={false}>
                   <View style={s.lineRow}>
                     <Text style={s.lineLabel}>{item.label}</Text>
-                    {item.kind === "owner_allowance" &&
+                    {packageTag.has(item.itemId) ? (
+                      <Text style={s.lineTag}>
+                        {packageTag.get(item.itemId)}
+                      </Text>
+                    ) : item.kind === "owner_allowance" &&
                     item.ownerAmountAud !== null ? (
                       <Text style={s.lineTag}>
                         Provisional sum {aud(item.ownerAmountAud)}

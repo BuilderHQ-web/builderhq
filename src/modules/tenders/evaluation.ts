@@ -37,6 +37,7 @@ import {
   deriveScheduleExclusions,
   deriveNotApplicable,
   deriveDisclosedPrices,
+  collapseGroupedLabels,
   type TenderSchedule,
 } from "./schedule";
 
@@ -100,6 +101,12 @@ export interface ReceiptLine {
    * sides of the ledger, exactly.
    */
   potential?: number;
+  /**
+   * The question this line reads from, when changing an answer could
+   * move it — the anchor a draft scorecard uses to jump straight to
+   * that slide. The sentinel "__docs" points at the documents module.
+   */
+  qid?: string;
 }
 
 export interface DimensionScore {
@@ -360,25 +367,26 @@ function ledger(base: number, baseLabel: string | null) {
   }
   let sum = base;
   return {
-    add(points: number, label: string) {
+    add(points: number, label: string, qid?: string) {
       if (points === 0) {
-        lines.push({ kind: "note", value: null, label });
+        lines.push({ kind: "note", value: null, label, qid });
         return;
       }
       sum += Math.round(points);
-      lines.push({ kind: "delta", value: Math.round(points), label });
+      lines.push({ kind: "delta", value: Math.round(points), label, qid });
     },
     note(label: string) {
       lines.push({ kind: "note", value: null, label });
     },
     /** Points available on a rubric slot and not earned. */
-    miss(potential: number, label: string) {
+    miss(potential: number, label: string, qid?: string) {
       if (potential <= 0) return;
       lines.push({
         kind: "miss",
         value: null,
         label,
         potential: Math.round(potential),
+        qid,
       });
     },
     settle(key: DimensionKey, opts?: { rubricTotal?: number }): DimensionScore {
@@ -539,14 +547,18 @@ export function evaluateTender(
 
   /* scope — schedule rounds read the pack marks; legacy the trade grid */
   const excludedTrades = schedule
-    ? deriveScheduleExclusions(schedule, a["scope.schedule"]).map(
-        (r) => r.label,
+    ? collapseGroupedLabels(
+        schedule,
+        deriveScheduleExclusions(schedule, a["scope.schedule"]),
       )
     : rows
         .filter((r) => matrix[r.id] === "excluded")
         .map((r) => tradeLabel(r.id as TradeId));
   const allowanceTrades = schedule
-    ? deriveAllowanceRows(schedule, a["scope.schedule"]).map((r) => r.label)
+    ? collapseGroupedLabels(
+        schedule,
+        deriveAllowanceRows(schedule, a["scope.schedule"]),
+      )
     : rows
         .filter((r) => matrix[r.id] === "allowance")
         .map((r) => tradeLabel(r.id as TradeId));
@@ -884,9 +896,9 @@ export function evaluateTender(
     // leaves open.
     const L = ledger(100, "every tender starts fully firm");
     if (contractForm === "cost_plus") {
-      L.add(-45, "cost plus contract: the price follows cost, not the tender");
+      L.add(-45, "cost plus contract: the price follows cost, not the tender", "contract.form");
     } else if (money.fixed === false) {
-      L.add(-40, "price is an estimate, not fixed");
+      L.add(-40, "price is an estimate, not fixed", "price.fixed");
     } else if (money.fixed === true) {
       L.note("fixed contract sum, held");
     }
@@ -904,6 +916,7 @@ export function evaluateTender(
       L.add(
         -expPenalty,
         `${pctLabel} of the price sits in the builder's own allowances (${aud(builderExposure)}), 2 points per percent`,
+        metrics.schedule ? "scope.schedule" : "pcps.has_ps",
       );
     } else if (exGst) {
       L.note(
@@ -913,27 +926,27 @@ export function evaluateTender(
       );
     }
     if (escalation === "uncapped") {
-      L.add(-25, "rise-and-fall clause with no cap");
+      L.add(-25, "rise-and-fall clause with no cap", "price.escalation");
     } else if (escalation === "capped") {
-      L.add(-10, "capped rise-and-fall clause");
+      L.add(-10, "capped rise-and-fall clause", "price.escalation");
     } else if (escalation === "none") {
       L.note("no rise-and-fall clause, held");
     }
     const basis = str(a["pcps.basis"]);
     if (basis === "generic") {
-      L.add(-15, "allowances are generic figures, not priced from the documents");
+      L.add(-15, "allowances are generic figures, not priced from the documents", "pcps.basis");
     } else if (basis === "partly") {
-      L.add(-7, "allowances only partly priced from the documents");
+      L.add(-7, "allowances only partly priced from the documents", "pcps.basis");
     } else if (basis === "documented") {
       L.note("allowances priced from this project's documents, held");
     }
     if (money.permitFeesIncluded === false) {
-      L.add(-5, "permit and authority fees on top of the price");
+      L.add(-5, "permit and authority fees on top of the price", "compliance.permit_fees");
     } else if (money.permitFeesIncluded === true) {
       L.note("permit and authority fees inside the price, held");
     }
     if (str(a["site.rock"]) === "variation") {
-      L.add(-5, "rock removal charged as a variation");
+      L.add(-5, "rock removal charged as a variation", "site.rock");
     } else if (str(a["site.rock"]) === "included") {
       L.note("rock removal inside the price, held");
     }
@@ -944,6 +957,7 @@ export function evaluateTender(
       L.add(
         -12,
         `deposit of ${money.depositPct}% sits above the ${capPct}% statutory cap in ${input.projectState.toUpperCase()}`,
+        "payments.deposit",
       );
     } else if (
       money.depositPct !== null &&
@@ -1006,6 +1020,7 @@ export function evaluateTender(
       L.add(
         -Math.min(10, extraExclusions.length * 2),
         `${extraExclusions.length} further written exclusion${extraExclusions.length === 1 ? "" : "s"}, 2 points each`,
+        "excl.derived_confirm",
       );
     }
     dims.push(L.settle("scope"));
@@ -1032,15 +1047,15 @@ export function evaluateTender(
       if (insp === "not_inspected") {
         L.note("priced without a site inspection, acknowledged");
       }
-      L.miss(W.insp, "walking the site earns these");
+      L.miss(W.insp, "walking the site earns these", "elig.site_inspection");
     }
     const docs = str(a["elig.docs_reviewed"]);
     if (docs === "full_set") L.add(W.docs, "reviewed the full document set");
     else if (docs === "partial") {
       L.add(5, "documents only partially reviewed");
-      L.miss(W.docs - 5, "reading the full set earns the balance");
+      L.miss(W.docs - 5, "reading the full set earns the balance", "elig.docs_reviewed");
     } else {
-      L.miss(W.docs, "document review not recorded");
+      L.miss(W.docs, "document review not recorded", "elig.docs_reviewed");
     }
     if (isV3) {
       // Document-aware soil: a report on file is confirmed; no report
@@ -1061,12 +1076,12 @@ export function evaluateTender(
           10,
           `assumed class ${SOIL_LABEL[basis] ?? basis.toUpperCase()} stated plainly, no report provided`,
         );
-        L.miss(W.soil - 10, "a soil report for this site earns the full 16");
+        L.miss(W.soil - 10, "a soil report for this site earns the full 16", "site.soil_class_basis");
       } else {
         if (basis === "not_stated") {
           L.note("no soil classification stated for the price");
         }
-        L.miss(W.soil, "stating the soil basis of the price earns these");
+        L.miss(W.soil, "stating the soil basis of the price earns these", "site.soil_class_basis");
       }
     } else {
       const soil = str(a["site.soil_report"]);
@@ -1076,19 +1091,19 @@ export function evaluateTender(
         if (soil === "assumed") {
           L.note("soil classification assumed, not tested");
         }
-        L.miss(W.soil, "pricing from this site's soil report earns these");
+        L.miss(W.soil, "pricing from this site's soil report earns these", "site.soil_report");
       }
       const rfis = str(a["understand.rfis"]);
       if (rfis === "answered") {
         L.add(10, "raised and resolved clarifications while pricing");
       } else if (rfis === "none_needed") {
         L.add(6, "no clarifications needed");
-        L.miss(4, "raising and closing out questions earns the full weight");
+        L.miss(4, "raising and closing out questions earns the full weight", "understand.rfis");
       } else {
         if (rfis === "awaiting") {
           L.note("still awaiting answers to clarifications");
         }
-        L.miss(10, "clarifications not raised or not closed out");
+        L.miss(10, "clarifications not raised or not closed out", "understand.rfis");
       }
       if (
         a["understand.gaps"] === true &&
@@ -1096,7 +1111,7 @@ export function evaluateTender(
       ) {
         L.add(6, "documented the gaps they priced around");
       } else {
-        L.miss(6, "documenting the gaps priced around earns these");
+        L.miss(6, "documenting the gaps priced around earns these", "understand.gaps");
       }
     }
     if (
@@ -1108,6 +1123,7 @@ export function evaluateTender(
       L.miss(
         W.concerns,
         "flagging design or constructability concerns earns these",
+        "understand.concerns",
       );
     }
     const itemPts = Math.min(W.item, metrics.itemisedCount);
@@ -1125,6 +1141,7 @@ export function evaluateTender(
         metrics.schedule
           ? `disclosing line prices earns up to the full ${W.item}`
           : `itemising trades by amount earns up to the full ${W.item}`,
+        metrics.schedule ? "scope.schedule" : "scope.matrix",
       );
     }
     const docPts = Math.min(W.attach, input.documentCount * 2);
@@ -1135,7 +1152,7 @@ export function evaluateTender(
       );
     }
     if (docPts < W.attach) {
-      L.miss(W.attach - docPts, `supporting documents earn 2 each, to ${W.attach}`);
+      L.miss(W.attach - docPts, `supporting documents earn 2 each, to ${W.attach}`, "__docs");
     }
     const commPts = commentary.present
       ? Math.min(
@@ -1153,6 +1170,7 @@ export function evaluateTender(
       L.miss(
         10 - commPts,
         "approach, value engineering and risk advice earn up to the full 10",
+        "comment.approach",
       );
     }
     dims.push(L.settle("preparation", { rubricTotal: 100 }));
@@ -1172,9 +1190,10 @@ export function evaluateTender(
       max: number,
       gainLabel: string | null,
       missLabel: string,
+      qid?: string,
     ) => {
-      if (earned > 0 && gainLabel) L.add(earned, gainLabel);
-      if (earned < max) L.miss(max - earned, missLabel);
+      if (earned > 0 && gainLabel) L.add(earned, gainLabel, qid);
+      if (earned < max) L.miss(max - earned, missLabel, qid);
     };
     const expPts: Record<string, number> = {
       "1_5": 5,
@@ -1187,6 +1206,7 @@ export function evaluateTender(
       20,
       exp ? `${EXPERIENCE[exp]?.toLowerCase()}` : null,
       "full marks need 50 or more comparable projects",
+      "creds.experience_type",
     );
     const largePts: Record<string, number> = {
       under_500k: 3,
@@ -1201,6 +1221,7 @@ export function evaluateTender(
       15,
       largest ? `${LARGEST[largest]?.toLowerCase()}` : null,
       "full marks need a largest contract over $5m",
+      "creds.largest_value",
     );
     const loadPts: Record<string, number> = { "1_2": 12, "3_5": 6, "6_plus": 0 };
     const load = str(a["team.supervisor_load"]);
@@ -1209,6 +1230,7 @@ export function evaluateTender(
       12,
       load ? `site lead ${LOAD[load]}` : null,
       "full marks need a site lead carrying 1 to 2 jobs",
+      "team.supervisor_load",
     );
     const concPts: Record<string, number> = { "0_2": 8, "3_5": 4, "6_plus": 0 };
     slot(
@@ -1216,6 +1238,7 @@ export function evaluateTender(
       8,
       concurrent ? `${CONCURRENT[concurrent]?.toLowerCase()}` : null,
       "full marks need at most 2 concurrent projects",
+      "programme.concurrent",
     );
     if (tenure === "under_1") L.note("crews together under a year");
     slot(
@@ -1227,6 +1250,7 @@ export function evaluateTender(
           ? "core crews together 1–3 years"
           : null,
       "full marks need core crews together 3 or more years",
+      "team.crew_tenure",
     );
     const whsPts: Record<string, number> = {
       certified: 10,
@@ -1238,6 +1262,7 @@ export function evaluateTender(
       10,
       whs ? `${(WHS[whs] ?? whs).toLowerCase()}` : null,
       "full marks need a certified WHS system",
+      "creds.whs",
     );
     const qaPts = Math.min(
       10,
@@ -1250,6 +1275,7 @@ export function evaluateTender(
       10,
       "quality control in place",
       "full marks need independent inspections with documented ITPs",
+      "creds.qa",
     );
     const refPts = Math.min(10, references.length * 4 + refLinks);
     if (refPts === 0) L.note("no references offered");
@@ -1258,12 +1284,14 @@ export function evaluateTender(
       10,
       `${references.length} referee${references.length === 1 ? "" : "s"}${refLinks ? " with project links" : ""}, 4 each to 10`,
       "referees earn 4 each, project links 1 each, to 10",
+      "creds.references",
     );
     slot(
       Math.min(4, inHouse.length * 2),
       4,
       `${inHouse.length} trade${inHouse.length === 1 ? "" : "s"} in-house`,
       "in-house trades earn 2 each, to 4",
+      "team.in_house",
     );
     slot(
       memberships.length > 0 ? 3 : 0,
@@ -1272,6 +1300,7 @@ export function evaluateTender(
         ? `${memberships.map((m) => m.toUpperCase()).join(" and ")} member`
         : null,
       "industry membership earns 3",
+      "creds.memberships",
     );
     dims.push(L.settle("credentials", { rubricTotal: 100 }));
   }
@@ -1288,9 +1317,10 @@ export function evaluateTender(
       max: number,
       gainLabel: string | null,
       missLabel: string,
+      qid?: string,
     ) => {
-      if (earned > 0 && gainLabel) L.add(earned, gainLabel);
-      if (earned < max) L.miss(max - earned, missLabel);
+      if (earned > 0 && gainLabel) L.add(earned, gainLabel, qid);
+      if (earned < max) L.miss(max - earned, missLabel, qid);
     };
     const updPts: Record<string, number> = {
       weekly: 16,
@@ -1302,6 +1332,7 @@ export function evaluateTender(
       16,
       upd ? `${(UPDATES[upd] ?? upd).toLowerCase()}` : null,
       "full marks need weekly progress updates",
+      "team.updates",
     );
     if (a["contract.variations_written"] === false) {
       L.note("variations not always in writing");
@@ -1311,12 +1342,14 @@ export function evaluateTender(
       18,
       "variations always priced in writing first",
       "committing to written variations before work earns 18",
+      "contract.variations_written",
     );
     slot(
       a["contract.variation_fee"] === false ? 6 : 0,
       6,
       "no variation admin fee",
       "waiving the variation admin fee earns 6",
+      "contract.variation_fee",
     );
     const dlpPts: Record<string, number> = { "3": 3, "6": 8, "12": 16, "24": 22 };
     const dlp = metrics.defectsLiabilityMonths;
@@ -1325,12 +1358,14 @@ export function evaluateTender(
       22,
       dlp ? `${dlp}-month defects period` : null,
       "full marks need a 24 month defects period",
+      "contract.defects_liability",
     );
     slot(
       a["aftercare.walkthrough"] === true ? 10 : 0,
       10,
       "pre-handover walkthrough",
       "a pre-handover walkthrough earns 10",
+      "aftercare.walkthrough",
     );
     const respPts: Record<string, number> = { "48h": 16, "1w": 8, best_effort: 2 };
     slot(
@@ -1338,12 +1373,14 @@ export function evaluateTender(
       16,
       resp ? `${(RESPONSE[resp] ?? resp).toLowerCase()}` : null,
       "full marks need defect calls answered within 48 hours",
+      "aftercare.response",
     );
     slot(
       a["aftercare.manual"] === true ? 12 : 0,
       12,
       "handover pack provided",
       "a handover pack earns 12",
+      "aftercare.manual",
     );
     dims.push(L.settle("delivery", { rubricTotal: 100 }));
   }
@@ -1374,29 +1411,30 @@ export function evaluateTender(
       L.miss(
         30 - weatherPts,
         "full marks need 15 or more weather days inside the build period",
+        "programme.weather",
       );
     }
     if (metrics.ldPerWeek !== null) {
       L.add(30, `liquidated damages offered at ${aud(metrics.ldPerWeek)}/week`);
     } else {
       L.note("no liquidated damages offered");
-      L.miss(30, "backing the programme with liquidated damages earns 30");
+      L.miss(30, "backing the programme with liquidated damages earns 30", "programme.liquidated_damages");
     }
     const vd = metrics.validityDays;
     const vdPts = vd !== null ? (vd >= 45 ? 20 : vd >= 30 ? 15 : vd >= 21 ? 8 : 3) : 0;
     if (vdPts > 0) L.add(vdPts, `price holds ${vd} days`);
     if (vdPts < 20) {
-      L.miss(20 - vdPts, "full marks need a price held 45 days or more");
+      L.miss(20 - vdPts, "full marks need a price held 45 days or more", "price.validity");
     }
     if (programme.leadTime) {
       L.add(10, `lead time stated, ${programme.leadTime}`);
     } else {
-      L.miss(10, "stating the lead time earns 10");
+      L.miss(10, "stating the lead time earns 10", "prog.lead_time");
     }
     if (programme.handoverLabel) {
       L.add(10, "start and duration produce a checkable handover window");
     } else {
-      L.miss(10, "a stated start and duration earn 10");
+      L.miss(10, "a stated start and duration earn 10", "programme.start");
     }
     dims.push(L.settle("programme", { rubricTotal: 100 }));
   }

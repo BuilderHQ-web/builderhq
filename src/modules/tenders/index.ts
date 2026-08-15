@@ -133,11 +133,15 @@ export {
   isScheduleComplete,
   deriveAllowanceRows,
   deriveScheduleExclusions,
+  clientAllowanceGroups,
+  groupedAllowanceItems,
+  collapseGroupedLabels,
   formatCitation,
 } from "./schedule";
 export type {
   TenderSchedule,
   TenderScheduleItem,
+  ClientAllowanceGroup,
   TenderScheduleCitation,
   ScheduleItemKind,
   ScheduleState,

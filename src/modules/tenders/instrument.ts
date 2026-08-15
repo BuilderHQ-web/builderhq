@@ -2047,7 +2047,17 @@ export function isAnswerComplete(
         const r = row as Record<string, unknown>;
         return fields.every((f) => {
           const val = r[f.key];
-          if (f.optional && (val === null || val === undefined)) return true;
+          // An optional field left empty is answered. Controlled
+          // inputs write "" rather than removing the key, so an empty
+          // string must read as absent or the field silently gates.
+          if (
+            f.optional &&
+            (val === null ||
+              val === undefined ||
+              (typeof val === "string" && val.trim().length === 0))
+          ) {
+            return true;
+          }
           if (f.type === "text") {
             return typeof val === "string" && val.trim().length > 0;
           }

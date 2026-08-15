@@ -148,7 +148,13 @@ function spotlightOn(el: HTMLElement, panel: boolean): SpotState {
   el.style.transition =
     "box-shadow 0.35s ease, background-color 0.35s ease, padding 0.35s ease, margin 0.35s ease";
   const apply = () => {
-    el.style.position = "relative";
+    // Fixed elements (the tender bar) must keep their own positioning:
+    // forcing `relative` would drop them out of the viewport into
+    // document flow, leaving the bar half cut at the page's end. Only
+    // static elements need the bump for z-index to take effect.
+    if (getComputedStyle(el).position === "static") {
+      el.style.position = "relative";
+    }
     el.style.zIndex = "60";
     if (panel) {
       el.style.backgroundColor = "#ffffff";

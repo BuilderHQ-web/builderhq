@@ -657,7 +657,7 @@ export function ProjectDetail({
                   same list, item by item.
                 </p>
 
-                <ScopeStatsBand pack={pack} />
+                <ScopeStatsBand pack={pack} unlocked={unlocked} />
 
                 {conflicts.length > 0 ? (
                   <div className="mt-4">
@@ -1434,7 +1434,15 @@ function PlaceholderContactBlock() {
  * The scope in three figures: no boxes, no table — centred numbers
  * over quiet labels, ruled off above and below.
  */
-function ScopeStatsBand({ pack }: { pack: PackSummary }) {
+function ScopeStatsBand({
+  pack,
+  unlocked,
+}: {
+  pack: PackSummary;
+  unlocked: boolean;
+}) {
+  // Pre-unlock the band shows how many provisional sums the round
+  // carries, never their dollars — the figures belong to the spot.
   const stats = [
     { k: "Scope items", v: String(pack.tenderable) },
     { k: "Trades", v: String(pack.divisions.length) },
@@ -1442,7 +1450,9 @@ function ScopeStatsBand({ pack }: { pack: PackSummary }) {
       k: "Provisional sums",
       v:
         pack.ownerAllowances > 0
-          ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
+          ? unlocked
+            ? `${pack.ownerAllowances} · ${formatAud(pack.ownerAllowanceTotal)}`
+            : String(pack.ownerAllowances)
           : "None",
     },
   ];

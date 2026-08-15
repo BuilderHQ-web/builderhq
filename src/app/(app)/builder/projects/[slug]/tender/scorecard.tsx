@@ -14,7 +14,12 @@
  */
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Gauge, MessageCircleQuestion } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Gauge,
+  MessageCircleQuestion,
+} from "lucide-react";
 
 import {
   evaluateTender,
@@ -68,9 +73,15 @@ export function useSelfEvaluation(args: {
 export function BuilderScorecard({
   ev,
   mode,
+  onJump,
 }: {
   ev: TenderEvaluation;
   mode: "draft" | "sealed";
+  /**
+   * Draft deck only: jump straight to the answer a ledger line reads
+   * from. Lines carrying an anchor render as buttons when present.
+   */
+  onJump?: (qid: string) => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
@@ -156,7 +167,7 @@ export function BuilderScorecard({
               </button>
               {isOpen ? (
                 <div className="mt-2 mb-1 rounded-md bg-[rgba(24,34,44,0.025)] px-3 py-2.5">
-                  <dl>
+                  <div>
                     {gains.length > 0 ? (
                       <p className="mb-1 text-[9.5px] tracking-[0.16em] uppercase text-[#0a7d73] font-ui font-semibold">
                         Points awarded
@@ -172,16 +183,17 @@ export function BuilderScorecard({
                         </p>
                         {mode === "draft" ? (
                           <p className="mb-1 text-[10.5px] leading-[1.5] text-text-dim">
-                            Each line says what earns the points. Change
-                            that answer and they are yours.
+                            {onJump
+                              ? "Each line says what earns the points. Select one to go straight to that answer."
+                              : "Each line says what earns the points. Change that answer and they are yours."}
                           </p>
                         ) : null}
                       </>
                     ) : null}
                     {onTable.map((r, i) => (
-                      <ScoreLine key={`m-${i}`} r={r} />
+                      <ScoreLine key={`m-${i}`} r={r} onJump={onJump} />
                     ))}
-                  </dl>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -233,42 +245,75 @@ export function BuilderScorecard({
  * simply not earned yet (amber). The colour tells the two apart; the
  * sign never contradicts the group heading.
  */
-function ScoreLine({ r }: { r: ReceiptLine }) {
+function ScoreLine({
+  r,
+  onJump,
+}: {
+  r: ReceiptLine;
+  onJump?: (qid: string) => void;
+}) {
+  const points = (
+    <span
+      className={cn(
+        "w-8 shrink-0 text-right font-mono text-[10.5px] tabular-nums",
+        r.kind === "note" && "text-text-dim",
+        r.kind === "base" && "font-semibold text-[#0a7d73]",
+        r.kind === "delta" &&
+          ((r.value ?? 0) > 0
+            ? "font-medium text-[#0a7d73]"
+            : "font-medium text-[#a8433e]"),
+        r.kind === "miss" && "text-[#8a6414]",
+        r.kind === "clamp" && "text-text-dim",
+      )}
+    >
+      {r.kind === "miss"
+        ? `−${r.potential ?? 0}`
+        : r.value === null
+          ? "·"
+          : r.value > 0
+            ? `+${r.value}`
+            : r.value === 0
+              ? "0"
+              : `−${Math.abs(r.value)}`}
+    </span>
+  );
+  const labelTone =
+    r.kind === "note" || r.kind === "miss" ? "text-text-dim" : "text-text-muted";
+
+  // A line that knows its question is a door, not a caption: the whole
+  // row is the control, and the arrow only surfaces on hover so the
+  // ledger keeps reading as a ledger.
+  if (onJump && r.qid) {
+    const qid = r.qid;
+    return (
+      <button
+        type="button"
+        onClick={() => onJump(qid)}
+        className="group w-full flex items-baseline gap-2.5 py-[2.5px] -mx-1.5 px-1.5 rounded-[5px] text-left hover:bg-[rgba(0,212,200,0.07)] transition-colors"
+      >
+        {points}
+        <span
+          className={cn(
+            "text-[11.5px] leading-[1.45] group-hover:text-text transition-colors",
+            labelTone,
+          )}
+        >
+          {r.label}
+          <ArrowUpRight
+            className="inline-block size-3 ml-1 align-[-1px] text-accent-deep opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-hidden
+          />
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div className="flex items-baseline gap-2.5 py-[2.5px]">
-      <dt
-        className={cn(
-          "w-8 shrink-0 text-right font-mono text-[10.5px] tabular-nums",
-          r.kind === "note" && "text-text-dim",
-          r.kind === "base" && "font-semibold text-[#0a7d73]",
-          r.kind === "delta" &&
-            ((r.value ?? 0) > 0
-              ? "font-medium text-[#0a7d73]"
-              : "font-medium text-[#a8433e]"),
-          r.kind === "miss" && "text-[#8a6414]",
-          r.kind === "clamp" && "text-text-dim",
-        )}
-      >
-        {r.kind === "miss"
-          ? `−${r.potential ?? 0}`
-          : r.value === null
-            ? "·"
-            : r.value > 0
-              ? `+${r.value}`
-              : r.value === 0
-                ? "0"
-                : `−${Math.abs(r.value)}`}
-      </dt>
-      <dd
-        className={cn(
-          "text-[11.5px] leading-[1.45]",
-          r.kind === "note" || r.kind === "miss"
-            ? "text-text-dim"
-            : "text-text-muted",
-        )}
-      >
+      {points}
+      <span className={cn("text-[11.5px] leading-[1.45]", labelTone)}>
         {r.label}
-      </dd>
+      </span>
     </div>
   );
 }

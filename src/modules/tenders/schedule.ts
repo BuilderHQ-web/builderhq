@@ -30,7 +30,12 @@
  * against, written by the deck alongside the first mark.
  */
 
-import { getScopeItem, getScopeDivision } from "@/modules/scope";
+import {
+  getScopeItem,
+  getScopeDivision,
+  selectionPackageKey,
+  ALLOWANCE_PACKAGES,
+} from "@/modules/scope";
 
 /* ── the schedule ───────────────────────────────────────────────────── */
 
@@ -376,6 +381,106 @@ export function isScheduleComplete(
     // stand; a disclosed price and an NA reason are optional strengths.
     return true;
   });
+}
+
+/* ── client provisional sum packages ────────────────────────────────── */
+
+/**
+ * The client nominates ONE figure for a selections package
+ * ("Landscaping: $69,000"); the engine splits it across the member
+ * lines by weight so every tender prices an identical per-line
+ * schedule. The split is bookkeeping, not information — a member
+ * line's share printed as its own dollar figure reads as five real
+ * prices where the client only ever set one. Every surface therefore
+ * shows the package WHOLE, with the member lines listed beneath it
+ * unnumbered, and the builder answers the package as one decision.
+ *
+ * Grouping is presentation-and-answer shaping only: storage, tallies
+ * and totals stay on the member lines (their split figures sum to the
+ * package exactly), so nothing downstream re-derives money.
+ */
+export interface ClientAllowanceGroup {
+  /** The selections package key from the Scope Standard's advice. */
+  key: string;
+  /** The package title the client set the figure under. */
+  label: string;
+  /** The client's nominated figure for the package as a whole —
+   *  the exact sum of the member lines' split figures. */
+  totalAud: number;
+  /** Member lines, schedule order. */
+  items: TenderScheduleItem[];
+}
+
+/**
+ * The client's provisional sums, regrouped to the packages they were
+ * nominated in. Only real groups return — a package that holds a
+ * single line IS its whole figure and stays a plain line.
+ */
+export function clientAllowanceGroups(
+  schedule: TenderSchedule,
+): ClientAllowanceGroup[] {
+  const by = new Map<string, ClientAllowanceGroup>();
+  const order: string[] = [];
+  for (const item of schedule.items) {
+    if (item.kind !== "owner_allowance" || item.ownerAmountAud === null) {
+      continue;
+    }
+    const key = selectionPackageKey(item.itemId);
+    if (!key) continue;
+    let g = by.get(key);
+    if (!g) {
+      g = {
+        key,
+        label:
+          ALLOWANCE_PACKAGES.find((d) => d.key === key)?.title ??
+          item.divisionLabel,
+        totalAud: 0,
+        items: [],
+      };
+      by.set(key, g);
+      order.push(key);
+    }
+    g.totalAud += item.ownerAmountAud;
+    g.items.push(item);
+  }
+  return order.map((k) => by.get(k)!).filter((g) => g.items.length >= 2);
+}
+
+/** itemId → its package, for every line that belongs to one. */
+export function groupedAllowanceItems(
+  schedule: TenderSchedule,
+): Map<string, ClientAllowanceGroup> {
+  const m = new Map<string, ClientAllowanceGroup>();
+  for (const g of clientAllowanceGroups(schedule)) {
+    for (const it of g.items) m.set(it.itemId, g);
+  }
+  return m;
+}
+
+/**
+ * Labels for a list of schedule lines with grouped members collapsed
+ * to their package title — five landscaping member chips become one
+ * "Landscaping" chip. Order preserved; the first member speaks for
+ * the package.
+ */
+export function collapseGroupedLabels(
+  schedule: TenderSchedule,
+  rows: Array<{ itemId: string; label: string }>,
+): string[] {
+  const grouped = groupedAllowanceItems(schedule);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of rows) {
+    const g = grouped.get(r.itemId);
+    if (!g) {
+      out.push(r.label);
+      continue;
+    }
+    if (seen.has(g.key)) continue;
+    seen.add(g.key);
+    out.push(g.label);
+  }
+  return out;
 }
 
 export interface DerivedAllowanceRow {
