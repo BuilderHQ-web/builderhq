@@ -9,7 +9,8 @@
  * report.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, FileUp, Loader2, UploadCloud } from "lucide-react";
 
 import {
@@ -22,10 +23,23 @@ import { cn } from "@/lib/utils";
 const MAX_BYTES = 50 * 1024 * 1024;
 
 export function AddDocuments({ projectId }: { projectId: string }) {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [added, setAdded] = useState<string[]>([]);
+
+  // A gap card's "Add it now" answers here: scroll the box into view
+  // and open the picker, so the choice becomes the act itself.
+  useEffect(() => {
+    const onAdd = () => {
+      boxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => inputRef.current?.click(), 350);
+    };
+    window.addEventListener("bhq:scope:add-doc", onAdd);
+    return () => window.removeEventListener("bhq:scope:add-doc", onAdd);
+  }, []);
 
   const upload = useCallback(
     async (files: FileList | File[]) => {
@@ -73,13 +87,16 @@ export function AddDocuments({ projectId }: { projectId: string }) {
       } finally {
         setBusy(false);
         if (inputRef.current) inputRef.current.value = "";
+        // The page's unread-documents banner is server-computed; a
+        // refresh brings it up the moment the upload lands.
+        router.refresh();
       }
     },
-    [projectId],
+    [projectId, router],
   );
 
   return (
-    <div>
+    <div ref={boxRef}>
       <button
         type="button"
         disabled={busy}

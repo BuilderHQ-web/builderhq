@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, FolderOpen } from "lucide-react";
+import { Plus, FolderOpen, Lock } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { listMine, type Project } from "@/modules/projects";
@@ -107,6 +107,19 @@ export default async function ProjectsPage() {
                             Example
                           </span>
                         ) : null}
+                        {/* Who can tender, visible from the shelf. A
+                            private round is a different kind of thing,
+                            not a detail to discover two pages deep. */}
+                        {p.tenderMode === "private" ? (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-[rgba(42,92,174,0.35)] bg-[rgba(42,92,174,0.06)] text-[8.5px] tracking-[0.14em] uppercase text-[#2a5cae] font-semibold">
+                            <Lock className="size-2.5" />
+                            Private
+                          </span>
+                        ) : (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-sm border border-border-subtle text-[8.5px] tracking-[0.14em] uppercase text-text-dim font-semibold">
+                            Open
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] text-text-dim truncate md:hidden">
                         {p.suburb ? `${p.suburb}, ${p.state}` : "Address pending"}

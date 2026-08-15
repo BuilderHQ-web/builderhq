@@ -190,6 +190,7 @@ export function ProjectDetail({
   myUserId,
   initialConversations,
   pack = null,
+  conflicts = [],
   latestAddendum = null,
   clientBrief = [],
   advisories = [],
@@ -208,6 +209,10 @@ export function ProjectDetail({
   initialConversations: ConversationListItem[];
   /** The approved pack, shaped for browsing; null on legacy rounds. */
   pack?: PackSummary | null;
+  /** Unresolved points where the round's documents disagree. The
+   *  owner reads the same notes; a builder prices with them in view
+   *  rather than discovering them on site. */
+  conflicts?: Array<{ id: string; summary: string; severity: string }>;
   latestAddendum?: { number: number; issuedAtISO: string } | null;
   /** The client's brief, safe for every viewer. */
   clientBrief?: Array<{ k: string; v: string }>;
@@ -653,6 +658,30 @@ export function ProjectDetail({
                 </p>
 
                 <ScopeStatsBand pack={pack} />
+
+                {conflicts.length > 0 ? (
+                  <div className="mt-4">
+                    <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
+                      Where the documents disagree
+                    </p>
+                    <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[68ch]">
+                      The set gives different answers on{" "}
+                      {conflicts.length === 1 ? "one point" : "these points"}.
+                      The client sees the same notes. Price with them in
+                      view, and raise anything that changes your number.
+                    </p>
+                    <ul className="mt-2.5 flex flex-col gap-2">
+                      {conflicts.map((c) => (
+                        <li
+                          key={c.id}
+                          className="rounded-md border border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.06)] px-3 py-2.5 text-[12px] leading-[1.6] text-text-muted"
+                        >
+                          {c.summary}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
                 {pack.ownerAllowances > 0 ? (
                   <p className="mt-4 text-[12px] leading-[1.6] text-text-dim max-w-[68ch]">

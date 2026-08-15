@@ -1760,6 +1760,47 @@ export async function dismissCapture(
   return ok({ ok: true });
 }
 
+/**
+ * The effective pack's unresolved conflicts, for the people the pack
+ * belongs to. Ops sees every conflict on the desk; what leaves the
+ * desk unresolved must not vanish — the owner and every builder
+ * pricing the pack read the same three lines the documents disagree
+ * on. Resolved and dismissed conflicts stay ops-only history.
+ */
+export async function listOpenConflictsForProject(
+  projectId: string,
+): Promise<
+  Array<{ id: string; summary: string; severity: string }>
+> {
+  const [run] = await db
+    .select({ id: scopeRuns.id })
+    .from(scopeRuns)
+    .where(
+      and(
+        eq(scopeRuns.projectId, projectId),
+        eq(scopeRuns.status, "approved"),
+        sql`${scopeRuns.effectiveAt} is not null`,
+      ),
+    )
+    .orderBy(desc(scopeRuns.effectiveAt))
+    .limit(1);
+  if (!run) return [];
+  return db
+    .select({
+      id: scopeRunConflicts.id,
+      summary: scopeRunConflicts.summary,
+      severity: scopeRunConflicts.severity,
+    })
+    .from(scopeRunConflicts)
+    .where(
+      and(
+        eq(scopeRunConflicts.runId, run.id),
+        eq(scopeRunConflicts.opsStatus, "pending"),
+      ),
+    )
+    .orderBy(scopeRunConflicts.createdAt);
+}
+
 export async function reviewConflict(
   actorId: string,
   conflictId: string,
@@ -2873,6 +2914,38 @@ export async function resolveGap(
 
 /** Documents arrived after 'upload_later' answers — read again. A new
  *  run supersedes the old; its resolutions die with it by design. */
+/**
+ * Project PDFs the given run has not read. The same diff requestReread
+ * uses to refuse a pointless re-read, exported so the review page can
+ * warn and the approval can refuse: a pack must never go to builders
+ * with a document sitting beside it unread.
+ */
+export async function listUnreadDocuments(
+  projectId: string,
+  runId: string,
+): Promise<Array<{ id: string; filename: string }>> {
+  const [current, prior] = await Promise.all([
+    db
+      .select({ id: documents.id, filename: documents.filename })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.projectId, projectId),
+          sql`${documents.tenderId} is null`,
+          eq(documents.status, "active"),
+          sql`${documents.deletedAt} is null`,
+          sql`lower(${documents.contentType}) like '%pdf%'`,
+        ),
+      ),
+    db
+      .select({ documentId: scopeRunDocuments.documentId })
+      .from(scopeRunDocuments)
+      .where(eq(scopeRunDocuments.runId, runId)),
+  ]);
+  const priorIds = new Set(prior.map((d) => d.documentId));
+  return current.filter((d) => !priorIds.has(d.id));
+}
+
 export async function requestReread(
   projectId: string,
   runnerId: string,
@@ -2983,6 +3056,18 @@ export async function completeOwnerReview(
   }
   if (review.value.run.effectiveAt) {
     return fail("conflict", "This pack is already live for the round.");
+  }
+  // A document added during the review but never read must not slip
+  // out with the pack. The page warns as soon as one lands; this is
+  // the same rule enforced where it cannot be scrolled past.
+  const unread = await listUnreadDocuments(projectId, review.value.run.id);
+  if (unread.length > 0) {
+    return fail(
+      "conflict",
+      unread.length === 1
+        ? `"${unread[0]!.filename}" was added after this read. Use "Documents added, read again" so it is in the pack before the round opens.`
+        : `${unread.length} documents were added after this read. Use "Documents added, read again" so they are in the pack before the round opens.`,
+    );
   }
   // Safety net before judging: materialise builder-priced rows for
   // every builders'-work gap and flip stale document promises. Runs

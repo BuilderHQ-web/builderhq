@@ -33,17 +33,19 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  Clock3,
   FileText,
   FileUp,
   Hammer,
   Info,
   Loader2,
   MinusCircle,
+  Pencil,
   Rocket,
   ShieldCheck,
   Sparkles,
   UserRound,
-  Pencil,
+  Lock,
 } from "lucide-react";
 
 import {
@@ -137,6 +139,8 @@ type Chapter = 0 | 1 | 2 | 3 | 4;
 
 export function PackReview({
   projectId,
+  unreadDocs = [],
+  round,
   slug,
   basePath,
   canResolve,
@@ -157,6 +161,18 @@ export function PackReview({
   resolutions,
 }: {
   projectId: string;
+  /** Project PDFs the current run has not read — added during this
+   *  review. Blocks go-live until the re-read runs. */
+  unreadDocs?: Array<{ id: string; filename: string }>;
+  /** The round as configured: who can tender, and who is invited.
+   *  Shown on the final chapter so nobody approves a round without
+   *  seeing who it goes to. */
+  round?: {
+    mode: "open" | "private";
+    spots: number;
+    invites: Array<{ id: string; label: string | null; status: string }>;
+    editHref: string;
+  };
   /** Current slug. Publishing regenerates it; never route from this. */
   slug: string;
   /** "/owner" or "/architect" — the runner's own mount point. */
@@ -312,7 +328,10 @@ export function PackReview({
   ).length;
   const openCount = askable.length - answered;
   const readyToGoLive =
-    openCount === 0 && waitingOnDocs === 0 && briefComplete;
+    openCount === 0 &&
+    waitingOnDocs === 0 &&
+    briefComplete &&
+    unreadDocs.length === 0;
 
   const divisionsCovered = evidencedByDivision.size;
   const pagesRead = register.reduce((n, r) => n + (r.pages ?? 0), 0);
@@ -451,6 +470,46 @@ export function PackReview({
 
   return (
     <div className="pb-28">
+      {/* A document landed after this read. One banner, every chapter,
+          because the risk is real on all of them: a pack going to
+          builders with a document beside it unread. Go-live is gated
+          on the same condition, and the server refuses it too. */}
+      {unreadDocs.length > 0 && !readOnly ? (
+        <div
+          className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
+          style={{
+            borderColor: "rgba(217,164,65,0.4)",
+            background: "rgba(217,164,65,0.08)",
+          }}
+        >
+          <p className="text-[12.5px] leading-[1.6] text-[#8a6414] min-w-0">
+            <span className="font-ui font-semibold">
+              {unreadDocs.length === 1
+                ? `"${unreadDocs[0]!.filename}" has not been read yet.`
+                : `${unreadDocs.length} added documents have not been read yet.`}
+            </span>{" "}
+            Run the re-read so {unreadDocs.length === 1 ? "it is" : "they are"}{" "}
+            in the pack before the round opens. Your answers carry forward.
+          </p>
+          <button
+            type="button"
+            disabled={rereading}
+            onClick={reread}
+            className="inline-flex shrink-0 items-center gap-1.5 h-8 px-3.5 rounded-full border text-[11.5px] font-ui font-medium transition-colors disabled:opacity-60"
+            style={{
+              borderColor: "rgba(217,164,65,0.5)",
+              color: "#8a6414",
+            }}
+          >
+            {rereading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <FileUp className="size-3" />
+            )}
+            Read the new {unreadDocs.length === 1 ? "document" : "documents"} in
+          </button>
+        </div>
+      ) : null}
       {/* chapter navigation — a fixed five-column band, nothing scrolls */}
       <nav className="grid grid-cols-5 border-y border-border-subtle">
         {chapters.map((c, i) => {
@@ -555,6 +614,7 @@ export function PackReview({
         ) : (
           <ChapterAboutYou
             projectId={projectId}
+            round={round}
             projectType={facts.type}
             audience={briefAudience}
             brief={brief}
@@ -718,11 +778,13 @@ function ChapterPack({
         {place ? ` in ${place}` : ""}. The result is your scope of works:{" "}
         <Strong>{stats.evidenced} item{stats.evidenced === 1 ? "" : "s"}</Strong> across{" "}
         <Strong>{stats.divisions} trades</Strong>, each tied to the page
-        it came from. Where your documents are silent, we prepared{" "}
+        it came from. Where your documents are silent, we wrote the
+        missing work in as{" "}
         <Strong>
-          {stats.questions} question{stats.questions === 1 ? "" : "s"}
+          {stats.questions} extra line{stats.questions === 1 ? "" : "s"}
         </Strong>{" "}
-        so nothing surprises you after builders have priced.
+        for the builders to price, so nothing turns up later as a
+        surprise variation.
       </p>
 
       {/* the numbers */}
@@ -732,7 +794,7 @@ function ChapterPack({
           { k: "Pages read", v: String(stats.pages) },
           { k: "Items evidenced", v: String(stats.evidenced) },
           { k: "Trades covered", v: String(stats.divisions) },
-          { k: "Questions prepared", v: String(stats.questions) },
+          { k: "Gaps covered for you", v: String(stats.questions) },
         ].map((s) => (
           <div key={s.k} className="bg-surface-1 px-4 py-3.5">
             <p className="text-[9px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
@@ -1008,6 +1070,39 @@ function ChapterScopeOfWorks({
         list, line by line, so their quotes compare exactly. Nothing
         here needs an answer from you.
       </p>
+
+      {/* The legend. The two kinds of line are already marked inside
+          every trade below; this states them once, with their counts,
+          so the register reads as a made thing rather than a long
+          list. It is also where the product gets to say, quietly, what
+          it just did. */}
+      <div className="mt-5 grid gap-2.5 sm:grid-cols-2 max-w-[760px]">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-4 py-3.5">
+          <p className="flex items-center justify-between gap-2 text-[10px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+            From your documents
+            <span className="font-display text-[18px] leading-none text-text tabular-nums tracking-normal">
+              {total}
+            </span>
+          </p>
+          <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
+            Read directly from your documents. Each line shows the page
+            it came from.
+          </p>
+        </div>
+        <div className="rounded-lg border border-[rgba(42,92,174,0.28)] bg-[rgba(42,92,174,0.045)] px-4 py-3.5">
+          <p className="flex items-center justify-between gap-2 text-[10px] tracking-[0.14em] uppercase text-[#2a5cae] font-ui font-semibold">
+            Added for the builders to price
+            <span className="font-display text-[18px] leading-none text-text tabular-nums tracking-normal">
+              {builderPricedTotal}
+            </span>
+          </p>
+          <p className="mt-1.5 text-[12px] leading-[1.6] text-text-muted">
+            Work the build will need that your documents do not detail.
+            We add these lines so every builder prices them now, not as
+            a variation later.
+          </p>
+        </div>
+      </div>
 
       <div className="mt-5">
         {SCOPE_DIVISIONS.map((d) => {
@@ -1312,40 +1407,45 @@ function ChapterDocuments({
                   </ul>
                 </div>
               ) : null}
-              {!readOnly ? (
-                <div className="mt-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4 py-3.5">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                      Add documents here
-                    </p>
-                    <p className="text-[10.5px] text-text-dim">
-                      Your answers so far carry forward through the re-read.
-                    </p>
-                  </div>
-                  <div className="mt-2.5">
-                    <AddDocuments projectId={projectId} />
-                  </div>
-                  <div className="mt-2.5 flex justify-end">
-                    <button
-                      type="button"
-                      disabled={rereading}
-                      onClick={onReread}
-                      className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-subtle text-[11.5px] font-ui text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-60"
-                    >
-                      {rereading ? (
-                        <Loader2 className="size-3 animate-spin" />
-                      ) : (
-                        <FileUp className="size-3" />
-                      )}
-                      Documents added, read again
-                    </button>
-                  </div>
-                </div>
-              ) : null}
             </>
           ) : null}
         </>
       )}
+
+      {/* The add box lives on this chapter regardless of what the pack
+          found: a gap card's "Add it now" needs somewhere to land even
+          when there are no advisories, and a complete set can still
+          grow. */}
+      {!readOnly ? (
+        <div className="mt-4 rounded-lg border border-border-subtle bg-surface-1 card-elev px-4 py-3.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              Add documents here
+            </p>
+            <p className="text-[10.5px] text-text-dim">
+              Your answers so far carry forward through the re-read.
+            </p>
+          </div>
+          <div className="mt-2.5">
+            <AddDocuments projectId={projectId} />
+          </div>
+          <div className="mt-2.5 flex justify-end">
+            <button
+              type="button"
+              disabled={rereading}
+              onClick={onReread}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-border-subtle text-[11.5px] font-ui text-text-muted hover:text-text hover:border-border-strong transition-colors disabled:opacity-60"
+            >
+              {rereading ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <FileUp className="size-3" />
+              )}
+              Documents added, read again
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-6 flex justify-end">
         <button
@@ -1780,6 +1880,7 @@ function DemolitionCard({
  */
 function ChapterAboutYou({
   projectId,
+  round,
   projectType,
   audience,
   brief,
@@ -1788,6 +1889,12 @@ function ChapterAboutYou({
   onComplete,
 }: {
   projectId: string;
+  round?: {
+    mode: "open" | "private";
+    spots: number;
+    invites: Array<{ id: string; label: string | null; status: string }>;
+    editHref: string;
+  };
   projectType: string;
   audience: BriefAudience;
   brief: Record<string, string>;
@@ -1829,6 +1936,78 @@ function ChapterAboutYou({
           <BadgeCheck className="size-3.5" />
           Done. Builders see these answers with your project.
         </p>
+      ) : null}
+
+      {/* The round, restated before the approval: who can tender, and
+          who has been asked. The one thing nobody should discover
+          after going live is who the round went to. */}
+      {round ? (
+        <div className="mt-6 rounded-lg border border-border-subtle bg-surface-1 card-elev px-5 py-4.5 max-w-[640px]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+              Your round
+              {round.mode === "private" ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-[rgba(42,92,174,0.35)] bg-[rgba(42,92,174,0.06)] text-[8.5px] tracking-[0.14em] uppercase text-[#2a5cae] font-semibold">
+                  <Lock className="size-2.5" />
+                  Private
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-sm border border-border-subtle text-[8.5px] tracking-[0.14em] uppercase text-text-dim font-semibold">
+                  Open
+                </span>
+              )}
+            </p>
+            {!readOnly ? (
+              <a
+                href={round.editHref}
+                className="text-[11.5px] text-accent-light hover:text-accent-deep transition-colors"
+              >
+                Change who can tender
+              </a>
+            ) : null}
+          </div>
+          <p className="mt-2 text-[12px] leading-[1.6] text-text-muted">
+            {round.mode === "private"
+              ? round.invites.length > 0
+                ? `By invitation only. ${round.invites.length} builder${round.invites.length === 1 ? "" : "s"} invited; nobody else sees this round.`
+                : "By invitation only. No builders invited yet; nobody sees this round until you invite them."
+              : round.invites.length > 0
+                ? `Open to verified builders, ${round.spots} spots. You have also invited ${round.invites.length} builder${round.invites.length === 1 ? "" : "s"} directly.`
+                : `Open to verified builders. ${round.spots} spots, first to take them.`}
+          </p>
+          {round.invites.length > 0 ? (
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {round.invites.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between gap-2 text-[12px]"
+                >
+                  <span className="min-w-0 truncate text-text">
+                    {inv.label ?? "Invited builder"}
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-[10px] tracking-[0.1em] uppercase font-ui font-semibold",
+                      inv.status === "joined"
+                        ? "text-[#0a7d73]"
+                        : inv.status === "declined" || inv.status === "revoked"
+                          ? "text-text-dim line-through"
+                          : "text-[#8a6414]",
+                    )}
+                  >
+                    {inv.status === "joined"
+                      ? "Joined"
+                      : inv.status === "declined"
+                        ? "Declined"
+                        : inv.status === "revoked"
+                          ? "Revoked"
+                          : "Invited"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -1883,7 +2062,7 @@ function QuestionCard({
         ? "Builders will price this"
         : resolution.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Documents to come"
+          : "Noted, document to come"
     : null;
 
   return (
@@ -1916,14 +2095,21 @@ function QuestionCard({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {docMood ? (
             <>
+              {/* Three answers, in the order of most control: hand the
+                  document over now, let the builders carry it, or note
+                  it for later. "Add it now" is not a state — it scrolls
+                  to the add box and opens the picker, and the re-read
+                  resolves the gap with the document itself. */}
               <AnswerChip
                 disabled={busy}
-                active={resolution?.resolution === "upload_later"}
+                active={false}
                 suggested={!resolution}
-                onClick={() => act("upload_later")}
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("bhq:scope:add-doc"));
+                }}
               >
                 <FileUp className="size-3.5" />
-                I will add this document
+                Add it now
               </AnswerChip>
               <AnswerChip
                 disabled={busy}
@@ -1931,7 +2117,15 @@ function QuestionCard({
                 onClick={() => act("builder_priced")}
               >
                 <Hammer className="size-3.5" />
-                Carry on, builders price the work
+                Builders provide and price it
+              </AnswerChip>
+              <AnswerChip
+                disabled={busy}
+                active={resolution?.resolution === "upload_later"}
+                onClick={() => act("upload_later")}
+              >
+                <Clock3 className="size-3.5" />
+                Noted, I will provide it later
               </AnswerChip>
             </>
           ) : (

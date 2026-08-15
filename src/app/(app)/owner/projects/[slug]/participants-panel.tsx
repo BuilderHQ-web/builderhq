@@ -53,7 +53,16 @@ const ROLE_SUB: Record<ParticipantRole, string> = {
   decider: "Everything above, plus shortlisting and the award.",
 };
 
-export function ParticipantsPanel({ projectId }: { projectId: string }) {
+export function ParticipantsPanel({
+  projectId,
+  audience = "architect",
+}: {
+  projectId: string;
+  /** Who is doing the sharing. An architect shares with their client;
+   *  an owner shares with their building designer or a co-owner. Same
+   *  seats, different sentence. */
+  audience?: "owner" | "architect";
+}) {
   const [seats, setSeats] = useState<SeatRow[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -80,8 +89,9 @@ export function ParticipantsPanel({ projectId }: { projectId: string }) {
       </header>
       <div className="p-5">
         <p className="text-[12.5px] text-text-muted leading-relaxed">
-          Give your client a seat at the round. A seat sees the project and
-          the evaluation; a Deciding seat can also shortlist and award.
+          {audience === "owner"
+            ? "Bring someone into the round: your building designer, or a co-owner of the project. A Following seat sees the project, the tenders and the evaluation; a Deciding seat can also shortlist and award."
+            : "Give your client a seat at the round. A seat sees the project and the evaluation; a Deciding seat can also shortlist and award."}
         </p>
 
         {seats === null ? (

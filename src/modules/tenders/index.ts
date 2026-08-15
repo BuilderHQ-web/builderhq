@@ -65,6 +65,7 @@ export {
   // KPIs
   countTendersReceivedForOwner,
   countTendersForProject,
+  listTenderStatesForProject,
   countAwardedForBuilder,
   // Analytics roll-up helper
   computeTenderAnalytics,

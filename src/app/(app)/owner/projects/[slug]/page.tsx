@@ -1,18 +1,24 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
-  Pencil,
-  MapPin,
-  DollarSign,
+  AlertTriangle,
+  ArrowUpRight,
+  BookOpenCheck,
+  Building,
   Calendar,
+  Check,
+  DollarSign,
   Eye,
   FileText,
-  ArrowUpRight,
   Home,
-  Building,
-  Wrench,
   Layers,
+  Lock,
+  MapPin,
   MessageSquare,
+  Pencil,
+  Plus,
+  Users,
+  Wrench,
 } from "lucide-react";
 
 import { auth } from "@/modules/auth";
@@ -25,6 +31,12 @@ import { listActiveForProjectUnchecked } from "@/modules/documents";
 import { countTendersForProject } from "@/modules/tenders";
 import { listForUserOnProject } from "@/modules/messaging";
 import { listUnlocksForProject, UNLOCK_CAP } from "@/modules/unlocks";
+import { listBuilderInvites, listTenderStatesForProject } from "@/modules/tenders";
+import {
+  getProjectSchedule,
+  listOpenConflictsForProject,
+} from "@/modules/scope-engine";
+import { packSummary } from "@/modules/tenders/schedule";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/app/reveal";
@@ -172,14 +184,23 @@ export default async function ProjectDetailPage({
   // the messaging panel's builder chips. Conversations are the
   // VIEWER'S own threads — the runner's pre-exist from unlocks, a
   // Deciding seat's are opened from the panel.
-  const [docs, tenderCount, conversations, builders] = await Promise.all([
-    listActiveForProjectUnchecked(project.id),
-    countTendersForProject(project.id),
-    canMessage
-      ? listForUserOnProject(session.user.id!, project.id)
-      : Promise.resolve([]),
-    listUnlocksForProject(project.id),
-  ]);
+  const [docs, tenderCount, conversations, builders, invitesR, tenderStates, schedule, conflicts] =
+    await Promise.all([
+      listActiveForProjectUnchecked(project.id),
+      countTendersForProject(project.id),
+      canMessage
+        ? listForUserOnProject(session.user.id!, project.id)
+        : Promise.resolve([]),
+      listUnlocksForProject(project.id),
+      isRunner
+        ? listBuilderInvites(session.user.id!, project.id)
+        : Promise.resolve(null),
+      isRunner ? listTenderStatesForProject(project.id) : Promise.resolve(new Map<string, string>()),
+      getProjectSchedule(project.id),
+      listOpenConflictsForProject(project.id),
+    ]);
+  const invites = invitesR && invitesR.ok ? invitesR.value : [];
+  const pack = schedule ? packSummary(schedule) : null;
 
   // Builders the viewer has no thread with yet — the panel's start
   // affordance. Empty for runners in practice (unlock auto-creates
@@ -221,6 +242,16 @@ export default async function ProjectDetailPage({
               >
                 {STATUS_LABEL[project.status]}
               </span>
+              {project.tenderMode === "private" ? (
+                <span className="px-1.5 py-0.5 rounded-sm border border-[rgba(42,92,174,0.35)] bg-[rgba(42,92,174,0.06)] text-[8.5px] tracking-[0.16em] uppercase text-[#2a5cae] font-semibold inline-flex items-center gap-1">
+                  <Lock className="size-2.5" />
+                  Private round
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-sm border border-border-subtle text-[8.5px] tracking-[0.16em] uppercase text-text-dim font-semibold">
+                  Open round
+                </span>
+              )}
             </span>
             <h1 className="mt-3 font-display uppercase tracking-[-0.02em] text-[32px] sm:text-[52px] leading-[0.92] text-text break-words">
               {project.title}
@@ -268,6 +299,95 @@ export default async function ProjectDetailPage({
             canMessage={canMessage}
           />
         </Reveal>
+
+        {/* The round board — who was asked, and where each of them is.
+            Four honest states a runner actually wants: invited (the
+            email is out), joined (they opened the project), started
+            (a tender is in draft), submitted. With the door to invite
+            another, closed at five. */}
+        {isRunner && (invites.length > 0 || project.tenderMode === "private") ? (
+          <Reveal immediate delay={0.02}>
+            <div className="mt-5 rounded-md border border-border-subtle bg-surface-1 card-elev px-5 py-4.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-text-dim font-ui font-semibold">
+                  <Users className="size-3.5 text-accent-light" />
+                  Your invited builders
+                  <span className="text-text-dim/70 normal-case tracking-normal">
+                    · {invites.filter((i) => i.status === "invited" || i.status === "joined").length} of 5
+                  </span>
+                </p>
+                {invites.filter((i) => i.status === "invited" || i.status === "joined").length < 5 ? (
+                  <Link
+                    href={`${base}/projects/${project.slug}/edit`}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-ui font-medium text-accent-light hover:text-accent-deep transition-colors"
+                  >
+                    <Plus className="size-3.5" />
+                    Invite another builder
+                  </Link>
+                ) : (
+                  <span className="text-[11px] text-text-dim">
+                    All five invitations used
+                  </span>
+                )}
+              </div>
+              {invites.length === 0 ? (
+                <p className="mt-3 text-[12.5px] leading-[1.65] text-text-muted">
+                  Nobody has been invited yet. On a private round, invited
+                  builders are the round: until you invite one, no builder
+                  can see this project.
+                </p>
+              ) : (
+                <ul className="mt-3 divide-y divide-border-subtle/60">
+                  {invites.map((inv) => {
+                    const tState = inv.builderUserId
+                      ? tenderStates.get(inv.builderUserId)
+                      : undefined;
+                    const stage =
+                      inv.status === "declined" || inv.status === "revoked"
+                        ? inv.status
+                        : tState === "submitted" || tState === "shortlisted" || tState === "awarded"
+                          ? "submitted"
+                          : tState === "draft"
+                            ? "started"
+                            : inv.status === "joined"
+                              ? "joined"
+                              : "invited";
+                    const STAGE: Record<string, { label: string; cls: string }> = {
+                      invited: { label: "Invited · not opened yet", cls: "text-[#8a6414]" },
+                      joined: { label: "Joined · reading the pack", cls: "text-[#2a5cae]" },
+                      started: { label: "Tender in progress", cls: "text-[#2a5cae]" },
+                      submitted: { label: "Tender submitted", cls: "text-[#0a7d73]" },
+                      declined: { label: "Declined", cls: "text-text-dim" },
+                      revoked: { label: "Revoked", cls: "text-text-dim" },
+                    };
+                    const st = STAGE[stage]!;
+                    return (
+                      <li
+                        key={inv.id}
+                        className="flex items-center justify-between gap-3 py-2.5 first:pt-1 last:pb-1"
+                      >
+                        <span className="min-w-0 flex items-center gap-2">
+                          <span className="min-w-0 truncate text-[13px] font-ui font-medium text-text">
+                            {inv.builderName ?? inv.company ?? inv.contactName ?? inv.email}
+                          </span>
+                          {inv.verificationPending ? (
+                            <span className="shrink-0 rounded-full bg-[rgba(201,148,34,0.12)] text-[#8a6414] px-2 py-px text-[9px] tracking-[0.08em] uppercase font-ui font-semibold">
+                              Verification pending
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className={cn("shrink-0 inline-flex items-center gap-1.5 text-[11px] font-ui font-medium", st.cls)}>
+                          {stage === "submitted" ? <Check className="size-3" /> : null}
+                          {st.label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </Reveal>
+        ) : null}
 
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 sm:gap-5 lg:gap-x-8">
           {/* Left — details (staggered entrance) */}
@@ -366,6 +486,65 @@ export default async function ProjectDetailPage({
             </Card>
             </Reveal>
 
+            {/* The scope of works — the thing the whole round prices.
+                It used to vanish from the owner's view the moment the
+                review ended; the record read stays one click away for
+                the life of the project. */}
+            {pack ? (
+              <Reveal immediate delay={0.10}>
+                <Card
+                  title="Scope of works"
+                  icon={<BookOpenCheck className="size-4" />}
+                >
+                  <p className="text-[12.5px] leading-[1.65] text-text-muted">
+                    <span className="text-text font-ui font-semibold">
+                      {pack.tenderable} lines
+                    </span>{" "}
+                    across {pack.divisions.length} divisions, built from your
+                    documents. Every builder prices this same list, so their
+                    tenders compare line by line.
+                  </p>
+                  <Link
+                    href={`${base}/projects/${project.slug}/scope`}
+                    className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-accent-light hover:text-accent-deep transition-colors"
+                  >
+                    Read the pack as builders see it
+                    <ArrowUpRight className="size-3" />
+                  </Link>
+                </Card>
+              </Reveal>
+            ) : null}
+
+            {/* Where the documents disagree. Ops reads every conflict;
+                the ones left standing belong to the people the pack
+                is for. Hiding a known disagreement from the person
+                signing the contract is not an option. */}
+            {conflicts.length > 0 ? (
+              <Reveal immediate delay={0.11}>
+                <Card
+                  title={`Where the documents disagree · ${conflicts.length}`}
+                  icon={<AlertTriangle className="size-4" />}
+                >
+                  <p className="text-[12px] leading-[1.6] text-text-muted">
+                    Your documents give different answers on{" "}
+                    {conflicts.length === 1 ? "one point" : "these points"}.
+                    Builders see the same notes and price with them in view,
+                    so nobody resolves a disagreement silently.
+                  </p>
+                  <ul className="mt-3 flex flex-col gap-2">
+                    {conflicts.map((c) => (
+                      <li
+                        key={c.id}
+                        className="rounded-md border border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.06)] px-3 py-2.5 text-[12px] leading-[1.6] text-text-muted"
+                      >
+                        {c.summary}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </Reveal>
+            ) : null}
+
             <Reveal immediate delay={0.12}>
             <Card title={`Documents · ${docs.length}`} icon={<FileText className="size-4" />}>
               {docs.length === 0 ? (
@@ -428,7 +607,10 @@ export default async function ProjectDetailPage({
                 round. Flagship case: the architect's client. */}
             {isRunner ? (
               <Reveal immediate delay={0.21}>
-                <ParticipantsPanel projectId={project.id} />
+                <ParticipantsPanel
+                  projectId={project.id}
+                  audience={session.user.role === "architect" ? "architect" : "owner"}
+                />
               </Reveal>
             ) : null}
 

@@ -22,7 +22,8 @@ import { ArrowLeft, BookOpenCheck, FileSearch } from "lucide-react";
 
 import { auth } from "@/modules/auth";
 import { getBySlugForViewer } from "@/modules/projects";
-import { getOwnerReview } from "@/modules/scope-engine";
+import { getOwnerReview, listUnreadDocuments } from "@/modules/scope-engine";
+import { listBuilderInvites } from "@/modules/tenders";
 import type { SynthesisOverview } from "@/modules/scope-engine/pipeline";
 import {
   adviseMissingDocuments,
@@ -161,6 +162,24 @@ export default async function ScopeReviewPage({
         ) : (
           <PackReview
             projectId={project.id}
+            unreadDocs={run ? await listUnreadDocuments(project.id, run.id) : []}
+            round={{
+              mode: project.tenderMode === "private" ? "private" : "open",
+              spots: project.tenderSpots ?? 3,
+              invites: await (async () => {
+                if (!canResolve) return [];
+                const r = await listBuilderInvites(session.user!.id!, project.id);
+                return r.ok
+                  ? r.value.map((i) => ({
+                      id: i.id,
+                      label:
+                        i.builderName ?? i.company ?? i.contactName ?? i.email,
+                      status: i.status,
+                    }))
+                  : [];
+              })(),
+              editHref: `${base}/projects/${project.slug}/edit`,
+            }}
             slug={project.slug}
             basePath={base}
             canResolve={canResolve}

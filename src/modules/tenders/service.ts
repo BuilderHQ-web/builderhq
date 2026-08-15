@@ -1140,6 +1140,32 @@ export async function countTendersReceivedForOwner(
   return rows[0]?.n ?? 0;
 }
 
+/**
+ * Each builder's tender state on a project, for the runner's round
+ * board: nothing, a draft in progress, or submitted. One cheap read
+ * keyed by builder so invite rows can carry "started their tender"
+ * without a per-row query.
+ */
+export async function listTenderStatesForProject(
+  projectId: string,
+): Promise<Map<string, string>> {
+  const rows = await db
+    .select({ builderId: tenders.builderId, status: tenders.status })
+    .from(tenders)
+    .where(
+      and(eq(tenders.projectId, projectId), sql`${tenders.deletedAt} is null`),
+    );
+  const m = new Map<string, string>();
+  for (const r of rows) {
+    // A submitted tender outranks an abandoned draft from the same
+    // builder; otherwise the latest word stands.
+    const prev = m.get(r.builderId);
+    if (prev === "submitted" || prev === "shortlisted" || prev === "awarded") continue;
+    m.set(r.builderId, r.status);
+  }
+  return m;
+}
+
 export async function countTendersForProject(
   projectId: string,
 ): Promise<number> {

@@ -12,6 +12,8 @@ export {
   getOwnerReview,
   resolveGap,
   requestReread,
+  listUnreadDocuments,
+  listOpenConflictsForProject,
   completeOwnerReview,
   getProjectSchedule,
   getRoundContextForBuilders,

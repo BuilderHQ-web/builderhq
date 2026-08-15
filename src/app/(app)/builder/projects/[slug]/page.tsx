@@ -15,6 +15,7 @@ import {
   getInviterForProject,
 } from "@/modules/tenders";
 import { packSummary } from "@/modules/tenders/schedule";
+import { listOpenConflictsForProject } from "@/modules/scope-engine";
 import {
   getProjectSchedule,
   listAddenda,
@@ -55,6 +56,7 @@ export default async function BuilderProjectPage({
   if (!previewR.ok) notFound();
   const preview = previewR.value;
 
+  const conflicts = await listOpenConflictsForProject(preview.id);
   const [unlocked, saved, schedule, addenda, roundContext] = await Promise.all([
     isUnlocked(userId, preview.id),
     isSaved(userId, preview.id),
@@ -139,6 +141,7 @@ export default async function BuilderProjectPage({
   return (
     <ProjectDetail
       preview={preview}
+      conflicts={conflicts}
       full={fullR?.ok ? fullR.value : null}
       unlocked={unlocked}
       saved={saved}
