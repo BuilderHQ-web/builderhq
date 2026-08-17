@@ -27,6 +27,9 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import type { PartnerLogo } from "@/app/(marketing)/partners/partners-data";
+import { cn } from "@/lib/utils";
+
+import { ASSOCIATIONS } from "./association";
 
 /** Cruise speed, px per second. */
 const SPEED = 38;
@@ -119,28 +122,36 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
             In association with
             <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
           </p>
-          <div className="mt-8 sm:mt-9 flex flex-wrap items-start justify-center gap-x-16 gap-y-10">
-            <figure className="flex flex-col items-center">
-              {/* 96px on a phone, 128px from sm. The badge is close to
-                  square, so its height is also roughly its width: the
-                  phone step is what keeps it from dominating a 335px
-                  column. */}
-              <Image
-                src="/Homepage_logos/hia-badge.png"
-                alt=""
-                width={414}
-                height={468}
-                className="h-24 sm:h-32 w-auto"
-              />
-              <figcaption className="mt-4 sm:mt-5">
-                <span className="block text-[13px] sm:text-[14px] font-medium text-text-muted">
-                  Housing Industry Association
-                </span>
-                <span className="block mt-1 text-[11.5px] sm:text-[12px] text-text-dim">
-                  Australia&rsquo;s peak body for residential building
-                </span>
-              </figcaption>
-            </figure>
+          <div className="mt-8 sm:mt-9 flex flex-wrap items-start justify-center gap-x-14 sm:gap-x-20 gap-y-10">
+            {ASSOCIATIONS.map((a) => (
+              <figure key={a.name} className="flex flex-col items-center">
+                {/* A shared 96px box on a phone, 128px from sm, with
+                    each mark centred inside it: a landscape lockup at
+                    the badge's height would run twice as wide and pull
+                    the row off balance, and a shared box keeps both
+                    captions on one line regardless. */}
+                <div className="flex h-24 sm:h-32 items-center justify-center">
+                  <Image
+                    src={a.src}
+                    alt=""
+                    width={a.width}
+                    height={a.height}
+                    className={cn(
+                      "w-auto",
+                      a.wide ? "h-[68px] sm:h-[88px]" : "h-24 sm:h-32",
+                    )}
+                  />
+                </div>
+                <figcaption className="mt-4 sm:mt-5 max-w-[15rem]">
+                  <span className="block text-[13px] sm:text-[14px] font-medium text-text-muted">
+                    {a.name}
+                  </span>
+                  <span className="block mt-1 text-[11.5px] sm:text-[12px] text-text-dim">
+                    {a.blurb}
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
 

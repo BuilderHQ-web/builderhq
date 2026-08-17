@@ -7,6 +7,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { cn } from "@/lib/utils";
+
+import { ASSOCIATIONS } from "./association";
 
 const COLUMNS: Array<{
   label: string;
@@ -81,22 +84,32 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
               </a>
             </p>
 
-            {/* The HIA mark, as an accreditation lockup at the foot of
-                the brand column: small, in colour, above the rule. The
-                badge is close to square, so 34px reads at the weight of
-                a line of body text beside it rather than shouting. */}
-            <div className="mt-1 flex items-center gap-3">
-              <Image
-                src="/Homepage_logos/hia-badge.png"
-                alt=""
-                width={414}
-                height={468}
-                className="h-[34px] w-auto shrink-0"
-              />
-              <span className="text-[12px] leading-[1.45] text-text-dim text-left">
-                In association with the
+            {/* The industry marks, as an accreditation lockup at the
+                foot of the brand column: small, in colour, above the
+                rule. The badge is close to square and the lockup is
+                landscape, so they are sized to sit at the same weight
+                rather than the same height. The names read underneath,
+                where a second body would otherwise crowd the row. */}
+            <div className="mt-1 flex flex-col items-center lg:items-start gap-2.5">
+              <div className="flex items-center gap-4">
+                {ASSOCIATIONS.map((a) => (
+                  <Image
+                    key={a.name}
+                    src={a.src}
+                    alt=""
+                    width={a.width}
+                    height={a.height}
+                    className={cn(
+                      "w-auto shrink-0",
+                      a.wide ? "h-[27px]" : "h-[34px]",
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="text-[12px] leading-[1.45] text-text-dim text-center lg:text-left">
+                In association with the Housing Industry Association
                 <br />
-                Housing Industry Association
+                and Master Builders Victoria
               </span>
             </div>
           </div>

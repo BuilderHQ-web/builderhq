@@ -88,8 +88,6 @@ export interface LensCopy {
      *  primary; "secondary" hands the filled button to the walk
      *  through, for a visitor who has never seen a tender round. */
     lead?: "primary" | "secondary";
-    /** Three instant answers under the CTAs — product facts only. */
-    facts: string[];
   };
   problem: {
     head: SectionHeadCopy;
@@ -152,7 +150,6 @@ export const LENS: Record<Role, LensCopy> = {
       primary: { label: "Start your project", href: "/signup?role=owner" },
       secondary: { label: "Watch the demo", href: "/demo" },
       lead: "secondary",
-      facts: ["Free for homeowners", "You approve the scope", "Verified builders only"],
     },
     problem: {
       head: {
@@ -288,11 +285,6 @@ export const LENS: Record<Role, LensCopy> = {
       subMore: "We read the client’s documents and lay out every item, so you price instead of investigating.",
       primary: { label: "Pick your next project", href: "/signup?role=builder" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: [
-        "Detailed scope of works provided",
-        "Limited spots on every tender",
-        "Priced properly, read properly",
-      ],
     },
     problem: {
       head: {
@@ -427,11 +419,6 @@ export const LENS: Record<Role, LensCopy> = {
       subMore: "Every submission comes back priced against one defined scope, under your practice’s name.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
       secondary: { label: "See how it works", href: "#how" },
-      facts: [
-        "Invite your own builders",
-        "One scope, priced by all",
-        "Your name on the recommendation",
-      ],
     },
     problem: {
       head: {

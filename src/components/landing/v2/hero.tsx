@@ -17,6 +17,7 @@ import { track } from "@/lib/analytics";
 import { HeroJourney } from "./hero-journey";
 import { LENS, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
+import { AssociationStrip } from "./association";
 import { RoleSwap } from "./swap";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -144,15 +145,10 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
                 </a>
               </div>
 
-              {/* Instant answers — desktop and tablet only; hidden on the phone hero. */}
-              <ul className="mt-4 lg:mt-7 hidden sm:flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 px-2 lg:px-0">
-                {copy.facts.map((f) => (
-                  <li key={f} className="inline-flex items-center gap-1.5 text-[11.5px] sm:text-[12.5px] font-medium text-text-muted">
-                    <span aria-hidden className="size-[5px] rounded-full" style={{ background: pal.accent }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              {/* The bodies we sit under, in place of three claims of
+                  our own. Small: they are a signature, not a feature
+                  list, and the phone keeps them too. */}
+              <AssociationStrip className="mt-5 lg:mt-8 px-2 lg:px-0" />
             </RoleSwap>
           </motion.div>
         </div>
