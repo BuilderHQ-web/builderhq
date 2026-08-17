@@ -6,10 +6,8 @@
  * full tier above the partner register. Keeping the list here means a
  * third body is one entry rather than three edits.
  *
- * The marks are portrait badges or landscape lockups, and the two
- * cannot share a height without the landscape one dominating the row.
- * `wide` carries that difference, so each surface sizes them by shape
- * rather than by name.
+ * Every mark runs to the same height on a given surface, whatever its
+ * shape, so a surface sets one height and the widths fall out of it.
  */
 import Image from "next/image";
 
@@ -22,8 +20,6 @@ export interface Association {
   src: string;
   width: number;
   height: number;
-  /** A landscape lockup, which needs less height than a badge. */
-  wide?: boolean;
 }
 
 export const ASSOCIATIONS: Association[] = [
@@ -38,9 +34,8 @@ export const ASSOCIATIONS: Association[] = [
     name: "Master Builders Australia",
     blurb: "The national voice of the building and construction industry",
     src: "/Homepage_logos/mba-badge.png",
-    width: 520,
-    height: 262,
-    wide: true,
+    width: 600,
+    height: 157,
   },
 ];
 
@@ -69,10 +64,7 @@ export function AssociationStrip({ className }: { className?: string }) {
             alt={a.name}
             width={a.width}
             height={a.height}
-            className={cn(
-              "w-auto shrink-0",
-              a.wide ? "h-[24px] sm:h-[28px]" : "h-[30px] sm:h-[34px]",
-            )}
+            className="h-[26px] sm:h-[30px] w-auto shrink-0"
           />
         ))}
       </span>

@@ -122,25 +122,22 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
           </p>
           <div className="mt-8 sm:mt-9 flex flex-wrap items-start justify-center gap-x-6 sm:gap-x-20 gap-y-10">
             {ASSOCIATIONS.map((a) => (
-              <figure
-                key={a.name}
-                className="flex w-[150px] sm:w-[236px] flex-col items-center"
-              >
-                {/* Every mark runs to the same length inside a shared
-                    96px box on a phone, 128px from sm: a badge and a
-                    landscape lockup only read as equals when they take
-                    up the same width, and the box holds both captions
-                    on one line whatever the height under it. */}
-                <div className="flex h-24 sm:h-32 items-center justify-center">
+              <figure key={a.name} className="flex flex-col items-center">
+                {/* One height for every mark, whatever its shape, so
+                    the row reads as a set. The caption below keeps its
+                    own width rather than the logo's: a badge and a
+                    long lockup would otherwise wrap their names and
+                    taglines to different depths. */}
+                <div className="flex h-[72px] sm:h-[104px] items-center justify-center">
                   <Image
                     src={a.src}
                     alt=""
                     width={a.width}
                     height={a.height}
-                    className="w-[85px] sm:w-[113px] h-auto"
+                    className="h-full w-auto max-w-full"
                   />
                 </div>
-                <figcaption className="mt-4 sm:mt-5">
+                <figcaption className="mt-4 sm:mt-5 w-[150px] sm:w-[236px]">
                   <span className="block text-[13px] sm:text-[14px] font-medium text-text-muted">
                     {a.name}
                   </span>

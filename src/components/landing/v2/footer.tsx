@@ -7,7 +7,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { cn } from "@/lib/utils";
 
 import { ASSOCIATIONS } from "./association";
 
@@ -99,10 +98,7 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                     alt=""
                     width={a.width}
                     height={a.height}
-                    className={cn(
-                      "w-auto shrink-0",
-                      a.wide ? "h-[27px]" : "h-[34px]",
-                    )}
+                    className="h-[30px] w-auto shrink-0"
                   />
                 ))}
               </div>
