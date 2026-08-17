@@ -22,7 +22,7 @@
  * need your plans").
  */
 
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 
@@ -31,6 +31,11 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 import { setAdsFunnelCookie } from "@/lib/ads-funnel-cookie";
+import {
+  metaEventId,
+  metaRequestContext,
+  sendMetaConversion,
+} from "@/lib/meta-capi";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { users } from "@/modules/users";
 import { projects } from "@/modules/projects";
@@ -313,6 +318,10 @@ export async function POST(request: NextRequest) {
 
   // ── User upsert ───────────────────────────────────────────────────
   let userId: string;
+  // Only a genuine account creation is a registration. Someone
+  // re-running the quiz on an unverified email is the same person
+  // finishing the same journey, not a second conversion.
+  let userWasCreated = false;
   try {
     const [existing] = await db
       .select({
@@ -377,6 +386,7 @@ export async function POST(request: NextRequest) {
         return jsonError(500, "internal", "Couldn't create your account.");
       }
       userId = row.id;
+      userWasCreated = true;
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -558,6 +568,39 @@ export async function POST(request: NextRequest) {
     },
     "ads-funnel signup complete (step 6)",
   );
+
+  // The ads funnel is where advertising actually converts, so this is
+  // the registration a campaign optimises against. It is reported from
+  // here rather than the browser for the same reason as the other
+  // signup path: the quiz hands off into the signed-in application,
+  // which carries no pixel.
+  //
+  // This route has the visitor's phone number, which /signup does not,
+  // and phone is one of Meta's strongest matching parameters. The id is
+  // derived from the user so it agrees with the other path and cannot
+  // report one person twice.
+  if (userWasCreated) {
+    const metaContext = await metaRequestContext();
+    after(() =>
+      sendMetaConversion({
+        eventName: "CompleteRegistration",
+        eventId: metaEventId("reg", userId),
+        context: metaContext,
+        user: {
+          email: body.email,
+          phone: phoneE164,
+          firstName: body.firstName,
+          lastName: body.lastName,
+          state: body.quiz.state,
+          externalId: userId,
+        },
+        customData: {
+          content_name: "ads_funnel",
+          content_category: body.quiz.type,
+        },
+      }),
+    );
+  }
 
   return NextResponse.json({
     ok: true,

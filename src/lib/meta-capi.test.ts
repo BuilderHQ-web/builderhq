@@ -30,14 +30,18 @@ const NO_CONTEXT = {
 async function capturePayload(
   input: Parameters<typeof sendMetaConversion>[0],
 ): Promise<Record<string, unknown>> {
-  const fetchMock = vi.fn(async () =>
-    new Response(JSON.stringify({ events_received: 1 }), { status: 200 }),
+  // The parameters are declared so the captured call is typed as a
+  // real fetch call; an inferred zero-arity mock hands back an empty
+  // tuple and the body cannot be read off it.
+  const fetchMock = vi.fn(
+    async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(JSON.stringify({ events_received: 1 }), { status: 200 }),
   );
   vi.stubGlobal("fetch", fetchMock);
   await sendMetaConversion(input);
   expect(fetchMock).toHaveBeenCalledTimes(1);
-  const [, init] = fetchMock.mock.calls[0]!;
-  return JSON.parse((init as RequestInit).body as string);
+  const init = fetchMock.mock.calls[0]![1];
+  return JSON.parse(String(init?.body ?? "{}"));
 }
 
 function firstEvent(payload: Record<string, unknown>) {
