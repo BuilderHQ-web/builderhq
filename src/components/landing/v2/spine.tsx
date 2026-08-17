@@ -19,7 +19,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ArrowRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
 import { LENS, ROLE_PALETTE } from "./content";
@@ -144,14 +144,28 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                         </p>
                       </div>
 
+                      {/* The story earns its ask at the end: the last
+                          step carries the filled CTA, and the ones
+                          before it point at the walk through instead
+                          of repeating the same button four times. */}
                       <div className="relative">
-                        <Link
-                          href={cta.href}
-                          className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full bg-accent text-accent-contrast text-[14.5px] font-semibold hover:bg-accent-hover transition-colors duration-[180ms]"
-                        >
-                          {cta.label}
-                          <ArrowUpRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        </Link>
+                        {last || !copy.stepCta ? (
+                          <Link
+                            href={cta.href}
+                            className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full bg-accent text-accent-contrast text-[14.5px] font-semibold hover:bg-accent-hover transition-colors duration-[180ms]"
+                          >
+                            {cta.label}
+                            <ArrowUpRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </Link>
+                        ) : (
+                          <Link
+                            href={copy.stepCta.href}
+                            className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full border border-[rgba(255,255,255,0.22)] text-white text-[14.5px] font-semibold hover:bg-[rgba(255,255,255,0.08)] transition-colors duration-[180ms]"
+                          >
+                            {copy.stepCta.label}
+                            <ArrowRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5" />
+                          </Link>
+                        )}
                       </div>
                     </div>
 

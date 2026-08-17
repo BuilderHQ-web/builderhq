@@ -84,6 +84,10 @@ export interface LensCopy {
     subMore?: string;
     primary: Cta;
     secondary: Cta;
+    /** Which of the two the hero fills in. The default is the
+     *  primary; "secondary" hands the filled button to the walk
+     *  through, for a visitor who has never seen a tender round. */
+    lead?: "primary" | "secondary";
     /** Three instant answers under the CTAs — product facts only. */
     facts: string[];
   };
@@ -98,6 +102,9 @@ export interface LensCopy {
   spine: {
     head: SectionHeadCopy;
     steps: Array<{ title: string; headline: string; body: string }>;
+    /** Carried by every step but the last, which keeps the filled
+     *  CTA. Without one, the earlier steps carry no button at all. */
+    stepCta?: Cta;
   };
   trust: {
     h2a: string;
@@ -144,6 +151,7 @@ export const LENS: Record<Role, LensCopy> = {
       subMore: "Every builder prices that same scope, so you can see what sits behind each number.",
       primary: { label: "Start your project", href: "/signup?role=owner" },
       secondary: { label: "Watch the demo", href: "/demo" },
+      lead: "secondary",
       facts: ["Free for homeowners", "You approve the scope", "Verified builders only"],
     },
     problem: {
@@ -178,6 +186,7 @@ export const LENS: Record<Role, LensCopy> = {
         h2b: "to your builder.",
         lead: "Four steps. You do the first one, we do the rest.",
       },
+      stepCta: { label: "See it in the demo", href: "/demo" },
       steps: [
         {
           title: "Upload",

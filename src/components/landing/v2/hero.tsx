@@ -10,7 +10,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowUpRight, ArrowDown } from "lucide-react";
+import { ArrowUpRight, ArrowDown, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
@@ -25,9 +25,16 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
   const { role } = useRole();
   const copy = LENS[role].hero;
   const pal = ROLE_PALETTE[role];
-  const primary = authedHref
+  const signup = authedHref
     ? { label: "Open your dashboard", href: authedHref }
     : copy.primary;
+  // A first time visitor has never seen a tender round, so the walk
+  // through earns the filled button and signing up sits beside it.
+  // Signed in, the dashboard leads: they are past being convinced.
+  const lead = !authedHref && copy.lead === "secondary" ? copy.secondary : signup;
+  const follow = lead === signup ? copy.secondary : signup;
+  // A hash goes down the page, a route goes forward.
+  const FollowArrow = follow.href.startsWith("#") ? ArrowDown : ArrowUpRight;
 
   return (
     <section
@@ -109,8 +116,8 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
             <RoleSwap>
               <div className="mt-8 sm:mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
                 <Link
-                  href={primary.href}
-                  onClick={() => track("hero_cta", { role, label: primary.label })}
+                  href={lead.href}
+                  onClick={() => track("hero_cta", { role, label: lead.label })}
                   className={cn(
                     "group inline-flex items-center justify-center gap-2 h-12 sm:h-[52px] px-8 rounded-full",
                     "bg-accent text-accent-contrast text-[15px] font-semibold tracking-[0.01em]",
@@ -119,15 +126,21 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
                     "hover:bg-accent-hover active:translate-y-[0.5px]",
                   )}
                 >
-                  {primary.label}
-                  <ArrowUpRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.4} />
+                  {lead.label}
+                  <ArrowRight className="size-4 transition-transform duration-[180ms] group-hover:translate-x-0.5" strokeWidth={2.4} />
                 </Link>
                 <a
-                  href={copy.secondary.href}
-                  className="group inline-flex items-center justify-center lg:justify-start gap-1.5 px-3 py-1.5 sm:py-3 text-[14px] sm:text-[14.5px] font-medium text-text-muted hover:text-text transition-colors"
+                  href={follow.href}
+                  onClick={() => track("hero_cta", { role, label: follow.label })}
+                  className={cn(
+                    "group inline-flex items-center justify-center gap-2 h-12 sm:h-[52px] px-7 rounded-full",
+                    "border border-border-strong bg-surface-1 text-text text-[15px] font-semibold tracking-[0.01em]",
+                    "transition-[background-color,border-color,transform] duration-[180ms]",
+                    "hover:bg-surface-2 active:translate-y-[0.5px]",
+                  )}
                 >
-                  {copy.secondary.label}
-                  <ArrowDown className="size-4 opacity-60 transition-all duration-[180ms] group-hover:translate-y-0.5 group-hover:opacity-100" />
+                  {follow.label}
+                  <FollowArrow className="size-4 opacity-70 transition-all duration-[180ms] group-hover:opacity-100" strokeWidth={2.2} />
                 </a>
               </div>
 
