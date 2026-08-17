@@ -1,9 +1,15 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { signUp, signUpSchema } from "@/modules/auth";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
+import {
+  metaEventId,
+  metaRequestContext,
+  sendMetaConversion,
+} from "@/lib/meta-capi";
 import { safeInternalPath } from "../_lib/next-path";
 
 /** Form-state shape consumed by useFormState / useActionState on the client. */
@@ -66,6 +72,35 @@ export async function signupAction(
     }
     return { error: result.error.message };
   }
+
+  // Report the registration to Meta from here, because the browser
+  // cannot. Everything past this action is the signed-in application,
+  // where the pixel deliberately does not mount, so the server is the
+  // only witness to the conversion a campaign is actually buying.
+  //
+  // The context is captured NOW, while the request still has its
+  // headers and cookies; `after` runs the send once the response is
+  // finished, and it runs even though `redirect` below throws. The id
+  // is derived from the new user rather than random, so a retried
+  // submission reports the same conversion instead of a second one.
+  const metaContext = await metaRequestContext();
+  const { userId, email } = result.value;
+  after(() =>
+    sendMetaConversion({
+      eventName: "CompleteRegistration",
+      eventId: metaEventId("reg", userId),
+      context: metaContext,
+      user: {
+        email,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        externalId: userId,
+      },
+      // Which side of the marketplace signed up, so campaigns can be
+      // optimised per audience rather than against one blended number.
+      customData: { content_name: parsed.data.role },
+    }),
+  );
 
   // Success — redirect to the verify-email page. We pass the email as a
   // query param so the next page can show "we sent a link to <email>".

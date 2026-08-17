@@ -35,6 +35,7 @@ import {
 } from "@/modules/leads/partner-roles";
 
 import { ROLE_PALETTE, type PaletteKey } from "./content";
+import { trackMetaEvent } from "@/components/analytics/meta-pixel";
 import {
   submitPartnerInterestAction,
   submitIntroRequestAction,
@@ -174,6 +175,10 @@ export function PartnerForm() {
     if (submitting || !mode) return;
     setError(null);
 
+    // Set by whichever branch submits; the server derives it from the
+    // lead row so both reporters name the same conversion.
+    let metaEventId: string | undefined;
+
     if (mode === "intro") {
       if (
         !fullName.trim() ||
@@ -199,6 +204,7 @@ export function PartnerForm() {
         setError(res.error.message);
         return;
       }
+      metaEventId = res.value.metaEventId;
     } else {
       if (
         !role ||
@@ -227,6 +233,16 @@ export function PartnerForm() {
         setError(res.error.message);
         return;
       }
+      metaEventId = res.value.metaEventId;
+    }
+
+    // The browser half of the Lead conversion. The server has already
+    // reported the same event under this id, so passing it here is what
+    // tells Meta the two are one conversion rather than two. Sending
+    // both is deliberate: whichever reporter survives ad blocking and
+    // tracking restrictions, the conversion is still counted once.
+    if (metaEventId) {
+      trackMetaEvent("Lead", { content_name: mode }, metaEventId);
     }
 
     track("partner_modal_submitted", { mode, role: role || null });

@@ -18,6 +18,7 @@
  */
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { z } from "zod";
 
 import {
@@ -37,6 +38,11 @@ import {
 import { logger } from "@/lib/logger";
 import { fail, ok, type Result } from "@/lib/result";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
+import {
+  metaEventId,
+  metaRequestContext,
+  sendMetaConversion,
+} from "@/lib/meta-capi";
 
 /** Australian states + territories — the select options on the form. */
 const AU_STATES = ["VIC", "NSW", "QLD", "ACT", "SA", "WA", "TAS", "NT"] as const;
@@ -65,7 +71,7 @@ export type PartnerInterestInput = z.infer<typeof inputSchema>;
 
 export async function submitPartnerInterestAction(
   input: PartnerInterestInput,
-): Promise<Result<{ ok: true }>> {
+): Promise<Result<{ ok: true; metaEventId?: string }>> {
   // Honeypot: bots fill hidden fields humans never see. Feign success so
   // the bot moves on, but do nothing — no row, no email.
   if (typeof input?.hp === "string" && input.hp.trim().length > 0) {
@@ -177,7 +183,30 @@ export async function submitPartnerInterestAction(
     );
   }
 
-  return ok({ ok: true });
+  // These forms sit on marketing pages, where the pixel IS mounted, so
+  // this is the case the dataset id exists for: the browser reports the
+  // same Lead under the same id and Meta keeps one of the pair. The id
+  // is the lead row, so a resubmitted form cannot invent a second
+  // conversion. Returned to the caller so the browser can match it.
+  const metaEventIdValue = metaEventId("lead", lead.id);
+  const metaContext = await metaRequestContext();
+  after(() =>
+    sendMetaConversion({
+      eventName: "Lead",
+      eventId: metaEventIdValue,
+      context: metaContext,
+      user: {
+        email: lead.email,
+        phone: lead.phone,
+        firstName,
+        lastName,
+        state: v.state,
+      },
+      customData: { content_name: `partner_${v.role}` },
+    }),
+  );
+
+  return ok({ ok: true, metaEventId: metaEventIdValue });
 }
 
 /* ── Homeowner introduction requests ─────────────────────────────────────
@@ -203,7 +232,7 @@ export type IntroRequestInput = z.infer<typeof introSchema>;
 
 export async function submitIntroRequestAction(
   input: IntroRequestInput,
-): Promise<Result<{ ok: true }>> {
+): Promise<Result<{ ok: true; metaEventId?: string }>> {
   if (typeof input?.hp === "string" && input.hp.trim().length > 0) {
     logger.info({ event: "partner_intro.honeypot_tripped" }, "intro form honeypot tripped");
     return ok({ ok: true });
@@ -295,5 +324,23 @@ export async function submitIntroRequestAction(
     );
   }
 
-  return ok({ ok: true });
+  const metaEventIdValue = metaEventId("lead", lead.id);
+  const metaContext = await metaRequestContext();
+  after(() =>
+    sendMetaConversion({
+      eventName: "Lead",
+      eventId: metaEventIdValue,
+      context: metaContext,
+      user: {
+        email: lead.email,
+        phone: lead.phone,
+        firstName,
+        lastName,
+        state: v.state,
+      },
+      customData: { content_name: "homeowner_intro_request" },
+    }),
+  );
+
+  return ok({ ok: true, metaEventId: metaEventIdValue });
 }

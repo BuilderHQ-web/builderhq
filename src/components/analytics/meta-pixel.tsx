@@ -146,7 +146,18 @@ fbq('track', 'PageView');`}
 export function trackMetaEvent(
   event: string,
   params?: Record<string, unknown>,
+  /**
+   * Shared with the server's report of the same conversion so Meta
+   * keeps one of the pair. Omit it for browser-only events; pass the
+   * id the server action returned whenever both halves fire, or the
+   * conversion is counted twice.
+   */
+  eventId?: string,
 ): void {
   if (typeof window === "undefined") return;
+  if (eventId) {
+    window.fbq?.("track", event, params ?? {}, { eventID: eventId });
+    return;
+  }
   window.fbq?.("track", event, params);
 }

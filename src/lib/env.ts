@@ -63,7 +63,25 @@ if (process.env.VERCEL_ENV === "preview") {
  * Things prefixed `NEXT_PUBLIC_` go in the client schema below — Next.js
  * inlines those at build time.
  */
+/**
+ * Meta Conversions API. Server-side only, deliberately without the
+ * NEXT_PUBLIC_ prefix: the token can send events as us, so it must
+ * never be compiled into the browser bundle.
+ *
+ * META_DATASET_ID is usually the same number as the pixel id, since
+ * Meta renamed Pixels to Datasets. META_TEST_EVENT_CODE routes events
+ * to the Test Events tab instead of the live stream; set it while
+ * verifying, leave it unset in production.
+ */
+const metaCapiSchema = {
+  META_CAPI_ACCESS_TOKEN: z.string().optional(),
+  META_DATASET_ID: z.string().optional(),
+  META_TEST_EVENT_CODE: z.string().optional(),
+};
+
 const serverSchema = z.object({
+  ...metaCapiSchema,
+
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
   // Auth.js v5
