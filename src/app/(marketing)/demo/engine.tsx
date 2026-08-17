@@ -30,6 +30,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight, MousePointerClick, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/brand/logo";
 import { track } from "@/lib/analytics";
 import {
   trackMetaCustomEvent,
@@ -76,67 +77,121 @@ const CRUMBS: Record<string, string> = {
 
 /* ── anchored positioning ───────────────────────────────────────────── */
 
+/** The breathing room between an element and the card under it. */
+const GAP = 14;
+
 interface AnchorBox {
-  top: number;
+  /** Where the card's top edge sits, in the content container's own
+   *  coordinate space: under the element, and under anything the
+   *  card would otherwise cover. */
+  edgeTop: number;
   left: number;
   width: number;
-  placement: "above" | "below";
   arrowX: number;
+  /** The caret is drawn only when the card still touches its
+   *  element; once it has been pushed clear, it would point at
+   *  nothing. */
+  caret: boolean;
   /** Which beat this measurement belongs to; stale boxes derive away. */
   forStep: string;
 }
 
 /**
- * Where the callout sits: beside the element the beat describes.
- * Measured after the target has been scrolled to centre, re-measured
- * on scroll and resize, and null on phones, where callouts fall back
- * to the bottom sheet. State only ever moves inside timers and
- * listeners; the no-anchor cases derive at return.
+ * Where the callout sits: always UNDER the element the beat
+ * describes, positioned in the document rather than the viewport, so
+ * it scrolls with its section and can never drift over anything.
+ * Null on phones, where callouts fall back to the bottom sheet.
  */
 function useAnchor(
   targetId: string | null,
   stepId: string,
   desktop: boolean,
-  reduceMotion: boolean,
+  container: React.RefObject<HTMLDivElement | null>,
+  card: React.RefObject<HTMLDivElement | null>,
 ): AnchorBox | null {
   const [box, setBox] = useState<AnchorBox | null>(null);
   useEffect(() => {
     if (!targetId || !desktop) return;
     const el = document.querySelector(`[data-demo-target="${targetId}"]`);
-    if (!el) return;
-    el.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      block: "center",
-    });
+    const host = container.current;
+    if (!el || !host) return;
     const measure = () => {
       const r = el.getBoundingClientRect();
-      const width = Math.min(400, window.innerWidth - 32);
-      const centre = r.left + r.width / 2;
-      const left = Math.min(
-        Math.max(16, centre - width / 2),
-        window.innerWidth - width - 16,
+      const c = host.getBoundingClientRect();
+      const width = Math.min(400, c.width);
+      const centre = r.left + r.width / 2 - c.left;
+      const left = Math.min(Math.max(0, centre - width / 2), c.width - width);
+      const height = card.current?.offsetHeight ?? 150;
+
+      // The card sits under the element, and under anything it would
+      // otherwise cover: a half hidden button is the thing the demo
+      // must never do. Each pass can uncover the next control down,
+      // so the clearance settles over a few rounds.
+      let top = r.bottom + GAP;
+      for (let pass = 0; pass < 4; pass += 1) {
+        let pushed = top;
+        document.querySelectorAll("button, a, input").forEach((node) => {
+          if (node === el || el.contains(node)) return;
+          if (node.closest("[data-demo-callout]") || node.closest("header"))
+            return;
+          const b = node.getBoundingClientRect();
+          if (b.width === 0 || b.height === 0) return;
+          const clearsSide =
+            b.right < c.left + left + 6 || b.left > c.left + left + width - 6;
+          if (clearsSide) return;
+          if (b.bottom > pushed && b.top < top + height) pushed = b.bottom + GAP;
+        });
+        if (pushed === top) break;
+        top = pushed;
+      }
+
+      // Scroll so the element and its card are both on screen: the
+      // card's foot above the fold, the element clear of the header.
+      // Done here, not once up front, because sections often mount on
+      // the beat that points at them and only later passes see the
+      // settled layout.
+      const y = window.scrollY;
+      const room = window.innerHeight;
+      const lowest = y + top + height + 24 - room;
+      const highest = y + r.top - 96;
+      const wanted = Math.max(
+        0,
+        Math.min(Math.max(lowest, y + r.top - room * 0.3), Math.max(0, highest)),
       );
-      // Below the element when there is room for a card; above it
-      // otherwise. 240px comfortably covers the tallest callout.
-      const below = r.bottom + 240 < window.innerHeight;
+      // "instant", explicitly: the page sets scroll-behavior smooth,
+      // and a smooth glide here is the bottom flash then jump bug.
+      if (Math.abs(wanted - y) > 4)
+        window.scrollTo({ top: wanted, behavior: "instant" });
+
       setBox({
-        top: below ? r.bottom + 14 : r.top - 14,
+        edgeTop: top - c.top,
         left,
         width,
-        placement: below ? "below" : "above",
         arrowX: Math.min(Math.max(22, centre - left), width - 22),
+        // Only the caret needs to know the element is further up.
+        caret: top - r.bottom <= GAP + 1,
         forStep: stepId,
       });
     };
-    const t = setTimeout(measure, reduceMotion ? 80 : 460);
+    const t = setTimeout(measure, 50);
+    // Surfaces animate in over ~400ms and spot rings settle after;
+    // later passes land the card on the settled layout.
+    const t2 = setTimeout(measure, 520);
+    const t3 = setTimeout(measure, 950);
+    // Blocks that arrive on the beat itself change the page under
+    // the card: measure again whenever the surface grows. The card
+    // is absolutely positioned, so it cannot feed this back.
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
     window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, { passive: true });
     return () => {
       clearTimeout(t);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      observer.disconnect();
       window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure);
     };
-  }, [targetId, stepId, desktop, reduceMotion]);
+  }, [targetId, stepId, desktop, container, card]);
   if (!targetId || !desktop) return null;
   return box && box.forStep === stepId ? box : null;
 }
@@ -317,13 +372,15 @@ export function DemoExperience() {
     cardRef.current?.focus({ preventScroll: true });
   }, [pos]);
 
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const anchor = useAnchor(
     step && (step.kind === "note" || step.kind === "click")
       ? (step.target ?? null)
       : null,
     step?.id ?? "",
     desktop,
-    reduceMotion,
+    contentRef,
+    cardRef,
   );
 
   /* ── render ──────────────────────────────────────────────────────── */
@@ -426,10 +483,8 @@ export function DemoExperience() {
       <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur-md border-b border-border-subtle">
         <div className="mx-auto max-w-[1080px] px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href="/" className="flex items-center gap-1 shrink-0" aria-label="BuilderHQ home">
-              <span className="font-ui font-bold tracking-[-0.02em] text-[15px] text-text">
-                Builder<span className="text-accent-light">HQ</span>
-              </span>
+            <Link href="/" className="flex items-center shrink-0" aria-label="BuilderHQ home">
+              <Logo height={25} tone="dark" />
             </Link>
             <span className="px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[9.5px] tracking-[0.14em] uppercase font-ui font-bold shrink-0">
               Demo
@@ -484,9 +539,10 @@ export function DemoExperience() {
       {/* ── the surface ────────────────────────────────────────────── */}
       <main className="flex-1">
         <div
+          ref={contentRef}
           className={cn(
-            "mx-auto max-w-[1080px] px-4 sm:px-6 pt-8 sm:pt-12",
-            isClose ? "pb-16" : "pb-56 sm:pb-40",
+            "relative mx-auto max-w-[1080px] px-4 sm:px-6 pt-8 sm:pt-12",
+            isClose ? "pb-16" : "pb-56 sm:pb-64",
           )}
         >
           {/* Keyed remount, entrance only. An exit animation makes the
@@ -521,6 +577,42 @@ export function DemoExperience() {
               />
             ) : null}
           </motion.div>
+
+          {/* ── anchored callout: sits under the element it describes,
+                 in the document, so it scrolls with its section ────── */}
+          {!isClose &&
+          step &&
+          (step.kind === "note" || step.kind === "click") &&
+          anchor ? (
+            <motion.div
+              key={step.id}
+              ref={cardRef}
+              tabIndex={-1}
+              data-quiet-focus
+              role="group"
+              aria-label={`${step.title}. ${step.line}`}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              data-demo-callout
+              style={{
+                top: anchor.edgeTop,
+                left: anchor.left,
+                width: anchor.width,
+              }}
+              className="absolute z-30 outline-none rounded-xl border border-border-subtle bg-surface-1 card-elev-lg px-5 py-4"
+            >
+              {/* the caret tying the callout to its element */}
+              {anchor.caret ? (
+                <span
+                  aria-hidden
+                  style={{ left: anchor.arrowX }}
+                  className="absolute -top-[7px] size-3 -translate-x-1/2 rotate-45 bg-surface-1 border-l border-t border-border-subtle"
+                />
+              ) : null}
+              {cardInner}
+            </motion.div>
+          ) : null}
         </div>
       </main>
 
@@ -572,46 +664,12 @@ export function DemoExperience() {
         </div>
       ) : null}
 
-      {/* ── anchored callout (desktop notes and clicks) ────────────── */}
-      {!isClose && step && (step.kind === "note" || step.kind === "click") && anchor ? (
-        <motion.div
-          key={step.id}
-          ref={cardRef}
-          tabIndex={-1}
-          data-quiet-focus
-          role="group"
-          aria-label={`${step.title}. ${step.line}`}
-          initial={reduceMotion ? false : { opacity: 0, y: anchor.placement === "below" ? 10 : -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: EASE }}
-          style={{
-            top: anchor.top,
-            left: anchor.left,
-            width: anchor.width,
-            transform: anchor.placement === "above" ? "translateY(-100%)" : undefined,
-          }}
-          className="fixed z-40 outline-none rounded-xl border border-border-subtle bg-surface-1 card-elev-lg px-5 py-4"
-        >
-          {/* the caret tying the callout to its element */}
-          <span
-            aria-hidden
-            style={{ left: anchor.arrowX }}
-            className={cn(
-              "absolute size-3 -translate-x-1/2 rotate-45 bg-surface-1 border-border-subtle",
-              anchor.placement === "below"
-                ? "-top-[7px] border-l border-t"
-                : "-bottom-[7px] border-r border-b",
-            )}
-          />
-          {cardInner}
-        </motion.div>
-      ) : null}
-
       {/* ── bottom card: watch beats, and every beat on phones ─────── */}
       {!isClose &&
       step &&
       !isIntro &&
-      (step.kind === "watch" || ((step.kind === "note" || step.kind === "click") && !anchor)) ? (
+      (step.kind === "watch" ||
+        ((step.kind === "note" || step.kind === "click") && !desktop)) ? (
         <div className="fixed inset-x-0 bottom-0 sm:inset-x-4 sm:bottom-5 z-40 sm:mx-auto sm:max-w-[560px] pointer-events-none">
           <motion.div
             key={step.id}

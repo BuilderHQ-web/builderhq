@@ -26,6 +26,7 @@ import {
   CircleDollarSign,
   FileText,
   FileUp,
+  Flag,
   Landmark,
   Lock,
   MessageCircleQuestion,
@@ -45,7 +46,8 @@ import {
   DEMO_DOCUMENTS,
   DEMO_PACKAGES,
   DEMO_PROJECT,
-  DEMO_QUESTIONS,
+  DEMO_FLAGS,
+  DEMO_GRID,
   DEMO_RECEIPTS,
   DEMO_SCOPE_DIVISIONS,
   DEMO_SCOPE_DIVISIONS_AFTER,
@@ -71,13 +73,16 @@ export interface SurfaceProps {
 
 /* ── shared primitives ──────────────────────────────────────────────── */
 
-/** The pulsing halo for the control a click beat asks for. */
+/** The pulsing halo for the control a click beat asks for. Carries
+ *  the anchor id so the engine's callout can sit right beside it. */
 function Spot({
+  id,
   active,
   children,
   className,
   reduceMotion,
 }: {
+  id: string;
   active: boolean;
   children: React.ReactNode;
   className?: string;
@@ -95,7 +100,11 @@ function Spot({
     return () => clearTimeout(t);
   }, [active, reduceMotion]);
   return (
-    <span ref={ref} className={cn("relative inline-flex", className)}>
+    <span
+      ref={ref}
+      data-demo-target={id}
+      className={cn("relative inline-flex", className)}
+    >
       {active ? (
         <motion.span
           aria-hidden
@@ -226,8 +235,7 @@ export function UploadSurface({
         Upload your plans
       </h2>
       <p className="mt-2.5 text-[13.5px] leading-[1.7] text-text-muted max-w-[62ch]">
-        Drop in the documents you already have. The reading works from
-        PDFs exactly as your architect issued them.
+        Drop in what you have. PDFs from your architect are perfect.
       </p>
 
       {!filed ? (
@@ -242,7 +250,7 @@ export function UploadSurface({
             <p className="mt-1 text-[12.5px] text-text-dim">
               Plans, engineering, reports. PDF, up to 30 files.
             </p>
-            <Spot active={spot === "add-plans"} reduceMotion={reduceMotion} className="mt-6">
+            <Spot id="add-plans" active={spot === "add-plans"} reduceMotion={reduceMotion} className="mt-6">
               <TealButton onClick={() => onAction("add-plans")}>
                 Add your plans
                 <FileUp className="size-4" />
@@ -353,7 +361,7 @@ export function UploadSurface({
                     return o.pick ? (
                       <Spot
                         key={o.id}
-                        active={spot === "choose-open"}
+                        id="choose-open" active={spot === "choose-open"}
                         reduceMotion={reduceMotion}
                         className="w-full"
                       >
@@ -376,10 +384,9 @@ export function UploadSurface({
               className="mt-5 flex items-center justify-between gap-4"
             >
               <p className="text-[12px] text-text-muted max-w-[46ch]">
-                Nothing renamed, nothing converted. This register is what
-                your round is priced from.
+                This exact set is what your quotes will be based on.
               </p>
-              <Spot active={spot === "start-reading"} reduceMotion={reduceMotion}>
+              <Spot id="start-reading" active={spot === "start-reading"} reduceMotion={reduceMotion}>
                 <TealButton onClick={() => onAction("start-reading")}>
                   Start the reading
                   <ArrowRight className="size-4" />
@@ -431,7 +438,7 @@ export function ReadingSurface({
     { label: "Identify the documents", done: true, active: false },
     { label: "Read every page", done: settled || pages >= DEMO_TOTALS.pages, active: watching },
     { label: "Write the scope of works", done: settled, active: watching && pages > 100 },
-    { label: "Checked by a person at BuilderHQ", done: settled, active: false, human: true },
+    { label: "Check every item before you see it", done: settled, active: false, human: true },
   ];
 
   return (
@@ -532,7 +539,7 @@ export function ReadingSurface({
           transition={{ duration: 0.4, ease: EASE }}
           className="mt-6 flex justify-end"
         >
-          <Spot active={spot === "open-scope"} reduceMotion={reduceMotion}>
+          <Spot id="open-scope" active={spot === "open-scope"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("open-scope")}>
               Open your scope of works
               <ArrowRight className="size-4" />
@@ -606,7 +613,7 @@ export function ScopeSurface({
           ))}
           <li>
             <Spot
-              active={spot === "expand-division"}
+              id="expand-division" active={spot === "expand-division"}
               reduceMotion={reduceMotion}
               className="w-full"
             >
@@ -712,7 +719,7 @@ export function ScopeSurface({
                       <span className="h-10 px-3.5 rounded-md border border-border-subtle bg-surface-1 inline-flex items-center text-[13px] tabular-nums text-text">
                         {fmtAud(p.amount)}
                       </span>
-                      <Spot active={spot === "set-budget"} reduceMotion={reduceMotion}>
+                      <Spot id="set-budget" active={spot === "set-budget"} reduceMotion={reduceMotion}>
                         <button
                           type="button"
                           onClick={() => onAction("set-budget")}
@@ -745,9 +752,9 @@ export function ScopeSurface({
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <p className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
           <ShieldCheck className="size-3.5 text-accent-light" />
-          Reviewed by a person before you see it
+          Checked before you see it
         </p>
-        <Spot active={spot === "publish"} reduceMotion={reduceMotion}>
+        <Spot id="publish" active={spot === "publish"} reduceMotion={reduceMotion}>
           <TealButton onClick={() => onAction("publish")} disabled={!psSet}>
             Approve and publish
             <ArrowRight className="size-4" />
@@ -891,7 +898,7 @@ export function RoundSurface({
           transition={{ duration: 0.4, ease: EASE }}
           className="mt-6 flex justify-end"
         >
-          <Spot active={spot === "see-tendering"} reduceMotion={reduceMotion}>
+          <Spot id="see-tendering" active={spot === "see-tendering"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("see-tendering")}>
               See what the builders do
               <ArrowRight className="size-4" />
@@ -971,8 +978,8 @@ export function TenderSurface({
           ))}
         </ul>
         <p className="mt-3 text-[11.5px] text-text-muted">
-          Included, a provisional sum, or excluded. A builder declares
-          every line in about thirty minutes.
+          In the price, a budget, or not included. Every line gets an
+          answer.
         </p>
       </Card>
 
@@ -980,7 +987,7 @@ export function TenderSurface({
         target="asks"
         className={cn("mt-4 px-5 py-4", softRing(soft === "asks"))}
       >
-        <Kicker>And every builder answers</Kicker>
+        <Kicker>Every builder also answers</Kicker>
         <ul className="mt-2.5 flex flex-wrap gap-1.5">
           {DEMO_ASKS.map((a) => (
             <li
@@ -990,6 +997,9 @@ export function TenderSurface({
               {a}
             </li>
           ))}
+          <li className="px-2.5 py-1.5 rounded-full border border-dashed border-border-subtle text-[11.5px] text-text-dim">
+            and plenty more
+          </li>
         </ul>
       </Card>
 
@@ -1027,7 +1037,7 @@ export function TenderSurface({
                     {fmtAud(t.price)}
                   </p>
                   <p className="mt-1 text-[10.5px] text-text-muted">
-                    ex GST · same scope
+                    ex GST · same list of work
                   </p>
                   <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-text-muted">
                     <BadgeCheck className="size-3 text-accent-light" />
@@ -1051,7 +1061,7 @@ export function TenderSurface({
           transition={{ duration: 0.4, ease: EASE }}
           className="mt-6 flex justify-end"
         >
-          <Spot active={spot === "open-comparison"} reduceMotion={reduceMotion}>
+          <Spot id="open-comparison" active={spot === "open-comparison"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("open-comparison")}>
               Open the comparison
               <ArrowRight className="size-4" />
@@ -1073,11 +1083,11 @@ export function CompareSurface({
   reduceMotion,
 }: SurfaceProps) {
   // Beats: 0 intro · 1 prices · 2 show-scores · 3 receipts ·
-  //        4 show-differences · 5 breakeven · 6 ladder ·
-  //        7 show-questions · 8 finish
+  //        4 show-differences · 5 grid · 6 breakeven · 7 ladder ·
+  //        8 show-flags · 9 questions · 10 finish
   const scores = stepIdx >= 3;
   const differing = stepIdx >= 5;
-  const questions = stepIdx >= 8;
+  const flags = stepIdx >= 9;
   const reveal = (on: boolean) =>
     reduceMotion || !on
       ? {}
@@ -1087,7 +1097,7 @@ export function CompareSurface({
     <div>
       <Kicker>The comparison</Kicker>
       <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Three tenders, one scope, read together.
+        Three quotes, side by side.
       </h2>
 
       {/* the tenders */}
@@ -1107,7 +1117,7 @@ export function CompareSurface({
                     {t.overall}
                   </span>
                   <span className="block text-[8px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold mt-0.5">
-                    Weighted
+                    Score
                   </span>
                 </motion.span>
               ) : null}
@@ -1128,12 +1138,11 @@ export function CompareSurface({
               </div>
               <p className="mt-1.5 text-[10.5px] text-text-muted">
                 {t.firmPct === 100
-                  ? "Fully priced. Nothing moves."
-                  : `${t.firmPct}% firm · ${fmtAud(t.movingAud)} can still move`}
+                  ? "Fully priced. Nothing can change."
+                  : `${t.firmPct}% locked in · ${fmtAud(t.movingAud)} can still change`}
               </p>
             </div>
 
-            {/* the six dimensions, when scoring is revealed */}
             {scores ? (
               <motion.ul {...reveal(true)} className="mt-3 pt-3 border-t border-border-subtle/60 space-y-1.5">
                 {DEMO_DIMENSIONS.map((d, i) => (
@@ -1154,44 +1163,6 @@ export function CompareSurface({
                 ))}
               </motion.ul>
             ) : null}
-
-            <ul className="mt-3 pt-3 border-t border-border-subtle/60 space-y-1.5">
-              <li className="flex items-center justify-between text-[11px]">
-                <span className="text-text-dim">Landscaping</span>
-                <span className="text-text-muted">{t.landscaping}</span>
-              </li>
-              <li
-                className={cn(
-                  "flex items-center justify-between text-[11px] rounded px-1 -mx-1 transition-colors",
-                  differing && t.driveway === "Excluded" && "bg-[rgba(201,148,34,0.12)]",
-                )}
-              >
-                <span className="text-text-dim">Driveway</span>
-                <span
-                  className={cn(
-                    "font-ui",
-                    t.driveway === "Excluded"
-                      ? "text-[#8a6414] font-semibold"
-                      : "text-text-muted",
-                  )}
-                >
-                  {t.driveway}
-                </span>
-              </li>
-              <li className="flex items-center justify-between text-[11px]">
-                <span className="text-text-dim">Every line priced</span>
-                <span
-                  className={cn(
-                    "font-ui",
-                    t.fullyPriced
-                      ? "text-accent-light font-semibold"
-                      : "text-[#8a6414] font-semibold",
-                  )}
-                >
-                  {t.fullyPriced ? "Yes" : "No"}
-                </span>
-              </li>
-            </ul>
           </Card>
         ))}
       </div>
@@ -1199,7 +1170,7 @@ export function CompareSurface({
       {/* reveal: the scores */}
       {!scores ? (
         <div className="mt-5 flex justify-center">
-          <Spot active={spot === "show-scores"} reduceMotion={reduceMotion}>
+          <Spot id="show-scores" active={spot === "show-scores"} reduceMotion={reduceMotion}>
             <button
               type="button"
               onClick={() => onAction("show-scores")}
@@ -1221,7 +1192,7 @@ export function CompareSurface({
           >
             <div className="flex items-center justify-between gap-3">
               <Kicker>
-                {DEMO_RECEIPTS.builder} · {DEMO_RECEIPTS.dimension}
+                {DEMO_RECEIPTS.builder} · {DEMO_RECEIPTS.dimension} · why {DEMO_RECEIPTS.score}?
               </Kicker>
               <span className="font-display text-[18px] leading-none text-text tabular-nums">
                 {DEMO_RECEIPTS.score}
@@ -1253,7 +1224,7 @@ export function CompareSurface({
       {/* reveal: the differences */}
       {scores && !differing ? (
         <div className="mt-5 flex justify-center">
-          <Spot active={spot === "show-differences"} reduceMotion={reduceMotion}>
+          <Spot id="show-differences" active={spot === "show-differences"} reduceMotion={reduceMotion}>
             <button
               type="button"
               onClick={() => onAction("show-differences")}
@@ -1266,8 +1237,69 @@ export function CompareSurface({
         </div>
       ) : null}
 
+      {/* the decision grid */}
       {differing ? (
-        <motion.div {...reveal(true)} className="mt-4 grid gap-3 lg:grid-cols-2">
+        <motion.div {...reveal(true)}>
+          <Card
+            target="grid"
+            className={cn("mt-4 overflow-hidden", softRing(soft === "grid"))}
+          >
+            <div className="px-5 py-3 border-b border-border-subtle/60 flex items-center justify-between">
+              <Kicker>The decision grid</Kicker>
+              <span className="text-[10.5px] text-text-dim">
+                Highlighted rows are where they differ
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-border-subtle/60">
+                    <th className="px-5 py-2 text-[10px] tracking-[0.12em] uppercase text-text-dim font-ui font-semibold min-w-[150px]">
+                      &nbsp;
+                    </th>
+                    {DEMO_TENDERS.map((t) => (
+                      <th key={t.name} className="px-4 py-2 text-[11px] font-ui font-semibold text-text min-w-[110px]">
+                        {t.name.split(" ")[0]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {DEMO_GRID.map((row) => (
+                    <tr
+                      key={row.label}
+                      className={cn(
+                        "border-b border-border-subtle/40 last:border-0",
+                        row.differs && "bg-[rgba(201,148,34,0.07)]",
+                      )}
+                    >
+                      <td className="px-5 py-2 text-[11.5px] text-text-muted">
+                        {row.label}
+                      </td>
+                      {row.vals.map((v, i) => (
+                        <td
+                          key={i}
+                          className={cn(
+                            "px-4 py-2 text-[11.5px] tabular-nums",
+                            v === "No" || v === "Not included"
+                              ? "text-[#8a6414] font-ui font-medium"
+                              : "text-text",
+                          )}
+                        >
+                          {v}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </motion.div>
+      ) : null}
+
+      {differing ? (
+        <motion.div {...reveal(true)} className="mt-3 grid gap-3 lg:grid-cols-2">
           <Card
             target="breakeven"
             className={cn(
@@ -1275,25 +1307,25 @@ export function CompareSurface({
               softRing(soft === "breakeven"),
             )}
           >
-            <Kicker>The exposure, in one line</Kicker>
+            <Kicker>The maths on the cheapest quote</Kicker>
             <p className="mt-2 text-[13.5px] leading-[1.65] text-text">
-              Corten is {fmtAud(DEMO_COMPARE.saving)} cheaper, but{" "}
-              {fmtAud(DEMO_COMPARE.exposure)} of its price sits in
-              allowances of its own. If those run{" "}
+              Corten is {fmtAud(DEMO_COMPARE.saving)} cheaper. But{" "}
+              {fmtAud(DEMO_COMPARE.exposure)} of its price is not locked
+              in. If that grows by{" "}
               <span className="font-ui font-semibold">
                 {DEMO_COMPARE.breakevenPct} percent
-              </span>{" "}
-              over, the saving is gone.
+              </span>
+              , your saving is gone.
             </p>
           </Card>
           <Card
             target="ladder"
             className={cn("px-5 py-4", softRing(soft === "ladder"))}
           >
-            <Kicker>What the next step up buys</Kicker>
+            <Kicker>What more money buys</Kicker>
             <p className="mt-2 text-[12.5px] text-text-muted">
-              Brightwater is {fmtAud(DEMO_COMPARE.stepUp)} above Meridian.
-              For that:
+              Brightwater costs {fmtAud(DEMO_COMPARE.stepUp)} more than
+              Meridian. For that you get:
             </p>
             <ul className="mt-2 space-y-1">
               {DEMO_COMPARE.stepUpBuys.map((b) => (
@@ -1307,31 +1339,45 @@ export function CompareSurface({
         </motion.div>
       ) : null}
 
-      {/* reveal: the questions */}
-      {differing && !questions ? (
+      {/* reveal: the flags */}
+      {differing && !flags ? (
         <div className="mt-5 flex justify-center">
-          <Spot active={spot === "show-questions"} reduceMotion={reduceMotion}>
+          <Spot id="show-flags" active={spot === "show-flags"} reduceMotion={reduceMotion}>
             <button
               type="button"
-              onClick={() => onAction("show-questions")}
+              onClick={() => onAction("show-flags")}
               className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
             >
-              Questions to ask
-              <MessageCircleQuestion className="size-3.5" />
+              Show the flags
+              <Flag className="size-3.5" />
             </button>
           </Spot>
         </div>
       ) : null}
 
-      {questions ? (
+      {flags ? (
         <motion.div {...reveal(true)}>
-          <Card className="mt-4 px-5 py-4">
-            <Kicker>Before you decide, ask</Kicker>
-            <ul className="mt-2.5 space-y-2">
-              {DEMO_QUESTIONS.map((q) => (
-                <li key={q} className="flex items-start gap-2.5 text-[12.5px] leading-[1.6] text-text">
-                  <MessageCircleQuestion className="size-3.5 text-accent-light shrink-0 mt-[2px]" />
-                  {q}
+          <Card
+            target="flags"
+            className={cn("mt-4 px-5 py-4", softRing(soft === "flags"))}
+          >
+            <Kicker>Flags, with your questions ready</Kicker>
+            <ul className="mt-3 space-y-3">
+              {DEMO_FLAGS.map((f) => (
+                <li key={f.label} className="flex items-start gap-3">
+                  <Flag className="size-3.5 text-[#8a6414] shrink-0 mt-[3px]" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-ui font-medium text-text">
+                      {f.label}
+                      <span className="ml-2 text-[10.5px] font-normal text-text-dim">
+                        {f.builder.split(" ")[0]}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 flex items-start gap-1.5 text-[12px] leading-[1.55] text-text-muted">
+                      <MessageCircleQuestion className="size-3.5 text-accent-light shrink-0 mt-[2px]" />
+                      {f.ask}
+                    </span>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1339,9 +1385,9 @@ export function CompareSurface({
         </motion.div>
       ) : null}
 
-      {questions ? (
+      {flags ? (
         <div className="mt-6 flex justify-end">
-          <Spot active={spot === "finish"} reduceMotion={reduceMotion}>
+          <Spot id="finish" active={spot === "finish"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("finish")}>
               Finish the round
               <ArrowRight className="size-4" />

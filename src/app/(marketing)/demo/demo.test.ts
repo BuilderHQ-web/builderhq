@@ -23,7 +23,8 @@ import {
   DEMO_DISCLAIMER,
   DEMO_DOCUMENTS,
   DEMO_PACKAGES,
-  DEMO_QUESTIONS,
+  DEMO_FLAGS,
+  DEMO_GRID,
   DEMO_RECEIPTS,
   DEMO_TENDERS,
   DEMO_TOTALS,
@@ -77,6 +78,29 @@ describe("demo arithmetic", () => {
     }
   });
 
+  test("the decision grid agrees with the tender data", () => {
+    const row = (label: string) => DEMO_GRID.find((r) => r.label === label)!;
+    DEMO_TENDERS.forEach((t, i) => {
+      expect(row("Price ex GST").vals[i]).toBe(`$${t.price.toLocaleString("en-AU")}`);
+      expect(row("Every line priced").vals[i]).toBe(t.fullyPriced ? "Yes" : "No");
+      expect(row("Driveway").vals[i]).toBe(t.driveway);
+    });
+    // The step-up bullets must be visible in the grid's own rows.
+    expect(row("Defects period").vals).toEqual(["12 months", "12 months", "24 months"]);
+    expect(row("Dedicated site supervisor").vals).toEqual(["No", "No", "Yes"]);
+    expect(row("Damages if handover is late").vals).toEqual(["No", "No", "Yes"]);
+  });
+
+  test("every flag carries a question for a named builder", () => {
+    for (const f of DEMO_FLAGS) {
+      expect(f.ask.length).toBeGreaterThan(10);
+      expect(
+        DEMO_TENDERS.some((t) => t.name === f.builder),
+        f.builder,
+      ).toBe(true);
+    }
+  });
+
   test("the opened receipt sums to its score", () => {
     const sum = DEMO_RECEIPTS.lines.reduce((n, l) => {
       const v = parseInt(l.value.replace("−", "-"), 10);
@@ -107,7 +131,8 @@ describe("demo copy rules", () => {
       DEMO_DISCLAIMER,
       ...DEMO_COMPARE.stepUpBuys,
       ...DEMO_ASKS,
-      ...DEMO_QUESTIONS,
+      ...DEMO_FLAGS.flatMap((f) => [f.label, f.ask]),
+      ...DEMO_GRID.flatMap((r) => [r.label, ...r.vals]),
       ...DEMO_PACKAGES.flatMap((pk) => [pk.title, pk.covers, pk.why]),
       ...DEMO_RECEIPTS.lines.map((l) => l.label),
     );

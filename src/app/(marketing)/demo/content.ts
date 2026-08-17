@@ -2,25 +2,28 @@
  * The demo script — every word, number and beat of the guided
  * walkthrough, in one file.
  *
- * The rhythm is the one the homepage explainers taught: TEXT FIRST,
- * then the interface. Every stage opens with a full-screen statement
- * over the blurred surface, and inside a stage each explanation is
- * anchored to the exact element it describes. Nobody should ever have
- * to work out what they are looking at.
+ * VOICE. The person watching knows nothing about tendering, scopes,
+ * or BuilderHQ. Every line is written so that anyone can follow it:
+ * short sentences, everyday words, one idea at a time. Professional,
+ * never clever. If a sentence needs reading twice, it is wrong.
+ *
+ * The rhythm is text first, then the interface: each stage opens
+ * with a full-screen statement over the blurred surface, and inside a
+ * stage every explanation sits beside the exact element it explains.
  *
  * Beat kinds:
  *   intro — the big centred statement over the blurred surface
- *   note  — an anchored callout beside the element it explains
- *   click — an anchored callout asking for one real click
+ *   note  — a callout anchored beside the element it explains
+ *   click — a callout anchored beside the one control to click
  *   watch — a quiet bottom card while the surface performs
  *
  * TRUTH RULES. The three builders are the personas seeded into every
  * new account's example round, so the close can honestly promise a
- * worked example round LIKE this one; it never claims identity. All
- * figures are internally consistent (a test pins the arithmetic,
- * including the weighted scores) and marked illustrative. The reading
- * is compressed and the script says so. No em dashes in rendered
- * copy; Australian English.
+ * worked example round LIKE this one. All figures are internally
+ * consistent (a test pins the arithmetic, the weighted scores, and
+ * the decision grid) and marked illustrative. The reading is
+ * compressed and the script says so. No em dashes in rendered copy;
+ * Australian English.
  */
 
 /* ── the walkthrough shape ──────────────────────────────────────────── */
@@ -81,21 +84,6 @@ export const DEMO_TOTALS = {
   builderPriced: 24,
 };
 
-/** Who can tender — the choice made during upload. */
-export const DEMO_ROUND_CHOICES = [
-  {
-    id: "open",
-    label: "Open to verified builders",
-    sub: "Builders near you take the spots",
-  },
-  {
-    id: "invite",
-    label: "Invite your own",
-    sub: "Only builders you choose",
-  },
-  { id: "both", label: "Both", sub: "Your builders plus ours" },
-];
-
 /** The division opened during the scope stage. */
 export const DEMO_DIVISION = {
   label: "Footings and ground floor structure",
@@ -114,7 +102,6 @@ export const DEMO_DIVISION = {
   ],
 };
 
-/** The divisions listed around it, in build order. */
 export const DEMO_SCOPE_DIVISIONS = [
   { label: "Preliminaries and site establishment", count: 14 },
   { label: "Approvals, certification and compliance", count: 11 },
@@ -127,20 +114,20 @@ export const DEMO_SCOPE_DIVISIONS_AFTER = [
   { label: "Windows and external glazing", count: 6 },
   { label: "Electrical and data", count: 10 },
 ];
-export const DEMO_SCOPE_MORE = "22 more divisions, written the same way";
+export const DEMO_SCOPE_MORE = "22 more sections, all written the same way";
 
 /**
- * The provisional sum packages, each with the reasoning the product
- * itself gives: what homes of this type and budget usually allow.
- * Landscaping is the one the visitor sets; the other two arrive set,
- * so the pattern is visible without three identical clicks.
+ * The budgets for what is not decided yet, each with the reasoning
+ * the product itself gives. Landscaping is the one the visitor sets;
+ * the other two arrive set, so the pattern shows without three
+ * identical clicks.
  */
 export const DEMO_PACKAGES = [
   {
     id: "appliances",
     title: "Appliances",
     covers: "Ovens, cooktops, rangehoods and dishwashers.",
-    why: "Homes like this usually allow 1 to 2.5 percent of the budget.",
+    why: "Homes like this usually set aside 1 to 2.5 percent of the budget.",
     amount: 18_000,
     preset: true,
   },
@@ -148,7 +135,7 @@ export const DEMO_PACKAGES = [
     id: "flooring",
     title: "Floor coverings",
     covers: "Boards, carpet and laminate to the drawn areas.",
-    why: "Homes like this usually allow 2 to 3.5 percent of the budget.",
+    why: "Homes like this usually set aside 2 to 3.5 percent of the budget.",
     amount: 28_000,
     preset: true,
   },
@@ -156,7 +143,7 @@ export const DEMO_PACKAGES = [
     id: "landscaping",
     title: "Landscaping",
     covers: "Garden beds and planting · Turf and lawn areas · Irrigation",
-    why: "Single dwellings around $1.25m usually put 3 to 5 percent into the garden, so a figure is suggested for you.",
+    why: "Homes around $1.25m usually put 3 to 5 percent into the garden. We suggest $47,000.",
     amount: 47_000,
     preset: false,
   },
@@ -172,9 +159,9 @@ export const DEMO_BUILDERS = [
 export const DEMO_ASKS = [
   "Insurance",
   "Who runs the site",
-  "Defects period",
+  "Warranty and defects period",
   "Variations in writing",
-  "Programme and start date",
+  "Start date and build time",
   "References",
 ];
 
@@ -183,7 +170,7 @@ export const DEMO_ASKS = [
  * saving 685,000 − 648,000 = 37,000; Corten's own exposure 82,500;
  * 37,000 / 82,500 = 44.8%, spoken as 45. Brightwater step-up
  * 728,000 − 685,000 = 43,000. Each overall equals its weighted
- * dimension scores, rounded.
+ * dimension scores, rounded. The grid agrees with the tender data.
  */
 export const DEMO_DIMENSIONS = [
   { label: "Price firmness", weight: 25 },
@@ -204,7 +191,7 @@ export const DEMO_TENDERS = [
     firmPct: 87,
     movingAud: 82_500,
     landscaping: "Your $47,000",
-    driveway: "Excluded",
+    driveway: "Not included",
     fullyPriced: false,
   },
   {
@@ -241,10 +228,49 @@ export const DEMO_RECEIPTS = {
   lines: [
     { value: "+100", label: "every tender starts fully firm" },
     { value: "·", label: "no allowances of its own, held" },
-    { value: "·", label: "carries your stated packages, no deduction" },
+    { value: "·", label: "carries your stated budgets, no deduction" },
     { value: "−10", label: "capped rise and fall clause" },
   ],
 };
+
+/**
+ * The decision grid: the differences that matter, side by side.
+ * Values must agree with DEMO_TENDERS where they overlap; a test
+ * checks it.
+ */
+export const DEMO_GRID: Array<{
+  label: string;
+  vals: [string, string, string];
+  differs: boolean;
+}> = [
+  { label: "Price ex GST", vals: ["$648,000", "$685,000", "$728,000"], differs: true },
+  { label: "Every line priced", vals: ["No", "Yes", "Yes"], differs: true },
+  { label: "Driveway", vals: ["Not included", "Included", "Included"], differs: true },
+  { label: "Defects period", vals: ["12 months", "12 months", "24 months"], differs: true },
+  { label: "Dedicated site supervisor", vals: ["No", "No", "Yes"], differs: true },
+  { label: "Damages if handover is late", vals: ["No", "No", "Yes"], differs: true },
+  { label: "Your garden budget", vals: ["$47,000", "$47,000", "$47,000"], differs: false },
+];
+
+/** Anything risky gets a flag, and every flag comes with the
+ *  question to ask that builder. */
+export const DEMO_FLAGS = [
+  {
+    builder: "Corten Building Co",
+    label: "The driveway is not in the price",
+    ask: "Ask Corten what adding the driveway back would cost.",
+  },
+  {
+    builder: "Corten Building Co",
+    label: "$82,500 of the price can still change",
+    ask: "Ask Corten which of those figures they would lock in today.",
+  },
+  {
+    builder: "Brightwater Projects",
+    label: "The 24 month defects period is a promise",
+    ask: "Ask Brightwater to put the 24 months in the contract.",
+  },
+];
 
 export const DEMO_COMPARE = {
   saving: 37_000,
@@ -257,13 +283,6 @@ export const DEMO_COMPARE = {
     "Damages payable if handover runs late",
   ],
 };
-
-/** The questions the round writes for you, before you decide. */
-export const DEMO_QUESTIONS = [
-  "Ask Corten what adding the driveway back would cost.",
-  "Ask Corten which allowances they would fix if the documents were final.",
-  "Ask Brightwater whether the 24 month defects period is written into the contract.",
-];
 
 export const fmtAud = (n: number) => `$${n.toLocaleString("en-AU")}`;
 
@@ -279,37 +298,37 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         kind: "intro",
         kicker: "Part 1 · Upload",
         title: "It starts with your plans.",
-        line: "Upload what you already have. The answers come from there.",
+        line: "You upload them. We do the rest.",
       },
       {
         id: "u-add",
         kind: "click",
         target: "add-plans",
         title: "Add your plans",
-        line: "PDFs from your architect, exactly as they came.",
+        line: "The PDFs from your architect are all we need.",
         prompt: "Click Add your plans",
       },
       {
         id: "u-register",
         kind: "note",
         target: "register",
-        title: "Every file, recognised",
-        line: "Plans, engineering, the soil report. Each one is named the moment it lands, so you can see what your round will be priced from.",
+        title: "We know what each file is",
+        line: "Plans, engineering, reports. Everything is named and counted for you.",
       },
       {
         id: "u-round",
         kind: "click",
         target: "choose-open",
-        title: "Who can tender?",
-        line: "Open it to verified builders near you, invite builders you already trust, or both.",
+        title: "You choose who can quote",
+        line: "Open it up to builders near you, invite your own, or do both.",
         prompt: "Choose Open to verified builders",
       },
       {
         id: "u-send",
         kind: "click",
         target: "start-reading",
-        title: "That is all we need",
-        line: "From here, the platform does the work.",
+        title: "That is it from you",
+        line: "Now we take over.",
         prompt: "Click Start the reading",
       },
     ],
@@ -323,28 +342,28 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         kind: "intro",
         kicker: "Part 2 · The reading",
         title: "We read every page.",
-        line: "Not skimmed. Read.",
+        line: "All of them. Properly.",
       },
       {
         id: "r-watch",
         kind: "watch",
         watchMs: 5600,
-        title: "211 pages, line by line",
-        line: "Nothing is measured off the drawings and nothing is guessed. Every line taken from your documents cites the page it came from.",
+        title: "211 pages, one by one",
+        line: "Every line we write down says which page it came from. Nothing is made up.",
       },
       {
         id: "r-check",
         kind: "note",
         target: "human-check",
-        title: "Then a person checks it",
-        line: "Someone at BuilderHQ reviews the pack before it reaches you. It takes seconds in the demo; allow a little longer in real life.",
+        title: "How it works",
+        line: "Our software reads every page of your plans, writes out each item of work, and checks it. One business day, and your scope of works is ready.",
       },
       {
         id: "r-done",
         kind: "click",
         target: "open-scope",
-        title: "Ready",
-        line: "See what it wrote.",
+        title: "Done",
+        line: "Come and see what we wrote.",
         prompt: "Click Open your scope of works",
       },
     ],
@@ -358,44 +377,44 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         kind: "intro",
         kicker: "Part 3 · Your scope of works",
         title: "Your whole build, written down.",
-        line: "242 items in plain English. This is the one list every builder prices.",
+        line: "One list of everything. Every builder will price this same list.",
       },
       {
         id: "s-expand",
         kind: "click",
         target: "expand-division",
-        title: "Open a section",
-        line: "See what sits inside.",
+        title: "Look inside",
+        line: "Open a section and see the detail.",
         prompt: "Open Footings and ground floor structure",
       },
       {
         id: "s-cite",
         kind: "note",
         target: "division-lines",
-        title: "Every line shows its source",
-        line: "The slab is on page 6 of your engineering, so that is what the line says. If a line is ever wrong, you can check it against your own documents.",
+        title: "Every line shows where it came from",
+        line: "The slab is on page 6 of your engineering. The line says so. You can always check it yourself.",
       },
       {
         id: "s-allow",
         kind: "note",
         target: "packages",
-        title: "Where your documents stop",
-        line: "A few choices are not documented yet, so you set a budget for each. The suggestions come from what homes like yours usually allow.",
+        title: "Some things are not decided yet",
+        line: "Like the garden. So you set a budget for each one, and we suggest a fair number based on homes like yours.",
       },
       {
         id: "s-budget",
         kind: "click",
         target: "set-budget",
         title: "Set the garden budget",
-        line: "One figure for the whole package. Every builder carries the same number, so it never decides the comparison.",
+        line: "One number. Every builder uses it, so the quotes stay fair.",
         prompt: "Click Set budget",
       },
       {
         id: "s-publish",
         kind: "click",
         target: "publish",
-        title: "Nothing goes out without you",
-        line: "Builders see this only after you approve it.",
+        title: "You are in control",
+        line: "Builders see nothing until you approve it.",
         prompt: "Click Approve and publish",
       },
     ],
@@ -408,29 +427,29 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         id: "l-open",
         kind: "intro",
         kicker: "Part 4 · Going live",
-        title: "Now it goes to the builders.",
-        line: "Exactly as you approved it. Every builder prices this same scope, so the quotes can finally be compared.",
+        title: "Now the builders come in.",
+        line: "They all price your list. Not their own guesses.",
       },
       {
         id: "l-hidden",
         kind: "note",
         target: "builder-view",
-        title: "Your address stays hidden",
-        line: "Builders see the project, not the street. The address is shared only when a builder secures a spot.",
+        title: "Your address stays private",
+        line: "Builders see the project, not your street. They only get the address after they take a spot.",
       },
       {
         id: "l-fill",
         kind: "watch",
         watchMs: 4600,
-        title: "Verified builders take the spots",
-        line: "ABN checked against the Australian Business Register, building licence verified. You chose three spots for this round; that number is yours to set.",
+        title: "Only verified builders",
+        line: "We check their ABN and their building licence first. You picked three spots for this round, and that number is up to you.",
       },
       {
         id: "l-go",
         kind: "click",
         target: "see-tendering",
-        title: "The round is live",
-        line: "Here is what the builders do next.",
+        title: "Your round is live",
+        line: "Watch what the builders do.",
         prompt: "Click See what the builders do",
       },
     ],
@@ -443,36 +462,36 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         id: "t-open",
         kind: "intro",
         kicker: "Part 5 · The tenders",
-        title: "Same scope. Same questions.",
-        line: "Quotes usually arrive in different shapes, built on different assumptions. Not here.",
+        title: "Every builder answers the same questions.",
+        line: "So you can truly compare them.",
       },
       {
         id: "t-marks",
         kind: "note",
         target: "marking",
-        title: "Every line, answered",
-        line: "Each builder goes through your scope and declares what their price does with every item: included, an allowance, or excluded. Nothing stays vague.",
+        title: "Line by line",
+        line: "Each builder marks every item we identified, so nothing is left out. Included, excluded, or an allowance.",
       },
       {
         id: "t-asks",
         kind: "note",
         target: "asks",
-        title: "And the questions you would not think to ask",
-        line: "Insurance, who runs the site, the defects period, variations in writing, programme. Their answers go on the record with the price.",
+        title: "We ask everything for you",
+        line: "Insurance, who runs the site, warranty, timing, and plenty more. All the chasing you would normally do, done.",
       },
       {
         id: "t-land",
         kind: "watch",
         watchMs: 4400,
-        title: "Three tenders, one shape",
-        line: "Each arrives as a complete document, with the builder's profile and verification behind it.",
+        title: "Three quotes, one format",
+        line: "Each arrives as a full document, with the builder's profile and checks behind it.",
       },
       {
         id: "t-go",
         kind: "click",
         target: "open-comparison",
-        title: "Now the good part",
-        line: "This is what the whole platform exists for.",
+        title: "All in",
+        line: "Time to compare them.",
         prompt: "Click Open the comparison",
       },
     ],
@@ -486,66 +505,80 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         kind: "intro",
         kicker: "Part 6 · The comparison",
         title: "This is where it pays off.",
-        line: "Three prices for the same work, read properly.",
+        line: "Three quotes for the same work, side by side.",
       },
       {
         id: "c-prices",
         kind: "note",
         target: "price-row",
-        title: "Three prices you can trust to mean something",
-        line: "Corten $648,000. Meridian $685,000. Brightwater $728,000. Same scope, so the gaps are real differences, not different guesses.",
+        title: "The prices",
+        line: "$648,000. $685,000. $728,000. Same list of work, so the gaps are real.",
       },
       {
         id: "c-scores",
         kind: "click",
         target: "show-scores",
-        title: "Every tender is scored",
-        line: "Six things that matter, weighted the same way for everyone.",
+        title: "Every quote gets a score",
+        line: "Six things that matter, scored the same way for everyone.",
         prompt: "Click Show the scores",
       },
       {
         id: "c-receipts",
         kind: "note",
         target: "receipts",
-        title: "And every score shows its working",
-        line: "Open any score and you see exactly what earned it and what cost it. No verdicts from us, just the builder's own answers, added up.",
+        title: "Every score is explained",
+        line: "Open any score and see exactly how it was worked out.",
       },
       {
         id: "c-differ",
         kind: "click",
         target: "show-differences",
-        title: "Where they differ",
-        line: "The comparison reads every line of all three so you do not have to.",
+        title: "So where do they differ?",
+        line: "We read every line of all three quotes for you.",
         prompt: "Click Where they differ",
+      },
+      {
+        id: "c-grid",
+        kind: "note",
+        target: "grid",
+        title: "Side by side",
+        line: "The differences that matter, in one table. The highlighted rows are the ones to look at.",
       },
       {
         id: "c-moving",
         kind: "note",
         target: "breakeven",
-        title: "$82,500 of the cheapest price can still move",
-        line: "Corten left the driveway out and kept $82,500 in allowances of its own. If those run 45 percent over, the $37,000 saving is gone. That arithmetic is done for you.",
+        title: "Watch the cheapest quote",
+        line: "$82,500 of Corten's price can still change. If it grows 45 percent, your saving is gone. We did that maths for you.",
       },
       {
         id: "c-ladder",
         kind: "note",
         target: "ladder",
-        title: "What paying more buys",
-        line: "Brightwater's extra $43,000, itemised. Worth it or not, at least you can see it.",
+        title: "What more money buys",
+        line: "Brightwater costs $43,000 more than Meridian. Here is exactly what you get for it.",
+      },
+      {
+        id: "c-flags",
+        kind: "click",
+        target: "show-flags",
+        title: "Anything risky gets flagged",
+        line: "Nothing hides in the fine print.",
+        prompt: "Click Show the flags",
       },
       {
         id: "c-questions",
-        kind: "click",
-        target: "show-questions",
-        title: "It even writes your questions",
-        line: "Before you decide, you get the exact questions worth putting to each builder.",
-        prompt: "Click Questions to ask",
+        kind: "note",
+        target: "flags",
+        title: "And we write your questions",
+        line: "Every flag comes with the exact question to ask that builder. Ready to send.",
       },
       {
         id: "c-finish",
         kind: "click",
         target: "finish",
-        title: "Your decision, with everything in view",
-        line: "Nothing here is a verdict. Every figure traces back to the tenders themselves, so whichever builder you choose, you can defend the choice.",
+        title: "Your decision, made clear",
+        line: "We never pick for you. We just make sure you see everything.",
         prompt: "Click Finish the round",
       },
     ],
@@ -563,12 +596,12 @@ export const DEMO_CLOSE = {
   kicker: "That is the whole of it",
   title: "You just ran a tender round.",
   recap: [
-    "Your documents became a 242 item scope of works, every documented line citing its page",
-    "Three verified builders priced the same list",
-    "The comparison showed you what each price covers",
+    "Your plans became a full scope of works",
+    "Builders priced the same list. Invite your own, or open it to verified builders near you",
+    "You saw exactly what each quote covers",
   ],
   truth:
-    "When you sign up, a worked example round like this one is waiting in your account, three tenders and all, so you can explore everything again before you upload a single document.",
+    "Sign up and we will walk you through your first project, start to finish. Your plans are all you need.",
   primary: { label: "Start your project", href: "/signup?role=owner" },
   secondary: { label: "Back to home", href: "/" },
 };
