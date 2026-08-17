@@ -109,7 +109,7 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
               <span className="text-[12px] leading-[1.45] text-text-dim text-center lg:text-left">
                 In association with the Housing Industry Association
                 <br />
-                and Master Builders Victoria
+                and Master Builders Australia
               </span>
             </div>
           </div>

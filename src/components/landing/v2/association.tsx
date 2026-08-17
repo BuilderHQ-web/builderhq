@@ -35,11 +35,11 @@ export const ASSOCIATIONS: Association[] = [
     height: 468,
   },
   {
-    name: "Master Builders Victoria",
-    blurb: "Victoria’s peak body for building and construction",
+    name: "Master Builders Australia",
+    blurb: "The national voice of the building and construction industry",
     src: "/Homepage_logos/mba-badge.png",
-    width: 461,
-    height: 233,
+    width: 520,
+    height: 262,
     wide: true,
   },
 ];
@@ -71,7 +71,7 @@ export function AssociationStrip({ className }: { className?: string }) {
             height={a.height}
             className={cn(
               "w-auto shrink-0",
-              a.wide ? "h-[21px] sm:h-[25px]" : "h-[26px] sm:h-[30px]",
+              a.wide ? "h-[24px] sm:h-[28px]" : "h-[30px] sm:h-[34px]",
             )}
           />
         ))}
