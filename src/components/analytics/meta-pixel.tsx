@@ -143,6 +143,20 @@ fbq('track', 'PageView');`}
  * categories and values, and an email or an address in a parameter
  * would be a disclosure the privacy policy does not cover.
  */
+/**
+ * Send an event of our own naming (Meta "custom event"). Campaigns can
+ * optimise on these once volume exists; until then they are still
+ * audience signals. Same guarantees as trackMetaEvent: a no-op when
+ * the pixel is absent, never throws.
+ */
+export function trackMetaCustomEvent(
+  event: string,
+  params?: Record<string, unknown>,
+): void {
+  if (typeof window === "undefined") return;
+  window.fbq?.("trackCustom", event, params);
+}
+
 export function trackMetaEvent(
   event: string,
   params?: Record<string, unknown>,

@@ -143,7 +143,7 @@ export const LENS: Record<Role, LensCopy> = {
       sub: "Upload your plans. We read every line and write out the full scope of works.",
       subMore: "Every builder prices that same scope, so you can see what sits behind each number.",
       primary: { label: "Start your project", href: "/signup?role=owner" },
-      secondary: { label: "See how it works", href: "#how" },
+      secondary: { label: "Watch the demo", href: "/demo" },
       facts: ["Free for homeowners", "You approve the scope", "Verified builders only"],
     },
     problem: {
