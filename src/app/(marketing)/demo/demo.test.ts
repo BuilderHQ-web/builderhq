@@ -16,10 +16,15 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  DEMO_ASKS,
   DEMO_CLOSE,
   DEMO_COMPARE,
+  DEMO_DIMENSIONS,
   DEMO_DISCLAIMER,
   DEMO_DOCUMENTS,
+  DEMO_PACKAGES,
+  DEMO_QUESTIONS,
+  DEMO_RECEIPTS,
   DEMO_TENDERS,
   DEMO_TOTALS,
   HOMEOWNER_SCRIPT,
@@ -60,6 +65,29 @@ describe("demo arithmetic", () => {
       expect(t.firmPct === 100).toBe(t.fullyPriced);
     }
   });
+
+  test("each overall score is its weighted dimensions, rounded", () => {
+    expect(DEMO_DIMENSIONS.reduce((n, d) => n + d.weight, 0)).toBe(100);
+    for (const t of DEMO_TENDERS) {
+      const weighted = DEMO_DIMENSIONS.reduce(
+        (n, d, i) => n + d.weight * t.dims[i]!,
+        0,
+      );
+      expect(Math.round(weighted / 100), t.name).toBe(t.overall);
+    }
+  });
+
+  test("the opened receipt sums to its score", () => {
+    const sum = DEMO_RECEIPTS.lines.reduce((n, l) => {
+      const v = parseInt(l.value.replace("−", "-"), 10);
+      return n + (Number.isFinite(v) ? v : 0);
+    }, 0);
+    expect(sum).toBe(DEMO_RECEIPTS.score);
+    // And it matches the same builder's firmness dimension.
+    const meridian = DEMO_TENDERS.find((t) => t.name === DEMO_RECEIPTS.builder)!;
+    const dimIdx = DEMO_DIMENSIONS.findIndex((d) => d.label === DEMO_RECEIPTS.dimension);
+    expect(meridian.dims[dimIdx]).toBe(DEMO_RECEIPTS.score);
+  });
 });
 
 describe("demo copy rules", () => {
@@ -78,7 +106,14 @@ describe("demo copy rules", () => {
       ...DEMO_CLOSE.recap,
       DEMO_DISCLAIMER,
       ...DEMO_COMPARE.stepUpBuys,
+      ...DEMO_ASKS,
+      ...DEMO_QUESTIONS,
+      ...DEMO_PACKAGES.flatMap((pk) => [pk.title, pk.covers, pk.why]),
+      ...DEMO_RECEIPTS.lines.map((l) => l.label),
     );
+    for (const stage of HOMEOWNER_SCRIPT) {
+      for (const st of stage.steps) if (st.kicker) out.push(st.kicker);
+    }
     return out;
   };
 
@@ -106,7 +141,15 @@ describe("demo copy rules", () => {
 
   test("the walkthrough stays inside the attention budget", () => {
     const steps = HOMEOWNER_SCRIPT.reduce((n, s) => n + s.steps.length, 0);
-    expect(steps).toBeLessThanOrEqual(26);
-    expect(steps).toBeGreaterThanOrEqual(15);
+    expect(steps).toBeLessThanOrEqual(38);
+    expect(steps).toBeGreaterThanOrEqual(20);
+  });
+
+  test("every stage except the close opens with text", () => {
+    for (const stage of HOMEOWNER_SCRIPT) {
+      if (stage.id === "close") continue;
+      expect(stage.steps[0]!.kind, stage.id).toBe("intro");
+      expect(stage.steps[0]!.kicker, stage.id).toBeTruthy();
+    }
   });
 });
