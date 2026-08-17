@@ -612,15 +612,23 @@ const SECTIONS = [
           aggregate and does not use cookies to follow you between websites.
         </P>
         <P>
-          <Strong>Advertising measurement.</Strong> We advertise, and on a small
-          number of marketing pages, chiefly the confirmation page shown after
-          you request a guide or book a call, we load Google’s tag so that
-          Google Ads and Google Analytics can record that the enquiry happened.
-          Google sets its own cookies through that tag and may use the
-          information for advertising measurement. These tags are not present in
-          the signed in application, and they never receive your project
-          documents or your account data. You can control this through your
-          browser settings and through your Google ad settings.
+          <Strong>Advertising measurement.</Strong> We advertise, and we measure
+          whether that advertising works. On a small number of marketing pages,
+          chiefly the confirmation page shown after you request a guide or book
+          a call, we load Google’s tag so that Google Ads and Google
+          Analytics can record that the enquiry happened. On our public pages
+          and on the sign in and sign up pages we load the Meta pixel, so that
+          advertising we run on Facebook and Instagram can be measured the same
+          way. Both companies set their own cookies through those tags and may
+          use the information for advertising measurement.
+        </P>
+        <P>
+          Neither tag is present in the signed in application. Once you are
+          inside your account, nothing about the projects you open, the
+          documents you upload, or the tenders you receive is sent to an
+          advertising network. You can control this through your browser
+          settings, through your Google ad settings, and through your Meta ad
+          preferences.
         </P>
         <P>
           We do not sell audience data to advertisers or to data brokers.

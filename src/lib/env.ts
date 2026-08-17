@@ -201,6 +201,16 @@ const clientSchema = z.object({
    *  /auth/magic success page fires the conversion event. */
   NEXT_PUBLIC_GOOGLE_ADS_ID: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: z.string().optional(),
+  /**
+   * Meta (Facebook) Pixel id. When set, the base pixel loads on the
+   * marketing and auth surfaces and sends PageView. Deliberately
+   * UNSET in development and on previews, so test browsing never
+   * reaches the live ad account. Set it in Vercel's Production scope
+   * only. It is never mounted inside the signed-in application: the
+   * privacy policy states that advertising tags are not present
+   * there, and project URLs would otherwise reach Meta.
+   */
+  NEXT_PUBLIC_META_PIXEL_ID: z.string().optional(),
   /** Cal.com booking link in `username/event-slug` form (e.g.
    *  "builderhq/builderhq-free-15-min-call"). Embedded on
    *  /book-a-call/confirmed. When unset, the page falls back to a
@@ -236,6 +246,7 @@ function loadEnv() {
         NEXT_PUBLIC_GOOGLE_ADS_ID: process.env.NEXT_PUBLIC_GOOGLE_ADS_ID,
         NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
         NEXT_PUBLIC_CAL_LINK: process.env.NEXT_PUBLIC_CAL_LINK,
+        NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
       }) as z.infer<typeof serverSchema> & z.infer<typeof clientSchema>);
 
   return merged;

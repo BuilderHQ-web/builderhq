@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { JsonLd } from "@/components/seo/json-ld";
+import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { siteGraph } from "@/lib/seo";
 
 /**
@@ -11,6 +12,12 @@ import { siteGraph } from "@/lib/seo";
  * generative engines. Individual pages add their own page-specific
  * schema (partner, collection, FAQ, article) on top.
  *
+ * Also mounts the Meta Pixel. Marketing and auth are the only two
+ * surfaces that carry it: they are where advertising traffic lands and
+ * where an account is created, and they hold nothing private. It is
+ * deliberately absent from the signed-in application, which is what the
+ * privacy policy tells visitors.
+ *
  * Otherwise a pass-through: marketing pages compose their own nav +
  * footer via MarketingPageShell / the landing composition.
  */
@@ -18,6 +25,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   return (
     <>
       <JsonLd data={siteGraph()} />
+      <MetaPixel />
       {children}
     </>
   );

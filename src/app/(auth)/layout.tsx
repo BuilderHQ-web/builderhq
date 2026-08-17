@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 
 import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
+import { MetaPixel } from "@/components/analytics/meta-pixel";
 
 /**
  * Auth shell — same atmospheric recipe as the landing.
@@ -36,6 +37,10 @@ export default function AuthLayout({
 }) {
   return (
     <div className="relative h-dvh overflow-hidden bg-[#f4f1ea] antialiased">
+      {/* Signing up is the conversion advertising pays for, so the pixel
+          reaches this surface too. It stops here: everything past the
+          form is the signed-in application, which carries no ad tags. */}
+      <MetaPixel />
       <AuthAmbient />
       <FibreCanvas />
       <GridOverlay />
