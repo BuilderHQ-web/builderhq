@@ -531,12 +531,13 @@ export function DemoExperience() {
             key={step.id}
             ref={cardRef}
             tabIndex={-1}
+            data-quiet-focus
             role="group"
             aria-label={`${step.title}. ${step.line}`}
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: EASE }}
-            className="outline-none max-w-[640px] w-full text-center"
+            className="outline-none select-none max-w-[640px] w-full text-center"
           >
             <p className="text-[10.5px] tracking-[0.32em] uppercase text-accent-light font-ui font-bold">
               {step.kicker}
@@ -577,6 +578,7 @@ export function DemoExperience() {
           key={step.id}
           ref={cardRef}
           tabIndex={-1}
+          data-quiet-focus
           role="group"
           aria-label={`${step.title}. ${step.line}`}
           initial={reduceMotion ? false : { opacity: 0, y: anchor.placement === "below" ? 10 : -10 }}
@@ -615,6 +617,7 @@ export function DemoExperience() {
             key={step.id}
             ref={step.kind === "watch" || !desktop ? cardRef : undefined}
             tabIndex={-1}
+            data-quiet-focus
             role="group"
             aria-label={`${step.title}. ${step.line}`}
             initial={reduceMotion ? false : { opacity: 0, y: 16 }}

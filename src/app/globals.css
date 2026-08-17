@@ -344,7 +344,10 @@ html.lenis body {
   text-shadow: none;
 }
 
-:focus-visible {
+/* The ring is for interactive controls. Containers that take focus
+   programmatically as screen-reader anchors (the demo's guide cards)
+   opt out with data-quiet-focus, keeping their own elevation. */
+:focus-visible:not([data-quiet-focus]) {
   outline: none;
   box-shadow:
     0 0 0 1px var(--color-bg),
