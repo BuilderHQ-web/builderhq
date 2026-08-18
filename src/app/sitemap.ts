@@ -39,6 +39,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
     },
     { url: `${SITE}/demo`, priority: 0.9, changeFrequency: "monthly" },
+    { url: `${SITE}/demo/architect`, priority: 0.9, changeFrequency: "monthly" },
     { url: `${SITE}/build-brief`, priority: 0.9, changeFrequency: "weekly" },
     { url: `${SITE}/about`, priority: 0.6, changeFrequency: "monthly" },
     { url: `${SITE}/faq`, priority: 0.6, changeFrequency: "monthly" },

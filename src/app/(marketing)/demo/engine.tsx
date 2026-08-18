@@ -36,44 +36,26 @@ import {
   trackMetaCustomEvent,
   trackMetaEvent,
 } from "@/components/analytics/meta-pixel";
-import {
-  DEMO_CLOSE,
-  DEMO_DISCLAIMER,
-  HOMEOWNER_SCRIPT,
-  type DemoStage,
-  type DemoStep,
-} from "./content";
-import {
-  CloseSurface,
-  CompareSurface,
-  ReadingSurface,
-  RoundSurface,
-  ScopeSurface,
-  TenderSurface,
-  UploadSurface,
-  type SurfaceProps,
-} from "./surfaces";
+import { type DemoStage, type DemoStep } from "./content";
+import { CloseSurface, type CloseCopy, type SurfaceProps } from "./ui";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const SURFACES: Record<string, React.ComponentType<SurfaceProps>> = {
-  upload: UploadSurface,
-  reading: ReadingSurface,
-  scope: ScopeSurface,
-  live: RoundSurface,
-  tenders: TenderSurface,
-  compare: CompareSurface,
-};
-
-const CRUMBS: Record<string, string> = {
-  upload: "New project",
-  reading: "Reading your documents",
-  scope: "Scope of works",
-  live: "Your round",
-  tenders: "Tenders",
-  compare: "The comparison",
-  close: "Done",
-};
+/**
+ * One walkthrough, fully described: the engine runs whichever script
+ * it is handed, so the homeowner and architect demos are two configs
+ * on one runtime rather than two runtimes.
+ */
+export interface DemoConfig {
+  /** Analytics identity: "homeowner", "architect". */
+  id: string;
+  script: DemoStage[];
+  /** Breadcrumb text per stage id. */
+  crumbs: Record<string, string>;
+  surfaces: Record<string, React.ComponentType<SurfaceProps>>;
+  close: CloseCopy;
+  disclaimer: string;
+}
 
 /* ── anchored positioning ───────────────────────────────────────────── */
 
@@ -211,10 +193,10 @@ function useDesktop(): boolean {
 
 /* ── the experience ─────────────────────────────────────────────────── */
 
-export function DemoExperience() {
+export function DemoExperience({ config }: { config: DemoConfig }) {
   const reduceMotion = !!useReducedMotion();
   const desktop = useDesktop();
-  const script = HOMEOWNER_SCRIPT;
+  const { script } = config;
 
   const [pos, setPos] = useState({ stage: 0, step: 0 });
   const stage: DemoStage = script[pos.stage]!;
@@ -333,12 +315,36 @@ export function DemoExperience() {
     window.scrollTo(0, 0);
   }, [stage.id]);
 
+  /* ── phones have no anchored callout to drive the scroll, so the
+        bottom sheet must never narrate an element that is off screen:
+        each anchored beat brings its element into view itself. ─────── */
+  useEffect(() => {
+    if (desktop) return;
+    const target =
+      step && (step.kind === "note" || step.kind === "click")
+        ? (step.target ?? null)
+        : null;
+    if (!target) return;
+    const t = setTimeout(() => {
+      document
+        .querySelector(`[data-demo-target="${target}"]`)
+        ?.scrollIntoView({
+          behavior: reduceMotion ? "auto" : "smooth",
+          block: "center",
+        });
+    }, 160);
+    return () => clearTimeout(t);
+  }, [step, desktop, reduceMotion]);
+
   /* ── measurement ─────────────────────────────────────────────────── */
 
   useEffect(() => {
-    track("demo_opened", { script: "homeowner" });
-    trackMetaEvent("ViewContent", { content_name: "product_demo" });
-  }, []);
+    track("demo_opened", { script: config.id });
+    trackMetaEvent("ViewContent", {
+      content_name: "product_demo",
+      content_category: config.id,
+    });
+  }, [config.id]);
 
   const seenStages = useRef(new Set<string>());
   useEffect(() => {
@@ -353,13 +359,16 @@ export function DemoExperience() {
         (st) => st.id === "close" || seenStages.current.has(st.id),
       );
       if (walked) {
-        track("demo_completed", {});
-        trackMetaCustomEvent("DemoCompleted", { content_name: "product_demo" });
+        track("demo_completed", { script: config.id });
+        trackMetaCustomEvent("DemoCompleted", {
+          content_name: "product_demo",
+          content_category: config.id,
+        });
       } else {
-        track("demo_skipped_to_end", {});
+        track("demo_skipped_to_end", { script: config.id });
       }
     }
-  }, [stage.id, script]);
+  }, [stage.id, script, config.id]);
 
   const onSignupClick = useCallback(() => {
     track("demo_signup_click", {});
@@ -385,7 +394,7 @@ export function DemoExperience() {
 
   /* ── render ──────────────────────────────────────────────────────── */
 
-  const Surface = SURFACES[stage.id];
+  const Surface = config.surfaces[stage.id];
   const stageNo = pos.stage + 1;
   const atStart = pos.stage === 0 && pos.step === 0;
 
@@ -490,7 +499,7 @@ export function DemoExperience() {
               Demo
             </span>
             <span className="hidden md:block text-[12px] text-text-dim truncate">
-              / {CRUMBS[stage.id]}
+              / {config.crumbs[stage.id]}
             </span>
           </div>
 
@@ -564,8 +573,8 @@ export function DemoExperience() {
               <CloseSurface
                 reduceMotion={reduceMotion}
                 onPrimary={onSignupClick}
-                close={DEMO_CLOSE}
-                disclaimer={DEMO_DISCLAIMER}
+                close={config.close}
+                disclaimer={config.disclaimer}
               />
             ) : Surface ? (
               <Surface

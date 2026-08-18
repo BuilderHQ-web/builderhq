@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * The homeowner demo's surfaces — the product, recreated on its own
- * design tokens.
+ * The architect demo's surfaces — the product as an architect meets
+ * it, recreated on the design tokens and driven by the step index,
+ * so stepping back rewinds the world for free.
  *
- * Deliberately NOT the real app components: the real screens are
- * auth-gated, database-backed, and cannot time-travel, and a demo
- * must show upload, analysis, review, live, tendering and comparison
- * inside four minutes. Each surface is a faithful, scripted
- * recreation, driven entirely by the step index the engine passes
- * down, so stepping BACK rewinds the world for free.
+ * Three blocks exist only here, because they are the architect's
+ * reasons to care: the invitation panel (their builders, our pool),
+ * the RFI card (asked once, answered once, issued as an addendum),
+ * and the recommendation export (the client deliverable, under the
+ * practice's name).
  *
- * Elements the walkthrough talks about carry data-demo-target ids:
- * the engine anchors its callouts to them and rings the active one.
+ * Every heading is followed by one plain line saying what the screen
+ * shows. The reader should never have to work out where they are.
  */
 
 import * as React from "react";
@@ -24,10 +24,12 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  Download,
   FileText,
   FileUp,
   Flag,
   Lock,
+  Mail,
   MessageCircleQuestion,
   ScanLine,
   ShieldCheck,
@@ -44,50 +46,86 @@ import {
   TealButton,
   useCountUp,
   type SurfaceProps,
-} from "./ui";
+} from "../ui";
 import {
-  DEMO_ASKS,
-  DEMO_BUILDERS,
   DEMO_COMPARE,
   DEMO_DIMENSIONS,
-  DEMO_DIVISION,
-  DEMO_DOCUMENTS,
-  DEMO_PACKAGES,
-  DEMO_PROJECT,
   DEMO_FLAGS,
   DEMO_GRID,
   DEMO_RECEIPTS,
-  DEMO_SCOPE_DIVISIONS,
-  DEMO_SCOPE_DIVISIONS_AFTER,
-  DEMO_SCOPE_MORE,
   DEMO_TENDERS,
-  DEMO_TOTALS,
   fmtAud,
+} from "../content";
+import {
+  ARCH_ASKS,
+  ARCH_DIVISION,
+  ARCH_DOCUMENTS,
+  ARCH_MARK_ROWS,
+  ARCH_PACKAGES,
+  ARCH_PROJECT,
+  ARCH_READING_FEED,
+  ARCH_REPORT,
+  ARCH_RFI,
+  ARCH_ROUND,
+  ARCH_SCOPE_DIVISIONS,
+  ARCH_SCOPE_DIVISIONS_AFTER,
+  ARCH_SCOPE_MORE,
+  ARCH_TOTALS,
 } from "./content";
 
-export { type SurfaceProps } from "./ui";
+/** The consistent screen header: where you are, what this is, what
+ *  you are looking at. One shape on every surface. */
+function Head({
+  kicker,
+  title,
+  sub,
+  right,
+}: {
+  kicker: string;
+  title: string;
+  sub?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <div className="min-w-0">
+        <Kicker>{kicker}</Kicker>
+        <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
+          {title}
+        </h2>
+        {sub ? (
+          <p className="mt-2 text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
+            {sub}
+          </p>
+        ) : null}
+      </div>
+      {right}
+    </div>
+  );
+}
 
 /* ── 1 · upload ─────────────────────────────────────────────────────── */
 
-export function UploadSurface({
+export function ArchUploadSurface({
   stepIdx,
   spot,
   soft,
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 add-set · 2 register · 3 choose-both ·
+  //        4 invites · 5 start-reading
   const filed = stepIdx >= 2;
-  const roundOffered = stepIdx >= 3;
-  const roundChosen = stepIdx >= 4;
+  const choiceOffered = stepIdx >= 3;
+  const chosen = stepIdx >= 4;
+  const ready = stepIdx >= 5;
   return (
     <div>
-      <Kicker>New project</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Upload your plans
-      </h2>
-      <p className="mt-2.5 text-[13.5px] leading-[1.7] text-text-muted max-w-[62ch]">
-        Drop in what you have. PDFs from your architect are perfect.
-      </p>
+      <Head
+        kicker={`New tender · ${ARCH_PROJECT.client}`}
+        title="Upload your documentation"
+        sub="The set you already have, exactly as you would issue it for tender."
+      />
 
       {!filed ? (
         <Card className="mt-6 border-dashed border-border-strong bg-transparent">
@@ -96,14 +134,14 @@ export function UploadSurface({
               <FileUp className="size-5" />
             </span>
             <p className="mt-4 text-[14px] font-ui font-medium text-text">
-              Drag your documents here
+              Drag your set here
             </p>
             <p className="mt-1 text-[12.5px] text-text-dim">
-              Plans, engineering, reports. PDF, up to 30 files.
+              Drawings, schedules, reports. PDF, up to 30 files.
             </p>
-            <Spot id="add-plans" active={spot === "add-plans"} reduceMotion={reduceMotion} className="mt-6">
-              <TealButton onClick={() => onAction("add-plans")}>
-                Add your plans
+            <Spot id="add-set" active={spot === "add-set"} reduceMotion={reduceMotion} className="mt-6">
+              <TealButton onClick={() => onAction("add-set")}>
+                Add your documentation
                 <FileUp className="size-4" />
               </TealButton>
             </Spot>
@@ -117,19 +155,19 @@ export function UploadSurface({
           >
             <div className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center justify-between">
               <p className="text-[12.5px] font-ui font-semibold text-text">
-                {DEMO_PROJECT.title}
+                {ARCH_PROJECT.title}
               </p>
               <p className="text-[11.5px] text-text-dim tabular-nums">
-                {DEMO_TOTALS.documents} documents · {DEMO_TOTALS.pages} pages
+                {ARCH_TOTALS.documents} documents · {ARCH_TOTALS.pages} pages
               </p>
             </div>
             <ul className="divide-y divide-border-subtle/50">
-              {DEMO_DOCUMENTS.map((d, i) => (
+              {ARCH_DOCUMENTS.map((d, i) => (
                 <motion.li
                   key={d.name}
                   initial={reduceMotion ? false : { opacity: 0, x: -14 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: reduceMotion ? 0 : i * 0.07, ease: EASE }}
+                  transition={{ duration: 0.3, delay: reduceMotion ? 0 : i * 0.06, ease: EASE }}
                   className="px-5 py-2.5 flex items-center gap-3"
                 >
                   <FileText className="size-4 text-text-dim shrink-0" />
@@ -139,7 +177,7 @@ export function UploadSurface({
                   <motion.span
                     initial={reduceMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: reduceMotion ? 0 : 0.7 + i * 0.07 }}
+                    transition={{ delay: reduceMotion ? 0 : 0.6 + i * 0.06 }}
                     className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[10.5px] font-ui font-semibold"
                   >
                     {d.kind}
@@ -152,7 +190,7 @@ export function UploadSurface({
             </ul>
           </Card>
 
-          {roundOffered ? (
+          {choiceOffered ? (
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,21 +199,15 @@ export function UploadSurface({
               <Card className="mt-4 px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <Kicker>Who can tender</Kicker>
-                  {roundChosen ? (
+                  {chosen ? (
                     <span className="inline-flex items-center gap-1.5 text-[11.5px] font-ui font-semibold text-accent-light">
                       <Check className="size-3.5" />
-                      Open round · 3 spots
+                      Hybrid round · 3 spots
                     </span>
                   ) : null}
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   {[
-                    {
-                      id: "choose-open",
-                      label: "Open to verified builders",
-                      sub: "Builders near you take the spots",
-                      pick: true,
-                    },
                     {
                       id: "choose-invite",
                       label: "Invite your own",
@@ -183,20 +215,26 @@ export function UploadSurface({
                       pick: false,
                     },
                     {
-                      id: "choose-both",
-                      label: "Both",
-                      sub: "Your builders plus ours",
+                      id: "choose-open",
+                      label: "Open to verified builders",
+                      sub: "Builders near the site take the spots",
                       pick: false,
                     },
+                    {
+                      id: "choose-both",
+                      label: "Your builders plus ours",
+                      sub: "Invite yours, we fill the rest",
+                      pick: true,
+                    },
                   ].map((o) => {
-                    const selected = roundChosen && o.pick;
+                    const selected = chosen && o.pick;
                     const btn = (
                       <button
                         type="button"
-                        onClick={() => o.pick && onAction("choose-open")}
+                        onClick={() => o.pick && onAction("choose-both")}
                         aria-disabled={!o.pick}
                         className={cn(
-                          "w-full text-left rounded-md border px-3.5 py-3 transition-colors",
+                          "w-full h-full text-left rounded-md border px-3.5 py-3 transition-colors",
                           selected
                             ? "border-border-accent bg-[rgba(0,212,200,0.05)]"
                             : o.pick
@@ -215,7 +253,8 @@ export function UploadSurface({
                     return o.pick ? (
                       <Spot
                         key={o.id}
-                        id="choose-open" active={spot === "choose-open"}
+                        id="choose-both"
+                        active={spot === "choose-both"}
                         reduceMotion={reduceMotion}
                         className="w-full"
                       >
@@ -230,7 +269,61 @@ export function UploadSurface({
             </motion.div>
           ) : null}
 
-          {roundChosen ? (
+          {chosen ? (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+            >
+              <Card
+                target="invites"
+                className={cn("mt-4 px-5 py-4", softRing(soft === "invites"))}
+              >
+                <Kicker>Your invitations</Kicker>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {ARCH_ROUND.map((b) => (
+                    <li
+                      key={b.name}
+                      className={cn(
+                        "rounded-md border px-3.5 py-3",
+                        b.invited
+                          ? "border-border-subtle"
+                          : "border-dashed border-border-subtle",
+                      )}
+                    >
+                      {b.invited ? (
+                        <>
+                          <span className="flex items-center gap-2">
+                            <span className="size-6 rounded-full bg-accent-muted flex items-center justify-center text-[9.5px] font-ui font-bold text-accent-light">
+                              {b.initials}
+                            </span>
+                            <span className="text-[12.5px] font-ui font-medium text-text truncate">
+                              {b.name}
+                            </span>
+                          </span>
+                          <span className="mt-1.5 inline-flex items-center gap-1 text-[10.5px] text-accent-light font-ui font-semibold">
+                            <Mail className="size-3" />
+                            Invitation sent
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[12.5px] text-text-muted">
+                            1 open spot
+                          </span>
+                          <span className="mt-1.5 block text-[10.5px] text-text-dim">
+                            A verified builder near the site takes it
+                          </span>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </motion.div>
+          ) : null}
+
+          {ready ? (
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -238,7 +331,7 @@ export function UploadSurface({
               className="mt-5 flex items-center justify-between gap-4"
             >
               <p className="text-[12px] text-text-muted max-w-[46ch]">
-                This exact set is what your quotes will be based on.
+                This exact set is what every builder prices.
               </p>
               <Spot id="start-reading" active={spot === "start-reading"} reduceMotion={reduceMotion}>
                 <TealButton onClick={() => onAction("start-reading")}>
@@ -256,51 +349,49 @@ export function UploadSurface({
 
 /* ── 2 · the reading ────────────────────────────────────────────────── */
 
-const READING_FEED = [
-  { line: "Waffle pod slab, 300mm pods with 85mm slab", cite: "Structural, page 6" },
-  { line: "Colorbond roofing in Monument", cite: "Architectural, page 12" },
-  { line: "Class H1 site, priced to the soil report", cite: "Soil report, page 4" },
-  { line: "7.1 star thermal performance", cite: "Energy assessment, page 3" },
-  { line: "No landscaping documented. Flagged for you.", cite: "Whole set" },
-];
-
-export function ReadingSurface({
+export function ArchReadingSurface({
   stepIdx,
   spot,
   soft,
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 watch · 2 human-check · 3 open-scope
   const watching = stepIdx === 1;
   const settled = stepIdx >= 2;
-  const pages = useCountUp(DEMO_TOTALS.pages, watching, settled, 4600, reduceMotion);
-  const items = useCountUp(DEMO_TOTALS.items, watching, settled, 5000, reduceMotion);
-  const cites = useCountUp(486, watching, settled, 5200, reduceMotion);
+  const pages = useCountUp(ARCH_TOTALS.pages, watching, settled, 4600, reduceMotion);
+  const items = useCountUp(ARCH_TOTALS.items, watching, settled, 5000, reduceMotion);
+  const cites = useCountUp(ARCH_TOTALS.citations, watching, settled, 5200, reduceMotion);
 
   const [feedIdx, setFeedIdx] = useState(0);
   useEffect(() => {
     if (!watching || reduceMotion) return;
     const t = setInterval(
-      () => setFeedIdx((i) => (i + 1) % READING_FEED.length),
+      () => setFeedIdx((i) => (i + 1) % ARCH_READING_FEED.length),
       1150,
     );
     return () => clearInterval(t);
   }, [watching, reduceMotion]);
-  const feed = READING_FEED[settled ? READING_FEED.length - 1 : feedIdx]!;
+  const feed = ARCH_READING_FEED[settled ? ARCH_READING_FEED.length - 1 : feedIdx]!;
 
   const stages: Array<{ label: string; done: boolean; active: boolean; human?: boolean }> = [
     { label: "Identify the documents", done: true, active: false },
-    { label: "Read every page", done: settled || pages >= DEMO_TOTALS.pages, active: watching },
+    { label: "Read every page", done: settled || pages >= ARCH_TOTALS.pages, active: watching },
     { label: "Write the scope of works", done: settled, active: watching && pages > 100 },
-    { label: "Check every item before you see it", done: settled, active: false, human: true },
+    { label: "Check every item before it reaches you", done: settled, active: false, human: true },
   ];
 
   return (
     <div>
-      <Kicker>Reading your documents</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        {settled ? "Your pack is ready." : "Reading, page by page."}
-      </h2>
+      <Head
+        kicker="Reading your set"
+        title={settled ? "The scope is drafted." : "Reading, page by page."}
+        sub={
+          settled
+            ? "Every item traced to its page, checked, and ready for your review."
+            : "Each line we write records the page it came from."
+        }
+      />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="px-6 py-6">
@@ -395,7 +486,7 @@ export function ReadingSurface({
         >
           <Spot id="open-scope" active={spot === "open-scope"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("open-scope")}>
-              Open your scope of works
+              Review the scope of works
               <ArrowRight className="size-4" />
             </TealButton>
           </Spot>
@@ -407,49 +498,50 @@ export function ReadingSurface({
 
 /* ── 3 · the scope of works ─────────────────────────────────────────── */
 
-export function ScopeSurface({
+export function ArchScopeSurface({
   stepIdx,
   spot,
   soft,
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 expand · 2 cite · 3 packages · 4 set-budget ·
+  //        5 publish
   const expanded = stepIdx >= 2;
   const psSet = stepIdx >= 5;
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Kicker>{DEMO_PROJECT.title}</Kicker>
-          <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-            Scope of works
-          </h2>
-        </div>
-        <div className="flex items-center gap-5 sm:gap-7">
-          {[
-            { v: DEMO_TOTALS.items, label: "Items" },
-            { v: DEMO_TOTALS.trades, label: "Trades" },
-            { v: DEMO_TOTALS.documents, label: "Documents" },
-          ].map((s) => (
-            <div key={s.label} className="text-right">
-              <p className="font-display text-[24px] sm:text-[28px] leading-none text-text tabular-nums">
-                {s.v}
-              </p>
-              <p className="mt-1 text-[9px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Head
+        kicker={ARCH_PROJECT.title}
+        title="Scope of works"
+        sub="Every item of work in the project, in one list. This is what the builders price."
+        right={
+          <div className="flex items-center gap-5 sm:gap-7">
+            {[
+              { v: ARCH_TOTALS.items, label: "Items" },
+              { v: ARCH_TOTALS.trades, label: "Trades" },
+              { v: ARCH_TOTALS.documents, label: "Documents" },
+            ].map((s) => (
+              <div key={s.label} className="text-right">
+                <p className="font-display text-[24px] sm:text-[28px] leading-none text-text tabular-nums">
+                  {s.v}
+                </p>
+                <p className="mt-1 text-[9px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        }
+      />
 
       <p className="mt-3 text-[12.5px] text-text-muted">
         <span className="font-ui font-semibold text-text">
-          {DEMO_TOTALS.evidenced} lines
+          {ARCH_TOTALS.evidenced} lines
         </span>{" "}
-        from your documents ·{" "}
+        cited from your set ·{" "}
         <span className="font-ui font-semibold text-[#2a5cae]">
-          {DEMO_TOTALS.builderPriced} lines
+          {ARCH_TOTALS.builderPriced} lines
         </span>{" "}
         added for the builders to price
       </p>
@@ -457,7 +549,7 @@ export function ScopeSurface({
       {/* divisions */}
       <Card className="mt-5 overflow-hidden">
         <ul className="divide-y divide-border-subtle/50">
-          {DEMO_SCOPE_DIVISIONS.map((d) => (
+          {ARCH_SCOPE_DIVISIONS.map((d) => (
             <li key={d.label} className="px-5 py-3 flex items-center justify-between">
               <span className="text-[13px] font-ui text-text">{d.label}</span>
               <span className="text-[11.5px] text-text-dim tabular-nums">
@@ -467,7 +559,8 @@ export function ScopeSurface({
           ))}
           <li>
             <Spot
-              id="expand-division" active={spot === "expand-division"}
+              id="expand-division"
+              active={spot === "expand-division"}
               reduceMotion={reduceMotion}
               className="w-full"
             >
@@ -477,10 +570,10 @@ export function ScopeSurface({
                 className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-bg-elev/60 transition-colors"
               >
                 <span className="text-[13px] font-ui font-semibold text-text">
-                  {DEMO_DIVISION.label}
+                  {ARCH_DIVISION.label}
                 </span>
                 <span className="flex items-center gap-2 text-[11.5px] text-text-dim tabular-nums">
-                  {DEMO_DIVISION.count} items
+                  {ARCH_DIVISION.count} items
                   <ChevronDown
                     className={cn("size-4 transition-transform", expanded && "rotate-180")}
                   />
@@ -498,7 +591,7 @@ export function ScopeSurface({
                   softRing(soft === "division-lines"),
                 )}
               >
-                {DEMO_DIVISION.lines.map((l) => (
+                {ARCH_DIVISION.lines.map((l) => (
                   <li key={l.label} className="px-5 py-3">
                     <p className="text-[13px] font-ui font-medium text-text">
                       {l.label}
@@ -510,12 +603,12 @@ export function ScopeSurface({
                   </li>
                 ))}
                 <li className="px-5 py-2.5 text-[11.5px] text-text-muted">
-                  5 more lines in this division
+                  {ARCH_DIVISION.more}
                 </li>
               </motion.ul>
             ) : null}
           </li>
-          {DEMO_SCOPE_DIVISIONS_AFTER.map((d) => (
+          {ARCH_SCOPE_DIVISIONS_AFTER.map((d) => (
             <li key={d.label} className="px-5 py-3 flex items-center justify-between">
               <span className="text-[13px] font-ui text-text">{d.label}</span>
               <span className="text-[11.5px] text-text-dim tabular-nums">
@@ -524,7 +617,7 @@ export function ScopeSurface({
             </li>
           ))}
           <li className="px-5 py-3 text-[12px] text-text-muted">
-            {DEMO_SCOPE_MORE}
+            {ARCH_SCOPE_MORE}
           </li>
         </ul>
       </Card>
@@ -537,11 +630,11 @@ export function ScopeSurface({
         <div className="flex items-baseline justify-between px-0.5">
           <Kicker>Provisional sums</Kicker>
           <p className="text-[11px] text-text-dim">
-            Budgets for what your documents leave open
+            Budgets for the client decisions still open
           </p>
         </div>
         <div className="mt-2 grid gap-2.5">
-          {DEMO_PACKAGES.map((p) => {
+          {ARCH_PACKAGES.map((p) => {
             const set = p.preset || psSet;
             return (
               <Card
@@ -592,8 +685,8 @@ export function ScopeSurface({
                     animate={{ opacity: 1 }}
                     className="mt-2 text-[11.5px] leading-[1.6] text-text-dim"
                   >
-                    Your budget covers this package as a whole. Builders
-                    price against the one figure, not line by line.
+                    Every builder carries this one figure, so the tenders
+                    stay comparable while the client decides.
                   </motion.p>
                 ) : null}
               </Card>
@@ -602,34 +695,45 @@ export function ScopeSurface({
         </div>
       </div>
 
-      {/* approve */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-        <p className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
-          <ShieldCheck className="size-3.5 text-accent-light" />
-          Checked before you see it
-        </p>
-        <Spot id="publish" active={spot === "publish"} reduceMotion={reduceMotion}>
-          <TealButton onClick={() => onAction("publish")} disabled={!psSet}>
-            Approve and publish
-            <ArrowRight className="size-4" />
-          </TealButton>
-        </Spot>
-      </div>
+      {/* approve: mounts on its own beat, so the budget callout
+          before it never has to dodge a control that is not in play */}
+      {psSet ? (
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE }}
+          className="mt-6 flex flex-wrap items-center justify-between gap-4"
+        >
+          <p className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
+            <ShieldCheck className="size-3.5 text-accent-light" />
+            Nothing is issued without your approval
+          </p>
+          <Spot id="publish" active={spot === "publish"} reduceMotion={reduceMotion}>
+            <TealButton onClick={() => onAction("publish")}>
+              Approve and issue
+              <ArrowRight className="size-4" />
+            </TealButton>
+          </Spot>
+        </motion.div>
+      ) : null}
     </div>
   );
 }
 
-/* ── 4 · going live ─────────────────────────────────────────────────── */
+/* ── 4 · the round ──────────────────────────────────────────────────── */
 
-export function RoundSurface({
+export function ArchRoundSurface({
   stepIdx,
   spot,
   soft,
   onAction,
   reduceMotion,
 }: SurfaceProps) {
-  const filling = stepIdx === 2;
-  const full = stepIdx >= 3;
+  // Beats: 0 intro · 1 watch fill · 2 builder-view · 3 rfi · 4 go
+  const filling = stepIdx === 1;
+  const full = stepIdx >= 2;
+  const rfiIn = stepIdx >= 3;
+  const done = stepIdx >= 4;
   const [ticks, setTicks] = useState(0);
   useEffect(() => {
     if (!filling || reduceMotion) return;
@@ -642,43 +746,13 @@ export function RoundSurface({
 
   return (
     <div>
-      <Kicker>Your round is live</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Builders take a spot.
-      </h2>
+      <Head
+        kicker="Your round"
+        title="The round opens."
+        sub="Your invited builders and the open spot, all pricing the scope you issued."
+      />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card
-          target="builder-view"
-          className={cn("px-5 py-5", softRing(soft === "builder-view"))}
-        >
-          <Kicker>What builders see</Kicker>
-          <p className="mt-3 text-[16px] font-ui font-semibold text-text">
-            {DEMO_PROJECT.title}
-          </p>
-          <p className="mt-1 text-[12.5px] text-text-muted">{DEMO_PROJECT.facts}</p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-text-muted">
-            <Lock className="size-3.5" />
-            Address shared only when a spot is secured
-          </p>
-          <div className="mt-4 pt-4 border-t border-border-subtle/60 grid grid-cols-3 gap-3 text-center">
-            {[
-              { v: String(DEMO_TOTALS.items), label: "Scope items" },
-              { v: String(DEMO_TOTALS.trades), label: "Trades" },
-              { v: "3", label: "Spots" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="font-display text-[22px] leading-none text-text tabular-nums">
-                  {s.v}
-                </p>
-                <p className="mt-1 text-[9px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Card>
-
         <Card className="px-5 py-5">
           <div className="flex items-center justify-between">
             <Kicker>Tender spots</Kicker>
@@ -687,7 +761,7 @@ export function RoundSurface({
             </span>
           </div>
           <ul className="mt-4 space-y-2.5">
-            {DEMO_BUILDERS.map((b, i) => {
+            {ARCH_ROUND.map((b, i) => {
               const taken = filled > i;
               return (
                 <li
@@ -724,18 +798,20 @@ export function RoundSurface({
                         </span>
                         <span className="inline-flex items-center gap-1 text-[10.5px] text-accent-light font-ui font-semibold">
                           <BadgeCheck className="size-3" />
-                          ABN and licence verified
+                          {b.invited
+                            ? "Accepted your invitation"
+                            : "Verified pool · ABN and licence checked"}
                         </span>
                       </motion.span>
                     ) : (
                       <span className="text-[12.5px] text-text-dim">
-                        Spot open
+                        {b.invited ? "Invitation out" : "Open spot"}
                       </span>
                     )}
                   </span>
                   {taken ? (
                     <span className="text-[10.5px] font-ui font-semibold text-text-dim shrink-0">
-                      Secured
+                      {b.invited ? "Invited" : "Pool"}
                     </span>
                   ) : null}
                 </li>
@@ -743,9 +819,97 @@ export function RoundSurface({
             })}
           </ul>
         </Card>
+
+        <Card
+          target="builder-view"
+          className={cn("px-5 py-5", softRing(soft === "builder-view"))}
+        >
+          <Kicker>What the open spot sees</Kicker>
+          <p className="mt-3 text-[16px] font-ui font-semibold text-text">
+            {ARCH_PROJECT.title}
+          </p>
+          <p className="mt-1 text-[12.5px] text-text-muted">{ARCH_PROJECT.facts}</p>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-text-muted">
+            <Lock className="size-3.5" />
+            Address shared only when a spot is secured
+          </p>
+          <div className="mt-4 pt-4 border-t border-border-subtle/60 grid grid-cols-3 gap-3 text-center">
+            {[
+              { v: String(ARCH_TOTALS.items), label: "Scope items" },
+              { v: String(ARCH_TOTALS.trades), label: "Trades" },
+              { v: "3", label: "Spots" },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="font-display text-[22px] leading-none text-text tabular-nums">
+                  {s.v}
+                </p>
+                <p className="mt-1 text-[9px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
 
-      {full ? (
+      {rfiIn ? (
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE }}
+        >
+          <Card
+            target="rfi"
+            className={cn("mt-4 px-5 py-4", softRing(soft === "rfi"))}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <Kicker>Requests for information</Kicker>
+              <span className="px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[10px] font-ui font-bold tracking-[0.08em] uppercase">
+                {ARCH_RFI.addendum}
+              </span>
+            </div>
+            <div className="mt-3 space-y-2.5">
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: reduceMotion ? 0 : 0.15, ease: EASE }}
+                className="flex items-start gap-3"
+              >
+                <span className="size-7 rounded-full bg-[rgba(24,34,44,0.06)] flex items-center justify-center text-[9.5px] font-ui font-bold text-text-muted shrink-0">
+                  {ARCH_RFI.initials}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-text leading-[1.55]">
+                    {ARCH_RFI.question}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-text-dim">{ARCH_RFI.from}</p>
+                </div>
+              </motion.div>
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: reduceMotion ? 0 : 1.0, ease: EASE }}
+                className="flex items-start gap-3"
+              >
+                <span className="size-7 rounded-full bg-accent-muted flex items-center justify-center text-accent-light shrink-0">
+                  <MessageCircleQuestion className="size-3.5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-ui font-medium text-text leading-[1.55]">
+                    {ARCH_RFI.answer}
+                  </p>
+                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-accent-light font-ui font-semibold">
+                    <Check className="size-3" />
+                    {ARCH_RFI.status}
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </Card>
+        </motion.div>
+      ) : null}
+
+      {done ? (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -754,7 +918,7 @@ export function RoundSurface({
         >
           <Spot id="see-tendering" active={spot === "see-tendering"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("see-tendering")}>
-              See what the builders do
+              See the tenders
               <ArrowRight className="size-4" />
             </TealButton>
           </Spot>
@@ -766,19 +930,14 @@ export function RoundSurface({
 
 /* ── 5 · tenders arrive ─────────────────────────────────────────────── */
 
-const MARK_ROWS = [
-  { label: "Waffle pod slab", state: "Included", tone: "teal" },
-  { label: "Landscaping package", state: "Provisional sum · $47,000", tone: "amber" },
-  { label: "Driveway and crossover", state: "Included", tone: "teal" },
-];
-
-export function TenderSurface({
+export function ArchTenderSurface({
   stepIdx,
   spot,
   soft,
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 marking · 2 asks · 3 watch land · 4 go
   const arriving = stepIdx === 3;
   const arrived = stepIdx >= 4;
   const [ticks, setTicks] = useState(0);
@@ -793,10 +952,11 @@ export function TenderSurface({
 
   return (
     <div>
-      <Kicker>The builders&rsquo; side</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Every builder answers the same scope.
-      </h2>
+      <Head
+        kicker="The builders' side"
+        title="Every tender takes the same shape."
+        sub="Each builder answers your scope item by item, then declares the rest under signature."
+      />
 
       <Card
         target="marking"
@@ -805,11 +965,11 @@ export function TenderSurface({
         <div className="flex items-center justify-between">
           <Kicker>Inside a builder&rsquo;s submission</Kicker>
           <span className="text-[11px] text-text-dim tabular-nums">
-            Line 41 of {DEMO_TOTALS.items}
+            Line 38 of {ARCH_TOTALS.items}
           </span>
         </div>
         <ul className="mt-3 space-y-2">
-          {MARK_ROWS.map((r, i) => (
+          {ARCH_MARK_ROWS.map((r, i) => (
             <motion.li
               key={r.label}
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
@@ -832,8 +992,7 @@ export function TenderSurface({
           ))}
         </ul>
         <p className="mt-3 text-[11.5px] text-text-muted">
-          In the price, a budget, or not included. Every line gets an
-          answer.
+          Every line in your scope gets an answer.
         </p>
       </Card>
 
@@ -841,9 +1000,9 @@ export function TenderSurface({
         target="asks"
         className={cn("mt-4 px-5 py-4", softRing(soft === "asks"))}
       >
-        <Kicker>Every builder also answers</Kicker>
+        <Kicker>Every builder also declares</Kicker>
         <ul className="mt-2.5 flex flex-wrap gap-1.5">
-          {DEMO_ASKS.map((a) => (
+          {ARCH_ASKS.map((a) => (
             <li
               key={a}
               className="px-2.5 py-1.5 rounded-full border border-border-subtle text-[11.5px] text-text-muted"
@@ -891,7 +1050,7 @@ export function TenderSurface({
                     {fmtAud(t.price)}
                   </p>
                   <p className="mt-1 text-[10.5px] text-text-muted">
-                    ex GST · same list of work
+                    ex GST · on your scope
                   </p>
                   <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-text-muted">
                     <BadgeCheck className="size-3 text-accent-light" />
@@ -929,7 +1088,7 @@ export function TenderSurface({
 
 /* ── 6 · the comparison ─────────────────────────────────────────────── */
 
-export function CompareSurface({
+export function ArchCompareSurface({
   stepIdx,
   spot,
   soft,
@@ -938,10 +1097,13 @@ export function CompareSurface({
 }: SurfaceProps) {
   // Beats: 0 intro · 1 prices · 2 show-scores · 3 receipts ·
   //        4 show-differences · 5 grid · 6 breakeven · 7 ladder ·
-  //        8 show-flags · 9 questions · 10 finish
+  //        8 show-flags · 9 questions · 10 report · 11 export
   const scores = stepIdx >= 3;
   const differing = stepIdx >= 5;
+  const maths = stepIdx >= 6;
+  const ladder = stepIdx >= 7;
   const flags = stepIdx >= 9;
+  const report = stepIdx >= 10;
   const reveal = (on: boolean) =>
     reduceMotion || !on
       ? {}
@@ -949,10 +1111,11 @@ export function CompareSurface({
 
   return (
     <div>
-      <Kicker>The comparison</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Three quotes, side by side.
-      </h2>
+      <Head
+        kicker="The comparison"
+        title="Three tenders, side by side."
+        sub="One scope, three prices, and the evidence behind every difference."
+      />
 
       {/* the tenders */}
       <div
@@ -1022,7 +1185,7 @@ export function CompareSurface({
       </div>
 
       {/* reveal: the scores */}
-      {!scores ? (
+      {!scores && stepIdx >= 2 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-scores" active={spot === "show-scores"} reduceMotion={reduceMotion}>
             <button
@@ -1076,7 +1239,7 @@ export function CompareSurface({
       ) : null}
 
       {/* reveal: the differences */}
-      {scores && !differing ? (
+      {scores && !differing && stepIdx >= 4 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-differences" active={spot === "show-differences"} reduceMotion={reduceMotion}>
             <button
@@ -1119,7 +1282,14 @@ export function CompareSurface({
                   </tr>
                 </thead>
                 <tbody>
-                  {DEMO_GRID.map((row) => (
+                  {DEMO_GRID.map((raw) => {
+                    // The shared grid is homeowner voiced in one row;
+                    // here the allowance carries its scope-stage name.
+                    const row =
+                      raw.label === "Your garden budget"
+                        ? { ...raw, label: "Landscaping budget" }
+                        : raw;
+                    return (
                     <tr
                       key={row.label}
                       className={cn(
@@ -1144,7 +1314,8 @@ export function CompareSurface({
                         </td>
                       ))}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1152,7 +1323,7 @@ export function CompareSurface({
         </motion.div>
       ) : null}
 
-      {differing ? (
+      {maths ? (
         <motion.div {...reveal(true)} className="mt-3 grid gap-3 lg:grid-cols-2">
           <Card
             target="breakeven"
@@ -1161,7 +1332,7 @@ export function CompareSurface({
               softRing(soft === "breakeven"),
             )}
           >
-            <Kicker>The maths on the cheapest quote</Kicker>
+            <Kicker>The maths on the cheapest tender</Kicker>
             <p className="mt-2 text-[13.5px] leading-[1.65] text-text">
               Corten is {fmtAud(DEMO_COMPARE.saving)} cheaper. But{" "}
               {fmtAud(DEMO_COMPARE.exposure)} of its price is not locked
@@ -1169,9 +1340,10 @@ export function CompareSurface({
               <span className="font-ui font-semibold">
                 {DEMO_COMPARE.breakevenPct} percent
               </span>
-              , your saving is gone.
+              , the saving is gone.
             </p>
           </Card>
+          {ladder ? (
           <Card
             target="ladder"
             className={cn("px-5 py-4", softRing(soft === "ladder"))}
@@ -1179,7 +1351,7 @@ export function CompareSurface({
             <Kicker>What more money buys</Kicker>
             <p className="mt-2 text-[12.5px] text-text-muted">
               Brightwater costs {fmtAud(DEMO_COMPARE.stepUp)} more than
-              Meridian. For that you get:
+              Meridian. For that your client gets:
             </p>
             <ul className="mt-2 space-y-1">
               {DEMO_COMPARE.stepUpBuys.map((b) => (
@@ -1190,11 +1362,12 @@ export function CompareSurface({
               ))}
             </ul>
           </Card>
+          ) : null}
         </motion.div>
       ) : null}
 
       {/* reveal: the flags */}
-      {differing && !flags ? (
+      {ladder && !flags && stepIdx >= 8 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-flags" active={spot === "show-flags"} reduceMotion={reduceMotion}>
             <button
@@ -1215,7 +1388,7 @@ export function CompareSurface({
             target="flags"
             className={cn("mt-4 px-5 py-4", softRing(soft === "flags"))}
           >
-            <Kicker>Flags, with your questions ready</Kicker>
+            <Kicker>Flags, with the questions drafted</Kicker>
             <ul className="mt-3 space-y-3">
               {DEMO_FLAGS.map((f) => (
                 <li key={f.label} className="flex items-start gap-3">
@@ -1239,15 +1412,48 @@ export function CompareSurface({
         </motion.div>
       ) : null}
 
-      {flags ? (
-        <div className="mt-6 flex justify-end">
-          <Spot id="finish" active={spot === "finish"} reduceMotion={reduceMotion}>
-            <TealButton onClick={() => onAction("finish")}>
-              Finish the round
-              <ArrowRight className="size-4" />
-            </TealButton>
-          </Spot>
-        </div>
+      {/* the client deliverable */}
+      {report ? (
+        <motion.div {...reveal(true)}>
+          <Card
+            target="report"
+            className={cn(
+              "mt-4 px-5 py-4 border-border-accent/40",
+              softRing(soft === "report"),
+            )}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5 min-w-0">
+                <span className="size-10 rounded-md bg-accent-muted flex items-center justify-center text-accent-light shrink-0">
+                  <FileText className="size-4.5" />
+                </span>
+                <div className="min-w-0">
+                  <Kicker>{ARCH_REPORT.kicker}</Kicker>
+                  <p className="mt-1 text-[14.5px] font-ui font-semibold text-text">
+                    {ARCH_REPORT.title} · {ARCH_REPORT.client}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] text-text-muted">
+                    {ARCH_REPORT.meta}
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {ARCH_REPORT.contents.map((c) => (
+                      <li key={c} className="flex items-start gap-2 text-[12px] text-text-muted">
+                        <Check className="size-3.5 text-accent-light shrink-0 mt-[1px]" />
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <Spot id="export-report" active={spot === "export-report"} reduceMotion={reduceMotion}>
+                <TealButton onClick={() => onAction("export-report")}>
+                  Export for your client
+                  <Download className="size-4" />
+                </TealButton>
+              </Spot>
+            </div>
+          </Card>
+        </motion.div>
       ) : null}
     </div>
   );

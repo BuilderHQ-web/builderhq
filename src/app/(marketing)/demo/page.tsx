@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { DemoExperience } from "./engine";
+import { HomeownerDemo } from "./homeowner";
 
 /**
  * /demo — the guided walkthrough of a full tender round, upload to
@@ -9,8 +9,8 @@ import { DemoExperience } from "./engine";
  * A route rather than a modal or a new window on purpose: it is
  * shareable, it works as a paid-traffic destination, the back button
  * behaves, and the marketing layout already carries the analytics.
- * The homeowner script runs here; the architect script will live at
- * /demo/architects on the same engine.
+ * The homeowner script runs here; the architect script lives at
+ * /demo/architect on the same engine.
  */
 
 export const metadata: Metadata = {
@@ -21,5 +21,5 @@ export const metadata: Metadata = {
 };
 
 export default function DemoPage() {
-  return <DemoExperience />;
+  return <HomeownerDemo />;
 }

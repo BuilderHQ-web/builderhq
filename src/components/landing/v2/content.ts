@@ -418,7 +418,8 @@ export const LENS: Record<Role, LensCopy> = {
       sub: "Run your client’s tender with the builders you trust, or ours.",
       subMore: "Every submission comes back priced against one defined scope, under your practice’s name.",
       primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
-      secondary: { label: "See how it works", href: "#how" },
+      secondary: { label: "Watch the demo", href: "/demo/architect" },
+      lead: "secondary",
     },
     problem: {
       head: {
@@ -452,6 +453,7 @@ export const LENS: Record<Role, LensCopy> = {
         h2b: "to your recommendation.",
         lead: "Four steps, and the practice keeps the judgement throughout.",
       },
+      stepCta: { label: "See it in the demo", href: "/demo/architect" },
       steps: [
         {
           title: "Upload",
