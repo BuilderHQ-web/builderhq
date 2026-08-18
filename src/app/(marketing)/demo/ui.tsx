@@ -287,11 +287,11 @@ export function Head({
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">
         <Kicker>{kicker}</Kicker>
-        <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[22px] sm:text-[27px] leading-[1.15] text-text">
+        <h2 className="mt-1.5 sm:mt-2 font-ui font-semibold tracking-[-0.02em] text-[20px] sm:text-[27px] leading-[1.2] sm:leading-[1.15] text-text">
           {title}
         </h2>
         {sub ? (
-          <p className="mt-2 text-[13px] leading-[1.65] text-text-muted max-w-[62ch]">
+          <p className="mt-1.5 sm:mt-2 text-[12.5px] sm:text-[13px] leading-[1.55] sm:leading-[1.65] text-text-muted max-w-[62ch]">
             {sub}
           </p>
         ) : null}
@@ -319,8 +319,10 @@ export function AppFrame({
 }) {
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-1 overflow-hidden shadow-[0_1px_2px_rgba(24,34,44,0.05),_0_28px_80px_-32px_rgba(24,34,44,0.3)]">
-      {/* browser chrome */}
-      <div className="relative flex items-center h-10 px-4 border-b border-border-subtle/60 bg-bg-elev/50">
+      {/* Browser chrome, desktop only: on a phone it is a picture of
+          a window nobody is looking through, and it costs 40px of the
+          little height there is. */}
+      <div className="relative hidden sm:flex items-center h-10 px-4 border-b border-border-subtle/60 bg-bg-elev/50">
         <span className="flex items-center gap-1.5" aria-hidden>
           <span className="size-2.5 rounded-full bg-[#e8a9a0]" />
           <span className="size-2.5 rounded-full bg-[#e6cf9d]" />
@@ -332,7 +334,7 @@ export function AppFrame({
         </span>
       </div>
       {/* the product's own bar */}
-      <div className="flex items-center justify-between h-12 px-5 sm:px-7 border-b border-border-subtle/60">
+      <div className="flex items-center justify-between h-11 sm:h-12 px-4 sm:px-7 border-b border-border-subtle/60">
         <span className="flex items-center gap-2.5 min-w-0">
           <Logo height={18} tone="dark" />
           <span className="text-text-faint" aria-hidden>/</span>
@@ -346,7 +348,7 @@ export function AppFrame({
         </span>
       </div>
       {/* the screen */}
-      <div className="px-4 sm:px-8 py-6 sm:py-8">{children}</div>
+      <div className="px-3.5 sm:px-8 py-5 sm:py-8">{children}</div>
     </div>
   );
 }
@@ -391,11 +393,24 @@ export function DocRegister({
             initial={reduceMotion ? false : { opacity: 0, x: -14 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: reduceMotion ? 0 : i * 0.06, ease: EASE }}
-            className="px-5 py-2.5 flex items-center gap-3"
+            className="px-4 sm:px-5 py-2.5 flex items-start sm:items-center gap-3"
           >
-            <FileText className="size-4 text-text-dim shrink-0" />
-            <span className="min-w-0 flex-1 text-[13px] text-text truncate">
-              {d.name}
+            <FileText className="size-4 text-text-dim shrink-0 mt-0.5 sm:mt-0" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12.5px] sm:text-[13px] text-text truncate">
+                {d.name}
+              </span>
+              {/* The chip is the proof that the product knew what each
+                  file was, so a phone keeps it: on its own line, since
+                  there is no room beside a filename at 375. */}
+              <motion.span
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: reduceMotion ? 0 : 0.55 + i * 0.06, duration: 0.25, ease: EASE }}
+                className="mt-1 sm:hidden inline-flex px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[10px] font-ui font-semibold"
+              >
+                {d.kind}
+              </motion.span>
             </span>
             <motion.span
               initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
@@ -405,7 +420,7 @@ export function DocRegister({
             >
               {d.kind}
             </motion.span>
-            <span className="text-[11.5px] text-text-dim tabular-nums shrink-0 w-14 text-right">
+            <span className="text-[11px] sm:text-[11.5px] text-text-dim tabular-nums shrink-0 w-12 sm:w-14 text-right">
               {d.pages} pages
             </span>
           </motion.li>
@@ -496,11 +511,27 @@ export function ScopeWriter({
     settled || (watching && reduceMotion) ? feed.length : watching ? n : 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[168px_1fr]">
-      {/* the page being read */}
-      <div className="hidden sm:block">
-        <div className="relative rounded-md border border-border-subtle bg-bg-elev/40 p-3.5 overflow-hidden">
-          <div className="space-y-2" aria-hidden>
+    <div
+      data-demo-target="reading-live"
+      className="grid gap-3 sm:gap-4 sm:grid-cols-[168px_1fr]"
+    >
+      {/* The page being read. A phone gets a short, wide version of
+          the same sheet: the scan is the proof that something is
+          happening, and hiding it left the beat with nothing to watch. */}
+      <div className="block">
+        <div className="relative rounded-md border border-border-subtle bg-bg-elev/40 p-3 sm:p-3.5 overflow-hidden">
+          {/* On a phone the sheet lies down: ten short columns, so the
+              sweep still reads as a page being worked through. */}
+          <div className="flex sm:hidden items-end gap-1.5 h-9" aria-hidden>
+            {[92, 100, 78, 100, 88, 62, 100, 84, 96, 70].map((h, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-sm bg-[rgba(24,34,44,0.08)]"
+                style={{ height: `${h}%` }}
+              />
+            ))}
+          </div>
+          <div className="hidden sm:block space-y-2" aria-hidden>
             {[92, 100, 78, 100, 88, 62, 100, 84, 96, 70].map((w, i) => (
               <div
                 key={i}
@@ -510,13 +541,22 @@ export function ScopeWriter({
             ))}
           </div>
           {watching && !reduceMotion ? (
-            <motion.div
-              aria-hidden
-              className="absolute inset-x-0 h-7 bg-[linear-gradient(180deg,rgba(0,212,200,0)_0%,rgba(0,212,200,0.16)_50%,rgba(0,212,200,0)_100%)] border-y border-[rgba(0,212,200,0.35)]"
-              initial={{ top: "-15%" }}
-              animate={{ top: "105%" }}
-              transition={{ duration: 2.1, repeat: Infinity, ease: "linear" }}
-            />
+            <>
+              <motion.div
+                aria-hidden
+                className="sm:hidden absolute inset-y-0 w-10 bg-[linear-gradient(90deg,rgba(0,212,200,0)_0%,rgba(0,212,200,0.18)_50%,rgba(0,212,200,0)_100%)] border-x border-[rgba(0,212,200,0.35)]"
+                initial={{ left: "-12%" }}
+                animate={{ left: "104%" }}
+                transition={{ duration: 2.1, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.div
+                aria-hidden
+                className="hidden sm:block absolute inset-x-0 h-7 bg-[linear-gradient(180deg,rgba(0,212,200,0)_0%,rgba(0,212,200,0.16)_50%,rgba(0,212,200,0)_100%)] border-y border-[rgba(0,212,200,0.35)]"
+                initial={{ top: "-15%" }}
+                animate={{ top: "105%" }}
+                transition={{ duration: 2.1, repeat: Infinity, ease: "linear" }}
+              />
+            </>
           ) : null}
         </div>
         <p className="mt-2 inline-flex items-center gap-1.5 text-[10.5px] text-text-dim">
@@ -567,6 +607,99 @@ export function ScopeWriter({
         </ul>
       </div>
     </div>
+  );
+}
+
+/* ── the decision grid ──────────────────────────────────────────────── */
+
+/**
+ * Where the tenders differ, side by side. A three column table is
+ * 480px of content and a phone has 311, so below sm the same rows are
+ * stacked: the attribute, then one labelled value per builder. No
+ * sideways scrolling, no columns hiding off the edge.
+ */
+export function DecisionGrid({
+  rows,
+  builders,
+  target,
+  ringed,
+  caption,
+}: {
+  rows: Array<{ label: string; vals: readonly [string, string, string]; differs: boolean }>;
+  builders: readonly string[];
+  target: string;
+  ringed: boolean;
+  caption: string;
+}) {
+  const amber = (v: string) =>
+    v === "No" || v === "Not included" ? "text-[#8a6414] font-ui font-medium" : "text-text";
+  return (
+    <Card target={target} className={cn("mt-4 overflow-hidden", softRing(ringed))}>
+      <div className="px-4 sm:px-5 py-3 border-b border-border-subtle/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+        <Kicker>The decision grid</Kicker>
+        <span className="text-[10.5px] text-text-dim">{caption}</span>
+      </div>
+
+      {/* the phone's form: one block per difference */}
+      <ul className="sm:hidden divide-y divide-border-subtle/50">
+        {rows.map((row) => (
+          <li
+            key={row.label}
+            className={cn("px-4 py-3", row.differs && "bg-[rgba(201,148,34,0.07)]")}
+          >
+            <p className="text-[11.5px] text-text-muted">{row.label}</p>
+            <div className="mt-1.5 grid grid-cols-3 gap-2">
+              {row.vals.map((v, i) => (
+                <span key={i} className="min-w-0">
+                  <span className="block text-[9px] tracking-[0.1em] uppercase text-text-dim font-ui font-semibold truncate">
+                    {builders[i]}
+                  </span>
+                  <span className={cn("mt-0.5 block text-[11.5px] tabular-nums", amber(v))}>
+                    {v}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* the desktop's form, unchanged */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-border-subtle/60">
+              <th className="px-5 py-2 text-[10px] tracking-[0.12em] uppercase text-text-dim font-ui font-semibold min-w-[150px]">
+                &nbsp;
+              </th>
+              {builders.map((b) => (
+                <th key={b} className="px-4 py-2 text-[11px] font-ui font-semibold text-text min-w-[110px]">
+                  {b}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={row.label}
+                className={cn(
+                  "border-b border-border-subtle/40 last:border-0",
+                  row.differs && "bg-[rgba(201,148,34,0.07)]",
+                )}
+              >
+                <td className="px-5 py-2 text-[11.5px] text-text-muted">{row.label}</td>
+                {row.vals.map((v, i) => (
+                  <td key={i} className={cn("px-4 py-2 text-[11.5px] tabular-nums", amber(v))}>
+                    {v}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 

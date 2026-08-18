@@ -46,6 +46,9 @@ import {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** The sticky header, plus its progress hairline. */
+const HEADER_H = 58;
+
 /**
  * One walkthrough, fully described: the engine runs whichever script
  * it is handed, so the homeowner and architect demos are two configs
@@ -320,26 +323,93 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
     window.scrollTo(0, 0);
   }, [stage.id]);
 
-  /* ── phones have no anchored callout to drive the scroll, so the
-        bottom sheet must never narrate an element that is off screen:
-        each anchored beat brings its element into view itself. ─────── */
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  /* The sheet's real height drives both the scroll band and the
+     content's bottom padding: a guess here is the difference between
+     a surface that clears the sheet and one that hides under it. */
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const [sheetH, setSheetH] = useState(190);
+  const [viewH, setViewH] = useState(812);
   useEffect(() => {
-    if (desktop) return;
+    const el = sheetRef.current;
+    if (!el || desktop) return;
+    const measure = () => {
+      setSheetH(el.offsetHeight);
+      setViewH(window.innerHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [desktop, step?.id]);
+
+  /* ── the phone's scroll authority ───────────────────────────────────
+        A phone has no anchored callout: the guide is a sheet pinned to
+        the bottom, and the header is pinned to the top. What remains
+        between them is the only place the visitor can actually see,
+        so every beat that names an element puts that element THERE.
+        Centring in the viewport is not good enough: the lower half of
+        a phone screen is behind the sheet, which is exactly how a
+        watch beat ends up playing where nobody can see it.
+
+        Watch beats scroll too, and only here: on a phone the surface
+        performs below the fold, while the desktop keeps its own
+        behaviour untouched. ──────────────────────────────────────── */
+  useEffect(() => {
+    if (desktop || !step) return;
     const target =
-      step && (step.kind === "note" || step.kind === "click")
+      step.kind === "note" || step.kind === "click" || step.kind === "watch"
         ? (step.target ?? null)
         : null;
     if (!target) return;
-    const t = setTimeout(() => {
-      document
-        .querySelector(`[data-demo-target="${target}"]`)
-        ?.scrollIntoView({
-          behavior: reduceMotion ? "auto" : "smooth",
-          block: "center",
-        });
-    }, 160);
-    return () => clearTimeout(t);
-  }, [step, desktop, reduceMotion]);
+
+    const bring = () => {
+      const el = document.querySelector(`[data-demo-target="${target}"]`);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const bandTop = HEADER_H + 12;
+      const bandBottom = window.innerHeight - sheetH - 12;
+      const band = Math.max(120, bandBottom - bandTop);
+      // Tall blocks lead with their head; anything that fits is
+      // centred in the band, which reads as deliberate rather than
+      // scrolled-to-by-accident.
+      const wanted =
+        r.height > band
+          ? window.scrollY + r.top - bandTop
+          : window.scrollY + r.top - bandTop - (band - r.height) / 2;
+      const top = Math.max(0, wanted);
+      if (Math.abs(top - window.scrollY) < 8) return;
+      // Instant, always. The page sets scroll-behavior smooth, and a
+      // glide here either fights the next beat or never finishes at
+      // all; a guided step should land, not travel.
+      window.scrollTo({ top, behavior: "instant" });
+    };
+
+    // Blocks arrive with their beat and animate in, so the position is
+    // taken again once the surface has settled.
+    const t1 = setTimeout(bring, 80);
+    const t2 = setTimeout(bring, 400);
+    const t3 = setTimeout(bring, 780);
+    const t4 = setTimeout(bring, 1200);
+    // And again whenever the surface grows underneath: a beat that
+    // reveals scores makes the cards above it taller, which would
+    // otherwise push the very thing being described back off screen.
+    const host = contentRef.current;
+    const ro = host ? new ResizeObserver(bring) : null;
+    if (host && ro) ro.observe(host);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      ro?.disconnect();
+    };
+  }, [step, desktop, sheetH]);
 
   /* ── measurement ─────────────────────────────────────────────────── */
 
@@ -386,7 +456,6 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
     cardRef.current?.focus({ preventScroll: true });
   }, [pos]);
 
-  const contentRef = useRef<HTMLDivElement | null>(null);
   const anchor = useAnchor(
     step && (step.kind === "note" || step.kind === "click")
       ? (step.target ?? null)
@@ -406,10 +475,15 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
   const cardInner = step ? (
     <>
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[9.5px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold tabular-nums">
+        <p className="min-w-0 truncate text-[9.5px] tracking-[0.16em] sm:tracking-[0.2em] uppercase text-accent-light font-ui font-semibold tabular-nums">
           Part {stageNo} of {script.length} · {stage.rail}
         </p>
-        <span className="flex items-center gap-1.5" aria-hidden>
+        {/* Eleven dots and a part label do not share a 300px line, so
+            a phone reads its position as a fraction instead. */}
+        <span className="sm:hidden text-[10px] font-ui font-semibold text-text-dim tabular-nums shrink-0">
+          {pos.step + 1}/{stage.steps.length}
+        </span>
+        <span className="hidden sm:flex items-center gap-1.5 shrink-0" aria-hidden>
           {stage.steps.map((x, i) => (
             <span
               key={x.id}
@@ -423,14 +497,14 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
           ))}
         </span>
       </div>
-      <p className="mt-1.5 font-ui font-semibold text-[15.5px] tracking-[-0.01em] text-text">
+      <p className="mt-1.5 font-ui font-semibold text-[16px] sm:text-[15.5px] tracking-[-0.01em] text-text">
         {step.title}
       </p>
-      <p className="mt-1 text-[12.5px] leading-[1.65] text-text-muted">
+      <p className="mt-1 text-[13.5px] sm:text-[12.5px] leading-[1.6] text-text-muted">
         {step.line}
       </p>
       {step.kind === "click" ? (
-        <p className="mt-2.5 flex items-center gap-2 rounded-lg bg-accent-muted px-3 py-2 text-[12.5px] font-ui font-semibold text-accent-light">
+        <p className="mt-2.5 flex items-center gap-2 rounded-lg bg-accent-muted px-3 py-2.5 sm:py-2 text-[13px] sm:text-[12.5px] font-ui font-semibold text-accent-light">
           <MousePointerClick
             className={cn("size-4 shrink-0", !reduceMotion && "animate-pulse")}
           />
@@ -443,7 +517,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
           onClick={back}
           disabled={atStart}
           className={cn(
-            "inline-flex items-center gap-1.5 h-9 px-2.5 -ml-2.5 rounded-full text-[12px] transition-colors",
+            "inline-flex items-center gap-1.5 h-11 sm:h-9 px-3 sm:px-2.5 -ml-3 sm:-ml-2.5 rounded-full text-[13px] sm:text-[12px] transition-colors",
             atStart
               ? "text-text-faint cursor-default"
               : "text-text-muted hover:text-text",
@@ -477,7 +551,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
             <button
               type="button"
               onClick={advance}
-              className="inline-flex items-center h-9 px-3 -mr-2 rounded-full text-[12px] text-text-muted hover:text-text transition-colors"
+              className="inline-flex items-center h-11 sm:h-9 px-3.5 sm:px-3 -mr-2 rounded-full text-[13px] sm:text-[12px] text-text-muted hover:text-text transition-colors"
             >
               Skip
             </button>
@@ -486,7 +560,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
           <button
             type="button"
             onClick={advance}
-            className="inline-flex items-center gap-1.5 h-9 px-4.5 rounded-full bg-accent text-accent-contrast text-[12.5px] font-semibold hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center gap-1.5 h-11 sm:h-9 px-5 sm:px-4.5 rounded-full bg-accent text-accent-contrast text-[13.5px] sm:text-[12.5px] font-semibold hover:bg-accent-hover transition-colors"
           >
             Continue
             <ArrowRight className="size-3.5" />
@@ -556,9 +630,23 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
       <main className="flex-1">
         <div
           ref={contentRef}
+          style={
+            // On a phone the sheet is opaque and pinned, so the surface
+            // must clear it. It also has to be able to scroll far
+            // enough that the LAST block can still reach the middle of
+            // the band: without that headroom the page hits its scroll
+            // ceiling and the final control of a stage stays under the
+            // sheet, which is precisely how a walkthrough loses someone.
+            !desktop && !isClose
+              ? {
+                  paddingBottom:
+                    sheetH + 32 + Math.round((viewH - HEADER_H - sheetH) / 2),
+                }
+              : undefined
+          }
           className={cn(
-            "relative mx-auto max-w-[1080px] px-4 sm:px-6 pt-8 sm:pt-12",
-            isClose ? "pb-16" : "pb-56 sm:pb-64",
+            "relative mx-auto max-w-[1080px] px-4 sm:px-6 pt-5 sm:pt-12",
+            isClose ? "pb-16" : "pb-24 sm:pb-64",
           )}
         >
           {/* Keyed remount, entrance only. An exit animation makes the
@@ -636,7 +724,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
 
       {/* ── the stage opener: text first, the surface waiting behind ── */}
       {isIntro && step ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-6 bg-[rgba(244,241,234,0.55)]">
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-5 sm:px-6 bg-[rgba(244,241,234,0.72)] sm:bg-[rgba(244,241,234,0.55)]">
           <motion.div
             key={step.id}
             ref={cardRef}
@@ -652,10 +740,10 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
             <p className="text-[10.5px] tracking-[0.32em] uppercase text-accent-light font-ui font-bold">
               {step.kicker}
             </p>
-            <h2 className="mt-4 font-ui font-semibold tracking-[-0.035em] text-[34px] sm:text-[46px] leading-[1.06] text-text">
+            <h2 className="mt-3.5 sm:mt-4 font-ui font-semibold tracking-[-0.035em] text-[29px] sm:text-[46px] leading-[1.1] sm:leading-[1.06] text-text">
               {step.title}
             </h2>
-            <p className="mt-4 text-[15px] sm:text-[16px] leading-[1.7] text-text-muted max-w-[46ch] mx-auto">
+            <p className="mt-3 sm:mt-4 text-[14.5px] sm:text-[16px] leading-[1.65] sm:leading-[1.7] text-text-muted max-w-[46ch] mx-auto">
               {step.line}
             </p>
             <div className="mt-8 flex items-center justify-center gap-4">
@@ -663,7 +751,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
                 <button
                   type="button"
                   onClick={back}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-full text-[12.5px] text-text-muted hover:text-text transition-colors"
+                  className="inline-flex items-center gap-1.5 h-12 px-4 rounded-full text-[13px] sm:text-[12.5px] text-text-muted hover:text-text transition-colors"
                 >
                   <ArrowLeft className="size-3.5" />
                   Back
@@ -672,7 +760,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
               <button
                 type="button"
                 onClick={advance}
-                className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_12px_32px_-12px_rgba(0,212,200,0.5)]"
+                className="inline-flex items-center gap-2 h-13 sm:h-12 px-8 sm:px-7 rounded-full bg-accent text-accent-contrast text-[14px] sm:text-[13px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors shadow-[0_0_0_1px_rgba(0,212,200,0.35),_0_12px_32px_-12px_rgba(0,212,200,0.5)]"
               >
                 Continue
                 <ArrowRight className="size-4" />
@@ -688,7 +776,10 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
       !isIntro &&
       (step.kind === "watch" ||
         ((step.kind === "note" || step.kind === "click") && !desktop)) ? (
-        <div className="fixed inset-x-0 bottom-0 sm:inset-x-4 sm:bottom-5 z-40 sm:mx-auto sm:max-w-[560px] pointer-events-none">
+        <div
+          ref={sheetRef}
+          className="fixed inset-x-0 bottom-0 sm:inset-x-4 sm:bottom-5 z-40 sm:mx-auto sm:max-w-[560px] pointer-events-none"
+        >
           <motion.div
             key={step.id}
             ref={step.kind === "watch" || !desktop ? cardRef : undefined}

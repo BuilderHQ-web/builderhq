@@ -253,6 +253,7 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
       {
         id: "r-watch",
         kind: "watch",
+        target: "reading-live",
         watchMs: 5600,
         title: "220 pages, one by one",
         line: "Every scope line cites the page it came from. Your set stays the single source of truth.",
@@ -339,6 +340,7 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
       {
         id: "l-fill",
         kind: "watch",
+        target: "spots",
         watchMs: 4600,
         title: "The builders come on",
         line: "Corten and Meridian accept your invitation. Brightwater takes the open spot. ABN and licence checked on all three.",
@@ -395,6 +397,7 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
       {
         id: "t-land",
         kind: "watch",
+        target: "tender-docs",
         watchMs: 4400,
         title: "Three tenders, ready to compare",
         line: "Each one lands in the same structure, with the builder's profile and checks behind it.",

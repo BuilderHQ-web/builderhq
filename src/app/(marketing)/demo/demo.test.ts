@@ -182,19 +182,29 @@ describe("demo copy rules", () => {
 });
 
 describe("homeowner demo anchors", () => {
-  const surfacesSrc = readFileSync(
-    new URL("./surfaces.tsx", import.meta.url),
-    "utf8",
-  );
+  // Targets can live in a shared primitive as easily as in a screen,
+  // so coverage is checked against both.
+  const surfacesSrc =
+    readFileSync(new URL("./surfaces.tsx", import.meta.url), "utf8") +
+    readFileSync(new URL("./ui.tsx", import.meta.url), "utf8");
 
-  test("every note and click target exists in the surfaces", () => {
+  test("every scripted target exists in the surfaces", () => {
     for (const stage of HOMEOWNER_SCRIPT) {
       for (const s of stage.steps) {
-        if ((s.kind !== "note" && s.kind !== "click") || !s.target) continue;
+        if (!s.target) continue;
         expect(
           surfacesSrc.includes(`"${s.target}"`),
           `target "${s.target}" (step ${s.id}) missing from surfaces.tsx`,
         ).toBe(true);
+      }
+    }
+  });
+
+  test("every watch beat names what it plays, for the phone to scroll to", () => {
+    for (const stage of HOMEOWNER_SCRIPT) {
+      for (const s of stage.steps) {
+        if (s.kind !== "watch") continue;
+        expect(s.target, `watch beat ${s.id} has no target`).toBeTruthy();
       }
     }
   });

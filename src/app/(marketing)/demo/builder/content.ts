@@ -322,6 +322,7 @@ export const BUILDER_SCRIPT: DemoStage[] = [
       {
         id: "c-land",
         kind: "watch",
+        target: "price-row",
         watchMs: 3800,
         title: "The other quotes come in",
         line: "Corten and Brightwater send theirs. Three quotes, one shape.",

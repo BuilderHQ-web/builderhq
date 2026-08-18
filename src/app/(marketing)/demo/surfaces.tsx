@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import {
   Card,
   CitePill,
+  DecisionGrid,
   DocRegister,
   EASE,
   Head,
@@ -510,7 +511,7 @@ export function ScopeSurface({
         data-demo-target="packages"
         className={cn("mt-4 rounded-lg", softRing(soft === "packages"))}
       >
-        <div className="flex items-baseline justify-between px-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 px-0.5">
           <Kicker>Provisional sums</Kicker>
           <p className="text-[11px] text-text-dim">
             Budgets for what your documents leave open
@@ -553,7 +554,7 @@ export function ScopeSurface({
                         <button
                           type="button"
                           onClick={() => onAction("set-budget")}
-                          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-accent text-accent-contrast text-[12px] font-semibold hover:bg-accent-hover transition-colors"
+                          className="inline-flex items-center gap-1.5 h-11 sm:h-10 px-4 rounded-full bg-accent text-accent-contrast text-[12.5px] sm:text-[12px] font-semibold hover:bg-accent-hover transition-colors"
                         >
                           <CircleDollarSign className="size-3.5" />
                           Set budget
@@ -665,7 +666,7 @@ export function RoundSurface({
           </div>
         </Card>
 
-        <Card className="px-5 py-5">
+        <Card target="spots" className="px-5 py-5">
           <div className="flex items-center justify-between">
             <Kicker>Tender spots</Kicker>
             <span className="text-[11.5px] font-ui font-semibold text-text tabular-nums">
@@ -844,7 +845,7 @@ export function TenderSurface({
         </ul>
       </Card>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div data-demo-target="tender-docs" className="mt-5 grid gap-3 sm:grid-cols-3">
         {DEMO_TENDERS.map((t, i) => (
           <TenderDoc
             key={t.name}
@@ -988,7 +989,7 @@ export function CompareSurface({
             <button
               type="button"
               onClick={() => onAction("show-scores")}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
+              className="inline-flex items-center gap-2 h-11 sm:h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
             >
               Show the scores
               <ChevronDown className="size-3.5" />
@@ -1042,7 +1043,7 @@ export function CompareSurface({
             <button
               type="button"
               onClick={() => onAction("show-differences")}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
+              className="inline-flex items-center gap-2 h-11 sm:h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
             >
               Where they differ
               <ChevronDown className="size-3.5" />
@@ -1054,61 +1055,13 @@ export function CompareSurface({
       {/* the decision grid */}
       {differing ? (
         <motion.div {...reveal(true)}>
-          <Card
+          <DecisionGrid
             target="grid"
-            className={cn("mt-4 overflow-hidden", softRing(soft === "grid"))}
-          >
-            <div className="px-5 py-3 border-b border-border-subtle/60 flex items-center justify-between">
-              <Kicker>The decision grid</Kicker>
-              <span className="text-[10.5px] text-text-dim">
-                Highlighted rows are where they differ
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-border-subtle/60">
-                    <th className="px-5 py-2 text-[10px] tracking-[0.12em] uppercase text-text-dim font-ui font-semibold min-w-[150px]">
-                      &nbsp;
-                    </th>
-                    {DEMO_TENDERS.map((t) => (
-                      <th key={t.name} className="px-4 py-2 text-[11px] font-ui font-semibold text-text min-w-[110px]">
-                        {t.name.split(" ")[0]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {DEMO_GRID.map((row) => (
-                    <tr
-                      key={row.label}
-                      className={cn(
-                        "border-b border-border-subtle/40 last:border-0",
-                        row.differs && "bg-[rgba(201,148,34,0.07)]",
-                      )}
-                    >
-                      <td className="px-5 py-2 text-[11.5px] text-text-muted">
-                        {row.label}
-                      </td>
-                      {row.vals.map((v, i) => (
-                        <td
-                          key={i}
-                          className={cn(
-                            "px-4 py-2 text-[11.5px] tabular-nums",
-                            v === "No" || v === "Not included"
-                              ? "text-[#8a6414] font-ui font-medium"
-                              : "text-text",
-                          )}
-                        >
-                          {v}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+            ringed={soft === "grid"}
+            caption="Highlighted rows are where they differ"
+            builders={DEMO_TENDERS.map((t) => t.name.split(" ")[0]!)}
+            rows={DEMO_GRID}
+          />
         </motion.div>
       ) : null}
 
@@ -1162,7 +1115,7 @@ export function CompareSurface({
             <button
               type="button"
               onClick={() => onAction("show-flags")}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
+              className="inline-flex items-center gap-2 h-11 sm:h-10 px-5 rounded-full border border-border-strong text-[12.5px] font-ui font-medium text-text hover:border-border-accent transition-colors"
             >
               Show the flags
               <Flag className="size-3.5" />

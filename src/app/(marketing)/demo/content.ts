@@ -349,6 +349,7 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
       {
         id: "r-watch",
         kind: "watch",
+        target: "reading-live",
         watchMs: 5600,
         title: "211 pages, one by one",
         line: "Every line we write down says which page it came from. Nothing is made up.",
@@ -442,6 +443,7 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
       {
         id: "l-fill",
         kind: "watch",
+        target: "spots",
         watchMs: 4600,
         title: "Only verified builders",
         line: "We check their ABN and their building licence first. You chose three spots for this project, and that number is up to you.",
@@ -484,6 +486,7 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
       {
         id: "t-land",
         kind: "watch",
+        target: "tender-docs",
         watchMs: 4400,
         title: "Three quotes, one format",
         line: "Each arrives as a full document, with the builder's profile and checks behind it.",

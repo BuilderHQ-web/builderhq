@@ -89,7 +89,7 @@ function ListingCard({
 }) {
   return (
     <div className="relative flex flex-col lg:flex-row rounded-xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
-      <div className="relative shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-border-subtle/60 h-[104px] lg:h-auto lg:w-[188px] lg:min-h-[124px]">
+      <div className="relative shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-border-subtle/60 h-[76px] sm:h-[104px] lg:h-auto lg:w-[188px] lg:min-h-[124px]">
         <CoverArt facts={listing.cover} scrim />
         <span className="absolute top-2.5 left-3 flex flex-wrap items-center gap-1.5">
           <span className="inline-flex items-center px-2 py-1 rounded-sm border border-border-subtle bg-white/75 backdrop-blur-[2px] text-[9px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
@@ -211,7 +211,7 @@ export function BuilderFindSurface({
         data-demo-target="board"
         className={cn("mt-5 rounded-lg", softRing(soft === "board"))}
       >
-        <div className="flex items-baseline justify-between px-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 px-0.5">
           <Kicker>Open to verified builders</Kicker>
           <p className="text-[11px] text-text-dim">
             {BUILDER_BOARD.length} projects open in your area
@@ -502,7 +502,7 @@ export function BuilderScopeSurface({
         data-demo-target="packages"
         className={cn("mt-4 rounded-lg", softRing(soft === "packages"))}
       >
-        <div className="flex items-baseline justify-between px-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 px-0.5">
           <Kicker>Provisional sums</Kicker>
           <p className="text-[11px] text-text-dim">
             Set by the client. The same figure for every builder.
@@ -604,7 +604,7 @@ export function BuilderTenderSurface({
                     initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3, ease: EASE }}
-                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-accent-muted text-accent-light text-[12px] font-ui font-semibold"
+                    className="inline-flex items-center gap-1.5 h-11 sm:h-9 px-4 rounded-full bg-accent-muted text-accent-light text-[12.5px] sm:text-[12px] font-ui font-semibold"
                   >
                     <Check className="size-3.5" />
                     Included
@@ -617,7 +617,7 @@ export function BuilderTenderSurface({
                   onClick={() => isPick && onAction("mark-included")}
                   aria-disabled={!isPick}
                   className={cn(
-                    "inline-flex items-center h-9 px-4 rounded-full border text-[12px] font-ui font-medium transition-colors",
+                    "inline-flex items-center h-11 sm:h-9 px-4 rounded-full border text-[12.5px] sm:text-[12px] font-ui font-medium transition-colors",
                     isPick
                       ? "border-border-strong text-text hover:border-border-accent"
                       : "border-border-subtle text-text-muted cursor-default",
