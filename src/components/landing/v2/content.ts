@@ -279,8 +279,8 @@ export const LENS: Record<Role, LensCopy> = {
   builder: {
     hero: {
       badge: "Live tender rounds",
-      h1a: "Find work",
-      h1b: "that fits your pipeline.",
+      h1a: "Find your",
+      h1b: "next build.",
       sub: "Live tenders in your area, with the drawings in and the scope of works already written.",
       subMore: "We read the client’s documents and lay out every item, so you price instead of investigating.",
       primary: { label: "Pick your next project", href: "/signup?role=builder" },
