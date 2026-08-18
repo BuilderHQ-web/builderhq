@@ -65,7 +65,7 @@ export function AssociationStrip({ className }: { className?: string }) {
             // The hero's marks answer "are these people real?" in the
             // first seconds, so they are never allowed to arrive late.
             priority
-            className="h-[26px] sm:h-[33px] w-auto shrink-0"
+            className="h-[26px] sm:h-[36px] w-auto shrink-0"
           />
         ))}
       </span>
