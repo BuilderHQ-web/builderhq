@@ -27,8 +27,6 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import type { PartnerLogo } from "@/app/(marketing)/partners/partners-data";
-import { ASSOCIATIONS } from "./association";
-
 /** Cruise speed, px per second. */
 const SPEED = 38;
 /** Approach rate for velocity changes (higher = quicker settle). */
@@ -105,55 +103,12 @@ export function PartnerMarquee({ logos }: { logos: PartnerLogo[] }) {
       className="relative px-5 md:px-10 py-12 lg:py-16 lg:min-h-[32svh] lg:flex lg:flex-col lg:justify-center"
     >
       <div className="mx-auto w-full max-w-[1180px]">
-        {/* ── The majors: institutions BuilderHQ is partnered with.
-            A static tier above the register marquee, in full colour,
-            built as a row so the next mark can simply join it. These
-            are relationships, not register listings, so nothing here
-            links away from the page. ── */}
-        <div className="mb-12 lg:mb-16 text-center">
-          {/* The kicker carries more weight than the register's label
-              below it, because this tier outranks it. The phone keeps
-              the smaller step: at 375px the rules and the words have
-              to share a 335px line. */}
-          <p className="flex items-center justify-center gap-3 text-[11px] sm:text-[13px] tracking-[0.28em] sm:tracking-[0.3em] uppercase font-medium text-text-muted">
-            <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
-            In association with
-            <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
-          </p>
-          <div className="mt-8 sm:mt-9 flex flex-wrap items-start justify-center gap-x-6 sm:gap-x-20 gap-y-10">
-            {ASSOCIATIONS.map((a) => (
-              <figure key={a.name} className="flex flex-col items-center">
-                {/* One height for every mark, whatever its shape, so
-                    the row reads as a set. The caption below keeps its
-                    own width rather than the logo's: a badge and a
-                    long lockup would otherwise wrap their names and
-                    taglines to different depths. */}
-                <div className="flex h-[72px] sm:h-[104px] items-center justify-center">
-                  <Image
-                    src={a.src}
-                    alt=""
-                    width={a.width}
-                    height={a.height}
-                    className="h-full w-auto max-w-full"
-                  />
-                </div>
-                <figcaption className="mt-4 sm:mt-5 w-[150px] sm:w-[236px]">
-                  <span className="block text-[13px] sm:text-[14px] font-medium text-text-muted">
-                    {a.name}
-                  </span>
-                  <span className="block mt-1 text-[11.5px] sm:text-[12px] text-text-dim">
-                    {a.blurb}
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-
         {marquee ? (
           <>
-            <p className="mb-8 text-[11px] tracking-[0.28em] uppercase text-text-dim text-center">
+            <p className="mb-8 flex items-center justify-center gap-3 text-[11px] sm:text-[12px] tracking-[0.28em] sm:tracking-[0.3em] uppercase font-medium text-text-muted text-center">
+              <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
               A network of trusted industry partners
+              <span aria-hidden className="h-px w-6 sm:w-9 bg-text-faint/40" />
             </p>
 
             <div

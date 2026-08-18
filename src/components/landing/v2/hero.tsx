@@ -148,7 +148,7 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
               {/* The bodies we sit under, in place of three claims of
                   our own. Small: they are a signature, not a feature
                   list, and the phone keeps them too. */}
-              <AssociationStrip className="mt-5 lg:mt-8 px-2 lg:px-0" />
+              <AssociationStrip className="mt-7 lg:mt-10 px-2 lg:px-0" />
             </RoleSwap>
           </motion.div>
         </div>

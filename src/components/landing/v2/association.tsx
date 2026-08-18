@@ -1,10 +1,12 @@
 /**
  * The industry bodies we sit under, in one place.
  *
- * Three surfaces show these marks at three sizes: a quiet strip under
- * the hero CTAs, a lockup at the foot of the brand column, and the
- * full tier above the partner register. Keeping the list here means a
- * third body is one entry rather than three edits.
+ * Two surfaces show these marks: a quiet strip under the hero CTAs,
+ * where recognition matters most, and a lockup at the foot of the
+ * brand column, where the names are spelled out. Small on purpose:
+ * an endorsement stated once reads as a fact, and a large one reads
+ * as an advertisement. Keeping the list here means a third body is
+ * one entry rather than two edits.
  *
  * Every mark runs to the same height on a given surface, whatever its
  * shape, so a surface sets one height and the widths fall out of it.
@@ -15,8 +17,6 @@ import { cn } from "@/lib/utils";
 
 export interface Association {
   name: string;
-  /** What the body is, in the reader's terms. Marquee only. */
-  blurb: string;
   src: string;
   width: number;
   height: number;
@@ -25,14 +25,12 @@ export interface Association {
 export const ASSOCIATIONS: Association[] = [
   {
     name: "Housing Industry Association",
-    blurb: "Australia’s peak body for residential building",
     src: "/Homepage_logos/hia-badge.png",
     width: 414,
     height: 468,
   },
   {
     name: "Master Builders Australia",
-    blurb: "The national voice of the building and construction industry",
     src: "/Homepage_logos/mba-badge.png",
     width: 600,
     height: 157,
@@ -64,6 +62,9 @@ export function AssociationStrip({ className }: { className?: string }) {
             alt={a.name}
             width={a.width}
             height={a.height}
+            // The hero's marks answer "are these people real?" in the
+            // first seconds, so they are never allowed to arrive late.
+            priority
             className="h-[26px] sm:h-[30px] w-auto shrink-0"
           />
         ))}
