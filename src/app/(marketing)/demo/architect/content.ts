@@ -72,34 +72,37 @@ export const ARCH_READING_FEED = [
   { line: "No landscaping documented. Held as a client decision.", cite: "Whole set" },
 ];
 
-/** The division opened during the scope stage. */
+/** The division opened during the scope stage: the new first floor,
+ *  priced straight off the engineering. The most valuable part of the
+ *  project, shown with the specifics that prove the set was read. */
 export const ARCH_DIVISION = {
-  label: "Demolition and retention",
-  count: 6,
+  label: "First floor structure and framing",
+  count: 9,
   lines: [
     {
-      label: "Retain and protect the front four rooms",
-      note: "The existing front rooms stay. Protection during the works is in the price.",
-      cite: "Demolition and retention plan, page 3",
+      label: "Steel beams over the ground floor opening",
+      note: "Two 310UB transfer beams, sized and priced to the engineering.",
+      cite: "Structural engineering, page 8, Rev B",
     },
     {
-      label: "Remove the rear lean-to and slab",
-      note: "Full removal, slab and footings included.",
-      cite: "Demolition and retention plan, page 4",
+      label: "First floor joists and structural flooring",
+      note: "LVL joists at 450 centres, laid to the framing layout.",
+      cite: "Structural engineering, page 9, Rev B",
     },
   ],
-  more: "4 more lines in this section",
+  more: "7 more lines in this section",
 };
 
 export const ARCH_SCOPE_DIVISIONS = [
   { label: "Preliminaries and site establishment", count: 13 },
   { label: "Approvals, certification and compliance", count: 9 },
-];
-export const ARCH_SCOPE_DIVISIONS_AFTER = [
+  { label: "Demolition and retention", count: 6 },
   { label: "Earthworks and excavation", count: 7 },
   { label: "Footings and new ground slab", count: 8 },
-  { label: "First floor structure and framing", count: 9 },
+];
+export const ARCH_SCOPE_DIVISIONS_AFTER = [
   { label: "Roofing and roof plumbing", count: 7 },
+  { label: "Windows and external glazing", count: 8 },
 ];
 export const ARCH_SCOPE_MORE = "21 more sections, all written the same way";
 
@@ -164,7 +167,7 @@ export const ARCH_ASKS = [
 
 /** What lands inside a submission on the tenders stage. */
 export const ARCH_MARK_ROWS = [
-  { label: "Retain and protect the front four rooms", state: "Included", tone: "teal" },
+  { label: "Steel beams over the ground floor opening", state: "Included", tone: "teal" },
   { label: "Landscaping package", state: "Provisional sum · $47,000", tone: "amber" },
   { label: "Driveway and crossover", state: "Included", tone: "teal" },
 ];
@@ -216,7 +219,7 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
         kind: "click",
         target: "choose-both",
         title: "You choose who tenders",
-        line: "Invite the builders you trust. We can fill the rest from our verified pool.",
+        line: "Invite your own builders, open the round to verified builders, or do both.",
         prompt: "Choose Your builders plus ours",
       },
       {
@@ -288,14 +291,14 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
         target: "expand-division",
         title: "Look inside",
         line: "Open a section and see the detail.",
-        prompt: "Open Demolition and retention",
+        prompt: "Open First floor structure and framing",
       },
       {
         id: "s-cite",
         kind: "note",
         target: "division-lines",
         title: "Every line cites your set",
-        line: "The retention is on page 3 of the demolition plan. The line says so. Builder queries answer themselves.",
+        line: "The steel is on page 8 of the engineering. The line says so. Builder queries answer themselves.",
       },
       {
         id: "s-allow",

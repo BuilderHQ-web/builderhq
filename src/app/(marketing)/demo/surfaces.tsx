@@ -496,7 +496,7 @@ export function ScopeSurface({
                   </li>
                 ))}
                 <li className="px-5 py-2.5 text-[11.5px] text-text-muted">
-                  5 more lines in this section
+                  4 more lines in this section
                 </li>
               </motion.ul>
             ) : null}

@@ -84,20 +84,22 @@ export const DEMO_TOTALS = {
   builderPriced: 24,
 };
 
-/** The division opened during the scope stage. */
+/** The division opened during the scope stage: windows, priced to
+ *  the schedule and the energy assessment. Two documents behind one
+ *  line of scope, and a cost the reader already worries about. */
 export const DEMO_DIVISION = {
-  label: "Footings and ground floor structure",
-  count: 7,
+  label: "Windows and external glazing",
+  count: 6,
   lines: [
     {
-      label: "Waffle pod slab",
-      note: "300mm waffle pods with an 85mm slab, priced to the engineering.",
-      cite: "Structural engineering, page 6, Rev B",
+      label: "Aluminium windows to the schedule",
+      note: "Every window priced to its scheduled size and finish, W01 to W18.",
+      cite: "Window and door schedule, page 2",
     },
     {
-      label: "Edge beams and set-downs",
-      note: "Edge beams and wet area set-downs as detailed.",
-      cite: "Structural engineering, page 7, Rev B",
+      label: "Double glazing throughout",
+      note: "Low e double glazing, priced to the 7.1 star energy assessment.",
+      cite: "Energy assessment, page 5",
     },
   ],
 };
@@ -107,11 +109,11 @@ export const DEMO_SCOPE_DIVISIONS = [
   { label: "Approvals, certification and compliance", count: 11 },
   { label: "Demolition and site clearing", count: 6 },
   { label: "Earthworks and excavation", count: 8 },
+  { label: "Footings and ground floor structure", count: 7 },
+  { label: "Framing", count: 8 },
 ];
 export const DEMO_SCOPE_DIVISIONS_AFTER = [
-  { label: "Framing", count: 8 },
   { label: "Roofing and roof plumbing", count: 7 },
-  { label: "Windows and external glazing", count: 6 },
   { label: "Electrical and data", count: 10 },
 ];
 export const DEMO_SCOPE_MORE = "22 more sections, all written the same way";
@@ -320,7 +322,7 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         kind: "click",
         target: "choose-open",
         title: "You choose who can quote",
-        line: "Open it up to builders near you, invite your own, or do both.",
+        line: "Invite your own builders, open the round to verified builders, or do both.",
         prompt: "Choose Open to verified builders",
       },
       {
@@ -385,14 +387,14 @@ export const HOMEOWNER_SCRIPT: DemoStage[] = [
         target: "expand-division",
         title: "Look inside",
         line: "Open a section and see the detail.",
-        prompt: "Open Footings and ground floor structure",
+        prompt: "Open Windows and external glazing",
       },
       {
         id: "s-cite",
         kind: "note",
         target: "division-lines",
         title: "Every line shows where it came from",
-        line: "The slab is on page 6 of your engineering. The line says so. You can always check it yourself.",
+        line: "The windows are on page 2 of your window schedule. The line says so. You can always check it yourself.",
       },
       {
         id: "s-allow",
