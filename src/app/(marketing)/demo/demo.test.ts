@@ -13,6 +13,8 @@
  * step would ship to every ad click.
  */
 
+import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vitest";
 
 import {
@@ -175,6 +177,39 @@ describe("demo copy rules", () => {
       if (stage.id === "close") continue;
       expect(stage.steps[0]!.kind, stage.id).toBe("intro");
       expect(stage.steps[0]!.kicker, stage.id).toBeTruthy();
+    }
+  });
+});
+
+describe("homeowner demo anchors", () => {
+  const surfacesSrc = readFileSync(
+    new URL("./surfaces.tsx", import.meta.url),
+    "utf8",
+  );
+
+  test("every note and click target exists in the surfaces", () => {
+    for (const stage of HOMEOWNER_SCRIPT) {
+      for (const s of stage.steps) {
+        if ((s.kind !== "note" && s.kind !== "click") || !s.target) continue;
+        expect(
+          surfacesSrc.includes(`"${s.target}"`),
+          `target "${s.target}" (step ${s.id}) missing from surfaces.tsx`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  test("every spotlit control in the surfaces is scripted", () => {
+    const spotIds = [...surfacesSrc.matchAll(/<Spot\s[^>]*?id="([^"]+)"/g)].map(
+      (m) => m[1]!,
+    );
+    const clickTargets = new Set(
+      HOMEOWNER_SCRIPT.flatMap((st) =>
+        st.steps.filter((s) => s.kind === "click").map((s) => s.target),
+      ),
+    );
+    for (const id of spotIds) {
+      expect(clickTargets.has(id), `Spot "${id}" has no click beat`).toBe(true);
     }
   });
 });

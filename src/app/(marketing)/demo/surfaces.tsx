@@ -1,18 +1,14 @@
 "use client";
 
 /**
- * The homeowner demo's surfaces — the product, recreated on its own
- * design tokens.
+ * The homeowner demo's screens, composed from the shared product
+ * primitives and driven entirely by the step index, so stepping back
+ * rewinds the world for free.
  *
- * Deliberately NOT the real app components: the real screens are
- * auth-gated, database-backed, and cannot time-travel, and a demo
- * must show upload, analysis, review, live, tendering and comparison
- * inside four minutes. Each surface is a faithful, scripted
- * recreation, driven entirely by the step index the engine passes
- * down, so stepping BACK rewinds the world for free.
- *
- * Elements the walkthrough talks about carry data-demo-target ids:
- * the engine anchors its callouts to them and rings the active one.
+ * Same standard as the architect demo: every screen inside the
+ * product frame, one set piece per stage, and a plain line under
+ * every heading saying what the screen shows. The script and its
+ * beat order are unchanged.
  */
 
 import * as React from "react";
@@ -29,7 +25,6 @@ import {
   Flag,
   Lock,
   MessageCircleQuestion,
-  ScanLine,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -37,11 +32,16 @@ import {
 import { cn } from "@/lib/utils";
 import {
   Card,
+  DocRegister,
   EASE,
+  Head,
   Kicker,
+  ScopeWriter,
+  SetChecklist,
   softRing,
   Spot,
   TealButton,
+  TenderDoc,
   useCountUp,
   type SurfaceProps,
 } from "./ui";
@@ -76,22 +76,22 @@ export function UploadSurface({
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 add-plans · 2 register · 3 choose-open ·
+  //        4 start-reading
   const filed = stepIdx >= 2;
   const roundOffered = stepIdx >= 3;
   const roundChosen = stepIdx >= 4;
   return (
     <div>
-      <Kicker>New project</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Upload your plans
-      </h2>
-      <p className="mt-2.5 text-[13.5px] leading-[1.7] text-text-muted max-w-[62ch]">
-        Drop in what you have. PDFs from your architect are perfect.
-      </p>
+      <Head
+        kicker="New project"
+        title="Upload your plans"
+        sub="Drop in what you have. PDFs from your architect are perfect."
+      />
 
       {!filed ? (
         <Card className="mt-6 border-dashed border-border-strong bg-transparent">
-          <div className="px-6 py-14 flex flex-col items-center text-center">
+          <div className="px-6 py-12 flex flex-col items-center text-center">
             <span className="size-12 rounded-full bg-accent-muted flex items-center justify-center text-accent-light">
               <FileUp className="size-5" />
             </span>
@@ -111,46 +111,19 @@ export function UploadSurface({
         </Card>
       ) : (
         <>
-          <Card
-            target="register"
-            className={cn("mt-6 overflow-hidden", softRing(soft === "register"))}
-          >
-            <div className="px-5 py-3.5 border-b border-border-subtle/60 flex items-center justify-between">
-              <p className="text-[12.5px] font-ui font-semibold text-text">
-                {DEMO_PROJECT.title}
-              </p>
-              <p className="text-[11.5px] text-text-dim tabular-nums">
-                {DEMO_TOTALS.documents} documents · {DEMO_TOTALS.pages} pages
-              </p>
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_236px] items-start">
+            <DocRegister
+              project={DEMO_PROJECT.title}
+              docs={DEMO_DOCUMENTS}
+              totalLabel={`${DEMO_TOTALS.documents} documents · ${DEMO_TOTALS.pages} pages`}
+              reduceMotion={reduceMotion}
+              target="register"
+              ringed={soft === "register"}
+            />
+            <div className="hidden lg:block">
+              <SetChecklist docs={DEMO_DOCUMENTS} reduceMotion={reduceMotion} />
             </div>
-            <ul className="divide-y divide-border-subtle/50">
-              {DEMO_DOCUMENTS.map((d, i) => (
-                <motion.li
-                  key={d.name}
-                  initial={reduceMotion ? false : { opacity: 0, x: -14 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: reduceMotion ? 0 : i * 0.07, ease: EASE }}
-                  className="px-5 py-2.5 flex items-center gap-3"
-                >
-                  <FileText className="size-4 text-text-dim shrink-0" />
-                  <span className="min-w-0 flex-1 text-[13px] text-text truncate">
-                    {d.name}
-                  </span>
-                  <motion.span
-                    initial={reduceMotion ? false : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: reduceMotion ? 0 : 0.7 + i * 0.07 }}
-                    className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[10.5px] font-ui font-semibold"
-                  >
-                    {d.kind}
-                  </motion.span>
-                  <span className="text-[11.5px] text-text-dim tabular-nums shrink-0 w-14 text-right">
-                    {d.pages} pages
-                  </span>
-                </motion.li>
-              ))}
-            </ul>
-          </Card>
+          </div>
 
           {roundOffered ? (
             <motion.div
@@ -196,7 +169,7 @@ export function UploadSurface({
                         onClick={() => o.pick && onAction("choose-open")}
                         aria-disabled={!o.pick}
                         className={cn(
-                          "w-full text-left rounded-md border px-3.5 py-3 transition-colors",
+                          "w-full h-full text-left rounded-md border px-3.5 py-3 transition-colors",
                           selected
                             ? "border-border-accent bg-[rgba(0,212,200,0.05)]"
                             : o.pick
@@ -204,8 +177,13 @@ export function UploadSurface({
                               : "border-border-subtle cursor-default",
                         )}
                       >
-                        <span className="block text-[12.5px] font-ui font-semibold text-text">
-                          {o.label}
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-[12.5px] font-ui font-semibold text-text">
+                            {o.label}
+                          </span>
+                          {selected ? (
+                            <Check className="size-3.5 text-accent-light shrink-0" />
+                          ) : null}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-text-muted">
                           {o.sub}
@@ -215,7 +193,8 @@ export function UploadSurface({
                     return o.pick ? (
                       <Spot
                         key={o.id}
-                        id="choose-open" active={spot === "choose-open"}
+                        id="choose-open"
+                        active={spot === "choose-open"}
                         reduceMotion={reduceMotion}
                         className="w-full"
                       >
@@ -271,22 +250,12 @@ export function ReadingSurface({
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 watch · 2 human-check · 3 open-scope
   const watching = stepIdx === 1;
   const settled = stepIdx >= 2;
   const pages = useCountUp(DEMO_TOTALS.pages, watching, settled, 4600, reduceMotion);
   const items = useCountUp(DEMO_TOTALS.items, watching, settled, 5000, reduceMotion);
   const cites = useCountUp(486, watching, settled, 5200, reduceMotion);
-
-  const [feedIdx, setFeedIdx] = useState(0);
-  useEffect(() => {
-    if (!watching || reduceMotion) return;
-    const t = setInterval(
-      () => setFeedIdx((i) => (i + 1) % READING_FEED.length),
-      1150,
-    );
-    return () => clearInterval(t);
-  }, [watching, reduceMotion]);
-  const feed = READING_FEED[settled ? READING_FEED.length - 1 : feedIdx]!;
 
   const stages: Array<{ label: string; done: boolean; active: boolean; human?: boolean }> = [
     { label: "Identify the documents", done: true, active: false },
@@ -297,20 +266,43 @@ export function ReadingSurface({
 
   return (
     <div>
-      <Kicker>Reading your documents</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        {settled ? "Your pack is ready." : "Reading, page by page."}
-      </h2>
+      <Head
+        kicker="Reading your documents"
+        title={settled ? "Your pack is ready." : "Reading, page by page."}
+        sub={
+          settled
+            ? "Every item traced to its page, checked, and ready for you."
+            : "Each line we write records the page it came from."
+        }
+      />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="px-6 py-6">
-          <ul className="space-y-4">
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        {[
+          { v: pages, label: "Pages read" },
+          { v: items, label: "Scope items written" },
+          { v: cites, label: "Citations recorded" },
+        ].map((s) => (
+          <Card key={s.label} className="px-4 py-3.5">
+            <p className="font-display text-[24px] sm:text-[30px] leading-none text-text tabular-nums">
+              {s.v.toLocaleString("en-AU")}
+            </p>
+            <p className="mt-1.5 text-[9px] sm:text-[10px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold">
+              {s.label}
+            </p>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr] items-start">
+        <Card className="px-5 py-4">
+          <Kicker>What happens</Kicker>
+          <ul className="mt-3.5 space-y-3.5">
             {stages.map((s) => (
               <li
                 key={s.label}
                 data-demo-target={s.human ? "human-check" : undefined}
                 className={cn(
-                  "flex items-center gap-3.5 rounded-md",
+                  "flex items-center gap-3 rounded-md",
                   s.human && softRing(soft === "human-check"),
                   s.human && soft === "human-check" && "px-2 py-1.5 -mx-2",
                 )}
@@ -326,64 +318,38 @@ export function ReadingSurface({
                   )}
                 >
                   {s.done ? (
-                    <Check className="size-3.5" strokeWidth={3} />
+                    <Check className="size-3" strokeWidth={3} />
                   ) : s.human ? (
-                    <UserRound className="size-3.5" />
+                    <UserRound className="size-3" />
                   ) : (
-                    <ScanLine className={cn("size-3.5", s.active && !reduceMotion && "animate-pulse")} />
+                    <span className={cn("size-1.5 rounded-full bg-current", s.active && !reduceMotion && "animate-pulse")} />
                   )}
                 </span>
                 <span
                   className={cn(
-                    "text-[13.5px] font-ui",
+                    "text-[12.5px] font-ui leading-[1.4]",
                     s.done || s.active ? "text-text" : "text-text-dim",
                   )}
                 >
                   {s.label}
                 </span>
                 {s.human && s.done ? (
-                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-ui font-semibold text-accent-light">
-                    <ShieldCheck className="size-3.5" />
+                  <span className="ml-auto inline-flex items-center gap-1 text-[10.5px] font-ui font-semibold text-accent-light shrink-0">
+                    <ShieldCheck className="size-3" />
                     Reviewed
                   </span>
                 ) : null}
               </li>
             ))}
           </ul>
-
-          <div className="mt-6 pt-5 border-t border-border-subtle/60">
-            <p className="text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
-              {settled ? "Among what it found" : "Being read now"}
-            </p>
-            <motion.div
-              key={feed.line}
-              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: EASE }}
-              className="mt-2"
-            >
-              <p className="text-[13.5px] text-text leading-[1.5]">{feed.line}</p>
-              <p className="mt-0.5 text-[11px] text-text-muted">{feed.cite}</p>
-            </motion.div>
-          </div>
         </Card>
 
-        <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
-          {[
-            { v: pages, label: "Pages read" },
-            { v: items, label: "Scope items written" },
-            { v: cites, label: "Citations recorded" },
-          ].map((s) => (
-            <Card key={s.label} className="px-4 py-4 lg:px-5 lg:py-5 text-center lg:text-left">
-              <p className="font-display text-[28px] lg:text-[34px] leading-none text-text tabular-nums">
-                {s.v.toLocaleString("en-AU")}
-              </p>
-              <p className="mt-1.5 text-[9.5px] lg:text-[10px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                {s.label}
-              </p>
-            </Card>
-          ))}
-        </div>
+        <ScopeWriter
+          feed={READING_FEED}
+          watching={watching}
+          settled={settled}
+          reduceMotion={reduceMotion}
+        />
       </div>
 
       {settled ? (
@@ -407,6 +373,16 @@ export function ReadingSurface({
 
 /* ── 3 · the scope of works ─────────────────────────────────────────── */
 
+/** A line's citation, worn as a small document pill. */
+function CitePill({ cite }: { cite: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border-subtle text-[10.5px] text-text-muted whitespace-nowrap">
+      <FileText className="size-2.5" />
+      {cite}
+    </span>
+  );
+}
+
 export function ScopeSurface({
   stepIdx,
   spot,
@@ -414,34 +390,35 @@ export function ScopeSurface({
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 expand · 2 cite · 3 packages · 4 set-budget ·
+  //        5 publish
   const expanded = stepIdx >= 2;
   const psSet = stepIdx >= 5;
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Kicker>{DEMO_PROJECT.title}</Kicker>
-          <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-            Scope of works
-          </h2>
-        </div>
-        <div className="flex items-center gap-5 sm:gap-7">
-          {[
-            { v: DEMO_TOTALS.items, label: "Items" },
-            { v: DEMO_TOTALS.trades, label: "Trades" },
-            { v: DEMO_TOTALS.documents, label: "Documents" },
-          ].map((s) => (
-            <div key={s.label} className="text-right">
-              <p className="font-display text-[24px] sm:text-[28px] leading-none text-text tabular-nums">
-                {s.v}
-              </p>
-              <p className="mt-1 text-[9px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Head
+        kicker={DEMO_PROJECT.title}
+        title="Scope of works"
+        sub="Everything your build needs, in one list. Every builder prices this same list."
+        right={
+          <div className="flex items-center gap-5 sm:gap-7">
+            {[
+              { v: DEMO_TOTALS.items, label: "Items" },
+              { v: DEMO_TOTALS.trades, label: "Trades" },
+              { v: DEMO_TOTALS.documents, label: "Documents" },
+            ].map((s) => (
+              <div key={s.label} className="text-right">
+                <p className="font-display text-[22px] sm:text-[26px] leading-none text-text tabular-nums">
+                  {s.v}
+                </p>
+                <p className="mt-1 text-[9px] tracking-[0.16em] uppercase text-text-dim font-ui font-semibold">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        }
+      />
 
       <p className="mt-3 text-[12.5px] text-text-muted">
         <span className="font-ui font-semibold text-text">
@@ -457,17 +434,24 @@ export function ScopeSurface({
       {/* divisions */}
       <Card className="mt-5 overflow-hidden">
         <ul className="divide-y divide-border-subtle/50">
-          {DEMO_SCOPE_DIVISIONS.map((d) => (
-            <li key={d.label} className="px-5 py-3 flex items-center justify-between">
+          {DEMO_SCOPE_DIVISIONS.map((d, i) => (
+            <motion.li
+              key={d.label}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: reduceMotion ? 0 : i * 0.05, ease: EASE }}
+              className="px-5 py-3 flex items-center justify-between"
+            >
               <span className="text-[13px] font-ui text-text">{d.label}</span>
               <span className="text-[11.5px] text-text-dim tabular-nums">
                 {d.count} items
               </span>
-            </li>
+            </motion.li>
           ))}
           <li>
             <Spot
-              id="expand-division" active={spot === "expand-division"}
+              id="expand-division"
+              active={spot === "expand-division"}
               reduceMotion={reduceMotion}
               className="w-full"
             >
@@ -500,17 +484,19 @@ export function ScopeSurface({
               >
                 {DEMO_DIVISION.lines.map((l) => (
                   <li key={l.label} className="px-5 py-3">
-                    <p className="text-[13px] font-ui font-medium text-text">
-                      {l.label}
-                    </p>
-                    <p className="mt-0.5 text-[12px] leading-[1.55] text-text-muted">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                      <p className="text-[13px] font-ui font-medium text-text">
+                        {l.label}
+                      </p>
+                      <CitePill cite={l.cite} />
+                    </div>
+                    <p className="mt-0.5 text-[12px] leading-[1.55] text-text-muted max-w-[68ch]">
                       {l.note}
                     </p>
-                    <p className="mt-1 text-[11px] text-text-muted">{l.cite}</p>
                   </li>
                 ))}
                 <li className="px-5 py-2.5 text-[11.5px] text-text-muted">
-                  5 more lines in this division
+                  5 more lines in this section
                 </li>
               </motion.ul>
             ) : null}
@@ -523,7 +509,7 @@ export function ScopeSurface({
               </span>
             </li>
           ))}
-          <li className="px-5 py-3 text-[12px] text-text-muted">
+          <li className="px-5 py-3 text-[12px] text-text-muted bg-bg-elev/30">
             {DEMO_SCOPE_MORE}
           </li>
         </ul>
@@ -602,19 +588,27 @@ export function ScopeSurface({
         </div>
       </div>
 
-      {/* approve */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-        <p className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
-          <ShieldCheck className="size-3.5 text-accent-light" />
-          Checked before you see it
-        </p>
-        <Spot id="publish" active={spot === "publish"} reduceMotion={reduceMotion}>
-          <TealButton onClick={() => onAction("publish")} disabled={!psSet}>
-            Approve and publish
-            <ArrowRight className="size-4" />
-          </TealButton>
-        </Spot>
-      </div>
+      {/* approve: mounts on its own beat, so the budget callout
+          before it never has to dodge a control that is not in play */}
+      {psSet ? (
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE }}
+          className="mt-6 flex flex-wrap items-center justify-between gap-4"
+        >
+          <p className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
+            <ShieldCheck className="size-3.5 text-accent-light" />
+            Checked before you see it
+          </p>
+          <Spot id="publish" active={spot === "publish"} reduceMotion={reduceMotion}>
+            <TealButton onClick={() => onAction("publish")}>
+              Approve and publish
+              <ArrowRight className="size-4" />
+            </TealButton>
+          </Spot>
+        </motion.div>
+      ) : null}
     </div>
   );
 }
@@ -628,6 +622,7 @@ export function RoundSurface({
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 builder-view · 2 watch fill · 3 go
   const filling = stepIdx === 2;
   const full = stepIdx >= 3;
   const [ticks, setTicks] = useState(0);
@@ -642,12 +637,13 @@ export function RoundSurface({
 
   return (
     <div>
-      <Kicker>Your round is live</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Builders take a spot.
-      </h2>
+      <Head
+        kicker="Your round is live"
+        title="Builders take a spot."
+        sub="Only verified builders. They all price the list you approved."
+      />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2 items-start">
         <Card
           target="builder-view"
           className={cn("px-5 py-5", softRing(soft === "builder-view"))}
@@ -779,6 +775,7 @@ export function TenderSurface({
   onAction,
   reduceMotion,
 }: SurfaceProps) {
+  // Beats: 0 intro · 1 marking · 2 asks · 3 watch land · 4 go
   const arriving = stepIdx === 3;
   const arrived = stepIdx >= 4;
   const [ticks, setTicks] = useState(0);
@@ -793,10 +790,11 @@ export function TenderSurface({
 
   return (
     <div>
-      <Kicker>The builders&rsquo; side</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Every builder answers the same scope.
-      </h2>
+      <Head
+        kicker="The builders' side"
+        title="Every builder answers the same scope."
+        sub="Each builder answers your list item by item, then the same questions under signature."
+      />
 
       <Card
         target="marking"
@@ -832,8 +830,7 @@ export function TenderSurface({
           ))}
         </ul>
         <p className="mt-3 text-[11.5px] text-text-muted">
-          In the price, a budget, or not included. Every line gets an
-          answer.
+          Every line in your scope gets an answer.
         </p>
       </Card>
 
@@ -858,54 +855,15 @@ export function TenderSurface({
       </Card>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        {DEMO_TENDERS.map((t, i) => {
-          const here = landed > i;
-          return (
-            <div
-              key={t.name}
-              className={cn(
-                "rounded-lg border px-4 py-4 min-h-[136px] transition-colors",
-                here
-                  ? "border-border-subtle bg-white shadow-[0_1px_2px_rgba(24,34,44,0.06),_0_14px_36px_-18px_rgba(24,34,44,0.25)]"
-                  : "border-dashed border-border-subtle",
-              )}
-            >
-              {here ? (
-                <motion.div
-                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, ease: EASE }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="size-7 rounded-full bg-accent-muted flex items-center justify-center text-[10px] font-ui font-bold text-accent-light">
-                      {t.initials}
-                    </span>
-                    <span className="text-[9px] tracking-[0.14em] uppercase text-accent-light font-ui font-semibold">
-                      Submitted
-                    </span>
-                  </div>
-                  <p className="mt-2.5 text-[12px] font-ui font-medium text-text truncate">
-                    {t.name}
-                  </p>
-                  <p className="mt-1 font-display text-[20px] leading-none text-text tabular-nums">
-                    {fmtAud(t.price)}
-                  </p>
-                  <p className="mt-1 text-[10.5px] text-text-muted">
-                    ex GST · same list of work
-                  </p>
-                  <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-text-muted">
-                    <BadgeCheck className="size-3 text-accent-light" />
-                    Verified · profile attached
-                  </p>
-                </motion.div>
-              ) : (
-                <p className="text-[11.5px] text-text-dim pt-10 text-center">
-                  Awaiting tender
-                </p>
-              )}
-            </div>
-          );
-        })}
+        {DEMO_TENDERS.map((t, i) => (
+          <TenderDoc
+            key={t.name}
+            tender={t}
+            here={landed > i}
+            reduceMotion={reduceMotion}
+            priceNote="ex GST · same list of work"
+          />
+        ))}
       </div>
 
       {arrived ? (
@@ -941,6 +899,8 @@ export function CompareSurface({
   //        8 show-flags · 9 questions · 10 finish
   const scores = stepIdx >= 3;
   const differing = stepIdx >= 5;
+  const maths = stepIdx >= 6;
+  const ladder = stepIdx >= 7;
   const flags = stepIdx >= 9;
   const reveal = (on: boolean) =>
     reduceMotion || !on
@@ -949,80 +909,90 @@ export function CompareSurface({
 
   return (
     <div>
-      <Kicker>The comparison</Kicker>
-      <h2 className="mt-2 font-ui font-semibold tracking-[-0.02em] text-[24px] sm:text-[30px] leading-[1.15] text-text">
-        Three quotes, side by side.
-      </h2>
+      <Head
+        kicker="The comparison"
+        title="Three quotes, side by side."
+        sub="One list of work, three prices, and the evidence behind every difference."
+      />
 
       {/* the tenders */}
       <div
         data-demo-target="price-row"
         className={cn("mt-6 grid gap-3 sm:grid-cols-3 rounded-lg", softRing(soft === "price-row"))}
       >
-        {DEMO_TENDERS.map((t) => (
-          <Card key={t.name} className="px-4 py-4">
-            <div className="flex items-center justify-between">
-              <span className="size-7 rounded-full bg-accent-muted flex items-center justify-center text-[10px] font-ui font-bold text-accent-light">
-                {t.initials}
-              </span>
-              {scores ? (
-                <motion.span {...reveal(true)} className="text-right">
-                  <span className="block font-display text-[18px] leading-none text-text tabular-nums">
-                    {t.overall}
-                  </span>
-                  <span className="block text-[8px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold mt-0.5">
-                    Score
-                  </span>
-                </motion.span>
-              ) : null}
-            </div>
-            <p className="mt-2 text-[12px] font-ui font-medium text-text truncate">
-              {t.name}
-            </p>
-            <p className="mt-1 font-display text-[24px] leading-none text-text tabular-nums">
-              {fmtAud(t.price)}
-            </p>
-
-            <div className="mt-3">
-              <div className="h-[5px] rounded-full overflow-hidden flex bg-[rgba(24,34,44,0.07)]">
-                <span className="h-full bg-[#0a7d73]" style={{ width: `${t.firmPct}%` }} />
-                {t.firmPct < 100 ? (
-                  <span className="h-full bg-[#c99422]" style={{ width: `${100 - t.firmPct}%` }} />
+        {DEMO_TENDERS.map((t, i) => (
+          <motion.div
+            key={t.name}
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: reduceMotion ? 0 : i * 0.1, ease: EASE }}
+          >
+            <Card className="px-4 py-4 h-full">
+              <div className="flex items-center justify-between">
+                <span className="size-7 rounded-full bg-accent-muted flex items-center justify-center text-[10px] font-ui font-bold text-accent-light">
+                  {t.initials}
+                </span>
+                {scores ? (
+                  <motion.span {...reveal(true)} className="text-right">
+                    <span className="block font-display text-[18px] leading-none text-text tabular-nums">
+                      {t.overall}
+                    </span>
+                    <span className="block text-[8px] tracking-[0.14em] uppercase text-text-dim font-ui font-semibold mt-0.5">
+                      Score
+                    </span>
+                  </motion.span>
                 ) : null}
               </div>
-              <p className="mt-1.5 text-[10.5px] text-text-muted">
-                {t.firmPct === 100
-                  ? "Fully priced. No allowances of its own."
-                  : `${t.firmPct}% locked in · ${fmtAud(t.movingAud)} can still change`}
+              <p className="mt-2 text-[12px] font-ui font-medium text-text truncate">
+                {t.name}
               </p>
-            </div>
+              <p className="mt-1 font-display text-[24px] leading-none text-text tabular-nums">
+                {fmtAud(t.price)}
+              </p>
 
-            {scores ? (
-              <motion.ul {...reveal(true)} className="mt-3 pt-3 border-t border-border-subtle/60 space-y-1.5">
-                {DEMO_DIMENSIONS.map((d, i) => (
-                  <li key={d.label} className="flex items-center gap-2">
-                    <span className="w-[86px] shrink-0 text-[9.5px] text-text-dim font-ui truncate">
-                      {d.label}
-                    </span>
-                    <span className="flex-1 h-[3px] rounded-full bg-[rgba(24,34,44,0.07)] overflow-hidden">
-                      <span
-                        className="block h-full rounded-full bg-[#0a7d73]"
-                        style={{ width: `${t.dims[i]}%` }}
-                      />
-                    </span>
-                    <span className="w-6 text-right text-[10px] tabular-nums text-text-muted">
-                      {t.dims[i]}
-                    </span>
-                  </li>
-                ))}
-              </motion.ul>
-            ) : null}
-          </Card>
+              <div className="mt-3">
+                <div className="h-[5px] rounded-full overflow-hidden flex bg-[rgba(24,34,44,0.07)]">
+                  <span className="h-full bg-[#0a7d73]" style={{ width: `${t.firmPct}%` }} />
+                  {t.firmPct < 100 ? (
+                    <span className="h-full bg-[#c99422]" style={{ width: `${100 - t.firmPct}%` }} />
+                  ) : null}
+                </div>
+                <p className="mt-1.5 text-[10.5px] text-text-muted">
+                  {t.firmPct === 100
+                    ? "Fully priced. No allowances of its own."
+                    : `${t.firmPct}% locked in · ${fmtAud(t.movingAud)} can still change`}
+                </p>
+              </div>
+
+              {scores ? (
+                <motion.ul {...reveal(true)} className="mt-3 pt-3 border-t border-border-subtle/60 space-y-1.5">
+                  {DEMO_DIMENSIONS.map((d, di) => (
+                    <li key={d.label} className="flex items-center gap-2">
+                      <span className="w-[86px] shrink-0 text-[9.5px] text-text-dim font-ui truncate">
+                        {d.label}
+                      </span>
+                      <span className="flex-1 h-[3px] rounded-full bg-[rgba(24,34,44,0.07)] overflow-hidden">
+                        <motion.span
+                          className="block h-full rounded-full bg-[#0a7d73]"
+                          initial={reduceMotion ? { width: `${t.dims[di]}%` } : { width: 0 }}
+                          animate={{ width: `${t.dims[di]}%` }}
+                          transition={{ duration: 0.6, delay: reduceMotion ? 0 : 0.15 + di * 0.06, ease: EASE }}
+                        />
+                      </span>
+                      <span className="w-6 text-right text-[10px] tabular-nums text-text-muted">
+                        {t.dims[di]}
+                      </span>
+                    </li>
+                  ))}
+                </motion.ul>
+              ) : null}
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       {/* reveal: the scores */}
-      {!scores ? (
+      {!scores && stepIdx >= 2 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-scores" active={spot === "show-scores"} reduceMotion={reduceMotion}>
             <button
@@ -1076,7 +1046,7 @@ export function CompareSurface({
       ) : null}
 
       {/* reveal: the differences */}
-      {scores && !differing ? (
+      {scores && !differing && stepIdx >= 4 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-differences" active={spot === "show-differences"} reduceMotion={reduceMotion}>
             <button
@@ -1152,7 +1122,7 @@ export function CompareSurface({
         </motion.div>
       ) : null}
 
-      {differing ? (
+      {maths ? (
         <motion.div {...reveal(true)} className="mt-3 grid gap-3 lg:grid-cols-2">
           <Card
             target="breakeven"
@@ -1172,6 +1142,7 @@ export function CompareSurface({
               , your saving is gone.
             </p>
           </Card>
+          {ladder ? (
           <Card
             target="ladder"
             className={cn("px-5 py-4", softRing(soft === "ladder"))}
@@ -1190,11 +1161,12 @@ export function CompareSurface({
               ))}
             </ul>
           </Card>
+          ) : null}
         </motion.div>
       ) : null}
 
       {/* reveal: the flags */}
-      {differing && !flags ? (
+      {ladder && !flags && stepIdx >= 8 ? (
         <div className="mt-5 flex justify-center">
           <Spot id="show-flags" active={spot === "show-flags"} reduceMotion={reduceMotion}>
             <button

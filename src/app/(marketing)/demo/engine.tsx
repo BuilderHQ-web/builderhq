@@ -37,7 +37,12 @@ import {
   trackMetaEvent,
 } from "@/components/analytics/meta-pixel";
 import { type DemoStage, type DemoStep } from "./content";
-import { CloseSurface, type CloseCopy, type SurfaceProps } from "./ui";
+import {
+  AppFrame,
+  CloseSurface,
+  type CloseCopy,
+  type SurfaceProps,
+} from "./ui";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -418,12 +423,20 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
           ))}
         </span>
       </div>
-      <p className="mt-1.5 font-ui font-semibold text-[15px] text-text">
+      <p className="mt-1.5 font-ui font-semibold text-[15.5px] tracking-[-0.01em] text-text">
         {step.title}
       </p>
       <p className="mt-1 text-[12.5px] leading-[1.65] text-text-muted">
         {step.line}
       </p>
+      {step.kind === "click" ? (
+        <p className="mt-2.5 flex items-center gap-2 rounded-lg bg-accent-muted px-3 py-2 text-[12.5px] font-ui font-semibold text-accent-light">
+          <MousePointerClick
+            className={cn("size-4 shrink-0", !reduceMotion && "animate-pulse")}
+          />
+          {step.prompt}
+        </p>
+      ) : null}
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
@@ -441,11 +454,8 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
         </button>
 
         {step.kind === "click" ? (
-          <span className="inline-flex items-center gap-2 text-[12.5px] font-ui font-semibold text-accent-light">
-            <MousePointerClick
-              className={cn("size-4", !reduceMotion && "animate-pulse")}
-            />
-            {step.prompt}
+          <span className="text-[11px] text-text-dim">
+            Use the screen above
           </span>
         ) : step.kind === "watch" ? (
           <span className="flex items-center gap-3">
@@ -497,9 +507,6 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
             </Link>
             <span className="px-2 py-0.5 rounded-full bg-accent-muted text-accent-light text-[9.5px] tracking-[0.14em] uppercase font-ui font-bold shrink-0">
               Demo
-            </span>
-            <span className="hidden md:block text-[12px] text-text-dim truncate">
-              / {config.crumbs[stage.id]}
             </span>
           </div>
 
@@ -577,13 +584,15 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
                 disclaimer={config.disclaimer}
               />
             ) : Surface ? (
-              <Surface
-                stepIdx={pos.step}
-                spot={step?.kind === "click" ? (step.target ?? null) : null}
-                soft={step?.kind === "note" ? (step.target ?? null) : null}
-                onAction={onAction}
-                reduceMotion={reduceMotion}
-              />
+              <AppFrame crumb={config.crumbs[stage.id] ?? ""}>
+                <Surface
+                  stepIdx={pos.step}
+                  spot={step?.kind === "click" ? (step.target ?? null) : null}
+                  soft={step?.kind === "note" ? (step.target ?? null) : null}
+                  onAction={onAction}
+                  reduceMotion={reduceMotion}
+                />
+              </AppFrame>
             ) : null}
           </motion.div>
 
@@ -609,7 +618,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
                 left: anchor.left,
                 width: anchor.width,
               }}
-              className="absolute z-30 outline-none rounded-xl border border-border-subtle bg-surface-1 card-elev-lg px-5 py-4"
+              className="absolute z-30 outline-none rounded-xl border border-border-subtle border-l-[3px] border-l-accent bg-surface-1 card-elev-lg px-5 py-4"
             >
               {/* the caret tying the callout to its element */}
               {anchor.caret ? (
