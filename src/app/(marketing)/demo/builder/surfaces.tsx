@@ -5,9 +5,9 @@
  * primitives and driven entirely by the step index, so stepping back
  * rewinds the world for free.
  *
- * The visitor plays Meridian Homes on the Northcote round the other
+ * The visitor plays Meridian Homes on the Northcote project the other
  * demos run. Set pieces, one per stage: the board cascading in and
- * the invitation arriving; the published rules of the round; the
+ * the invitation arriving; the terms of the project; the
  * scope in hand; marking a line and watching it land; the level
  * field assembling; the award.
  */
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { CoverArt } from "@/components/builder/project-cover";
 import {
   Card,
   CitePill,
@@ -67,10 +68,79 @@ import {
   BUILDER_INVITE,
   BUILDER_MARKING,
   BUILDER_TERMS,
+  type BoardListing,
 } from "./content";
 
 /** The visitor's chair. */
 const YOU = "Meridian Homes";
+
+/**
+ * A project on the board, drawn as the product draws it: the cover
+ * band with its type chip and budget on the left, the specification
+ * on the right. The band is the product's own component, so the demo
+ * cannot drift away from the card a builder actually meets.
+ */
+function ListingCard({
+  listing,
+  invited,
+}: {
+  listing: BoardListing;
+  invited?: boolean;
+}) {
+  return (
+    <div className="relative flex flex-col lg:flex-row rounded-xl border border-border-subtle bg-surface-1 card-elev overflow-hidden">
+      <div className="relative shrink-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-border-subtle/60 h-[104px] lg:h-auto lg:w-[188px] lg:min-h-[124px]">
+        <CoverArt facts={listing.cover} scrim />
+        <span className="absolute top-2.5 left-3 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center px-2 py-1 rounded-sm border border-border-subtle bg-white/75 backdrop-blur-[2px] text-[9px] tracking-[0.16em] uppercase text-text font-ui font-semibold whitespace-nowrap">
+            {listing.chip}
+          </span>
+          {invited ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-border-accent/60 bg-white/75 backdrop-blur-[2px] text-[9px] tracking-[0.16em] uppercase text-accent-light font-ui font-semibold whitespace-nowrap">
+              <Mail className="size-2.5" />
+              Invited
+            </span>
+          ) : null}
+        </span>
+        <div className="absolute left-3 bottom-2.5">
+          <p className="text-[8px] tracking-[0.18em] uppercase text-text-muted font-ui font-semibold">
+            Project budget
+          </p>
+          <p className="mt-0.5 font-display text-[16px] leading-none tracking-[-0.01em] tabular-nums text-text">
+            {listing.budget}
+          </p>
+        </div>
+      </div>
+
+      <div className="min-w-0 flex-1 px-4 sm:px-5 py-3.5 flex flex-col justify-center gap-2">
+        <div className="min-w-0">
+          <p className="font-ui font-semibold text-[14px] leading-[1.3] text-text">
+            {listing.title}
+          </p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-text-muted">
+            <Lock className="size-3 text-text-dim shrink-0" />
+            Address shared when your spot is secured
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          {[listing.facts, `${listing.items} scope items`, `${listing.pages} pages read`].map(
+            (spec) => (
+              <span
+                key={spec}
+                className="px-2 py-1 rounded-sm bg-bg-elev/70 text-[10.5px] text-text-muted"
+              >
+                {spec}
+              </span>
+            ),
+          )}
+          <span className="ml-auto text-[11px] font-ui font-semibold text-accent-light tabular-nums">
+            {listing.spots}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── 1 · find work ──────────────────────────────────────────────────── */
 
@@ -86,9 +156,9 @@ export function BuilderFindSurface({
   return (
     <div>
       <Head
-        kicker="Open rounds · Melbourne, VIC"
-        title="Find your next project"
-        sub="Live tender rounds near you, with the documents in and the scope already written."
+        kicker="Find work · Melbourne, VIC"
+        title="Projects open right now"
+        sub="Every one has its documents in and its scope of works written. Pick what suits your pipeline."
       />
 
       {inviteIn ? (
@@ -104,21 +174,28 @@ export function BuilderFindSurface({
               softRing(soft === "invitation"),
             )}
           >
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-              <div className="flex items-start gap-3.5 min-w-0">
-                <span className="size-10 rounded-full bg-accent-muted flex items-center justify-center text-accent-light shrink-0">
-                  <Mail className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <Kicker>{BUILDER_INVITE.from}</Kicker>
-                  <p className="mt-1 text-[14.5px] font-ui font-semibold text-text">
-                    {ARCH_PROJECT.title}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-text-muted">
-                    {ARCH_PROJECT.facts} · {BUILDER_INVITE.note}
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <span className="size-7 rounded-full bg-accent-muted flex items-center justify-center text-accent-light shrink-0">
+                <Mail className="size-3.5" />
+              </span>
+              <Kicker>{BUILDER_INVITE.from}</Kicker>
+            </div>
+            <div className="mt-3">
+              <ListingCard
+                invited
+                listing={{
+                  title: ARCH_PROJECT.title,
+                  facts: ARCH_PROJECT.facts,
+                  budget: "$620k to $760k",
+                  spots: BUILDER_INVITE.note,
+                  items: ARCH_TOTALS.items,
+                  pages: ARCH_TOTALS.pages,
+                  chip: BUILDER_INVITE.chip,
+                  cover: BUILDER_INVITE.cover,
+                }}
+              />
+            </div>
+            <div className="mt-3 flex justify-end">
               <Spot id="accept-invite" active={spot === "accept-invite"} reduceMotion={reduceMotion}>
                 <TealButton onClick={() => onAction("accept-invite")}>
                   Accept invitation
@@ -137,69 +214,22 @@ export function BuilderFindSurface({
         <div className="flex items-baseline justify-between px-0.5">
           <Kicker>Open to verified builders</Kicker>
           <p className="text-[11px] text-text-dim">
-            {BUILDER_BOARD.length} rounds open in your area
+            {BUILDER_BOARD.length} projects open in your area
           </p>
         </div>
         <div className="mt-2 grid gap-2.5">
-          {BUILDER_BOARD.map((b, i) => {
-            const card = (
-              <Card
-                key={b.title}
-                className={cn("px-4.5 py-3.5", i === 0 && "h-full")}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
-                  <div className="min-w-0">
-                    <p className="text-[13.5px] font-ui font-semibold text-text">
-                      {b.title}
-                    </p>
-                    <p className="mt-0.5 text-[11.5px] text-text-muted">
-                      {b.facts} · Budget guide {b.budget}
-                    </p>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-text-dim">
-                      <span className="tabular-nums">{b.items} scope items</span>
-                      <span className="tabular-nums">{b.pages} pages read</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Lock className="size-2.5" />
-                        Address on securing a spot
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[11px] font-ui font-semibold text-accent-light tabular-nums">
-                      {b.spots}
-                    </span>
-                    <span
-                      aria-disabled
-                      className="inline-flex items-center h-9 px-4 rounded-full border border-border-subtle text-[12px] font-ui font-medium text-text-muted cursor-default"
-                    >
-                      Open the project
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            );
-            return i === 0 ? (
-              <motion.div
-                key={b.title}
-                data-demo-target="open-card"
-                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.32, delay: reduceMotion ? 0 : i * 0.1, ease: EASE }}
-                className={cn("rounded-lg", softRing(soft === "open-card"))}
-              >
-                {card}
-              </motion.div>
-            ) : (
-              <motion.div
-                key={b.title}
-                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.32, delay: reduceMotion ? 0 : i * 0.1, ease: EASE }}
-              >
-                {card}
-              </motion.div>
-            );
-          })}
+          {BUILDER_BOARD.map((b, i) => (
+            <motion.div
+              key={b.title}
+              data-demo-target={i === 0 ? "open-card" : undefined}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.32, delay: reduceMotion ? 0 : i * 0.1, ease: EASE }}
+              className={cn("rounded-xl", i === 0 && softRing(soft === "open-card"))}
+            >
+              <ListingCard listing={b} />
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>
@@ -221,7 +251,7 @@ export function BuilderProjectSurface({
   return (
     <div>
       <Head
-        kicker="Your round"
+        kicker="Your project"
         title={ARCH_PROJECT.title}
         sub="Your spot is secured. Everything below is yours before you price a single line."
         right={
@@ -292,19 +322,27 @@ export function BuilderProjectSurface({
             target="terms"
             className={cn("mt-4 px-5 py-4", softRing(soft === "terms"))}
           >
-            <Kicker>The rules of this round</Kicker>
+            <Kicker>How this project works</Kicker>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {[BUILDER_TERMS.spots, BUILDER_TERMS.closes, BUILDER_TERMS.scoring].map((t) => (
-                <p
-                  key={t}
-                  className="flex items-center gap-2 rounded-md border border-border-subtle px-3.5 py-2.5 text-[12px] text-text"
+              {BUILDER_TERMS.map((t) => (
+                <div
+                  key={t.label}
+                  className="rounded-md border border-border-subtle px-3.5 py-3"
                 >
-                  <Check className="size-3.5 text-accent-light shrink-0" />
-                  {t}
-                </p>
+                  <p className="flex items-start gap-2 text-[12.5px] font-ui font-semibold text-text">
+                    <Check className="size-3.5 text-accent-light shrink-0 mt-[2px]" />
+                    {t.label}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-[1.5] text-text-muted">
+                    {t.why}
+                  </p>
+                </div>
               ))}
             </div>
-            <ul className="mt-3 flex flex-wrap gap-1.5">
+            <p className="mt-3.5 pt-3 border-t border-border-subtle/60 text-[11px] text-text-dim">
+              What your quote is read against, published before you price:
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
               {DEMO_DIMENSIONS.map((d) => (
                 <li
                   key={d.label}
@@ -733,7 +771,7 @@ export function BuilderCompareSurface({
       <Head
         kicker="The client's view"
         title="Three tenders, one scope."
-        sub="This is how the round reads on the other side of the table."
+        sub="This is what the owner sees when the quotes are in."
       />
 
       <div
@@ -906,7 +944,7 @@ export function BuilderCompareSurface({
             className={cn("mt-4 px-5 py-4", softRing(soft === "flags"))}
           >
             <div className="flex items-center justify-between gap-3">
-              <Kicker>Flags on this round</Kicker>
+              <Kicker>Flags on this project</Kicker>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-ui font-semibold text-accent-light">
                 <ShieldCheck className="size-3.5" />
                 Your tender drew none

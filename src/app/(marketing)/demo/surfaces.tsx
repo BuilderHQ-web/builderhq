@@ -137,7 +137,7 @@ export function UploadSurface({
                   {roundChosen ? (
                     <span className="inline-flex items-center gap-1.5 text-[11.5px] font-ui font-semibold text-accent-light">
                       <Check className="size-3.5" />
-                      Open round · 3 spots
+                      Open to builders · 3 spots
                     </span>
                   ) : null}
                 </div>
@@ -628,7 +628,7 @@ export function RoundSurface({
   return (
     <div>
       <Head
-        kicker="Your round is live"
+        kicker="Your project is live"
         title="Builders take a spot."
         sub="Only verified builders. They all price the list you approved."
       />
@@ -1205,7 +1205,7 @@ export function CompareSurface({
         <div className="mt-6 flex justify-end">
           <Spot id="finish" active={spot === "finish"} reduceMotion={reduceMotion}>
             <TealButton onClick={() => onAction("finish")}>
-              Finish the round
+              Finish
               <ArrowRight className="size-4" />
             </TealButton>
           </Spot>

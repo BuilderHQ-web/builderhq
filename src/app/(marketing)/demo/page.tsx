@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { HomeownerDemo } from "./homeowner";
 
 /**
- * /demo — the guided walkthrough of a full tender round, upload to
+ * /demo — the guided walkthrough of a whole tender, upload to
  * decision, scripted end to end on the product's own design system.
  *
  * A route rather than a modal or a new window on purpose: it is
@@ -16,7 +16,7 @@ import { HomeownerDemo } from "./homeowner";
 export const metadata: Metadata = {
   title: "Watch the demo",
   description:
-    "Walk through a full tender round in four minutes: your plans become a cited scope of works, three verified builders price the same list, and the comparison shows what each price actually covers.",
+    "Walk through a whole tender in four minutes: your plans become a full scope of works, three verified builders price the same list, and the comparison shows what each price actually covers.",
   alternates: { canonical: "/demo" },
 };
 

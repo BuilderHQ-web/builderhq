@@ -149,7 +149,7 @@ export function ArchUploadSurface({
                   {chosen ? (
                     <span className="inline-flex items-center gap-1.5 text-[11.5px] font-ui font-semibold text-accent-light">
                       <Check className="size-3.5" />
-                      Hybrid round · 3 spots
+                      Yours plus ours · 3 spots
                     </span>
                   ) : null}
                 </div>
@@ -664,7 +664,7 @@ export function ArchScopeSurface({
   );
 }
 
-/* ── 4 · the round ──────────────────────────────────────────────────── */
+/* ── 4 · out to tender ──────────────────────────────────────────────── */
 
 export function ArchRoundSurface({
   stepIdx,
@@ -691,8 +691,8 @@ export function ArchRoundSurface({
   return (
     <div>
       <Head
-        kicker="Your round"
-        title="The round opens."
+        kicker="Out to tender"
+        title="The tender opens."
         sub="Your invited builders and the open spot, all pricing the scope you issued."
       />
 

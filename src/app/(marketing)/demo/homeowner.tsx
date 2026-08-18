@@ -24,7 +24,7 @@ const CONFIG: DemoConfig = {
     upload: "New project",
     reading: "Reading your documents",
     scope: "Scope of works",
-    live: "Your round",
+    live: "Your project",
     tenders: "Tenders",
     compare: "The comparison",
     close: "Done",

@@ -42,12 +42,10 @@ const allCopy = (): string[] => {
     ...BUILDER_CLOSE.recap,
     BUILDER_DISCLAIMER,
     ...Object.values(BUILDER_CRUMBS),
-    ...BUILDER_BOARD.flatMap((b) => [b.title, b.facts, b.budget, b.spots]),
+    ...BUILDER_BOARD.flatMap((b) => [b.title, b.facts, b.budget, b.spots, b.chip]),
     BUILDER_INVITE.from,
     BUILDER_INVITE.note,
-    BUILDER_TERMS.spots,
-    BUILDER_TERMS.closes,
-    BUILDER_TERMS.scoring,
+    ...BUILDER_TERMS.flatMap((t) => [t.label, t.why]),
     BUILDER_MARKING.position,
     BUILDER_MARKING.summary,
     ...BUILDER_MARKING.states,
@@ -79,8 +77,9 @@ describe("builder demo truth", () => {
     const lines = BUILDER_SCRIPT.flatMap((st) => st.steps.map((s) => s.line)).join(" ");
     expect(lines).toContain("$37,000");
     expect(lines).toContain("$82,500");
-    expect(lines).toContain("$47,000");
-    expect(lines).toContain(String(ARCH_RFI.addendum));
+    // The RFI is described from the receiving side, so the demo names
+    // the builder who asked rather than the addendum number.
+    expect(lines).toContain(ARCH_RFI.from.split(" ")[0]!);
   });
 
   test("the marked line is the featured division's first line", () => {
@@ -99,9 +98,9 @@ describe("builder demo truth", () => {
     expect(accept.line).toContain("Northcote");
   });
 
-  test("every board listing keeps spots at three or fewer", () => {
+  test("every board listing keeps its open spots at three or fewer", () => {
     for (const b of BUILDER_BOARD) {
-      expect(b.spots).toMatch(/^[0-3] of 3 spots open$/);
+      expect(b.spots).toMatch(/^[1-3] spots? open$/);
     }
   });
 });
@@ -113,15 +112,16 @@ describe("builder demo copy rules", () => {
     }
   });
 
-  test("fees are mentioned exactly once, and never with a dollar figure", () => {
-    const mentions = allCopy().filter((t) => /\bfees?\b/i.test(t));
-    expect(mentions).toHaveLength(1);
-    expect(mentions[0]).toContain("small and serious");
-    for (const text of allCopy()) {
-      if (/\bfees?\b/i.test(text)) {
-        expect(text).not.toMatch(/\$\d/);
-      }
-    }
+  test("fees are never mentioned", () => {
+    const mentions = allCopy().filter((t) =>
+      /\bfees?\b|\bcharges?\b|\bsubscriptions?\b|\bcredits?\b/i.test(t),
+    );
+    expect(mentions, `fee language in: ${mentions.join(" | ")}`).toHaveLength(0);
+  });
+
+  test("projects are called projects, never rounds", () => {
+    const mentions = allCopy().filter((t) => /\brounds?\b/i.test(t));
+    expect(mentions, `round language in: ${mentions.join(" | ")}`).toHaveLength(0);
   });
 
   test("every step has a title and a line; click steps have a prompt and target", () => {

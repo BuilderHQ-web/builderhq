@@ -282,8 +282,8 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
         id: "s-open",
         kind: "intro",
         kicker: "Part 3 · The scope of works",
-        title: "The whole project, itemised.",
-        line: "One scope. Every builder prices this same list.",
+        title: "The whole project, written out.",
+        line: "We read every page of your set and list every item of work. Every builder prices that same list.",
       },
       {
         id: "s-expand",
@@ -297,15 +297,15 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
         id: "s-cite",
         kind: "note",
         target: "division-lines",
-        title: "Every line cites your set",
-        line: "The steel is on page 8 of the engineering. The line says so. Builder queries answer themselves.",
+        title: "Every line points back to your set",
+        line: "The steel is on page 8 of the engineering. Each line names its page, so builder queries answer themselves.",
       },
       {
         id: "s-allow",
         kind: "note",
         target: "packages",
-        title: "Client decisions, held open",
-        line: "Anything not documented yet gets a budget. Every builder carries the same figure, so the tenders stay comparable.",
+        title: "We catch what the set leaves out",
+        line: "Anything not drawn yet gets flagged and given a budget. Every builder carries the same figure, so the tenders stay comparable.",
       },
       {
         id: "s-budget",
@@ -327,20 +327,20 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
   },
   {
     id: "live",
-    rail: "The round",
+    rail: "The tender",
     steps: [
       {
         id: "l-open",
         kind: "intro",
-        kicker: "Part 4 · The round",
-        title: "The round opens.",
+        kicker: "Part 4 · Out to tender",
+        title: "The tender opens.",
         line: "Your builders, and one of ours. All pricing the same scope.",
       },
       {
         id: "l-fill",
         kind: "watch",
         watchMs: 4600,
-        title: "The spots fill",
+        title: "The builders come on",
         line: "Corten and Meridian accept your invitation. Brightwater takes the open spot. ABN and licence checked on all three.",
       },
       {
@@ -417,8 +417,8 @@ export const ARCHITECT_SCRIPT: DemoStage[] = [
         id: "c-open",
         kind: "intro",
         kicker: "Part 6 · The comparison",
-        title: "This is what you hand your client.",
-        line: "Three tenders on one scope, explained and defensible.",
+        title: "The cheapest tender stops winning by default.",
+        line: "We show your client what sits behind every price, so you can advise on more than the bottom line.",
       },
       {
         id: "c-prices",
@@ -521,7 +521,7 @@ export const ARCH_CLOSE: CloseCopy = {
     "The comparison came back explained, under your name",
   ],
   truth:
-    "Sign up and your account opens with a worked example round like this one, ready to explore. Your next tender can run here.",
+    "Sign up and your account opens with a worked example project like this one, ready to explore. Your next tender can run here.",
   primary: { label: "Run a tender for your client", href: "/signup?role=architect" },
   secondary: { label: "Back to home", href: "/" },
 };
@@ -532,7 +532,7 @@ export const ARCH_CRUMBS: Record<string, string> = {
   upload: "New tender",
   reading: "Reading your set",
   scope: "Scope of works",
-  live: "Your round",
+  live: "Out to tender",
   tenders: "Tenders",
   compare: "The comparison",
   close: "Done",
