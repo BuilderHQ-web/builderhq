@@ -454,6 +454,16 @@ export function SetChecklist({
   );
 }
 
+/** A line's citation, worn as a small document pill. */
+export function CitePill({ cite }: { cite: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border-subtle text-[10.5px] text-text-muted whitespace-nowrap">
+      <FileText className="size-2.5" />
+      {cite}
+    </span>
+  );
+}
+
 /* ── the reading set piece ──────────────────────────────────────────── */
 
 /**

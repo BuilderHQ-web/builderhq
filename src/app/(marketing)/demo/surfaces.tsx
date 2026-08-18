@@ -20,7 +20,6 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
-  FileText,
   FileUp,
   Flag,
   Lock,
@@ -32,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   Card,
+  CitePill,
   DocRegister,
   EASE,
   Head,
@@ -372,16 +372,6 @@ export function ReadingSurface({
 }
 
 /* ── 3 · the scope of works ─────────────────────────────────────────── */
-
-/** A line's citation, worn as a small document pill. */
-function CitePill({ cite }: { cite: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border-subtle text-[10.5px] text-text-muted whitespace-nowrap">
-      <FileText className="size-2.5" />
-      {cite}
-    </span>
-  );
-}
 
 export function ScopeSurface({
   stepIdx,
