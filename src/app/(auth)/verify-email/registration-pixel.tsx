@@ -13,12 +13,19 @@
  * It fires HERE rather than on the signup form because the form's
  * action ends in a redirect: it returns nothing to the client, so the
  * page that submitted it never learns the id the server used. The id
- * and the role travel in the redirect instead, and this page sends the
- * matching half. Meta keeps one of the pair on event name and id.
+ * and the role travel in a short-lived http-only cookie instead, and
+ * this page sends the matching half. Meta keeps one of the pair on
+ * event name and id.
  *
- * Both values are validated before anything is sent. They arrive
- * through a URL, which anyone can type, and a conversion built from an
- * arbitrary query string is a conversion that did not happen.
+ * They travelled in the query string until an audit pointed out that
+ * the same redirect was also carrying the customer's email address,
+ * and that the pixel reads the address bar on every event it sends.
+ * Nothing about a new account belongs in a URL.
+ *
+ * Both values are still validated before anything is sent. We wrote
+ * the cookie and the browser cannot, but a conversion built from
+ * anything other than what the database was given is a conversion that
+ * did not happen, and that is worth two lines of checking.
  */
 
 import { useEffect } from "react";
@@ -30,6 +37,14 @@ import {
   metaRegistrationParams,
 } from "@/lib/meta-role";
 
+/**
+ * Conversions this document has already reported, by event id. React
+ * runs an effect twice in development, a remount would run it again,
+ * and while Meta discards the repeat on the id, a conversion should be
+ * sent once because it happened once.
+ */
+const reported = new Set<string>();
+
 export function RegistrationPixel({
   eventId,
   role,
@@ -38,8 +53,10 @@ export function RegistrationPixel({
   role?: string;
 }) {
   useEffect(() => {
-    if (!isRegistrationEventId(eventId)) return;
+    if (!eventId || !isRegistrationEventId(eventId)) return;
     if (!role || !isAdvertisableRole(role)) return;
+    if (reported.has(eventId)) return;
+    reported.add(eventId);
     // The same builder the server used, so the two reports carry the
     // same parameters and not merely the same id.
     trackMetaEvent("CompleteRegistration", metaRegistrationParams({ role }), eventId);

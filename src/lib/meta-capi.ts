@@ -37,6 +37,7 @@ import { cookies, headers } from "next/headers";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { clientIpFromHeaders } from "@/lib/ratelimit";
+import { sanitiseMetaSourceUrl } from "@/lib/meta-url";
 
 /** Pinned rather than floating: a version bump can change field
  *  handling, and that should be a deliberate edit with a test behind
@@ -217,7 +218,11 @@ export async function sendMetaConversion(
         event_time: Math.floor(Date.now() / 1000),
         event_id: input.eventId,
         action_source: "website",
-        event_source_url: input.sourceUrl ?? input.context.sourceUrl ?? undefined,
+        // Stripped to the campaign parameters, and dropped entirely
+        // for a path that is itself a secret. See lib/meta-url.
+        event_source_url: sanitiseMetaSourceUrl(
+          input.sourceUrl ?? input.context.sourceUrl,
+        ),
         user_data: userData,
         ...(input.customData ? { custom_data: input.customData } : {}),
       },

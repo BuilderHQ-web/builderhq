@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { signUp, signUpSchema } from "@/modules/auth";
@@ -11,7 +11,9 @@ import {
   sendMetaConversion,
 } from "@/lib/meta-capi";
 import { metaRegistrationParams } from "@/lib/meta-role";
+import { readUtmAttribution, UTM_COOKIE } from "@/lib/utm";
 import { safeInternalPath } from "../_lib/next-path";
+import { setSignupHandoff } from "../_lib/signup-handoff";
 
 /** Form-state shape consumed by useFormState / useActionState on the client. */
 export interface SignupActionState {
@@ -42,12 +44,21 @@ export async function signupAction(
     };
   }
 
+  // Which campaign brought them, read from our own cookie rather than
+  // from the form. The parameters were dropped on a landing page long
+  // before this form existed, and a value that lands in the database
+  // should not be one a stranger can type into a request.
+  const jar = await cookies();
+  const utm = readUtmAttribution(jar.get(UTM_COOKIE)?.value);
+
   const raw = {
     firstName: String(formData.get("firstName") ?? ""),
     lastName: String(formData.get("lastName") ?? ""),
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
     role: String(formData.get("role") ?? ""),
+    ...(utm.source ? { signupSource: utm.source } : {}),
+    ...(utm.campaign ? { signupCampaign: utm.campaign } : {}),
   };
 
   // Field-level Zod first so we can show inline errors before the service hits.
@@ -112,18 +123,23 @@ export async function signupAction(
     }),
   );
 
-  // Success — redirect to the verify-email page. We pass the email as a
-  // query param so the next page can show "we sent a link to <email>".
+  // Success. Everything the next page needs travels in a short-lived
+  // http-only cookie rather than the query string: the address it will
+  // name, the continuation path, and the id and role of the conversion
+  // just reported, which the browser has no other way to learn because
+  // this action ends in a redirect and returns nothing to the client.
+  // The verify-email page sends the browser's half under that id, and
+  // Meta keeps one of the pair.
   //
-  // The event id and the role ride along because the browser has no
-  // other way to learn them: this action ends in a redirect, so it
-  // returns nothing to the client, and the conversion it just reported
-  // needs a matching browser event under the SAME id or Meta counts the
-  // pair as one report from a lossy source instead of two views of one
-  // conversion. The verify-email page sends that half.
-  redirect(
-    `/verify-email?email=${encodeURIComponent(result.value.email)}${
-      next ? `&next=${encodeURIComponent(next)}` : ""
-    }&mev=${encodeURIComponent(eventId)}&mrole=${encodeURIComponent(createdRole)}`,
-  );
+  // None of it belongs in an address bar. The advertising pixel reads
+  // the address on every event it sends, so a query string is a
+  // disclosure to a third party, and this one used to carry a
+  // customer's email address.
+  await setSignupHandoff({
+    email,
+    eventId,
+    role: createdRole,
+    ...(next ? { next } : {}),
+  });
+  redirect("/verify-email");
 }

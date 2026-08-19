@@ -12,6 +12,7 @@ import { resendVerificationEmail, signIn } from "@/modules/auth";
 import { users } from "@/modules/users";
 import { clientIpFromHeaders, limiters } from "@/lib/ratelimit";
 import { dashboardForRole } from "@/lib/dashboard-route";
+import { setSignupHandoff } from "../_lib/signup-handoff";
 
 export interface LoginActionState {
   error?: string;
@@ -111,11 +112,13 @@ export async function loginAction(
     // this detour too.
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
     await resendVerificationEmail({ email }, safeNext ? { next: safeNext } : {});
-    redirect(
-      `/verify-email?email=${encodeURIComponent(email)}${
-        safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""
-      }`,
-    );
+    // The address and the continuation path travel in a short-lived
+    // http-only cookie, not the query string. The advertising pixel
+    // reads the address bar on every event it sends, and a customer's
+    // email address is not something to disclose to a third party for
+    // the sake of a friendlier sentence on the next page.
+    await setSignupHandoff({ email, ...(safeNext ? { next: safeNext } : {}) });
+    redirect("/verify-email");
   }
 
   // Active user. Resolve target dashboard and hand off to Auth.js.

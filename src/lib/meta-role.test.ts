@@ -160,9 +160,13 @@ describe("the call sites stay wired", () => {
   test("the signup conversion has a browser half under the same id", () => {
     const action = read("../app/(auth)/signup/actions.ts");
     // The id is built once and used for both the server report and the
-    // redirect that lets the browser send its half.
+    // handoff that lets the browser send its half. It travels in a
+    // short-lived http-only cookie rather than the query string,
+    // because that query string was also carrying the customer's email
+    // address into the pixel. See meta-url.test.ts.
     expect(action).toContain("const eventId = metaEventId(\"reg\", userId)");
-    expect(action).toContain("mev=");
+    expect(action).toContain("setSignupHandoff({");
+    expect(action).toContain("eventId,");
     const pixel = read("../app/(auth)/verify-email/registration-pixel.tsx");
     expect(pixel).toContain("CompleteRegistration");
     expect(pixel).toContain("metaRegistrationParams");

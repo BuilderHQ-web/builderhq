@@ -4,30 +4,22 @@ import { Mail } from "lucide-react";
 import { AuthHeader } from "../_components/auth-header";
 import { AUTH_CONTAINER_CLS } from "../_lib/auth-styles";
 
-import { safeInternalPath } from "../_lib/next-path";
+import { readSignupHandoff } from "../_lib/signup-handoff";
 import { RegistrationPixel } from "./registration-pixel";
 import { ResendButton } from "./resend-button";
 
 export const metadata = { title: "Verify your email" };
 
-export default async function VerifyEmailPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    email?: string;
-    next?: string;
-    /** The conversion the signup action just reported, so the browser
-     *  can send its half of the pair under the same id. */
-    mev?: string;
-    mrole?: string;
-  }>;
-}) {
-  const { email, next: rawNext, mev, mrole } = await searchParams;
-  const next = safeInternalPath(rawNext);
+export default async function VerifyEmailPage() {
+  // Handed over by the signup or login action in a short-lived
+  // http-only cookie. Nothing about the person who just signed up is
+  // in the address bar, which is the only part of this page the
+  // advertising pixel gets to read.
+  const { email, next, eventId, role } = await readSignupHandoff();
 
   return (
     <div className={AUTH_CONTAINER_CLS}>
-      <RegistrationPixel eventId={mev} role={mrole} />
+      <RegistrationPixel eventId={eventId} role={role} />
       <AuthHeader
         title={<>Check your inbox</>}
         subtitle={
