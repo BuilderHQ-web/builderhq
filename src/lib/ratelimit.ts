@@ -91,6 +91,13 @@ export const limiters = {
   signIn: make("signin", 10, 60),
   /** New account creation — per IP. */
   signUp: make("signup", 5, 300),
+  /**
+   * The server half of a landing-page view, per IP. Generous, because
+   * a visitor legitimately sees a handful of lens pages in a session,
+   * and tight enough that the endpoint cannot be used to manufacture
+   * conversions in bulk.
+   */
+  metaLensView: make("meta_lens_view", 20, 300),
   /** Password-reset request — per email/IP. */
   forgot: make("forgot", 3, 600),
   /** Re-send verification email — per email. */

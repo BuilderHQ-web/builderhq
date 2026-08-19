@@ -5,6 +5,7 @@ import { AuthHeader } from "../_components/auth-header";
 import { AUTH_CONTAINER_CLS } from "../_lib/auth-styles";
 
 import { safeInternalPath } from "../_lib/next-path";
+import { RegistrationPixel } from "./registration-pixel";
 import { ResendButton } from "./resend-button";
 
 export const metadata = { title: "Verify your email" };
@@ -12,13 +13,21 @@ export const metadata = { title: "Verify your email" };
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; next?: string }>;
+  searchParams: Promise<{
+    email?: string;
+    next?: string;
+    /** The conversion the signup action just reported, so the browser
+     *  can send its half of the pair under the same id. */
+    mev?: string;
+    mrole?: string;
+  }>;
 }) {
-  const { email, next: rawNext } = await searchParams;
+  const { email, next: rawNext, mev, mrole } = await searchParams;
   const next = safeInternalPath(rawNext);
 
   return (
     <div className={AUTH_CONTAINER_CLS}>
+      <RegistrationPixel eventId={mev} role={mrole} />
       <AuthHeader
         title={<>Check your inbox</>}
         subtitle={

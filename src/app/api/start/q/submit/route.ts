@@ -36,6 +36,7 @@ import {
   metaRequestContext,
   sendMetaConversion,
 } from "@/lib/meta-capi";
+import { metaRegistrationParams } from "@/lib/meta-role";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { users } from "@/modules/users";
 import { projects } from "@/modules/projects";
@@ -579,12 +580,25 @@ export async function POST(request: NextRequest) {
   // and phone is one of Meta's strongest matching parameters. The id is
   // derived from the user so it agrees with the other path and cannot
   // report one person twice.
+  // The id and parameters are built here whether or not this request
+  // created the account, because the response carries them to the
+  // browser and the browser must never invent its own.
+  const metaEvent = metaEventId("reg", userId);
+  // This funnel always creates a project owner, and it names itself in
+  // content_name rather than naming the role, so the role rides in its
+  // own parameter exactly as it does on /signup.
+  const metaParams = metaRegistrationParams({
+    role: "project_owner",
+    contentName: "ads_funnel",
+    contentCategory: body.quiz.type,
+  });
+
   if (userWasCreated) {
     const metaContext = await metaRequestContext();
     after(() =>
       sendMetaConversion({
         eventName: "CompleteRegistration",
-        eventId: metaEventId("reg", userId),
+        eventId: metaEvent,
         context: metaContext,
         user: {
           email: body.email,
@@ -594,10 +608,7 @@ export async function POST(request: NextRequest) {
           state: body.quiz.state,
           externalId: userId,
         },
-        customData: {
-          content_name: "ads_funnel",
-          content_category: body.quiz.type,
-        },
+        customData: metaParams,
       }),
     );
   }
@@ -606,5 +617,11 @@ export async function POST(request: NextRequest) {
     ok: true,
     projectId,
     projectSlug,
+    // Only when this request was the one that registered the account:
+    // the browser half exists to pair with a conversion that was just
+    // reported, and a returning submitter has no conversion to pair.
+    ...(userWasCreated
+      ? { meta: { eventId: metaEvent, params: metaParams } }
+      : {}),
   });
 }

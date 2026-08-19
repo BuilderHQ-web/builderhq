@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { ShieldCheck } from "lucide-react";
 
+import { trackMetaEvent } from "@/components/analytics/meta-pixel";
+
 import { QuizShell } from "../../_components/quiz-shell";
 import { QuizNext } from "../../_components/quiz-next";
 import { TextField } from "../../_components/text-field";
@@ -138,6 +140,10 @@ export function ContactStep({ turnstileSiteKey }: Props) {
             ok: true;
             projectId: string;
             projectSlug: string;
+            /** Present only when this submission registered the
+             *  account, so the browser can report its half of the
+             *  conversion the server just reported. */
+            meta?: { eventId: string; params: Record<string, string> };
           }
         | { ok: false; code: string; message: string }
         | null;
@@ -154,6 +160,18 @@ export function ContactStep({ turnstileSiteKey }: Props) {
         }
         setSubmitting(false);
         return;
+      }
+
+      // The server has reported this registration through the
+      // Conversions API. Send the browser's half under the same id so
+      // Meta keeps one of the pair rather than counting two, and match
+      // its parameters exactly by using the ones the server built.
+      if (body.meta) {
+        trackMetaEvent(
+          "CompleteRegistration",
+          body.meta.params,
+          body.meta.eventId,
+        );
       }
 
       // Soft-auth cookie was set server-side; localStorage no longer

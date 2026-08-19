@@ -22,6 +22,7 @@ import { FlyingLabel } from "./flying-label";
 import { ScrollProgress } from "./scroll-progress";
 import type { Role } from "./content";
 import { RoleProvider } from "./role";
+import { LensView } from "./lens-view";
 import { LandingNav } from "./nav";
 import { BuildBriefStrip } from "./build-brief-strip";
 import { Hero } from "./hero";
@@ -52,6 +53,10 @@ export function Landing({
   return (
     <RoleProvider initialRole={initialRole} initialDocked={initialDocked}>
       <div className="lp-light">
+      {/* Reports which of the three stories this page served, once
+          per view. The lens is the one the page was rendered with, not
+          one the selector can change: see the note in lens-view.tsx. */}
+      <LensView lens={initialRole} />
       <Canvas />
 
       <LandingNav authedHref={authedHref} partnerNav={partnerNavTypes()} />

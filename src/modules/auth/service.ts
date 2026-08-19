@@ -94,7 +94,19 @@ export async function signUp(
      */
     next?: string;
   } = {},
-): Promise<Result<{ userId: string; email: string }>> {
+): Promise<
+  Result<{
+    userId: string;
+    email: string;
+    /**
+     * The role this account was created with, returned so callers
+     * report the account that exists rather than the field that was
+     * submitted. Advertising breaks down conversions by it, and a
+     * value read back from the write is one nobody can spoof.
+     */
+    role: (typeof userRoleEnum.enumValues)[number];
+  }>
+> {
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
     return fail("validation", "Some fields need fixing.", {
@@ -169,7 +181,7 @@ export async function signUp(
   }
 
   logger.info({ event: "auth.signup", userId, role }, "user signed up");
-  return ok({ userId, email });
+  return ok({ userId, email, role });
 }
 
 // ── Mobile sign-up (6-digit OTP) ─────────────────────────────────────────

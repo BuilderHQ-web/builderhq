@@ -10,6 +10,7 @@ import {
   metaRequestContext,
   sendMetaConversion,
 } from "@/lib/meta-capi";
+import { metaRegistrationParams } from "@/lib/meta-role";
 import { safeInternalPath } from "../_lib/next-path";
 
 /** Form-state shape consumed by useFormState / useActionState on the client. */
@@ -84,11 +85,22 @@ export async function signupAction(
   // is derived from the new user rather than random, so a retried
   // submission reports the same conversion instead of a second one.
   const metaContext = await metaRequestContext();
-  const { userId, email } = result.value;
+  // The role comes back from the service, which returns what it wrote,
+  // rather than from the submitted field. Advertising breaks its spend
+  // down by this value, so it has to describe the account that exists.
+  const { userId, email, role: createdRole } = result.value;
+  const eventId = metaEventId("reg", userId);
+  // Which side of the marketplace signed up, so campaigns can be
+  // optimised per audience rather than against one blended number.
+  // `content_name` keeps the stored role it has always carried, and
+  // `role` is the advertising dimension. The browser half sends this
+  // object verbatim, so the two reports of one conversion agree
+  // parameter for parameter as well as on the id.
+  const conversionParams = metaRegistrationParams({ role: createdRole });
   after(() =>
     sendMetaConversion({
       eventName: "CompleteRegistration",
-      eventId: metaEventId("reg", userId),
+      eventId,
       context: metaContext,
       user: {
         email,
@@ -96,17 +108,22 @@ export async function signupAction(
         lastName: parsed.data.lastName,
         externalId: userId,
       },
-      // Which side of the marketplace signed up, so campaigns can be
-      // optimised per audience rather than against one blended number.
-      customData: { content_name: parsed.data.role },
+      customData: conversionParams,
     }),
   );
 
   // Success — redirect to the verify-email page. We pass the email as a
   // query param so the next page can show "we sent a link to <email>".
+  //
+  // The event id and the role ride along because the browser has no
+  // other way to learn them: this action ends in a redirect, so it
+  // returns nothing to the client, and the conversion it just reported
+  // needs a matching browser event under the SAME id or Meta counts the
+  // pair as one report from a lossy source instead of two views of one
+  // conversion. The verify-email page sends that half.
   redirect(
     `/verify-email?email=${encodeURIComponent(result.value.email)}${
       next ? `&next=${encodeURIComponent(next)}` : ""
-    }`,
+    }&mev=${encodeURIComponent(eventId)}&mrole=${encodeURIComponent(createdRole)}`,
   );
 }
