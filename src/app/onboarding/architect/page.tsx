@@ -20,16 +20,26 @@ export default async function ArchitectOnboardingPage() {
   const firstName = (session.user.name ?? "").split(" ")[0] || "there";
 
   return (
-    <div className="flex flex-col gap-7 sm:gap-8">
+    /**
+     * One measure, held to the centre of the page.
+     *
+     * The heading, the copy and every field share a single column width.
+     * This is the first screen of the product a practice ever sees, so
+     * it is built like a page rather than a form dropped on a canvas:
+     * the introduction sits on the paper, and the work sits in a card
+     * under it.
+     */
+    <div className="mx-auto flex w-full max-w-[620px] flex-col gap-5 sm:gap-6">
       <header className="flex flex-col gap-3">
         <Eyebrow>Designer studio · setup</Eyebrow>
-        <h1 className="font-display uppercase tracking-[-0.02em] text-[clamp(2.25rem,5vw+1rem,3.75rem)] leading-[0.95]">
+        <h1 className="font-display uppercase tracking-[-0.02em] leading-[1] text-[clamp(1.8rem,2.6vw+0.9rem,2.5rem)]">
           Welcome, {firstName}
         </h1>
-        <p className="text-[14px] leading-[22px] text-text-muted max-w-[46ch]">
-          Two quick details and your studio is live. From your dashboard you
-          can upload a client&apos;s project, choose how the tender runs, and
-          bring your builders and your client in when you&apos;re ready.
+        <p className="text-[14px] leading-[22px] text-text-muted">
+          Tell us about your practice and your studio is live. From your
+          dashboard you can upload a client&apos;s project, choose how the
+          tender runs, and bring your builders and your client in when
+          you&apos;re ready.
         </p>
       </header>
 
