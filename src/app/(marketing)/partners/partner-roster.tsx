@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-
 import {
   ARCHITECT_PARTNERS,
   BUILDER_PARTNERS,
@@ -16,7 +15,12 @@ import {
   StateFilteredRows,
   StateFilterProvider,
 } from "./partner-state-filter";
-import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-ui";
+import {
+  GoogleRating,
+  PartnerAvatar,
+  StateBadge,
+  partnerHue,
+} from "./partner-ui";
 
 /**
  * PartnersRegister — the body shared by /partners, /partners/architects and
@@ -28,12 +32,41 @@ import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-u
 
 type Active = "all" | "architect" | "builder" | "finance" | "conveyancer";
 
-const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
+/** A discipline appears as a tab only once it has a live partner, the
+ *  same rule partnerNavTypes applies to the header dropdown. A kind can
+ *  therefore be added to the register before its first partner goes
+ *  live without advertising an empty category. `all` always shows. */
+const SEGMENTS: Array<{
+  key: Active;
+  label: string;
+  href: string;
+  count?: number;
+}> = [
   { key: "all", label: "All partners", href: "/partners" },
-  { key: "architect", label: "Design partners", href: "/partners/architects" },
-  { key: "builder", label: "Builder partners", href: "/partners/builders" },
-  { key: "finance", label: "Finance partners", href: "/partners/finance-brokers" },
-  { key: "conveyancer", label: "Conveyancing partners", href: "/partners/conveyancers" },
+  {
+    key: "architect",
+    label: "Design partners",
+    href: "/partners/architects",
+    count: ARCHITECT_PARTNERS.length,
+  },
+  {
+    key: "builder",
+    label: "Builder partners",
+    href: "/partners/builders",
+    count: BUILDER_PARTNERS.length,
+  },
+  {
+    key: "finance",
+    label: "Finance partners",
+    href: "/partners/finance-brokers",
+    count: FINANCE_PARTNERS.length,
+  },
+  {
+    key: "conveyancer",
+    label: "Conveyancing partners",
+    href: "/partners/conveyancers",
+    count: CONVEYANCER_PARTNERS.length,
+  },
 ];
 
 export function PartnersRegister({ active }: { active: Active }) {
@@ -161,8 +194,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             </h3>
             <p className="mt-2.5 text-[14px] leading-[1.65] text-text-muted max-w-[42ch]">
               Building designers, builders and finance brokers. Introduce
-              yourself and we will take a proper look at your work. No fees,
-              no contracts, and leaving takes one email.
+              yourself and we will take a proper look at your work. No fees, no
+              contracts, and leaving takes one email.
             </p>
             <div className="mt-6">
               <JoinButton
@@ -210,28 +243,30 @@ function SegmentedNav({ active }: { active: Active }) {
       aria-label="Filter partners"
       className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 p-1"
     >
-      {SEGMENTS.map((s) => {
-        const on = s.key === active;
-        return (
-          <Link
-            key={s.key}
-            href={s.href}
-            // Switching lens keeps the register in place — the three
-            // routes stay distinct for SEO/outreach, but toggling
-            // between them holds your scroll position instead of
-            // snapping back to the top.
-            scroll={false}
-            aria-current={on ? "page" : undefined}
-            className={
-              on
-                ? "inline-flex items-center h-9 px-4 rounded-full bg-white card-elev text-[13px] font-semibold text-text"
-                : "inline-flex items-center h-9 px-4 rounded-full text-[13px] font-medium text-text-muted hover:text-text transition-colors"
-            }
-          >
-            {s.label}
-          </Link>
-        );
-      })}
+      {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
+        (s) => {
+          const on = s.key === active;
+          return (
+            <Link
+              key={s.key}
+              href={s.href}
+              // Switching lens keeps the register in place — the three
+              // routes stay distinct for SEO/outreach, but toggling
+              // between them holds your scroll position instead of
+              // snapping back to the top.
+              scroll={false}
+              aria-current={on ? "page" : undefined}
+              className={
+                on
+                  ? "inline-flex items-center h-9 px-4 rounded-full bg-white card-elev text-[13px] font-semibold text-text"
+                  : "inline-flex items-center h-9 px-4 rounded-full text-[13px] font-medium text-text-muted hover:text-text transition-colors"
+              }
+            >
+              {s.label}
+            </Link>
+          );
+        },
+      )}
     </nav>
   );
 }
@@ -240,7 +275,10 @@ function RegisterRule({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="flex items-center gap-2 text-[13.5px] font-semibold text-text">
-        <span aria-hidden className="size-[5px] rounded-full bg-accent-light shrink-0" />
+        <span
+          aria-hidden
+          className="size-[5px] rounded-full bg-accent-light shrink-0"
+        />
         {title}
       </p>
       <p className="text-[12.5px] leading-[1.6] text-text-muted pl-[13px]">
@@ -299,7 +337,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
       <span
         aria-hidden
         className="absolute top-0 inset-x-8 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-[300ms]"
-        style={{ background: `linear-gradient(90deg, transparent, ${h.accent}59, transparent)` }}
+        style={{
+          background: `linear-gradient(90deg, transparent, ${h.accent}59, transparent)`,
+        }}
       />
       <div className="flex items-start gap-4 sm:gap-5">
         <PartnerAvatar partner={partner} size={60} />
@@ -333,7 +373,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
           </div>
           <p className="mt-1 text-[12.5px] text-text-dim">
             {partner.suburb}
-            <span aria-hidden className="mx-2 text-text-faint">·</span>
+            <span aria-hidden className="mx-2 text-text-faint">
+              ·
+            </span>
             {partner.disciplines.join("  ·  ")}
           </p>
           <p className="mt-2.5 max-w-[60ch] text-[14px] leading-[1.6] text-text-muted">
