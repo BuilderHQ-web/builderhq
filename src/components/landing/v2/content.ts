@@ -592,7 +592,7 @@ export const ECOSYSTEM = {
    Keyed a little wider than Role: the finance hue has no lens on the
    landing page, but the Preferred Partner register still renders finance
    partners in it. ──────────────────────────────────────────────────── */
-export type PaletteKey = Role | "finance";
+export type PaletteKey = Role | "finance" | "conveyancer";
 
 export const ROLE_PALETTE: Record<
   PaletteKey,
@@ -641,6 +641,15 @@ export const ROLE_PALETTE: Record<
     glow2: "rgba(64,36,150,0.09)",
     wash: "rgba(106,63,202,0.32)",
     tint: "rgba(110,66,206,0.06)",
+  },
+  conveyancer: {
+    name: "forest",
+    accent: "#17714b", // deep green, distinct from the homeowner teal
+    accentSoft: "#0f5c3c",
+    glow1: "rgba(23,113,75,0.15)",
+    glow2: "rgba(28,110,200,0.07)",
+    wash: "rgba(23,113,75,0.30)",
+    tint: "rgba(23,113,75,0.05)",
   },
 };
 

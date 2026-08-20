@@ -5,6 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import {
   ARCHITECT_PARTNERS,
   BUILDER_PARTNERS,
+  CONVEYANCER_PARTNERS,
   FINANCE_PARTNERS,
   partnerStates,
   type Partner,
@@ -25,13 +26,14 @@ import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-u
  * rows read as editorial entries rather than list items.
  */
 
-type Active = "all" | "architect" | "builder" | "finance";
+type Active = "all" | "architect" | "builder" | "finance" | "conveyancer";
 
 const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
   { key: "all", label: "All partners", href: "/partners" },
   { key: "architect", label: "Design partners", href: "/partners/architects" },
   { key: "builder", label: "Builder partners", href: "/partners/builders" },
   { key: "finance", label: "Finance partners", href: "/partners/finance-brokers" },
+  { key: "conveyancer", label: "Conveyancing partners", href: "/partners/conveyancers" },
 ];
 
 export function PartnersRegister({ active }: { active: Active }) {
@@ -42,7 +44,14 @@ export function PartnersRegister({ active }: { active: Active }) {
         ? BUILDER_PARTNERS
         : active === "finance"
           ? FINANCE_PARTNERS
-          : [...ARCHITECT_PARTNERS, ...BUILDER_PARTNERS, ...FINANCE_PARTNERS];
+          : active === "conveyancer"
+            ? CONVEYANCER_PARTNERS
+            : [
+                ...ARCHITECT_PARTNERS,
+                ...BUILDER_PARTNERS,
+                ...FINANCE_PARTNERS,
+                ...CONVEYANCER_PARTNERS,
+              ];
   const stateCounts: Record<string, number> = {};
   for (const p of activePartners) {
     for (const s of partnerStates(p)) {
@@ -96,6 +105,14 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="builder partners"
           />
         )}
+        {(active === "all" || active === "conveyancer") && (
+          <PartnerSection
+            label="Conveyancing partners"
+            intro="Licensed conveyancers who read the title, the covenants and the overlays before a client commits to a site."
+            partners={CONVEYANCER_PARTNERS}
+            emptyLabel="conveyancing partners"
+          />
+        )}
         {(active === "all" || active === "finance") && (
           <PartnerSection
             label="Finance partners"
@@ -123,6 +140,12 @@ export function PartnersRegister({ active }: { active: Active }) {
         <CrossLink
           href="/partners/architects"
           text="Still need a designer? Meet our design partners"
+        />
+      ) : null}
+      {active === "conveyancer" ? (
+        <CrossLink
+          href="/partners/builders"
+          text="Site secured? Meet our builder partners"
         />
       ) : null}
 
