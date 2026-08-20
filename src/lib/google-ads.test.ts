@@ -142,6 +142,21 @@ describe("how the conversion is fired", () => {
     expect(page).toContain("emailSha256");
   });
 
+  test("one script load, two destinations, each configured by its own caller", () => {
+    // The Google tag is one library serving several products. GA4 and
+    // Google Ads are separate destinations on it, so whichever mounts
+    // first fetches the script and each adds its own `config`. Fetching
+    // it once per id would be a second copy for no benefit.
+    const ga = read("../components/analytics/google-analytics.tsx");
+    expect(ga).toContain("let scriptLoaded = false");
+    expect(ga).toContain('gtag/js?id=${tagId}');
+    // GA4 configures its own measurement id...
+    expect(ga).toContain('"config", measurementId');
+    // ...and the conversion component configures the Ads account.
+    expect(comp).toContain("ensureGtag(GOOGLE_ADS_ACCOUNT)");
+    expect(comp).toContain('"config", GOOGLE_ADS_ACCOUNT');
+  });
+
   test("both networks fire once per document, on one trigger", () => {
     expect(comp).toContain("CompleteRegistration");
     expect(comp).toContain('"event", "conversion"');

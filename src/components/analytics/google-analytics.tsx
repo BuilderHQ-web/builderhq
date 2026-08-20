@@ -44,8 +44,8 @@ declare global {
 /** Per document, not per mount: crossing route groups remounts this. */
 let booted = false;
 let lastTrackedPath: string | null = null;
-/** gtag.js is fetched once per measurement id per document. */
-const loadedTags = new Set<string>();
+/** gtag.js is fetched once per document, whichever id asks first. */
+let scriptLoaded = false;
 
 /**
  * Define `gtag` and load Google's library, once.
@@ -74,8 +74,12 @@ export function ensureGtag(tagId: string): void {
     window.gtag = gtag as Window["gtag"];
     gtag("js", new Date());
   }
-  if (loadedTags.has(tagId)) return;
-  loadedTags.add(tagId);
+  // One script, however many destinations. Google's tag serves several
+  // ids from a single load, and each caller adds its own `config` after
+  // this returns. Fetching it once per id would be a second copy of the
+  // same library for no benefit.
+  if (scriptLoaded) return;
+  scriptLoaded = true;
   const tag = document.createElement("script");
   tag.async = true;
   tag.src = `https://www.googletagmanager.com/gtag/js?id=${tagId}`;
