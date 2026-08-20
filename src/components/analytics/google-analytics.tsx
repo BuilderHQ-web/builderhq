@@ -44,23 +44,49 @@ declare global {
 /** Per document, not per mount: crossing route groups remounts this. */
 let booted = false;
 let lastTrackedPath: string | null = null;
+/** gtag.js is fetched once per measurement id per document. */
+const loadedTags = new Set<string>();
 
-function bootGtag(measurementId: string): void {
-  if (window.gtag) return;
+/**
+ * Define `gtag` and load Google's library, once.
+ *
+ * THE ARGUMENTS OBJECT IS NOT AN IMPLEMENTATION DETAIL. gtag.js decides
+ * whether a `dataLayer` entry is a command or a piece of data by whether
+ * it is an `arguments` object. Push a rest-parameter array instead and
+ * the library still loads, the queue still fills, every call still looks
+ * like it worked, and nothing is ever sent. Google's own snippet uses
+ * `function gtag(){dataLayer.push(arguments)}` for exactly this reason,
+ * and it has to be copied literally.
+ *
+ * Shared with the Google Ads conversion components, which each had their
+ * own copy of this and each had it wrong.
+ */
+export function ensureGtag(tagId: string): void {
+  if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
-  const gtag: NonNullable<Window["gtag"]> = function (...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
-  window.gtag = gtag;
-  gtag("js", new Date());
-  // We send page views ourselves, once we have decided the address is
-  // reportable. Google's automatic one cannot be held back any other way.
-  gtag("config", measurementId, { send_page_view: false });
-
+  if (!window.gtag) {
+    // The rest parameter exists only to satisfy the type of the calls
+    // below. What is pushed is `arguments`, which is what gtag.js reads.
+    function gtag(..._args: unknown[]) {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer!.push(arguments);
+    }
+    window.gtag = gtag as Window["gtag"];
+    gtag("js", new Date());
+  }
+  if (loadedTags.has(tagId)) return;
+  loadedTags.add(tagId);
   const tag = document.createElement("script");
   tag.async = true;
-  tag.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  tag.src = `https://www.googletagmanager.com/gtag/js?id=${tagId}`;
   document.head.appendChild(tag);
+}
+
+function bootGtag(measurementId: string): void {
+  ensureGtag(measurementId);
+  // We send page views ourselves, once we have decided the address is
+  // reportable. Google's automatic one cannot be held back any other way.
+  window.gtag?.("config", measurementId, { send_page_view: false });
 }
 
 export function GoogleAnalytics() {

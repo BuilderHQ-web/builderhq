@@ -163,6 +163,31 @@ describe("Google Analytics is held to the same rule as the pixel", () => {
     expect(ga).toContain('k.startsWith("utm_")');
   });
 
+  test("the dataLayer receives the arguments object, never an array", () => {
+    // This is the whole ballgame. gtag.js decides whether a dataLayer
+    // entry is a command by whether it is an `arguments` object. Push a
+    // rest-parameter array and the library loads, the queue fills, every
+    // call looks like it worked, and nothing is ever transmitted. It
+    // shipped that way once and GA4 recorded zero events.
+    expect(ga).toContain("window.dataLayer!.push(arguments)");
+    expect(ga).not.toMatch(/dataLayer!?\??\.push\(args\)/);
+  });
+
+  test("nothing anywhere defines its own broken gtag", () => {
+    // Three Google Ads conversion components each had their own copy of
+    // the loader and each had it wrong, so those conversions never fired.
+    // They share one loader now.
+    for (const rel of [
+      "../app/(marketing)/guide-confirmed/confirmed-conversion.tsx",
+      "../app/(marketing)/architect-tender-confirmed/confirmed-conversion.tsx",
+      "../app/(marketing)/book-a-call/confirmed/book-confirmed.tsx",
+    ]) {
+      const src = read(rel);
+      expect(src, rel).toContain("ensureGtag");
+      expect(src, rel).not.toMatch(/dataLayer!?\??\.push\(args\)/);
+    }
+  });
+
   test("it mounts on the public surfaces only", () => {
     for (const rel of ["../app/(marketing)/layout.tsx", "../app/(auth)/layout.tsx"]) {
       expect(read(rel), rel).toContain("<GoogleAnalytics />");

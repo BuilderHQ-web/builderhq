@@ -20,6 +20,7 @@ import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { env } from "@/lib/env";
+import { ensureGtag } from "@/components/analytics/google-analytics";
 
 const GOOGLE_ADS_ACCOUNT = "AW-18140811034";
 // TODO: create a "Book Call Confirmed" conversion action in Google Ads
@@ -45,19 +46,12 @@ export function BookConfirmed() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.gtag) {
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ACCOUNT}`;
-      document.head.appendChild(script);
-      window.dataLayer = window.dataLayer || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      window.gtag = function (...args: any[]) {
-        window.dataLayer!.push(args);
-      };
-      window.gtag("js", new Date());
-      window.gtag("config", GOOGLE_ADS_ACCOUNT);
-    }
+    // One shared loader. This block used to be hand rolled here and
+    // pushed a rest-parameter array into the dataLayer instead of the
+    // `arguments` object, which gtag.js ignores. The library loaded,
+    // the queue filled, and no conversion was ever sent.
+    ensureGtag(GOOGLE_ADS_ACCOUNT);
+    window.gtag?.("config", GOOGLE_ADS_ACCOUNT);
 
     window.gtag?.("event", "conversion", {
       send_to: `${GOOGLE_ADS_ACCOUNT}/${CONVERSION_LABEL}`,
