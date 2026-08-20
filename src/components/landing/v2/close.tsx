@@ -11,6 +11,7 @@ import { ArrowUpRight } from "lucide-react";
 
 import { Reveal } from "../reveal";
 import { track } from "@/lib/analytics";
+import { trackDemoCta } from "./demo-cta";
 import { LENS } from "./content";
 import { SectionField } from "./section-field";
 import { useRole } from "./role";
@@ -50,7 +51,10 @@ export function Close({ authedHref }: { authedHref: string | null }) {
             <div className="flex flex-col items-center gap-6">
               <Link
                 href={primary.href}
-                onClick={() => track("close_cta", { role, label: primary.label })}
+                onClick={() => {
+                  track("close_cta", { role, label: primary.label });
+                  trackDemoCta({ href: primary.href, lens: role, placement: "closing", label: primary.label });
+                }}
                 className="group inline-flex items-center justify-center gap-2 h-[52px] sm:h-12 px-8 rounded-full bg-accent text-accent-contrast text-[14px] font-semibold tracking-[0.02em] hover:bg-accent-hover transition-colors duration-[160ms] shadow-[0_0_0_1px_rgba(0,212,200,0.4),0_8px_28px_-8px_rgba(0,212,200,0.55)]"
               >
                 {primary.label}

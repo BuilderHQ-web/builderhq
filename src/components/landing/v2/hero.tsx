@@ -14,6 +14,7 @@ import { ArrowUpRight, ArrowDown, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
+import { trackDemoCta } from "./demo-cta";
 import { HeroJourney } from "./hero-journey";
 import { LENS, ROLE_PALETTE } from "./content";
 import { useRole } from "./role";
@@ -118,7 +119,10 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
               <div className="mt-8 sm:mt-5 lg:mt-9 flex flex-col items-stretch lg:items-start sm:flex-row sm:items-center sm:justify-center lg:justify-start gap-2 sm:gap-5">
                 <Link
                   href={lead.href}
-                  onClick={() => track("hero_cta", { role, label: lead.label })}
+                  onClick={() => {
+                    track("hero_cta", { role, label: lead.label });
+                    trackDemoCta({ href: lead.href, lens: role, placement: "hero", label: lead.label });
+                  }}
                   className={cn(
                     "group inline-flex items-center justify-center gap-2 h-12 sm:h-[52px] px-8 rounded-full",
                     "bg-accent text-accent-contrast text-[15px] font-semibold tracking-[0.01em]",
@@ -132,7 +136,10 @@ export function Hero({ authedHref }: { authedHref: string | null }) {
                 </Link>
                 <a
                   href={follow.href}
-                  onClick={() => track("hero_cta", { role, label: follow.label })}
+                  onClick={() => {
+                    track("hero_cta", { role, label: follow.label });
+                    trackDemoCta({ href: follow.href, lens: role, placement: "hero", label: follow.label });
+                  }}
                   className={cn(
                     "group inline-flex items-center justify-center gap-2 h-12 sm:h-[52px] px-7 rounded-full",
                     "border border-border-strong bg-surface-1 text-text text-[15px] font-semibold tracking-[0.01em]",

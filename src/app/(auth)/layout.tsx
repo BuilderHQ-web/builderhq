@@ -6,6 +6,7 @@ import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 /**
  * Auth shell — same atmospheric recipe as the landing.
@@ -43,6 +44,7 @@ export default function AuthLayout({
           form is the signed-in application, which carries no ad tags. */}
       <MetaPixel />
       <AttributionCapture />
+      <GoogleAnalytics />
       <AuthAmbient />
       <FibreCanvas />
       <GridOverlay />
