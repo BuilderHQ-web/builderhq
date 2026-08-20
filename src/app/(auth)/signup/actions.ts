@@ -10,6 +10,7 @@ import {
   metaRequestContext,
   sendMetaConversion,
 } from "@/lib/meta-capi";
+import { hashedEmail } from "@/lib/hash-identity";
 import { metaRegistrationParams } from "@/lib/meta-role";
 import { ATTRIBUTION_COOKIE, decodeAttribution } from "@/lib/attribution";
 import { recordSignupAttribution } from "@/modules/users/attribution";
@@ -149,6 +150,10 @@ export async function signupAction(
   // customer's email address.
   await setSignupHandoff({
     email,
+    // Hashed here, exactly as the Conversions API hashes it, so Google's
+    // enhanced conversions match on the same value. The plaintext stays
+    // on this side of the wire.
+    ...(hashedEmail(email) ? { emailSha256: hashedEmail(email)! } : {}),
     eventId,
     role: createdRole,
     ...(next ? { next } : {}),

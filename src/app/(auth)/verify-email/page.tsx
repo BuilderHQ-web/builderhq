@@ -5,7 +5,7 @@ import { AuthHeader } from "../_components/auth-header";
 import { AUTH_CONTAINER_CLS } from "../_lib/auth-styles";
 
 import { readSignupHandoff } from "../_lib/signup-handoff";
-import { RegistrationPixel } from "./registration-pixel";
+import { SignupConversions } from "./signup-conversions";
 import { ResendButton } from "./resend-button";
 
 export const metadata = { title: "Verify your email" };
@@ -15,11 +15,15 @@ export default async function VerifyEmailPage() {
   // http-only cookie. Nothing about the person who just signed up is
   // in the address bar, which is the only part of this page the
   // advertising pixel gets to read.
-  const { email, next, eventId, role } = await readSignupHandoff();
+  const { email, next, eventId, role, emailSha256 } = await readSignupHandoff();
 
   return (
     <div className={AUTH_CONTAINER_CLS}>
-      <RegistrationPixel eventId={eventId} role={role} />
+      <SignupConversions
+        eventId={eventId}
+        role={role}
+        emailSha256={emailSha256}
+      />
       <AuthHeader
         title={<>Check your inbox</>}
         subtitle={

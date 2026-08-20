@@ -167,7 +167,7 @@ describe("the call sites stay wired", () => {
     expect(action).toContain("const eventId = metaEventId(\"reg\", userId)");
     expect(action).toContain("setSignupHandoff({");
     expect(action).toContain("eventId,");
-    const pixel = read("../app/(auth)/verify-email/registration-pixel.tsx");
+    const pixel = read("../app/(auth)/verify-email/signup-conversions.tsx");
     expect(pixel).toContain("CompleteRegistration");
     expect(pixel).toContain("metaRegistrationParams");
   });
