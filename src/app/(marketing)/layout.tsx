@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { JsonLd } from "@/components/seo/json-ld";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
-import { UtmCapture } from "@/components/analytics/utm-capture";
+import { AttributionCapture } from "@/components/analytics/attribution-capture";
 import { siteGraph } from "@/lib/seo";
 
 /**
@@ -27,7 +27,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <>
       <JsonLd data={siteGraph()} />
       <MetaPixel />
-      <UtmCapture />
+      <AttributionCapture />
       {children}
     </>
   );

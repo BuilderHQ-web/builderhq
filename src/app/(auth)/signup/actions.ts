@@ -11,7 +11,8 @@ import {
   sendMetaConversion,
 } from "@/lib/meta-capi";
 import { metaRegistrationParams } from "@/lib/meta-role";
-import { readUtmAttribution, UTM_COOKIE } from "@/lib/utm";
+import { ATTRIBUTION_COOKIE, decodeAttribution } from "@/lib/attribution";
+import { recordSignupAttribution } from "@/modules/users/attribution";
 import { safeInternalPath } from "../_lib/next-path";
 import { setSignupHandoff } from "../_lib/signup-handoff";
 
@@ -44,12 +45,18 @@ export async function signupAction(
     };
   }
 
-  // Which campaign brought them, read from our own cookie rather than
-  // from the form. The parameters were dropped on a landing page long
-  // before this form existed, and a value that lands in the database
-  // should not be one a stranger can type into a request.
+  // Where they came from, read from our own cookie rather than from the
+  // form. The parameters were dropped on a landing page days before this
+  // form existed, and a value that lands in the database should not be
+  // one a stranger can type into a request.
   const jar = await cookies();
-  const utm = readUtmAttribution(jar.get(UTM_COOKIE)?.value);
+  const attribution = decodeAttribution(jar.get(ATTRIBUTION_COOKIE)?.value);
+  // The two long-standing columns keep carrying last touch, which is what
+  // every existing report reads. The full record goes beside them.
+  const utm = {
+    source: attribution.last?.source,
+    campaign: attribution.last?.campaign,
+  };
 
   const raw = {
     firstName: String(formData.get("firstName") ?? ""),
@@ -122,6 +129,11 @@ export async function signupAction(
       customData: conversionParams,
     }),
   );
+
+  // How this account arrived, in full, beside the two columns above.
+  // Best effort by design: an analytics write must never be able to
+  // interfere with an account that has already been created.
+  await recordSignupAttribution(userId, attribution);
 
   // Success. Everything the next page needs travels in a short-lived
   // http-only cookie rather than the query string: the address it will

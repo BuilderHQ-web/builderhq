@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { FibreCanvas } from "@/components/landing/fibre-canvas";
 import { GridOverlay } from "@/components/landing/grid-overlay";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
-import { UtmCapture } from "@/components/analytics/utm-capture";
+import { AttributionCapture } from "@/components/analytics/attribution-capture";
 
 /**
  * Auth shell — same atmospheric recipe as the landing.
@@ -42,7 +42,7 @@ export default function AuthLayout({
           reaches this surface too. It stops here: everything past the
           form is the signed-in application, which carries no ad tags. */}
       <MetaPixel />
-      <UtmCapture />
+      <AttributionCapture />
       <AuthAmbient />
       <FibreCanvas />
       <GridOverlay />
