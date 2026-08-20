@@ -1330,9 +1330,9 @@ export const PARTNERS: Partner[] = [
     },
     aboutLabel: "The firm",
     stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "390 reviews" },
       { label: "Established", value: "2010", sub: "sixteen years of settlements" },
       { label: "Offices", value: "3", sub: "across metropolitan Melbourne" },
-      { label: "Vendor statement", value: "s32", sub: "read before you sign" },
     ],
     why: "A conveyancer is the first professional to look at a block of land, and often the only one who reads what is actually on the title. Restrictive covenants, easements and planning overlays decide whether the house a client is planning can legally be built there, and a covenant stays binding however old it is. Removing one takes a Supreme Court application or a planning scheme amendment. An owner who finds that out after settlement has bought the wrong site.\n\nParamount has been doing this since 2010, and works the way that problem needs: in early, alongside the builder, the broker and the agent, rather than at the end when the paperwork is already drawn. Sasha Obeid founded the firm and is a member of the Australian Institute of Conveyancers, Victorian Division. Conveyancing is all they do, which is rather the point. For an owner or a developer buying land to build on, this is the call to make before the offer, not after it.",
     about:
