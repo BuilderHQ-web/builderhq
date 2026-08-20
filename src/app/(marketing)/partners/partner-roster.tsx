@@ -122,7 +122,8 @@ export function PartnersRegister({ active }: { active: Active }) {
       </div>
 
       <div className="mt-10 flex flex-col gap-16 lg:gap-20">
-        {(active === "all" || active === "architect") && (
+        {(active === "architect" ||
+          (active === "all" && ARCHITECT_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Design partners"
             intro="Building designers and architects doing considered residential work, who we are glad to point homeowners toward."
@@ -130,7 +131,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="design partners"
           />
         )}
-        {(active === "all" || active === "builder") && (
+        {(active === "builder" ||
+          (active === "all" && BUILDER_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Builder partners"
             intro="Builders we have met, whose recent work we have looked at, and who we are glad to put in front of an owner."
@@ -138,7 +140,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="builder partners"
           />
         )}
-        {(active === "all" || active === "conveyancer") && (
+        {(active === "conveyancer" ||
+          (active === "all" && CONVEYANCER_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Conveyancing partners"
             intro="Licensed conveyancers who read the title, the covenants and the overlays before a client commits to a site."
@@ -146,7 +149,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="conveyancing partners"
           />
         )}
-        {(active === "all" || active === "finance") && (
+        {(active === "finance" ||
+          (active === "all" && FINANCE_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Finance partners"
             intro="Brokers with real construction finance experience, and clients who speak well of them."
