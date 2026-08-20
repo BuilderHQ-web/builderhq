@@ -1322,6 +1322,7 @@ export const PARTNERS: Partner[] = [
     tagline:
       "A Victorian conveyancing firm that reads the title, the covenants and the overlays before a client commits to a site.",
     disciplines: ["Contract and Section 32 review", "Off the plan", "Development sites"],
+    google: { rating: 4.8, reviews: 390 },
     institution: {
       name: "Australian Institute of Conveyancers",
       role: "Victorian Division member",
@@ -1342,6 +1343,7 @@ export const PARTNERS: Partner[] = [
       serves: "Victoria",
       focus: "Residential and commercial conveyancing",
     },
+    website: "https://paramountconveyancing.com.au/",
     instagram: "https://www.instagram.com/paramount.conveyancing/",
     facebook: "https://www.facebook.com/ParamountConveyancing",
     linkedin: "https://www.linkedin.com/company/paramount-conveyancing",
