@@ -122,7 +122,7 @@ export function GuideForm({ styles }: { styles: Styles }) {
         </div>
       ) : null}
 
-      <form onSubmit={onSubmit} noValidate>
+      <form data-clarity-mask="true" onSubmit={onSubmit} noValidate>
         <div className={styles.field}>
           <label className={styles.fieldLabel} htmlFor="firstName">
             First name <span className={styles.req}>*</span>

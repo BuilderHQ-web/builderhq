@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { ClarityTag } from "@/components/analytics/clarity";
 import { siteGraph } from "@/lib/seo";
 
 /**
@@ -30,6 +31,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <MetaPixel />
       <AttributionCapture />
       <GoogleAnalytics />
+      {/* Session replay, public pages only. Never the auth surfaces. */}
+      <ClarityTag />
       {children}
     </>
   );

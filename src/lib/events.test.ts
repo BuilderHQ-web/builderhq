@@ -173,3 +173,77 @@ describe("Google Analytics is held to the same rule as the pixel", () => {
     expect(appLayout).not.toContain("MetaPixel");
   });
 });
+
+describe("session replay is the most tightly fenced tag on the site", () => {
+  const clarity = read("../components/analytics/clarity.tsx");
+
+  test("it decides before it boots, like every other tag", () => {
+    expect(clarity).toContain("isReportableTrackingUrl");
+    const decision = clarity.indexOf("isReportableTrackingUrl");
+    const boot = clarity.indexOf("bootClarity(projectId)");
+    expect(decision).toBeGreaterThan(-1);
+    expect(decision).toBeLessThan(boot);
+  });
+
+  test("it never attaches a person to a recording", () => {
+    // Clarity's `identify` call takes a user id or an email. Calling it
+    // would turn a layout diagnostic into a surveillance record.
+    expect(clarity).not.toContain('"identify"');
+    expect(clarity).not.toContain("identify(");
+  });
+
+  test("it is mounted on the public pages and nowhere else", () => {
+    expect(read("../app/(marketing)/layout.tsx")).toContain("<ClarityTag />");
+    // Deliberately NOT the auth layout: those pages carry password
+    // fields, and a recording taken beside one is not worth having.
+    expect(read("../app/(auth)/layout.tsx")).not.toContain("ClarityTag");
+    expect(read("../app/(app)/layout.tsx")).not.toContain("ClarityTag");
+  });
+
+  test("every public form that takes contact details is masked", () => {
+    // The dashboard masks input values too, but a setting somebody can
+    // loosen without knowing why is not a control.
+    for (const rel of [
+      "../app/(marketing)/estimate_request_landing_page/estimate-form.tsx",
+      "../app/(marketing)/guide/guide-form.tsx",
+      "../app/(marketing)/owneradvisory/owner-advisory-form.tsx",
+      "../app/(marketing)/start/q/contact/contact-step.tsx",
+      "../app/(marketing)/book-a-call/book-call-form.tsx",
+      "../app/(marketing)/architect-tender/architect-tender-form.tsx",
+      "../components/landing/v2/partner-form.tsx",
+    ]) {
+      expect(read(rel), rel).toContain("data-clarity-mask");
+    }
+  });
+});
+
+describe("the privacy policy describes what actually runs", () => {
+  const policy = read("../app/(marketing)/privacy/page.tsx");
+
+  test("every tag we load is named in it", () => {
+    for (const tool of ["Google Analytics", "Microsoft Clarity", "Meta pixel"]) {
+      expect(policy, tool).toContain(tool);
+    }
+  });
+
+  test("it discloses the attribution cookie and its life", () => {
+    expect(policy).toContain("400 days");
+  });
+
+  test("it still promises the application carries no tags", () => {
+    expect(policy).toMatch(/signed in application/);
+  });
+
+  test("it does not claim more containment than the code delivers", () => {
+    // Vercel Web Analytics is mounted in the ROOT layout, so it runs on
+    // every page including inside the account. An earlier draft of this
+    // section said no analytics service ran there, which was false. If
+    // that mount ever moves, this test should be revisited rather than
+    // the sentence quietly becoming wrong again.
+    const rootLayout = read("../app/layout.tsx");
+    const vercelIsGlobal = rootLayout.includes("<Analytics />");
+    expect(vercelIsGlobal).toBe(true);
+    expect(policy).toContain("Vercel");
+    expect(policy).toMatch(/counts page views everywhere|across the whole site/);
+  });
+});
