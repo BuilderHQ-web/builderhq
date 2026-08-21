@@ -2716,13 +2716,13 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     date: "2026-08-21",
     displayDate: "Friday, 21 August 2026",
     title:
-      "Victoria is rewriting when the money moves, and the reform timeline everyone is circulating is wrong.",
+      "Victoria is rewriting when the money moves, and every reform date now sits on one timeline.",
     standfirst:
-      "Draft regulations on deposits and progress payments are open for consultation. A Royal Commission has been appointed into major public construction. New home sales fell for a third month. And the Victorian reform timeline in wide circulation has at least two dates badly wrong, so we checked every one against the legislation register.",
+      "Draft regulations on deposits and progress payments are open for consultation. A Royal Commission has been appointed into major public construction. New home sales fell for a third month. And every Victorian building reform date, checked against the legislation register and set out in order.",
     seoTitle:
       "The Build Brief 007: Victoria Rewrites Deposits and Progress Payments | BuilderHQ",
     seoDescription:
-      "Victoria has released draft regulations changing when money moves through a build. A Royal Commission has been appointed. New home sales fell 3.7% in July. And the Victorian reform timeline most people are working from has two dates wrong.",
+      "Victoria has released draft regulations changing when money moves through a build. A Royal Commission has been appointed. New home sales fell 3.7% in July. And every Victorian building reform date on one checked timeline.",
     keywords: [
       "victoria deposits progress payments regulations",
       "domestic building contract victoria 2026",
@@ -2765,7 +2765,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "Most building reform is about what gets built. This week's is about when you get paid.",
         "Victoria released draft regulations covering deposits and progress payments, with a Regulatory Impact Statement, open for consultation now. It is the detail behind the contract changes [we wrote about last week](/build-brief/issue-006), and it is the part that touches every job in the state.",
         "On Thursday the Premier appointed a Royal Commission into misconduct in major public construction. We set out what it covers, and what it does not, in the second signal. And new home sales fell for a third month running.",
-        "The Feature is the whole Victorian reform timeline, checked line by line against the legislation register. We did that because the version in wide circulation is wrong in at least two places, and one of them is a law people are still waiting for that has been in force since April.",
+        "The Feature is the whole Victorian reform timeline, checked line by line against the legislation register. Two dates are worth reading twice: a law many are still waiting for has been in force since April, and a set of requirements that reads like a 2028 problem started this July.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -2928,16 +2928,16 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       headline: "Everything changing in Victorian building, on",
       headlineAccent: "one timeline.",
       standfirst:
-        "We checked every date against the Victorian legislation register rather than the summaries. Two of them are wrong almost everywhere you will read them, and one is a law people are still waiting for that has been in force since April.",
+        "Every date here is checked against the Victorian legislation register. Two of them are easy to misread, and both are the kind of mistake that puts a job on the wrong side of a rule.",
       paragraphs: [
         "No state has changed its building rules more in the past two years than Victoria. The problem is not the changes. It is keeping track of which one starts when, and which of them touches the job you are quoting this week.",
-        "Two corrections first, because they are the ones most likely to catch you out.",
+        "Two dates first, because they are the ones most likely to catch a job out.",
       ],
       sections: [
         {
-          heading: "The two dates most people have wrong",
+          heading: "Two dates worth reading twice",
           paragraphs: [
-            "**The Fairer Payments on Jobsites Act is not coming. It arrived in April.** The Building Legislation Amendment (Fairer Payments on Jobsites and Other Matters) Act 2025 is Act No. 43 of 2025. Its security of payment reforms were proclaimed early and commenced **15 April 2026**. The 1 September 2026 date attached to it in most summaries is only the statutory backstop in section 2(3), and what falls to that date is the registration of building surveyors and building inspectors, plus two adjudication provisions. If you are a subcontractor waiting for claimable variations and excluded amounts to be abolished, they already have been.",
+            "**The Fairer Payments on Jobsites Act is not coming. It arrived in April.** The Building Legislation Amendment (Fairer Payments on Jobsites and Other Matters) Act 2025 is Act No. 43 of 2025. Its security of payment reforms were proclaimed early and commenced **15 April 2026**. The 1 September 2026 date in section 2(3) is the statutory backstop, not the commencement date. It is worth knowing how these clauses read: a commencement section names a date things start by, and anything proclaimed earlier starts earlier. What falls to 1 September is the registration of building surveyors and building inspectors, plus two adjudication provisions. If you are a subcontractor waiting for claimable variations and excluded amounts to be abolished, they already have been.",
             "**Minimum financial requirements are not a 2028 problem.** They commenced **1 July 2026**. New applicants comply immediately. Existing builders phase in by size, from reporting years starting 1 November 2027 for the largest, 1 March 2028 for the middle tier, and 1 July 2028 for the smallest. 1 July 2028 is the last tier, not the start.",
           ],
         },
@@ -2965,7 +2965,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           heading: "Running alongside",
           paragraphs: [
             "**Royal Commission into the Integrity of Major Public and Civil Infrastructure Construction Projects in Victoria.** Appointed 20 August 2026. Final report due by 20 August 2027. Findings may lead to further regulatory change.",
-            "General information only, correct at the date of publication. Get advice for your own situation. Where this edition and [our earlier coverage](/build-brief/issue-006) differ, this one is right: it was checked against the legislation register.",
+            "General information only, correct at the date of publication. Get advice for your own situation. This edition also corrects a date in [our earlier coverage](/build-brief/issue-006): the Building and Plumbing Administration and Enforcement Act was assented in May, not commenced.",
           ],
         },
       ],
@@ -3110,7 +3110,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "When did the Fairer Payments on Jobsites Act commence in Victoria?",
-        a: "Its main security of payment reforms commenced on 15 April 2026, proclaimed early in Victoria Government Gazette S 189. The Act is No. 43 of 2025 and received assent on 13 November 2025. The 1 September 2026 date widely attached to it is only the statutory backstop under section 2(3), and what falls to that date is the registration of building surveyors and building inspectors, information statements from relevant building surveyors, and two adjudication provisions.",
+        a: "Its main security of payment reforms commenced on 15 April 2026, proclaimed early in Victoria Government Gazette S 189. The Act is No. 43 of 2025 and received assent on 13 November 2025. The 1 September 2026 date in section 2(3) is the statutory backstop rather than the commencement date, and what falls to it is the registration of building surveyors and building inspectors, information statements from relevant building surveyors, and two adjudication provisions.",
       },
       {
         q: "Can a Victorian building contract have a cost escalation clause?",
@@ -3122,7 +3122,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "When do Victoria's minimum financial requirements for builders apply?",
-        a: "They commenced on 1 July 2026. New applicants must comply immediately. Builders already registered phase in by size, from reporting years starting on or after 1 November 2027 for those with net tangible assets above $1.5 million, 1 March 2028 for $50,001 to $1.5 million, and 1 July 2028 for $1 to $50,000. The commonly quoted 1 July 2028 date is the last tier, not the start of the scheme.",
+        a: "They commenced on 1 July 2026. New applicants must comply immediately. Builders already registered phase in by size, from reporting years starting on or after 1 November 2027 for those with net tangible assets above $1.5 million, 1 March 2028 for $50,001 to $1.5 million, and 1 July 2028 for $1 to $50,000. 1 July 2028 is the last tier, not the start of the scheme.",
       },
       {
         q: "What does the Victorian Royal Commission into construction cover?",
@@ -3142,7 +3142,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
     ],
     share:
-      "Victoria has released draft regulations on deposits and progress payments, and the reform timeline most people are working from has two dates wrong. This week's Build Brief.",
+      "Victoria has released draft regulations on deposits and progress payments, and every Victorian reform date now sits on one checked timeline. This week's Build Brief.",
     subscribeLine: "Five minutes, every Friday.",
     furtherReading: [
       { label: "Issue 006: the apartments that never started", href: "/build-brief/issue-006" },
