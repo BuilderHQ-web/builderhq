@@ -237,7 +237,9 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
                   key={r.label}
                   className="flex items-baseline justify-between gap-6 py-2.5"
                 >
-                  <span className="text-[13.5px] text-text-muted">{r.label}</span>
+                  <span className="text-[13.5px] text-text-muted">
+                    {r.label}
+                  </span>
                   <span
                     className={`font-ui font-semibold tabular-nums text-[15px] ${
                       r.accent ? "text-accent-light" : "text-text"
@@ -273,7 +275,10 @@ function Signal({ signal, count }: { signal: BriefSignal; count: number }) {
           </p>
           <div className="mt-3 flex flex-col gap-3 max-w-[64ch]">
             {signal.callout.paragraphs.map((p, i) => (
-              <p key={i} className="text-[14.5px] leading-[1.65] text-text-muted">
+              <p
+                key={i}
+                className="text-[14.5px] leading-[1.65] text-text-muted"
+              >
                 <InlineText text={p} />
               </p>
             ))}
@@ -318,7 +323,10 @@ function QuoteDoc({
       <p className="mt-1 text-[12px] text-text-dim">{doc.docSubtitle}</p>
       <ul className="mt-4 divide-y divide-[#101820]/[0.05]">
         {doc.rows.map((r) => (
-          <li key={r.item} className="flex items-baseline justify-between gap-4 py-[7px]">
+          <li
+            key={r.item}
+            className="flex items-baseline justify-between gap-4 py-[7px]"
+          >
             <span className="text-[12.5px] text-text-muted">
               {r.item}
               {r.flag && r.flag !== "Excluded" ? (
@@ -403,12 +411,18 @@ export default async function BriefIssuePage({
 
       <div className="mx-auto w-full max-w-[980px]">
         {/* breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mb-6 text-[11.5px] tracking-[0.06em] text-text-dim">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 text-[11.5px] tracking-[0.06em] text-text-dim"
+        >
           <Link href="/" className="hover:text-text transition-colors">
             Home
           </Link>
           <span className="mx-2">/</span>
-          <Link href="/build-brief" className="hover:text-text transition-colors">
+          <Link
+            href="/build-brief"
+            className="hover:text-text transition-colors"
+          >
             The Build Brief
           </Link>
           <span className="mx-2">/</span>
@@ -483,10 +497,10 @@ export default async function BriefIssuePage({
                 ? [{ label: "Project of the Week", href: "#project" }]
                 : []),
               ...(issue.voices ? [{ label: "Voices", href: "#voices" }] : []),
-              ...(issue.bps
-                ? [{ label: "The Standard", href: "#bps" }]
+              ...(issue.bps ? [{ label: "The Standard", href: "#bps" }] : []),
+              ...(pc
+                ? [{ label: "Partner Corner", href: "#partner-corner" }]
                 : []),
-              ...(pc ? [{ label: "Partner Corner", href: "#partner-corner" }] : []),
               ...(issue.faq?.length
                 ? [{ label: "In brief", href: "#questions" }]
                 : []),
@@ -534,7 +548,10 @@ export default async function BriefIssuePage({
               </div>
               <div className="mt-9 flex flex-col gap-4 max-w-[66ch]">
                 {issue.association.paragraphs.map((para, i) => (
-                  <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.7] text-text-muted"
+                  >
                     <InlineText text={para} />
                   </p>
                 ))}
@@ -598,7 +615,10 @@ export default async function BriefIssuePage({
               </div>
               <div className="mt-8 flex flex-col gap-4 max-w-[64ch]">
                 {issue.podcast.paragraphs.map((para, i) => (
-                  <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.7] text-text-muted"
+                  >
                     <InlineText text={para} />
                   </p>
                 ))}
@@ -625,7 +645,9 @@ export default async function BriefIssuePage({
                 {issue.note.eyebrow}
               </p>
             ) : null}
-            <h2 className={`${issue.note.eyebrow ? "mt-3" : ""} max-w-[28ch] ${SECTION_H2}`}>
+            <h2
+              className={`${issue.note.eyebrow ? "mt-3" : ""} max-w-[28ch] ${SECTION_H2}`}
+            >
               {issue.note.heading}
             </h2>
             <div className="mt-5 flex flex-col gap-4 max-w-[70ch]">
@@ -735,66 +757,75 @@ export default async function BriefIssuePage({
                 ) : null}
 
                 <div className="lg:order-1 max-w-[70ch]">
-                <div className="flex flex-col gap-4">
-                  {issue.feature.paragraphs.map((p, i) => (
-                    <p
-                      key={i}
-                      className="text-[16px] leading-[1.75] font-ui font-medium text-text"
-                    >
-                      <InlineText text={p} />
-                    </p>
-                  ))}
-                </div>
-                {issue.feature.sections.map((s) => (
-                  <section key={s.heading} className="mt-8">
-                    <h3 className="text-[17.5px] font-ui font-semibold tracking-[-0.01em] text-text">
-                      {s.heading}
-                    </h3>
-                    <div className="mt-3 flex flex-col gap-4">
-                      {s.paragraphs.map((p, i) => (
-                        <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
-                          <InlineText text={p} />
-                        </p>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-
-                {issue.feature.pullQuote ? (
-                  <p
-                    className="mt-9 max-w-[32ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
-                    style={SERIF}
-                  >
-                    {issue.feature.pullQuote}
-                  </p>
-                ) : null}
-
-                {issue.feature.finePrint ? (
-                  <details className="group mt-8 rounded-xl bg-[#fbfaf7] ring-1 ring-[#101820]/[0.08] open:pb-1">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
-                      <span className="text-[13px] font-ui font-semibold text-text">
-                        {issue.feature.finePrint.title}
-                        <span className="ml-2 text-[11px] tracking-[0.14em] uppercase text-text-dim font-semibold">
-                          the fine print
-                        </span>
-                      </span>
-                      <span
-                        aria-hidden
-                        className="text-[13px] text-text-dim transition-transform duration-200 group-open:rotate-90"
+                  <div className="flex flex-col gap-4">
+                    {issue.feature.paragraphs.map((p, i) => (
+                      <p
+                        key={i}
+                        className="text-[16px] leading-[1.75] font-ui font-medium text-text"
                       >
-                        →
-                      </span>
-                    </summary>
-                    <ul className="flex flex-col gap-3 px-5 pb-5">
-                      {issue.feature.finePrint.items.map((item, i) => (
-                        <li key={i} className="flex gap-3 text-[13.5px] leading-[1.65] text-text-muted">
-                          <span aria-hidden className="mt-[9px] size-1 shrink-0 rounded-full bg-[#0a7d73]/60" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                ) : null}
+                        <InlineText text={p} />
+                      </p>
+                    ))}
+                  </div>
+                  {issue.feature.sections.map((s) => (
+                    <section key={s.heading} className="mt-8">
+                      <h3 className="text-[17.5px] font-ui font-semibold tracking-[-0.01em] text-text">
+                        {s.heading}
+                      </h3>
+                      <div className="mt-3 flex flex-col gap-4">
+                        {s.paragraphs.map((p, i) => (
+                          <p
+                            key={i}
+                            className="text-[15px] leading-[1.75] text-text-muted"
+                          >
+                            <InlineText text={p} />
+                          </p>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+
+                  {issue.feature.pullQuote ? (
+                    <p
+                      className="mt-9 max-w-[32ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
+                      style={SERIF}
+                    >
+                      {issue.feature.pullQuote}
+                    </p>
+                  ) : null}
+
+                  {issue.feature.finePrint ? (
+                    <details className="group mt-8 rounded-xl bg-[#fbfaf7] ring-1 ring-[#101820]/[0.08] open:pb-1">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+                        <span className="text-[13px] font-ui font-semibold text-text">
+                          {issue.feature.finePrint.title}
+                          <span className="ml-2 text-[11px] tracking-[0.14em] uppercase text-text-dim font-semibold">
+                            the fine print
+                          </span>
+                        </span>
+                        <span
+                          aria-hidden
+                          className="text-[13px] text-text-dim transition-transform duration-200 group-open:rotate-90"
+                        >
+                          →
+                        </span>
+                      </summary>
+                      <ul className="flex flex-col gap-3 px-5 pb-5">
+                        {issue.feature.finePrint.items.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex gap-3 text-[13.5px] leading-[1.65] text-text-muted"
+                          >
+                            <span
+                              aria-hidden
+                              className="mt-[9px] size-1 shrink-0 rounded-full bg-[#0a7d73]/60"
+                            />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
                 </div>
               </div>
             ) : (
@@ -802,12 +833,17 @@ export default async function BriefIssuePage({
               <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start">
                 <div className="flex flex-col gap-4">
                   {issue.feature.paragraphs.map((p, i) => (
-                    <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
+                    <p
+                      key={i}
+                      className="text-[15px] leading-[1.75] text-text-muted"
+                    >
                       <InlineText text={p} />
                     </p>
                   ))}
                 </div>
-                {issue.feature.quoteDoc ? <QuoteDoc doc={issue.feature.quoteDoc} /> : null}
+                {issue.feature.quoteDoc ? (
+                  <QuoteDoc doc={issue.feature.quoteDoc} />
+                ) : null}
               </div>
             )}
 
@@ -822,153 +858,169 @@ export default async function BriefIssuePage({
               supplied and licensed, otherwise the typographic card
               carries the outbound link. */}
           {project ? (
-          <MastheadPanel id="project" className="px-6 py-10 sm:px-12 sm:py-12" art={false}>
-            <div className="flex items-baseline justify-between gap-4">
-              <MastheadKicker>{project.kicker}</MastheadKicker>
-              <span className="hidden sm:block text-[10.5px] tracking-[0.18em] uppercase text-white/40">
-                The Build Brief · Issue {issueNo(issue)}
-              </span>
-            </div>
+            <MastheadPanel
+              id="project"
+              className="px-6 py-10 sm:px-12 sm:py-12"
+              art={false}
+            >
+              <div className="flex items-baseline justify-between gap-4">
+                <MastheadKicker>{project.kicker}</MastheadKicker>
+                <span className="hidden sm:block text-[10.5px] tracking-[0.18em] uppercase text-white/40">
+                  The Build Brief · Issue {issueNo(issue)}
+                </span>
+              </div>
 
-            {project.headline ? (
-              project.link ? (
-                <a
-                  href={project.link.href}
-                  target="_blank"
-                  rel="noopener"
-                  className="group/headline block w-fit"
-                >
+              {project.headline ? (
+                project.link ? (
+                  <a
+                    href={project.link.href}
+                    target="_blank"
+                    rel="noopener"
+                    className="group/headline block w-fit"
+                  >
+                    <AccentHeadline
+                      dark
+                      serif
+                      text={project.headline}
+                      accent={project.headlineAccent}
+                      className="mt-5 max-w-[22ch] text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.1] decoration-white/30 underline-offset-4 group-hover/headline:underline"
+                    />
+                  </a>
+                ) : (
                   <AccentHeadline
                     dark
                     serif
                     text={project.headline}
                     accent={project.headlineAccent}
-                    className="mt-5 max-w-[22ch] text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.1] decoration-white/30 underline-offset-4 group-hover/headline:underline"
+                    className="mt-5 max-w-[22ch] text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.1]"
                   />
-                </a>
+                )
               ) : (
-                <AccentHeadline
-                  dark
-                  serif
-                  text={project.headline}
-                  accent={project.headlineAccent}
-                  className="mt-5 max-w-[22ch] text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.1]"
-                />
-              )
-            ) : (
-              <h2
-                className="mt-5 text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.08]"
+                <h2
+                  className="mt-5 text-[clamp(1.9rem,2.6vw+1rem,3rem)] leading-[1.08]"
+                  style={SERIF}
+                >
+                  {project.name}
+                  {project.studio ? (
+                    <span className="text-white/55"> · {project.studio}</span>
+                  ) : null}
+                </h2>
+              )}
+              {project.recognition ? (
+                <p
+                  className="mt-2.5 text-[12.5px] tracking-[0.06em]"
+                  style={{ color: "rgba(224,178,92,0.92)" }}
+                >
+                  {project.recognition}
+                </p>
+              ) : null}
+
+              {project.image ? (
+                <figure className="mt-7 overflow-hidden rounded-xl ring-1 ring-white/10">
+                  <Image
+                    src={project.image.src}
+                    alt={project.image.alt}
+                    width={1600}
+                    height={1000}
+                    className="w-full h-auto"
+                  />
+                  <figcaption className="px-4 py-2.5 text-[11px] text-white/45">
+                    {project.image.credit}
+                  </figcaption>
+                </figure>
+              ) : null}
+
+              <div className="mt-6 flex flex-col gap-4 max-w-[64ch]">
+                {project.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.75] text-white/75"
+                  >
+                    <InlineText dark text={p} />
+                  </p>
+                ))}
+              </div>
+              <p
+                className="mt-7 max-w-[34ch] text-[clamp(1.25rem,1.3vw+0.8rem,1.6rem)] leading-[1.3]"
                 style={SERIF}
               >
-                {project.name}
-                {project.studio ? (
-                  <span className="text-white/55"> · {project.studio}</span>
+                “{project.pullQuote}”
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                {project.link ? (
+                  <a
+                    href={project.link.href}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-[12.5px] font-ui font-semibold text-[#06231f] hover:brightness-105 transition"
+                  >
+                    {project.link.label} ↗
+                  </a>
                 ) : null}
-              </h2>
-            )}
-            {project.recognition ? (
-              <p
-                className="mt-2.5 text-[12.5px] tracking-[0.06em]"
-                style={{ color: "rgba(224,178,92,0.92)" }}
-              >
-                {project.recognition}
-              </p>
-            ) : null}
-
-            {project.image ? (
-              <figure className="mt-7 overflow-hidden rounded-xl ring-1 ring-white/10">
-                <Image
-                  src={project.image.src}
-                  alt={project.image.alt}
-                  width={1600}
-                  height={1000}
-                  className="w-full h-auto"
-                />
-                <figcaption className="px-4 py-2.5 text-[11px] text-white/45">
-                  {project.image.credit}
-                </figcaption>
-              </figure>
-            ) : null}
-
-            <div className="mt-6 flex flex-col gap-4 max-w-[64ch]">
-              {project.body.map((p, i) => (
-                <p key={i} className="text-[15px] leading-[1.75] text-white/75">
-                  <InlineText dark text={p} />
+                {project.credit ? (
+                  <span className="text-[11.5px] text-white/40">
+                    {project.credit}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-8 border-t border-white/10 pt-6">
+                <TakesGridOnDark takes={project.takes} />
+              </div>
+              {project.source ? (
+                <p className="mt-6 text-[11.5px] tracking-[0.05em] text-white/40">
+                  Source: {project.source}.
                 </p>
-              ))}
-            </div>
-            <p
-              className="mt-7 max-w-[34ch] text-[clamp(1.25rem,1.3vw+0.8rem,1.6rem)] leading-[1.3]"
-              style={SERIF}
-            >
-              “{project.pullQuote}”
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              {project.link ? (
-                <a
-                  href={project.link.href}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-[12.5px] font-ui font-semibold text-[#06231f] hover:brightness-105 transition"
-                >
-                  {project.link.label} ↗
-                </a>
               ) : null}
-              {project.credit ? (
-                <span className="text-[11.5px] text-white/40">{project.credit}</span>
-              ) : null}
-            </div>
-            <div className="mt-8 border-t border-white/10 pt-6">
-              <TakesGridOnDark takes={project.takes} />
-            </div>
-            {project.source ? (
-              <p className="mt-6 text-[11.5px] tracking-[0.05em] text-white/40">
-                Source: {project.source}.
-              </p>
-            ) : null}
-          </MastheadPanel>
+            </MastheadPanel>
           ) : null}
 
           {/* Voices — only where the edition carries one. */}
           {issue.voices ? (
-          <BriefCard id="voices">
-            <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
-              {issue.voices.kicker}
-            </BriefKicker>
-            <h2 className={`max-w-[28ch] ${SECTION_H2}`}>{issue.voices.headline}</h2>
-            <blockquote className="mt-8 relative pl-6 sm:pl-8 border-l-2 border-accent-light/50">
-              <span
-                aria-hidden
-                className="absolute -top-5 left-4 sm:left-6 text-[64px] leading-none text-accent-light/25 select-none"
-                style={SERIF}
-              >
-                “
-              </span>
-              <p
-                className="max-w-[26ch] text-[clamp(1.7rem,2.4vw+0.9rem,2.7rem)] leading-[1.18] text-text"
-                style={SERIF}
-              >
-                “{issue.voices.quote}”
-              </p>
-              <footer className="mt-5 text-[12.5px] text-text-dim">
-                <span className="font-ui font-semibold tracking-[0.04em] text-text">
-                  {issue.voices.attribution}
-                </span>{" "}
-                · <span className="text-text-muted">{issue.voices.role}</span>
-              </footer>
-            </blockquote>
-            <div className="mt-6 flex flex-col gap-4 max-w-[68ch]">
-              {issue.voices.body.map((p, i) => (
-                <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
-                  <InlineText text={p} />
+            <BriefCard id="voices">
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.voices.kicker}
+              </BriefKicker>
+              <h2 className={`max-w-[28ch] ${SECTION_H2}`}>
+                {issue.voices.headline}
+              </h2>
+              <blockquote className="mt-8 relative pl-6 sm:pl-8 border-l-2 border-accent-light/50">
+                <span
+                  aria-hidden
+                  className="absolute -top-5 left-4 sm:left-6 text-[64px] leading-none text-accent-light/25 select-none"
+                  style={SERIF}
+                >
+                  “
+                </span>
+                <p
+                  className="max-w-[26ch] text-[clamp(1.7rem,2.4vw+0.9rem,2.7rem)] leading-[1.18] text-text"
+                  style={SERIF}
+                >
+                  “{issue.voices.quote}”
                 </p>
-              ))}
-            </div>
-            {issue.voices.takes ? <TakesGrid takes={issue.voices.takes} /> : null}
-            {issue.voices.source ? (
-              <SourceLine>{issue.voices.source}</SourceLine>
-            ) : null}
-          </BriefCard>
+                <footer className="mt-5 text-[12.5px] text-text-dim">
+                  <span className="font-ui font-semibold tracking-[0.04em] text-text">
+                    {issue.voices.attribution}
+                  </span>{" "}
+                  · <span className="text-text-muted">{issue.voices.role}</span>
+                </footer>
+              </blockquote>
+              <div className="mt-6 flex flex-col gap-4 max-w-[68ch]">
+                {issue.voices.body.map((p, i) => (
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.75] text-text-muted"
+                  >
+                    <InlineText text={p} />
+                  </p>
+                ))}
+              </div>
+              {issue.voices.takes ? (
+                <TakesGrid takes={issue.voices.takes} />
+              ) : null}
+              {issue.voices.source ? (
+                <SourceLine>{issue.voices.source}</SourceLine>
+              ) : null}
+            </BriefCard>
           ) : null}
 
           {/* The BuilderHQ Procurement Standard — an editorial section
@@ -982,7 +1034,12 @@ export default async function BriefIssuePage({
               <h2 className={`max-w-[30ch] ${SECTION_H2}`}>
                 {issue.bps.headline}
                 {issue.bps.headlineAccent ? (
-                  <> <span className="text-accent-light">{issue.bps.headlineAccent}</span></>
+                  <>
+                    {" "}
+                    <span className="text-accent-light">
+                      {issue.bps.headlineAccent}
+                    </span>
+                  </>
                 ) : null}
               </h2>
               {issue.bps.standfirst ? (
@@ -996,7 +1053,10 @@ export default async function BriefIssuePage({
 
               <div className="mt-7 flex flex-col gap-4 max-w-[68ch]">
                 {issue.bps.paragraphs.map((p, i) => (
-                  <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.75] text-text-muted"
+                  >
                     <InlineText text={p} />
                   </p>
                 ))}
@@ -1063,9 +1123,7 @@ export default async function BriefIssuePage({
                 <ol className="mt-9 grid gap-px overflow-hidden rounded-lg bg-[#101820]/[0.10] sm:grid-cols-2">
                   {issue.bps.principles.map((pr) => (
                     <li key={pr.n} className="bg-[#faf7f2] px-5 py-5">
-                      <span
-                        className="text-[11px] tracking-[0.18em] text-accent-light font-ui font-semibold tabular-nums"
-                      >
+                      <span className="text-[11px] tracking-[0.18em] text-accent-light font-ui font-semibold tabular-nums">
                         {pr.n}
                       </span>
                       <p className="mt-2 text-[15px] font-ui font-semibold leading-[1.35] text-text">
@@ -1086,7 +1144,10 @@ export default async function BriefIssuePage({
                   </p>
                   <div className="mt-3 flex flex-col gap-4 max-w-[68ch]">
                     {issue.bps.definition.paragraphs.map((p, i) => (
-                      <p key={i} className="text-[15px] leading-[1.75] text-text-muted">
+                      <p
+                        key={i}
+                        className="text-[15px] leading-[1.75] text-text-muted"
+                      >
                         <InlineText text={p} />
                       </p>
                     ))}
@@ -1095,7 +1156,9 @@ export default async function BriefIssuePage({
               ) : null}
 
               {issue.bps.takes ? <TakesGrid takes={issue.bps.takes} /> : null}
-              {issue.bps.source ? <SourceLine>{issue.bps.source}</SourceLine> : null}
+              {issue.bps.source ? (
+                <SourceLine>{issue.bps.source}</SourceLine>
+              ) : null}
             </BriefCard>
           ) : null}
 
@@ -1117,8 +1180,9 @@ export default async function BriefIssuePage({
               ) : null}
               {partner ? (
                 <p className="mt-3 text-[12.5px] text-text-dim">
-                  {partner.disciplines.slice(0, 2).join(" & ")} · {partner.suburb},{" "}
-                  {partner.state} · In the network since {partner.joined}
+                  {partner.disciplines.slice(0, 2).join(" & ")} ·{" "}
+                  {partner.suburb}, {partner.state} · In the network since{" "}
+                  {partner.joined}
                 </p>
               ) : null}
 
@@ -1132,32 +1196,32 @@ export default async function BriefIssuePage({
                 {pc.portrait || (pc.showLogo && practiceMark) ? (
                   <figure className="max-w-[220px]">
                     {pc.portrait ? (
-                    <div className="overflow-hidden rounded-xl ring-1 ring-[#101820]/[0.08]">
-                      <Image
-                        src={pc.portrait}
-                        alt={`${pc.principal}, ${pc.principalRole}`}
-                        width={440}
-                        height={550}
-                        className="w-full h-auto"
-                      />
-                    </div>
+                      <div className="overflow-hidden rounded-xl ring-1 ring-[#101820]/[0.08]">
+                        <Image
+                          src={pc.portrait}
+                          alt={`${pc.principal}, ${pc.principalRole}`}
+                          width={440}
+                          height={550}
+                          className="w-full h-auto"
+                        />
+                      </div>
                     ) : null}
                     {pc.portrait ? (
-                    <figcaption className="mt-3">
-                      <p className="text-[13.5px] font-ui font-semibold text-text">
-                        {pc.portraitCaption ?? pc.principal}
-                      </p>
-                      {pc.portraitCaption ? null : (
-                        <p className="text-[11.5px] text-text-dim">
-                          {pc.principalRole}
+                      <figcaption className="mt-3">
+                        <p className="text-[13.5px] font-ui font-semibold text-text">
+                          {pc.portraitCaption ?? pc.principal}
                         </p>
-                      )}
-                      {pc.principalQuote ? (
-                        <p className="mt-2 text-[12.5px] italic leading-[1.5] text-text-muted">
-                          “{pc.principalQuote}”
-                        </p>
-                      ) : null}
-                    </figcaption>
+                        {pc.portraitCaption ? null : (
+                          <p className="text-[11.5px] text-text-dim">
+                            {pc.principalRole}
+                          </p>
+                        )}
+                        {pc.principalQuote ? (
+                          <p className="mt-2 text-[12.5px] italic leading-[1.5] text-text-muted">
+                            “{pc.principalQuote}”
+                          </p>
+                        ) : null}
+                      </figcaption>
                     ) : null}
                     {/* The practice's mark, given the same column and
                         the same weight as the person who founded it.
@@ -1190,7 +1254,8 @@ export default async function BriefIssuePage({
                         />
                         {partner ? (
                           <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
-                            {partner.roleLabel} · {partner.suburb}, {partner.state}
+                            {partner.roleLabel} · {partner.suburb},{" "}
+                            {partner.state}
                           </p>
                         ) : null}
                       </div>
@@ -1215,10 +1280,16 @@ export default async function BriefIssuePage({
                     <div className="mb-6 grid grid-cols-3 gap-4 border-y border-[#101820]/[0.08] py-4">
                       {pc.stats.map((s) => (
                         <div key={s.label}>
-                          <p className="text-[clamp(1.3rem,1.3vw+0.8rem,1.7rem)] leading-none text-text" style={SERIF}>
+                          <p
+                            className="text-[clamp(1.3rem,1.3vw+0.8rem,1.7rem)] leading-none text-text"
+                            style={SERIF}
+                          >
                             {s.value}
                             {s.star ? (
-                              <span aria-hidden className="ml-1 align-[3px] text-[13px] text-[#e0b25c]">
+                              <span
+                                aria-hidden
+                                className="ml-1 align-[3px] text-[13px] text-[#e0b25c]"
+                              >
                                 ★
                               </span>
                             ) : null}
@@ -1264,6 +1335,7 @@ export default async function BriefIssuePage({
                     </Link>
                   </div>
                 </div>
+              </div>
 
               {/* The featured project, run full width beneath the
                   practice. This edition weights the work ahead of the
@@ -1277,7 +1349,10 @@ export default async function BriefIssuePage({
                     {pc.project.name}
                   </h3>
                   {pc.project.deck ? (
-                    <p className="mt-3 max-w-[52ch] text-[15.5px] italic leading-[1.6] text-text-muted" style={SERIF}>
+                    <p
+                      className="mt-3 max-w-[52ch] text-[15.5px] italic leading-[1.6] text-text-muted"
+                      style={SERIF}
+                    >
                       {pc.project.deck}
                     </p>
                   ) : null}
@@ -1298,7 +1373,10 @@ export default async function BriefIssuePage({
                   <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-8 lg:gap-12">
                     <div className="flex flex-col gap-4">
                       {pc.project.paragraphs.map((para, i) => (
-                        <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                        <p
+                          key={i}
+                          className="text-[15px] leading-[1.7] text-text-muted"
+                        >
                           <InlineText text={para} />
                         </p>
                       ))}
@@ -1323,7 +1401,9 @@ export default async function BriefIssuePage({
                             <dt className="text-[12px] tracking-[0.1em] uppercase text-text-dim font-ui font-semibold">
                               {f.k}
                             </dt>
-                            <dd className="text-right text-[13.5px] text-text">{f.v}</dd>
+                            <dd className="text-right text-[13.5px] text-text">
+                              {f.v}
+                            </dd>
                           </div>
                         ))}
                       </dl>
@@ -1345,7 +1425,6 @@ export default async function BriefIssuePage({
                   ) : null}
                 </div>
               ) : null}
-              </div>
             </BriefCard>
           ) : null}
 
@@ -1379,7 +1458,9 @@ export default async function BriefIssuePage({
               <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
                 Sources
               </BriefKicker>
-              <h2 className={SECTION_H2}>Where this edition&apos;s numbers come from</h2>
+              <h2 className={SECTION_H2}>
+                Where this edition&apos;s numbers come from
+              </h2>
               <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
                 {issue.sourceGroups.map((g) => (
                   <section key={g.heading}>
@@ -1513,11 +1594,17 @@ export default async function BriefIssuePage({
                   </>
                 ) : null}
                 The Build Brief is compiled by{" "}
-                <Link href="/about" className="underline decoration-[#101820]/20 underline-offset-2 hover:text-text transition-colors">
+                <Link
+                  href="/about"
+                  className="underline decoration-[#101820]/20 underline-offset-2 hover:text-text transition-colors"
+                >
                   BuilderHQ
                 </Link>
                 , Melbourne. Read past editions at{" "}
-                <Link href="/build-brief" className="underline decoration-[#101820]/20 underline-offset-2 hover:text-text transition-colors">
+                <Link
+                  href="/build-brief"
+                  className="underline decoration-[#101820]/20 underline-offset-2 hover:text-text transition-colors"
+                >
                   builderhq.com.au/build-brief
                 </Link>
                 .
