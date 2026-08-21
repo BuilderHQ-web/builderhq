@@ -22,7 +22,7 @@
 
 import "server-only";
 import { after } from "next/server";
-import { and, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -50,7 +50,7 @@ import type {
 // drag another module's service (and the lib/db chain) into a runtime
 // cycle.
 import { documents } from "@/modules/documents";
-import { unlocks } from "@/modules/unlocks";
+import { unlocks, UNLOCK_CAP } from "@/modules/unlocks";
 
 // Pricing intentionally not imported here — service.ts only needs it
 // for non-existent monetary calculations right now. Pricing lives in
@@ -391,6 +391,93 @@ export async function getByIdForOwner(
 // ── builder-side queries ─────────────────────────────────────────────────
 
 /**
+ * Is this round still open? Spots taken against the round's own
+ * capacity, as a correlated subquery so it can be ordered on.
+ *
+ * The card computes the same thing for display (tenderSpots ??
+ * UNLOCK_CAP); this is that rule expressed once more in SQL, because
+ * ordering has to happen before the rows come back.
+ */
+const hasSpotsLeft = sql`(
+  (select count(*) from ${unlocks} where ${unlocks.projectId} = ${projects.id})
+  < coalesce(${projects.tenderSpots}, ${UNLOCK_CAP})
+)`;
+
+/**
+ * How well a round fits one builder, 0 to 5. Null when we know
+ * nothing about them, which leaves the ordering exactly as it was.
+ *
+ * Location outranks type deliberately. A builder can usually stretch
+ * to a project type next door to their usual work; they cannot
+ * stretch to a project three hundred kilometres away. So the location
+ * tier is doubled and type only breaks ties inside it:
+ *
+ *   5  their suburb, their type          2  their state, wrong type
+ *   4  their suburb, wrong type          1  elsewhere, their type
+ *   3  their state, their type           0  no signal either way
+ *
+ * The suburb branch is tested before the statewide one, so a builder
+ * holding both a tight Essendon area and a blanket VIC area still
+ * sees Essendon rounds above the rest of Victoria.
+ */
+function builderFitScore(rankFor: MarketplaceFilters["rankFor"]): SQL | null {
+  const areas = rankFor?.areas ?? [];
+  const categories = rankFor?.categories ?? [];
+  const exact = areas.filter((a) => !a.statewide && a.suburb);
+  const statewide = areas.filter((a) => a.statewide);
+
+  const terms: SQL[] = [];
+  if (exact.length > 0 || statewide.length > 0) {
+    const branches: SQL[] = [];
+    if (exact.length > 0) {
+      const cond = or(
+        ...exact.map((a) =>
+          and(eq(projects.state, a.state), eq(projects.suburb, a.suburb!)),
+        ),
+      )!;
+      branches.push(sql`when ${cond} then 2`);
+    }
+    if (statewide.length > 0) {
+      const cond = or(...statewide.map((a) => eq(projects.state, a.state)))!;
+      branches.push(sql`when ${cond} then 1`);
+    }
+    terms.push(sql`(case ${sql.join(branches, sql` `)} else 0 end) * 2`);
+  }
+  if (categories.length > 0) {
+    terms.push(
+      sql`(case when ${inArray(projects.type, categories)} then 1 else 0 end)`,
+    );
+  }
+  return terms.length > 0 ? sql.join(terms, sql` + `) : null;
+}
+
+/**
+ * The marketplace's default order, in priority order:
+ *
+ *   1. Rounds a builder can still join, above rounds that are full. A
+ *      full round is a shop window with nothing for sale. It belongs
+ *      on the page, because market depth is worth seeing, but never
+ *      above something they can act on.
+ *   2. How well the round fits this builder, when we know them.
+ *   3. Newest first.
+ *
+ * Each clause only breaks ties in the one before it, so all three
+ * work together rather than any one winning outright.
+ */
+export function marketplaceOrder(
+  rankFor: MarketplaceFilters["rankFor"],
+): SQL[] {
+  const order: SQL[] = [desc(hasSpotsLeft)];
+  const fit = builderFitScore(rankFor);
+  if (fit) order.push(desc(fit));
+  // coalesce, not publishedAt alone: DESC sorts NULLs first in
+  // Postgres, so a row with no publish stamp would otherwise lead the
+  // entire marketplace.
+  order.push(sql`coalesce(${projects.publishedAt}, ${projects.createdAt}) desc`);
+  return order;
+}
+
+/**
  * Marketplace listing for builders. Returns `MarketplacePreview` rows
  * (strips private fields). Filters apply at the SQL level.
  *
@@ -483,7 +570,7 @@ export async function listForMarketplace(
     })
     .from(projects)
     .where(and(...conds))
-    .orderBy(desc(projects.publishedAt))
+    .orderBy(...marketplaceOrder(filters.rankFor))
     .limit(filters.limit ?? 60)
     .offset(filters.offset ?? 0);
 

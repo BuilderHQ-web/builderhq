@@ -15,6 +15,7 @@ import {
   countMySaved,
 } from "@/modules/unlocks";
 import { getStatus as getFbaStatus } from "@/modules/credits";
+import { getBuilderProfile } from "@/modules/profiles";
 import { packStatsForProjects } from "@/modules/scope-engine";
 import { ProjectCard, PrivateRoundStubCard } from "@/components/builder/project-card";
 import { BuilderSectionTabs } from "@/components/builder/section-tabs";
@@ -61,13 +62,34 @@ export default async function BrowsePage({
   const session = await auth();
   if (!session?.user) redirect("/login?next=/builder/browse");
 
+  const userId = session.user.id!;
   const filters = parseFilters(params);
+
+  // What this builder does and where, used to ORDER the market, never
+  // to narrow it. A builder browsing must be able to see the whole
+  // board, including the round two states over they might take on
+  // anyway; it simply sits below the work that fits them.
+  const profile = await getBuilderProfile(userId).catch(() => null);
+  const rankFor = {
+    categories: profile?.categories.map((c) => c.category) ?? [],
+    areas:
+      profile?.serviceAreas
+        .map((a) => ({
+          state: a.state,
+          suburb: a.suburb,
+          // The same radius rule the dashboard uses: 50km or more is
+          // wide enough that suburb precision stops meaning anything.
+          statewide: (a.radiusKm ?? 0) >= 50,
+        }))
+        .filter((a) => a.statewide || a.suburb !== null) ?? [],
+  };
+  const personalised = rankFor.categories.length > 0 || rankFor.areas.length > 0;
+
   const [projects, privateStubs] = await Promise.all([
-    listForMarketplace(filters),
+    listForMarketplace({ ...filters, ...(personalised ? { rankFor } : {}) }),
     listPrivateRoundStubs(filters),
   ]);
 
-  const userId = session.user.id!;
   const [unlockedIds, savedIds, unlockedCount, savedCount, fbaStatus] =
     await Promise.all([
       listMyUnlockedProjectIds(userId),

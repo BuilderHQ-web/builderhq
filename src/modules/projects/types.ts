@@ -138,6 +138,31 @@ export type MarketplaceFilters = {
     suburb: string | null;
     statewide: boolean;
   }>;
+  /**
+   * Rank the results for one builder, WITHOUT removing any of them.
+   *
+   * The distinction from `serviceAreaMatch` above is the whole point:
+   * that one is a filter, so a builder given it stops seeing anything
+   * outside their areas. Browse must never do that — a market a
+   * builder cannot see the edges of is not a market. So this orders
+   * instead. A project outside every service area still appears, it
+   * just appears below the ones that fit.
+   *
+   * Ordering runs in SQL rather than over the returned page, because
+   * the query is paginated: sorting 60 already-fetched rows would
+   * only shuffle the newest 60, and the perfectly matched round
+   * sitting at row 61 would never surface at all.
+   */
+  rankFor?: {
+    /** Project types this builder takes on. Empty = no type signal. */
+    categories?: Array<ProjectRow["type"]>;
+    /** Service areas, already collapsed by radius (see above). */
+    areas?: Array<{
+      state: NonNullable<ProjectRow["state"]>;
+      suburb: string | null;
+      statewide: boolean;
+    }>;
+  };
   /** Pagination. */
   limit?: number;
   offset?: number;
