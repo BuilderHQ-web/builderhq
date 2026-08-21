@@ -206,6 +206,8 @@ export interface BriefIssue {
      *  wide lockup at the same height are not equal weight. */
     logos: Array<{ src: string; alt: string; height: number }>;
     paragraphs: string[];
+    /** A closing line, set apart from the body. */
+    closing?: string;
     cta?: { label: string; href: string };
   };
   podcast?: {
@@ -2742,17 +2744,19 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     ogImage: "/build-brief/og-issue-007.jpg",
     association: {
       kicker: "In association with",
-      headline: "BuilderHQ is now working in association with the",
+      headline: "BuilderHQ is proud to be associated with",
       headlineAccent: "HIA and Master Builders.",
       logos: [
         { src: "/build-brief/issue-007/hia.png", alt: "Housing Industry Association", height: 76 },
         { src: "/build-brief/issue-007/master-builders.png", alt: "Master Builders Australia", height: 40 },
       ],
       paragraphs: [
-        "Two of Australia's peak residential construction bodies are now formally associated with BuilderHQ.",
-        "For the people who use the platform, the practical meaning is straightforward. The standards we hold builders to, and the way we structure a tender, now sit alongside the two organisations that most of this industry already works with.",
-        "The Build Brief has always drawn on their research. Their economists appear in these pages most weeks, including this one. This puts the relationship on the record.",
+        "BuilderHQ is a member of two of Australia's leading building industry organisations, the Housing Industry Association and Master Builders.",
+        "For us, membership is about staying connected to the organisations, standards, research and conversations helping shape Australian construction. That matters as we build a new way to tender and evaluate construction projects.",
+        "Our platform has been developed around a simple principle: better procurement should support a stronger, more professional construction industry. Being part of the broader HIA and Master Builders communities keeps BuilderHQ connected to the industry we are building for.",
+        "Their research and market intelligence also regularly inform The Build Brief, alongside data and insights from across the Australian construction sector.",
       ],
+      closing: "Built for the industry. Connected to the industry.",
     },
     note: {
       eyebrow: "This week from the BuilderHQ team",
