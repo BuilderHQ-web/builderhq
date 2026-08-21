@@ -2765,7 +2765,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "Most building reform is about what gets built. This week's is about when you get paid.",
         "Victoria released draft regulations covering deposits and progress payments, with a Regulatory Impact Statement, open for consultation now. It is the detail behind the contract changes [we wrote about last week](/build-brief/issue-006), and it is the part that touches every job in the state.",
         "On Thursday the Premier appointed a Royal Commission into misconduct in major public construction. We set out what it covers, and what it does not, in the second signal. And new home sales fell for a third month running.",
-        "The Feature is the whole Victorian reform timeline, checked line by line against the legislation register. Two dates are worth reading twice: a law many are still waiting for has been in force since April, and a set of requirements that reads like a 2028 problem started this July.",
+        "The Feature is the whole Victorian reform timeline, checked line by line against the legislation register. Two dates are worth reading twice: a law many are still waiting for has been in force since April, and a set of rules that sounds like a 2028 problem started this July.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -2813,14 +2813,14 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           "The Victorian government released draft regulations and a Regulatory Impact Statement this week covering deposits and progress payments on domestic building contracts. Consultation is open. These are proposals, not settled limits.",
           "Under the Domestic Building Contracts Amendment Act, deposit and progress payment limits move out of the Act and into regulations, where they can be updated without returning to Parliament. One provision looks forward: progress payment limits will be able to vary where part of the work uses a modern method of construction, such as modular or offsite prefabrication. Traditional stages assume value is created on site. When most of a home is built in a factory, base, frame and lock-up stop describing anything useful.",
           "Three other changes commence with it on 1 December. A cost escalation clause is only permitted where the contract price is $1 million or more, and the increase cannot exceed 5% of the contract price. The five day cooling off period applies whether or not the owner obtained legal advice. And builder initiated and owner initiated variations become a single process.",
-          "One more thing is changing that is easy to miss. An owner can already end a contract if the price rises 15% or the build time extends by half. Today that right is limited to increases arising for unforeseeable reasons. The amendment removes that limitation, so the thresholds stay the same while the right behind them gets materially wider.",
+          "One more thing is changing that is easy to miss. An owner can already end a contract if the price rises 15% or the build time extends by half. Today that right is limited to increases arising for unforeseeable reasons. The amendment removes that limitation, so the limits stay the same but the right behind them gets much wider.",
           "All of it applies to contracts signed after commencement. Existing contracts continue as they are.",
         ],
         source:
           "Victorian Government, draft regulations and Regulatory Impact Statement on deposits and progress payments; Domestic Building Contracts Amendment Act 2025 (Act No. 36 of 2025), verified against the authorised text on the Victorian legislation register",
         takes: {
           owners:
-            "Your deposit and payment schedule will be set by rules being written right now, and consultation is open. [Test the build cost early](/estimate_request_landing_page) so the schedule has something real to sit against.",
+            "Your deposit and payment schedule will be set by rules being written right now, and consultation is open. [Test the build cost early](/estimate_request_landing_page) so you know what the schedule is drawing against.",
           designers:
             "If you administer contracts, the payment schedule you are used to changes on 1 December.",
           builders:
@@ -2861,14 +2861,14 @@ export const BRIEF_ISSUES: BriefIssue[] = [
             ],
           },
           footnote:
-            "Lawful action under industrial relations and occupational health and safety law is expressly excluded.",
+            "Lawful action under industrial relations and workplace safety law is specifically excluded.",
         },
         body: [
           "Premier Ben Carroll appointed a Royal Commission on Thursday and released its Terms of Reference. It will investigate crime and misconduct in the state's construction industry, including intimidation, coercion and criminal influence, and it can compel evidence.",
-          "The scope matters more than the headline. The Terms of Reference define the subject matter as major public and civil infrastructure construction projects commissioned by the State of Victoria. This is not an inquiry into residential builders, and for anyone building or renovating a home in Victoria, nothing changes today. Lawful action under industrial relations and occupational health and safety law is expressly outside the scope.",
+          "The scope matters more than the headline. The Terms of Reference define the subject matter as major public and civil infrastructure construction projects commissioned by the State of Victoria. This is not an inquiry into residential builders, and for anyone building or renovating a home in Victoria, nothing changes today. Lawful action under industrial relations and workplace safety law is specifically outside the scope.",
           "What could change is what follows. The Commission will consider what regulatory and legislative changes are needed, and the government has signalled legislation to strengthen the powers of Victoria's anti-corruption body, IBAC.",
           "Victorian Chamber of Commerce and Industry chief executive Sally Curtain said that those in the industry who are honest and hardworking deserve a system that protects them, not one that enables intimidation, coercion or criminal gain.",
-          "A final report is due by 20 August 2027, with an interim report at the Commissioner's discretion. Hearing dates have not been announced.",
+          "A final report is due by 20 August 2027, and the Commissioner may hand up an interim report before then. Hearing dates have not been announced.",
         ],
         source:
           "Victorian Government, Royal Commission into the Integrity of Major Public and Civil Infrastructure Construction Projects in Victoria, Terms of Reference, 20 August 2026; Victorian Chamber of Commerce and Industry statement, 20 August 2026",
@@ -2878,7 +2878,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
             "No immediate effect on documentation, procurement or contract administration.",
           builders:
             "The scope is misconduct on major public projects. Findings may reach regulation more broadly.",
-          brokers: "No immediate effect on lending. A medium term watch item.",
+          brokers: "No immediate effect on lending. Worth watching over the next year or two.",
         },
       },
       {
@@ -2906,8 +2906,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         },
         body: [
           "The Housing Industry Association's July survey recorded a 3.7% fall in new home sales, the third consecutive monthly decline, which HIA senior economist Thomas Devitt attributed to higher interest rates and policy uncertainty weighing on consumer confidence.",
-          "The three month picture is the sharper one. Sales in the three months to July were 13.5% lower than the previous quarter, while the trailing twelve months still sat 17.1% higher than the year before. New South Wales was the only state to record a monthly increase, at 2.1%. Queensland fell hardest at 10.9%, then South Australia at 7.6% and Victoria at 2.0%. Over the full year Victoria leads the country, 27.6% ahead.",
-          "Read it beside the first signal. Fewer sales, and a payment structure being rewritten at the same time. Which is why the consultation above is worth ten minutes of a builder's Friday.",
+          "The three month picture is sharper. Sales in the three months to July were 13.5% lower than the previous quarter, while the trailing twelve months still sat 17.1% higher than the year before. New South Wales was the only state to record a monthly increase, at 2.1%. Queensland fell hardest at 10.9%, then South Australia at 7.6% and Victoria at 2.0%. Over the full year Victoria leads the country, 27.6% ahead.",
+          "Read it beside the first signal. Fewer sales, and a payment structure being rewritten at the same time. Which is why the consultation above is worth ten minutes of a builder's time.",
         ],
         source:
           "Housing Industry Association, New Home Sales report, 21 August 2026 (survey of large volume builders in the five largest states)",
@@ -2928,10 +2928,10 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       headline: "Everything changing in Victorian building, on",
       headlineAccent: "one timeline.",
       standfirst:
-        "Every date here is checked against the Victorian legislation register. Two of them are easy to misread, and both are the kind of mistake that puts a job on the wrong side of a rule.",
+        "Every date here is checked against the Victorian legislation register. Two of them are easy to misread, and either could put a job on the wrong side of a rule.",
       paragraphs: [
         "No state has changed its building rules more in the past two years than Victoria. The problem is not the changes. It is keeping track of which one starts when, and which of them touches the job you are quoting this week.",
-        "Two dates first, because they are the ones most likely to catch a job out.",
+        "Two dates first, because they are the ones most likely to catch you out.",
       ],
       sections: [
         {
@@ -2945,20 +2945,20 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           heading: "In effect now",
           paragraphs: [
             "**1 July 2025 · Building and Plumbing Commission.** The regulator now operating as the BPC. Worth knowing that the Victorian Building Authority has not been abolished: the BPC currently operates as the VBA trading as the Building and Plumbing Commission.",
-            "**15 April 2026 · Fairer Payments on Jobsites, security of payment.** Claimable variations and excluded amounts repealed, which removes the narrowest limits in the country. Performance security claims can now go to adjudication. Notice based time bars can be declared unfair where compliance is not reasonably possible or would be unreasonably onerous. The adjudication review mechanism is abolished.",
+            "**15 April 2026 · Fairer Payments on Jobsites, security of payment.** Claimable variations and excluded amounts repealed, which removes the narrowest limits in the country. Performance security claims can now go to adjudication. A notice deadline in a contract can now be declared unfair if meeting it was not reasonably possible, or would have been too hard. The adjudication review mechanism is abolished.",
             "**19 May 2026 · Cladding Safety Victoria Repeal Act.** Assented 19 May 2026. Cladding Safety Victoria's functions wound up.",
             "**1 July 2026 · Home warranty replaces Domestic Building Insurance.** For contracts signed on or after 1 July, on work over $20,000 in buildings of three storeys or less. Cover rose from $300,000 to $400,000. The difference that matters: under the old scheme an owner could claim only if the builder died, disappeared or became insolvent. Now an owner can claim where work is incomplete, defective or non-compliant and the builder will not or cannot fix it. Major defects six years, others two.",
             "**1 July 2026 · Rectification orders.** The BPC can direct a builder or developer to fix defective, non-compliant or incomplete work up to ten years after completion. Retrospective, so it reaches homes finished before 1 July.",
-            "**1 July 2026 · Minimum financial requirements, and the developer bond scheme.** Both commenced. The bond obligation itself is triggered by permit date, which is where 1 July 2027 comes in below.",
+            "**1 July 2026 · Minimum financial requirements, and the developer bond scheme.** Both commenced. The bond itself is triggered by the permit date, which is where 1 July 2027 comes in below.",
           ],
         },
         {
           heading: "Coming",
           paragraphs: [
             "**1 September 2026 · The rest of Fairer Payments on Jobsites.** Eleven days. Registration of building surveyors and building inspectors, information statements from relevant building surveyors, and two adjudication provisions, unless proclaimed sooner.",
-            "**1 December 2026 · Domestic Building Contracts Amendment Act.** Unless proclaimed earlier, and applying only to contracts signed after it starts. A new developer category, where a builder contracting with a developer sees contract content requirements drop from 21 items to four and several consumer protections fall away. One variation process. Deposit and progress payment limits move into regulations, which are out for consultation now. Progress payment limits can vary for modern methods of construction. Cost escalation clauses only where the contract price is $1 million or more, capped at 5%. Five day cooling off, legal advice or not. And the 15% price and 50% time termination right loses its unforeseeable reasons limitation.",
-            "**1 July 2027 · Developer bond obligation.** Applies to apartment buildings of four storeys and above where the building permit is issued on or after that date. Bond of 2% of total build cost. Decennial insurance is legislated as an alternative instrument.",
-            "**By 1 December 2027 · Building and Plumbing Administration and Enforcement Act.** Act No. 17 of 2026, passed the Assembly 2 April 2026 and the Council 12 May 2026, assented 19 May 2026. It commences by proclamation and no later than 1 December 2027. Anyone quoting a firmer date than that is guessing.",
+            "**1 December 2026 · Domestic Building Contracts Amendment Act.** Unless proclaimed earlier, and applying only to contracts signed after it starts. A new developer category, where a builder contracting with a developer has to put four things in the contract instead of 21, and several consumer protections fall away. One variation process. Deposit and progress payment limits move into regulations, which are out for consultation now. Progress payment limits can vary for modern methods of construction. Cost escalation clauses only where the contract price is $1 million or more, capped at 5%. Five day cooling off, legal advice or not. And the 15% price and 50% time termination right loses its unforeseeable reasons limitation.",
+            "**1 July 2027 · Developer bond obligation.** Applies to apartment buildings of four storeys and above where the building permit is issued on or after that date. Bond of 2% of total build cost. Decennial insurance is legislated as an alternative.",
+            "**By 1 December 2027 · Building and Plumbing Administration and Enforcement Act.** Act No. 17 of 2026, passed the Assembly 2 April 2026 and the Council 12 May 2026, assented 19 May 2026. It starts by proclamation and no later than 1 December 2027. No firmer date has been set.",
           ],
         },
         {
@@ -3003,7 +3003,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "Market Watch 01 is about the schedule a payment follows. This is about the number that schedule is calculated from, and why it moves after signing.",
       paragraphs: [
         "Victoria is being careful about when money changes hands. A deposit cap, six payment stages, a five per cent limit on escalation. All of it applies to a contract price that was set before anyone checked whether three builders were pricing the same house.",
-        "A variation is not usually a builder changing their mind. It is a line nobody settled before pricing opened, surfacing at the point where a budget has the least room left in it. The payment schedule is now tightly regulated. The number it draws down against is not.",
+        "A variation is not usually a builder changing their mind. It is a line nobody settled before pricing opened, and it turns up when the budget has the least room left. The payment schedule is now tightly regulated. The number it draws down against is not.",
       ],
       comparison: {
         title: "Same drawings, same house, three quotes",
@@ -3052,25 +3052,24 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       principalRole: "Building Designer and director",
       showLogo: true,
       logo: "/partners/house-design-solutions/logo.png",
-      deck: "Business at the front, party out the back.",
       stats: [
         { value: "5.0", label: "Google rating", star: true },
         { value: "30 yrs", label: "Melbourne house design" },
         { value: "Albert Park", label: "Studio, serving all Melbourne" },
       ],
-      why: "Paul A. Mete has been designing Melbourne houses for thirty years, and House Design Solutions is deliberately small: the person you talk to is the person drawing your house. The practice works across new homes, extensions and unit development, with feasibility advice at the front of it, which is why owners tend to arrive before they have decided what to do with a site rather than after.",
+      why: "Paul A. Mete has been designing Melbourne houses for thirty years, and House Design Solutions is deliberately small: the person you talk to is the person drawing your house. The practice works across new homes, extensions and unit development, and starts with feasibility advice, so owners often come to them before they have decided what to do with a site.",
       practice:
-        "A building design practice in Albert Park working across all of Melbourne, and a member of Design Matters National, having been with its predecessor the Building Designers Association of Victoria for more than twenty five years.",
+        "A building design practice in Albert Park working across all of Melbourne, and a member of Design Matters National, after more than twenty five years with the body that came before it, the Building Designers Association of Victoria.",
       welcome:
-        "A practice that tells an owner what a site is worth doing before it draws anything is exactly the kind we want in front of people planning a build.",
+        "A practice that tells an owner whether a site is worth building on before it draws anything is exactly the kind we want in front of people planning a build.",
       project: {
         kicker: "The project",
         name: "The Mullet House, at the foothills of the Dandenong Ranges",
         deck: "A rear house extension does not have to be a slave to the original architecture of the dwelling.",
         paragraphs: [
-          "The clients had a large, ageing Tudor style home on acreage, and were daunted by how to extend something so loud and proud in its styling. Most people would conclude that any addition is obliged to follow suit and buy the trimmings to match. House Design Solutions argued the opposite.",
-          "The practice calls it a mullet design: business at the front, party out the back. The formal Tudor rooms stay as they are, and the rear becomes a modern, light filled, open extension. The whole bet is placed on the transition point rather than on mimicry. In the practice's own words, mimicking heritage just because you feel compelled is generally a bad idea, as it does not really serve the old or the new.",
-          "That transition is where the design work is: timber lined walls and grassed areas meeting the old brickwork, with colour drawn from the original carried into the new so the two halves read as one house. The practice also advised that changes back in the existing dwelling should reference the extension, knitting old and new both ways rather than only forwards. The brief asked for a private poolside oasis, and got one.",
+          "The clients had a large, ageing Tudor style home on acreage, and were daunted by how to extend something so loud and proud in its styling. Most people would assume any addition has to match it. House Design Solutions argued the opposite.",
+          "The practice calls it a mullet design: business at the front, party out the back. The formal Tudor rooms stay as they are, and the rear becomes a modern, light filled, open extension. The whole design rests on the join between the two, rather than on copying the old style. In the practice's own words, mimicking heritage just because you feel compelled is generally a bad idea, as it does not really serve the old or the new.",
+          "The join is where the work is: timber lined walls and lawn meeting the old brickwork, with colour taken from the original and carried into the new, so the two halves read as one house. The practice also advised that changes made back in the old house should point to the extension, so the two tie together in both directions. The brief asked for a private poolside oasis, and got one.",
         ],
         hero: {
           src: "/build-brief/issue-007/mullet-rear.jpg",
@@ -3126,7 +3125,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "What does the Victorian Royal Commission into construction cover?",
-        a: "The Royal Commission into the Integrity of Major Public and Civil Infrastructure Construction Projects in Victoria was appointed on 20 August 2026. Its Terms of Reference define the subject matter as major public and civil infrastructure construction projects commissioned by the State of Victoria, so residential building sits outside it. It can compel evidence. Lawful action under industrial relations and occupational health and safety law is expressly excluded. A final report is due by 20 August 2027.",
+        a: "The Royal Commission into the Integrity of Major Public and Civil Infrastructure Construction Projects in Victoria was appointed on 20 August 2026. Its Terms of Reference define the subject matter as major public and civil infrastructure construction projects commissioned by the State of Victoria, so residential building sits outside it. It can compel evidence. Lawful action under industrial relations and workplace safety law is specifically excluded. A final report is due by 20 August 2027.",
       },
       {
         q: "Did new home sales fall in Australia in July 2026?",
@@ -3134,7 +3133,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "When does the Victorian developer bond scheme apply?",
-        a: "The scheme commenced on 1 July 2026, but the bond obligation is triggered by permit date: a bond is required for apartment buildings of four storeys and above where the building permit is issued on or after 1 July 2027. The bond is 2% of total build cost, and decennial insurance is legislated as an alternative instrument.",
+        a: "The scheme commenced on 1 July 2026, but the bond obligation is triggered by permit date: a bond is required for apartment buildings of four storeys and above where the building permit is issued on or after 1 July 2027. The bond is 2% of total build cost, and decennial insurance is legislated as an alternative.",
       },
       {
         q: "Why do three builders quote different prices for the same house?",
