@@ -59,7 +59,9 @@ export interface Partner {
    *  When set, the app's public profile route (/b/<that slug>) renders
    *  THIS partner page instead of the standard register profile — the
    *  curated profile is the profile, whichever door a client comes
-   *  through. Ignored while draft. */
+   *  through. Independent of `draft`: a partner we have not published
+   *  to the directory can still have their curated page serve as their
+   *  own profile. */
   builderProfileSlug?: string;
   name: string;
   /** Overrides the default kind label ("Architecture practice" /
@@ -2777,6 +2779,7 @@ export const PARTNERS: Partner[] = [
     slug: "the-builders-project",
     kind: "builder",
     draft: true,
+    builderProfileSlug: "the-builders-project-61b9f3",
     roleLabel: "Custom home builder",
     name: "The Builders Project",
     monogram: "TB",
@@ -4498,15 +4501,24 @@ export function getPartner(slug: string): Partner | undefined {
 /**
  * The partner whose curated page should stand in for an in-app builder
  * profile, looked up by the builder_profiles.slug the app links to.
- * Drafts never match: until a partner page is live, the standard
- * register profile keeps serving.
+ *
+ * `draft` is deliberately NOT consulted. The two flags govern different
+ * doors: `draft` decides whether a partner is listed in, and reachable
+ * through, the Preferred Partner directory; `builderProfileSlug`
+ * decides whether their curated page is also their own public profile.
+ * A builder can be the second without being the first, which is what
+ * happens while we are still courting them — the page is theirs and
+ * better than the register could assemble, but the network they are
+ * not yet part of does not advertise them.
+ *
+ * The caller is responsible for the consequences of a draft: no
+ * directory links out, and no structured data claiming a /partners URL
+ * that would 404. See the /b/[slug] route.
  */
 export function getPartnerForBuilderSlug(
   builderProfileSlug: string,
 ): Partner | undefined {
-  return PARTNERS.find(
-    (p) => !p.draft && p.builderProfileSlug === builderProfileSlug,
-  );
+  return PARTNERS.find((p) => p.builderProfileSlug === builderProfileSlug);
 }
 
 /**

@@ -49,15 +49,21 @@ export async function generateMetadata({
   const partner = getPartnerForBuilderSlug(slug);
   if (partner) {
     const title = `${partner.name} · Preferred Partner`;
+    // Where the canonical points depends on whether the partner page is
+    // published. A live partner has a /partners URL and that is the
+    // primary of the pair. A draft has no such page — it 404s — so this
+    // route IS the only address the profile has, and must canonicalise
+    // to itself rather than at a door that does not open.
+    const home = partner.draft ? `/b/${slug}` : `/partners/${partner.slug}`;
     return {
       title,
       description: partner.tagline,
-      alternates: { canonical: `/partners/${partner.slug}` },
+      alternates: { canonical: home },
       openGraph: {
         type: "profile",
         title,
         description: partner.tagline,
-        url: `/partners/${partner.slug}`,
+        url: home,
       },
       twitter: {
         card: "summary_large_image",
@@ -98,8 +104,16 @@ export default async function PublicBuilderRoute({ params }: RouteParams) {
   if (partner) {
     return (
       <MarketingPageShell {...partnerHeaderProps(partner)}>
-        <JsonLd data={partnerGraph(partner)} />
-        <PartnerProfileSections partner={partner} />
+        {/* partnerEntity states /partners/<slug> as the entity's URL.
+            True for a published partner, a 404 for a draft — so a draft
+            page carries no partner schema rather than pointing search
+            engines at a door that does not open. */}
+        {partner.draft ? null : <JsonLd data={partnerGraph(partner)} />}
+        {/* A draft is absent from the directory, so the links that lead
+            into it would strand a visitor looking for this builder
+            among partners who are not there. `preview` drops exactly
+            those links and nothing else. */}
+        <PartnerProfileSections partner={partner} preview={partner.draft} />
       </MarketingPageShell>
     );
   }
