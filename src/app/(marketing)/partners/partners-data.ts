@@ -2776,6 +2776,83 @@ export const PARTNERS: Partner[] = [
   },
 
   {
+    slug: "buildkomm",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Residential and commercial builder",
+    name: "Buildkomm",
+    monogram: "BK",
+    logo: "/partners/buildkomm/logo.png",
+    principal: "Eddie Komm",
+    suburb: "Moorabbin",
+    state: "VIC",
+    states: ["VIC", "QLD"],
+    tagline:
+      "A Moorabbin builder carrying townhouses, boutique apartments and architectural homes across bayside Melbourne, with the licences and the balance sheet to run several major contracts at once.",
+    disciplines: [
+      "Townhouses and dual occupancy",
+      "Boutique apartments",
+      "Luxury residences",
+      "Industrial and commercial",
+    ],
+    stats: [
+      { label: "Completed works", value: "$200m+", sub: "delivered to date" },
+      {
+        label: "DBI facility",
+        value: "$40m",
+        sub: "domestic building insurance",
+      },
+      {
+        label: "Licensed",
+        value: "VIC + QLD",
+        sub: "commercial and residential",
+      },
+    ],
+    signature: {
+      label: "Registered builder",
+      value: "DB-U 69666",
+    },
+    accolade: {
+      label: "Master Builders Victoria",
+      sub: "member, and QBCC licensed in Queensland",
+      tag: "Accredited",
+    },
+    why: "Buildkomm is the rare builder whose capacity is a matter of record rather than assertion.\n\nMost builders ask an owner to take their financial standing on trust. Buildkomm publishes it: over $200 million in completed works, and a $40 million Domestic Building Insurance facility, which is the figure an insurer is willing to stand behind and the reason they can carry several large residential contracts at the same time without one project's cash flow depending on another's.\n\nThe licensing is unusually broad for a residential builder. Commercial and residential registration in Victoria, a residential licence in Queensland, and a portfolio that runs from warehouses in precast and structural steel through to architectural homes in Brighton and Beaumaris. A builder who works in post-tensioned slabs and basement construction on a five-storey apartment building brings a different order of structural confidence to a three-storey townhouse site.\n\nFor a developer or an architect with a difficult site, a basement, or a programme that cannot slip, this is a builder whose systems were built for exactly that.",
+    about:
+      "Buildkomm is a Melbourne based builder working across the residential and commercial sectors, led by director Eddie Komm from an office in Moorabbin.\n\nThe practice delivers turnkey projects for developers, architects and private clients, organised around four streams: medium-density townhouses of two and three storeys, including dual occupancy and multi-unit developments on both slab-on-ground and basement; boutique to mid-rise apartments up to five storeys in structural concrete and post-tensioned slabs; industrial warehouses and facilities in precast panel and structural steel with commercial fit-out; and architecturally significant homes in Melbourne's bayside suburbs.\n\nCompleted work is concentrated through Melbourne's south east and bayside, from Malvern East and Caulfield through Bentleigh, Ormond, Highett and Cheltenham to Brighton, Beaumaris, Mentone, Mordialloc and the Chelsea beaches. The team of roughly forty runs on documented systems and construction technology, which is what allows the same standard to hold across concurrent projects rather than following whichever site the director happens to be standing on.",
+    facts: {
+      experience: "Decades",
+      basedIn: "Moorabbin, VIC",
+      serves: "Melbourne and south east Queensland",
+      focus: "Townhouses, apartments and luxury homes",
+    },
+    website: "https://www.buildkomm.com.au",
+    instagram: "https://www.instagram.com/buildkomm/",
+    linkedin: "https://au.linkedin.com/company/build-komm",
+    galleryUrl: "https://www.buildkomm.com.au/portfolio",
+    work: [
+      {
+        title: "Bayside townhouses",
+        suburb: "Brighton",
+        type: "Townhouses",
+        image: "/partners/buildkomm/brighton.jpg",
+      },
+      {
+        title: "Double-height living",
+        suburb: "Beaumaris",
+        type: "Luxury residence",
+        image: "/partners/buildkomm/beaumaris.jpg",
+      },
+      {
+        title: "Three-storey residences",
+        suburb: "Caulfield",
+        type: "Multi-dwelling",
+        image: "/partners/buildkomm/caulfield.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "the-builders-project",
     kind: "builder",
     draft: true,
