@@ -2779,6 +2779,7 @@ export const PARTNERS: Partner[] = [
     slug: "buildkomm",
     kind: "builder",
     draft: true,
+    builderProfileSlug: "buildkomm-pty-ltd-715fe8",
     roleLabel: "Residential and commercial builder",
     name: "Buildkomm",
     monogram: "BK",
@@ -2803,23 +2804,20 @@ export const PARTNERS: Partner[] = [
         sub: "domestic building insurance",
       },
       {
+        // Short value, long sub: "VIC + QLD" wraps to two lines at this
+        // type size and breaks the band's rhythm against $200m+ / $40m.
         label: "Licensed",
-        value: "VIC + QLD",
-        sub: "commercial and residential",
+        value: "Dual",
+        sub: "VIC and QLD, commercial and residential",
       },
     ],
     signature: {
       label: "Registered builder",
       value: "DB-U 69666",
     },
-    accolade: {
-      label: "Master Builders Victoria",
-      sub: "member, and QBCC licensed in Queensland",
-      tag: "Accredited",
-    },
-    why: "Buildkomm is the rare builder whose capacity is a matter of record rather than assertion.\n\nMost builders ask an owner to take their financial standing on trust. Buildkomm publishes it: over $200 million in completed works, and a $40 million Domestic Building Insurance facility, which is the figure an insurer is willing to stand behind and the reason they can carry several large residential contracts at the same time without one project's cash flow depending on another's.\n\nThe licensing is unusually broad for a residential builder. Commercial and residential registration in Victoria, a residential licence in Queensland, and a portfolio that runs from warehouses in precast and structural steel through to architectural homes in Brighton and Beaumaris. A builder who works in post-tensioned slabs and basement construction on a five-storey apartment building brings a different order of structural confidence to a three-storey townhouse site.\n\nFor a developer or an architect with a difficult site, a basement, or a programme that cannot slip, this is a builder whose systems were built for exactly that.",
+    why: "Buildkomm is the rare builder whose capacity is a matter of record rather than assertion.\n\nMost builders ask an owner to take their financial standing on trust. Buildkomm publishes it: over $200 million in completed works, and a $40 million Domestic Building Insurance facility, which is the figure an insurer is willing to stand behind and the reason they can carry several large contracts at once.\n\nThe licensing is unusually broad too, covering commercial and residential work in Victoria and residential in Queensland. A builder who handles post-tensioned slabs and basements on a five-storey apartment building brings a different order of structural confidence to a townhouse site.",
     about:
-      "Buildkomm is a Melbourne based builder working across the residential and commercial sectors, led by director Eddie Komm from an office in Moorabbin.\n\nThe practice delivers turnkey projects for developers, architects and private clients, organised around four streams: medium-density townhouses of two and three storeys, including dual occupancy and multi-unit developments on both slab-on-ground and basement; boutique to mid-rise apartments up to five storeys in structural concrete and post-tensioned slabs; industrial warehouses and facilities in precast panel and structural steel with commercial fit-out; and architecturally significant homes in Melbourne's bayside suburbs.\n\nCompleted work is concentrated through Melbourne's south east and bayside, from Malvern East and Caulfield through Bentleigh, Ormond, Highett and Cheltenham to Brighton, Beaumaris, Mentone, Mordialloc and the Chelsea beaches. The team of roughly forty runs on documented systems and construction technology, which is what allows the same standard to hold across concurrent projects rather than following whichever site the director happens to be standing on.",
+      "Buildkomm is a Melbourne based builder working across the residential and commercial sectors, led by director Eddie Komm from an office in Moorabbin. They are a Master Builders Victoria member and QBCC licensed in Queensland.\n\nThe practice delivers turnkey projects for developers, architects and private clients across four streams: medium-density townhouses on slab-on-ground and basement, boutique to mid-rise apartments up to five storeys, industrial warehouses in precast and structural steel, and architecturally significant homes in Melbourne's bayside suburbs.\n\nCompleted work concentrates through the south east and bayside, from Malvern East and Caulfield through Bentleigh and Cheltenham to Brighton, Beaumaris and Mordialloc. A team of roughly forty runs on documented systems, which is what holds the same standard across concurrent projects.",
     facts: {
       experience: "Decades",
       basedIn: "Moorabbin, VIC",
