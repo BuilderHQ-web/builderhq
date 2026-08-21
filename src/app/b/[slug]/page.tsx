@@ -6,6 +6,14 @@ import { getBuilderBySlug } from "@/modules/profiles";
 import { presignDownload } from "@/modules/documents";
 import { getLockState } from "@/modules/verification";
 import { logger } from "@/lib/logger";
+import { MarketingPageShell } from "@/components/landing/page-shell";
+import { JsonLd } from "@/components/seo/json-ld";
+import { partnerGraph } from "@/lib/seo";
+import { getPartnerForBuilderSlug } from "@/app/(marketing)/partners/partners-data";
+import {
+  PartnerProfileSections,
+  partnerHeaderProps,
+} from "@/app/(marketing)/partners/partner-profile";
 
 import { PublicBuilderProfile } from "./public-profile";
 
@@ -34,6 +42,30 @@ export async function generateMetadata({
   params,
 }: RouteParams): Promise<Metadata> {
   const { slug } = await params;
+  // A partner builder's curated page stands in for the register
+  // profile, so the metadata mirrors the partner page's. Canonical
+  // points at /partners/<slug>: one profile served through two doors
+  // must not read as two competing pages to a crawler.
+  const partner = getPartnerForBuilderSlug(slug);
+  if (partner) {
+    const title = `${partner.name} · Preferred Partner`;
+    return {
+      title,
+      description: partner.tagline,
+      alternates: { canonical: `/partners/${partner.slug}` },
+      openGraph: {
+        type: "profile",
+        title,
+        description: partner.tagline,
+        url: `/partners/${partner.slug}`,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description: partner.tagline,
+      },
+    };
+  }
   // We don't auth-gate metadata — even a logged-out crawler getting an
   // approved profile's page should pull the right OG tags.
   const bundle = await getBuilderBySlug(slug, null);
@@ -54,6 +86,24 @@ export async function generateMetadata({
 
 export default async function PublicBuilderRoute({ params }: RouteParams) {
   const { slug } = await params;
+
+  // A builder who is also a Preferred Partner has a curated page that
+  // is simply better than anything the register can assemble — richer
+  // copy, real photographs, a rating. When one exists, it IS the
+  // profile: a homeowner clicking "view profile" inside the app and a
+  // visitor browsing the partner directory see the same page. The
+  // branch depends only on repo data, never the database, and a
+  // partner still in draft falls through to the standard profile.
+  const partner = getPartnerForBuilderSlug(slug);
+  if (partner) {
+    return (
+      <MarketingPageShell {...partnerHeaderProps(partner)}>
+        <JsonLd data={partnerGraph(partner)} />
+        <PartnerProfileSections partner={partner} />
+      </MarketingPageShell>
+    );
+  }
+
   const session = await auth();
   const viewerId = session?.user?.id ?? null;
 

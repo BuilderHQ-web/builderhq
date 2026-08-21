@@ -55,6 +55,12 @@ export interface Partner {
    *  /partners/[slug] route, but reachable via /partners/preview/[slug]
    *  for the partner to review their draft before it goes live. */
   draft?: boolean;
+  /** The partner's in-app builder account, by its builder_profiles.slug.
+   *  When set, the app's public profile route (/b/<that slug>) renders
+   *  THIS partner page instead of the standard register profile — the
+   *  curated profile is the profile, whichever door a client comes
+   *  through. Ignored while draft. */
+  builderProfileSlug?: string;
   name: string;
   /** Overrides the default kind label ("Architecture practice" /
    *  "Finance partner") where a partner needs a more accurate title,
@@ -3092,6 +3098,7 @@ export const PARTNERS: Partner[] = [
   {
     slug: "de-lune-construction",
     kind: "builder",
+    builderProfileSlug: "de-lune-construction-db683d",
     roleLabel: "Architectural builder",
     name: "de Lune Construction",
     monogram: "DL",
@@ -4486,6 +4493,20 @@ export function partnerStates(p: Partner): string[] {
 
 export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);
+}
+
+/**
+ * The partner whose curated page should stand in for an in-app builder
+ * profile, looked up by the builder_profiles.slug the app links to.
+ * Drafts never match: until a partner page is live, the standard
+ * register profile keeps serving.
+ */
+export function getPartnerForBuilderSlug(
+  builderProfileSlug: string,
+): Partner | undefined {
+  return PARTNERS.find(
+    (p) => !p.draft && p.builderProfileSlug === builderProfileSlug,
+  );
 }
 
 /**
