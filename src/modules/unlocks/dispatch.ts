@@ -176,6 +176,89 @@ export async function dispatchUnlockEvent(input: {
   }
 }
 
+/**
+ * The deferred half of a pre-assigned round.
+ *
+ * A concierge round is sometimes filled before it is published: unlock
+ * rows are inserted while the project is still a draft, silently, so
+ * the builders hear nothing about a project they cannot yet open. This
+ * sends the builder half of the unlock dispatch for every unlock on
+ * the project, and ONLY the builder half. The owner is deliberately
+ * not told here: on a pre-assigned round the owner is briefed by the
+ * concierge, not by three "builder unlocked your project" emails
+ * arriving in the same minute their round goes live.
+ *
+ * Called from the project_published dispatch, which runs once per
+ * publish. Safe to call again anyway: the outbox dedupes on
+ * (kind, email, project), and the kind here is the same one the
+ * organic unlock dispatch uses, so a builder can never receive the
+ * unlock email twice whichever path fires first.
+ */
+export async function dispatchDeferredUnlockBuilderEmails(
+  projectId: string,
+): Promise<number> {
+  try {
+    const rows = await db
+      .select({ builderId: unlocks.builderId })
+      .from(unlocks)
+      .where(eq(unlocks.projectId, projectId));
+    if (rows.length === 0) return 0;
+
+    let sent = 0;
+    for (const { builderId } of rows) {
+      const ctx = await gatherContext(builderId, projectId);
+      if (!ctx) {
+        logger.warn(
+          { event: "unlock.deferred.no_context", projectId, builderId },
+          "deferred unlock email — no context",
+        );
+        continue;
+      }
+      const projectAddress =
+        [
+          ctx.project.addressLine1,
+          ctx.project.suburb,
+          ctx.project.state,
+          ctx.project.postcode,
+        ]
+          .filter(Boolean)
+          .join(", ") || null;
+
+      await enqueueEmails([
+        {
+          kind: `unlock_builder:${ctx.builder.id}`,
+          toEmail: ctx.builder.email,
+          userId: ctx.builder.id,
+          projectId: ctx.project.id,
+          payload: {
+            builderFirstName: ctx.builder.firstName,
+            projectTitle: ctx.project.title,
+            projectAddress,
+            ownerName: ctx.owner.name,
+            ownerEmail: ctx.owner.email,
+            ownerPhone: ctx.owner.phone,
+            projectSlug: ctx.project.slug,
+            unlockedViaFba: ctx.unlock.source === "founding",
+          },
+        },
+      ]);
+      sent += 1;
+    }
+    logger.info(
+      { event: "unlock.deferred.enqueued", projectId, sent },
+      "deferred unlock builder emails enqueued",
+    );
+    return sent;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { event: "unlock.deferred.failed", projectId, msg },
+      "deferred unlock dispatch failed — continuing",
+    );
+    return 0;
+  }
+}
+
 async function gatherContext(
   builderId: string,
   projectId: string,
