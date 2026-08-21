@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -138,7 +138,7 @@ export const MIN_TICK_BUDGET_MS = STAGE_FLOOR.synthesise + 10_000;
  * functions declared `maxDuration = 300`, so this leaves the platform
  * twenty seconds of headroom to return cleanly.
  */
-export const TICK_BUDGET_MS = 280_000;
+export const TICK_BUDGET_MS = 740_000;
 
 /**
  * How long one tick owns a run.
@@ -153,7 +153,7 @@ export const TICK_BUDGET_MS = 280_000;
  * item set, and each emailed ops that the pack was ready. Four emails,
  * four different counts.
  */
-export const LEASE_MS = TICK_BUDGET_MS + 40_000;
+export const LEASE_MS = TICK_BUDGET_MS + 60_000;
 
 /** The shape stored beside extraction findings so later runs can
  *  prove the work is reusable: same pipeline version, same bytes. */
@@ -407,7 +407,15 @@ function addUsage(
 export async function processRunTick(
   runId: string,
   budgetMs = 240_000,
-): Promise<Result<{ status: string; moreWork: boolean }>> {
+): Promise<
+  Result<{
+    status: string;
+    moreWork: boolean;
+    /** Another worker holds the lease; retry after retryInSec. */
+    locked?: true;
+    retryInSec?: number;
+  }>
+> {
   const started = Date.now();
   const timeLeft = () => budgetMs - (Date.now() - started);
 
@@ -424,6 +432,7 @@ export async function processRunTick(
     .update(scopeRuns)
     .set({
       status: sql`case when ${scopeRuns.status} = 'pending' then 'classifying' else ${scopeRuns.status} end`,
+      leaseUntil: new Date(Date.now() + LEASE_MS),
       updatedAt: new Date(),
     })
     .where(
@@ -431,22 +440,64 @@ export async function processRunTick(
         eq(scopeRuns.id, runId),
         inArray(scopeRuns.status, ["pending", "classifying", "extracting", "synthesising"]),
         or(
-          eq(scopeRuns.status, "pending"),
-          lt(scopeRuns.updatedAt, new Date(Date.now() - LEASE_MS)),
+          isNull(scopeRuns.leaseUntil),
+          lt(scopeRuns.leaseUntil, new Date()),
+          // Runs leased under the old updated_at scheme have no
+          // lease_until; the staleness fallback lets them recover.
+          and(
+            isNull(scopeRuns.leaseUntil),
+            lt(scopeRuns.updatedAt, new Date(Date.now() - LEASE_MS)),
+          ),
         ),
       ),
     )
     .returning({ id: scopeRuns.id });
   if (claimed.length === 0) {
-    // Either another tick holds the lease, or the run is already done.
+    // Two very different situations used to share this answer, and an
+    // admin pressing the button could not tell "finished" from "another
+    // worker holds the lock". Now the caller is told which, and when
+    // the lock frees.
     const [current] = await db
-      .select({ status: scopeRuns.status })
+      .select({ status: scopeRuns.status, leaseUntil: scopeRuns.leaseUntil })
       .from(scopeRuns)
       .where(eq(scopeRuns.id, runId))
       .limit(1);
     if (!current) return fail("not_found", "Run not found.");
-    return ok({ status: current.status, moreWork: false });
+    const terminal = ["review", "approved", "failed", "superseded"].includes(current.status);
+    const held =
+      !terminal && current.leaseUntil !== null && current.leaseUntil > new Date();
+    return ok({
+      status: current.status,
+      moreWork: !terminal,
+      ...(held
+        ? {
+            locked: true as const,
+            retryInSec: Math.max(
+              1,
+              Math.ceil((current.leaseUntil!.getTime() - Date.now()) / 1000),
+            ),
+          }
+        : {}),
+    });
   }
+
+  /**
+   * A clean return hands the run back: the lease is released so the
+   * very next tick (the browser loop's, the cron's, anyone's) can
+   * claim immediately. Yesterday a tick that finished its slice kept
+   * an implicit lease for five more minutes, and its own successor
+   * silently bounced off it.
+   */
+  const release = async () => {
+    await db
+      .update(scopeRuns)
+      .set({ leaseUntil: null })
+      .where(eq(scopeRuns.id, runId));
+  };
+  const yieldWith = async (status: string) => {
+    await release();
+    return ok({ status, moreWork: true });
+  };
 
   const [run] = await db
     .select()
@@ -492,7 +543,7 @@ export async function processRunTick(
     if (run.status === "pending" || run.status === "classifying") {
       await bump("classifying");
       for (;;) {
-        if (timeLeft() < STAGE_FLOOR.classify) return ok({ status: "classifying", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.classify) return yieldWith("classifying");
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -530,6 +581,7 @@ export async function processRunTick(
             status: "failed",
             error: `This pack carries ${budget?.pages} pages to extract; the run budget is ${MAX_RUN_PAGES}. Remove or merge documents on the project, then start a fresh run.`,
             usage,
+            leaseUntil: null,
             updatedAt: new Date(),
           })
           .where(eq(scopeRuns.id, runId));
@@ -537,7 +589,7 @@ export async function processRunTick(
         return ok({ status: "failed", moreWork: false });
       }
       for (;;) {
-        if (timeLeft() < STAGE_FLOOR.extract) return ok({ status: "extracting", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.extract) return yieldWith("extracting");
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -554,17 +606,40 @@ export async function processRunTick(
     }
 
     // Stage 3 — synthesis over everything extracted.
-    if (timeLeft() < STAGE_FLOOR.synthesise) return ok({ status: "extracting", moreWork: true });
+    if (timeLeft() < STAGE_FLOOR.synthesise) return yieldWith("extracting");
     await bump("synthesising");
 
     const docRows = await db
       .select({
         row: scopeRunDocuments,
         filename: documents.filename,
+        sha256: documents.sha256,
       })
       .from(scopeRunDocuments)
       .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
       .where(eq(scopeRunDocuments.runId, runId));
+
+    // A failed document stops the run LOUDLY. Yesterday synthesis ran
+    // over eight of ten documents and would have produced a
+    // finished-looking scope with the architectural set silently
+    // absent. A hole in the register is a wrong answer, not a smaller
+    // one. The desk's "Retry failed documents" action re-queues them.
+    const failedDocs = docRows.filter((d) => d.row.status === "failed");
+    if (failedDocs.length > 0) {
+      const names = failedDocs.map((d) => d.filename).join(", ");
+      await db
+        .update(scopeRuns)
+        .set({
+          status: "failed",
+          error: `${failedDocs.length} document(s) could not be read after retrying: ${names}. Use "Retry failed documents", or remove them from the project and start a fresh run.`,
+          usage,
+          leaseUntil: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(scopeRuns.id, runId));
+      await dispatchScopeRunOps(runId, "failed").catch(() => undefined);
+      return ok({ status: "failed", moreWork: false });
+    }
     // Register hygiene: the same document uploaded twice must not read
     // as twice the evidence.
     const deduped = dedupeRegister(
@@ -575,6 +650,7 @@ export async function processRunTick(
           kind: d.row.kind,
           docTitle: d.row.docTitle,
           pageCount: d.row.pageCount,
+          sha256: d.sha256,
           d,
         })),
     );
@@ -602,22 +678,67 @@ export async function processRunTick(
           status: "failed",
           error: "No document could be read. Every register row failed.",
           usage,
+          leaseUntil: null,
           updatedAt: new Date(),
         })
         .where(eq(scopeRuns.id, runId));
       return ok({ status: "failed", moreWork: false });
     }
 
-    const {
-      synthesis,
-      usage: synthUsage,
-      salvaged: synthesisSalvaged,
-    } = await synthesiseRun({
-      projectType,
-      documents: extracted,
-      extensions: vocab.all,
-    });
-    usage = addUsage(usage, "synthesis", synthUsage);
+    // Pass one is the expensive call, so its result is persisted the
+    // moment it returns. Anything that kills the tick after this point
+    // — the platform ceiling, a crash, a failed second pass — costs
+    // nothing but a retry: the next tick resumes from the checkpoint
+    // instead of paying for the call again. The checkpoint is keyed to
+    // the exact extracted document set; if the register changes, it is
+    // stale and discarded.
+    const checkpointKey = extracted
+      .map((d) => d.documentId)
+      .sort()
+      .join(",");
+    type SynthCheckpoint = {
+      key: string;
+      synthesis: Awaited<ReturnType<typeof synthesiseRun>>["synthesis"];
+      salvaged: number;
+    };
+    const savedCp = run.synthesisCheckpoint as SynthCheckpoint | null;
+    let synthesis: SynthCheckpoint["synthesis"];
+    let synthesisSalvaged: number;
+    if (savedCp && savedCp.key === checkpointKey && savedCp.synthesis) {
+      logger.info(
+        { event: "scope.synthesis.resumed_from_checkpoint", runId },
+        "synthesis pass one resumed from checkpoint — not re-run",
+      );
+      synthesis = savedCp.synthesis;
+      synthesisSalvaged = savedCp.salvaged ?? 0;
+    } else {
+      const fresh = await synthesiseRun({
+        projectType,
+        documents: extracted,
+        extensions: vocab.all,
+      });
+      synthesis = fresh.synthesis;
+      synthesisSalvaged = fresh.salvaged;
+      usage = addUsage(usage, "synthesis", fresh.usage);
+      await db
+        .update(scopeRuns)
+        .set({
+          synthesisCheckpoint: {
+            key: checkpointKey,
+            synthesis,
+            salvaged: synthesisSalvaged,
+          } as object,
+          usage,
+          updatedAt: new Date(),
+        })
+        .where(eq(scopeRuns.id, runId));
+      // The remaining work is one cheap classifier call plus the item
+      // writes. If the budget cannot carry it, hand over rather than
+      // risk dying mid-write: the checkpoint makes the handover free.
+      if (timeLeft() < 60_000) {
+        return yieldWith("synthesising");
+      }
+    }
 
     // ── the deterministic half of accuracy ──────────────────────────
     // Capture hygiene runs FIRST so auto-mapped repeat discoveries
@@ -991,6 +1112,10 @@ export async function processRunTick(
         status: "review",
         overview: synthesis.overview as object | null,
         usage: { ...usage, estimatedCostUsd: cost, analysis } as object,
+        // The run is done: the checkpoint has served, and the lease is
+        // handed back in the same write that announces completion.
+        synthesisCheckpoint: null,
+        leaseUntil: null,
         updatedAt: new Date(),
       })
       .where(and(eq(scopeRuns.id, runId), ne(scopeRuns.status, "review")))
@@ -1021,7 +1146,10 @@ export async function processRunTick(
     const msg = err instanceof Error ? err.message : String(err);
     await db
       .update(scopeRuns)
-      .set({ status: "failed", error: msg, usage, updatedAt: new Date() })
+      // The lease is released with the failure so a retry does not have
+      // to wait it out. The checkpoint is kept: whatever failed, pass
+      // one's work is real, and the retry resumes from it.
+      .set({ status: "failed", error: msg, usage, leaseUntil: null, updatedAt: new Date() })
       .where(eq(scopeRuns.id, runId));
     logger.error({ event: "scope.run.failed", runId, msg }, "scope run failed");
     // A stalled pack is a runner waiting on a promise the platform
@@ -1157,6 +1285,56 @@ export async function tickQueuedRuns(budgetMs = 50_000): Promise<{
       "scope queue advanced",
     );
   }
+
+  // The watchdog. A run still processing two hours after it started is
+  // not slow, it is stuck, and yesterday the only way anyone found out
+  // was by looking. One ops email per run, deduplicated by the outbox
+  // key, so a stall alerts exactly once however many sweeps see it.
+  try {
+    const stalled = await db
+      .select({
+        id: scopeRuns.id,
+        status: scopeRuns.status,
+        createdAt: scopeRuns.createdAt,
+        projectTitle: projects.title,
+      })
+      .from(scopeRuns)
+      .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
+      .where(
+        and(
+          inArray(scopeRuns.status, ["pending", "classifying", "extracting", "synthesising"]),
+          lt(scopeRuns.createdAt, new Date(Date.now() - 2 * 60 * 60 * 1000)),
+        ),
+      );
+    if (stalled.length > 0) {
+      const { enqueueEmails } = await import("@/modules/notifications");
+      const { OPS_EMAIL } = await import("@/modules/email");
+      await enqueueEmails(
+        stalled.map((r) => ({
+          kind: "scope_run_stalled",
+          toEmail: OPS_EMAIL,
+          userId: null,
+          projectId: null,
+          payload: {
+            runId: r.id,
+            status: r.status,
+            projectTitle: r.projectTitle,
+            startedAt: r.createdAt.toISOString(),
+            note: "This run has been processing for over two hours. Check the admin scope desk.",
+          },
+        })),
+      );
+      logger.warn(
+        { event: "scope.queue.stalled", runs: stalled.map((r) => r.id) },
+        "stalled scope runs detected — ops alerted",
+      );
+    }
+  } catch (err) {
+    logger.warn(
+      { event: "scope.queue.watchdog_failed", msg: err instanceof Error ? err.message : String(err) },
+      "stall watchdog failed — continuing",
+    );
+  }
   return { ticked, reachedReview, failed };
 }
 
@@ -1242,13 +1420,36 @@ async function extractOne(
         .where(eq(scopeRunDocuments.id, docRow.id));
       return;
     }
-    const { findings, usage: u, salvaged } = await extractDocument({
-      bytes: loaded.bytes,
-      filename: loaded.filename,
-      kind: docRow.kind ?? "other",
-      projectType,
-      extensions,
-    });
+    // One retry before a document is declared unreadable. Yesterday's
+    // two "failed" documents were bad rolls, not bad files: both passed
+    // untouched on the second attempt. A model returning an invalid
+    // shape once is weather; twice on the same bytes is a real problem
+    // worth a human's attention.
+    let attempt = 0;
+    let extractedResult: Awaited<ReturnType<typeof extractDocument>>;
+    for (;;) {
+      attempt += 1;
+      try {
+        extractedResult = await extractDocument({
+          bytes: loaded.bytes,
+          filename: loaded.filename,
+          kind: docRow.kind ?? "other",
+          projectType,
+          extensions,
+        });
+        break;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (attempt >= 2) {
+          throw new Error(`${msg} (after ${attempt} attempts)`);
+        }
+        logger.warn(
+          { event: "scope.extract.retry", file: loaded.filename, attempt, msg },
+          "extraction attempt failed — retrying once",
+        );
+      }
+    }
+    const { findings, usage: u, salvaged } = extractedResult;
     setUsage(addUsage(usage, "extract", u));
     // The meta rides beside the pages: it is what proves, on a later
     // run, that this extraction covers the same bytes under the same
@@ -1276,6 +1477,55 @@ async function extractOne(
 }
 
 // ── reads for the ops surface ───────────────────────────────────────────
+
+/**
+ * The desk's rescue lever: re-queue a failed run's failed documents.
+ *
+ * Yesterday this took hand-written SQL. A failed run is terminal to
+ * the tick, deliberately, so recovery is an explicit human act: reset
+ * every failed document to classified, clear the error, put the run
+ * back in extracting, and let the next tick take it from there. The
+ * synthesis checkpoint, if one exists, is discarded — the register is
+ * about to change, so pass one must be re-run over the full set.
+ */
+export async function retryFailedDocuments(
+  runId: string,
+): Promise<Result<{ requeued: number }>> {
+  const [run] = await db
+    .select({ status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "failed") {
+    return fail("conflict", "Only failed runs can retry their documents.");
+  }
+  const requeued = await db
+    .update(scopeRunDocuments)
+    .set({ status: "classified", error: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(scopeRunDocuments.runId, runId),
+        eq(scopeRunDocuments.status, "failed"),
+      ),
+    )
+    .returning({ id: scopeRunDocuments.id });
+  await db
+    .update(scopeRuns)
+    .set({
+      status: "extracting",
+      error: null,
+      leaseUntil: null,
+      synthesisCheckpoint: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(scopeRuns.id, runId));
+  logger.info(
+    { event: "scope.run.docs_requeued", runId, requeued: requeued.length },
+    "failed documents re-queued by the desk",
+  );
+  return ok({ requeued: requeued.length });
+}
 
 export async function listRuns(limit = 40): Promise<
   Array<

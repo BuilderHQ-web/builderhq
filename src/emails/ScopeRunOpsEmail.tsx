@@ -17,7 +17,7 @@ import {
 } from "./_shell";
 
 interface ScopeRunOpsEmailProps {
-  kind: "started" | "review" | "failed";
+  kind: "started" | "review" | "failed" | "stalled";
   projectTitle: string;
   evidencedCount: number;
   gapCount: number;
@@ -37,6 +37,7 @@ export function ScopeRunOpsEmail({
 }: ScopeRunOpsEmailProps) {
   const review = kind === "review";
   const started = kind === "started";
+  const stalled = kind === "stalled";
   return (
     <EmailShell
       preview={
@@ -44,7 +45,9 @@ export function ScopeRunOpsEmail({
           ? `Analysis started: ${projectTitle}`
           : review
             ? `Pack ready for review: ${projectTitle}`
-            : `Extraction failed: ${projectTitle}`
+            : stalled
+              ? `Run stalled: ${projectTitle}`
+              : `Extraction failed: ${projectTitle}`
       }
       kicker="Scope engine"
       heading={
@@ -52,7 +55,9 @@ export function ScopeRunOpsEmail({
           ? "An analysis run has started"
           : review
             ? "A pack is waiting for review"
-            : "An extraction run failed"
+            : stalled
+              ? "A run has been processing for too long"
+              : "An extraction run failed"
       }
       whyReceiving="You are receiving this because you run the BuilderHQ ops desk."
     >

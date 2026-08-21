@@ -1155,18 +1155,34 @@ export function dedupeRegister<
     kind: string | null;
     docTitle: string | null;
     pageCount: number | null;
+    /** Content hash from the documents table, when the caller has it. */
+    sha256?: string | null;
   },
 >(docs: T[]): { keep: T[]; duplicates: T[] } {
+  // "The same document uploaded twice" means the same BYTES, and the
+  // content hash is the only key that says so. The old title-and-pages
+  // heuristic silently excluded Unit 2's energy certificate on the
+  // first multi-dwelling pack, because per-unit documents legitimately
+  // share a title and a page count. Different file, different content,
+  // different evidence. The heuristic survives only for legacy rows
+  // that carry no hash.
   const seen = new Map<string, T>();
   const keep: T[] = [];
   const duplicates: T[] = [];
   for (const d of docs) {
-    const title = d.docTitle?.trim().toLowerCase();
-    if (!title || !d.kind || !d.pageCount) {
+    let key: string | null = null;
+    if (d.sha256) {
+      key = `sha|${d.sha256}`;
+    } else {
+      const title = d.docTitle?.trim().toLowerCase();
+      if (title && d.kind && d.pageCount) {
+        key = `${d.kind}|${title}|${d.pageCount}`;
+      }
+    }
+    if (!key) {
       keep.push(d);
       continue;
     }
-    const key = `${d.kind}|${title}|${d.pageCount}`;
     if (seen.has(key)) duplicates.push(d);
     else {
       seen.set(key, d);

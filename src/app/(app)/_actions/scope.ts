@@ -13,6 +13,7 @@ import { fail, ok, type Result } from "@/lib/result";
 import {
   startRun,
   processRunTick,
+  retryFailedDocuments,
   TICK_BUDGET_MS,
   reviewItem,
   addItem,
@@ -54,9 +55,24 @@ export async function startScopeRunAction(
  *  declares maxDuration = 300). It was 50_000, below the synthesis
  *  floor, so the desk's re-tick button could never finish a run
  *  either — the same defect the cron carried. */
+export async function retryFailedDocumentsAction(
+  runId: string,
+): Promise<Result<{ requeued: number }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return retryFailedDocuments(runId);
+}
+
 export async function tickScopeRunAction(
   runId: string,
-): Promise<Result<{ status: string; moreWork: boolean }>> {
+): Promise<
+  Result<{
+    status: string;
+    moreWork: boolean;
+    locked?: true;
+    retryInSec?: number;
+  }>
+> {
   const a = await requireAdmin();
   if (!a.ok) return a;
   return processRunTick(runId, TICK_BUDGET_MS);

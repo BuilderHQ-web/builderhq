@@ -31,7 +31,14 @@ export const runtime = "nodejs";
  * extraction floor (60s) or the synthesis floor (90s), so every tick
  * returned "more work to do" and the queue froze while reporting ok.
  */
-export const maxDuration = 300;
+/**
+ * Fluid compute allows 800s on this plan. Synthesis on a real
+ * multi-dwelling pack streams for six to eight minutes; under the old
+ * 300s ceiling every attempt was killed mid-call, billed, and saved
+ * nothing (2026-08-20). TICK_BUDGET_MS leaves sixty seconds of margin
+ * under this figure.
+ */
+export const maxDuration = 800;
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");

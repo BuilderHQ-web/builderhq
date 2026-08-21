@@ -18,7 +18,7 @@ import { RunReview } from "./run-review";
 
 export const metadata = { title: "Scope run" };
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export default async function ScopeRunPage({
   params,
