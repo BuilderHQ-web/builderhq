@@ -16,7 +16,11 @@ if (/tiny-resonance/.test(host)) {
   process.exit(2);
 }
 const mode = process.argv[2];
-const arg = process.argv[3];
+const arg = process.argv[3] ?? "";
+if ((mode === "--tick" || mode === "--state" || mode === "--start") && !arg) {
+  console.error(`usage: ${mode} <value>`);
+  process.exit(2);
+}
 const rows = async (q: any) => { const r: any = await db.execute(q); return r.rows ?? r; };
 
 if (mode === "--start") {
