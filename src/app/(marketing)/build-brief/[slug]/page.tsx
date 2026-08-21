@@ -556,6 +556,14 @@ export default async function BriefIssuePage({
                   </p>
                 ))}
               </div>
+              {issue.association.closing ? (
+                <p
+                  className="mt-8 max-w-[40ch] text-[clamp(1.15rem,0.9vw+0.85rem,1.5rem)] leading-[1.35] tracking-[-0.01em] text-text"
+                  style={SERIF}
+                >
+                  {issue.association.closing}
+                </p>
+              ) : null}
               {issue.association.cta ? (
                 <Link
                   href={issue.association.cta.href}
