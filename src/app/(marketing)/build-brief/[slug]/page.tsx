@@ -506,6 +506,50 @@ export default async function BriefIssuePage({
         </nav>
 
         <div className="mt-8 sm:mt-10 flex flex-col gap-8 sm:gap-10">
+          {/* In association — a statement of fact, set quietly. The
+              names carry the weight, so the layout gives them room and
+              stays out of the way. */}
+          {issue.association ? (
+            <BriefCard id="in-association">
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.association.kicker}
+              </BriefKicker>
+              <AccentHeadline
+                text={issue.association.headline}
+                accent={issue.association.headlineAccent}
+                className={`mt-3 max-w-[24ch] ${SECTION_H2}`}
+              />
+              <div className="mt-8 flex flex-wrap items-center gap-x-12 gap-y-8">
+                {issue.association.logos.map((l) => (
+                  <Image
+                    key={l.src}
+                    src={l.src}
+                    alt={l.alt}
+                    width={520}
+                    height={260}
+                    style={{ height: l.height }}
+                    className="w-auto object-contain object-left"
+                  />
+                ))}
+              </div>
+              <div className="mt-9 flex flex-col gap-4 max-w-[66ch]">
+                {issue.association.paragraphs.map((para, i) => (
+                  <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                    <InlineText text={para} />
+                  </p>
+                ))}
+              </div>
+              {issue.association.cta ? (
+                <Link
+                  href={issue.association.cta.href}
+                  className="mt-7 inline-flex items-center gap-2 text-[13.5px] font-ui font-semibold text-accent-light hover:underline"
+                >
+                  {issue.association.cta.label}
+                </Link>
+              ) : null}
+            </BriefCard>
+          ) : null}
+
           {issue.podcast ? (
             <BriefCard
               id="podcast"
@@ -1220,6 +1264,87 @@ export default async function BriefIssuePage({
                     </Link>
                   </div>
                 </div>
+
+              {/* The featured project, run full width beneath the
+                  practice. This edition weights the work ahead of the
+                  profile, so it gets the room and the images. */}
+              {pc.project ? (
+                <div className="mt-12 border-t border-[#101820]/[0.10] pt-10">
+                  <p className="text-[11px] tracking-[0.2em] uppercase text-accent-light font-ui font-semibold">
+                    {pc.project.kicker}
+                  </p>
+                  <h3 className="mt-3 max-w-[24ch] font-ui font-semibold tracking-[-0.02em] leading-[1.15] text-[clamp(1.5rem,1.6vw+1rem,2.1rem)] text-text">
+                    {pc.project.name}
+                  </h3>
+                  {pc.project.deck ? (
+                    <p className="mt-3 max-w-[52ch] text-[15.5px] italic leading-[1.6] text-text-muted" style={SERIF}>
+                      {pc.project.deck}
+                    </p>
+                  ) : null}
+                  <figure className="mt-7">
+                    <Image
+                      src={pc.project.hero.src}
+                      alt={pc.project.hero.alt}
+                      width={1600}
+                      height={1200}
+                      className="w-full h-auto rounded-xl"
+                    />
+                    {pc.project.credit ? (
+                      <figcaption className="mt-2.5 text-[11.5px] text-text-dim">
+                        {pc.project.credit}
+                      </figcaption>
+                    ) : null}
+                  </figure>
+                  <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-8 lg:gap-12">
+                    <div className="flex flex-col gap-4">
+                      {pc.project.paragraphs.map((para, i) => (
+                        <p key={i} className="text-[15px] leading-[1.7] text-text-muted">
+                          <InlineText text={para} />
+                        </p>
+                      ))}
+                      {pc.project.link ? (
+                        <Link
+                          href={pc.project.link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex w-fit items-center gap-2 text-[13.5px] font-ui font-semibold text-accent-light hover:underline"
+                        >
+                          {pc.project.link.label}
+                        </Link>
+                      ) : null}
+                    </div>
+                    {pc.project.facts?.length ? (
+                      <dl className="h-fit rounded-xl border border-[#101820]/[0.10] bg-[#faf7f2] px-6 py-5">
+                        {pc.project.facts.map((f) => (
+                          <div
+                            key={f.k}
+                            className="flex items-baseline justify-between gap-6 border-b border-[#101820]/[0.07] py-2.5 last:border-0"
+                          >
+                            <dt className="text-[12px] tracking-[0.1em] uppercase text-text-dim font-ui font-semibold">
+                              {f.k}
+                            </dt>
+                            <dd className="text-right text-[13.5px] text-text">{f.v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                  </div>
+                  {pc.project.gallery?.length ? (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {pc.project.gallery.map((g) => (
+                        <Image
+                          key={g.src}
+                          src={g.src}
+                          alt={g.alt}
+                          width={1600}
+                          height={1200}
+                          className="w-full h-auto rounded-xl"
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               </div>
             </BriefCard>
           ) : null}
