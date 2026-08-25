@@ -76,7 +76,19 @@ try {
   const after = (await pool.query(
     `select count(*)::int c from unlocks where project_id=$1`, [p.id])).rows[0].c;
   console.log(`inserted: ${inserted}  |  unlocks now: ${after}`);
-  console.log("\nNo emails were sent. They go out when the project publishes.");
+  // What happens next depends entirely on whether the round is still a
+  // draft. On a draft the publish dispatch sends the deferred unlock
+  // email at go-live. On a round that is ALREADY live there is no
+  // remaining dispatch, so these builders are never told by the
+  // platform at all — the concierge has to tell them.
+  const live = p.status === "published" || p.status === "tendering";
+  console.log(
+    live
+      ? "\nNo emails were sent, and none will be: this round is already live,\n" +
+        "so the publish dispatch has already run. Tell these builders yourself,\n" +
+        "or send the owner half with scripts/prod-send-unlock-owner.mts."
+      : "\nNo emails were sent. They go out when the project publishes.",
+  );
 } finally {
   await pool.end();
 }
