@@ -2121,12 +2121,30 @@ export async function approveRun(
 
   // Re-reads carry the client's prior answers forward: a gap they
   // already resolved on the effective pack keeps its resolution, so
-  // only what CHANGED asks again. upload_later never carries — the
+  // only what CHANGED asks again. upload_later never carries: the
   // re-read exists because those documents arrived.
-  const carried = await carryForwardResolutions(run.projectId, runId);
-  if (carried > 0) {
+  //
+  // MUST stay ahead of autoResolveBuilderWork below. That inserts with
+  // onConflictDoNothing, so rows written here survive it. Swapped, a
+  // client's allowance or exclusion would lose silently to a
+  // builder-priced default.
+  const { carried, priorRunId, eligible } = await carryForwardResolutions(
+    run.projectId,
+    runId,
+  );
+  // Logged unconditionally, and at two levels, because the zero case
+  // has two meanings and only one of them is routine. No prior run is
+  // ordinary on a first read. A prior run whose answers ALL evaporated
+  // is the failure this function was rewritten to prevent, and it used
+  // to be invisible because the log only fired when carried > 0.
+  if (priorRunId && carried === 0 && eligible > 0) {
+    logger.warn(
+      { event: "scope.run.resolutions_carried", runId, priorRunId, carried, eligible },
+      "no prior gap resolutions carried onto the new run",
+    );
+  } else {
     logger.info(
-      { event: "scope.run.resolutions_carried", runId, carried },
+      { event: "scope.run.resolutions_carried", runId, priorRunId, carried, eligible },
       "prior gap resolutions carried onto the new run",
     );
   }
@@ -2705,11 +2723,24 @@ export async function getRoundContextForBuilders(
   };
 }
 
-/** Copy still-relevant gap resolutions from the effective run. */
-async function carryForwardResolutions(
+/**
+ * The run whose answers and verdicts a new run should inherit.
+ *
+ * One resolver, deliberately, because two of them drifting is how a
+ * pack ends up carrying its items from one run and its resolutions
+ * from another.
+ *
+ * The ordering is the subtle part. `effective_at` is stamped only when
+ * a round actually goes live, so on a project that has never published
+ * it is null on every run, and Postgres sorts NULLs FIRST on DESC. A
+ * plain `desc(effectiveAt)` would therefore rank a never-effective run
+ * above the genuinely live pack. `nulls last` puts the live one first
+ * and falls back to recency for the rest.
+ */
+async function priorRunForCarry(
   projectId: string,
   newRunId: string,
-): Promise<number> {
+): Promise<string | null> {
   const [prev] = await db
     .select({ id: scopeRuns.id })
     .from(scopeRuns)
@@ -2717,21 +2748,64 @@ async function carryForwardResolutions(
       and(
         eq(scopeRuns.projectId, projectId),
         eq(scopeRuns.status, "approved"),
-        sql`${scopeRuns.effectiveAt} is not null`,
         ne(scopeRuns.id, newRunId),
       ),
     )
-    .orderBy(desc(scopeRuns.effectiveAt))
+    .orderBy(
+      sql`${scopeRuns.effectiveAt} desc nulls last`,
+      desc(scopeRuns.approvedAt),
+      desc(scopeRuns.createdAt),
+    )
     .limit(1);
-  if (!prev) return 0;
+  return prev?.id ?? null;
+}
+
+/**
+ * Copy still-relevant gap resolutions from the previous approved run.
+ *
+ * This used to require `effective_at is not null`, which meant it
+ * worked for a re-read of a LIVE round and silently did nothing on a
+ * first publish, because `effective_at` is only written when a round
+ * goes live. A first publish is what every new customer does, so the
+ * feature failed exactly where a customer meets us, and it failed
+ * quietly: the caller only logged when it carried something.
+ *
+ * Returns the prior run id as well as the counts, because the inverse
+ * question — which answers did the new read make irrelevant — needs the
+ * same run, and resolving it twice is how the two answers disagree.
+ */
+async function carryForwardResolutions(
+  projectId: string,
+  newRunId: string,
+): Promise<{ carried: number; priorRunId: string | null; eligible: number }> {
+  const priorRunId = await priorRunForCarry(projectId, newRunId);
+  if (!priorRunId) return { carried: 0, priorRunId: null, eligible: 0 };
+
+  // How many COULD have carried, so "carried 0 of 12" is distinguishable
+  // from "there was nothing to carry" in the log below.
+  const [{ n: eligible = 0 } = { n: 0 }] = await db
+    .select({ n: sql<number>`count(*)`.mapWith(Number) })
+    .from(scopeGapResolutions)
+    .where(
+      and(
+        eq(scopeGapResolutions.runId, priorRunId),
+        ne(scopeGapResolutions.resolution, "upload_later"),
+      ),
+    );
 
   const rows = await db.execute(sql`
     insert into scope_gap_resolutions
       (run_id, item_id, resolution, amount_aud, note, created_by)
     select ${newRunId}, r.item_id, r.resolution, r.amount_aud, r.note, r.created_by
     from scope_gap_resolutions r
-    where r.run_id = ${prev.id}
+    where r.run_id = ${priorRunId}
+      -- upload_later never carries: a re-read exists BECAUSE the
+      -- promised documents arrived, and autoResolveBuilderWork sweeps
+      -- every upload_later row on the run with no item join, so a
+      -- carried orphan promise would be flipped to builder_priced.
       and r.resolution <> 'upload_later'
+      -- Only onto a line the new read still raises as an open gap.
+      -- An answer given against different evidence is not an answer.
       and exists (
         select 1 from scope_run_items i
         where i.run_id = ${newRunId}
@@ -2742,7 +2816,63 @@ async function carryForwardResolutions(
     on conflict (run_id, item_id) do nothing
     returning id
   `);
-  return Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
+  const carried = Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
+  return { carried, priorRunId, eligible };
+}
+
+/**
+ * The inverse of the carry: answers the new read made irrelevant.
+ *
+ * Every resolution on the prior run whose item the new run no longer
+ * raises as an open gap, either because the read reclassified it or
+ * because ops removed it. Nothing is written; this exists so an
+ * owner's money is never silently dropped. A $44,000 allowance against
+ * a line the next read calls "not expected" would otherwise vanish
+ * with no trace to them or to us.
+ *
+ * `upload_later` is included here even though it never carries: if the
+ * documents did not in fact answer the line, the client should see
+ * that their promise went unmet rather than have it disappear.
+ */
+async function listDroppedResolutions(
+  priorRunId: string,
+  newRunId: string,
+): Promise<DroppedResolution[]> {
+  const rows = await db.execute(sql`
+    select r.item_id      as "itemId",
+           r.resolution   as "resolution",
+           r.amount_aud   as "amountAud",
+           r.note         as "note",
+           p.label        as "label"
+      from scope_gap_resolutions r
+      left join scope_run_items p
+        on p.run_id = ${priorRunId} and p.item_id = r.item_id
+     where r.run_id = ${priorRunId}
+       and not exists (
+         select 1 from scope_run_items i
+         where i.run_id = ${newRunId}
+           and i.item_id = r.item_id
+           and i.status = 'gap'
+           and i.ops_status <> 'removed'
+       )
+     order by r.item_id
+  `);
+  const list = (Array.isArray(rows) ? rows : (rows.rows ?? [])) as Array<{
+    itemId: string;
+    resolution: string;
+    amountAud: number | null;
+    note: string | null;
+    label: string | null;
+  }>;
+  return list.map((r) => ({
+    itemId: r.itemId,
+    // Ops-authored custom lines carry their label on the row; Standard
+    // items resolve theirs from the ontology.
+    label: getScopeItem(r.itemId)?.label ?? r.label ?? r.itemId,
+    resolution: r.resolution,
+    amountAud: r.amountAud,
+    note: r.note,
+  }));
 }
 
 /** Bell + letter to the runner when ops approves their pack. */
@@ -2875,6 +3005,19 @@ export async function requestPreparation(
   return ok({ runId: run.value.id });
 }
 
+/**
+ * An answer the client gave that the latest read no longer asks for.
+ * Carries enough to show them what they said, in the words they saw
+ * when they said it.
+ */
+export interface DroppedResolution {
+  itemId: string;
+  label: string;
+  resolution: string;
+  amountAud: number | null;
+  note: string | null;
+}
+
 export interface OwnerScopeReview {
   phase: "reading" | "ready" | "none";
   run: ScopeRunRow | null;
@@ -2890,6 +3033,17 @@ export interface OwnerScopeReview {
   }>;
   items: ScopeRunItemRow[];
   resolutions: ScopeGapResolutionRow[];
+  /**
+   * Answers the client gave on the previous pack that the latest read
+   * made irrelevant, because it no longer raises that line as an open
+   * gap. Present only in the "ready" phase.
+   *
+   * These are NOT questions and must never be folded into `resolutions`
+   * or the askable set: they are shown so an owner's money cannot leave
+   * the pack silently, which is what happened to a $44,000 fireplace
+   * allowance on 21 August 2026.
+   */
+  droppedResolutions?: DroppedResolution[];
   /** Runner may act; seats read. */
   canResolve: boolean;
   /**
@@ -3057,6 +3211,14 @@ export async function getOwnerReview(
       .limit(1)
       .then((r) => r[0]?.type ?? "single_dwelling")) as ScopeProjectType,
   });
+  // Answers the latest read made irrelevant. Read-only, and resolved
+  // through the SAME prior-run resolver the carry uses, so the two can
+  // never disagree about which run they are comparing against.
+  const carryFrom = await priorRunForCarry(projectId, run.id);
+  const droppedResolutions = carryFrom
+    ? await listDroppedResolutions(carryFrom, run.id)
+    : [];
+
   return ok({
     phase: "ready",
     run,
@@ -3069,6 +3231,7 @@ export async function getOwnerReview(
     addenda,
     namedMissing,
     readiness,
+    droppedResolutions,
   });
 }
 
