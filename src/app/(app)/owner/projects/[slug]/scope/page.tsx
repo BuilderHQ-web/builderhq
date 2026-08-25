@@ -72,6 +72,7 @@ export default async function ScopeReviewPage({
     mode,
     addenda,
     namedMissing,
+    droppedResolutions,
   } = review.value;
   const addendaForClient = addenda.map((a) => ({
     number: a.number,
@@ -215,6 +216,7 @@ export default async function ScopeReviewPage({
                 return `${std.get(c.documentId) ?? "a document"} p.${c.page}`;
               }),
             }))}
+            droppedResolutions={droppedResolutions ?? []}
             register={(() => {
               const std = resolveRegisterNames(register);
               return [...register]
