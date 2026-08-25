@@ -861,6 +861,11 @@ export async function processRunTick(
       )
       .orderBy(desc(scopeRuns.createdAt))
       .limit(1);
+    /** itemId → the prior run's verdict, for the gates below. */
+    const carriedVerdicts = new Map<
+      string,
+      { status: string; note: string | null; opsStatus: string; opsNote: string | null }
+    >();
     const carriedCustom: Array<{
       itemId: string;
       status: string;
@@ -893,6 +898,50 @@ export async function processRunTick(
           note: c.note,
           label: c.label,
           confidence: c.confidence,
+        });
+      }
+
+      // Ops verdicts from the pack this one replaces.
+      //
+      // A re-read used to throw away the whole desk pass: on one real
+      // project that was 38 removals and 204 confirmations, redone by
+      // hand. A judgement that an item does not apply to THIS PROJECT
+      // is a project fact, not a fact about one run, and the promoted
+      // captures already prove the pattern by surviving in the global
+      // vocabulary.
+      //
+      // Deliberately conservative about WHICH verdicts carry, because
+      // approveRun's gate counts pending items and is the only thing
+      // guaranteeing a human looked at a pack before a client does. A
+      // verdict carries only when the new read reached the same
+      // conclusion about the line AND wrote the same note; anything
+      // the read changed goes back to pending for a human. The ops
+      // note always carries, because a note is a human's reasoning and
+      // is never made wrong by a re-read: the desk sees what it
+      // thought last time while it re-confirms.
+      const priorVerdicts = await db
+        .select({
+          itemId: scopeRunItems.itemId,
+          status: scopeRunItems.status,
+          opsStatus: scopeRunItems.opsStatus,
+          opsNote: scopeRunItems.opsNote,
+          note: scopeRunItems.note,
+        })
+        .from(scopeRunItems)
+        .where(eq(scopeRunItems.runId, priorApproved.id));
+      for (const v of priorVerdicts) {
+        // 'removed' must never carry: the row was deleted above, and
+        // re-inserting it as removed resurrects an ops deletion as an
+        // invisible row that every `ne(opsStatus,'removed')` reader
+        // drops while it still occupies the (run_id, item_id) slot.
+        // 'added' means ops typed the row by hand, which is false of a
+        // synthesis-produced one.
+        if (v.opsStatus === "removed" || v.opsStatus === "added") continue;
+        carriedVerdicts.set(v.itemId, {
+          status: v.status,
+          note: v.note,
+          opsStatus: v.opsStatus,
+          opsNote: v.opsNote,
         });
       }
     }
@@ -1036,6 +1085,7 @@ export async function processRunTick(
           depth: i.depth,
           remaining: i.remaining,
           confidence: i.confidence,
+          ...verdictFor(carriedVerdicts, i.itemId, i.status, i.note),
         })),
       );
     }
@@ -1265,6 +1315,41 @@ async function dispatchScopeRunOps(
       "scope ops dispatch failed",
     );
   }
+}
+
+/**
+ * Which of a prior run's ops verdicts may carry onto a new one.
+ *
+ * The note always carries: it is a human's reasoning about the project
+ * and a re-read does not make it wrong. The desk sees what it thought
+ * last time while it decides again.
+ *
+ * The VERDICT carries only when the new read reached the same
+ * conclusion, meaning both the status and the reader's own note are
+ * unchanged. That second condition is the conservative part and it is
+ * deliberate: approveRun's gate counts pending items and is the only
+ * thing that guarantees a human looked at a pack before a client sees
+ * it. Carrying on status alone would let a re-read arrive fully
+ * confirmed with nobody having read a word of it. Requiring the note
+ * to match too means a verdict only survives where the pack genuinely
+ * did not change, and anything the read touched goes back to a human.
+ */
+export function verdictFor(
+  carried: Map<
+    string,
+    { status: string; note: string | null; opsStatus: string; opsNote: string | null }
+  >,
+  itemId: string,
+  status: string,
+  note: string | null,
+): { opsStatus?: string; opsNote?: string | null } {
+  const prior = carried.get(itemId);
+  if (!prior) return {};
+  const unchanged = prior.status === status && (prior.note ?? "") === (note ?? "");
+  return unchanged
+    ? { opsStatus: prior.opsStatus, opsNote: prior.opsNote }
+    : // Note only. The column default puts the row back at 'pending'.
+      { opsNote: prior.opsNote };
 }
 
 /**
