@@ -16,12 +16,14 @@ import {
   listMyDocuments,
   listForProject,
   softDelete,
+  setCategory,
   canUpload,
   type ActorContext,
 } from "@/modules/documents";
 import { fail, type Result } from "@/lib/result";
 import type {
   Document,
+  DocumentCategory,
   InitUploadInput,
   InitUploadResult,
 } from "@/modules/documents";
@@ -82,4 +84,37 @@ export async function softDeleteAction(
   const a = await requireActor();
   if (!a.ok) return a;
   return softDelete(a.value.id, documentId);
+}
+
+/**
+ * The nine categories, restated here on purpose.
+ *
+ * A "use server" argument is untrusted network input whatever its
+ * declared TypeScript type, and the type is erased before it reaches
+ * the database, where an unknown value would be a runtime enum error
+ * rather than a clean refusal.
+ */
+const CATEGORIES = new Set<DocumentCategory>([
+  "architectural",
+  "structural_engineering",
+  "civil_engineering",
+  "specifications",
+  "land_report",
+  "soil_report",
+  "energy_rating",
+  "town_planning",
+  "other",
+]);
+
+/** Re-file a document under a different category. */
+export async function setDocumentCategoryAction(
+  documentId: string,
+  category: string,
+): Promise<Result<Document>> {
+  const a = await requireActor();
+  if (!a.ok) return a;
+  if (!CATEGORIES.has(category as DocumentCategory)) {
+    return fail("validation", "Unknown document category.");
+  }
+  return setCategory(a.value.id, documentId, category as DocumentCategory);
 }

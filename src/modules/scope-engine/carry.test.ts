@@ -22,7 +22,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { users } from "@/modules/users";
@@ -290,7 +290,7 @@ describe("an answer the new read dropped is shown, never discarded", () => {
     await answer(run1, "landscaping.turf", "builder_priced");
 
     // Fireplace reclassified away; turf still a live question.
-    const run2 = await makeRun(projectId, {
+    await makeRun(projectId, {
       status: "approved",
       effectiveAt: null,
       approvedAt: new Date(),
@@ -354,7 +354,7 @@ describe("an answer the new read dropped is shown, never discarded", () => {
       items: [{ itemId: "hvac.fireplace", status: "gap" }],
     });
     await answer(run1, "hvac.fireplace", "allowance", 44_000);
-    const run2 = await makeRun(projectId, {
+    await makeRun(projectId, {
       status: "approved",
       effectiveAt: null,
       approvedAt: new Date(),
@@ -369,6 +369,5 @@ describe("an answer the new read dropped is shown, never discarded", () => {
       "a dropped answer leaked into the live resolutions",
     ).toBe(false);
     expect(review.value.droppedResolutions?.length).toBe(1);
-    void run2;
   }, 60_000);
 });

@@ -36,6 +36,7 @@ export {
   listActiveObjectsForProject,
   listForTenderUnchecked,
   getDownloadUrlForUnlocked,
+  setCategory,
   softDelete,
 } from "./service";
 
