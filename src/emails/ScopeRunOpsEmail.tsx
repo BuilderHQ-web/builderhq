@@ -24,7 +24,16 @@ interface ScopeRunOpsEmailProps {
   estimatedCostUsd: number | null;
   error: string | null;
   deskUrl: string;
+  /** An earlier run already read this project. */
+  isReread?: boolean;
+  /** Documents this run ingested. */
+  documentCount?: number;
+  /** Filenames present now and absent from the previous read. */
+  addedDocuments?: string[];
 }
+
+/** Named documents, capped so a bulk upload cannot make an unreadable letter. */
+const NAME_CAP = 5;
 
 export function ScopeRunOpsEmail({
   kind,
@@ -34,17 +43,28 @@ export function ScopeRunOpsEmail({
   estimatedCostUsd,
   error,
   deskUrl,
+  isReread = false,
+  documentCount,
+  addedDocuments = [],
 }: ScopeRunOpsEmailProps) {
   const review = kind === "review";
   const started = kind === "started";
   const stalled = kind === "stalled";
+  const addedLabel =
+    addedDocuments.length === 0
+      ? null
+      : addedDocuments.length <= NAME_CAP
+        ? addedDocuments.join(", ")
+        : `${addedDocuments.slice(0, NAME_CAP).join(", ")}, and ${
+            addedDocuments.length - NAME_CAP
+          } more`;
   return (
     <EmailShell
       preview={
         started
-          ? `Analysis started: ${projectTitle}`
+          ? `${isReread ? "Re-read" : "Analysis"} started: ${projectTitle}`
           : review
-            ? `Pack ready for review: ${projectTitle}`
+            ? `${isReread ? "Re-read" : "Pack"} ready for review: ${projectTitle}`
             : stalled
               ? `Run stalled: ${projectTitle}`
               : `Extraction failed: ${projectTitle}`
@@ -52,9 +72,13 @@ export function ScopeRunOpsEmail({
       kicker="Scope engine"
       heading={
         started
-          ? "An analysis run has started"
+          ? isReread
+            ? "A re-read has started"
+            : "An analysis run has started"
           : review
-            ? "A pack is waiting for review"
+            ? isReread
+              ? "A re-read is waiting for review"
+              : "A pack is waiting for review"
             : stalled
               ? "A run has been processing for too long"
               : "An extraction run failed"
@@ -63,17 +87,31 @@ export function ScopeRunOpsEmail({
     >
       <BodyText>
         {started ? (
-          <>
-            The documents on <Strong>{projectTitle}</Strong> have gone in
-            for analysis. A second email follows when the pack is ready
-            for review; if it has not arrived within the hour, the run is
-            stuck and the desk should look.
-          </>
+          isReread ? (
+            <>
+              The owner of <Strong>{projectTitle}</Strong> added documents
+              and asked for a fresh read. This replaces the previous pack.
+              A second email follows when it is ready for review; if it
+              has not arrived within the hour, the run is stuck and the
+              desk should look.
+            </>
+          ) : (
+            <>
+              The documents on <Strong>{projectTitle}</Strong> have gone in
+              for analysis. A second email follows when the pack is ready
+              for review; if it has not arrived within the hour, the run is
+              stuck and the desk should look.
+            </>
+          )
         ) : review ? (
           <>
             The documents on <Strong>{projectTitle}</Strong> have been read
-            and synthesised. Nothing reaches the client until every line
-            carries a verdict, so the clock is now on the desk.
+            and synthesised.{" "}
+            {isReread
+              ? "This is a re-read, so it supersedes the pack you reviewed before and the desk pass starts again. "
+              : ""}
+            Nothing reaches the client until every line carries a verdict,
+            so the clock is now on the desk.
           </>
         ) : (
           <>
@@ -85,14 +123,34 @@ export function ScopeRunOpsEmail({
         )}
       </BodyText>
 
-      <MetaCard title={started ? "The run" : review ? "The pack" : "The failure"}>
+      <MetaCard
+        title={
+          started
+            ? isReread
+              ? "The re-read"
+              : "The run"
+            : review
+              ? isReread
+                ? "The re-read"
+                : "The pack"
+              : "The failure"
+        }
+      >
         <MetaRow label="Project" value={projectTitle} />
         {started ? (
-          <MetaRow label="Documents in" value={String(evidencedCount)} />
+          <>
+            <MetaRow label="Documents in" value={String(documentCount ?? 0)} />
+            {addedLabel ? (
+              <MetaRow label="Added since the last read" value={addedLabel} />
+            ) : null}
+          </>
         ) : review ? (
           <>
             <MetaRow label="Documented items" value={String(evidencedCount)} />
             <MetaRow label="Open gaps" value={String(gapCount)} />
+            {addedLabel ? (
+              <MetaRow label="Added since the last read" value={addedLabel} />
+            ) : null}
             {estimatedCostUsd !== null ? (
               <MetaRow
                 label="Model spend"

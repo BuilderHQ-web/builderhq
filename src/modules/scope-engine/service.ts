@@ -1170,6 +1170,8 @@ async function dispatchScopeRunOps(
 
     const [row] = await db
       .select({
+        projectId: scopeRuns.projectId,
+        createdAt: scopeRuns.createdAt,
         projectTitle: projects.title,
         error: scopeRuns.error,
         usage: scopeRuns.usage,
@@ -1180,16 +1182,56 @@ async function dispatchScopeRunOps(
       .limit(1);
     if (!row) return;
 
+    // Is this a re-read, and what arrived since last time?
+    //
+    // Derived structurally rather than from the audit event. The
+    // scope.reread_requested row is written AFTER the dispatch fires
+    // and not at all on the idempotent in-flight return, so reading it
+    // here would race a row that may not exist and would misreport a
+    // real re-read as a first read.
+    //
+    // The baseline is restricted to review/approved on purpose:
+    // startRun marks prior unfinished runs superseded before inserting
+    // the new one, so an unrestricted "latest prior run" would land on
+    // a run that never read anything and report nothing added.
+    const [baseline] = await db
+      .select({ id: scopeRuns.id })
+      .from(scopeRuns)
+      .where(
+        and(
+          eq(scopeRuns.projectId, row.projectId),
+          ne(scopeRuns.id, runId),
+          inArray(scopeRuns.status, ["review", "approved"]),
+          lt(scopeRuns.createdAt, row.createdAt),
+        ),
+      )
+      .orderBy(desc(scopeRuns.createdAt))
+      .limit(1);
+
+    const [thisRunDocs, priorDocIds] = await Promise.all([
+      db
+        .select({ id: scopeRunDocuments.documentId, filename: documents.filename })
+        .from(scopeRunDocuments)
+        .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+        .where(eq(scopeRunDocuments.runId, runId)),
+      baseline
+        ? db
+            .select({ id: scopeRunDocuments.documentId })
+            .from(scopeRunDocuments)
+            .where(eq(scopeRunDocuments.runId, baseline.id))
+        : Promise.resolve([] as Array<{ id: string }>),
+    ]);
+    const priorSet = new Set(priorDocIds.map((d) => d.id));
+    const documentCount = thisRunDocs.length;
+    const addedDocuments = baseline
+      ? thisRunDocs.filter((d) => !priorSet.has(d.id)).map((d) => d.filename)
+      : [];
+    const isReread = !!baseline;
+
     let evidenced = 0;
     let gaps = 0;
     if (kind === "started") {
-      // No items exist yet — the run has only just been born. The
-      // heartbeat email carries the document count instead.
-      const [docs] = await db
-        .select({ n: sql<number>`count(*)`.mapWith(Number) })
-        .from(scopeRunDocuments)
-        .where(eq(scopeRunDocuments.runId, runId));
-      evidenced = docs?.n ?? 0;
+      // No items exist yet: the run has only just been born.
     } else {
       const [tally] = await db
         .select({
@@ -1212,6 +1254,9 @@ async function dispatchScopeRunOps(
       estimatedCostUsd: usage?.estimatedCostUsd ?? null,
       error: row.error,
       deskUrl: `${base}/admin/scope/${runId}`,
+      isReread,
+      documentCount,
+      addedDocuments,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -3432,6 +3477,13 @@ export async function requestReread(
   }
   const run = await startRun(projectId, runnerId);
   if (!run.ok) return run;
+  // Ops hears that a re-read has started, the same way it hears about a
+  // first read. Without this a re-read was completely silent until it
+  // reached review or failed, which is how "why have I got another
+  // review of that project" became an investigation rather than a
+  // glance at an inbox. Fire-and-forget: a mail hiccup must never fail
+  // the re-read.
+  void dispatchScopeRunOps(run.value.id, "started").catch(() => undefined);
   await recordProjectEvent({
     projectId,
     actorId: runnerId,
