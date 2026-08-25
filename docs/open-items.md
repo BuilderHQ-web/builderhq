@@ -14,97 +14,28 @@ Companion documents:
 - `~/.claude/.../memory/project_scope_engine_limits.md` — the 20 August
   scope engine incident and the hardening that shipped for it.
 
-Last verified: **21 August 2026**.
+Last verified: **25 August 2026**.
 
 ---
 
 ## A. Code, in the scope engine and its surfaces
 
-### R1. Carry-forward never fires on a first publish
-`src/modules/scope-engine/service.ts` · `carryForwardResolutions`
+### R2b. Conflict dismissals still do not carry across a re-read
+`scope_run_conflicts`
 
-The function does the right thing: it copies every prior gap resolution
-whose item is still a live gap on the new run. But it only looks for a
-prior run that is `approved` **and has `effective_at` set**, and
-`effective_at` is only written when a round actually goes live.
+R2a carried the item verdicts. Conflicts could not follow: the table has
+no index and no natural key, and `summary` is model prose that rewords
+between runs, so there is nothing to match a prior verdict against.
 
-So it works for a re-read of a live round, and silently does nothing on
-a first publish, which is what every new customer does. It also logs
-only when `carried > 0`, so the failure leaves no trace.
+Guessing wrong is worse than re-asking. `listOpenConflictsForProject`
+shows pending conflicts to the owner **and to every builder pricing the
+pack**, so a false "dismissed" hides a real conflict from the whole
+round; a lost one merely re-asks ops.
 
-**Seen live:** Paul Mete lost both answers, including a $44,000
-allowance, on 21 August.
-
-**Fix.** Widen the lookup to the most recent approved run on the
-project whether or not it ever became effective, ordering by
-`approved_at` when `effective_at` is null. Log the zero case so
-"carried 0 of 2" is visible on the desk.
-
----
-
-### R2. A re-read discards the entire ops desk pass
-`src/modules/scope-engine/service.ts`
-
-Item verdicts, ops notes and conflict dismissals live on
-`scope_run_items` / `scope_run_conflicts`, keyed to the run. A new run
-starts from nothing.
-
-**Seen live:** 59 desk actions on the first read (38 removals, 204
-confirmations, 2 conflict dismissals) all had to be redone. Only the 8
-promoted captures survived, because those were written to the global
-`scope_vocab_extensions` table.
-
-That surviving 8 is the pattern to copy: **a judgement about a project
-is a project fact, not a run fact.**
-
-**Fix.** Carry ops verdicts forward on the same match rule as R1: same
-`item_id`, same `status`, not `removed` on the new run. Anything whose
-status changed between reads stays pending, because the judgement was
-made against different evidence.
-
----
-
-### R3. Nothing warns before the re-read fires
-`src/app/(app)/owner/projects/[slug]/scope/pack-review.tsx`
-
-The button calls the action directly. Worse than a missing warning, the
-panel above it states **"Your answers carry forward."** For a
-first-publish project that is currently false (see R1), so the product
-makes a promise it does not keep.
-
-**Fix.** R1 makes the sentence true. Also state what a re-read costs
-before it runs: how many documents will be read, and that anything the
-new read changes will be asked again.
-
----
-
-### R4. An answered gap that becomes `not_expected` vanishes silently
-`src/modules/scope-engine/service.ts`
-
-If the owner answers a gap and a later read marks that item
-`not_expected`, the item never appears again and the answer is never
-mentioned. Money can leave the pack without anyone seeing it go.
-
-**Seen live:** Paul's $44,000 fireplace allowance. `hvac.fireplace` is
-`not_expected` on the current run, so he will never be asked, and
-nothing tells him or us.
-
-**Fix.** After a re-read, surface every prior resolution whose item is
-no longer askable: "You allowed $44,000 for a fireplace. The new read
-finds no fireplace in the documents. Confirm." Never drop an owner's
-number without showing them.
-
----
-
-### R5. The ops email cannot say which kind of read it is
-`src/modules/scope-engine/service.ts` · `dispatchScopeRunOps`
-
-Its kinds are `started | review | failed`. A re-read is indistinguishable
-from a first read, which cost a full investigation on 21 August to
-answer the question "why have I got another review of that project".
-
-**Fix.** Carry the reason and the document delta: "Re-read requested by
-the owner. 11 documents, 1 added since the last read: <filename>."
+**Blocked on a migration.** A unique index on a derived natural key: a
+hash of the normalised summary plus the sorted citation `documentId`s,
+stored as a real column so the index can exist. Schema change plus a
+backfill, not a service edit.
 
 ---
 
@@ -120,16 +51,6 @@ the product proves its worth and it is currently wasted.
 
 ---
 
-### R7. A document's category cannot be changed after upload
-No `updateDocumentCategory` action exists.
-
-**Seen live:** Paul deleted and re-uploaded two documents to correct
-their category. Four uploads to place two files.
-
-**Fix.** Allow the category to be edited in place.
-
----
-
 ## B. Code, elsewhere
 
 ### G1. Two Google Ads conversion actions hold placeholder labels
@@ -140,17 +61,6 @@ Both still read `REPLACE_WITH_…`, so neither conversion can record.
 
 **Blocked.** The real labels come from the Google Ads conversion
 actions and only Aryan can read them.
-
----
-
-### S1. A concierge script prints a misleading closing line
-`scripts/prod-grant-unlocks.mjs:79`
-
-Prints "No emails were sent. They go out when the project publishes."
-That is true for a draft, and false for an already-published project,
-where no emails will ever go out for those grants.
-
-**Fix.** Say what is actually true for the project's current status.
 
 ---
 
@@ -239,4 +149,42 @@ should leave the marketplace rather than pad it.
 
 ## Closed
 
-_Nothing yet. Move items here with the commit that closed them._
+Newest first. Kept rather than deleted: the reason something was wrong
+is usually worth keeping.
+
+### R1 · Carry-forward never fired on a first publish
+`2865676` · The `effective_at` predicate is gone and the ordering is
+`nulls last`, so it works before a round has gone live. Logged
+unconditionally, at warn when a prior run existed and nothing carried.
+
+### R2a · The desk's verdicts survive a re-read
+`56176a4` · Carried in the synthesis persist, but only where the new
+read reached the same conclusion and wrote the same note. Notes always
+carry. `removed` and `added` never do. **R2b, conflict dismissals, is
+still open below.**
+
+### R3 · Nothing warned before the re-read fired
+`f867317` · All four buttons open a confirmation stating what happens
+and how many answers are at stake. Portalled to the body, because a
+transformed ancestor was trapping `position: fixed`.
+
+### R4 · An answered gap that became `not_expected` vanished
+`2865676` (server) and `f867317` (client) · Every answer the new read
+no longer asks for is listed in chapter 01, in the words the client
+saw. Deliberately never folded into the live questions.
+
+### R5 · The ops email could not say which kind of read it was
+`83fb264` · A re-read now dispatches at all (it previously sent
+nothing), says so in the subject and heading, and names the documents
+added since the last read. The `evidencedCount` overload is gone.
+
+### R7 · A document's category could not be changed
+`dc0b473` · `setCategory` with five guards, including a refusal to move
+the last architectural plan out and break the publish gate from behind.
+The UI affordance is still to build.
+
+### S1 · A concierge script printed a misleading closing line
+`250fef0`, corrected in `dc0b473` · The mapping is now total
+over `project_status`; the first attempt was narrower than the enum and
+let `awarded` and `archived` fall through to the draft wording.
+
