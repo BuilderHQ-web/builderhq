@@ -3243,14 +3243,13 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     number: 8,
     date: "2026-08-28",
     displayDate: "Friday, 28 August 2026",
-    title:
-      "The work is getting done. The workforce to do it is thinning.",
+    title: "More work is coming. Fewer people are learning to do it.",
     standfirst:
-      "Residential building work done rose 9.1% over the year. On total construction work Victoria led the mainland and the ACT went backwards. Construction apprentices in training are at a five year low. A large New South Wales builder is in voluntary administration, so we set out how that process works and what protection exists. And the dashboard for design practices is live.",
+      "Home building is up 9.1% for the year. Victoria is busy and the ACT is not. The number of apprentices learning a construction trade is the lowest in five years. A large builder has gone into administration, so we set out what that means for the owners. And designers are starting to bring us their projects.",
     seoTitle:
-      "The Build Brief 008: Residential Building Work Is Up 9.1% | BuilderHQ",
+      "The Build Brief 008: Home Building Up 9.1%, Apprentices at a Five Year Low | BuilderHQ",
     seoDescription:
-      "Residential building work done rose 9.1% over the year. Victoria led the mainland on total construction work and the ACT went backwards. A major builder is in administration. And construction apprentices hit a five year low.",
+      "Home building work rose 9.1% over the year. Victoria is busy, the ACT is not. Construction apprentices are at a five year low. And what voluntary administration means if you are the owner.",
     keywords: [
       "construction work done australia june quarter 2026",
       "residential building activity victoria",
@@ -3264,58 +3263,51 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "abs construction work done june 2026",
       "home building compensation fund nsw",
       "domestic building insurance victoria",
-      "scope of works tender residential",
-      "architect tender dashboard australia",
+      "architect tender australia",
       "builderhq",
     ],
     ogImage: "/build-brief/og-issue-008.jpg",
     announcement: {
       kicker: "New",
-      headline: "The dashboard for design practices is",
-      headlineAccent: "live.",
+      headline: "You finished the drawings.",
+      headlineAccent: "Then the quotes came back.",
       standfirst:
-        "The stage after documentation, where three builders read one set of drawings three ways, now has a tool built for it.",
+        "Three builders. Three formats. Nothing lines up. Someone has to sort it out before the client can choose, and it is usually you.",
       paragraphs: [
-        "A design practice finishes a documentation set, and then the client has to get builders to price it. Three builders read the drawings three ways, price three different scopes, and return three PDFs in three formats. Someone has to work out where the differences are before the client can decide. Usually that someone is the practice, unpaid.",
-        "The dashboard is built for that stage. Upload the client’s drawings, specifications, engineering and reports, and the platform produces a structured scope of works, with every line referenced back to the document, page and revision it came from. Where the documents only partly answer something, it says so rather than filling the gap. The practice reviews and approves it before anything is published.",
-        "Builders then price against that same scope, line by line, marked included, provisional, excluded or not applicable, alongside structured answers on programme, credentials, insurances and aftercare.",
-        "It is free to the practice. Rounds can be run privately with your own builders. The recommendation goes to the client with your practice’s name on it.",
+        "BuilderHQ is built for that stage. You upload the drawings. You get one schedule of works, checked line by line against the documents.",
+        "Builders price that same schedule. Same lines, same order, same questions on programme, insurance and aftercare. Nothing to reconcile afterwards.",
+        "You approve the schedule before it goes out. You choose the builders. The recommendation reaches your client with your name on it.",
       ],
       chart: {
         kind: "strip",
         title: "How a round runs",
-        desc: "Documents are uploaded and read, the platform produces a structured scope of works, the practice reviews and approves it, builders price the same schedule line by line, and the recommendation goes to the client under the practice’s name.",
+        desc: "The practice uploads the drawings. BuilderHQ produces one schedule of works, which the practice approves. Verified builders take the places and price the same lines. The practice presents the recommendation to the client.",
         stages: [
-          { label: "Drawings, specs and reports" },
-          { label: "Structured scope of works", accent: true },
-          { label: "Practice reviews and approves" },
-          { label: "Builders price the same lines", accent: true },
-          { label: "Recommendation to the client" },
+          { label: "You upload the drawings" },
+          { label: "One schedule of works", accent: true },
+          { label: "You approve it" },
+          { label: "Verified builders take the places", accent: true },
+          { label: "Every builder prices the same lines", accent: true },
+          { label: "You present the recommendation" },
         ],
         callout: {
           from: 1,
-          to: 3,
-          label: "The part nobody pays for",
-          sub: "three formats reconciled by hand becomes one schedule everybody prices",
+          to: 4,
+          label: "The part that used to take a week",
         },
-        legend: {
-          accent: "Done by the platform",
-          context: "The practice’s call",
-        },
+        legend: { accent: "BuilderHQ", context: "You" },
       },
-      closing:
-        "The comparison work is the work. It should not be the part nobody pays for.",
+      closing: "Comparing three quotes is real work. It should not be invisible.",
       cta: { label: "See how it works for design practices", href: "/for/architects" },
     },
     note: {
       eyebrow: "This week from the BuilderHQ team",
-      heading: "The work is getting done. The workforce to do it is thinning.",
+      heading: "More work is coming. Fewer people are learning to do it.",
       paragraphs: [
-        "The ABS published Construction Work Done on Tuesday. Residential building work rose 1.7% for the June quarter and 9.1% over the year. On total construction work, Victoria led the mainland at 5.8% while the ACT went backwards by 8.8%.",
-        "That is real activity, not permits. Money moving, trades on site, homes progressing. Which makes the second number harder to read.",
-        "Construction apprentices in training have fallen to 105,790, the lowest in five years, while July’s labour force figures showed employment falling by 15,800 and unemployment rising to 4.5%. More work, fewer people learning how to do it.",
-        "In between the two sits a story from New South Wales that a lot of people will be talking about this weekend. A large residential builder is in voluntary administration with around 2,000 homes under construction. We have written it as what an owner should understand about the process, and what protection exists, rather than as a collapse story.",
-        "The Feature is one round on the platform, set out in full. What went in, what came out, and what the builders are pricing against.",
+        "The ABS published its work done figures on Tuesday. Home building rose 1.7% for the quarter and 9.1% for the year. That is real activity. Money moving, trades on site, houses going up.",
+        "Then the other number. Only 105,790 people are training in a construction trade, the lowest in five years. July also saw employment fall by 15,800 and unemployment rise to 4.5%.",
+        "Between the two sits a story from New South Wales. A large builder is in voluntary administration with around 2,000 homes on the go. We have written it as what an owner needs to know, not as a collapse story.",
+        "And in the Feature, the part we are most pleased about. Designers are starting to bring us their projects.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -3324,17 +3316,16 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       {
         n: "01",
         kicker: "The Work",
-        headline:
-          "Residential building work is up 9.1% over the year. The state picture",
-        headlineAccent: "splits sharply.",
+        headline: "Home building is up 9.1% for the year.",
+        headlineAccent: "Not everywhere.",
         stat: {
           value: "+9.1%",
-          label: "residential building work done, year to June quarter 2026",
-          sub: "$27.87 billion, seasonally adjusted chain volume measures",
+          label: "home building work done, year to June 2026",
+          sub: "$27.87 billion, seasonally adjusted",
         },
         chart: {
           kind: "diverging",
-          title: "Total construction work done, change over the June quarter 2026",
+          title: "Construction work done, change over the June quarter 2026",
           desc: "Victoria recorded the strongest quarterly growth of any mainland state at 5.8%. New South Wales rose 1.4% and Queensland 1.1%. The ACT fell 8.8%, Tasmania 9.5% and Western Australia 19.7%.",
           valueHeading: "Change on the March quarter",
           bars: [
@@ -3347,215 +3338,145 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           ],
           zeroLabel: "no change",
           footnote:
-            "Seasonally adjusted, chain volume measures. These are state totals across all construction, not residential alone.",
+            "All construction, not homes alone. Seasonally adjusted, chain volume measures.",
         },
         body: [
-          "The ABS released Construction Work Done for the June quarter on Tuesday. Residential building work done rose 1.7% for the quarter and 9.1% over the year, to $27.87 billion in seasonally adjusted chain volume terms. On the trend measure it rose 1.0% for the quarter and 7.1% over the year.",
-          "This is a different measure from the ones we usually report. Approvals are permission. Commencements are a start date. Work done is the value of construction physically carried out in the quarter. It is the closest thing to a measure of what is happening on site.",
-          "Total construction work fell 2.1% to $82.5 billion, dragged down by a 6.0% fall in engineering. Building work rose 1.3% to $45.8 billion.",
-          "The state picture splits sharply, and those figures are totals rather than residential alone. Victoria’s total construction work rose 5.8% to $19.73 billion, the strongest growth of any mainland state. The ACT fell 8.8% to $1.01 billion. New South Wales rose 1.4% and Queensland 1.1%, while Western Australia fell 19.7% and Tasmania 9.5%.",
-          "For a Victorian builder, that is confirmation the pipeline is being worked through. For anyone building in the ACT, it is a signal that the local market is contracting, and worth factoring into a programme.",
+          "Work done is not the same as approvals. An approval is permission. Work done is the value of what got built during the quarter. It is the closest we get to a measure of what is happening on site.",
+          "Home building rose 1.7% for the quarter and 9.1% for the year, to $27.87 billion. All construction fell 2.1% to $82.5 billion, pulled down by a 6.0% drop in engineering. Building alone rose 1.3%.",
+          "The states split. Victoria rose 5.8% to $19.73 billion, the best of any mainland state. The ACT fell 8.8% to $1.01 billion. New South Wales rose 1.4% and Queensland 1.1%. Western Australia fell 19.7% and Tasmania 9.5%. Those are state totals across all construction, not homes alone.",
+          "If you build in Victoria, the pipeline is moving. If you build in the ACT, the market is shrinking, and your programme should say so.",
         ],
         source:
           "ABS, Construction Work Done, Australia, Preliminary, June quarter 2026, released 26 August 2026. Figures are preliminary and subject to revision",
         weekend: "Approvals are a promise. This is the work.",
         takes: {
-          owners:
-            "Victorian trades are busy. Book early and expect committed programmes.",
-          designers:
-            "Activity is running ahead of documentation capacity in Victoria. Turnaround on a complete set is worth more than it was.",
-          builders:
-            "The Victorian pipeline is converting. The ACT is not, and capacity planning should reflect that.",
-          brokers:
-            "Work done is drawdown. Rising activity means facilities are being drawn faster in Victoria.",
+          owners: "Victorian trades are busy. Book early and get the dates in writing.",
+          designers: "Work is running ahead of drawing capacity in Victoria. A quick turnaround is worth more than it was.",
+          builders: "Victoria is converting. The ACT is not. Plan capacity accordingly.",
+          brokers: "Work done is drawdown. Victorian facilities are being drawn faster.",
         },
       },
       {
         n: "02",
         kicker: "The Process",
-        headline:
-          "A builder is in administration with 2,000 homes under construction. Here is how that process",
-        headlineAccent: "works.",
+        headline: "A builder is in administration. Here is what happens",
+        headlineAccent: "to your build.",
         stat: {
           value: "2,000",
-          label: "homes reported under construction at the time of appointment",
+          label: "homes reported under construction when administrators were appointed",
           sub: "around 13,000 more reported in the pipeline",
         },
         chart: {
           kind: "compare",
-          title: "Which Victorian scheme covers your build, and what it does",
-          desc: "Victorian home warranty cover changed on 1 July 2026. Contracts signed before that date sit under Domestic Building Insurance, capped at $300,000. Contracts signed on or after it sit under the First Resort Home Warranty Scheme, capped at $400,000, which can also be claimed on where work is incomplete, defective or non-compliant.",
+          title: "Which Victorian scheme covers you",
+          desc: "Victorian home warranty cover changed on 1 July 2026. Contracts signed before that date are covered to $300,000. Contracts signed on or after it are covered to $400,000, and can also be claimed on where work is incomplete or defective.",
           rowLabels: ["The scheme", "Cover", "When you can claim", "Major defects"],
           left: {
-            heading: "Contract before 1 July 2026",
+            heading: "Signed before 1 July 2026",
             cells: [
               "Domestic Building Insurance",
               "Up to $300,000",
-              "Builder dies, disappears or becomes insolvent",
+              "The builder dies, disappears or becomes insolvent",
               "Six years",
             ],
           },
           right: {
-            heading: "Contract on or after 1 July 2026",
+            heading: "Signed on or after 1 July 2026",
             cells: [
               "First Resort Home Warranty",
               "Up to $400,000",
-              "Also where work is incomplete, defective or non-compliant and the builder cannot or will not fix it",
+              "Also when work is incomplete or defective and the builder will not fix it",
               "Six years",
             ],
           },
           footnote:
-            "Victoria only, on domestic building work over $20,000 in buildings of three storeys or less. Cover does not transfer between the schemes, and an existing policy runs on its own terms.",
+            "Victoria only, on work over $20,000 in buildings of three storeys or less. Cover does not move between the schemes.",
         },
         body: [
-          "Administrators appointed to New South Wales residential builder Bathla have told the ABC the company needs around $20 million to keep construction moving for a further five weeks. Roughly 2,000 homes are reported to be under construction, with around 13,000 more in the pipeline. Teneo was appointed voluntary administrator, and the first meeting of creditors is listed for 4 September.",
-          "We are not going to write about the company. What is useful is the process, because most people only learn it when they are already in it.",
-          "**Voluntary administration is not liquidation.** An administrator is appointed to work out whether the business can be saved, sold or restructured. Work can continue during that period if there is funding to continue it. Creditors vote on the outcome.",
-          "**Your contract does not disappear.** It sits with the company under administration. What happens next depends on the outcome of the administration, not on the day it was announced.",
-          "**Deposits and progress payments already made** sit with the company. Whether they can be recovered depends on the outcome and on what insurance covers.",
-          "**Home warranty insurance is the mechanism that matters, and it differs by state.** These homes are in New South Wales, where the Home Building Compensation Fund covers up to $340,000 per dwelling and insolvency is one of the triggers. Victoria runs a separate scheme, and it changed on 1 July.",
-          "In Victoria, for contracts signed on or after 1 July 2026, the First Resort Home Warranty Scheme covers up to $400,000, and an owner can claim where work is incomplete, defective or non-compliant and the builder cannot or will not put it right. Before 1 July, Domestic Building Insurance covered up to $300,000 and required the builder to have died, disappeared or become insolvent. Insolvency triggers both. The difference is that under the newer scheme, an owner does not have to wait for a collapse to make a claim.",
-          "The question worth asking is not what to do when it happens. It is what you can establish before you sign: licensing, insurance, current workload, financial standing, and how many other jobs the person running your site is carrying.",
+          "Administrators told the ABC this week that New South Wales builder Bathla needs around $20 million to keep sites moving for another five weeks. Around 2,000 homes are under construction and around 13,000 more are in the pipeline. Teneo is the administrator and creditors meet on 4 September.",
+          "We are not going to write about the company. The useful part is the process, because most people only learn it once they are in it.",
+          "**Administration is not liquidation.** An administrator works out whether the business can be saved, sold or restructured. Work can keep going if there is money to keep it going. Creditors vote on what happens.",
+          "**Your contract still stands.** It sits with the company. What happens next depends on how the administration ends, not on the day it was announced.",
+          "**Money you have already paid** sits with the company. Getting it back depends on the outcome and on what your insurance covers.",
+          "**Home warranty cover is the thing that matters.** It differs by state. These homes are in New South Wales, where cover runs to $340,000 a dwelling and insolvency is one of the triggers. Victoria has its own scheme, and it changed on 1 July.",
+          "In Victoria, contracts signed on or after 1 July 2026 are covered to $400,000, and you can claim when work is incomplete or defective and the builder will not fix it. Before that date, cover was $300,000 and you had to wait for the builder to die, disappear or become insolvent. Insolvency triggers both. The change is that you no longer have to wait for a collapse.",
+          "The better question is not what to do when it happens. It is what you can check before you sign. Licence, insurance, current workload, financial standing, and how many other sites the person running yours is carrying.",
         ],
         source:
           "ABC News, 27 August 2026; Building and Plumbing Commission, Victoria; icare NSW, Home Building Compensation Fund",
-        weekend:
-          "The time to check a builder’s standing is before the contract, not after the news.",
+        weekend: "Check a builder before the contract, not after the news.",
         takes: {
-          owners:
-            "Know which warranty scheme covers your contract, and what the cover limit is.",
-          designers:
-            "A builder’s financial standing belongs in the recommendation alongside their portfolio.",
-          builders:
-            "Being able to evidence licensing, insurance and financial standing is becoming a competitive advantage.",
-          brokers:
-            "Warranty cover and builder solvency sit together in the risk picture on any construction facility.",
+          owners: "Know which scheme covers your contract, and what it pays.",
+          designers: "A builder’s financial standing belongs in the recommendation, next to their portfolio.",
+          builders: "Being able to show licence, insurance and financial standing is becoming an advantage.",
+          brokers: "Warranty cover and builder solvency sit together in the risk picture.",
         },
       },
       {
         n: "03",
         kicker: "The Workforce",
-        headline: "Construction apprentices in training have hit a",
-        headlineAccent: "five year low.",
+        headline: "There is more work than ever.",
+        headlineAccent: "And fewer people learning the trade.",
         stat: {
           value: "105,790",
-          label: "construction apprentices in training, end of 2025",
-          sub: "the lowest figure in five years",
+          label: "people training in a construction trade, end of 2025",
+          sub: "the lowest in five years",
         },
         chart: {
           kind: "figures",
           title: "More work. Fewer people learning to do it.",
-          desc: "Residential building work done rose 9.1% over the year to the June quarter 2026. Construction apprentices in training stood at 105,790 at the end of 2025, the lowest in five years, and 28,290 left a construction apprenticeship early during 2025 without a qualification.",
+          desc: "Home building work done rose 9.1% over the year to June 2026. Only 105,790 people were training in a construction trade at the end of 2025, the lowest in five years. During 2025, 28,290 left early without finishing.",
           valueHeading: "Figure",
           figures: [
-            {
-              label: "residential building work done, year to June 2026",
-              value: 9.1,
-              display: "+9.1%",
-              accent: true,
-            },
-            {
-              label: "construction apprentices in training, end of 2025",
-              value: 105790,
-              display: "105,790",
-            },
-            {
-              label: "left a construction apprenticeship early in 2025, without a qualification",
-              value: 28290,
-              display: "28,290",
-            },
+            { label: "home building work, year to June 2026", value: 9.1, display: "+9.1%", accent: true },
+            { label: "training in a construction trade, end of 2025", value: 105790, display: "105,790" },
+            { label: "left their training early in 2025, without finishing", value: 28290, display: "28,290" },
           ],
-          footnote:
-            "The first figure is ABS, the second and third are NCVER quarterly data cited by Master Builders Australia.",
+          footnote: "ABS for the first figure, NCVER via Master Builders for the other two.",
         },
         body: [
-          "Construction apprentices in training stood at 105,790 at the end of 2025, the lowest figure in five years, on NCVER quarterly data cited by Master Builders Australia. During 2025, 28,290 construction apprentices left their training early without a qualification. New starts are not the problem: more than 7,600 began in the December 2025 quarter, 10.0% up on the same period a year earlier.",
-          "Master Builders chief economist Shane Garrett said apprentice numbers are still getting hammered by worryingly high withdrawal rates. The body puts the shortfall at more than 300,000 infrastructure workers and a further 116,000 housing construction workers by 2030.",
-          "It lands alongside July’s labour force figures, released on 20 August, which showed employment falling by 15,800 and the unemployment rate rising to 4.5% from 4.4%. The participation rate fell 0.2 percentage points to 66.9%.",
-          "Read it beside the first signal. Residential building work done is up 9.1% over the year. The volume of work is rising and the number of people being trained to do it is falling.",
-          "[Issue 005](/build-brief/issue-005) covered research showing that three in four apprentices have never considered leaving, and that the ones who do are usually short of support rather than commitment. That research was about keeping the people already in the system. This number is about how many are in it at all.",
+          "Only 105,790 people were training in a construction trade at the end of 2025. That is the lowest in five years. During the year, 28,290 left their training early without finishing.",
+          "New starts are not the problem. More than 7,600 began in the December quarter, 10.0% up on the year before. People are signing up. They are not staying.",
+          "Master Builders chief economist Shane Garrett said apprentice numbers are still getting hammered by worryingly high withdrawal rates. The body puts the shortfall at more than 300,000 infrastructure workers and another 116,000 housing workers by 2030.",
+          "July’s job figures landed the same week. Employment fell by 15,800 and unemployment rose to 4.5% from 4.4%.",
+          "Read it beside the first signal. The work is growing. The workforce is not. [Issue 005](/build-brief/issue-005) looked at why apprentices leave, and it is usually support rather than commitment.",
         ],
         source:
-          "NCVER apprentice and trainee data cited by Master Builders Australia, 22 June 2026; Master Builders Australia, 20 August 2026; ABS Labour Force, Australia, July 2026, released 20 August 2026",
+          "NCVER apprentice and trainee data cited by Master Builders Australia, 22 June 2026; Master Builders Australia, 20 August 2026; ABS Labour Force, Australia, July 2026",
         weekend: "The work is growing faster than the workforce.",
         takes: {
-          owners:
-            "Trade availability, not price, will set your programme. Book early.",
-          designers:
-            "Complexity that needs scarce trades carries programme risk. Worth raising at design stage.",
-          builders:
-            "Taking on an apprentice is a capacity decision as much as a cost one.",
-          brokers:
-            "Longer programmes mean longer facilities and more interest during construction.",
+          owners: "Trade availability will set your dates, not price. Book early.",
+          designers: "A design that needs scarce trades carries programme risk. Say so early.",
+          builders: "Taking on an apprentice is a capacity decision as much as a cost one.",
+          brokers: "Longer builds mean longer facilities and more interest along the way.",
         },
       },
     ],
     feature: {
       kicker: "The Feature",
-      headline:
-        "One tender round, from eleven documents to three builders pricing",
-      headlineAccent: "the same lines.",
+      headline: "Designers are bringing us their projects.",
+      headlineAccent: "Builders are turning up for them.",
       standfirst:
-        "A Port Melbourne project, set out in full. What went in, what came out, and what the builders are answering.",
+        "The best jobs come from the people who drew them. That is starting to happen, and the builders have noticed.",
       paragraphs: [
-        "This is our own work, so the useful version is the mechanics rather than the pitch. Below is one round on the platform with its real figures. The point is what a structured round looks like, whether or not you ever run one.",
-        "The project is a pair of three storey townhouses replacing a single dwelling on a compact corner site in Port Melbourne. Four bedrooms each, all electric, sharing a fire rated party wall. Planning is approved. The client is working to a start early in 2027. It came to the platform through the practice that designed it.",
+        "A pair of three storey townhouses in Port Melbourne went out to tender this month. It reached us the way we always hoped these would: through the practice that designed it.",
+        "That matters more than it sounds. When a designer brings a project, it arrives with its drawings finished, its planning approved and a client who has already decided to build. Builders can tell the difference immediately.",
+        "Three builder places were offered. All three were taken, and the first builder was into their submission 35 minutes after the round opened.",
+        "This is the shape we want. Designers bring the work they have already done. Builders get real projects instead of cold leads. Everybody prices the same thing.",
       ],
-      sections: [
-        {
-          heading: "What went in",
-          paragraphs: [
-            "Eleven documents, 148 pages. Architectural working drawings at revision 6, structural drawings, a plan of survey, a geotechnical report, two NatHERS certificates, an inclusions list written to suit the current drawing issue, endorsed planning drawings, an endorsed landscape plan, a sustainable design assessment and a Melbourne Water response.",
-            "That is a well documented job. Nothing below is a comment on the quality of the set.",
-          ],
-        },
-        {
-          heading: "What came out",
-          paragraphs: [
-            "250 scope lines across 31 trade groups, from demolition and earthworks through to appliances and landscaping. 184 lines are evidenced by the documents, and 181 of those carry a reference back to the file and the page they came from. 23 lines are marked not applicable to this project, rock excavation and bushfire compliance among them.",
-            "43 are gaps. The documents do not settle them either way. Contaminated soil, spoil removal, laundry appliances, handover documentation. None of that is a drawing’s job. Drawings answer what a building is. They are not written to answer every question a price depends on, which is why the same gap turns up in a set this complete.",
-            "24 of those gaps were settled with the client before pricing opened. Each one became an instruction every builder can see: included, an allowance at a stated figure, or excluded. The rest stay marked open, so nobody prices a guess and presents it as a number.",
-          ],
-        },
-        {
-          heading: "What the builders price against",
-          paragraphs: [
-            "One schedule, the same for all three. Every line answered one of four ways: included as documented, an allowance at a stated figure, excluded, or not applicable. Alongside it, structured answers on programme, credentials, insurances and aftercare.",
-            "The round was opened with three builder places. All three were taken. When the submissions are in, the client reads them line against line rather than PDF against PDF, and the practice that documented the job is the one presenting the comparison.",
-          ],
-        },
-      ],
-      factBox: {
-        title: "The round, in figures",
-        rows: [
-          { k: "Documents assessed", v: "11 files, 148 pages" },
-          { k: "Scope lines produced", v: "250" },
-          { k: "Trade groups covered", v: "31" },
-          { k: "Lines evidenced by the documents", v: "184" },
-          { k: "Lines carrying a document and page reference", v: "181" },
-          { k: "Gaps found", v: "43" },
-          { k: "Gaps settled before pricing opened", v: "24" },
-          { k: "Builder places", v: "3, all taken" },
-        ],
-      },
       pullQuote:
-        "43 gaps in a set this complete. Drawings answer what a building is, not every question a price depends on.",
-      source:
-        "BuilderHQ platform data for a published round, August 2026. The project is described in general terms and no party is named",
+        "When a designer brings a project, builders can tell the difference immediately.",
+      source: "BuilderHQ platform data, August 2026. No party is named",
       takes: {
-        owners:
-          "A price is only as firm as the scope behind it. [Put a project through the same process](/) and the gaps get settled before anyone quotes.",
-        designers:
-          "This is the stage practices absorb for free. [See how it works for design practices](/for/architects).",
-        builders:
-          "Three places, one schedule, every builder answering the same lines. [See what a round looks like](/for/builders).",
-        brokers:
-          "A round that settles its gaps before pricing gives you a contract sum with less room to move once drawdown starts.",
+        owners: "Ask your designer to run the tender. They know the job better than anyone.",
+        designers: "Your projects are the ones builders want. [See how it works](/for/architects).",
+        builders: "Designer led projects come documented and decided. [See what a round looks like](/for/builders).",
+        brokers: "A well run tender gives you a contract sum you can lend against.",
       },
     },
     partnerCorner: {
       partnerSlug: "neighbourhood-architecture",
-      headline: "Meet Neighbourhood Architecture, and a wartime cottage brought up to 7.6 stars.",
+      headline: "Meet Neighbourhood Architecture, and a 1940s cottage that now runs at 7.6 stars.",
       principal: "Chris Clode and Brendan McGregor",
       principalRole: "Directors",
       showLogo: true,
@@ -3563,20 +3484,20 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       stats: [
         { value: "5.0", label: "Google rating", star: true },
         { value: "16", label: "MBA and HIA honours since 2022" },
-        { value: "Kingston", label: "Studio, serving Canberra and southern NSW" },
+        { value: "Kingston", label: "Canberra and southern NSW" },
       ],
-      why: "Most homes are designed first and assessed for energy performance afterwards, by which time orientation, glazing and shading are already settled. Neighbourhood Architecture runs the modelling from the start, so those decisions are tested while they are still easy to change.",
+      why: "Most homes are designed first and tested for energy performance afterwards. By then the orientation, glazing and shading are already fixed. This practice runs the modelling from the first sketch, while those decisions are still easy to change.",
       practice:
-        "A Canberra practice founded in 2021 by Chris Clode, a registered architect, and Brendan McGregor, an HIA GreenSmart Professional. One small team covers both the architecture and the energy expertise, on new homes, renovations and extensions across Canberra and southern New South Wales.",
+        "A Canberra practice, founded in 2021 by Chris Clode, a registered architect, and Brendan McGregor, an HIA GreenSmart Professional. New homes, renovations and extensions across Canberra and southern New South Wales.",
       welcome:
         "A practice that tests how a house will perform before the plan is fixed is exactly the kind we want in front of people planning a build.",
       project: {
         kicker: "The project",
         name: "Tocumwal Revival, O’Connor",
         paragraphs: [
-          "In the late 1940s more than 200 houses were dismantled at the Tocumwal air base in New South Wales, trucked to Canberra and rebuilt in O’Connor, Turner and Ainslie. It was the largest movement of houses in Australian history, and the cottages that came from it are now known simply as Tocumwals. They were built quickly, for a housing shortage, and they were never built to be warm.",
-          "This one was restored rather than replaced. New external cladding replicates the home’s original detailing, so the street still reads as a Tocumwal, while the fabric behind it was thermally upgraded throughout. A discreet link joins the original cottage to a new rear extension holding the kitchen, dining and living space, with a study nook.",
-          "The extension is where the performance comes from. Raked ceilings, polished concrete floors and a waffle pod slab do the thermal work, with uPVC double glazing and high performance insulation. The finished house rates 7.6 stars, which is a long way from where a 1940s barracks cottage starts. Master Builders ACT named it Sustainable Residential Project of the year in 2025, and it was a finalist for Renovation or Addition between $500,000 and $1 million.",
+          "In the late 1940s more than 200 houses were pulled apart at the Tocumwal air base, trucked to Canberra and rebuilt in O’Connor, Turner and Ainslie. It was the largest move of houses in Australian history. They went up fast, for a housing shortage, and they were never built to be warm.",
+          "This one was kept rather than replaced. New cladding copies the original detailing, so the street still reads as a Tocumwal, while everything behind it was upgraded. A short link joins the old cottage to a new rear extension with the kitchen, dining and living space.",
+          "Raked ceilings, polished concrete floors and a waffle pod slab do the thermal work, with double glazing and heavy insulation. The house now rates 7.6 stars. Master Builders ACT named it Sustainable Residential Project of the year in 2025.",
         ],
         hero: {
           src: "/build-brief/issue-008/tocumwal-revival.jpg",
@@ -3585,12 +3506,10 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         credit:
           "Photography by Ben King Photography. Image supplied by Neighbourhood Architecture.",
         facts: [
-          { k: "Project", v: "Tocumwal Revival" },
           { k: "Location", v: "O’Connor, ACT" },
           { k: "Type", v: "Heritage renovation and rear extension" },
           { k: "Energy rating", v: "7.6 stars" },
           { k: "Completed", v: "October 2024" },
-          { k: "Practice", v: "Neighbourhood Architecture" },
         ],
         link: {
           label: "See the project on Neighbourhood Architecture",
@@ -3605,47 +3524,43 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     faq: [
       {
         q: "How much did construction work rise in the June quarter 2026?",
-        a: "Residential building work done rose 1.7% for the quarter and 9.1% over the year, to $27.87 billion in seasonally adjusted chain volume terms. On the trend measure it rose 1.0% for the quarter and 7.1% over the year. Total construction work fell 2.1% to $82.5 billion, with engineering down 6.0% and building up 1.3% to $45.8 billion. The figures are preliminary and subject to revision.",
+        a: "Home building work done rose 1.7% for the quarter and 9.1% for the year, to $27.87 billion. All construction fell 2.1% to $82.5 billion, with engineering down 6.0% and building up 1.3% to $45.8 billion. The figures are preliminary and can be revised.",
       },
       {
         q: "Which state had the strongest construction growth in the June quarter 2026?",
-        a: "Victoria, on total construction work done, which rose 5.8% to $19.73 billion, the strongest growth of any mainland state. New South Wales rose 1.4% and Queensland 1.1%. The ACT fell 8.8% to $1.01 billion, Tasmania fell 9.5% and Western Australia fell 19.7%. These are state totals across all construction rather than residential alone.",
+        a: "Victoria, up 5.8% to $19.73 billion, the best of any mainland state. New South Wales rose 1.4% and Queensland 1.1%. The ACT fell 8.8% to $1.01 billion, Tasmania fell 9.5% and Western Australia fell 19.7%. These are state totals across all construction, not homes alone.",
       },
       {
-        q: "What is the difference between building approvals, commencements and work done?",
-        a: "Approvals are permission to build. Commencements are a start date. Work done is the value of construction physically carried out during the quarter, so it is the closest of the three to a measure of what is happening on site. The ABS publishes Construction Work Done quarterly, and dwelling counts follow later in Building Activity.",
+        q: "What is the difference between building approvals and work done?",
+        a: "An approval is permission to build. Work done is the value of what got built during the quarter, so it is much closer to a measure of what is happening on site. The ABS publishes work done every quarter.",
       },
       {
         q: "What happens to my contract if my builder goes into voluntary administration?",
-        a: "Voluntary administration is not liquidation. An administrator is appointed to work out whether the business can be saved, sold or restructured, and work can continue during that period if there is funding to continue it. Your contract does not disappear: it sits with the company under administration, and what happens next depends on the outcome rather than on the day it was announced. Creditors vote on that outcome.",
+        a: "Administration is not liquidation. An administrator works out whether the business can be saved, sold or restructured, and work can keep going if there is money to keep it going. Your contract still stands and sits with the company. What happens next depends on how the administration ends, and creditors vote on that.",
       },
       {
         q: "How much does home warranty insurance cover in Victoria?",
-        a: "For contracts signed on or after 1 July 2026, the First Resort Home Warranty Scheme covers up to $400,000 on domestic building work over $20,000 in buildings of three storeys or less. For contracts signed before that date, Domestic Building Insurance covered up to $300,000. Major defects are covered for six years under both. Cover does not transfer between the schemes.",
+        a: "For contracts signed on or after 1 July 2026, cover runs to $400,000 on work over $20,000 in buildings of three storeys or less. For contracts signed before then, cover was $300,000. Major defects are covered for six years under both. Cover does not move between the schemes.",
       },
       {
         q: "Can you claim on Victorian home warranty cover before the builder collapses?",
-        a: "Under the First Resort Home Warranty Scheme, yes. An owner can claim where work is incomplete, defective or non-compliant and the builder cannot or will not put it right. Under the older Domestic Building Insurance scheme the builder had to have died, disappeared or become insolvent first. Insolvency triggers both schemes, so the older one was not without cover on an insolvency.",
+        a: "Under the newer scheme, yes. You can claim when work is incomplete or defective and the builder will not or cannot fix it. Under the older scheme the builder had to have died, disappeared or become insolvent first. Insolvency triggers both, so the older scheme was not without cover on an insolvency.",
       },
       {
         q: "How much does home warranty insurance cover in New South Wales?",
-        a: "The Home Building Compensation Fund covers up to $340,000 per dwelling. Its triggers include the builder becoming insolvent, dying, disappearing, or having their licence suspended for failing to comply with a money order. Failure to complete work is claimable up to 20% of the contract price, and major defects for up to six years from completion.",
+        a: "Cover runs to $340,000 a dwelling. The triggers include the builder becoming insolvent, dying, disappearing, or having their licence suspended for failing to comply with a money order. Major defects are covered for up to six years from completion.",
       },
       {
         q: "How many construction apprentices are in training in Australia?",
-        a: "105,790 at the end of 2025, the lowest figure in five years, on NCVER quarterly data cited by Master Builders Australia. During 2025, 28,290 construction apprentices left their training early without a qualification, while more than 7,600 began in the December 2025 quarter, 10.0% up on the same period a year earlier.",
+        a: "105,790 at the end of 2025, the lowest in five years, on NCVER data cited by Master Builders Australia. During 2025, 28,290 left their training early without finishing, while more than 7,600 started in the December quarter, 10.0% up on the year before.",
       },
       {
-        q: "What did the July 2026 labour force figures show?",
-        a: "Employment fell by 15,800 and the unemployment rate rose to 4.5% from 4.4%. The participation rate fell 0.2 percentage points to 66.9%. The ABS released the figures on 20 August 2026.",
-      },
-      {
-        q: "What does a structured scope of works contain?",
-        a: "On the round covered in this edition, 11 documents totalling 148 pages produced 250 scope lines across 31 trade groups. 184 lines were evidenced by the documents and 181 of those carried a reference back to the file and page. 23 were marked not applicable to that project, and 43 were gaps the documents did not settle, of which 24 were resolved with the client before pricing opened.",
+        q: "What did the July 2026 job figures show?",
+        a: "Employment fell by 15,800 and unemployment rose to 4.5% from 4.4%. The participation rate fell 0.2 percentage points to 66.9%. The ABS released the figures on 20 August 2026.",
       },
     ],
     share:
-      "Residential building work done is up 9.1% over the year, construction apprentices in training are at a five year low, and a large builder is in voluntary administration. This week’s Build Brief.",
+      "Home building is up 9.1% for the year, apprentice numbers are at a five year low, and a large builder is in administration. This week’s Build Brief.",
     subscribeLine: "Five minutes, every Friday.",
     furtherReading: [
       { label: "Issue 007: every Victorian reform date on one timeline", href: "/build-brief/issue-007" },

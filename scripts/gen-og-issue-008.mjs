@@ -22,7 +22,7 @@ const OUT = path.join(PUB, "og-issue-008.jpg");
 const W = 1200;
 const H = 630;
 
-const titleLines = ["The work is getting done.", "The workforce is thinning."];
+const titleLines = ["More work is coming.", "Fewer people to do it."];
 
 let y = 330;
 const TITLE_SIZE = 44;

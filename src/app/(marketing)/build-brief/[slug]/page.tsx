@@ -606,8 +606,13 @@ export default async function BriefIssuePage({
                   {issue.announcement.standfirst}
                 </p>
               ) : null}
+              {/* The strip needs air above it: it follows a serif deck,
+                  and its figcaption sits tight to the text baseline
+                  without one. */}
               {issue.announcement.chart ? (
-                <BriefChart spec={issue.announcement.chart} />
+                <div className="mt-9">
+                  <BriefChart spec={issue.announcement.chart} />
+                </div>
               ) : null}
               <div className="mt-8 flex flex-col gap-4 max-w-[66ch]">
                 {issue.announcement.paragraphs.map((para, i) => (
