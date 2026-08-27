@@ -1370,7 +1370,7 @@ function ChapterDocuments({
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
         {nothing
           ? "Your document set covers the reports and schedules builders usually ask for. Nothing needs adding before the round goes out."
-          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. None of it blocks your round: every quote simply carries fewer assumptions for each document you add.`}
+          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. Each document you add removes assumptions from every quote. Where a report asks for an answer, promising it for later holds your round until you add it and we read again.`}
       </p>
 
       {nothing ? (
@@ -2114,7 +2114,7 @@ function QuestionCard({
         ? "Builders will price this"
         : resolution.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Noted, document to come"
+          : "Holding the round for this document"
     : null;
 
   return (
@@ -2177,7 +2177,7 @@ function QuestionCard({
                 onClick={() => act("upload_later")}
               >
                 <Clock3 className="size-3.5" />
-                Noted, I will provide it later
+                I will add it before we go live
               </AnswerChip>
             </>
           ) : (
@@ -2326,7 +2326,7 @@ function DroppedAnswers({
         ? "Builders will price this"
         : r.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Noted, document to come";
+          : "Holding the round for this document";
 
   return (
     <div className="mt-6 rounded-lg border border-border-accent/40 bg-[rgba(0,212,200,0.03)] card-elev px-4.5 py-4">
