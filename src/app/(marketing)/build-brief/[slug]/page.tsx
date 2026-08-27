@@ -593,10 +593,15 @@ export default async function BriefIssuePage({
               <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
                 {issue.announcement.kicker}
               </BriefKicker>
+              {/* Wider than the other section headings on purpose. At
+                  24ch an announcement headline breaks inside its own
+                  accent phrase and orphans a word in teal at the end of
+                  the first line; 32ch keeps a short one whole and still
+                  caps the measure for a long one. */}
               <AccentHeadline
                 text={issue.announcement.headline}
                 accent={issue.announcement.headlineAccent}
-                className={`mt-3 max-w-[24ch] ${SECTION_H2}`}
+                className={`mt-3 max-w-[32ch] ${SECTION_H2}`}
               />
               {issue.announcement.standfirst ? (
                 <p
