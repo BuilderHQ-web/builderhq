@@ -3306,7 +3306,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       eyebrow: "This week from the BuilderHQ team",
       heading: "More work is coming. Fewer people are learning to do it.",
       paragraphs: [
-        "The ABS published its work done figures on Tuesday. Home building rose 1.7% for the quarter and 9.1% for the year. That is real activity. Money moving, trades on site, houses going up.",
+        "The ABS published its work done figures on Wednesday. Home building rose 1.7% for the quarter and 9.1% for the year. That is real activity. Money moving, trades on site, houses going up.",
         "Then the other number. Only 105,790 people are training in a construction trade, the lowest in five years. July also saw employment fall by 15,800 and unemployment rise to 4.5%.",
         "Between the two sits a story from New South Wales. A large builder is in voluntary administration with around 2,000 homes on the go. We have written it as what an owner needs to know, not as a collapse story.",
         "And in the Feature, the part we are most pleased about. Designers are starting to bring us their projects.",
@@ -3323,15 +3323,17 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         stat: {
           value: "+9.1%",
           label: "home building work done, year to June 2026",
-          sub: "$27.87 billion, seasonally adjusted",
+          sub: "$27,867.1 million, seasonally adjusted",
         },
         chart: {
           kind: "diverging",
           title: "Construction work done, change over the June quarter 2026",
-          desc: "Victoria recorded the strongest quarterly growth of any mainland state at 5.8%. New South Wales rose 1.4% and Queensland 1.1%. The ACT fell 8.8%, Tasmania 9.5% and Western Australia 19.7%.",
+          desc: "Victoria recorded the strongest quarterly growth of any state or territory at 5.8%. The Northern Territory rose 2.7%, South Australia 1.6%, New South Wales 1.4% and Queensland 1.1%. The ACT fell 8.8%, Tasmania 9.5% and Western Australia 19.7%.",
           valueHeading: "Change on the March quarter",
           bars: [
             { label: "Victoria", value: 5.8, display: "+5.8%", accent: true },
+            { label: "Northern Territory", value: 2.7, display: "+2.7%" },
+            { label: "South Australia", value: 1.6, display: "+1.6%" },
             { label: "New South Wales", value: 1.4, display: "+1.4%" },
             { label: "Queensland", value: 1.1, display: "+1.1%" },
             { label: "Australian Capital Territory", value: -8.8, display: "-8.8%" },
@@ -3344,8 +3346,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         },
         body: [
           "Work done is not the same as approvals. An approval is permission. Work done is the value of what got built during the quarter. It is the closest we get to a measure of what is happening on site.",
-          "Home building rose 1.7% for the quarter and 9.1% for the year, to $27.87 billion. All construction fell 2.1% to $82.5 billion, pulled down by a 6.0% drop in engineering. Building alone rose 1.3%.",
-          "The states split. Victoria rose 5.8% to $19.73 billion, the best of any mainland state. The ACT fell 8.8% to $1.01 billion. New South Wales rose 1.4% and Queensland 1.1%. Western Australia fell 19.7% and Tasmania 9.5%. Those are state totals across all construction, not homes alone.",
+          "Home building rose 1.7% for the quarter and 9.1% for the year, to $27,867.1 million. All construction fell 2.1% to $82.5 billion, pulled down by a 6.0% drop in engineering. Building alone rose 1.3%.",
+          "The states split. Victoria rose 5.8% to $19,733.7 million, the best of any state or territory. The Northern Territory rose 2.7%, South Australia 1.6%, New South Wales 1.4% and Queensland 1.1%. The ACT fell 8.8% to $1,012.5 million, Tasmania fell 9.5% and Western Australia 19.7%. Those are totals across all construction, not homes alone.",
           "One caution on the state figures. They cover all construction, so a single large road, rail or resources project starting or finishing will move a whole state. Nationally, engineering fell 6.0% while building rose 1.3%, and this release does not split those out state by state. Read the state numbers as a signal about the whole industry, not about housing on its own.",
           "If you build in Victoria, the pipeline is moving. If you build in the ACT, the market is shrinking, and your programme should say so.",
         ],
@@ -3442,7 +3444,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
           "Only 105,790 people were training in a construction trade at the end of 2025. That is the lowest in five years. During the year, 28,290 left their training early without finishing.",
           "New starts are not the problem. More than 7,600 began in the December quarter, 10.0% up on the year before. People are signing up. They are not staying.",
           "Master Builders chief economist Shane Garrett said apprentice numbers are still getting hammered by worryingly high withdrawal rates. The body puts the shortfall at more than 300,000 infrastructure workers and another 116,000 housing workers by 2030.",
-          "July’s job figures landed the same week. Employment fell by 15,800 and unemployment rose to 4.5% from 4.4%.",
+          "July’s job figures, out the week before, pointed the same way. Employment fell by 15,800 and unemployment rose to 4.5% from 4.4%.",
           "Read it beside the first signal. The work is growing. The workforce is not.",
           "For anyone planning a build, this is the number sitting behind every long lead time. A trade shortage does not show up as a price rise first. It shows up as a date you cannot get. [Issue 005](/build-brief/issue-005) looked at why apprentices leave, and it is usually support rather than commitment.",
         ],
@@ -3467,7 +3469,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "A pair of three storey townhouses in Port Melbourne went out to tender this month. It reached us the way we always hoped these would: through the practice that designed it.",
         "Ask the practices why they are using it and the answer tends to be the same. It is one upload. The drawings, the engineering and the reports go up once, and the schedule of works comes back written against them. Nothing about the project changes. What changes is that the job only has to be explained once instead of three times, and the evening that used to go on three PDFs and a spreadsheet does not happen.",
         "Builders notice it from the other side. When a designer brings a project, it arrives with the drawings finished, the planning approved and a client who has already decided to build. A builder can tell inside a minute whether it is worth their time, which is more than a lead has ever told them.",
-        "Three builder places were offered. All three were taken, and the first builder was into their submission 35 minutes after the round opened.",
+        "Three verified builders are on the round now, pricing it against that schedule.",
         "This is the shape we want. Designers bring work they have already done. Builders get real projects instead of cold leads. And because every submission answers the same lines, the client ends up choosing between builders rather than between documents.",
       ],
       pullQuote:
@@ -3530,11 +3532,11 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     faq: [
       {
         q: "How much did construction work rise in the June quarter 2026?",
-        a: "Home building work done rose 1.7% for the quarter and 9.1% for the year, to $27.87 billion. All construction fell 2.1% to $82.5 billion, with engineering down 6.0% and building up 1.3% to $45.8 billion. The figures are preliminary and can be revised.",
+        a: "Home building work done rose 1.7% for the quarter and 9.1% for the year, to $27,867.1 million. All construction fell 2.1% to $82.5 billion, with engineering down 6.0% and building up 1.3% to $45.8 billion. The figures are preliminary and can be revised.",
       },
       {
         q: "Which state had the strongest construction growth in the June quarter 2026?",
-        a: "Victoria, up 5.8% to $19.73 billion, the best of any mainland state. New South Wales rose 1.4% and Queensland 1.1%. The ACT fell 8.8% to $1.01 billion, Tasmania fell 9.5% and Western Australia fell 19.7%. These are state totals across all construction, not homes alone.",
+        a: "Victoria, up 5.8% to $19,733.7 million, the strongest growth of any state or territory. The Northern Territory rose 2.7%, South Australia 1.6%, New South Wales 1.4% and Queensland 1.1%. The ACT fell 8.8% to $1,012.5 million, Tasmania fell 9.5% and Western Australia fell 19.7%. These are totals across all construction, not homes alone.",
       },
       {
         q: "What is the difference between building approvals and work done?",
@@ -3550,7 +3552,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         q: "Can you claim on Victorian home warranty cover before the builder collapses?",
-        a: "Under the newer scheme, yes. You can claim when work is incomplete or defective and the builder will not or cannot fix it. Under the older scheme the builder had to have died, disappeared or become insolvent first. Insolvency triggers both, so the older scheme was not without cover on an insolvency.",
+        a: "Under the newer scheme, yes. You can claim when work is incomplete or defective and the builder will not or cannot fix it. Under the older scheme the builder had to have died, disappeared or become insolvent first. Insolvency triggers both schemes. The older one still paid out when a builder went under.",
       },
       {
         q: "How much does home warranty insurance cover in New South Wales?",
