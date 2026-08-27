@@ -77,7 +77,10 @@ export function PartnerAvatar({
           alt={partner.name}
           loading="lazy"
           className="object-contain"
-          style={{ width: "74%", height: "74%" }}
+          // A square mark is limited by height and sits at 74% as before.
+          // A wide lockup is limited by width, where 74% left the mark
+          // looking undersized in the tile, so width may run to 88%.
+          style={{ maxWidth: "88%", maxHeight: "74%" }}
         />
       </span>
     );
