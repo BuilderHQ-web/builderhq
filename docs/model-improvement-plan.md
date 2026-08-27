@@ -1124,3 +1124,75 @@ or none, never two.
 
 Status: **READY TO DEVELOP. Wave 0 first; nothing in it touches
 pipeline behaviour or live data.**
+
+---
+---
+
+# Wave 0 — DELIVERED (27 August 2026)
+
+The measuring equipment is built, both poles of the corpus are
+labelled, the flywheel is closed and the desk is reversible. Nothing in
+this wave changed pipeline behaviour; all of it measures or protects
+it.
+
+| Story | Delivered |
+|---|---|
+| S1.2 scorer + metric suite | `src/modules/scope/golden-v2.ts` — 9 targets, 8 assertion kinds, 28 tests, 3 mutations confirmed caught |
+| S1.1 golden packages | `57-wallace-street` (241 lines, sparse pole) and `108-dow-street` (54 lines, rich pole) |
+| S1.3 score persistence | `eval/scope-golden/scores/<pkg>/<label>-<stamp>.json` |
+| S1.5 label validator | `scripts/dev-golden-validate.mts` — refused a package on first run, correctly |
+| S2.1 correction reader | `src/modules/scope-engine/corrections.ts` — 21 tests, 4 mutations, 1 test gap found and closed |
+| S9.1 desk reversal | reopen for items, conflicts and captures; 9 DB-backed tests |
+| S9.3 label integrity | reversals excluded from accuracy, reported as a rate |
+| Ceremony skills | `.claude/skills/` — golden-label, wave-release, regression-triage, scope-migration |
+
+## The v6 baseline
+
+| Metric | Wallace (1 doc) | Dow (10 docs) | Target |
+|---|---|---|---|
+| False-gap rate | 56.2% | **62.7%** | ≤ 5% |
+| Priceable precision | 46.7% | 50.0% | ≥ 98% |
+| Gap-class accuracy | 0.0% | 0.0% | ≥ 95% |
+| Conflict precision | 33.3% | 40.0% | ≥ 97% |
+| Conflict recall | 33.3% | 40.0% | ≥ 95% |
+| Citation validity | 96.2% | 100% | ≥ 98% |
+| False not-expected | 8.0% | 0.0% | ≤ 1% |
+| False NE on CORE | **0** | **0** | 0 |
+| Dwelling merges | **0** | **0** | 0 |
+| Regressions | 1/14 | 1/10 | all |
+
+Desk corrections, production: implied agreement **88.6%** over 1,193
+judged lines; 0 lines added by hand across five runs.
+
+## Four findings that reshape the programme
+
+1. **The false-gap rate is WORSE on the rich pack than the sparse one.**
+   Ten documents produced a higher proportion of wrong gaps than one.
+   The engine does not over-gap from missing information; it over-gaps
+   because it does not know what a gap is. Calibration, not retrieval,
+   is the primary fix — but see (4).
+
+2. **The engine never hides work.** False not-expected is 0% on the
+   rich pack and 0 on CORE items everywhere, and the desk has added
+   exactly 0 lines by hand across five runs. Two independent
+   measurements agree: every failure is over-production, which is the
+   safe direction to correct.
+
+3. **Confidence is two different signals wearing one number.** Every
+   fabricated evidence claim sat below the 0.65 floor; gap confidence
+   is a flat 0.7 constant identical to the whole-run mean. Per-dimension
+   calibration is now demonstrated from production data, not argued.
+
+4. **Ten of Dow's 51 gaps were already evidenced in the supplied pack.**
+   On a ten-document pack that is a RETRIEVAL failure, distinct from
+   calibration and needing its own fix. Wave 2's evidence-carrying
+   residual addresses it; Wave 1's schedule extraction helps.
+
+Of the engine's 121 Wallace gaps, **21 are true design gaps**. Of Dow's
+51, **7 are**. That ratio is the programme's headline.
+
+## Wave 1 opens
+
+The single extraction-schema release. Nothing in Wave 1 ships until the
+schema is designed whole, measured against token headroom offline, and
+scored against both baselines above.
