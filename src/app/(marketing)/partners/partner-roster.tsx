@@ -42,28 +42,28 @@ const SEGMENTS: Array<{
   href: string;
   count?: number;
 }> = [
-  { key: "all", label: "All partners", href: "/partners" },
+  { key: "all", label: "All", href: "/partners" },
   {
     key: "architect",
-    label: "Design partners",
+    label: "Design",
     href: "/partners/architects",
     count: ARCHITECT_PARTNERS.length,
   },
   {
     key: "builder",
-    label: "Builder partners",
+    label: "Builders",
     href: "/partners/builders",
     count: BUILDER_PARTNERS.length,
   },
   {
     key: "finance",
-    label: "Finance partners",
+    label: "Finance",
     href: "/partners/finance-brokers",
     count: FINANCE_PARTNERS.length,
   },
   {
     key: "conveyancer",
-    label: "Conveyancing partners",
+    label: "Conveyancing",
     href: "/partners/conveyancers",
     count: CONVEYANCER_PARTNERS.length,
   },
@@ -243,35 +243,40 @@ export function PartnersRegister({ active }: { active: Active }) {
 
 function SegmentedNav({ active }: { active: Active }) {
   return (
-    <nav
-      aria-label="Filter partners"
-      className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 p-1"
-    >
-      {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
-        (s) => {
-          const on = s.key === active;
-          return (
-            <Link
-              key={s.key}
-              href={s.href}
-              // Switching lens keeps the register in place — the three
-              // routes stay distinct for SEO/outreach, but toggling
-              // between them holds your scroll position instead of
-              // snapping back to the top.
-              scroll={false}
-              aria-current={on ? "page" : undefined}
-              className={
-                on
-                  ? "inline-flex items-center h-9 px-4 rounded-full bg-white card-elev text-[13px] font-semibold text-text"
-                  : "inline-flex items-center h-9 px-4 rounded-full text-[13px] font-medium text-text-muted hover:text-text transition-colors"
-              }
-            >
-              {s.label}
-            </Link>
-          );
-        },
-      )}
-    </nav>
+    // Five disciplines no longer fit a phone. The strip scrolls inside
+    // its own box so the page never moves sideways, and shrink-0 stops
+    // the map beside it squeezing the pills on desktop.
+    <div className="max-w-full shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav
+        aria-label="Filter partners"
+        className="inline-flex w-max items-center gap-1 rounded-full border border-border-subtle bg-surface-2 p-1"
+      >
+        {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
+          (s) => {
+            const on = s.key === active;
+            return (
+              <Link
+                key={s.key}
+                href={s.href}
+                // Switching lens keeps the register in place — the three
+                // routes stay distinct for SEO/outreach, but toggling
+                // between them holds your scroll position instead of
+                // snapping back to the top.
+                scroll={false}
+                aria-current={on ? "page" : undefined}
+                className={
+                  on
+                    ? "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap bg-white card-elev text-[13px] font-semibold text-text"
+                    : "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap text-[13px] font-medium text-text-muted hover:text-text transition-colors"
+                }
+              >
+                {s.label}
+              </Link>
+            );
+          },
+        )}
+      </nav>
+    </div>
   );
 }
 
