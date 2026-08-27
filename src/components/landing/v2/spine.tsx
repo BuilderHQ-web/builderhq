@@ -25,6 +25,7 @@ import { Reveal } from "../reveal";
 import { LENS, ROLE_PALETTE } from "./content";
 import { SectionHead } from "./section-head";
 import { useRole } from "./role";
+import { trackDemoCta } from "./demo-cta";
 import { RoleSwap } from "./swap";
 import { AppScene } from "./app-scenes";
 import { useCardInView } from "./scene-motion";
@@ -152,6 +153,14 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                         {last || !copy.stepCta ? (
                           <Link
                             href={cta.href}
+                            onClick={() =>
+                              trackDemoCta({
+                                href: cta.href,
+                                lens: role,
+                                placement: "journey_step",
+                                label: cta.label,
+                              })
+                            }
                             className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full bg-accent text-accent-contrast text-[14.5px] font-semibold hover:bg-accent-hover transition-colors duration-[180ms]"
                           >
                             {cta.label}
@@ -160,6 +169,14 @@ export function Spine({ authedHref }: { authedHref?: string | null }) {
                         ) : (
                           <Link
                             href={copy.stepCta.href}
+                            onClick={() =>
+                              trackDemoCta({
+                                href: copy.stepCta!.href,
+                                lens: role,
+                                placement: "journey_step",
+                                label: copy.stepCta!.label,
+                              })
+                            }
                             className="group inline-flex items-center gap-2 h-[52px] px-8 rounded-full border border-[rgba(255,255,255,0.22)] text-white text-[14.5px] font-semibold hover:bg-[rgba(255,255,255,0.08)] transition-colors duration-[180ms]"
                           >
                             {copy.stepCta.label}

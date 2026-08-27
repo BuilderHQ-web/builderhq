@@ -25,8 +25,10 @@
  * ("addendum"), and the read-only record of a live pack ("record").
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+import { motion } from "motion/react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -154,6 +156,7 @@ export function PackReview({
   briefComplete: briefCompleteInitial = false,
   documentNames,
   namedMissing = [],
+  droppedResolutions = [],
   register,
   facts,
   standardVersion,
@@ -190,6 +193,18 @@ export function PackReview({
   documentNames: Record<string, string>;
   /** Documents the pack itself names but does not contain. */
   namedMissing?: Array<{ ref: string; sources: string[] }>;
+  /**
+   * Answers given on the previous pack that this read no longer asks
+   * for. Shown, never re-asked, and deliberately kept out of
+   * `resolutions` so a dropped answer cannot render as a live one.
+   */
+  droppedResolutions?: Array<{
+    itemId: string;
+    label: string;
+    resolution: string;
+    amountAud: number | null;
+    note: string | null;
+  }>;
   register: RegisterRow[];
   facts: PackFacts;
   standardVersion: string;
@@ -206,6 +221,7 @@ export function PackReview({
   const [briefComplete, setBriefComplete] = useState(briefCompleteInitial);
   const [completing, setCompleting] = useState(false);
   const [rereading, setRereading] = useState(false);
+  const [confirmReread, setConfirmReread] = useState(false);
 
   /* ── derivations ─────────────────────────────────────────────────── */
 
@@ -377,7 +393,7 @@ export function PackReview({
   const onResolve = useCallback(
     async (
       itemId: string,
-      resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+      resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
       amountAud?: number,
     ) => {
       const r = await resolveScopeGapAction(projectId, itemId, {
@@ -423,7 +439,8 @@ export function PackReview({
     }
   }, [projectId, router, basePath, slug]);
 
-  const reread = useCallback(async () => {
+  const runReread = useCallback(async () => {
+    setConfirmReread(false);
     setRereading(true);
     try {
       const r = await requestScopeRereadAction(projectId);
@@ -437,6 +454,12 @@ export function PackReview({
       setRereading(false);
     }
   }, [projectId, router]);
+
+  // What a re-read actually costs the client, in their terms: answers
+  // already given on lines the pack still raises. Those carry, but only
+  // where the new read agrees, so this is the number at stake rather
+  // than a promise.
+  const answeredCount = askable.filter((g) => resolved.has(g.itemId)).length;
 
   /* ── chapters ────────────────────────────────────────────────────── */
 
@@ -489,12 +512,13 @@ export function PackReview({
                 : `${unreadDocs.length} added documents have not been read yet.`}
             </span>{" "}
             Run the re-read so {unreadDocs.length === 1 ? "it is" : "they are"}{" "}
-            in the pack before the round opens. Your answers carry forward.
+            in the pack before the round opens. We will show you what it
+            changes before anything else happens.
           </p>
           <button
             type="button"
             disabled={rereading}
-            onClick={reread}
+            onClick={() => setConfirmReread(true)}
             className="inline-flex shrink-0 items-center gap-1.5 h-8 px-3.5 rounded-full border text-[11.5px] font-ui font-medium transition-colors disabled:opacity-60"
             style={{
               borderColor: "rgba(217,164,65,0.5)",
@@ -564,6 +588,7 @@ export function PackReview({
             currentDescription={currentDescription}
             projectId={projectId}
             readOnly={readOnly}
+            droppedResolutions={droppedResolutions}
             register={register}
             standardVersion={standardVersion}
             stats={{
@@ -596,7 +621,7 @@ export function PackReview({
             resolved={resolved}
             readOnly={readOnly}
             rereading={rereading}
-            onReread={reread}
+            onReread={() => setConfirmReread(true)}
             onResolve={onResolve}
             onContinue={() => setChapter(3)}
           />
@@ -653,7 +678,7 @@ export function PackReview({
                 <button
                   type="button"
                   disabled={rereading}
-                  onClick={reread}
+                  onClick={() => setConfirmReread(true)}
                   className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-strong bg-surface-1 text-text text-[12.5px] hover:bg-bg-elev transition-colors disabled:opacity-60"
                 >
                   {rereading ? (
@@ -709,7 +734,7 @@ export function PackReview({
             <button
               type="button"
               disabled={rereading}
-              onClick={reread}
+              onClick={() => setConfirmReread(true)}
               className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-full border border-border-strong bg-surface-1 text-text text-[12.5px] hover:bg-bg-elev transition-colors disabled:opacity-60 shrink-0"
             >
               {rereading ? (
@@ -721,6 +746,16 @@ export function PackReview({
             </button>
           </div>
         </div>
+      ) : null}
+
+      {confirmReread ? (
+        <RereadDialog
+          documentCount={unreadDocs.length}
+          answeredCount={answeredCount}
+          busy={rereading}
+          onConfirm={runReread}
+          onClose={() => setConfirmReread(false)}
+        />
       ) : null}
     </div>
   );
@@ -734,6 +769,7 @@ function ChapterPack({
   currentDescription,
   projectId,
   readOnly,
+  droppedResolutions,
   register,
   standardVersion,
   stats,
@@ -746,6 +782,13 @@ function ChapterPack({
   currentDescription: string | null;
   projectId: string;
   readOnly: boolean;
+  droppedResolutions: Array<{
+    itemId: string;
+    label: string;
+    resolution: string;
+    amountAud: number | null;
+    note: string | null;
+  }>;
   register: RegisterRow[];
   standardVersion: string;
   stats: {
@@ -817,6 +860,12 @@ function ChapterPack({
         />
       ) : null}
 
+
+      {/* Answers this read no longer asks for. A re-read replaces the
+          pack, so a figure the client gave against the previous one can
+          stop applying. It must never just disappear: a $44,000
+          fireplace allowance did exactly that on 21 August 2026. */}
+      <DroppedAnswers rows={droppedResolutions} />
       {/* the register */}
       <div className="mt-6 rounded-lg border border-border-subtle bg-surface-1 card-elev">
         <p className="px-4.5 pt-4 text-[9.5px] tracking-[0.18em] uppercase text-text-dim font-ui font-semibold">
@@ -1306,7 +1355,7 @@ function ChapterDocuments({
   onReread: () => void;
   onResolve: (
     itemId: string,
-    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amountAud?: number,
   ) => Promise<boolean>;
   onContinue: () => void;
@@ -1321,7 +1370,7 @@ function ChapterDocuments({
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
         {nothing
           ? "Your document set covers the reports and schedules builders usually ask for. Nothing needs adding before the round goes out."
-          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. None of it blocks your round: every quote simply carries fewer assumptions for each document you add.`}
+          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. Each document you add removes assumptions from every quote. Where a report asks for an answer, only adding it to this round holds your round open: the other two answers send it out as it stands.`}
       </p>
 
       {nothing ? (
@@ -1423,7 +1472,8 @@ function ChapterDocuments({
               Add documents here
             </p>
             <p className="text-[10.5px] text-text-dim">
-              Your answers so far carry forward through the re-read.
+              Your answers carry forward, except where the new read
+              changes the line.
             </p>
           </div>
           <div className="mt-2.5">
@@ -2029,7 +2079,7 @@ function QuestionCard({
   readOnly: boolean;
   onResolve: (
     itemId: string,
-    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amountAud?: number,
   ) => Promise<boolean>;
   docMood?: boolean;
@@ -2045,7 +2095,7 @@ function QuestionCard({
   const [busy, setBusy] = useState(false);
 
   const act = async (
-    kind: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    kind: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amt?: number,
   ) => {
     setBusy(true);
@@ -2064,7 +2114,9 @@ function QuestionCard({
         ? "Builders will price this"
         : resolution.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Noted, document to come"
+          : resolution.resolution === "owner_later"
+            ? "Coming after this round; builders price it now"
+            : "Holding the round for this document"
     : null;
 
   return (
@@ -2097,21 +2149,24 @@ function QuestionCard({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {docMood ? (
             <>
-              {/* Three answers, in the order of most control: hand the
-                  document over now, let the builders carry it, or note
-                  it for later. "Add it now" is not a state — it scrolls
-                  to the add box and opens the picker, and the re-read
-                  resolves the gap with the document itself. */}
+              {/* Three answers that differ in what they DO, not in
+                  wording. The first holds the round; the other two let
+                  it go out. The old pair ("Add it now" and a promise to
+                  add it before go-live) described one outcome twice, so
+                  they are now one answer: it records the promise AND
+                  opens the picker, because the document is coming
+                  either way and the round waits for it. */}
               <AnswerChip
                 disabled={busy}
-                active={false}
+                active={resolution?.resolution === "upload_later"}
                 suggested={!resolution}
                 onClick={() => {
+                  void act("upload_later");
                   window.dispatchEvent(new CustomEvent("bhq:scope:add-doc"));
                 }}
               >
                 <FileUp className="size-3.5" />
-                Add it now
+                Add it to this round
               </AnswerChip>
               <AnswerChip
                 disabled={busy}
@@ -2123,11 +2178,11 @@ function QuestionCard({
               </AnswerChip>
               <AnswerChip
                 disabled={busy}
-                active={resolution?.resolution === "upload_later"}
-                onClick={() => act("upload_later")}
+                active={resolution?.resolution === "owner_later"}
+                onClick={() => act("owner_later")}
               >
                 <Clock3 className="size-3.5" />
-                Noted, I will provide it later
+                I will send it after this round
               </AnswerChip>
             </>
           ) : (
@@ -2241,5 +2296,180 @@ function AnswerChip({
         </span>
       ) : null}
     </button>
+  );
+}
+
+/**
+ * Answers the latest read made irrelevant.
+ *
+ * Self-suppressing: a first read, or a re-read that changed nothing
+ * material, renders nothing at all. When it does render it is a
+ * statement, not a question — these lines are no longer asked, and the
+ * point is that the client sees what they said rather than having it
+ * vanish between packs.
+ *
+ * The verdict wording matches the answer cards exactly, so a client
+ * reads back the same phrase they chose.
+ */
+function DroppedAnswers({
+  rows,
+}: {
+  rows: Array<{
+    itemId: string;
+    label: string;
+    resolution: string;
+    amountAud: number | null;
+    note: string | null;
+  }>;
+}) {
+  if (rows.length === 0) return null;
+
+  const said = (r: (typeof rows)[number]) =>
+    r.resolution === "allowance"
+      ? `Budget set: $${(r.amountAud ?? 0).toLocaleString("en-AU")}`
+      : r.resolution === "builder_priced"
+        ? "Builders will price this"
+        : r.resolution === "excluded"
+          ? "Excluded from this tender"
+          : r.resolution === "owner_later"
+            ? "Coming after this round; builders price it now"
+            : "Holding the round for this document";
+
+  return (
+    <div className="mt-6 rounded-lg border border-border-accent/40 bg-[rgba(0,212,200,0.03)] card-elev px-4.5 py-4">
+      <p className="text-[9.5px] tracking-[0.18em] uppercase text-accent-deep font-ui font-semibold inline-flex items-center gap-1.5">
+        <Info className="size-3" />
+        Answers this read no longer needs
+      </p>
+      <p className="mt-2 text-[12.5px] leading-[1.6] text-text-muted">
+        {rows.length === 1
+          ? "You answered this on the previous pack. The latest read does not raise it, so it is not being asked again."
+          : `You answered ${rows.length} of these on the previous pack. The latest read does not raise them, so they are not being asked again.`}{" "}
+        Nothing is lost. If one of them still matters, tell us and we
+        will put it back in.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {rows.map((r) => (
+          <li key={r.itemId} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="text-[12.5px] font-ui font-medium text-text">
+              {r.label}
+            </span>
+            <span className="text-[12px] text-accent-deep font-ui font-medium">
+              {said(r)}
+            </span>
+            {r.note ? (
+              <span className="text-[12px] text-text-dim min-w-0">{r.note}</span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Confirm a re-read, and say what it costs.
+ *
+ * The button used to fire the moment it was clicked, and the panel
+ * above it promised "your answers carry forward" at a time when, for
+ * any project that had never published, they did not. Both halves are
+ * fixed now: the carry works, and this states plainly what carries and
+ * what does not before anything is spent.
+ *
+ * The cost quoted here is deliberately the CONSEQUENCE, never the model
+ * spend. That figure is on the run and reachable from this page, but it
+ * is BuilderHQ's cost of goods and no client should be shown it.
+ */
+function RereadDialog({
+  documentCount,
+  answeredCount,
+  busy,
+  onConfirm,
+  onClose,
+}: {
+  documentCount: number;
+  answeredCount: number;
+  busy: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !busy) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, busy]);
+
+  if (typeof document === "undefined") return null;
+
+  // Portalled to the body on purpose. An ancestor of the pack review
+  // carries a transform, and a transformed ancestor becomes the
+  // containing block for position:fixed, so an inline dialog's scrim
+  // covers only part of the viewport instead of all of it.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirm the re-read"
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        className="absolute inset-0 cursor-default"
+        style={{ background: "rgba(20,30,38,0.5)" }}
+        onClick={onClose}
+        disabled={busy}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[460px] rounded-lg border border-border-subtle bg-bg p-6 shadow-[0_32px_80px_-24px_rgba(15,23,32,0.45)]"
+      >
+        <span
+          className="inline-flex size-10 items-center justify-center rounded-full"
+          style={{ background: "rgba(0,212,200,0.12)", color: "#0a7d73" }}
+        >
+          <FileUp className="size-5" strokeWidth={1.75} />
+        </span>
+        <h3 className="mt-4 font-ui font-semibold text-[16.5px] tracking-[-0.015em] text-text">
+          Read the {documentCount === 1 ? "new document" : `${documentCount} new documents`} in?
+        </h3>
+        <p className="mt-2 text-[13px] leading-[1.62] text-text-muted">
+          We will read every document on the project again and rebuild the
+          pack from all of them together. It usually takes a few minutes,
+          and the round cannot open until the new pack has been checked.
+        </p>
+        <p className="mt-2.5 text-[13px] leading-[1.62] text-text-muted">
+          {answeredCount === 0
+            ? "You have not answered anything yet, so there is nothing to lose."
+            : answeredCount === 1
+              ? "Your answer carries across to the new pack. If the fresh read changes that line, we will ask you about it again and show you what you said before."
+              : `Your ${answeredCount} answers carry across to the new pack. Where the fresh read changes a line, we will ask you again and show you what you said before.`}
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="h-10 px-4 rounded-md text-[13px] font-ui text-text-muted hover:text-text transition-colors disabled:opacity-60"
+          >
+            Not yet
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-accent text-accent-contrast text-[13px] font-ui font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            Read them in
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body,
   );
 }

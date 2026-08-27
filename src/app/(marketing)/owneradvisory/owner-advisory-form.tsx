@@ -296,7 +296,7 @@ function TextStep({
   return (
     <>
       <p className={s.question}>{title}</p>
-      <div className={s.textField}>
+      <div data-clarity-mask="true" className={s.textField}>
         <input
           className={s.input}
           type="text"
@@ -351,7 +351,7 @@ function ContactStep({
   return (
     <>
       <p className={s.question}>How should we reach you?</p>
-      <div className={`${s.textField} ${mobileValid ? s.valid : ""}`}>
+      <div data-clarity-mask="true" className={`${s.textField} ${mobileValid ? s.valid : ""}`}>
         <input
           className={s.input}
           type="tel"
@@ -366,7 +366,7 @@ function ContactStep({
           }}
         />
       </div>
-      <div className={`${s.textField} ${emailValid ? s.valid : ""}`}>
+      <div data-clarity-mask="true" className={`${s.textField} ${emailValid ? s.valid : ""}`}>
         <input
           className={s.input}
           type="email"

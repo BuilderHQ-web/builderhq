@@ -32,6 +32,7 @@ import {
   promoteCaptureAction,
   reviewScopeConflictAction,
   reviewScopeItemAction,
+  retryFailedDocumentsAction,
   tickScopeRunAction,
 } from "@/app/(app)/_actions/scope";
 import { toast } from "@/components/ui/toast";
@@ -145,6 +146,18 @@ export function RunReview({
           break;
         }
         setStatus(r.value.status);
+        // "Locked" and "done" used to be the same answer, and a press
+        // inside the lease window silently did nothing. Now a held
+        // lease says so, and the loop waits it out instead of quitting.
+        if (r.value.locked) {
+          const wait = Math.min(r.value.retryInSec ?? 30, 120);
+          toast.info(
+            "Another worker holds this run",
+            `Waiting ${wait}s for the lease, then continuing.`,
+          );
+          await new Promise((res) => setTimeout(res, wait * 1000));
+          continue;
+        }
         if (!r.value.moreWork) break;
       }
       router.refresh();
@@ -152,6 +165,25 @@ export function RunReview({
       setRunning(false);
     }
   }, [runId, router]);
+
+  const retryFailedDocs = useCallback(async () => {
+    setRunning(true);
+    try {
+      const r = await retryFailedDocumentsAction(runId);
+      if (!r.ok) {
+        toast.error("Could not re-queue", r.error.message);
+        return;
+      }
+      toast.success(
+        "Documents re-queued",
+        `${r.value.requeued} document(s) will be read again.`,
+      );
+      setStatus("extracting");
+      await runToCompletion();
+    } finally {
+      setRunning(false);
+    }
+  }, [runId, runToCompletion]);
 
   if (PROCESSING.includes(status)) {
     return (
@@ -180,6 +212,40 @@ export function RunReview({
             <>
               <Play className="size-4" />
               Run to completion
+            </>
+          )}
+        </button>
+        <RegisterTable register={orderedRegister} docName={docName} />
+      </section>
+    );
+  }
+
+  if (status === "failed") {
+    return (
+      <section className="rounded-lg border border-border-subtle bg-surface-1 card-elev px-6 py-10 text-center">
+        <p className="text-[13px] font-ui font-semibold text-text">
+          This run failed
+        </p>
+        <p className="mt-2 text-[12.5px] text-text-muted max-w-[60ch] mx-auto">
+          The register below shows which documents could not be read.
+          Re-queue them and the run continues from where it stopped;
+          everything already read is kept, nothing is paid for twice.
+        </p>
+        <button
+          type="button"
+          disabled={running}
+          onClick={retryFailedDocs}
+          className="mt-5 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-accent text-accent-contrast text-[13px] font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60"
+        >
+          {running ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Working ({status})
+            </>
+          ) : (
+            <>
+              <Play className="size-4" />
+              Retry failed documents
             </>
           )}
         </button>

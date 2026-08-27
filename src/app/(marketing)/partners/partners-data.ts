@@ -55,6 +55,14 @@ export interface Partner {
    *  /partners/[slug] route, but reachable via /partners/preview/[slug]
    *  for the partner to review their draft before it goes live. */
   draft?: boolean;
+  /** The partner's in-app builder account, by its builder_profiles.slug.
+   *  When set, the app's public profile route (/b/<that slug>) renders
+   *  THIS partner page instead of the standard register profile — the
+   *  curated profile is the profile, whichever door a client comes
+   *  through. Independent of `draft`: a partner we have not published
+   *  to the directory can still have their curated page serve as their
+   *  own profile. */
+  builderProfileSlug?: string;
   name: string;
   /** Overrides the default kind label ("Architecture practice" /
    *  "Finance partner") where a partner needs a more accurate title,
@@ -2818,9 +2826,85 @@ export const PARTNERS: Partner[] = [
   },
 
   {
+    slug: "buildkomm",
+    kind: "builder",
+    draft: true,
+    builderProfileSlug: "buildkomm-pty-ltd-715fe8",
+    roleLabel: "Residential and commercial builder",
+    name: "Buildkomm",
+    monogram: "BK",
+    logo: "/partners/buildkomm/logo.png",
+    principal: "Eddie Komm",
+    suburb: "Moorabbin",
+    state: "VIC",
+    states: ["VIC", "QLD"],
+    tagline:
+      "A Moorabbin builder carrying townhouses, boutique apartments and architectural homes across bayside Melbourne, with the licences and the balance sheet to run several major contracts at once.",
+    disciplines: [
+      "Townhouses and dual occupancy",
+      "Boutique apartments",
+      "Luxury residences",
+      "Industrial and commercial",
+    ],
+    stats: [
+      { label: "Completed works", value: "$200m+", sub: "delivered to date" },
+      {
+        label: "DBI facility",
+        value: "$40m",
+        sub: "domestic building insurance",
+      },
+      {
+        // Short value, long sub: "VIC + QLD" wraps to two lines at this
+        // type size and breaks the band's rhythm against $200m+ / $40m.
+        label: "Licensed",
+        value: "Dual",
+        sub: "VIC and QLD, commercial and residential",
+      },
+    ],
+    signature: {
+      label: "Registered builder",
+      value: "DB-U 69666",
+    },
+    why: "Buildkomm is the rare builder whose capacity is a matter of record rather than assertion.\n\nMost builders ask an owner to take their financial standing on trust. Buildkomm publishes it: over $200 million in completed works, and a $40 million Domestic Building Insurance facility, which is the figure an insurer is willing to stand behind and the reason they can carry several large contracts at once.\n\nThe licensing is unusually broad too, covering commercial and residential work in Victoria and residential in Queensland. A builder who handles post-tensioned slabs and basements on a five-storey apartment building brings a different order of structural confidence to a townhouse site.",
+    about:
+      "Buildkomm is a Melbourne based builder working across the residential and commercial sectors, led by director Eddie Komm from an office in Moorabbin. They are a Master Builders Victoria member and QBCC licensed in Queensland.\n\nThe practice delivers turnkey projects for developers, architects and private clients across four streams: medium-density townhouses on slab-on-ground and basement, boutique to mid-rise apartments up to five storeys, industrial warehouses in precast and structural steel, and architecturally significant homes in Melbourne's bayside suburbs.\n\nCompleted work concentrates through the south east and bayside, from Malvern East and Caulfield through Bentleigh and Cheltenham to Brighton, Beaumaris and Mordialloc. A team of roughly forty runs on documented systems, which is what holds the same standard across concurrent projects.",
+    facts: {
+      experience: "Decades",
+      basedIn: "Moorabbin, VIC",
+      serves: "Melbourne and south east Queensland",
+      focus: "Townhouses, apartments and luxury homes",
+    },
+    website: "https://www.buildkomm.com.au",
+    instagram: "https://www.instagram.com/buildkomm/",
+    linkedin: "https://au.linkedin.com/company/build-komm",
+    galleryUrl: "https://www.buildkomm.com.au/portfolio",
+    work: [
+      {
+        title: "Bayside townhouses",
+        suburb: "Brighton",
+        type: "Townhouses",
+        image: "/partners/buildkomm/brighton.jpg",
+      },
+      {
+        title: "Double-height living",
+        suburb: "Beaumaris",
+        type: "Luxury residence",
+        image: "/partners/buildkomm/beaumaris.jpg",
+      },
+      {
+        title: "Three-storey residences",
+        suburb: "Caulfield",
+        type: "Multi-dwelling",
+        image: "/partners/buildkomm/caulfield.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "the-builders-project",
     kind: "builder",
     draft: true,
+    builderProfileSlug: "the-builders-project-61b9f3",
     roleLabel: "Custom home builder",
     name: "The Builders Project",
     monogram: "TB",
@@ -3142,6 +3226,7 @@ export const PARTNERS: Partner[] = [
   {
     slug: "de-lune-construction",
     kind: "builder",
+    builderProfileSlug: "de-lune-construction-db683d",
     roleLabel: "Architectural builder",
     name: "de Lune Construction",
     monogram: "DL",
@@ -4539,6 +4624,29 @@ export function partnerStates(p: Partner): string[] {
 
 export function getPartner(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug);
+}
+
+/**
+ * The partner whose curated page should stand in for an in-app builder
+ * profile, looked up by the builder_profiles.slug the app links to.
+ *
+ * `draft` is deliberately NOT consulted. The two flags govern different
+ * doors: `draft` decides whether a partner is listed in, and reachable
+ * through, the Preferred Partner directory; `builderProfileSlug`
+ * decides whether their curated page is also their own public profile.
+ * A builder can be the second without being the first, which is what
+ * happens while we are still courting them — the page is theirs and
+ * better than the register could assemble, but the network they are
+ * not yet part of does not advertise them.
+ *
+ * The caller is responsible for the consequences of a draft: no
+ * directory links out, and no structured data claiming a /partners URL
+ * that would 404. See the /b/[slug] route.
+ */
+export function getPartnerForBuilderSlug(
+  builderProfileSlug: string,
+): Partner | undefined {
+  return PARTNERS.find((p) => p.builderProfileSlug === builderProfileSlug);
 }
 
 /**

@@ -39,6 +39,7 @@ export { SCOPE_CONFIDENCE_FLOOR } from "./floor";
 export {
   startRun,
   processRunTick,
+  retryFailedDocuments,
   tickQueuedRuns,
   TICK_BUDGET_MS,
   MIN_TICK_BUDGET_MS,

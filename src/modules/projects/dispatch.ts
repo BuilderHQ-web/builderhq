@@ -27,7 +27,7 @@
  */
 
 import "server-only";
-import { and, eq, ne, isNull, count, inArray } from "drizzle-orm";
+import { and, eq, ne, isNull, count, inArray, notInArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/lib/db";
@@ -40,6 +40,7 @@ import {
   PARTICIPANT_INVITE_VALIDITY_DAYS,
 } from "./participants";
 import { tenderBuilderInvites } from "@/modules/tenders/schema";
+import { unlocks } from "@/modules/unlocks";
 import { documents } from "@/modules/documents/schema";
 import { users } from "@/modules/users/schema";
 import {
@@ -162,12 +163,24 @@ export async function dispatchProjectPublishedEvent(
       );
     }
 
+    // 4. Unlocks granted while the project was still a draft — a
+    // pre-assigned (concierge) round. The builders were deliberately
+    // told nothing at grant time, because the project did not exist for
+    // them yet. It does now, so their unlock email goes out. Same
+    // outbox kind as an organic unlock, so it can never double-send.
+    const { dispatchDeferredUnlockBuilderEmails } = await import(
+      "@/modules/unlocks/dispatch"
+    );
+    const deferredUnlockEmails =
+      await dispatchDeferredUnlockBuilderEmails(projectId);
+
     logger.info(
       {
         event: "project.dispatch.ok",
         projectId,
         kind: "project_published",
         invitesSent: pendingInvites.length,
+        deferredUnlockEmails,
       },
       "project_published dispatch complete",
     );
@@ -275,6 +288,17 @@ async function fanOutToBuilders(
   // profile (skip half-onboarded — they don't have a public profile yet
   // and emailing them is more nag than nudge). pending_review counts
   // as a real builder; only `incomplete` is excluded.
+  // Builders already holding an unlock on this project are IN the
+  // round, not an audience for it. On an organic round this set is
+  // empty at publish; on a pre-assigned round, inviting them to come
+  // and unlock a project they already hold would read as a mix-up.
+  // They receive the unlock email instead (step 4 of the dispatch).
+  const alreadyIn = await db
+    .select({ builderId: unlocks.builderId })
+    .from(unlocks)
+    .where(eq(unlocks.projectId, ctx.project.id));
+  const alreadyInIds = alreadyIn.map((r) => r.builderId);
+
   const rows = await db
     .select({
       userId: users.id,
@@ -290,6 +314,9 @@ async function fanOutToBuilders(
         eq(users.role, "builder"),
         ne(builderProfiles.approvalStatus, "incomplete"),
         isNull(users.deletedAt),
+        ...(alreadyInIds.length > 0
+          ? [notInArray(users.id, alreadyInIds)]
+          : []),
       ),
     );
 

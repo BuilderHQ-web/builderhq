@@ -151,3 +151,74 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+/**
+ * user_attribution · where an account came from, in full.
+ *
+ * `users.signupSource` and `users.signupCampaign` stay where they are:
+ * two columns, last touch, written at signup, and read by code that
+ * already exists. This table is the complete record beside them.
+ *
+ * WHY IT IS SEPARATE. Attribution belongs to the visitor before it
+ * belongs to the account. It is collected over days by somebody with no
+ * user row at all, and it is analytics rather than identity, so it does
+ * not earn a dozen columns on the table every request in the product
+ * reads. Deleting the account deletes it.
+ *
+ * WHY FIRST AND LAST. Reporting on one of them alone is how a channel
+ * gets defunded for another channel's work: last touch hands every
+ * delayed conversion to search, first touch hands every one of them to
+ * the advertisement, and the truth is that both did a job. Keeping the
+ * pair means the analysis can choose rather than the schema deciding.
+ *
+ * `anonId` is the join to pre-signup behaviour: the same id the events
+ * pipeline stamps on every page view and demo beat before anybody has
+ * an account.
+ */
+export const userAttribution = pgTable(
+  "user_attribution",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    /** First-party anonymous id, from the visitor's own cookie. */
+    anonId: text("anon_id"),
+
+    // The campaign that introduced us. Written once, never updated.
+    firstSource: text("first_source"),
+    firstMedium: text("first_medium"),
+    firstCampaign: text("first_campaign"),
+    firstContent: text("first_content"),
+    firstTerm: text("first_term"),
+    firstReferrer: text("first_referrer"),
+    firstLanding: text("first_landing"),
+    firstAt: timestamp("first_at", { mode: "date", withTimezone: true }),
+
+    // The campaign that closed. Rewritten by any later campaign visit.
+    lastSource: text("last_source"),
+    lastMedium: text("last_medium"),
+    lastCampaign: text("last_campaign"),
+    lastContent: text("last_content"),
+    lastTerm: text("last_term"),
+    lastReferrer: text("last_referrer"),
+    lastLanding: text("last_landing"),
+    lastAt: timestamp("last_at", { mode: "date", withTimezone: true }),
+
+    /** The platforms' own join keys, kept so their reports can be checked. */
+    gclid: text("gclid"),
+    fbclid: text("fbclid"),
+
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("user_attribution_anon_idx").on(t.anonId),
+    index("user_attribution_first_campaign_idx").on(t.firstCampaign),
+    index("user_attribution_last_campaign_idx").on(t.lastCampaign),
+  ],
+);
+
+export type UserAttribution = typeof userAttribution.$inferSelect;
+export type NewUserAttribution = typeof userAttribution.$inferInsert;

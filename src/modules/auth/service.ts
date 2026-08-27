@@ -793,7 +793,11 @@ export async function resetPassword(raw: unknown): Promise<Result<{ userId: stri
 
   const email = vt.identifier.slice(PWRESET_PREFIX.length);
   const [user] = await db
-    .select({ id: users.id, status: users.status })
+    .select({
+      id: users.id,
+      status: users.status,
+      emailVerified: users.emailVerified,
+    })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
@@ -806,15 +810,53 @@ export async function resetPassword(raw: unknown): Promise<Result<{ userId: stri
 
   const passwordHash = await hash(password, PASSWORD_HASH_OPTS);
 
+  /**
+   * A completed reset also proves the address.
+   *
+   * The link was delivered to this mailbox and nowhere else, and it
+   * has just been redeemed — that is the same evidence a verification
+   * email gathers, obtained the same way. Asking the person to prove
+   * it a second time immediately afterwards tests nothing and reads
+   * as the platform not trusting its own email.
+   *
+   * It matters most for people who never verified in the first place:
+   * an imported account, or an address changed by support. Without
+   * this they set a password, sign in with it correctly, and are sent
+   * straight back out to the inbox they just came from.
+   *
+   * Only ever an upgrade. Nothing here can un-verify an address or
+   * revive a closed account — banned and suspended returned above.
+   */
+  const verifiesEmail =
+    user.emailVerified === null || user.status === "pending_verification";
+
   await db.transaction(async (tx) => {
     await tx
       .update(users)
-      .set({ passwordHash, updatedAt: new Date() })
+      .set({
+        passwordHash,
+        ...(verifiesEmail
+          ? {
+              emailVerified: user.emailVerified ?? new Date(),
+              ...(user.status === "pending_verification"
+                ? { status: "active" as const }
+                : {}),
+            }
+          : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(users.id, user.id));
     await tx
       .delete(verificationTokens)
       .where(eq(verificationTokens.identifier, vt.identifier));
   });
+
+  if (verifiesEmail) {
+    logger.info(
+      { event: "auth.pwreset.verified_email", userId: user.id },
+      "password reset also verified the address",
+    );
+  }
 
   // SECURITY TODO (Phase 4): JWT sessions issued before now remain valid up
   // to their TTL. Add `password_changed_at` to users and check it in the

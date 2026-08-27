@@ -2452,25 +2452,44 @@ export async function sendScopeAddendumEmail(
 }
 
 interface SendScopeRunOpsEmailInput {
-  kind: "started" | "review" | "failed";
+  kind: "started" | "review" | "failed" | "stalled";
   projectTitle: string;
   evidencedCount: number;
   gapCount: number;
   estimatedCostUsd: number | null;
   error: string | null;
   deskUrl: string;
+  /**
+   * Whether an earlier run already read this project. Optional because
+   * the stalled-run drainer in the outbox cron builds this input by
+   * hand and has no run context to derive it from.
+   */
+  isReread?: boolean;
+  /** Documents this run ingested. */
+  documentCount?: number;
+  /** Filenames present now and absent from the previous read. */
+  addedDocuments?: string[];
 }
 
 /** The desk's push: a pack awaits review, or a run needs rescue. */
 export async function sendScopeRunOpsEmail(
   input: SendScopeRunOpsEmailInput,
 ): Promise<Result<{ id: string }>> {
+  // A re-read says so in the subject line. Reading "Analysis started"
+  // twice for one project is what made a second review look like a
+  // fault rather than a customer adding a document.
   const subject =
     input.kind === "started"
-      ? `Analysis started — ${input.projectTitle}`
+      ? input.isReread
+        ? `Re-read started — ${input.projectTitle}`
+        : `Analysis started — ${input.projectTitle}`
       : input.kind === "review"
-        ? `Pack ready for review — ${input.projectTitle}`
-        : `Extraction failed — ${input.projectTitle}`;
+        ? input.isReread
+          ? `Re-read ready for review — ${input.projectTitle}`
+          : `Pack ready for review — ${input.projectTitle}`
+        : input.kind === "stalled"
+          ? `Run stalled — ${input.projectTitle}`
+          : `Extraction failed — ${input.projectTitle}`;
   const [html, text] = await Promise.all([
     render(ScopeRunOpsEmail(input)),
     render(ScopeRunOpsEmail(input), { plainText: true }),

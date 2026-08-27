@@ -171,10 +171,18 @@ export async function GET(request: NextRequest) {
         }
         return true;
       });
-      // Newest first — same ordering convention as listForMarketplace.
+      // Same ordering convention as listForMarketplace: rounds with a
+      // spot left first, then newest. This path sorts in JS because
+      // the candidate set is the user's own saved/unlocked ids rather
+      // than a SQL page, so the ordering has to be restated here — if
+      // the marketplace order changes, this changes with it.
+      const openFirst = (p: (typeof filtered)[number]) =>
+        p.unlockedCount < (p.tenderSpots ?? UNLOCK_CAP) ? 0 : 1;
       filtered.sort((a, b) => {
-        const at = a.publishedAt?.getTime() ?? 0;
-        const bt = b.publishedAt?.getTime() ?? 0;
+        const spots = openFirst(a) - openFirst(b);
+        if (spots !== 0) return spots;
+        const at = (a.publishedAt ?? a.createdAt)?.getTime() ?? 0;
+        const bt = (b.publishedAt ?? b.createdAt)?.getTime() ?? 0;
         return bt - at;
       });
       const slice = filtered.slice(offset, offset + limit);

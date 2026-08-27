@@ -23,5 +23,5 @@
  * functions from this index would create a runtime cycle:
  *   schema → users/index → users/service → lib/db → schemas (TDZ).
  */
-export { users, userRoleEnum, userStatusEnum } from "./schema";
-export type { User, NewUser } from "./schema";
+export { users, userAttribution, userRoleEnum, userStatusEnum } from "./schema";
+export type { User, NewUser, UserAttribution, NewUserAttribution } from "./schema";

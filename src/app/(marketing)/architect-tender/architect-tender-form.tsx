@@ -155,7 +155,7 @@ export function ArchitectTenderForm({ styles }: { styles: Styles }) {
   const submitDisabled = !consent || submitting;
 
   return (
-    <form className={styles.form} onSubmit={onSubmit} noValidate>
+    <form data-clarity-mask="true" className={styles.form} onSubmit={onSubmit} noValidate>
       <div className={styles.field}>
         <label className={styles.label} htmlFor="firstName">
           First name

@@ -31,6 +31,7 @@ import { cookies } from "next/headers";
 
 import { decodeCookieJson, encodeCookieJson } from "@/lib/cookie-json";
 import { env } from "@/lib/env";
+import { isSha256Hex } from "@/lib/google-ads";
 import { isAdvertisableRole, isRegistrationEventId } from "@/lib/meta-role";
 import { safeInternalPath } from "./next-path";
 
@@ -45,6 +46,12 @@ const MAX_EMAIL_LENGTH = 254;
 export interface SignupHandoff {
   /** The address the verification link went to. */
   email?: string;
+  /**
+   * The same SHA-256 of that address the Conversions API was given, so
+   * Google's enhanced conversions can be matched on it. Hashed on the
+   * server; the plaintext never reaches an advertising network.
+   */
+  emailSha256?: string;
   /** The conversion the server reported, so the browser can pair with it. */
   eventId?: string;
   /** The role that was actually written, for the advertising breakdown. */
@@ -56,6 +63,7 @@ export interface SignupHandoff {
 export async function setSignupHandoff(handoff: SignupHandoff): Promise<void> {
   const payload = {
     ...(handoff.email ? { e: handoff.email } : {}),
+    ...(handoff.emailSha256 ? { h: handoff.emailSha256 } : {}),
     ...(handoff.eventId ? { v: handoff.eventId } : {}),
     ...(handoff.role ? { r: handoff.role } : {}),
     ...(handoff.next ? { n: handoff.next } : {}),
@@ -92,6 +100,8 @@ export async function readSignupHandoff(): Promise<SignupHandoff> {
       : undefined;
   const eventId =
     typeof value.v === "string" && isRegistrationEventId(value.v) ? value.v : undefined;
+  const emailSha256 =
+    typeof value.h === "string" && isSha256Hex(value.h) ? value.h : undefined;
   const role =
     typeof value.r === "string" && isAdvertisableRole(value.r) ? value.r : undefined;
   const next =
@@ -99,6 +109,7 @@ export async function readSignupHandoff(): Promise<SignupHandoff> {
 
   return {
     ...(email ? { email } : {}),
+    ...(emailSha256 ? { emailSha256 } : {}),
     ...(eventId ? { eventId } : {}),
     ...(role ? { role } : {}),
     ...(next ? { next } : {}),

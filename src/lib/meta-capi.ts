@@ -31,10 +31,10 @@ import "server-only";
  * never be able to fail somebody's signup.
  */
 
-import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 
 import { env } from "@/lib/env";
+import { hashNormalised, sha256Hex } from "@/lib/hash-identity";
 import { logger } from "@/lib/logger";
 import { clientIpFromHeaders } from "@/lib/ratelimit";
 import { sanitiseMetaSourceUrl } from "@/lib/meta-url";
@@ -62,16 +62,13 @@ export function isMetaCapiEnabled(): boolean {
 
 /* ── normalisation + hashing ─────────────────────────────────────────── */
 
-function sha256(value: string): string {
-  return createHash("sha256").update(value, "utf8").digest("hex");
-}
-
-/** Hash a value Meta expects lowercased and trimmed (email, names). */
-function hashPlain(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const normalised = value.trim().toLowerCase();
-  return normalised.length > 0 ? sha256(normalised) : null;
-}
+/**
+ * Trim, lowercase, hash. Shared with Google's enhanced conversions
+ * through lib/hash-identity, so the same customer hashes to the same
+ * value for both networks and neither can drift from the other.
+ */
+const hashPlain = hashNormalised;
+const sha256 = sha256Hex;
 
 /**
  * Phone numbers must reach Meta as digits including the country code,

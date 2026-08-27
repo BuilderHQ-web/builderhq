@@ -229,6 +229,12 @@ const clientSchema = z.object({
    * there, and project URLs would otherwise reach Meta.
    */
   NEXT_PUBLIC_META_PIXEL_ID: z.string().optional(),
+  /** GA4 measurement id, e.g. G-XRGE0MFJJH. Production scope only,
+   *  so development and preview never reach the live property. */
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
+  /** Microsoft Clarity project id. Production scope only, and it
+   *  mounts on the marketing pages alone. See the component. */
+  NEXT_PUBLIC_CLARITY_PROJECT_ID: z.string().optional(),
   /** Cal.com booking link in `username/event-slug` form (e.g.
    *  "builderhq/builderhq-free-15-min-call"). Embedded on
    *  /book-a-call/confirmed. When unset, the page falls back to a
@@ -265,6 +271,8 @@ function loadEnv() {
         NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
         NEXT_PUBLIC_CAL_LINK: process.env.NEXT_PUBLIC_CAL_LINK,
         NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+        NEXT_PUBLIC_CLARITY_PROJECT_ID: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID,
       }) as z.infer<typeof serverSchema> & z.infer<typeof clientSchema>);
 
   return merged;

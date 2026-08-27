@@ -98,6 +98,9 @@ export const limiters = {
    * conversions in bulk.
    */
   metaLensView: make("meta_lens_view", 20, 300),
+  /** First-party events. Batched, so this is batches per minute,
+   *  not events: a busy visitor sends far fewer than they generate. */
+  events: make("events", 60, 60),
   /** Password-reset request — per email/IP. */
   forgot: make("forgot", 3, 600),
   /** Re-send verification email — per email. */

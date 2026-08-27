@@ -607,26 +607,58 @@ const SECTIONS = [
           platform.
         </P>
         <P>
-          <Strong>Website analytics.</Strong> We use Vercel Web Analytics to
-          count page views and measure how the site performs. It reports in
-          aggregate and does not use cookies to follow you between websites.
+          <Strong>Website analytics.</Strong> On our public pages we use
+          Google Analytics to count page views and see which pages people
+          read, and we keep our own record, on our own servers, of things like
+          which page you arrived on and whether you opened the product demo.
+          That record is tied to a random identifier stored on your device, not
+          to your name or your email. Separately, Vercel, which hosts this
+          website, counts page views across the whole site, including inside
+          your account, as part of running it.
+        </P>
+        <P>
+          <Strong>Where you came from.</Strong> When you arrive from an
+          advertisement or a search result, we store the campaign details from
+          the web address in a cookie on your device for up to 400 days, so
+          that if you come back later we still know which campaign introduced
+          us. It holds no personal information, only the campaign labels we
+          wrote into our own advertising.
+        </P>
+        <P>
+          <Strong>Session recording.</Strong> On our public pages we use
+          Microsoft Clarity, which records how pages are used: mouse movement,
+          scrolling, taps and clicks. It is how we find layouts that are
+          confusing or broken on a particular device. Anything typed into a
+          form is masked and never recorded, no recording is linked to your
+          name or email, and it does not run on the sign in and sign up pages
+          or anywhere inside your account.
         </P>
         <P>
           <Strong>Advertising measurement.</Strong> We advertise, and we measure
-          whether that advertising works. On a small number of marketing pages,
-          chiefly the confirmation page shown after you request a guide or book
-          a call, we load Google’s tag so that Google Ads and Google
-          Analytics can record that the enquiry happened. On our public pages
-          and on the sign in and sign up pages we load the Meta pixel, so that
-          advertising we run on Facebook and Instagram can be measured the same
-          way. Both companies set their own cookies through those tags and may
-          use the information for advertising measurement.
+          whether that advertising works. On our public pages and on the sign in
+          and sign up pages we load the Meta pixel and Google’s tag, so that
+          advertising we run on Facebook, Instagram and Google can be measured.
+          Both companies set their own cookies through those tags and may use
+          the information for advertising measurement. When you create an
+          account we also report that to Meta from our own servers, using your
+          email address in a scrambled form that cannot be read back.
         </P>
         <P>
-          Neither tag is present in the signed in application. Once you are
-          inside your account, nothing about the projects you open, the
+          <Strong>What never leaves in a web address.</Strong> No page address
+          we send to an advertising or analytics service carries your email
+          address, your name, or a one time link from an email such as a
+          password reset or an invitation. On the pages where the address
+          itself is private, no measurement tag is loaded at all.
+        </P>
+        <P>
+          None of these tags is present in the signed in application. Once you
+          are inside your account, nothing about the projects you open, the
           documents you upload, or the tenders you receive is sent to an
-          advertising network. You can control this through your browser
+          advertising network, to Google, or to a session recorder. The one
+          exception is our host, Vercel, which counts page views everywhere:
+          it already receives every web address it serves for us, it acts only
+          on our instructions, and it is not permitted to use any of it for
+          advertising. You can control this through your browser
           settings, through your Google ad settings, and through your Meta ad
           preferences.
         </P>

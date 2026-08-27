@@ -218,7 +218,7 @@ export function ContactStep({ turnstileSiteKey }: Props) {
         sub="Your project goes private to your account until you publish, no builder sees it before that. We use your details to confirm you and notify you when tenders arrive."
         aside={<TrustAside />}
       >
-        <div className="max-w-[520px] space-y-4">
+        <div data-clarity-mask="true" className="max-w-[520px] space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <TextField
               label="First name"

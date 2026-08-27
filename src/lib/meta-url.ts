@@ -30,7 +30,7 @@
  *      them, and none of them is a page an advertisement points at.
  */
 
-import { UTM_KEYS } from "./utm";
+import { UTM_KEYS } from "./attribution";
 
 const CAMPAIGN_KEYS: ReadonlySet<string> = new Set<string>(UTM_KEYS);
 

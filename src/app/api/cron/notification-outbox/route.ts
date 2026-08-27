@@ -75,6 +75,8 @@ export async function GET(request: NextRequest) {
         resendId = await sendUnlockBuilder(row);
       } else if (row.kind.startsWith("unlock_ops")) {
         resendId = await sendUnlockOps(row);
+      } else if (row.kind === "scope_run_stalled") {
+        resendId = await sendScopeStalled(row);
       } else {
         // Unknown kind — park it (don't loop forever).
         await markOutboxFailed(row.id, 999, `unknown kind: ${row.kind}`);
@@ -212,4 +214,27 @@ async function sendUnlockOps(row: ClaimedOutboxRow): Promise<string> {
   });
   if (!result.ok) throw new Error(result.error.message);
   return result.value.id;
+}
+
+/** A run has been processing for hours: the desk needs to look. */
+async function sendScopeStalled(row: ClaimedOutboxRow): Promise<string> {
+  const p = row.payload as {
+    runId: string;
+    status: string;
+    startedAt: string;
+    projectTitle?: string;
+    note?: string;
+  };
+  const { sendScopeRunOpsEmail } = await import("@/modules/email");
+  const r = await sendScopeRunOpsEmail({
+    kind: "stalled",
+    projectTitle: p.projectTitle ?? `run ${p.runId.slice(0, 8)}`,
+    evidencedCount: 0,
+    gapCount: 0,
+    estimatedCostUsd: null,
+    error: `${p.note ?? "Run stalled."} Status: ${p.status}, started ${p.startedAt}.`,
+    deskUrl: `${BASE}/admin/scope/${p.runId}`,
+  });
+  if (!r.ok) throw new Error(r.error.message);
+  return r.value.id;
 }

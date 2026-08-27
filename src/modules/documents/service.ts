@@ -23,7 +23,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -37,6 +37,7 @@ import {
 } from "./storage";
 import type {
   Document,
+  DocumentCategory,
   InitUploadInput,
   InitUploadResult,
 } from "./types";
@@ -428,6 +429,98 @@ export async function softDelete(
     .set({ deletedAt: new Date(), updatedAt: new Date() })
     .where(eq(documents.id, documentId));
   return ok({ id: documentId });
+}
+
+/**
+ * Re-file a document under a different category.
+ *
+ * Category is chosen by which tile the owner dropped the file on, and
+ * until now the only way to correct a mis-drop was to delete the file
+ * and upload it again. A real client did exactly that twice in one
+ * sitting: four uploads to place two documents.
+ *
+ * Safe to change after the fact, which is worth stating because it is
+ * not obvious. The scope engine does not read this column: it selects
+ * its corpus on project, status and deletedAt, then classifies every
+ * document itself into the separate scopeRunDocuments.kind vocabulary.
+ * So re-filing cannot invalidate a run, cannot make a document unread,
+ * and cannot trigger a re-read. Everything else that reads category is
+ * display only.
+ *
+ * The one thing it CAN break is the publish gate, which counts active
+ * architectural documents. Moving the last architectural plan out of
+ * that category is refused rather than allowed, because the gate runs
+ * only at publish and nothing re-checks afterwards: a live round that
+ * silently no longer satisfies its own entry condition would be
+ * invisible until somebody went looking.
+ */
+export async function setCategory(
+  ownerId: string,
+  documentId: string,
+  category: DocumentCategory,
+): Promise<Result<Document>> {
+  const [row] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), isNull(documents.deletedAt)));
+  if (!row) return fail("not_found", "Document not found.");
+  if (row.ownerId !== ownerId) return fail("forbidden", "Not your document.");
+
+  // A tender attachment is a different surface entirely: listForProject
+  // excludes them, and re-filing a builder's insurance certificate
+  // under "soil report" would mean nothing.
+  if (row.tenderId !== null) {
+    return fail("conflict", "Tender attachments cannot be re-filed.");
+  }
+  // A pending row has no bytes behind it and a failed one is awaiting
+  // cleanup; neither appears in the owner's file list.
+  if (row.status !== "active") {
+    return fail("conflict", "Document is not yet finalised.");
+  }
+  if (row.category === category) return ok(toPublic(row));
+  // projectId is nullable on this table. Category only means anything
+  // in the context of a project's document set, and both guards below
+  // need one, so an unattached document is refused rather than
+  // silently skipping them.
+  const projectId = row.projectId;
+  if (!projectId) {
+    return fail("conflict", "This document is not attached to a project.");
+  }
+
+  const { isSampleProject } = await import("@/modules/sample");
+  if (await isSampleProject(projectId)) {
+    return fail("forbidden", "The example round is read only.");
+  }
+
+  // The publish gate, re-run with the change applied. Only bites when
+  // this document is the last active architectural plan and it is
+  // being moved out.
+  if (row.category === "architectural" && category !== "architectural") {
+    const remaining = await db.$count(
+      documents,
+      and(
+        eq(documents.projectId, projectId),
+        eq(documents.category, "architectural"),
+        eq(documents.status, "active"),
+        isNull(documents.deletedAt),
+        ne(documents.id, documentId),
+      ),
+    );
+    if (remaining === 0) {
+      return fail(
+        "validation",
+        "This is the only architectural plan on the project, and a project cannot run a tender round without one. Upload the replacement first, then re-file this.",
+      );
+    }
+  }
+
+  const [updated] = await db
+    .update(documents)
+    .set({ category, updatedAt: new Date() })
+    .where(eq(documents.id, documentId))
+    .returning();
+  if (!updated) return fail("internal", "Could not re-file the document.");
+  return ok(toPublic(updated));
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────

@@ -6,8 +6,8 @@
  * email send wrapper) per AU Spam Act 2003 + RFC 8058.
  *
  * Subject + headline are kept neutral; the body shows the suburb +
- * type + budget band — never the exact address or owner identity
- * (those unlock for a fee).
+ * type + budget band, never the exact address or owner identity
+ * (those open up when a builder secures a tender spot).
  */
 
 import {
@@ -65,7 +65,7 @@ export function ProjectPublishedBuilderEmail({
       <BodyText>{greet}</BodyText>
       <BodyText>
         A new project just went live on the platform
-        {isInServiceArea ? " — and it sits inside your service area" : ""}.
+        {isInServiceArea ? ", and it sits inside your service area" : ""}.
       </BodyText>
 
       <MetaCard>
@@ -77,8 +77,9 @@ export function ProjectPublishedBuilderEmail({
       <PrimaryButton href={projectUrl}>View project</PrimaryButton>
 
       <Caption>
-        Address, owner contact, and downloadable documents are private until
-        you unlock — free with your Founding Builder Access.
+        The address, the owner&apos;s contact details, all project documents
+        and the detailed scope of works become available once you secure your
+        tender spot.
       </Caption>
     </EmailShell>
   );

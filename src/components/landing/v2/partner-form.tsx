@@ -339,7 +339,11 @@ export function PartnerForm() {
                   {copy.sub}
                 </p>
 
-                <form onSubmit={onSubmit} className="mt-5 space-y-3.5">
+                <form
+                  data-clarity-mask="true"
+                  onSubmit={onSubmit}
+                  className="mt-5 space-y-3.5"
+                >
                   {/* Honeypot — offscreen, never seen by humans. */}
                   <input
                     type="text"

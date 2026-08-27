@@ -30,6 +30,21 @@ export const scopeRuns = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     status: text().notNull().default("pending"),
+    /**
+     * Explicit work lease. A claimant sets it to now()+LEASE; a tick
+     * that returns cleanly releases it (null), so its own next tick can
+     * claim immediately. Distinct from updatedAt on purpose: staleness
+     * of a display timestamp is not a lock, and treating it as one is
+     * how "done" and "locked" became the same answer.
+     */
+    leaseUntil: timestamp("lease_until", { mode: "date", withTimezone: true }),
+    /**
+     * Pass one of synthesis, persisted the moment it returns. The
+     * expensive call survives anything that kills the tick afterwards:
+     * the next tick resumes from here instead of paying for it again.
+     * Cleared when the run reaches review.
+     */
+    synthesisCheckpoint: jsonb("synthesis_checkpoint"),
     scopeVersion: text().notNull(),
     error: text(),
     cursor: jsonb().notNull().default({}),

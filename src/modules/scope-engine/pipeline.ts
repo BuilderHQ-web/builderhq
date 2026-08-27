@@ -50,6 +50,44 @@ export const EXTRACT_MODEL = "claude-opus-4-8";
 export const SYNTHESIS_MODEL = "claude-opus-4-8";
 
 /**
+ * Output ceilings, named and watched.
+ *
+ * The 2026-08-20 incident: synthesis pass one was capped at 32k while
+ * the first multi-dwelling pack needed ~35.5k, and nothing anywhere
+ * reported how close earlier runs had come (the largest real single
+ * dwelling used 24k). The ceiling was not wrong, it was invisible.
+ * Every long call now logs its share of the ceiling on the way out,
+ * and warns at 60 percent, so the next limit is raised on a chart
+ * rather than discovered in front of a customer. Thinking tokens
+ * count against these caps too.
+ */
+export const EXTRACT_MAX_TOKENS = 24_000;
+export const SYNTHESIS_MAX_TOKENS = 64_000;
+export const RESIDUAL_MAX_TOKENS = 32_000;
+
+export function logHeadroom(
+  stage: string,
+  outputTokens: number,
+  ceiling: number,
+  context: Record<string, unknown> = {},
+): void {
+  const pct = Math.round((outputTokens / ceiling) * 100);
+  const line = {
+    event: "scope.headroom",
+    stage,
+    outputTokens,
+    ceiling,
+    pct,
+    ...context,
+  };
+  if (pct >= 60) {
+    logger.warn(line, `scope ${stage} used ${pct}% of its output ceiling`);
+  } else {
+    logger.info(line, `scope ${stage} headroom ${pct}%`);
+  }
+}
+
+/**
  * Bumped whenever a prompt, schema or model changes in a way that
  * makes older stage outputs incomparable. Extraction reuse across
  * runs keys on this: findings from a prior version are re-extracted,
@@ -434,7 +472,7 @@ export async function classifyDocument(args: {
       "classification shape rejected",
     );
     throw new Error(
-      `classification invalid for ${args.filename} (stop: ${message.stop_reason})`,
+      `classification returned an invalid shape for ${args.filename}`,
     );
   }
   return {
@@ -721,7 +759,7 @@ async function extractCall(args: {
   const message = await anthropic()
     .messages.stream({
     model: EXTRACT_MODEL,
-    max_tokens: 24_000,
+    max_tokens: EXTRACT_MAX_TOKENS,
     system: [
       { type: "text", text: EXTRACT_RULES },
       {
@@ -767,7 +805,7 @@ async function extractCall(args: {
       "extraction shape rejected",
     );
     throw new Error(
-      `extraction invalid for ${args.filename} (stop: ${message.stop_reason})`,
+      `extraction returned an invalid shape for ${args.filename}: ${pages.length} usable page(s), ${salvaged} rejected`,
     );
   }
   if (salvaged > 0) {
@@ -777,6 +815,9 @@ async function extractCall(args: {
     );
   }
   const offset = args.range ? args.range.from - 1 : 0;
+  logHeadroom("extract", message.usage.output_tokens, EXTRACT_MAX_TOKENS, {
+    file: args.filename,
+  });
   return {
     pages: offset === 0 ? pages : pages.map((p) => ({ ...p, page: p.page + offset })),
     usage: usageOf(message),
@@ -1182,7 +1223,7 @@ export async function synthesiseRun(args: {
   const message = await anthropic()
     .messages.stream({
     model: SYNTHESIS_MODEL,
-    max_tokens: 32_000,
+    max_tokens: SYNTHESIS_MAX_TOKENS,
     // Adaptive thinking is live on the API for this model; the pinned
     // SDK's types predate it, hence the cast.
     thinking: { type: "adaptive" } as unknown as Anthropic.ThinkingConfigParam,
@@ -1234,7 +1275,9 @@ export async function synthesiseRun(args: {
       { event: "scope.synthesis.invalid_shape", stop: message.stop_reason, salvaged: itemsSalvage.salvaged },
       "synthesis shape rejected",
     );
-    throw new Error(`synthesis invalid (stop: ${message.stop_reason})`);
+    throw new Error(
+      `synthesis returned an invalid shape: ${itemsSalvage.salvaged} entries rejected`,
+    );
   }
   const salvagedCount =
     itemsSalvage.salvaged + conflictsSalvage.salvaged + capturesSalvage.salvaged;
@@ -1323,6 +1366,7 @@ export async function synthesiseRun(args: {
     );
     overview = null;
   }
+  logHeadroom("synthesis", message.usage.output_tokens, SYNTHESIS_MAX_TOKENS);
   return {
     synthesis: { overview, items, conflicts, captures },
     usage: usageOf(message),
@@ -1407,7 +1451,7 @@ export async function classifyResidualItems(args: {
   const message = await anthropic()
     .messages.stream({
       model: SYNTHESIS_MODEL,
-      max_tokens: 24_000,
+      max_tokens: RESIDUAL_MAX_TOKENS,
       thinking: { type: "adaptive" } as unknown as Anthropic.ThinkingConfigParam,
       system: [
         { type: "text", text: RESIDUAL_RULES },
@@ -1467,6 +1511,7 @@ export async function classifyResidualItems(args: {
     if (verdicts.has(v.itemId)) continue;
     verdicts.set(v.itemId, { verdict: v.verdict, note: v.note });
   }
+  logHeadroom("residual", message.usage.output_tokens, RESIDUAL_MAX_TOKENS);
   return { verdicts, usage: usageOf(message) };
 }
 

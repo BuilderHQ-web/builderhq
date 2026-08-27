@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { and, desc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fail, ok, type Result } from "@/lib/result";
@@ -138,7 +138,7 @@ export const MIN_TICK_BUDGET_MS = STAGE_FLOOR.synthesise + 10_000;
  * functions declared `maxDuration = 300`, so this leaves the platform
  * twenty seconds of headroom to return cleanly.
  */
-export const TICK_BUDGET_MS = 280_000;
+export const TICK_BUDGET_MS = 740_000;
 
 /**
  * How long one tick owns a run.
@@ -153,7 +153,7 @@ export const TICK_BUDGET_MS = 280_000;
  * item set, and each emailed ops that the pack was ready. Four emails,
  * four different counts.
  */
-export const LEASE_MS = TICK_BUDGET_MS + 40_000;
+export const LEASE_MS = TICK_BUDGET_MS + 60_000;
 
 /** The shape stored beside extraction findings so later runs can
  *  prove the work is reusable: same pipeline version, same bytes. */
@@ -407,7 +407,15 @@ function addUsage(
 export async function processRunTick(
   runId: string,
   budgetMs = 240_000,
-): Promise<Result<{ status: string; moreWork: boolean }>> {
+): Promise<
+  Result<{
+    status: string;
+    moreWork: boolean;
+    /** Another worker holds the lease; retry after retryInSec. */
+    locked?: true;
+    retryInSec?: number;
+  }>
+> {
   const started = Date.now();
   const timeLeft = () => budgetMs - (Date.now() - started);
 
@@ -424,6 +432,7 @@ export async function processRunTick(
     .update(scopeRuns)
     .set({
       status: sql`case when ${scopeRuns.status} = 'pending' then 'classifying' else ${scopeRuns.status} end`,
+      leaseUntil: new Date(Date.now() + LEASE_MS),
       updatedAt: new Date(),
     })
     .where(
@@ -431,22 +440,64 @@ export async function processRunTick(
         eq(scopeRuns.id, runId),
         inArray(scopeRuns.status, ["pending", "classifying", "extracting", "synthesising"]),
         or(
-          eq(scopeRuns.status, "pending"),
-          lt(scopeRuns.updatedAt, new Date(Date.now() - LEASE_MS)),
+          isNull(scopeRuns.leaseUntil),
+          lt(scopeRuns.leaseUntil, new Date()),
+          // Runs leased under the old updated_at scheme have no
+          // lease_until; the staleness fallback lets them recover.
+          and(
+            isNull(scopeRuns.leaseUntil),
+            lt(scopeRuns.updatedAt, new Date(Date.now() - LEASE_MS)),
+          ),
         ),
       ),
     )
     .returning({ id: scopeRuns.id });
   if (claimed.length === 0) {
-    // Either another tick holds the lease, or the run is already done.
+    // Two very different situations used to share this answer, and an
+    // admin pressing the button could not tell "finished" from "another
+    // worker holds the lock". Now the caller is told which, and when
+    // the lock frees.
     const [current] = await db
-      .select({ status: scopeRuns.status })
+      .select({ status: scopeRuns.status, leaseUntil: scopeRuns.leaseUntil })
       .from(scopeRuns)
       .where(eq(scopeRuns.id, runId))
       .limit(1);
     if (!current) return fail("not_found", "Run not found.");
-    return ok({ status: current.status, moreWork: false });
+    const terminal = ["review", "approved", "failed", "superseded"].includes(current.status);
+    const held =
+      !terminal && current.leaseUntil !== null && current.leaseUntil > new Date();
+    return ok({
+      status: current.status,
+      moreWork: !terminal,
+      ...(held
+        ? {
+            locked: true as const,
+            retryInSec: Math.max(
+              1,
+              Math.ceil((current.leaseUntil!.getTime() - Date.now()) / 1000),
+            ),
+          }
+        : {}),
+    });
   }
+
+  /**
+   * A clean return hands the run back: the lease is released so the
+   * very next tick (the browser loop's, the cron's, anyone's) can
+   * claim immediately. Yesterday a tick that finished its slice kept
+   * an implicit lease for five more minutes, and its own successor
+   * silently bounced off it.
+   */
+  const release = async () => {
+    await db
+      .update(scopeRuns)
+      .set({ leaseUntil: null })
+      .where(eq(scopeRuns.id, runId));
+  };
+  const yieldWith = async (status: string) => {
+    await release();
+    return ok({ status, moreWork: true });
+  };
 
   const [run] = await db
     .select()
@@ -492,7 +543,7 @@ export async function processRunTick(
     if (run.status === "pending" || run.status === "classifying") {
       await bump("classifying");
       for (;;) {
-        if (timeLeft() < STAGE_FLOOR.classify) return ok({ status: "classifying", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.classify) return yieldWith("classifying");
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -530,6 +581,7 @@ export async function processRunTick(
             status: "failed",
             error: `This pack carries ${budget?.pages} pages to extract; the run budget is ${MAX_RUN_PAGES}. Remove or merge documents on the project, then start a fresh run.`,
             usage,
+            leaseUntil: null,
             updatedAt: new Date(),
           })
           .where(eq(scopeRuns.id, runId));
@@ -537,7 +589,7 @@ export async function processRunTick(
         return ok({ status: "failed", moreWork: false });
       }
       for (;;) {
-        if (timeLeft() < STAGE_FLOOR.extract) return ok({ status: "extracting", moreWork: true });
+        if (timeLeft() < STAGE_FLOOR.extract) return yieldWith("extracting");
         const [next] = await db
           .select()
           .from(scopeRunDocuments)
@@ -554,17 +606,40 @@ export async function processRunTick(
     }
 
     // Stage 3 — synthesis over everything extracted.
-    if (timeLeft() < STAGE_FLOOR.synthesise) return ok({ status: "extracting", moreWork: true });
+    if (timeLeft() < STAGE_FLOOR.synthesise) return yieldWith("extracting");
     await bump("synthesising");
 
     const docRows = await db
       .select({
         row: scopeRunDocuments,
         filename: documents.filename,
+        sha256: documents.sha256,
       })
       .from(scopeRunDocuments)
       .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
       .where(eq(scopeRunDocuments.runId, runId));
+
+    // A failed document stops the run LOUDLY. Yesterday synthesis ran
+    // over eight of ten documents and would have produced a
+    // finished-looking scope with the architectural set silently
+    // absent. A hole in the register is a wrong answer, not a smaller
+    // one. The desk's "Retry failed documents" action re-queues them.
+    const failedDocs = docRows.filter((d) => d.row.status === "failed");
+    if (failedDocs.length > 0) {
+      const names = failedDocs.map((d) => d.filename).join(", ");
+      await db
+        .update(scopeRuns)
+        .set({
+          status: "failed",
+          error: `${failedDocs.length} document(s) could not be read after retrying: ${names}. Use "Retry failed documents", or remove them from the project and start a fresh run.`,
+          usage,
+          leaseUntil: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(scopeRuns.id, runId));
+      await dispatchScopeRunOps(runId, "failed").catch(() => undefined);
+      return ok({ status: "failed", moreWork: false });
+    }
     // Register hygiene: the same document uploaded twice must not read
     // as twice the evidence.
     const deduped = dedupeRegister(
@@ -575,6 +650,7 @@ export async function processRunTick(
           kind: d.row.kind,
           docTitle: d.row.docTitle,
           pageCount: d.row.pageCount,
+          sha256: d.sha256,
           d,
         })),
     );
@@ -602,22 +678,67 @@ export async function processRunTick(
           status: "failed",
           error: "No document could be read. Every register row failed.",
           usage,
+          leaseUntil: null,
           updatedAt: new Date(),
         })
         .where(eq(scopeRuns.id, runId));
       return ok({ status: "failed", moreWork: false });
     }
 
-    const {
-      synthesis,
-      usage: synthUsage,
-      salvaged: synthesisSalvaged,
-    } = await synthesiseRun({
-      projectType,
-      documents: extracted,
-      extensions: vocab.all,
-    });
-    usage = addUsage(usage, "synthesis", synthUsage);
+    // Pass one is the expensive call, so its result is persisted the
+    // moment it returns. Anything that kills the tick after this point
+    // — the platform ceiling, a crash, a failed second pass — costs
+    // nothing but a retry: the next tick resumes from the checkpoint
+    // instead of paying for the call again. The checkpoint is keyed to
+    // the exact extracted document set; if the register changes, it is
+    // stale and discarded.
+    const checkpointKey = extracted
+      .map((d) => d.documentId)
+      .sort()
+      .join(",");
+    type SynthCheckpoint = {
+      key: string;
+      synthesis: Awaited<ReturnType<typeof synthesiseRun>>["synthesis"];
+      salvaged: number;
+    };
+    const savedCp = run.synthesisCheckpoint as SynthCheckpoint | null;
+    let synthesis: SynthCheckpoint["synthesis"];
+    let synthesisSalvaged: number;
+    if (savedCp && savedCp.key === checkpointKey && savedCp.synthesis) {
+      logger.info(
+        { event: "scope.synthesis.resumed_from_checkpoint", runId },
+        "synthesis pass one resumed from checkpoint — not re-run",
+      );
+      synthesis = savedCp.synthesis;
+      synthesisSalvaged = savedCp.salvaged ?? 0;
+    } else {
+      const fresh = await synthesiseRun({
+        projectType,
+        documents: extracted,
+        extensions: vocab.all,
+      });
+      synthesis = fresh.synthesis;
+      synthesisSalvaged = fresh.salvaged;
+      usage = addUsage(usage, "synthesis", fresh.usage);
+      await db
+        .update(scopeRuns)
+        .set({
+          synthesisCheckpoint: {
+            key: checkpointKey,
+            synthesis,
+            salvaged: synthesisSalvaged,
+          } as object,
+          usage,
+          updatedAt: new Date(),
+        })
+        .where(eq(scopeRuns.id, runId));
+      // The remaining work is one cheap classifier call plus the item
+      // writes. If the budget cannot carry it, hand over rather than
+      // risk dying mid-write: the checkpoint makes the handover free.
+      if (timeLeft() < 60_000) {
+        return yieldWith("synthesising");
+      }
+    }
 
     // ── the deterministic half of accuracy ──────────────────────────
     // Capture hygiene runs FIRST so auto-mapped repeat discoveries
@@ -740,6 +861,11 @@ export async function processRunTick(
       )
       .orderBy(desc(scopeRuns.createdAt))
       .limit(1);
+    /** itemId → the prior run's verdict, for the gates below. */
+    const carriedVerdicts = new Map<
+      string,
+      { status: string; note: string | null; opsStatus: string; opsNote: string | null }
+    >();
     const carriedCustom: Array<{
       itemId: string;
       status: string;
@@ -772,6 +898,50 @@ export async function processRunTick(
           note: c.note,
           label: c.label,
           confidence: c.confidence,
+        });
+      }
+
+      // Ops verdicts from the pack this one replaces.
+      //
+      // A re-read used to throw away the whole desk pass: on one real
+      // project that was 38 removals and 204 confirmations, redone by
+      // hand. A judgement that an item does not apply to THIS PROJECT
+      // is a project fact, not a fact about one run, and the promoted
+      // captures already prove the pattern by surviving in the global
+      // vocabulary.
+      //
+      // Deliberately conservative about WHICH verdicts carry, because
+      // approveRun's gate counts pending items and is the only thing
+      // guaranteeing a human looked at a pack before a client does. A
+      // verdict carries only when the new read reached the same
+      // conclusion about the line AND wrote the same note; anything
+      // the read changed goes back to pending for a human. The ops
+      // note always carries, because a note is a human's reasoning and
+      // is never made wrong by a re-read: the desk sees what it
+      // thought last time while it re-confirms.
+      const priorVerdicts = await db
+        .select({
+          itemId: scopeRunItems.itemId,
+          status: scopeRunItems.status,
+          opsStatus: scopeRunItems.opsStatus,
+          opsNote: scopeRunItems.opsNote,
+          note: scopeRunItems.note,
+        })
+        .from(scopeRunItems)
+        .where(eq(scopeRunItems.runId, priorApproved.id));
+      for (const v of priorVerdicts) {
+        // 'removed' must never carry: the row was deleted above, and
+        // re-inserting it as removed resurrects an ops deletion as an
+        // invisible row that every `ne(opsStatus,'removed')` reader
+        // drops while it still occupies the (run_id, item_id) slot.
+        // 'added' means ops typed the row by hand, which is false of a
+        // synthesis-produced one.
+        if (v.opsStatus === "removed" || v.opsStatus === "added") continue;
+        carriedVerdicts.set(v.itemId, {
+          status: v.status,
+          note: v.note,
+          opsStatus: v.opsStatus,
+          opsNote: v.opsNote,
         });
       }
     }
@@ -915,6 +1085,7 @@ export async function processRunTick(
           depth: i.depth,
           remaining: i.remaining,
           confidence: i.confidence,
+          ...verdictFor(carriedVerdicts, i.itemId, i.status, i.note),
         })),
       );
     }
@@ -991,6 +1162,10 @@ export async function processRunTick(
         status: "review",
         overview: synthesis.overview as object | null,
         usage: { ...usage, estimatedCostUsd: cost, analysis } as object,
+        // The run is done: the checkpoint has served, and the lease is
+        // handed back in the same write that announces completion.
+        synthesisCheckpoint: null,
+        leaseUntil: null,
         updatedAt: new Date(),
       })
       .where(and(eq(scopeRuns.id, runId), ne(scopeRuns.status, "review")))
@@ -1021,7 +1196,10 @@ export async function processRunTick(
     const msg = err instanceof Error ? err.message : String(err);
     await db
       .update(scopeRuns)
-      .set({ status: "failed", error: msg, usage, updatedAt: new Date() })
+      // The lease is released with the failure so a retry does not have
+      // to wait it out. The checkpoint is kept: whatever failed, pass
+      // one's work is real, and the retry resumes from it.
+      .set({ status: "failed", error: msg, usage, leaseUntil: null, updatedAt: new Date() })
       .where(eq(scopeRuns.id, runId));
     logger.error({ event: "scope.run.failed", runId, msg }, "scope run failed");
     // A stalled pack is a runner waiting on a promise the platform
@@ -1042,6 +1220,8 @@ async function dispatchScopeRunOps(
 
     const [row] = await db
       .select({
+        projectId: scopeRuns.projectId,
+        createdAt: scopeRuns.createdAt,
         projectTitle: projects.title,
         error: scopeRuns.error,
         usage: scopeRuns.usage,
@@ -1052,16 +1232,56 @@ async function dispatchScopeRunOps(
       .limit(1);
     if (!row) return;
 
+    // Is this a re-read, and what arrived since last time?
+    //
+    // Derived structurally rather than from the audit event. The
+    // scope.reread_requested row is written AFTER the dispatch fires
+    // and not at all on the idempotent in-flight return, so reading it
+    // here would race a row that may not exist and would misreport a
+    // real re-read as a first read.
+    //
+    // The baseline is restricted to review/approved on purpose:
+    // startRun marks prior unfinished runs superseded before inserting
+    // the new one, so an unrestricted "latest prior run" would land on
+    // a run that never read anything and report nothing added.
+    const [baseline] = await db
+      .select({ id: scopeRuns.id })
+      .from(scopeRuns)
+      .where(
+        and(
+          eq(scopeRuns.projectId, row.projectId),
+          ne(scopeRuns.id, runId),
+          inArray(scopeRuns.status, ["review", "approved"]),
+          lt(scopeRuns.createdAt, row.createdAt),
+        ),
+      )
+      .orderBy(desc(scopeRuns.createdAt))
+      .limit(1);
+
+    const [thisRunDocs, priorDocIds] = await Promise.all([
+      db
+        .select({ id: scopeRunDocuments.documentId, filename: documents.filename })
+        .from(scopeRunDocuments)
+        .innerJoin(documents, eq(documents.id, scopeRunDocuments.documentId))
+        .where(eq(scopeRunDocuments.runId, runId)),
+      baseline
+        ? db
+            .select({ id: scopeRunDocuments.documentId })
+            .from(scopeRunDocuments)
+            .where(eq(scopeRunDocuments.runId, baseline.id))
+        : Promise.resolve([] as Array<{ id: string }>),
+    ]);
+    const priorSet = new Set(priorDocIds.map((d) => d.id));
+    const documentCount = thisRunDocs.length;
+    const addedDocuments = baseline
+      ? thisRunDocs.filter((d) => !priorSet.has(d.id)).map((d) => d.filename)
+      : [];
+    const isReread = !!baseline;
+
     let evidenced = 0;
     let gaps = 0;
     if (kind === "started") {
-      // No items exist yet — the run has only just been born. The
-      // heartbeat email carries the document count instead.
-      const [docs] = await db
-        .select({ n: sql<number>`count(*)`.mapWith(Number) })
-        .from(scopeRunDocuments)
-        .where(eq(scopeRunDocuments.runId, runId));
-      evidenced = docs?.n ?? 0;
+      // No items exist yet: the run has only just been born.
     } else {
       const [tally] = await db
         .select({
@@ -1084,6 +1304,9 @@ async function dispatchScopeRunOps(
       estimatedCostUsd: usage?.estimatedCostUsd ?? null,
       error: row.error,
       deskUrl: `${base}/admin/scope/${runId}`,
+      isReread,
+      documentCount,
+      addedDocuments,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1092,6 +1315,41 @@ async function dispatchScopeRunOps(
       "scope ops dispatch failed",
     );
   }
+}
+
+/**
+ * Which of a prior run's ops verdicts may carry onto a new one.
+ *
+ * The note always carries: it is a human's reasoning about the project
+ * and a re-read does not make it wrong. The desk sees what it thought
+ * last time while it decides again.
+ *
+ * The VERDICT carries only when the new read reached the same
+ * conclusion, meaning both the status and the reader's own note are
+ * unchanged. That second condition is the conservative part and it is
+ * deliberate: approveRun's gate counts pending items and is the only
+ * thing that guarantees a human looked at a pack before a client sees
+ * it. Carrying on status alone would let a re-read arrive fully
+ * confirmed with nobody having read a word of it. Requiring the note
+ * to match too means a verdict only survives where the pack genuinely
+ * did not change, and anything the read touched goes back to a human.
+ */
+export function verdictFor(
+  carried: Map<
+    string,
+    { status: string; note: string | null; opsStatus: string; opsNote: string | null }
+  >,
+  itemId: string,
+  status: string,
+  note: string | null,
+): { opsStatus?: string; opsNote?: string | null } {
+  const prior = carried.get(itemId);
+  if (!prior) return {};
+  const unchanged = prior.status === status && (prior.note ?? "") === (note ?? "");
+  return unchanged
+    ? { opsStatus: prior.opsStatus, opsNote: prior.opsNote }
+    : // Note only. The column default puts the row back at 'pending'.
+      { opsNote: prior.opsNote };
 }
 
 /**
@@ -1155,6 +1413,56 @@ export async function tickQueuedRuns(budgetMs = 50_000): Promise<{
     logger.info(
       { event: "scope.queue.ticked", queued: queued.length, ticked, reachedReview, failed },
       "scope queue advanced",
+    );
+  }
+
+  // The watchdog. A run still processing two hours after it started is
+  // not slow, it is stuck, and yesterday the only way anyone found out
+  // was by looking. One ops email per run, deduplicated by the outbox
+  // key, so a stall alerts exactly once however many sweeps see it.
+  try {
+    const stalled = await db
+      .select({
+        id: scopeRuns.id,
+        status: scopeRuns.status,
+        createdAt: scopeRuns.createdAt,
+        projectTitle: projects.title,
+      })
+      .from(scopeRuns)
+      .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
+      .where(
+        and(
+          inArray(scopeRuns.status, ["pending", "classifying", "extracting", "synthesising"]),
+          lt(scopeRuns.createdAt, new Date(Date.now() - 2 * 60 * 60 * 1000)),
+        ),
+      );
+    if (stalled.length > 0) {
+      const { enqueueEmails } = await import("@/modules/notifications");
+      const { OPS_EMAIL } = await import("@/modules/email");
+      await enqueueEmails(
+        stalled.map((r) => ({
+          kind: "scope_run_stalled",
+          toEmail: OPS_EMAIL,
+          userId: null,
+          projectId: null,
+          payload: {
+            runId: r.id,
+            status: r.status,
+            projectTitle: r.projectTitle,
+            startedAt: r.createdAt.toISOString(),
+            note: "This run has been processing for over two hours. Check the admin scope desk.",
+          },
+        })),
+      );
+      logger.warn(
+        { event: "scope.queue.stalled", runs: stalled.map((r) => r.id) },
+        "stalled scope runs detected — ops alerted",
+      );
+    }
+  } catch (err) {
+    logger.warn(
+      { event: "scope.queue.watchdog_failed", msg: err instanceof Error ? err.message : String(err) },
+      "stall watchdog failed — continuing",
     );
   }
   return { ticked, reachedReview, failed };
@@ -1242,13 +1550,36 @@ async function extractOne(
         .where(eq(scopeRunDocuments.id, docRow.id));
       return;
     }
-    const { findings, usage: u, salvaged } = await extractDocument({
-      bytes: loaded.bytes,
-      filename: loaded.filename,
-      kind: docRow.kind ?? "other",
-      projectType,
-      extensions,
-    });
+    // One retry before a document is declared unreadable. Yesterday's
+    // two "failed" documents were bad rolls, not bad files: both passed
+    // untouched on the second attempt. A model returning an invalid
+    // shape once is weather; twice on the same bytes is a real problem
+    // worth a human's attention.
+    let attempt = 0;
+    let extractedResult: Awaited<ReturnType<typeof extractDocument>>;
+    for (;;) {
+      attempt += 1;
+      try {
+        extractedResult = await extractDocument({
+          bytes: loaded.bytes,
+          filename: loaded.filename,
+          kind: docRow.kind ?? "other",
+          projectType,
+          extensions,
+        });
+        break;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (attempt >= 2) {
+          throw new Error(`${msg} (after ${attempt} attempts)`);
+        }
+        logger.warn(
+          { event: "scope.extract.retry", file: loaded.filename, attempt, msg },
+          "extraction attempt failed — retrying once",
+        );
+      }
+    }
+    const { findings, usage: u, salvaged } = extractedResult;
     setUsage(addUsage(usage, "extract", u));
     // The meta rides beside the pages: it is what proves, on a later
     // run, that this extraction covers the same bytes under the same
@@ -1276,6 +1607,55 @@ async function extractOne(
 }
 
 // ── reads for the ops surface ───────────────────────────────────────────
+
+/**
+ * The desk's rescue lever: re-queue a failed run's failed documents.
+ *
+ * Yesterday this took hand-written SQL. A failed run is terminal to
+ * the tick, deliberately, so recovery is an explicit human act: reset
+ * every failed document to classified, clear the error, put the run
+ * back in extracting, and let the next tick take it from there. The
+ * synthesis checkpoint, if one exists, is discarded — the register is
+ * about to change, so pass one must be re-run over the full set.
+ */
+export async function retryFailedDocuments(
+  runId: string,
+): Promise<Result<{ requeued: number }>> {
+  const [run] = await db
+    .select({ status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "failed") {
+    return fail("conflict", "Only failed runs can retry their documents.");
+  }
+  const requeued = await db
+    .update(scopeRunDocuments)
+    .set({ status: "classified", error: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(scopeRunDocuments.runId, runId),
+        eq(scopeRunDocuments.status, "failed"),
+      ),
+    )
+    .returning({ id: scopeRunDocuments.id });
+  await db
+    .update(scopeRuns)
+    .set({
+      status: "extracting",
+      error: null,
+      leaseUntil: null,
+      synthesisCheckpoint: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(scopeRuns.id, runId));
+  logger.info(
+    { event: "scope.run.docs_requeued", runId, requeued: requeued.length },
+    "failed documents re-queued by the desk",
+  );
+  return ok({ requeued: requeued.length });
+}
 
 export async function listRuns(limit = 40): Promise<
   Array<
@@ -1871,12 +2251,30 @@ export async function approveRun(
 
   // Re-reads carry the client's prior answers forward: a gap they
   // already resolved on the effective pack keeps its resolution, so
-  // only what CHANGED asks again. upload_later never carries — the
+  // only what CHANGED asks again. upload_later never carries: the
   // re-read exists because those documents arrived.
-  const carried = await carryForwardResolutions(run.projectId, runId);
-  if (carried > 0) {
+  //
+  // MUST stay ahead of autoResolveBuilderWork below. That inserts with
+  // onConflictDoNothing, so rows written here survive it. Swapped, a
+  // client's allowance or exclusion would lose silently to a
+  // builder-priced default.
+  const { carried, priorRunId, eligible } = await carryForwardResolutions(
+    run.projectId,
+    runId,
+  );
+  // Logged unconditionally, and at two levels, because the zero case
+  // has two meanings and only one of them is routine. No prior run is
+  // ordinary on a first read. A prior run whose answers ALL evaporated
+  // is the failure this function was rewritten to prevent, and it used
+  // to be invisible because the log only fired when carried > 0.
+  if (priorRunId && carried === 0 && eligible > 0) {
+    logger.warn(
+      { event: "scope.run.resolutions_carried", runId, priorRunId, carried, eligible },
+      "no prior gap resolutions carried onto the new run",
+    );
+  } else {
     logger.info(
-      { event: "scope.run.resolutions_carried", runId, carried },
+      { event: "scope.run.resolutions_carried", runId, priorRunId, carried, eligible },
       "prior gap resolutions carried onto the new run",
     );
   }
@@ -2455,11 +2853,24 @@ export async function getRoundContextForBuilders(
   };
 }
 
-/** Copy still-relevant gap resolutions from the effective run. */
-async function carryForwardResolutions(
+/**
+ * The run whose answers and verdicts a new run should inherit.
+ *
+ * One resolver, deliberately, because two of them drifting is how a
+ * pack ends up carrying its items from one run and its resolutions
+ * from another.
+ *
+ * The ordering is the subtle part. `effective_at` is stamped only when
+ * a round actually goes live, so on a project that has never published
+ * it is null on every run, and Postgres sorts NULLs FIRST on DESC. A
+ * plain `desc(effectiveAt)` would therefore rank a never-effective run
+ * above the genuinely live pack. `nulls last` puts the live one first
+ * and falls back to recency for the rest.
+ */
+async function priorRunForCarry(
   projectId: string,
   newRunId: string,
-): Promise<number> {
+): Promise<string | null> {
   const [prev] = await db
     .select({ id: scopeRuns.id })
     .from(scopeRuns)
@@ -2467,21 +2878,64 @@ async function carryForwardResolutions(
       and(
         eq(scopeRuns.projectId, projectId),
         eq(scopeRuns.status, "approved"),
-        sql`${scopeRuns.effectiveAt} is not null`,
         ne(scopeRuns.id, newRunId),
       ),
     )
-    .orderBy(desc(scopeRuns.effectiveAt))
+    .orderBy(
+      sql`${scopeRuns.effectiveAt} desc nulls last`,
+      desc(scopeRuns.approvedAt),
+      desc(scopeRuns.createdAt),
+    )
     .limit(1);
-  if (!prev) return 0;
+  return prev?.id ?? null;
+}
+
+/**
+ * Copy still-relevant gap resolutions from the previous approved run.
+ *
+ * This used to require `effective_at is not null`, which meant it
+ * worked for a re-read of a LIVE round and silently did nothing on a
+ * first publish, because `effective_at` is only written when a round
+ * goes live. A first publish is what every new customer does, so the
+ * feature failed exactly where a customer meets us, and it failed
+ * quietly: the caller only logged when it carried something.
+ *
+ * Returns the prior run id as well as the counts, because the inverse
+ * question — which answers did the new read make irrelevant — needs the
+ * same run, and resolving it twice is how the two answers disagree.
+ */
+async function carryForwardResolutions(
+  projectId: string,
+  newRunId: string,
+): Promise<{ carried: number; priorRunId: string | null; eligible: number }> {
+  const priorRunId = await priorRunForCarry(projectId, newRunId);
+  if (!priorRunId) return { carried: 0, priorRunId: null, eligible: 0 };
+
+  // How many COULD have carried, so "carried 0 of 12" is distinguishable
+  // from "there was nothing to carry" in the log below.
+  const [{ n: eligible = 0 } = { n: 0 }] = await db
+    .select({ n: sql<number>`count(*)`.mapWith(Number) })
+    .from(scopeGapResolutions)
+    .where(
+      and(
+        eq(scopeGapResolutions.runId, priorRunId),
+        ne(scopeGapResolutions.resolution, "upload_later"),
+      ),
+    );
 
   const rows = await db.execute(sql`
     insert into scope_gap_resolutions
       (run_id, item_id, resolution, amount_aud, note, created_by)
     select ${newRunId}, r.item_id, r.resolution, r.amount_aud, r.note, r.created_by
     from scope_gap_resolutions r
-    where r.run_id = ${prev.id}
+    where r.run_id = ${priorRunId}
+      -- upload_later never carries: a re-read exists BECAUSE the
+      -- promised documents arrived, and autoResolveBuilderWork sweeps
+      -- every upload_later row on the run with no item join, so a
+      -- carried orphan promise would be flipped to builder_priced.
       and r.resolution <> 'upload_later'
+      -- Only onto a line the new read still raises as an open gap.
+      -- An answer given against different evidence is not an answer.
       and exists (
         select 1 from scope_run_items i
         where i.run_id = ${newRunId}
@@ -2492,7 +2946,63 @@ async function carryForwardResolutions(
     on conflict (run_id, item_id) do nothing
     returning id
   `);
-  return Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
+  const carried = Array.isArray(rows) ? rows.length : (rows.rows?.length ?? 0);
+  return { carried, priorRunId, eligible };
+}
+
+/**
+ * The inverse of the carry: answers the new read made irrelevant.
+ *
+ * Every resolution on the prior run whose item the new run no longer
+ * raises as an open gap, either because the read reclassified it or
+ * because ops removed it. Nothing is written; this exists so an
+ * owner's money is never silently dropped. A $44,000 allowance against
+ * a line the next read calls "not expected" would otherwise vanish
+ * with no trace to them or to us.
+ *
+ * `upload_later` is included here even though it never carries: if the
+ * documents did not in fact answer the line, the client should see
+ * that their promise went unmet rather than have it disappear.
+ */
+async function listDroppedResolutions(
+  priorRunId: string,
+  newRunId: string,
+): Promise<DroppedResolution[]> {
+  const rows = await db.execute(sql`
+    select r.item_id      as "itemId",
+           r.resolution   as "resolution",
+           r.amount_aud   as "amountAud",
+           r.note         as "note",
+           p.label        as "label"
+      from scope_gap_resolutions r
+      left join scope_run_items p
+        on p.run_id = ${priorRunId} and p.item_id = r.item_id
+     where r.run_id = ${priorRunId}
+       and not exists (
+         select 1 from scope_run_items i
+         where i.run_id = ${newRunId}
+           and i.item_id = r.item_id
+           and i.status = 'gap'
+           and i.ops_status <> 'removed'
+       )
+     order by r.item_id
+  `);
+  const list = (Array.isArray(rows) ? rows : (rows.rows ?? [])) as Array<{
+    itemId: string;
+    resolution: string;
+    amountAud: number | null;
+    note: string | null;
+    label: string | null;
+  }>;
+  return list.map((r) => ({
+    itemId: r.itemId,
+    // Ops-authored custom lines carry their label on the row; Standard
+    // items resolve theirs from the ontology.
+    label: getScopeItem(r.itemId)?.label ?? r.label ?? r.itemId,
+    resolution: r.resolution,
+    amountAud: r.amountAud,
+    note: r.note,
+  }));
 }
 
 /** Bell + letter to the runner when ops approves their pack. */
@@ -2577,13 +3087,20 @@ import {
  *                    skip bins, temporary fencing, a hundred small
  *                    things no owner should have to cost themselves)
  *   excluded       — outside this contract entirely
- *   upload_later   — the documents are coming; re-read before going out
+ *   upload_later   — the document is coming IN THIS ROUND; the round
+ *                    holds until it arrives and the pack is read again
+ *   owner_later    — the owner will supply the document AFTER this
+ *                    round (it is being prepared). The round does not
+ *                    hold. The work stays in the contract and the
+ *                    builders price it now, without the document, so
+ *                    the line must reach them on the schedule.
  */
 export type GapResolutionKind =
   | "allowance"
   | "builder_priced"
   | "excluded"
-  | "upload_later";
+  | "upload_later"
+  | "owner_later";
 
 /**
  * The runner submits for preparation. Publishability is validated
@@ -2625,6 +3142,19 @@ export async function requestPreparation(
   return ok({ runId: run.value.id });
 }
 
+/**
+ * An answer the client gave that the latest read no longer asks for.
+ * Carries enough to show them what they said, in the words they saw
+ * when they said it.
+ */
+export interface DroppedResolution {
+  itemId: string;
+  label: string;
+  resolution: string;
+  amountAud: number | null;
+  note: string | null;
+}
+
 export interface OwnerScopeReview {
   phase: "reading" | "ready" | "none";
   run: ScopeRunRow | null;
@@ -2640,6 +3170,17 @@ export interface OwnerScopeReview {
   }>;
   items: ScopeRunItemRow[];
   resolutions: ScopeGapResolutionRow[];
+  /**
+   * Answers the client gave on the previous pack that the latest read
+   * made irrelevant, because it no longer raises that line as an open
+   * gap. Present only in the "ready" phase.
+   *
+   * These are NOT questions and must never be folded into `resolutions`
+   * or the askable set: they are shown so an owner's money cannot leave
+   * the pack silently, which is what happened to a $44,000 fireplace
+   * allowance on 21 August 2026.
+   */
+  droppedResolutions?: DroppedResolution[];
   /** Runner may act; seats read. */
   canResolve: boolean;
   /**
@@ -2807,6 +3348,14 @@ export async function getOwnerReview(
       .limit(1)
       .then((r) => r[0]?.type ?? "single_dwelling")) as ScopeProjectType,
   });
+  // Answers the latest read made irrelevant. Read-only, and resolved
+  // through the SAME prior-run resolver the carry uses, so the two can
+  // never disagree about which run they are comparing against.
+  const carryFrom = await priorRunForCarry(projectId, run.id);
+  const droppedResolutions = carryFrom
+    ? await listDroppedResolutions(carryFrom, run.id)
+    : [];
+
   return ok({
     phase: "ready",
     run,
@@ -2819,6 +3368,7 @@ export async function getOwnerReview(
     addenda,
     namedMissing,
     readiness,
+    droppedResolutions,
   });
 }
 
@@ -3019,6 +3569,13 @@ export async function requestReread(
   }
   const run = await startRun(projectId, runnerId);
   if (!run.ok) return run;
+  // Ops hears that a re-read has started, the same way it hears about a
+  // first read. Without this a re-read was completely silent until it
+  // reached review or failed, which is how "why have I got another
+  // review of that project" became an investigation rather than a
+  // glance at an inbox. Fire-and-forget: a mail hiccup must never fail
+  // the re-read.
+  void dispatchScopeRunOps(run.value.id, "started").catch(() => undefined);
   await recordProjectEvent({
     projectId,
     actorId: runnerId,
@@ -3452,7 +4009,14 @@ async function scheduleForRun(
       if (r.resolution === "allowance") {
         kind = "owner_allowance";
         ownerAmountAud = r.amountAud ?? null;
-      } else if (r.resolution === "builder_priced") {
+      } else if (
+        r.resolution === "builder_priced" ||
+        // The owner's document comes after this round, so the builders
+        // price the work now without it. Named explicitly because the
+        // fallback below means EXCLUDED: letting this fall through
+        // would tell every builder the work is out of contract.
+        r.resolution === "owner_later"
+      ) {
         kind = "owner_open";
       } else {
         kind = "owner_excluded";

@@ -413,7 +413,13 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
 
   /* ── measurement ─────────────────────────────────────────────────── */
 
+  const openReported = useRef(false);
   useEffect(() => {
+    // Once per document. React runs an effect twice in development and a
+    // remount would run it again, and an opening counted twice makes the
+    // completion rate look half what it is.
+    if (openReported.current) return;
+    openReported.current = true;
     track("demo_opened", { script: config.id });
     trackMetaEvent("ViewContent", {
       content_name: "product_demo",
@@ -425,7 +431,7 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
   useEffect(() => {
     if (seenStages.current.has(stage.id)) return;
     seenStages.current.add(stage.id);
-    track("demo_stage", { stage: stage.id });
+    track("demo_stage", { stage: stage.id, script: config.id });
     if (stage.id === "close") {
       // Completion is the demo's one conversion signal and Meta will
       // optimise on it, so a curiosity click on the rail's last chip
@@ -446,8 +452,8 @@ export function DemoExperience({ config }: { config: DemoConfig }) {
   }, [stage.id, script, config.id]);
 
   const onSignupClick = useCallback(() => {
-    track("demo_signup_click", {});
-  }, []);
+    track("demo_signup_click", { script: config.id });
+  }, [config.id]);
 
   // The active callout is the walkthrough's voice: focusing it keeps
   // keyboard users anchored and has screen readers announce the beat.
