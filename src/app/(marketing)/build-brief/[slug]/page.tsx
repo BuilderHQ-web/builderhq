@@ -487,6 +487,9 @@ export default async function BriefIssuePage({
           <div className="flex items-baseline gap-x-7 whitespace-nowrap text-[10px] sm:text-[10.5px] tracking-[0.18em] uppercase font-ui font-semibold">
             <span className="text-text-dim shrink-0">In this edition</span>
             {[
+              ...(issue.announcement
+                ? [{ label: "The Announcement", href: "#announcement" }]
+                : []),
               ...(issue.podcast
                 ? [{ label: "The Podcast", href: "#podcast" }]
                 : []),
@@ -570,6 +573,77 @@ export default async function BriefIssuePage({
                   className="mt-7 inline-flex items-center gap-2 text-[13.5px] font-ui font-semibold text-accent-light hover:underline"
                 >
                   {issue.association.cta.label}
+                </Link>
+              ) : null}
+            </BriefCard>
+          ) : null}
+
+          {/* The announcement — a launch, not a weekly section, so it
+              carries the same faint teal lift the podcast block uses.
+              There is no photograph: a dashboard screenshot dates
+              within a release, so the sequence does the work instead. */}
+          {issue.announcement ? (
+            <BriefCard
+              id="announcement"
+              style={{
+                background:
+                  "linear-gradient(148deg, rgba(0,212,200,0.075) 0%, rgba(0,212,200,0.018) 34%, #ffffff 62%), linear-gradient(330deg, rgba(45,99,214,0.05) 0%, rgba(255,255,255,0) 44%), #ffffff",
+              }}
+            >
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.announcement.kicker}
+              </BriefKicker>
+              {/* Wider than the other section headings on purpose. At
+                  24ch an announcement headline breaks inside its own
+                  accent phrase and orphans a word in teal at the end of
+                  the first line; 32ch keeps a short one whole and still
+                  caps the measure for a long one. */}
+              <AccentHeadline
+                text={issue.announcement.headline}
+                accent={issue.announcement.headlineAccent}
+                className={`mt-3 max-w-[32ch] ${SECTION_H2}`}
+              />
+              {issue.announcement.standfirst ? (
+                <p
+                  className="mt-4 max-w-[54ch] text-[clamp(1.15rem,1.1vw+0.9rem,1.45rem)] leading-[1.4] text-text-muted"
+                  style={SERIF}
+                >
+                  {issue.announcement.standfirst}
+                </p>
+              ) : null}
+              {/* The strip needs air above it: it follows a serif deck,
+                  and its figcaption sits tight to the text baseline
+                  without one. */}
+              {issue.announcement.chart ? (
+                <div className="mt-9">
+                  <BriefChart spec={issue.announcement.chart} />
+                </div>
+              ) : null}
+              <div className="mt-8 flex flex-col gap-4 max-w-[66ch]">
+                {issue.announcement.paragraphs.map((para, i) => (
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.7] text-text-muted"
+                  >
+                    <InlineText text={para} />
+                  </p>
+                ))}
+              </div>
+              {issue.announcement.closing ? (
+                <p
+                  className="mt-8 max-w-[40ch] text-[clamp(1.15rem,0.9vw+0.85rem,1.5rem)] leading-[1.35] tracking-[-0.01em] text-text"
+                  style={SERIF}
+                >
+                  {issue.announcement.closing}
+                </p>
+              ) : null}
+              {issue.announcement.cta ? (
+                <Link
+                  href={issue.announcement.cta.href}
+                  className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-border-strong px-5 py-2.5 text-[13px] font-ui font-semibold text-text hover:border-accent-light hover:text-accent-light transition-colors"
+                >
+                  {issue.announcement.cta.label}
+                  <span aria-hidden>→</span>
                 </Link>
               ) : null}
             </BriefCard>
@@ -837,13 +911,29 @@ export default async function BriefIssuePage({
                 </div>
               </div>
             ) : (
-              /* Split layout with the annotated document (Issue 001) */
-              <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start">
-                <div className="flex flex-col gap-4">
+              /* No sub-sections. Two shapes share this branch: the
+                 annotated document beside the read (Issue 001), and a
+                 Feature short enough to be all lede (Issue 008). The
+                 split only earns its column when there is a document
+                 to put in it, so without one the copy runs at the
+                 article measure and takes the article's weight rather
+                 than sitting in half a grid beside nothing. */
+              <div
+                className={`mt-8 ${
+                  issue.feature.quoteDoc
+                    ? "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start"
+                    : ""
+                }`}
+              >
+                <div className="flex flex-col gap-4 max-w-[70ch]">
                   {issue.feature.paragraphs.map((p, i) => (
                     <p
                       key={i}
-                      className="text-[15px] leading-[1.75] text-text-muted"
+                      className={
+                        issue.feature.quoteDoc
+                          ? "text-[15px] leading-[1.75] text-text-muted"
+                          : "text-[16px] leading-[1.75] font-ui font-medium text-text"
+                      }
                     >
                       <InlineText text={p} />
                     </p>
@@ -851,6 +941,18 @@ export default async function BriefIssuePage({
                 </div>
                 {issue.feature.quoteDoc ? (
                   <QuoteDoc doc={issue.feature.quoteDoc} />
+                ) : null}
+                {/* The article branch renders its own pull quote inside
+                    the text column. This branch has no text column to
+                    put one in, so it renders its own rather than
+                    silently dropping the field. */}
+                {!issue.feature.quoteDoc && issue.feature.pullQuote ? (
+                  <p
+                    className="mt-9 max-w-[32ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
+                    style={SERIF}
+                  >
+                    {issue.feature.pullQuote}
+                  </p>
                 ) : null}
               </div>
             )}
