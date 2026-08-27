@@ -38,6 +38,7 @@ const KIND_LABEL: Record<PartnerKind, string> = {
   architect: "Building designer",
   builder: "Builder",
   finance: "Finance broker",
+  conveyancer: "Conveyancer",
 };
 
 export default async function Image({

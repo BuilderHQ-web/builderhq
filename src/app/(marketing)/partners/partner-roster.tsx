@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 
 import {
   ARCHITECT_PARTNERS,
   BUILDER_PARTNERS,
+  CONVEYANCER_PARTNERS,
   FINANCE_PARTNERS,
   partnerStates,
   type Partner,
@@ -15,7 +17,12 @@ import {
   StateFilteredRows,
   StateFilterProvider,
 } from "./partner-state-filter";
-import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-ui";
+import {
+  GoogleRating,
+  PartnerAvatar,
+  StateBadge,
+  partnerHue,
+} from "./partner-ui";
 
 /**
  * PartnersRegister — the body shared by /partners, /partners/architects and
@@ -25,13 +32,43 @@ import { GoogleRating, PartnerAvatar, StateBadge, partnerHue } from "./partner-u
  * rows read as editorial entries rather than list items.
  */
 
-type Active = "all" | "architect" | "builder" | "finance";
+type Active = "all" | "architect" | "builder" | "finance" | "conveyancer";
 
-const SEGMENTS: Array<{ key: Active; label: string; href: string }> = [
-  { key: "all", label: "All partners", href: "/partners" },
-  { key: "architect", label: "Design partners", href: "/partners/architects" },
-  { key: "builder", label: "Builder partners", href: "/partners/builders" },
-  { key: "finance", label: "Finance partners", href: "/partners/finance-brokers" },
+/** A discipline appears as a tab only once it has a live partner, the
+ *  same rule partnerNavTypes applies to the header dropdown. A kind can
+ *  therefore be added to the register before its first partner goes
+ *  live without advertising an empty category. `all` always shows. */
+const SEGMENTS: Array<{
+  key: Active;
+  label: string;
+  href: string;
+  count?: number;
+}> = [
+  { key: "all", label: "All", href: "/partners" },
+  {
+    key: "architect",
+    label: "Design",
+    href: "/partners/architects",
+    count: ARCHITECT_PARTNERS.length,
+  },
+  {
+    key: "builder",
+    label: "Builders",
+    href: "/partners/builders",
+    count: BUILDER_PARTNERS.length,
+  },
+  {
+    key: "finance",
+    label: "Finance",
+    href: "/partners/finance-brokers",
+    count: FINANCE_PARTNERS.length,
+  },
+  {
+    key: "conveyancer",
+    label: "Conveyancing",
+    href: "/partners/conveyancers",
+    count: CONVEYANCER_PARTNERS.length,
+  },
 ];
 
 export function PartnersRegister({ active }: { active: Active }) {
@@ -42,7 +79,14 @@ export function PartnersRegister({ active }: { active: Active }) {
         ? BUILDER_PARTNERS
         : active === "finance"
           ? FINANCE_PARTNERS
-          : [...ARCHITECT_PARTNERS, ...BUILDER_PARTNERS, ...FINANCE_PARTNERS];
+          : active === "conveyancer"
+            ? CONVEYANCER_PARTNERS
+            : [
+                ...ARCHITECT_PARTNERS,
+                ...BUILDER_PARTNERS,
+                ...FINANCE_PARTNERS,
+                ...CONVEYANCER_PARTNERS,
+              ];
   const stateCounts: Record<string, number> = {};
   for (const p of activePartners) {
     for (const s of partnerStates(p)) {
@@ -80,7 +124,8 @@ export function PartnersRegister({ active }: { active: Active }) {
       </div>
 
       <div className="mt-10 flex flex-col gap-16 lg:gap-20">
-        {(active === "all" || active === "architect") && (
+        {(active === "architect" ||
+          (active === "all" && ARCHITECT_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Design partners"
             intro="Building designers and architects doing considered residential work, who we are glad to point homeowners toward."
@@ -88,7 +133,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="design partners"
           />
         )}
-        {(active === "all" || active === "builder") && (
+        {(active === "builder" ||
+          (active === "all" && BUILDER_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Builder partners"
             intro="Builders we have met, whose recent work we have looked at, and who we are glad to put in front of an owner."
@@ -96,7 +142,17 @@ export function PartnersRegister({ active }: { active: Active }) {
             emptyLabel="builder partners"
           />
         )}
-        {(active === "all" || active === "finance") && (
+        {(active === "conveyancer" ||
+          (active === "all" && CONVEYANCER_PARTNERS.length > 0)) && (
+          <PartnerSection
+            label="Conveyancing partners"
+            intro="Licensed conveyancers who read the title, the covenants and the overlays before a client commits to a site."
+            partners={CONVEYANCER_PARTNERS}
+            emptyLabel="conveyancing partners"
+          />
+        )}
+        {(active === "finance" ||
+          (active === "all" && FINANCE_PARTNERS.length > 0)) && (
           <PartnerSection
             label="Finance partners"
             intro="Brokers with real construction finance experience, and clients who speak well of them."
@@ -125,6 +181,12 @@ export function PartnersRegister({ active }: { active: Active }) {
           text="Still need a designer? Meet our design partners"
         />
       ) : null}
+      {active === "conveyancer" ? (
+        <CrossLink
+          href="/partners/builders"
+          text="Site secured? Meet our builder partners"
+        />
+      ) : null}
 
       {/* The two doors. */}
       <section className="mt-16 lg:mt-20 rounded-2xl border border-border-subtle bg-white card-elev overflow-hidden">
@@ -138,8 +200,8 @@ export function PartnersRegister({ active }: { active: Active }) {
             </h3>
             <p className="mt-2.5 text-[14px] leading-[1.65] text-text-muted max-w-[42ch]">
               Building designers, builders and finance brokers. Introduce
-              yourself and we will take a proper look at your work. No fees,
-              no contracts, and leaving takes one email.
+              yourself and we will take a proper look at your work. No fees, no
+              contracts, and leaving takes one email.
             </p>
             <div className="mt-6">
               <JoinButton
@@ -183,33 +245,47 @@ export function PartnersRegister({ active }: { active: Active }) {
 
 function SegmentedNav({ active }: { active: Active }) {
   return (
-    <nav
-      aria-label="Filter partners"
-      className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-2 p-1"
-    >
-      {SEGMENTS.map((s) => {
-        const on = s.key === active;
-        return (
-          <Link
-            key={s.key}
-            href={s.href}
-            // Switching lens keeps the register in place — the three
-            // routes stay distinct for SEO/outreach, but toggling
-            // between them holds your scroll position instead of
-            // snapping back to the top.
-            scroll={false}
-            aria-current={on ? "page" : undefined}
-            className={
-              on
-                ? "inline-flex items-center h-9 px-4 rounded-full bg-white card-elev text-[13px] font-semibold text-text"
-                : "inline-flex items-center h-9 px-4 rounded-full text-[13px] font-medium text-text-muted hover:text-text transition-colors"
-            }
-          >
-            {s.label}
-          </Link>
-        );
-      })}
-    </nav>
+    // No tray behind these: the buttons sit straight on the canvas. The
+    // one you are on is frosted glass and a touch larger, the rest are
+    // quiet outlines. Five do not fit one phone row, so they wrap rather
+    // than scroll, three then two, because a filter nobody can see is a
+    // filter nobody uses.
+    <div className="w-full shrink-0 sm:w-auto">
+      <nav
+        aria-label="Filter partners"
+        className="flex w-full flex-wrap items-center gap-2 sm:inline-flex sm:w-max sm:flex-nowrap"
+      >
+        {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
+          (s) => {
+            const on = s.key === active;
+            return (
+              <Link
+                key={s.key}
+                href={s.href}
+                // Switching lens keeps the register in place — the routes
+                // stay distinct for SEO/outreach, but toggling between
+                // them holds your scroll position instead of snapping
+                // back to the top.
+                scroll={false}
+                aria-current={on ? "page" : undefined}
+                className={cn(
+                  "inline-flex h-9 grow basis-[28%] items-center justify-center whitespace-nowrap rounded-full px-4 text-[13px]",
+                  // Scale rather than padding, so growing the active one
+                  // never reflows the row underneath it.
+                  "origin-center transition-[scale,background-color,box-shadow,color] duration-200 ease-[var(--ease-out)]",
+                  "sm:grow-0 sm:basis-auto",
+                  on
+                    ? "scale-[1.06] bg-white/55 font-semibold text-text shadow-[0_2px_14px_rgba(16,24,32,0.10)] ring-1 ring-white/70 backdrop-blur-md"
+                    : "font-medium text-text-muted ring-1 ring-[#101820]/[0.09] hover:text-text hover:ring-[#101820]/20",
+                )}
+              >
+                {s.label}
+              </Link>
+            );
+          },
+        )}
+      </nav>
+    </div>
   );
 }
 
@@ -217,7 +293,10 @@ function RegisterRule({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="flex items-center gap-2 text-[13.5px] font-semibold text-text">
-        <span aria-hidden className="size-[5px] rounded-full bg-accent-light shrink-0" />
+        <span
+          aria-hidden
+          className="size-[5px] rounded-full bg-accent-light shrink-0"
+        />
         {title}
       </p>
       <p className="text-[12.5px] leading-[1.6] text-text-muted pl-[13px]">
@@ -276,7 +355,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
       <span
         aria-hidden
         className="absolute top-0 inset-x-8 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-[300ms]"
-        style={{ background: `linear-gradient(90deg, transparent, ${h.accent}59, transparent)` }}
+        style={{
+          background: `linear-gradient(90deg, transparent, ${h.accent}59, transparent)`,
+        }}
       />
       <div className="flex items-start gap-4 sm:gap-5">
         <PartnerAvatar partner={partner} size={60} />
@@ -310,7 +391,9 @@ function PartnerRow({ partner }: { partner: Partner }) {
           </div>
           <p className="mt-1 text-[12.5px] text-text-dim">
             {partner.suburb}
-            <span aria-hidden className="mx-2 text-text-faint">·</span>
+            <span aria-hidden className="mx-2 text-text-faint">
+              ·
+            </span>
             {partner.disciplines.join("  ·  ")}
           </p>
           <p className="mt-2.5 max-w-[60ch] text-[14px] leading-[1.6] text-text-muted">

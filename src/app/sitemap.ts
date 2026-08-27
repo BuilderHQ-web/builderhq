@@ -38,6 +38,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
       changeFrequency: "weekly",
     },
+    {
+      url: `${SITE}/partners/conveyancers`,
+      priority: 0.8,
+      changeFrequency: "weekly",
+    },
     { url: `${SITE}/demo`, priority: 0.9, changeFrequency: "monthly" },
     { url: `${SITE}/demo/architect`, priority: 0.9, changeFrequency: "monthly" },
     { url: `${SITE}/demo/builder`, priority: 0.9, changeFrequency: "monthly" },

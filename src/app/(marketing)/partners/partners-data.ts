@@ -24,7 +24,7 @@
  * do not audition them.
  */
 
-export type PartnerKind = "architect" | "builder" | "finance";
+export type PartnerKind = "architect" | "builder" | "finance" | "conveyancer";
 
 export interface PartnerWork {
   title: string;
@@ -1313,6 +1313,55 @@ export const PARTNERS: Partner[] = [
         type: "Extension and addition",
         image: "/partners/architects-ring-associates/hughes.jpg",
       },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "paramount-conveyancing",
+    kind: "conveyancer",
+    roleLabel: "Conveyancing firm",
+    name: "Paramount Conveyancing",
+    monogram: "PC",
+    logo: "/partners/paramount-conveyancing/logo.png",
+    principal: "Sasha Obeid",
+    suburb: "Greenvale",
+    state: "VIC",
+    tagline:
+      "A Victorian conveyancing firm that reads the title, the covenants and the overlays before a client commits to a site.",
+    disciplines: ["Contract and Section 32 review", "Off the plan", "Development sites"],
+    google: { rating: 4.8, reviews: 390 },
+    institution: {
+      name: "Australian Institute of Conveyancers",
+      role: "Victorian Division member",
+      note: "Licensed under the Conveyancers Act 2006 · professional indemnity insured",
+    },
+    aboutLabel: "The firm",
+    stats: [
+      { label: "Google rating", value: "4.8", star: true, sub: "390 reviews" },
+      { label: "Established", value: "2010", sub: "sixteen years of settlements" },
+      { label: "Offices", value: "3", sub: "across metropolitan Melbourne" },
+    ],
+    why: "A conveyancer is the first professional to look at a block of land, and often the only one who reads what is actually on the title. Restrictive covenants, easements and planning overlays decide whether the house a client is planning can legally be built there, and a covenant stays binding however old it is. Removing one takes a Supreme Court application or a planning scheme amendment. An owner who finds that out after settlement has bought the wrong site.\n\nParamount has been doing this since 2010, and works the way that problem needs: in early, alongside the builder, the broker and the agent, rather than at the end when the paperwork is already drawn. Sasha Obeid founded the firm and is a member of the Australian Institute of Conveyancers, Victorian Division. Conveyancing is all they do, which is rather the point. For an owner or a developer buying land to build on, this is the call to make before the offer, not after it.",
+    about:
+      "Paramount Conveyancing is a Victorian firm founded in 2010 by director Sasha Obeid, working from offices in Greenvale, Melbourne CBD and Hoppers Crossing. The team handles residential and commercial transactions: established homes, land, off the plan purchases, development sites and investment property, along with subdivisions, mortgages and refinances. They act for local and international clients, and regularly work with developers, builders, buyers agents, mortgage brokers and real estate agents. The firm does not carry out financial feasibility work. What it does is review contracts, Section 32 statements, title, planning and related documentation, flag the problems, and make sure a client understands what they are committing to.",
+    facts: {
+      established: "2010",
+      basedIn: "Greenvale, VIC",
+      serves: "Victoria",
+      focus: "Residential and commercial conveyancing",
+    },
+    website: "https://paramountconveyancing.com.au/",
+    instagram: "https://www.instagram.com/paramount.conveyancing/",
+    facebook: "https://www.facebook.com/ParamountConveyancing",
+    linkedin: "https://www.linkedin.com/company/paramount-conveyancing",
+    servicesLabel: "Where they help",
+    services: [
+      "Contract and Section 32 review before you sign",
+      "Title, covenant and easement checks",
+      "Off the plan purchases",
+      "Land and development site acquisitions",
+      "Subdivisions and settlements",
+      "Sales, mortgages and refinances",
     ],
     joined: "2026",
   },
@@ -4563,6 +4612,9 @@ export const BUILDER_PARTNERS = PARTNERS.filter(
 export const FINANCE_PARTNERS = PARTNERS.filter(
   (p) => p.kind === "finance" && !p.draft,
 );
+export const CONVEYANCER_PARTNERS = PARTNERS.filter(
+  (p) => p.kind === "conveyancer" && !p.draft,
+);
 
 /** Every state a partner practises in — `states` when set, else `[state]`. */
 export function partnerStates(p: Partner): string[] {
@@ -4637,6 +4689,12 @@ export function partnerNavTypes(): PartnerNavType[] {
       sub: "Brokers who know construction lending",
       count: FINANCE_PARTNERS.length,
       href: "/partners/finance-brokers",
+    },
+    {
+      label: "Conveyancing partners",
+      sub: "Conveyancers who read the title before you commit",
+      count: CONVEYANCER_PARTNERS.length,
+      href: "/partners/conveyancers",
     },
     // Engineers, lawyers and consultants join here as the register
     // widens. Empty disciplines are filtered out below, so a type can

@@ -20,6 +20,7 @@ export const KIND_LABEL = {
   architect: "Architecture practice",
   builder: "Building company",
   finance: "Finance partner",
+  conveyancer: "Conveyancing firm",
 } as const;
 
 /** The label under "Preferred Partner", accurate to what the partner is
@@ -360,7 +361,12 @@ export function PartnerProfileSections({
       {/* The practice. */}
       <section className="mt-12 lg:mt-16">
         <SectionLabel hue={h.accent}>
-          {partner.aboutLabel ?? (partner.kind === "architect" ? "The practice" : "The business")}
+          {partner.aboutLabel ??
+            (partner.kind === "architect"
+              ? "The practice"
+              : partner.kind === "conveyancer"
+                ? "The firm"
+                : "The business")}
         </SectionLabel>
         <div className="mt-4 max-w-[62ch] space-y-4">
           {partner.about.split(/\n\n+/).map((para, i) => (

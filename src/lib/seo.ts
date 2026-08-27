@@ -110,11 +110,14 @@ export function siteGraph(): Record<string, unknown> {
 /** schema.org type per partner kind. Building designers and architects
  *  map to ProfessionalService (accurate whether or not they are a
  *  registered architect); finance brokers to FinancialService;
- *  builders to GeneralContractor. */
+ *  builders to GeneralContractor; conveyancers to LegalService, which
+ *  is the closest schema.org type for a licensed conveyancing
+ *  practice. */
 const KIND_TYPE: Record<PartnerKind, string> = {
   architect: "ProfessionalService",
   builder: "GeneralContractor",
   finance: "FinancialService",
+  conveyancer: "LegalService",
 };
 
 const KIND_REGISTER: Record<
@@ -124,6 +127,10 @@ const KIND_REGISTER: Record<
   architect: { path: "/partners/architects", label: "Design partners" },
   builder: { path: "/partners/builders", label: "Build partners" },
   finance: { path: "/partners/finance-brokers", label: "Finance partners" },
+  conveyancer: {
+    path: "/partners/conveyancers",
+    label: "Conveyancing partners",
+  },
 };
 
 function partnerImage(partner: Partner): string | undefined {
