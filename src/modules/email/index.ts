@@ -39,6 +39,7 @@ export {
   sendOwnerAdvisoryOpsEmail,
   sendOwnerAdvisoryConfirmationEmail,
   sendEstimateRequestOpsEmail,
+  sendMetaLeadOpsEmail,
   sendBookCallOpsEmail,
   sendArchitectTenderOpsEmail,
   sendArchitectTenderConfirmationEmail,

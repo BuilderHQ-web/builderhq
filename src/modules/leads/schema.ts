@@ -55,6 +55,11 @@ export const leadKindEnum = pgEnum("lead_kind", [
   // lawyers or consultants needs no migration. Firm name lands in
   // practice_name; state + website ride in `meta`.
   "partner_network_interest",
+  // Meta Lead Ads Instant Form. The campaign / ad set / ad / form
+  // identifiers and the raw payload ride in `meta` jsonb; the lead's
+  // own Meta id lands in external_id so a replayed webhook cannot
+  // create a second row.
+  "meta_instant_form",
 ]);
 
 export const leads = pgTable(
@@ -95,6 +100,18 @@ export const leads = pgTable(
 
     // Attribution — utm_* params, referrer-derived source, etc.
     source: text(),
+
+    /**
+     * Where a lead captured by SOMEONE ELSE'S form came from, and that
+     * channel's own id for it. Together they are the idempotency key
+     * (partial unique index, migration 0051): an ad platform replays
+     * deliveries as a matter of routine, and without this the same
+     * homeowner is rung twice.
+     *
+     * Both NULL for leads captured by our own forms.
+     */
+    externalSource: text("external_source"),
+    externalId: text("external_id"),
 
     // Audit (spot bot floods after the fact).
     ip: text(),
