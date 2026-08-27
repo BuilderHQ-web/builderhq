@@ -62,3 +62,59 @@ acoustic-report (CORE only within multi_dwelling); new-openings (near-universal 
 TOTALS: CORE 89, CONDITIONAL 119, ALTERNATIVE 26, COMMERCIAL 22 (sum 256).
 
 Source: /Users/aryanvadera/Desktop/BuilderHQ/Website/src/modules/scope/ontology.ts
+
+---
+
+## RATIFIED CORRECTIONS — 27 August 2026 (Aryan)
+
+Two calls in the draft above were overturned by the person who builds
+these, and both are worth more as RULES than as one-off labels. Each
+becomes applicability metadata in the S4.1 tier release.
+
+### 1. approvals.acoustic-report: CORE → CONDITIONAL
+
+Not core on a two-dwelling job. The Partiwall shaftliner system as
+normally supplied already meets the minimum separation requirement, so
+no separate acoustic report is required.
+
+**Activation signal** (the only conditions under which it becomes
+expected): an apartment/multi-level class rather than attached
+dwellings, OR a high-noise location — rail corridor, tram line,
+arterial road, flight path — usually evidenced by a planning-permit
+acoustic condition or a noise overlay.
+
+Corroboration: the word "acoustic" appears zero times across the
+21-page Wallace set.
+
+### 2. external-walls.eaves-soffits: a DERIVED exclusion
+
+A parapet-and-box-gutter roof has no eaves, and therefore no soffit
+lining. This is not a judgement call; it follows from the roof form.
+
+**Rule.** Where the documents evidence box gutters behind parapet
+capping, eaves and soffit items are NOT EXPECTED with that as the
+positive reason. This is the first entry in a class the ontology has
+never had: **mutual exclusion derived from an evidenced system**, where
+selecting system A structurally rules out item B. Others to seed from
+the same class: slab-on-ground excludes underfloor insulation and
+timber subfloor (already handled); a flat parapet roof excludes
+raked/cathedral ceiling framing; a fully-tiled floor scope excludes the
+carpet/timber alternatives.
+
+Both the engine AND the independent auditor missed this — the auditor
+called it "a genuine finish gap where eaves/overhangs occur", assuming a
+roof form the project does not have.
+
+### A second instance of the substring trap
+
+Searching the text layer for these two produced a warning worth
+recording for the extraction work. "eave" matches inside **"leaves** of
+cavity walls" and "blocked with **leaves**"; the only other hits are the
+level annotation "EAVES 49.81" (a height, not a construction) and a
+conditional NCC shading note. This is the same class as "flyscreen"
+matching "similar to fly screen mesh" on the rainwater-tank strainer.
+
+**Consequence for Wave 1:** term matching over the text layer must be
+token-boundary aware and must distinguish an annotation/level label
+from a construction note. A naive `includes()` would confirm eaves on
+this project three times over.

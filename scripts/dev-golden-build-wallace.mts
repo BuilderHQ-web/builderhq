@@ -207,18 +207,130 @@ const OVERRIDES: Record<
   },
 };
 
+
+/**
+ * RATIFIED by Aryan, 27 August 2026.
+ *
+ * Every row here was flagged as ambiguous by the rules above and has
+ * now been decided by a human who builds these for a living. The
+ * reasoning is recorded with each one, because a label nobody can
+ * argue with later is a label nobody can correct later.
+ *
+ * Two of these overturned my own recommendation, and both became
+ * rules rather than just labels — see docs/ontology-tiering-draft.md.
+ */
+const RATIFIED: Record<string, Partial<GoldenExpectedLineV2> & { basis: string }> = {
+  // ── domain corrections that became rules ──
+  "approvals.acoustic-report": {
+    coverage: "not_expected",
+    tier: "conditional",
+    source: "adjudicated",
+    basis:
+      "RATIFIED: not core on a two-dwelling job. The Partiwall shaftliner system as supplied meets the minimum separation requirement, so no separate acoustic report is required. An acoustic report is triggered by a multi-level apartment class or a high-noise location (rail, tram, arterial), neither of which applies here. The word 'acoustic' does not appear once in the 21-page set.",
+  },
+  "external-walls.eaves-soffits": {
+    coverage: "not_expected",
+    source: "adjudicated",
+    basis:
+      "RATIFIED: this roof has no eaves. It is a parapet-and-box-gutter form, and box gutters behind parapets exclude eaves and soffits by construction. 'Soffit' appears zero times in the set; every 'eave' hit is either the level annotation 'EAVES 49.81', the substring inside 'leaves of cavity walls', or a conditional NCC shading note. Both the engine's gap and the auditor's 'genuine finish gap where eaves occur' assumed a roof form this project does not have.",
+  },
+
+  // ── the engineer-decides trio: deferred, not inapplicable ──
+  "footings-slab.strip-pad-footings": {
+    coverage: "gap",
+    gapClass: "later_consultant_package",
+    source: "adjudicated",
+    basis:
+      "The auditor: 'DO NOT MARK NOT EXPECTED. The slab/footing system is expressly left to the engineer; strip/pad components cannot be excluded until the structural design is supplied.' Deferred to a package that was not supplied, not proven inapplicable.",
+  },
+  "footings-slab.waffle-slab": {
+    coverage: "gap",
+    gapClass: "later_consultant_package",
+    source: "adjudicated",
+    basis:
+      "Same ruling: the set establishes slab-on-ground and refers the slab to engineering. It does not prove the final system is not waffle/pod.",
+  },
+  "footings-slab.vapour-barrier": {
+    coverage: "gap",
+    gapClass: "later_consultant_package",
+    source: "audit",
+    basis:
+      "Expected in the structural/slab package or a builder-compliant slab system. The architectural set does not select the membrane build-up, so this is not an owner design chase.",
+  },
+  "footings-slab.underslab-drainage": {
+    coverage: "gap",
+    gapClass: "contractor_obligation",
+    source: "audit",
+    basis:
+      "Contractor/hydraulic coordination, not a standalone architectural design gap. Rough-in is required before the slab but final routes are a plumbing and structural coordination matter.",
+  },
+
+  // ── alternative groups: one question, not one per sibling ──
+  "lining.cornice": {
+    coverage: "gap",
+    gapClass: "design_gap",
+    source: "audit",
+    basis:
+      "Carries the single wall-ceiling junction question for its alternative group. Neither cornice nor square-set is selected.",
+  },
+  "lining.square-set": {
+    coverage: "not_expected",
+    source: "audit",
+    basis:
+      "The duplicate sibling. The omission is one finish choice, resolved under the cornice line; gapping both would ask the same question twice.",
+  },
+  "hvac.split-systems": {
+    coverage: "gap",
+    gapClass: "design_gap",
+    source: "adjudicated",
+    basis:
+      "Anchors the HVAC selection question. The drawings require reverse-cycle at minimum 3-star and select NEITHER a ducted nor a split package, so the system type is unresolved. Until the abstention state ships this is expressed as one gap on the group, matching how cornice/square-set is handled.",
+  },
+  "hvac.ducted-system": {
+    coverage: "not_expected",
+    source: "adjudicated",
+    basis:
+      "Not selected. The engine evidenced BOTH ducted and split from generic reverse-cycle wording, then reported a conflict between its own two inferences.",
+  },
+
+  // ── reclassifications ──
+  "roofing.roof-ventilation": {
+    coverage: "evidenced",
+    priceable: false,
+    source: "audit",
+    basis:
+      "The auditor states the engine's gap is false: the general details require climate-zone roof-space ventilation unless a listed exclusion applies.",
+  },
+  "waterproofing.certification": {
+    coverage: "evidenced",
+    priceable: false,
+    source: "adjudicated",
+    basis:
+      "Page 16 requires inspection plus either DFT testing or a 24-hour controlled water test. It does NOT require an applicator certificate, so the engine's priceable grade overreached. Certification is a compliance obligation carried in the trade price.",
+  },
+  "flooring.carpet": {
+    coverage: "gap",
+    gapClass: "design_gap",
+    source: "audit",
+    basis:
+      "Stands for the missing overall floor-finish schedule. No finish is selected anywhere; gapping every possible floor covering would ask one question four times.",
+  },
+  "fire-services.fire-doors": {
+    coverage: "not_expected",
+    source: "adjudicated",
+    basis:
+      "No fire-door package is shown or required. The real requirement is a compliant tested detail wherever a service penetrates the FRL 60/60/60 Partiwall, which belongs to the party-wall system rather than a fire-door line.",
+  },
+};
+
 /**
  * Rows the rules classify but a human should still confirm, because
  * the auditor's wording left genuine ambiguity. Marked rather than
  * guessed: an unratified label is excluded from every metric.
  */
-const NEEDS_RATIFICATION = new Set([
-  "hvac.ducted-system",
-  "hvac.split-systems",
-  "roofing.roof-ventilation",
-  "lining.cornice",
-  "lining.square-set",
-  "flooring.carpet",
+const NEEDS_RATIFICATION = new Set<string>([
+  // Empty: every flagged row was ratified on 27 August 2026. New
+  // ambiguities land here as they are found.
 ]);
 
 // ── build ───────────────────────────────────────────────────────────
@@ -281,9 +393,11 @@ const lines: GoldenExpectedLineV2[] = rows.map((r) => {
     ...(coverage === "evidenced" && cited.length > 0 ? { citations: cited } : {}),
   };
 
-  // Overrides win over everything above.
+  // Overrides win over the rules; a human ratification wins over both.
   const o = OVERRIDES[r.itemId];
   if (o) Object.assign(line, o, { tier });
+  const rat = RATIFIED[r.itemId];
+  if (rat) Object.assign(line, rat, { tier: rat.tier ?? tier });
 
   // Mark for ratification: explicit list, unclassifiable prose, or a
   // borderline tier call that changes what the label means.
@@ -291,12 +405,14 @@ const lines: GoldenExpectedLineV2[] = rows.map((r) => {
     NEEDS_RATIFICATION.has(r.itemId) ||
     unclassified.some((u) => u.endsWith(r.itemId)) ||
     (starred.has(r.itemId) && line.coverage === "gap");
-  if (needsHuman && !OVERRIDES[r.itemId]) line.reviewerConfirmation = "required";
+  if (needsHuman && !OVERRIDES[r.itemId] && !RATIFIED[r.itemId]) {
+    line.reviewerConfirmation = "required";
+  }
 
   // A gap must carry a class; anything left without one is unsettled.
   if (line.coverage === "gap" && !line.gapClass) {
     line.gapClass = "design_gap";
-    line.reviewerConfirmation = "required";
+    if (!RATIFIED[r.itemId]) line.reviewerConfirmation = "required";
   }
   if (line.coverage !== "gap") delete line.gapClass;
   if (line.coverage !== "evidenced") delete line.priceable;
@@ -414,6 +530,45 @@ const regressions: GoldenPackageV2["regressions"] = [
       { kind: "coverageNot", itemId: "joinery.mirror-cabinets", notEquals: "gap" },
       { kind: "coverageNot", itemId: "landscaping.pool", notEquals: "gap" },
       { kind: "coverageNot", itemId: "stairs.residential-lift", notEquals: "gap" },
+    ],
+  },
+  {
+    id: "WAL-APP-002",
+    title: "Roof form excludes the details that form implies",
+    rationale:
+      "Ratified by Aryan: a parapet-and-box-gutter roof has no eaves and therefore no soffit lining. Both the engine and the audit assumed a roof form this project does not have. 'Soffit' appears zero times in the set.",
+    assertions: [
+      { kind: "coverageNot", itemId: "external-walls.eaves-soffits", notEquals: "gap" },
+    ],
+  },
+  {
+    id: "WAL-APP-003",
+    title: "A consultant report is not required merely because a system exists",
+    rationale:
+      "Ratified by Aryan: the Partiwall shaftliner as supplied meets the minimum separation requirement. An acoustic report is triggered by an apartment class or a high-noise location, neither present here.",
+    assertions: [
+      { kind: "coverageNot", itemId: "approvals.acoustic-report", notEquals: "gap" },
+    ],
+  },
+  {
+    id: "WAL-DEFER-001",
+    title: "A system left to the engineer is deferred, not excluded",
+    rationale:
+      "The set proves slab-on-ground and refers the slab to engineering. Neither waffle nor strip/pad can be ruled out until the structural package arrives, and neither is an owner design commission.",
+    assertions: [
+      { kind: "gapClass", itemId: "footings-slab.waffle-slab", equals: "later_consultant_package" },
+      { kind: "gapClass", itemId: "footings-slab.strip-pad-footings", equals: "later_consultant_package" },
+    ],
+  },
+  {
+    id: "WAL-ALT-001",
+    title: "An alternative group asks its question once",
+    rationale:
+      "Cornice and square-set are one wall-ceiling junction choice; ducted and split are one HVAC choice. Gapping every sibling asks the same question N times.",
+    assertions: [
+      { kind: "coverage", itemId: "lining.square-set", equals: "not_expected" },
+      { kind: "coverageNot", itemId: "hvac.ducted-system", notEquals: "evidenced" },
+      { kind: "coverageNot", itemId: "hvac.split-systems", notEquals: "evidenced" },
     ],
   },
   {

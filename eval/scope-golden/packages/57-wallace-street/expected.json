@@ -129,12 +129,10 @@
     },
     {
       "itemId": "approvals.acoustic-report",
-      "coverage": "gap",
-      "tier": "core",
-      "source": "audit",
-      "basis": "Auditor approved the engine's finding. Genuine tender/design gap. The Partiwall fire system is identified, but no project acoustic rating/report or testing criterion is supplied.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "RATIFIED: not core on a two-dwelling job. The Partiwall shaftliner system as supplied meets the minimum separation requirement, so no separate acoustic report is required. An acoustic report is triggered by a multi-level apartment class or a high-noise location (rail, tram, arterial), neither of which applies here. The word 'acoustic' does not appear once in the 21-page set."
     },
     {
       "itemId": "approvals.authority-consents",
@@ -518,11 +516,11 @@
     },
     {
       "itemId": "footings-slab.strip-pad-footings",
-      "coverage": "not_expected",
+      "coverage": "gap",
       "tier": "alternative",
-      "source": "audit",
-      "basis": "DO NOT MARK NOT EXPECTED. The slab/footing system is expressly left to the engineer; strip/pad components cannot be excluded until the structural design is supplied.",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "The auditor: 'DO NOT MARK NOT EXPECTED. The slab/footing system is expressly left to the engineer; strip/pad components cannot be excluded until the structural design is supplied.' Deferred to a package that was not supplied, not proven inapplicable.",
+      "gapClass": "later_consultant_package"
     },
     {
       "itemId": "footings-slab.subfloor-timber",
@@ -557,26 +555,24 @@
       "coverage": "gap",
       "tier": "core",
       "source": "audit",
-      "basis": "CONTRACTOR / HYDRAULIC COORDINATION, not a standalone architectural design gap. Drainage rough-in is required before the slab, but final routes are a plumbing/structural coordination matter.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "basis": "Contractor/hydraulic coordination, not a standalone architectural design gap. Rough-in is required before the slab but final routes are a plumbing and structural coordination matter.",
+      "gapClass": "contractor_obligation"
     },
     {
       "itemId": "footings-slab.vapour-barrier",
       "coverage": "gap",
       "tier": "core",
       "source": "audit",
-      "basis": "EXPECTED IN THE STRUCTURAL/SLAB PACKAGE or builder compliant slab system. The architectural set does not select the membrane/preparation build-up, so do not treat this as a separate owner design chase.",
-      "gapClass": "later_consultant_package",
-      "reviewerConfirmation": "required"
+      "basis": "Expected in the structural/slab package or a builder-compliant slab system. The architectural set does not select the membrane build-up, so this is not an owner design chase.",
+      "gapClass": "later_consultant_package"
     },
     {
       "itemId": "footings-slab.waffle-slab",
-      "coverage": "not_expected",
+      "coverage": "gap",
       "tier": "alternative",
-      "source": "audit",
-      "basis": "DO NOT MARK NOT EXPECTED YET. The architectural set only establishes slab-on-ground and refers the slab to engineering; it does not prove the final system is not waffle/pod.",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "Same ruling: the set establishes slab-on-ground and refers the slab to engineering. It does not prove the final system is not waffle/pod.",
+      "gapClass": "later_consultant_package"
     },
     {
       "itemId": "retaining.engineered-concrete-block",
@@ -913,7 +909,7 @@
       "coverage": "evidenced",
       "tier": "conditional",
       "source": "audit",
-      "basis": "EVIDENCED - partial/conditional. The general details require climate-zone roof-space ventilation unless a listed exclusion applies. The current GAP finding is false.",
+      "basis": "The auditor states the engine's gap is false: the general details require climate-zone roof-space ventilation unless a listed exclusion applies.",
       "priceable": false,
       "citations": [
         {
@@ -924,8 +920,7 @@
           "file": "57 Wallace Street Brunswick West - Architectural.pdf",
           "page": 15
         }
-      ],
-      "reviewerConfirmation": "required"
+      ]
     },
     {
       "itemId": "roofing.sarking-battens",
@@ -1054,12 +1049,10 @@
     },
     {
       "itemId": "external-walls.eaves-soffits",
-      "coverage": "gap",
+      "coverage": "not_expected",
       "tier": "core",
-      "source": "audit",
-      "basis": "Auditor approved the engine's finding. Genuine finish gap where eaves/overhangs occur. Fascia/gutter and roof geometry are shown, but soffit/eaves lining material and finish are not fixed.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "RATIFIED: this roof has no eaves. It is a parapet-and-box-gutter form, and box gutters behind parapets exclude eaves and soffits by construction. 'Soffit' appears zero times in the set; every 'eave' hit is either the level annotation 'EAVES 49.81', the substring inside 'leaves of cavity walls', or a conditional NCC shading note. Both the engine's gap and the auditor's 'genuine finish gap where eaves occur' assumed a roof form this project does not have."
     },
     {
       "itemId": "external-walls.fc-cladding",
@@ -1398,17 +1391,15 @@
       "coverage": "gap",
       "tier": "alternative",
       "source": "audit",
-      "basis": "Auditor approved the engine's finding. Genuine ceiling-junction finish gap. Neither cornice nor square-set is selected; resolve one governing wall/ceiling finish system before tender.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "basis": "Carries the single wall-ceiling junction question for its alternative group. Neither cornice nor square-set is selected.",
+      "gapClass": "design_gap"
     },
     {
       "itemId": "lining.square-set",
       "coverage": "not_expected",
       "tier": "alternative",
       "source": "audit",
-      "basis": "REMOVE as a duplicate alternative gap. The actual omission is the ceiling/wall junction finish choice; keep one clarification under the cornice line rather than treating cornice and square-set as simultaneously missing scope.",
-      "reviewerConfirmation": "required"
+      "basis": "The duplicate sibling. The omission is one finish choice, resolved under the cornice line; gapping both would ask the same question twice."
     },
     {
       "itemId": "lining.wall-plasterboard",
@@ -1748,15 +1739,15 @@
       "itemId": "waterproofing.certification",
       "coverage": "evidenced",
       "tier": "commercial",
-      "source": "audit",
-      "basis": "CORRECT BEFORE SENDING. Page 16 requires inspection and either DFT testing or a 24-hour controlled water test; it does not expressly require an applicator certificate. Treat certification as a compliance/handover obligation.",
+      "source": "adjudicated",
+      "basis": "Page 16 requires inspection plus either DFT testing or a 24-hour controlled water test. It does NOT require an applicator certificate, so the engine's priceable grade overreached. Certification is a compliance obligation carried in the trade price.",
       "citations": [
         {
           "file": "57 Wallace Street Brunswick West - Architectural.pdf",
           "page": 16
         }
       ],
-      "reviewerConfirmation": "required"
+      "priceable": false
     },
     {
       "itemId": "waterproofing.planter-tanking",
@@ -1902,9 +1893,8 @@
       "coverage": "gap",
       "tier": "conditional",
       "source": "audit",
-      "basis": "CHANGE TO A GENERIC FLOOR-FINISH SCHEDULE GAP. No overall floor-covering schedule is supplied, but the documents do not specifically select carpet. Do not create simultaneous gaps for every possible floor finish.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "basis": "Stands for the missing overall floor-finish schedule. No finish is selected anywhere; gapping every possible floor covering would ask one question four times.",
+      "gapClass": "design_gap"
     },
     {
       "itemId": "flooring.engineered-timber",
@@ -2343,9 +2333,8 @@
       "itemId": "hvac.ducted-system",
       "coverage": "not_expected",
       "tier": "alternative",
-      "source": "audit",
-      "basis": "REMOVE THE SYSTEM-TYPE ASSERTION. The drawings require reverse-cycle heating/cooling and contain generic ductwork rules, but do not select a ducted whole-home system. Record HVAC system type as unresolved.",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "Not selected. The engine evidenced BOTH ducted and split from generic reverse-cycle wording, then reported a conflict between its own two inferences."
     },
     {
       "itemId": "hvac.ducted-vacuum",
@@ -2396,11 +2385,11 @@
     },
     {
       "itemId": "hvac.split-systems",
-      "coverage": "not_expected",
+      "coverage": "gap",
       "tier": "alternative",
-      "source": "audit",
-      "basis": "REMOVE THE SYSTEM-TYPE ASSERTION. Reverse-cycle heating/cooling is required, but no wall-mounted split-system package is actually selected. Record HVAC system type as unresolved.",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "Anchors the HVAC selection question. The drawings require reverse-cycle at minimum 3-star and select NEITHER a ducted nor a split package, so the system type is unresolved. Until the abstention state ships this is expressed as one gap on the group, matching how cornice/square-set is handled.",
+      "gapClass": "design_gap"
     },
     {
       "itemId": "hvac.ventilation-systems",
@@ -2425,12 +2414,10 @@
     },
     {
       "itemId": "fire-services.fire-doors",
-      "coverage": "gap",
+      "coverage": "not_expected",
       "tier": "conditional",
-      "source": "audit",
-      "basis": "REWORD. No fire-door package is shown. Any service penetration through the FRL 60/60/60 Partiwall must use a compliant tested detail, but that is a party-wall interface requirement, not evidence that fire doors are missing.",
-      "gapClass": "design_gap",
-      "reviewerConfirmation": "required"
+      "source": "adjudicated",
+      "basis": "No fire-door package is shown or required. The real requirement is a compliant tested detail wherever a service penetrates the FRL 60/60/60 Partiwall, which belongs to the party-wall system rather than a fire-door line."
     },
     {
       "itemId": "fire-services.hydrants-hose-reels",
@@ -2987,6 +2974,69 @@
           "kind": "coverageNot",
           "itemId": "stairs.residential-lift",
           "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "WAL-APP-002",
+      "title": "Roof form excludes the details that form implies",
+      "rationale": "Ratified by Aryan: a parapet-and-box-gutter roof has no eaves and therefore no soffit lining. Both the engine and the audit assumed a roof form this project does not have. 'Soffit' appears zero times in the set.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "external-walls.eaves-soffits",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "WAL-APP-003",
+      "title": "A consultant report is not required merely because a system exists",
+      "rationale": "Ratified by Aryan: the Partiwall shaftliner as supplied meets the minimum separation requirement. An acoustic report is triggered by an apartment class or a high-noise location, neither present here.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "approvals.acoustic-report",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "WAL-DEFER-001",
+      "title": "A system left to the engineer is deferred, not excluded",
+      "rationale": "The set proves slab-on-ground and refers the slab to engineering. Neither waffle nor strip/pad can be ruled out until the structural package arrives, and neither is an owner design commission.",
+      "assertions": [
+        {
+          "kind": "gapClass",
+          "itemId": "footings-slab.waffle-slab",
+          "equals": "later_consultant_package"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "footings-slab.strip-pad-footings",
+          "equals": "later_consultant_package"
+        }
+      ]
+    },
+    {
+      "id": "WAL-ALT-001",
+      "title": "An alternative group asks its question once",
+      "rationale": "Cornice and square-set are one wall-ceiling junction choice; ducted and split are one HVAC choice. Gapping every sibling asks the same question N times.",
+      "assertions": [
+        {
+          "kind": "coverage",
+          "itemId": "lining.square-set",
+          "equals": "not_expected"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "hvac.ducted-system",
+          "notEquals": "evidenced"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "hvac.split-systems",
+          "notEquals": "evidenced"
         }
       ]
     },
