@@ -393,7 +393,7 @@ export function PackReview({
   const onResolve = useCallback(
     async (
       itemId: string,
-      resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+      resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
       amountAud?: number,
     ) => {
       const r = await resolveScopeGapAction(projectId, itemId, {
@@ -1355,7 +1355,7 @@ function ChapterDocuments({
   onReread: () => void;
   onResolve: (
     itemId: string,
-    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amountAud?: number,
   ) => Promise<boolean>;
   onContinue: () => void;
@@ -1370,7 +1370,7 @@ function ChapterDocuments({
       <p className="mt-3 text-[13.5px] leading-[1.7] text-text-muted max-w-[66ch]">
         {nothing
           ? "Your document set covers the reports and schedules builders usually ask for. Nothing needs adding before the round goes out."
-          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. Each document you add removes assumptions from every quote. Where a report asks for an answer, promising it for later holds your round until you add it and we read again.`}
+          : `Your set includes ${[...kinds].map((k) => (KIND_LABEL[k!] ?? k!).toLowerCase()).join(", ")} documentation. Below is what a builder would notice missing. Each document you add removes assumptions from every quote. Where a report asks for an answer, only adding it to this round holds your round open: the other two answers send it out as it stands.`}
       </p>
 
       {nothing ? (
@@ -2079,7 +2079,7 @@ function QuestionCard({
   readOnly: boolean;
   onResolve: (
     itemId: string,
-    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    resolution: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amountAud?: number,
   ) => Promise<boolean>;
   docMood?: boolean;
@@ -2095,7 +2095,7 @@ function QuestionCard({
   const [busy, setBusy] = useState(false);
 
   const act = async (
-    kind: "allowance" | "builder_priced" | "excluded" | "upload_later",
+    kind: "allowance" | "builder_priced" | "excluded" | "upload_later" | "owner_later",
     amt?: number,
   ) => {
     setBusy(true);
@@ -2114,7 +2114,9 @@ function QuestionCard({
         ? "Builders will price this"
         : resolution.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Holding the round for this document"
+          : resolution.resolution === "owner_later"
+            ? "Coming after this round; builders price it now"
+            : "Holding the round for this document"
     : null;
 
   return (
@@ -2147,21 +2149,24 @@ function QuestionCard({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {docMood ? (
             <>
-              {/* Three answers, in the order of most control: hand the
-                  document over now, let the builders carry it, or note
-                  it for later. "Add it now" is not a state — it scrolls
-                  to the add box and opens the picker, and the re-read
-                  resolves the gap with the document itself. */}
+              {/* Three answers that differ in what they DO, not in
+                  wording. The first holds the round; the other two let
+                  it go out. The old pair ("Add it now" and a promise to
+                  add it before go-live) described one outcome twice, so
+                  they are now one answer: it records the promise AND
+                  opens the picker, because the document is coming
+                  either way and the round waits for it. */}
               <AnswerChip
                 disabled={busy}
-                active={false}
+                active={resolution?.resolution === "upload_later"}
                 suggested={!resolution}
                 onClick={() => {
+                  void act("upload_later");
                   window.dispatchEvent(new CustomEvent("bhq:scope:add-doc"));
                 }}
               >
                 <FileUp className="size-3.5" />
-                Add it now
+                Add it to this round
               </AnswerChip>
               <AnswerChip
                 disabled={busy}
@@ -2173,11 +2178,11 @@ function QuestionCard({
               </AnswerChip>
               <AnswerChip
                 disabled={busy}
-                active={resolution?.resolution === "upload_later"}
-                onClick={() => act("upload_later")}
+                active={resolution?.resolution === "owner_later"}
+                onClick={() => act("owner_later")}
               >
                 <Clock3 className="size-3.5" />
-                I will add it before we go live
+                I will send it after this round
               </AnswerChip>
             </>
           ) : (
@@ -2326,7 +2331,9 @@ function DroppedAnswers({
         ? "Builders will price this"
         : r.resolution === "excluded"
           ? "Excluded from this tender"
-          : "Holding the round for this document";
+          : r.resolution === "owner_later"
+            ? "Coming after this round; builders price it now"
+            : "Holding the round for this document";
 
   return (
     <div className="mt-6 rounded-lg border border-border-accent/40 bg-[rgba(0,212,200,0.03)] card-elev px-4.5 py-4">

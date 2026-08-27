@@ -3087,13 +3087,20 @@ import {
  *                    skip bins, temporary fencing, a hundred small
  *                    things no owner should have to cost themselves)
  *   excluded       — outside this contract entirely
- *   upload_later   — the documents are coming; re-read before going out
+ *   upload_later   — the document is coming IN THIS ROUND; the round
+ *                    holds until it arrives and the pack is read again
+ *   owner_later    — the owner will supply the document AFTER this
+ *                    round (it is being prepared). The round does not
+ *                    hold. The work stays in the contract and the
+ *                    builders price it now, without the document, so
+ *                    the line must reach them on the schedule.
  */
 export type GapResolutionKind =
   | "allowance"
   | "builder_priced"
   | "excluded"
-  | "upload_later";
+  | "upload_later"
+  | "owner_later";
 
 /**
  * The runner submits for preparation. Publishability is validated
@@ -4002,7 +4009,14 @@ async function scheduleForRun(
       if (r.resolution === "allowance") {
         kind = "owner_allowance";
         ownerAmountAud = r.amountAud ?? null;
-      } else if (r.resolution === "builder_priced") {
+      } else if (
+        r.resolution === "builder_priced" ||
+        // The owner's document comes after this round, so the builders
+        // price the work now without it. Named explicitly because the
+        // fallback below means EXCLUDED: letting this fall through
+        // would tell every builder the work is out of contract.
+        r.resolution === "owner_later"
+      ) {
         kind = "owner_open";
       } else {
         kind = "owner_excluded";
