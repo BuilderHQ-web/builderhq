@@ -24,6 +24,7 @@ import {
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
 import { ProjectDetail } from "./detail";
+import { balanceFor } from "@/modules/wallet";
 
 export async function generateMetadata({
   params,
@@ -96,6 +97,9 @@ export default async function BuilderProjectPage({
       : null;
   const fbaStatus = await getStatus(userId);
   const priceAud = unlockPriceFor(preview.type);
+  // Spendable credit, so the bar can offer it instead of a card.
+  // Zero for almost every builder, and cheap to ask for.
+  const creditAud = unlocked ? 0 : (await balanceFor(userId)).availableAud;
   // Provenance: who put this builder's name on the round, if anyone.
   const invitedBy = unlocked
     ? await getInviterForProject(userId, preview.id)
@@ -149,6 +153,7 @@ export default async function BuilderProjectPage({
       ownerContact={ownerContact}
       fbaStatus={fbaStatus}
       priceAud={priceAud}
+      creditAud={creditAud}
       myTenderStatus={myTender?.status ?? null}
       viewerMode={viewerMode}
       myUserId={userId}

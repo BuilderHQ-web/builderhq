@@ -36,6 +36,7 @@ import * as auditSchema from "@/modules/audit/schema";
 import * as leadsSchema from "@/modules/leads/schema";
 import * as paymentsSchema from "@/modules/payments/schema";
 import * as pushSchema from "@/modules/push/schema";
+import * as walletSchema from "@/modules/wallet/schema";
 
 // Neon's WS transport needs a polyfill outside the browser.
 if (typeof WebSocket === "undefined") {
@@ -58,6 +59,7 @@ const schema = {
   ...leadsSchema,
   ...paymentsSchema,
   ...pushSchema,
+  ...walletSchema,
 };
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });

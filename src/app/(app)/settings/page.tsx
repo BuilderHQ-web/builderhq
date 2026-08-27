@@ -8,6 +8,7 @@ import {
   Hammer,
   Lock,
   Sliders,
+  Ticket,
   User,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ import { auth } from "@/modules/auth";
 import { db } from "@/lib/db";
 import { users } from "@/modules/users";
 import { getOwnerProfile } from "@/modules/profiles";
+import { balanceFor } from "@/modules/wallet";
 import { PageHeader } from "@/components/app/page-header";
 import { Reveal } from "@/components/app/reveal";
 import { cn } from "@/lib/utils";
@@ -25,6 +27,7 @@ import { OwnerSettingsForm } from "./owner-form";
 import { PreferencesForm } from "./preferences-form";
 import { DeleteAccountForm } from "./delete-account-form";
 import { getMarketingEmailsEnabled } from "./actions";
+import { CreditsPanel } from "./credits-panel";
 
 export const metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
@@ -57,6 +60,10 @@ export default async function SettingsPage() {
   // right value on first render (no flash of wrong state).
   const marketingEmailsEnabled = await getMarketingEmailsEnabled();
 
+  // Account credit. Builders only, and always loaded for them: the
+  // panel renders an empty state rather than vanishing at zero.
+  const creditBalance = role === "builder" ? await balanceFor(userId) : null;
+
   // Quick-jump nav entries — built role-aware so builders / owners see
   // only the sections that apply. The same hash anchors hang off each
   // <SettingsSection> so the sticky list stays in sync.
@@ -79,6 +86,11 @@ export default async function SettingsPage() {
       id: "public-profile",
       label: "Public profile",
       icon: <Hammer className="size-3" />,
+    });
+    navItems.push({
+      id: "credits",
+      label: "Credits",
+      icon: <Ticket className="size-3" />,
     });
   }
   navItems.push(
@@ -205,6 +217,21 @@ export default async function SettingsPage() {
                   Open public profile
                   <ArrowUpRight className="size-3.5 transition-transform duration-[140ms] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
+              </SettingsSection>
+            </Reveal>
+          ) : null}
+
+          {/* Account credit — builders only, always rendered for them */}
+          {role === "builder" && creditBalance ? (
+            <Reveal immediate delay={0.13}>
+              <SettingsSection
+                id="credits"
+                kicker="Credits"
+                icon={<Ticket className="size-3.5" />}
+                title="Account credit"
+                description="Credit issued by BuilderHQ, and what it has been spent on. It applies against the cost of securing a tender spot."
+              >
+                <CreditsPanel balance={creditBalance} />
               </SettingsSection>
             </Reveal>
           ) : null}

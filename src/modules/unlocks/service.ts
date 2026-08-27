@@ -147,6 +147,13 @@ async function dispatchUnlock(
 // ── unlocks ──────────────────────────────────────────────────────────────
 
 /**
+ * The transaction handle drizzle hands a `db.transaction` callback.
+ * Named so the funding hook below can be typed without every caller
+ * reaching into drizzle's internals.
+ */
+export type UnlockTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
  * Idempotent: calling twice with the same builder+project is fine.
  * Returns the existing row in that case.
  *
@@ -178,6 +185,16 @@ export async function unlockProject(
      *  which charge funded the unlock (and the webhook can tell its own
      *  unlock apart from a racing one). */
     stripePaymentIntentId?: string | null;
+    /**
+     * Runs INSIDE the insert transaction, after the row exists and the
+     * spot is claimed. The credit path debits the ledger here so the
+     * unlock and the money move together: throw and both roll back.
+     *
+     * Stripe cannot use this — its money moves in Stripe, not in a
+     * table we control — which is why the paid path captures only
+     * after this transaction has already committed.
+     */
+    fundWithin?: (tx: UnlockTx, unlock: UnlockRow) => Promise<void>;
   } = {},
 ): Promise<Result<UnlockRow>> {
   // Already unlocked? Return the existing row.
@@ -205,6 +222,7 @@ export async function unlockProject(
       projectId,
       options.source,
       options.stripePaymentIntentId ?? null,
+      options.fundWithin,
     );
   }
 
@@ -244,10 +262,12 @@ async function insertUnlockWithCap(
   projectId: string,
   source: UnlockRow["source"],
   stripePaymentIntentId: string | null = null,
+  fundWithin?: (tx: UnlockTx, unlock: UnlockRow) => Promise<void>,
 ): Promise<Result<UnlockRow>> {
   let inserted: UnlockRow | null = null;
   let atCap = false;
   let capForMessage: number = UNLOCK_CAP;
+  let fundingError: string | null = null;
 
   try {
     await db.transaction(async (tx) => {
@@ -275,8 +295,28 @@ async function insertUnlockWithCap(
         .values({ builderId, projectId, source, stripePaymentIntentId })
         .returning();
       inserted = row ?? null;
+
+      // Fund it before the lock is released. A throw here rolls the
+      // whole transaction back, so a builder can never end up holding
+      // an unlock the ledger did not pay for.
+      if (row && fundWithin) {
+        try {
+          await fundWithin(tx, row);
+        } catch (err) {
+          fundingError = err instanceof Error ? err.message : String(err);
+          inserted = null;
+          throw err;
+        }
+      }
     });
   } catch (err) {
+    if (fundingError) {
+      logger.warn(
+        { event: "unlock.funding_declined", projectId, builderId, msg: fundingError },
+        "unlock rolled back: funding declined",
+      );
+      return fail("validation", fundingError);
+    }
     const msg = err instanceof Error ? err.message : String(err);
     logger.error(
       { event: "unlock.insert_failed", projectId, builderId, msg },

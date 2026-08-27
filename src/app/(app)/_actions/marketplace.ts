@@ -23,6 +23,11 @@ import {
 } from "@/modules/projects";
 import { getDownloadUrlForUnlocked } from "@/modules/documents";
 import { createUnlockCheckout } from "@/modules/payments";
+import {
+  unlockWithCredits,
+  acknowledgeGrants,
+  type UnlockWithCreditsResult,
+} from "@/modules/wallet";
 import { fail, ok, type Result } from "@/lib/result";
 
 async function requireBuilder(): Promise<Result<ActorContext>> {
@@ -78,6 +83,32 @@ export async function startUnlockCheckoutAction(
   const r = await createUnlockCheckout({ builderId: a.value.id, slug });
   if (!r.ok) return r;
   return ok({ url: r.value.url, alreadyUnlocked: r.value.alreadyUnlocked });
+}
+
+/**
+ * Unlock a project out of the builder's credit balance, with no card
+ * involved. The ledger debit and the unlock row commit together, so a
+ * failure here leaves the builder with both their credit and no
+ * unlock, never one without the other.
+ */
+export async function unlockWithCreditsAction(
+  slug: string,
+): Promise<Result<UnlockWithCreditsResult>> {
+  const a = await requireBuilder();
+  if (!a.ok) return a;
+  if (!canUnlock(a.value)) {
+    return fail("forbidden", "Only builders can unlock projects.");
+  }
+  return unlockWithCredits({ builderId: a.value.id, slug });
+}
+
+/** The builder has read the credit announcement on their dashboard. */
+export async function acknowledgeCreditGrantsAction(): Promise<
+  Result<{ acknowledged: number }>
+> {
+  const a = await requireBuilder();
+  if (!a.ok) return a;
+  return acknowledgeGrants(a.value.id);
 }
 
 /**

@@ -28,11 +28,13 @@ import {
   MessageSquare,
   ShieldCheck,
   CreditCard,
+  Ticket,
 } from "lucide-react";
 
 import {
   unlockProjectAction,
   startUnlockCheckoutAction,
+  unlockWithCreditsAction,
   amIUnlockedAction,
   saveProjectAction,
   unsaveProjectAction,
@@ -185,6 +187,7 @@ export function ProjectDetail({
   ownerContact,
   fbaStatus,
   priceAud,
+  creditAud,
   myTenderStatus,
   viewerMode,
   myUserId,
@@ -205,6 +208,8 @@ export function ProjectDetail({
   ownerContact: OwnerContact | null;
   fbaStatus: FbaStatus;
   priceAud: number;
+  /** Spendable account credit, whole AUD. */
+  creditAud: number;
   myUserId: string;
   initialConversations: ConversationListItem[];
   /** The approved pack, shaped for browsing; null on legacy rounds. */
@@ -336,6 +341,35 @@ export function ProjectDetail({
       }
       setUnlocked(true);
       toast.success("Project unlocked", "You can now message the owner and submit a tender.");
+      router.refresh();
+    });
+  };
+
+  // Credit unlock → no card, no redirect. The ledger debit and the
+  // unlock row commit in one transaction server-side, so there is
+  // nothing to poll for and nothing to reconcile on return.
+  const onCreditUnlock = () => {
+    startUnlock(async () => {
+      const r = await unlockWithCreditsAction(preview.slug);
+      if (!r.ok) {
+        const reason = (r.error.details as { reason?: string } | undefined)?.reason;
+        if (reason === "project_full") {
+          toast.error(
+            "Round is full",
+            "Another builder took the last spot. Browse other open projects.",
+          );
+          router.refresh();
+          return;
+        }
+        toast.error("Could not use your credit", r.error.message);
+        router.refresh();
+        return;
+      }
+      setUnlocked(true);
+      toast.success(
+        `Unlocked with $${r.value.spentAud} credit`,
+        `$${r.value.remainingAud} credit remaining on your account.`,
+      );
       router.refresh();
     });
   };
@@ -770,6 +804,7 @@ export function ProjectDetail({
       ) : (
         <UnlockBar
           priceAud={priceAud}
+          creditAud={creditAud}
           documents={documents.length}
           fbaStatus={fbaStatus}
           unlockedCount={preview.unlockedCount}
@@ -777,6 +812,7 @@ export function ProjectDetail({
           unlocking={unlocking}
           onUnlock={onUnlock}
           onPaidUnlock={onPaidUnlock}
+          onCreditUnlock={onCreditUnlock}
         />
       )}
     </div>
@@ -870,6 +906,7 @@ function TenderCtaBar({
 
 function UnlockBar({
   priceAud,
+  creditAud,
   documents,
   fbaStatus,
   unlockedCount,
@@ -877,8 +914,10 @@ function UnlockBar({
   unlocking,
   onUnlock,
   onPaidUnlock,
+  onCreditUnlock,
 }: {
   priceAud: number;
+  creditAud: number;
   documents: number;
   fbaStatus: FbaStatus;
   unlockedCount: number;
@@ -886,6 +925,7 @@ function UnlockBar({
   unlocking: boolean;
   onUnlock: () => void;
   onPaidUnlock: () => void;
+  onCreditUnlock: () => void;
 }) {
   const fbaActive = fbaStatus.active;
   const hasCredits = fbaActive && fbaStatus.remainingThisCycle > 0;
@@ -968,11 +1008,45 @@ function UnlockBar({
                 </div>
               </div>
             </div>
-            {/* Right — paid CTA */}
-            <button type="button" onClick={onPaidUnlock} disabled={unlocking} className={ctaClass}>
-              {unlocking ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
-              {unlocking ? "Redirecting…" : `Unlock for $${priceAud}`}
-            </button>
+            {/* Right — CTA. Credit covers the whole spot or none of it,
+                so the card path stays exactly as it was underneath. */}
+            {creditAud >= priceAud ? (
+              <div className="flex flex-col items-stretch gap-1.5">
+                <button
+                  type="button"
+                  onClick={onCreditUnlock}
+                  disabled={unlocking}
+                  className={ctaClass}
+                >
+                  {unlocking ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Ticket className="size-4" />
+                  )}
+                  {unlocking ? "Securing…" : `Use $${priceAud} credit`}
+                </button>
+                <button
+                  type="button"
+                  onClick={onPaidUnlock}
+                  disabled={unlocking}
+                  className="text-[11.5px] text-text-dim hover:text-text-muted transition-colors disabled:opacity-50"
+                >
+                  or pay by card
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-stretch gap-1.5">
+                <button type="button" onClick={onPaidUnlock} disabled={unlocking} className={ctaClass}>
+                  {unlocking ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+                  {unlocking ? "Redirecting…" : `Unlock for $${priceAud}`}
+                </button>
+                {creditAud > 0 ? (
+                  <p className="text-[11.5px] text-text-dim text-center">
+                    ${creditAud} credit available, ${priceAud - creditAud} short
+                  </p>
+                ) : null}
+              </div>
+            )}
           </>
         )}
       </div>

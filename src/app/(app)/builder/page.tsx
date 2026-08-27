@@ -41,6 +41,8 @@ import { BuilderHeroIntro } from "@/components/builder/hero-intro";
 import { ProjectCard } from "@/components/builder/project-card";
 import { logger } from "@/lib/logger";
 import { cn, plural } from "@/lib/utils";
+import { unacknowledgedGrantsFor } from "@/modules/wallet";
+import { CreditAnnouncement } from "./credit-announcement";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -123,7 +125,16 @@ export default async function BuilderDashboard() {
       .filter((m) => m.statewide || m.suburb !== null) ?? [];
   const matchedCategories = profile?.categories.map((c) => c.category) ?? [];
 
-  const [dash, openRounds, invites, drafts, savedIds, fbaStatus, unlockedIds] =
+  const [
+    dash,
+    openRounds,
+    invites,
+    drafts,
+    savedIds,
+    fbaStatus,
+    unlockedIds,
+    creditGrants,
+  ] =
     await Promise.all([
       userId
         ? safe("dashboard_rollup", getBuilderDashboardData(userId, firstName), EMPTY_DASH(firstName))
@@ -152,6 +163,9 @@ export default async function BuilderDashboard() {
         ? safe("fba_status", getFbaStatus(userId), { active: false, reason: "no_grant" } as const)
         : Promise.resolve({ active: false, reason: "no_grant" } as const),
       userId ? safe("unlocked_ids", listMyUnlockedProjectIds(userId), []) : [],
+      // Live credit the builder has not been told about yet. Empty for
+      // almost everyone, which is why it costs nothing to always ask.
+      userId ? safe("credit_grants", unacknowledgedGrantsFor(userId), []) : [],
     ]);
 
   const approvalStatus = profile?.profile?.approvalStatus ?? "incomplete";
@@ -451,6 +465,11 @@ export default async function BuilderDashboard() {
       {/* ── working area — one column, full width ─────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         <div className="mx-auto max-w-[1200px] flex flex-col gap-12">
+          {/* account credit — only while a grant is unacknowledged */}
+          {creditGrants.length > 0 ? (
+            <CreditAnnouncement grants={creditGrants} />
+          ) : null}
+
           {/* on your desk — the one toned panel on the page */}
           {queueShown.length > 0 ? (
             <section

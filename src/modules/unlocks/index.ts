@@ -38,7 +38,7 @@ export {
   countMySaved,
 } from "./service";
 
-export type { ProjectUnlockBuilder } from "./service";
+export type { ProjectUnlockBuilder, UnlockTx } from "./service";
 
 export { canUnlock, canSave } from "./policies";
 export type { ActorContext } from "./policies";

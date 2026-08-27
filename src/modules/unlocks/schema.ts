@@ -47,6 +47,8 @@ export const unlockSourceEnum = pgEnum("unlock_source", [
   "admin",
   // Appended last: pg ALTER TYPE ADD VALUE appends safely.
   "invited",
+  // 0050: funded from the builder's own credit ledger, not a card.
+  "credit",
 ]);
 
 // ── unlocks ──────────────────────────────────────────────────────────────
