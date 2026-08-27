@@ -243,13 +243,14 @@ export function PartnersRegister({ active }: { active: Active }) {
 
 function SegmentedNav({ active }: { active: Active }) {
   return (
-    // Five disciplines no longer fit a phone. The strip scrolls inside
-    // its own box so the page never moves sideways, and shrink-0 stops
-    // the map beside it squeezing the pills on desktop.
-    <div className="max-w-full shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    // Five disciplines do not fit one phone row, so they wrap rather
+    // than scroll: a filter nobody can see is a filter nobody uses.
+    // Each pill takes a third and grows into whatever the last row
+    // leaves, giving three then two. Desktop stays a single capsule.
+    <div className="w-full shrink-0 sm:w-auto">
       <nav
         aria-label="Filter partners"
-        className="inline-flex w-max items-center gap-1 rounded-full border border-border-subtle bg-surface-2 p-1"
+        className="flex w-full flex-wrap items-center gap-1 rounded-2xl border border-border-subtle bg-surface-2 p-1 sm:inline-flex sm:w-max sm:flex-nowrap sm:rounded-full"
       >
         {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
           (s) => {
@@ -266,8 +267,8 @@ function SegmentedNav({ active }: { active: Active }) {
                 aria-current={on ? "page" : undefined}
                 className={
                   on
-                    ? "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap bg-white card-elev text-[13px] font-semibold text-text"
-                    : "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap text-[13px] font-medium text-text-muted hover:text-text transition-colors"
+                    ? "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap grow basis-[calc(33.333%-0.5rem)] justify-center sm:grow-0 sm:basis-auto bg-white card-elev text-[13px] font-semibold text-text"
+                    : "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap grow basis-[calc(33.333%-0.5rem)] justify-center sm:grow-0 sm:basis-auto text-[13px] font-medium text-text-muted hover:text-text transition-colors"
                 }
               >
                 {s.label}
