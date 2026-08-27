@@ -37,10 +37,33 @@ import {
   SelectionEntrySchema,
   SynthesisSchemaForTest,
   planChunks,
+  EXTRACT_MAX_TOKENS,
   salvageArray,
   salvageIsFailure,
   type SynthesisDocumentInput,
 } from "./pipeline";
+
+/**
+ * v7 added claim axes and page identity to the extraction schema.
+ * These fixtures care about item ids, so this builder fills the rest
+ * with the defaults the parser would produce — in ONE place, so the
+ * next schema field is one edit rather than one per fixture.
+ */
+type PageFinding = SynthesisDocumentInput["findings"]["pages"][number];
+const page = (over: Partial<PageFinding> & { page: number }): PageFinding => ({
+  sheetId: null,
+  viewType: "other",
+  viewLabel: null,
+  dwelling: null,
+  itemIds: [],
+  claims: [],
+  schedules: [],
+  statedFigures: [],
+  offStandard: [],
+  docRefs: [],
+  note: null,
+  ...over,
+});
 
 const DOCS: SynthesisDocumentInput[] = [
   {
@@ -50,24 +73,10 @@ const DOCS: SynthesisDocumentInput[] = [
     revision: "B",
     findings: {
       pages: [
-        {
-          page: 1,
-          itemIds: ["framing.wall-frames", "roofing.tile-roof"],
-          statedFigures: [],
-          offStandard: [],
-          docRefs: [],
-          note: null,
-        },
-        {
-          page: 2,
-          itemIds: ["tiling.floor-tiles-supply"],
-          statedFigures: [],
-          offStandard: [],
-          docRefs: [],
-          note: null,
-        },
+        page({ page: 1, itemIds: ["framing.wall-frames", "roofing.tile-roof"] }),
+        page({ page: 2, itemIds: ["tiling.floor-tiles-supply"] }),
       ],
-    } as SynthesisDocumentInput["findings"],
+    },
   },
 ];
 
@@ -424,24 +433,48 @@ describe("schema salvage", () => {
 /* ── chunk plan: long documents extract in ranges ───────────────────── */
 
 describe("planChunks", () => {
+  // Written against the CONSTANT, not against a number. CHUNK_PAGES is
+  // set from a measurement of what the schema actually costs per page
+  // and moves whenever that measurement does; a test that hardcodes it
+  // fails for the wrong reason every time the ceiling is retuned.
   test("a document inside the limit is one whole-document call", () => {
-    expect(planChunks(50)).toEqual([{ from: 1, to: 50 }]);
+    expect(planChunks(1)).toEqual([{ from: 1, to: 1 }]);
     expect(planChunks(CHUNK_PAGES)).toEqual([{ from: 1, to: CHUNK_PAGES }]);
   });
 
-  test("a long specification splits into covering, non-overlapping ranges", () => {
-    const ranges = planChunks(190);
-    expect(ranges).toEqual([
-      { from: 1, to: 80 },
-      { from: 81, to: 160 },
-      { from: 161, to: 190 },
+  test("one page over the limit splits, and the split is exact", () => {
+    expect(planChunks(CHUNK_PAGES + 1)).toEqual([
+      { from: 1, to: CHUNK_PAGES },
+      { from: CHUNK_PAGES + 1, to: CHUNK_PAGES + 1 },
     ]);
-    // Every page covered exactly once.
+  });
+
+  test("a long specification splits into covering, non-overlapping ranges", () => {
+    const total = CHUNK_PAGES * 2 + Math.floor(CHUNK_PAGES / 2);
+    const ranges = planChunks(total);
+    expect(ranges).toHaveLength(3);
+    expect(ranges[0]).toEqual({ from: 1, to: CHUNK_PAGES });
+    expect(ranges.at(-1)!.to).toBe(total);
+
+    // Every page covered exactly once, in order, with no gap or overlap.
     const pages = ranges.flatMap((r) =>
       Array.from({ length: r.to - r.from + 1 }, (_, i) => r.from + i),
     );
-    expect(pages).toHaveLength(190);
-    expect(new Set(pages).size).toBe(190);
+    expect(pages).toHaveLength(total);
+    expect(new Set(pages).size).toBe(total);
+    expect(pages).toEqual([...pages].sort((a, b) => a - b));
+  });
+
+  test("no chunk can exceed the output ceiling at the measured rate", () => {
+    // The bug this whole retune existed to fix: CHUNK_PAGES was 80
+    // while a page costs ~586 output tokens, so a full chunk needed
+    // ~47,000 against a 24,000 ceiling and threw mid-stream.
+    const MEASURED_TOKENS_PER_PAGE = 586;
+    const worstChunk = CHUNK_PAGES * MEASURED_TOKENS_PER_PAGE;
+    expect(
+      worstChunk,
+      `a full ${CHUNK_PAGES}-page chunk needs ~${worstChunk} tokens against a ${EXTRACT_MAX_TOKENS} ceiling`,
+    ).toBeLessThan(EXTRACT_MAX_TOKENS * 0.6);
   });
 });
 

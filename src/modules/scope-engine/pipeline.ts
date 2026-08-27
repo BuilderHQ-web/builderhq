@@ -61,7 +61,24 @@ export const SYNTHESIS_MODEL = "claude-opus-4-8";
  * rather than discovered in front of a customer. Thinking tokens
  * count against these caps too.
  */
-export const EXTRACT_MAX_TOKENS = 24_000;
+/**
+ * MEASURED, not chosen. v7's page schema costs 586 output tokens per
+ * page on the Wallace architectural set (21 pages, a dense
+ * notes-heavy document), up from 462 under v6 — the claim axes,
+ * evidence quotes and page identity are worth about 27%.
+ *
+ * The old 24,000 was already unsafe before v7: at 462 tok/page an
+ * 80-page chunk produced ~37,000 tokens, so a dense long document hit
+ * `stop_reason: max_tokens` and threw, having saved nothing. Dow's two
+ * largest documents already sat at 71% and 69% of the ceiling.
+ *
+ * 48,000 with CHUNK_PAGES at 40 puts a full chunk at ~23,500 tokens,
+ * 49% of the ceiling and comfortably under the 60% warn line, leaving
+ * room for a document roughly twice as dense as any measured. Output
+ * tokens are billed as used, so the headroom costs nothing until it is
+ * needed.
+ */
+export const EXTRACT_MAX_TOKENS = 48_000;
 export const SYNTHESIS_MAX_TOKENS = 64_000;
 export const RESIDUAL_MAX_TOKENS = 32_000;
 
@@ -107,7 +124,7 @@ export function logHeadroom(
  * note locality (each note written only from its cited pages), and
  * one line per distinct cladding system.
  */
-export const SCOPE_PIPELINE_VERSION = 6;
+export const SCOPE_PIPELINE_VERSION = 7;
 
 /** 28 MB — the same ceiling the plan auto-fill extractor uses. */
 export const MAX_PDF_BYTES = 28 * 1024 * 1024;
@@ -118,7 +135,15 @@ export const MAX_PDF_BYTES = 28 * 1024 * 1024;
  * to absolute page numbers. 80 leaves headroom under the hard limit
  * and keeps each chunk's output well inside the token ceiling.
  */
-export const CHUNK_PAGES = 80;
+/**
+ * Halved from 80, which no measurement ever supported. See
+ * EXTRACT_MAX_TOKENS: at the measured 586 tokens per page an 80-page
+ * chunk needs ~47,000 output tokens, which would have sat at 98% of
+ * even the raised ceiling. 40 pages is ~23,500, and the API's own
+ * 100-page-per-request limit is no longer the binding constraint —
+ * the output ceiling is.
+ */
+export const CHUNK_PAGES = 40;
 
 /** Classification needs the cover and title block, not the whole set. */
 export const CLASSIFY_PAGES = 8;
@@ -604,12 +629,157 @@ const clipped = (max: number) =>
     .min(1)
     .transform((v) => v.trim().slice(0, max));
 
+/**
+ * v7 — the claim axes.
+ *
+ * Every one of these exists because the engine got something wrong in a
+ * way `itemIds: string[]` could not express. A bare id says "this page
+ * shows this work"; it cannot say the page shows it being REFUSED, or
+ * shows it CONDITIONALLY, or shows it only in a marketing render.
+ *
+ * They are deliberately NOT emitted for every item. An ordinary
+ * positive, selected, project-specific claim stays in `itemIds`, which
+ * costs one string. A claim row costs roughly forty tokens, so it is
+ * reserved for items whose meaning is modified — which is exactly the
+ * set the deterministic engines need to read.
+ */
+export const CLAIM_POLARITY = [
+  "positive",
+  "excluded",
+  "not_required",
+  "by_owner",
+  "by_others",
+  "deleted",
+] as const;
+
+export const CLAIM_MODALITY = [
+  "selected",
+  "minimum",
+  "maximum",
+  "if_required",
+  "where_required",
+  "may",
+  "indicative",
+  "typical",
+  "alternative",
+  "provision_only",
+] as const;
+
+export const CLAIM_GENERICITY = [
+  "project_specific",
+  "schedule",
+  "detail",
+  "general_note",
+  "template_note",
+  "render_only",
+] as const;
+
+export const VIEW_TYPES = [
+  "plan",
+  "elevation",
+  "section",
+  "detail",
+  "schedule",
+  "render",
+  "notes",
+  "title",
+  "other",
+] as const;
+
+export const FIGURE_BASIS = [
+  "per_dwelling",
+  "total_project",
+  "per_room",
+  "shared",
+  "minimum",
+  "maximum",
+  "selected",
+  "nominal",
+] as const;
+
+const enumish = <T extends readonly string[]>(vals: T, fallback: T[number]) =>
+  z
+    .string()
+    .nullish()
+    .transform((v) => (v && (vals as readonly string[]).includes(v) ? v : fallback));
+
 export const PageFindingSchema = z.object({
   page: z.number().int().min(1),
+
+  /**
+   * The printed sheet identifier (WD12), which is NOT the PDF page. On
+   * the Wallace set the two diverge — PDF page 11 is sheet WD12 — so a
+   * page-only citation silently crosses sheets.
+   */
+  sheetId: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 24) : null)),
+  /** What kind of drawing this is. A render cannot establish scope. */
+  viewType: enumish(VIEW_TYPES, "other"),
+  /** Local identity: "Unit 1 roof plan - north". Two figures on two
+   *  different views are not a contradiction. */
+  viewLabel: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 80) : null)),
+  /** Set only where the whole page belongs to one dwelling. */
+  dwelling: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.trim().slice(0, 40) : null)),
+
   itemIds: z
     .array(z.string())
     .default([])
     .transform((a) => a.slice(0, 60)),
+
+  /**
+   * Items this page says something ABOUT, beyond showing them. The
+   * quote is what makes entailment checkable: a claim whose words are
+   * absent from the page is a fabrication, and until now nothing could
+   * tell the difference.
+   */
+  claims: z
+    .array(
+      z.object({
+        itemId: z.string(),
+        polarity: enumish(CLAIM_POLARITY, "positive"),
+        modality: enumish(CLAIM_MODALITY, "selected"),
+        genericity: enumish(CLAIM_GENERICITY, "project_specific"),
+        quote: clipped(180),
+        dwelling: z
+          .string()
+          .nullish()
+          .transform((v) => (v ? v.trim().slice(0, 40) : null)),
+      }),
+    )
+    .default([])
+    .transform((a) => a.slice(0, 20)),
+
+  /**
+   * Schedules present on the page, by identity rather than by row. A
+   * window schedule EXISTING is what decides whether window sizes are
+   * specified; transcribing every row would cost more than it tells.
+   */
+  schedules: z
+    .array(
+      z.object({
+        title: clipped(80),
+        kind: enumish(
+          ["window", "door", "finishes", "fixture", "electrical", "other"] as const,
+          "other",
+        ),
+        rows: z
+          .number()
+          .int()
+          .nullish()
+          .transform((v) => (typeof v === "number" && v >= 0 ? Math.min(v, 999) : null)),
+      }),
+    )
+    .default([])
+    .transform((a) => a.slice(0, 6)),
+
   statedFigures: z
     .array(
       z.object({
@@ -619,6 +789,21 @@ export const PageFindingSchema = z.object({
           .string()
           .nullish()
           .transform((v) => v ?? null),
+        /**
+         * What the figure is measured against. Without this, 2 kW per
+         * dwelling and 4 kW total look like a contradiction rather
+         * than the same fact stated twice.
+         */
+        basis: z
+          .string()
+          .nullish()
+          .transform((v) =>
+            v && (FIGURE_BASIS as readonly string[]).includes(v) ? v : null,
+          ),
+        dwelling: z
+          .string()
+          .nullish()
+          .transform((v) => (v ? v.trim().slice(0, 40) : null)),
       }),
     )
     .default([])
@@ -666,6 +851,83 @@ const EXTRACT_TOOL: Anthropic.Tool = {
           type: "object",
           properties: {
             page: { type: "integer", description: "1-based page number." },
+            sheetId: {
+              type: ["string", "null"],
+              description:
+                "The sheet identifier PRINTED on the drawing (e.g. 'WD12', 'A-104'), not the page number. Null when the page prints none.",
+            },
+            viewType: {
+              type: "string",
+              enum: ["plan", "elevation", "section", "detail", "schedule", "render", "notes", "title", "other"],
+              description:
+                "What this page IS. Use 'render' for perspectives and 3D visuals, 'notes' for specification/general-note sheets, 'schedule' for tabulated schedules.",
+            },
+            viewLabel: {
+              type: ["string", "null"],
+              description:
+                "The view's own title as printed, e.g. 'Unit 1 Roof Plan' or 'North Elevation'. This is how two figures are known to describe different parts of the building.",
+            },
+            dwelling: {
+              type: ["string", "null"],
+              description:
+                "Set ONLY where the whole page belongs to one dwelling, e.g. 'Unit 2'. Null for shared or whole-project pages.",
+            },
+            claims: {
+              type: "array",
+              description:
+                "Items this page says something ABOUT, beyond simply showing them. Emit a claim ONLY when at least one of these is true: the page refuses, excludes or deletes the work; the page makes it conditional or indicative rather than selected; the evidence is a generic/template note or a render rather than project-specific drawing. Ordinary positive selected work belongs in itemIds alone. At most 20 per page.",
+              items: {
+                type: "object",
+                properties: {
+                  itemId: { type: "string", description: "The Scope Standard item id." },
+                  polarity: {
+                    type: "string",
+                    enum: ["positive", "excluded", "not_required", "by_owner", "by_others", "deleted"],
+                    description:
+                      "'not_required' for 'NO IRRIGATION' or 'no cornice'. 'by_owner'/'by_others' where the page assigns it away. 'deleted' where a revision removes it.",
+                  },
+                  modality: {
+                    type: "string",
+                    enum: ["selected", "minimum", "maximum", "if_required", "where_required", "may", "indicative", "typical", "alternative", "provision_only"],
+                    description:
+                      "'if_required' for 'if irrigation is required'. 'minimum' for 'min 2kW'. 'provision_only' for a symbol, space or rough-in without a supplied product. 'selected' only where the document actually chooses it.",
+                  },
+                  genericity: {
+                    type: "string",
+                    enum: ["project_specific", "schedule", "detail", "general_note", "template_note", "render_only"],
+                    description:
+                      "'template_note' for boilerplate/BCA clauses that apply to any project. 'render_only' where the ONLY evidence is a perspective image. Neither can establish selected scope.",
+                  },
+                  quote: {
+                    type: "string",
+                    description:
+                      "The exact printed words that carry this claim, copied verbatim from the page. Short. This is checked against the page later, so never paraphrase and never invent.",
+                  },
+                  dwelling: {
+                    type: ["string", "null"],
+                    description: "Which dwelling this claim is about, when the page says.",
+                  },
+                },
+                required: ["itemId", "polarity", "modality", "genericity", "quote", "dwelling"],
+              },
+            },
+            schedules: {
+              type: "array",
+              description:
+                "Tabulated schedules printed on this page, by identity only — do not transcribe rows. At most 6.",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string", description: "The schedule's printed title." },
+                  kind: {
+                    type: "string",
+                    enum: ["window", "door", "finishes", "fixture", "electrical", "other"],
+                  },
+                  rows: { type: ["integer", "null"], description: "How many rows it has, if countable." },
+                },
+                required: ["title", "kind", "rows"],
+              },
+            },
             itemIds: {
               type: "array",
               items: { type: "string" },
@@ -683,8 +945,18 @@ const EXTRACT_TOOL: Anthropic.Tool = {
                     type: ["string", "null"],
                     description: "The Scope Standard item it belongs to, when clear.",
                   },
+                  basis: {
+                    type: ["string", "null"],
+                    enum: ["per_dwelling", "total_project", "per_room", "shared", "minimum", "maximum", "selected", "nominal", null],
+                    description:
+                      "What the figure is measured against. '2 kW per dwelling' is per_dwelling; '4 kW total' is total_project; 'min 2 kW' is minimum. Null when the page does not say.",
+                  },
+                  dwelling: {
+                    type: ["string", "null"],
+                    description: "Which dwelling the figure belongs to, when stated.",
+                  },
                 },
-                required: ["label", "value", "itemId"],
+                required: ["label", "value", "itemId", "basis", "dwelling"],
               },
             },
             offStandard: {
@@ -717,7 +989,7 @@ const EXTRACT_TOOL: Anthropic.Tool = {
               description: "One short line only when something on the page needs a human's eye.",
             },
           },
-          required: ["page", "itemIds", "statedFigures", "offStandard", "docRefs", "note"],
+          required: ["page", "sheetId", "viewType", "viewLabel", "dwelling", "itemIds", "claims", "schedules", "statedFigures", "offStandard", "docRefs", "note"],
         },
       },
     },
@@ -734,7 +1006,12 @@ THE RULES — these are absolute:
 4. Every page gets an entry, even if empty, so coverage is auditable.
 5. VISIBLE CONTENT ONLY. Consultants build reports on templates from earlier jobs, and a PDF's text layer often carries invisible residue: white or hidden text, content buried under images, another project's details surviving beneath the printed page. Evidence is what the RENDERED page visibly shows a person holding the printout. If the text layer offers content that does not appear on the visible page — a different address, another report number, a second client or title block — treat it as template residue and ignore it entirely: no item, no figure, no note, no citation may rest on it. Text that IS visibly printed on the page is always in scope, even when it looks like an error; errors a reader can see are exactly what notes are for.
 6. THE PACK NAMES ITS OWN GAPS. When a page refers to a SEPARATE document — a report number, a named plan or schedule, a specification it depends on, a sheet count revealing an incomplete set ('Sheet 2 of 5') — record the reference under docRefs exactly as printed. Do NOT record internal navigation within the same drawing set: 'refer to S31', elevation and section markers, 'see detail on sheet S10' are the set talking to itself, never a missing document.
-7. RESPONSIBILITY DISCLAIMERS NEED EYES. When a page assigns work to others or excludes it ('waterproofing by others', 'pool overflow by others', 'NIC'), say so in the page note, quoting the disclaimer. Unassigned responsibility is a risk a human must see.`;
+7. RESPONSIBILITY DISCLAIMERS NEED EYES. When a page assigns work to others or excludes it ('waterproofing by others', 'pool overflow by others', 'NIC'), record it as a CLAIM with the matching polarity and the disclaimer quoted. Unassigned responsibility is a risk a human must see.
+8. A REFUSAL IS EVIDENCE TOO. 'NO IRRIGATION', 'no cornice - square set', 'no gas connection' are among the most valuable things a document says, and they are NOT absences: they settle a question. Record every one as a claim with polarity 'not_required' and the words quoted. Where the same sentence SELECTS the alternative — 'no cornice, square set ceilings' chooses square-set — record that as a second, positive claim. A negation that only deletes has been half read.
+9. CONDITIONAL IS NOT CHOSEN. 'If irrigation is required', 'where required', 'may be fitted', 'indicative only', 'minimum 2kW', 'or similar approved' do not select anything. Put the item in itemIds only if the work is genuinely shown, and record a claim carrying the modality with the words quoted. A possibility read as a selection puts work in a tender nobody asked for.
+10. A NOTE THAT FITS ANY PROJECT SPECIFIES NONE. Boilerplate compliance clauses, standard construction notes and code extracts describe what would apply IF the work occurred; they do not establish that it occurs here. Record such evidence with genericity 'template_note' or 'general_note'. A perspective or 3D visual is 'render_only' and can never, on its own, establish that a structure exists — if the plans and elevations do not show it, it is not scope.
+11. QUOTE, DO NOT PARAPHRASE. Every claim carries the printed words that support it, copied exactly. These are checked against the page afterwards, and a claim whose words are not there is treated as fabricated. Where you cannot quote it, do not claim it.
+12. SAY WHERE YOU ARE. Record the printed sheet id, what kind of view the page is, and the view's own title. Two figures on two different roof planes are not a contradiction, and only the view identity can tell anyone that. Where a page belongs to one dwelling, say which — per-dwelling requirements must never be merged.`;
 
 /** One extraction call over one PDF (whole document or a page range). */
 async function extractCall(args: {
