@@ -79,7 +79,7 @@ export function CreditAnnouncement({ grants }: { grants: CreditGrantView[] }) {
       </p>
 
       <h2 className="mt-2 font-display uppercase tracking-[-0.014em] text-[22px] sm:text-[26px] leading-[1.05] text-text">
-        We have credited your account {money(total)}
+        We have credited your account with {money(total)}
       </h2>
 
       {note ? (

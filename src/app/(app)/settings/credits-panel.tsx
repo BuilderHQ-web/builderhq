@@ -40,9 +40,9 @@ export function CreditsPanel({ balance }: { balance: CreditBalance }) {
             </p>
             <p className="mt-1 text-[12.5px] leading-[1.6] text-text-muted max-w-[62ch]">
               Credit is issued by BuilderHQ, usually where a round did not
-              meet the standard we hold ourselves to. It spends like money
-              against the cost of unlocking a project, and it will appear
-              here the moment it is issued.
+              meet the standard we hold ourselves to. It applies against the
+              cost of securing a tender spot, and will appear here the moment
+              it is issued.
             </p>
           </div>
         </div>
@@ -72,9 +72,9 @@ export function CreditsPanel({ balance }: { balance: CreditBalance }) {
         )}
         {availableAud > 0 ? (
           <p className="mt-2.5 text-[12.5px] leading-[1.6] text-text-muted max-w-[62ch]">
-            This is applied at the moment you secure a spot. Where your
-            balance covers the full cost of a project, you will be offered
-            the option to use it instead of paying by card.
+            The credit applies against the cost of securing a tender spot.
+            Where it covers a project in full, you will be offered the option
+            to use it instead of paying by card.
           </p>
         ) : null}
       </div>
