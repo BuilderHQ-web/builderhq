@@ -122,7 +122,9 @@ export async function POST(request: NextRequest) {
 type Outcome = "done" | "retry";
 
 async function ingest(notification: LeadgenNotification): Promise<Outcome> {
-  const fetched = await fetchLead(notification.leadgenId, env.META_PAGE_ACCESS_TOKEN);
+  const fetched = await fetchLead(notification.leadgenId, env.META_PAGE_ACCESS_TOKEN, {
+    appSecret: env.META_APP_SECRET,
+  });
   if (!fetched.ok) {
     logger.error(
       {

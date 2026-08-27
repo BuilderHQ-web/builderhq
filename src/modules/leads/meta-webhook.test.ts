@@ -55,6 +55,25 @@ describe("verifySignature", () => {
     expect(verifySignature(body, sign(body), undefined).ok).toBe(false);
   });
 
+  test("verifies whichever unicode encoding Meta puts on the wire", () => {
+    // Meta's own docs warn that the HMAC is taken over the ESCAPED
+    // unicode form of the payload. Both forms must verify against a
+    // signature of their own bytes, because the only safe rule is to
+    // hash exactly what arrived. A name with diacritics is ordinary in
+    // Australia, so getting this wrong loses real leads.
+    const name = "Nguy\u1ec5n Jos\u00e9";
+    const escaped = JSON.stringify({ object: "page", name })
+      .replace(/[\u0080-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+    const literal = JSON.stringify({ object: "page", name });
+    expect(escaped).not.toBe(literal);
+
+    expect(verifySignature(escaped, sign(escaped), SECRET).ok).toBe(true);
+    expect(verifySignature(literal, sign(literal), SECRET).ok).toBe(true);
+    // And a signature taken over the other encoding must not pass.
+    expect(verifySignature(escaped, sign(literal), SECRET).ok).toBe(false);
+    expect(verifySignature(literal, sign(escaped), SECRET).ok).toBe(false);
+  });
+
   test("a signature of the right length but wrong bytes is still refused", () => {
     const right = sign(body);
     const wrong = right.slice(0, -1) + (right.endsWith("a") ? "b" : "a");
@@ -276,6 +295,38 @@ describe("fetchLead", () => {
     const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(String(url)).toContain("campaign_name");
     expect(String(url)).toContain("field_data");
+  });
+
+  test("signs the call with appsecret_proof when the secret is available", async () => {
+    // Required when the app has "Require App Secret" enabled, ignored
+    // when it is not. Without it that setting turns every lead fetch
+    // into a bare 400 that names no cause.
+    const fetchImpl = vi.fn(async () => okResponse()) as unknown as typeof fetch;
+    await fetchLead("lead-1", "PAGE-TOKEN", { appSecret: SECRET, fetchImpl });
+    const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+
+    const expected = createHmac("sha256", SECRET).update("PAGE-TOKEN", "utf8").digest("hex");
+    expect(String(url)).toContain(`appsecret_proof=${expected}`);
+    // The proof is an HMAC of the token. The token itself still must
+    // not be in the URL.
+    expect(String(url)).not.toContain("PAGE-TOKEN&");
+    expect(String(url)).not.toContain("access_token");
+  });
+
+  test("omits appsecret_proof when no secret is configured", async () => {
+    const fetchImpl = vi.fn(async () => okResponse()) as unknown as typeof fetch;
+    await fetchLead("lead-1", "PAGE-TOKEN", { fetchImpl });
+    const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(String(url)).not.toContain("appsecret_proof");
+  });
+
+  test("calls a Graph version Meta still serves", async () => {
+    // A retired version stops answering rather than warning, so this
+    // pins the one that was verified live.
+    const fetchImpl = vi.fn(async () => okResponse()) as unknown as typeof fetch;
+    await fetchLead("lead-1", "PAGE-TOKEN", { fetchImpl });
+    const [url] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(String(url)).toContain("/v26.0/");
   });
 
   test("returns the campaign context alongside the answers", async () => {
