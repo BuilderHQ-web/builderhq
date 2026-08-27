@@ -356,26 +356,54 @@ async function debitWithin(
 ): Promise<void> {
   const { builderId, amountAud, projectId, unlockId } = args;
 
+  // TWO statements, and the order matters more than it looks.
+  //
+  // Postgres runs this transaction at READ COMMITTED. When a
+  // `SELECT ... FOR UPDATE` blocks on a row another transaction holds,
+  // it re-reads THAT ROW at the latest version once the lock frees,
+  // but the rest of the statement keeps the snapshot it started with.
+  // A sum of redemptions computed inside this same statement would
+  // therefore be the sum from BEFORE the transaction we just waited
+  // for committed: both callers read the balance as untouched, and
+  // both spend it. That is a real double-spend, and it cost $298 of
+  // unlocks against $199 of credit the first time this was written.
+  //
+  // So: take the locks first, carrying nothing but the grant rows.
   const locked = await tx.execute(sql`
-    select g.id,
-           g.amount_aud,
-           coalesce((
-             select sum(r.amount_aud) from credit_redemptions r
-              where r.grant_id = g.id
-           ), 0) as spent_aud
+    select g.id, g.amount_aud
       from credit_grants g
      where g.builder_id = ${builderId}
        and g.revoked_at is null
        and g.expires_at > now()
-     order by g.expires_at asc
-       for update of g
+     order by g.expires_at asc, g.id asc
+       for update
   `);
 
-  const rows = (locked.rows ?? locked) as Array<{
+  const grantRows = (locked.rows ?? locked) as Array<{
     id: string;
     amount_aud: number;
-    spent_aud: string | number;
   }>;
+
+  // Then, as a SEPARATE statement, read what has been spent. Every
+  // statement in READ COMMITTED takes a fresh snapshot, so this one
+  // sees every redemption committed by whoever held the lock before us.
+  const spentQ = await tx.execute(sql`
+    select grant_id, sum(amount_aud)::int as spent_aud
+      from credit_redemptions
+     where builder_id = ${builderId}
+     group by grant_id
+  `);
+  const spentByGrant = new Map(
+    ((spentQ.rows ?? spentQ) as Array<{ grant_id: string; spent_aud: number }>).map(
+      (r) => [r.grant_id, Number(r.spent_aud)],
+    ),
+  );
+
+  const rows = grantRows.map((g) => ({
+    id: g.id,
+    amount_aud: g.amount_aud,
+    spent_aud: spentByGrant.get(g.id) ?? 0,
+  }));
 
   let owing = amountAud;
   const draws: Array<{ grantId: string; take: number }> = [];

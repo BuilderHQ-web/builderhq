@@ -12,7 +12,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { users } from "@/modules/users";
@@ -236,8 +236,26 @@ describe("spending credit on an unlock", () => {
     expect(won, "exactly one unlock may be funded").toBe(1);
 
     const bal = await balanceFor(b);
-    expect(bal.availableAud, "the balance can never go negative").toBe(50);
-    expect(bal.availableAud).toBeGreaterThanOrEqual(0);
+    expect(bal.availableAud).toBe(50);
+
+    // balanceFor clamps a grant's remainder at zero for display, which
+    // would hide an overdraw. Assert on the raw ledger instead: the sum
+    // of what was taken can never exceed the sum of what was given.
+    const [tally] = await db
+      .select({
+        spent: sql<number>`coalesce(sum(${creditRedemptions.amountAud}), 0)`.mapWith(Number),
+      })
+      .from(creditRedemptions)
+      .where(eq(creditRedemptions.builderId, b));
+    expect(tally!.spent, "never spend more than was granted").toBeLessThanOrEqual(199);
+    expect(tally!.spent).toBe(149);
+
+    // And exactly one unlock row exists across the two projects.
+    const unlockRows = await db
+      .select()
+      .from(unlocks)
+      .where(inArray(unlocks.projectId, [p1.id, p2.id]));
+    expect(unlockRows, "one funded unlock, one refusal").toHaveLength(1);
   }, 30_000);
 
   test("unlocking twice does not charge twice", async () => {
