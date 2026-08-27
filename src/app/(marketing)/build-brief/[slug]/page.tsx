@@ -906,13 +906,29 @@ export default async function BriefIssuePage({
                 </div>
               </div>
             ) : (
-              /* Split layout with the annotated document (Issue 001) */
-              <div className="mt-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start">
-                <div className="flex flex-col gap-4">
+              /* No sub-sections. Two shapes share this branch: the
+                 annotated document beside the read (Issue 001), and a
+                 Feature short enough to be all lede (Issue 008). The
+                 split only earns its column when there is a document
+                 to put in it, so without one the copy runs at the
+                 article measure and takes the article's weight rather
+                 than sitting in half a grid beside nothing. */
+              <div
+                className={`mt-8 ${
+                  issue.feature.quoteDoc
+                    ? "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start"
+                    : ""
+                }`}
+              >
+                <div className="flex flex-col gap-4 max-w-[70ch]">
                   {issue.feature.paragraphs.map((p, i) => (
                     <p
                       key={i}
-                      className="text-[15px] leading-[1.75] text-text-muted"
+                      className={
+                        issue.feature.quoteDoc
+                          ? "text-[15px] leading-[1.75] text-text-muted"
+                          : "text-[16px] leading-[1.75] font-ui font-medium text-text"
+                      }
                     >
                       <InlineText text={p} />
                     </p>
@@ -920,6 +936,18 @@ export default async function BriefIssuePage({
                 </div>
                 {issue.feature.quoteDoc ? (
                   <QuoteDoc doc={issue.feature.quoteDoc} />
+                ) : null}
+                {/* The article branch renders its own pull quote inside
+                    the text column. This branch has no text column to
+                    put one in, so it renders its own rather than
+                    silently dropping the field. */}
+                {!issue.feature.quoteDoc && issue.feature.pullQuote ? (
+                  <p
+                    className="mt-9 max-w-[32ch] border-l-2 border-accent/50 pl-5 text-[clamp(1.25rem,1.3vw+0.9rem,1.7rem)] leading-[1.3] text-text"
+                    style={SERIF}
+                  >
+                    {issue.feature.pullQuote}
+                  </p>
                 ) : null}
               </div>
             )}
