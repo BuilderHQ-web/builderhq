@@ -487,6 +487,9 @@ export default async function BriefIssuePage({
           <div className="flex items-baseline gap-x-7 whitespace-nowrap text-[10px] sm:text-[10.5px] tracking-[0.18em] uppercase font-ui font-semibold">
             <span className="text-text-dim shrink-0">In this edition</span>
             {[
+              ...(issue.announcement
+                ? [{ label: "The Announcement", href: "#announcement" }]
+                : []),
               ...(issue.podcast
                 ? [{ label: "The Podcast", href: "#podcast" }]
                 : []),
@@ -570,6 +573,67 @@ export default async function BriefIssuePage({
                   className="mt-7 inline-flex items-center gap-2 text-[13.5px] font-ui font-semibold text-accent-light hover:underline"
                 >
                   {issue.association.cta.label}
+                </Link>
+              ) : null}
+            </BriefCard>
+          ) : null}
+
+          {/* The announcement — a launch, not a weekly section, so it
+              carries the same faint teal lift the podcast block uses.
+              There is no photograph: a dashboard screenshot dates
+              within a release, so the sequence does the work instead. */}
+          {issue.announcement ? (
+            <BriefCard
+              id="announcement"
+              style={{
+                background:
+                  "linear-gradient(148deg, rgba(0,212,200,0.075) 0%, rgba(0,212,200,0.018) 34%, #ffffff 62%), linear-gradient(330deg, rgba(45,99,214,0.05) 0%, rgba(255,255,255,0) 44%), #ffffff",
+              }}
+            >
+              <BriefKicker right={`The Build Brief · Issue ${issueNo(issue)}`}>
+                {issue.announcement.kicker}
+              </BriefKicker>
+              <AccentHeadline
+                text={issue.announcement.headline}
+                accent={issue.announcement.headlineAccent}
+                className={`mt-3 max-w-[24ch] ${SECTION_H2}`}
+              />
+              {issue.announcement.standfirst ? (
+                <p
+                  className="mt-4 max-w-[54ch] text-[clamp(1.15rem,1.1vw+0.9rem,1.45rem)] leading-[1.4] text-text-muted"
+                  style={SERIF}
+                >
+                  {issue.announcement.standfirst}
+                </p>
+              ) : null}
+              {issue.announcement.chart ? (
+                <BriefChart spec={issue.announcement.chart} />
+              ) : null}
+              <div className="mt-8 flex flex-col gap-4 max-w-[66ch]">
+                {issue.announcement.paragraphs.map((para, i) => (
+                  <p
+                    key={i}
+                    className="text-[15px] leading-[1.7] text-text-muted"
+                  >
+                    <InlineText text={para} />
+                  </p>
+                ))}
+              </div>
+              {issue.announcement.closing ? (
+                <p
+                  className="mt-8 max-w-[40ch] text-[clamp(1.15rem,0.9vw+0.85rem,1.5rem)] leading-[1.35] tracking-[-0.01em] text-text"
+                  style={SERIF}
+                >
+                  {issue.announcement.closing}
+                </p>
+              ) : null}
+              {issue.announcement.cta ? (
+                <Link
+                  href={issue.announcement.cta.href}
+                  className="mt-7 inline-flex items-center gap-1.5 rounded-full border border-border-strong px-5 py-2.5 text-[13px] font-ui font-semibold text-text hover:border-accent-light hover:text-accent-light transition-colors"
+                >
+                  {issue.announcement.cta.label}
+                  <span aria-hidden>→</span>
                 </Link>
               ) : null}
             </BriefCard>
