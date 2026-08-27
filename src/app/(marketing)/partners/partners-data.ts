@@ -1319,7 +1319,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "paramount-conveyancing",
     kind: "conveyancer",
-    draft: true,
     roleLabel: "Conveyancing firm",
     name: "Paramount Conveyancing",
     monogram: "PC",
