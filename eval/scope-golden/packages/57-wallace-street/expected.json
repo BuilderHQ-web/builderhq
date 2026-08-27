@@ -1,0 +1,3063 @@
+{
+  "schemaVersion": 2,
+  "slug": "57-wallace-street",
+  "title": "57 Wallace Street, Brunswick West — two attached dwellings",
+  "projectType": "multi_dwelling",
+  "labelledAgainst": "1.2.0",
+  "labelledBy": "Independent 241-line QS verification (Aug 2026), adjudicated against the source drawings — see docs/wallace-verification-audit.md",
+  "labelledAt": "2026-08-27",
+  "packProfile": {
+    "suppliedKinds": [
+      "architectural"
+    ],
+    "completeness": "sparse"
+  },
+  "documents": [
+    {
+      "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+      "kind": "architectural",
+      "revision": "D",
+      "pages": 21,
+      "page": null,
+      "sha256": "73f6c2c30013ff56ebb8b56498758196e81f5668ca5fb72d0271645d5c05e202"
+    }
+  ],
+  "lines": [
+    {
+      "itemId": "preliminaries.craneage",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Craneage/material handling is builder means-and-methods/preliminaries. It is a valid tender cost but not a missing consultant design item.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.dilapidation-report",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Dilapidation records are a project/contract risk-control obligation where required, not a drawing that the owner should chase as design scope.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.final-clean",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Progressive/final cleaning is a builder lump-sum obligation, not a missing architectural design item.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.insurances-warranty",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Contract works/home-warranty insurance is a statutory/commercial builder obligation, not a missing drawing.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.scaffolding",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Scaffolding/edge protection is builder temporary works and means-and-methods, not consultant design scope.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.site-amenities",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Site toilet/amenities are builder preliminaries, not a missing design document.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.site-establishment",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Site establishment/access/storage is builder preliminaries, not a missing architectural detail.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.supervision",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Supervision/project management is builder preliminaries and must be included in the lump sum, not treated as a design gap.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.survey-setout",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Construction set-out is a builder/surveyor execution obligation. The tender should allocate it, not present it as missing architectural design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.temporary-fencing",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, but the evidence is only the 1.8 m tree-protection fence. Do not imply whole-site security/perimeter fencing is documented; carry general temporary fencing as a builder preliminaries obligation.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.temporary-services",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Temporary power/water is a builder preliminaries obligation, not a design gap.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.traffic-management",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Traffic/footpath management is conditional builder logistics/authority compliance, not a missing architectural drawing.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.waste-management",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACTOR / PRELIMINARY OBLIGATION. Waste bins/rubbish removal is builder preliminaries. Page 1 also requires waste management/recycling; do not show it as a missing design item.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "approvals.acoustic-report",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine tender/design gap. The Partiwall fire system is identified, but no project acoustic rating/report or testing criterion is supplied.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "approvals.authority-consents",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "itemId": "approvals.building-permit",
+      "coverage": "evidenced",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "itemId": "approvals.bushfire-compliance",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. Page 1 expressly records BAL Level: N/A. The current GAP is a false positive."
+    },
+    {
+      "itemId": "approvals.development-conditions",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "itemId": "approvals.energy-report",
+      "coverage": "evidenced",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "approvals.engineering-design",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "EXPECTED IN A LATER STRUCTURAL PACKAGE. The architectural set repeatedly refers slab, bracing and lintels to engineering, but no structural drawings/certification are supplied.",
+      "gapClass": "later_consultant_package"
+    },
+    {
+      "itemId": "approvals.handover-documentation",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CONTRACT / HANDOVER OBLIGATION, not a missing design document. Require manuals, warranties and certificates in the tender conditions rather than presenting this as an architectural gap.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "approvals.mandatory-inspections",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "STATUTORY / CONTRACTOR COORDINATION OBLIGATION. The set is building-permit stamped, but the inspection schedule is not reproduced. Do not present mandatory inspections as missing design scope.",
+      "gapClass": "statutory"
+    },
+    {
+      "itemId": "approvals.occupancy-certificate",
+      "coverage": "gap",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "STATUTORY HANDOVER OBLIGATION, not consultant design scope. Carry responsibility for obtaining/finalising occupancy approval in the contract/tender conditions.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "approvals.protection-works",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "CONDITIONAL STATUTORY REQUIREMENT. Do not state a definite project GAP unless the building surveyor requires formal protection works; keep it as a conditional responsibility/clarification.",
+      "gapClass": "statutory"
+    },
+    {
+      "itemId": "approvals.soil-geotech",
+      "coverage": "evidenced",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "itemId": "demolition.asbestos-removal",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED from this package. No existing building or demolition scope is shown on the project lot, so an asbestos-removal gap should not be created from a hypothetical existing structure."
+    },
+    {
+      "itemId": "demolition.full-demolition",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. The set contains no demolition plan or instruction to demolish an existing dwelling on the project lot."
+    },
+    {
+      "itemId": "demolition.service-disconnections",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a standalone scope item because no demolition/abolishment works are identified."
+    },
+    {
+      "itemId": "demolition.tree-removal",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. Existing trees are shown with TPZ protection measures; no tree removal is identified."
+    },
+    {
+      "itemId": "earthworks.bulk-excavation",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as bulk excavation. The project is slab-on-ground with no basement or major cut/fill scope shown. Local excavation belongs under normal footing/service works."
+    },
+    {
+      "itemId": "earthworks.contaminated-soil",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "COMMERCIAL / LATENT-CONDITION RISK. No contamination is established. Do not ask the owner for a contamination design simply because the possibility exists.",
+      "gapClass": "referenced_package_missing"
+    },
+    {
+      "itemId": "earthworks.detailed-excavation",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR EARTHWORKS / LATER STRUCTURAL COORDINATION. Local footing and service excavation is inherent in the build; final extents depend on the missing engineering/service design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "earthworks.dewatering",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED on current evidence. No basement, groundwater condition or dewatering requirement is identified."
+    },
+    {
+      "itemId": "earthworks.erosion-control",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "earthworks.imported-fill",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED unless the engineer/geotechnical package later requires it. No imported-fill requirement is shown."
+    },
+    {
+      "itemId": "earthworks.rock-excavation",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "GEOTECHNICAL / LATENT-CONDITION DEPENDENCY. A specific soil report is referenced but not supplied; do not create a standalone rock-excavation design gap without that report.",
+      "gapClass": "referenced_package_missing"
+    },
+    {
+      "itemId": "earthworks.site-strip",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR EARTHWORKS OBLIGATION. Site preparation/topsoil stripping should be carried in the builder price where required, not presented as missing consultant design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "earthworks.spoil-removal",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR EARTHWORKS OBLIGATION. Ordinary clean spoil generated by the documented works is a builder commercial inclusion, not a missing drawing.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "site-services.fire-main-connection",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "site-services.gas-connection",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "site-services.nbn-provision",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "site-services.onsite-detention",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a separate OSD system. The drawings show rainwater tanks, permeable surfaces and discharge to LPOD, but no detention tank/basin."
+    },
+    {
+      "itemId": "site-services.power-connection",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Two MB locations are shown, so the service/metering intent is not wholly absent. Authority connection route, capacity, fees and consumer-main details remain unresolved.",
+      "priceable": false
+    },
+    {
+      "itemId": "site-services.rainwater-tank",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not priceable. Two 2000 L tanks and catchments are shown, but pump model, first-flush/mains backup components, pipework/reuse connections and final installation details are not fixed.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "site-services.sewer-connection",
+      "coverage": "gap",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine services gap. Sanitary fixtures are shown, but no sanitary drainage layout, connection point or authority sewer-connection detail is supplied.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "site-services.sewer-pump",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No sewer pump station or pumped sanitary drainage is shown. Do not infer one from unknown service levels."
+    },
+    {
+      "itemId": "site-services.stormwater",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "site-services.water-connection",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Two WM locations are shown, so separate water metering intent is present. Supply route, authority requirements and connection scope remain unresolved.",
+      "priceable": false
+    },
+    {
+      "itemId": "footings-slab.piers-piles",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED unless later structural/geotechnical design selects them. The architectural set does not show piers or screw piles."
+    },
+    {
+      "itemId": "footings-slab.raft-slab",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "EVIDENCED - partial only as a generic slab-on-ground. The drawings say \"Concrete Slab As per Engineers Design\"; they do not establish a conventional raft slab as the final engineered system.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "footings-slab.slab-edge-insulation",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. The embedded energy assessment records the ground floor as slab on ground with insulation NIL for both dwellings."
+    },
+    {
+      "itemId": "footings-slab.slab-setdowns",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "itemId": "footings-slab.strip-pad-footings",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "DO NOT MARK NOT EXPECTED. The slab/footing system is expressly left to the engineer; strip/pad components cannot be excluded until the structural design is supplied.",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "footings-slab.subfloor-timber",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "footings-slab.suspended-slab",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. Upper floors are timber-joist/yellow-tongue construction, not suspended concrete."
+    },
+    {
+      "itemId": "footings-slab.termite-management",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "itemId": "footings-slab.underslab-drainage",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR / HYDRAULIC COORDINATION, not a standalone architectural design gap. Drainage rough-in is required before the slab, but final routes are a plumbing/structural coordination matter.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "footings-slab.vapour-barrier",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EXPECTED IN THE STRUCTURAL/SLAB PACKAGE or builder compliant slab system. The architectural set does not select the membrane/preparation build-up, so do not treat this as a separate owner design chase.",
+      "gapClass": "later_consultant_package",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "footings-slab.waffle-slab",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "DO NOT MARK NOT EXPECTED YET. The architectural set only establishes slab-on-ground and refers the slab to engineering; it does not prove the final system is not waffle/pod.",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "retaining.engineered-concrete-block",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No retaining wall is shown; a conditional AG-drain note does not establish retaining-wall construction."
+    },
+    {
+      "itemId": "retaining.shoring",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED on current evidence. No deep excavation or retaining excavation requiring shoring is identified."
+    },
+    {
+      "itemId": "retaining.subsoil-drainage",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "The auditor removed this as merely conditional. Page 2 also prints mandatory AG requirements: drains 'must be installed at the base of all excavations and along the high side of a sloping site', 400mm into the soil. There is real scope; the engine was closer than the audit.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "itemId": "retaining.timber-sleeper",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No timber/concrete sleeper retaining wall is shown."
+    },
+    {
+      "itemId": "steel.beams-columns",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "The auditor removed steel as NOT EXPECTED while ruling elsewhere that footing and slab systems 'cannot be excluded until the structural design is supplied'. Page 1 anticipates built-in structural steel. Applied consistently, this is a later-package dependency, not an inapplicable item.",
+      "gapClass": "later_consultant_package",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "itemId": "steel.connections-fixings",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "Follows steel.beams-columns: resolved by the structural package, not inapplicable.",
+      "gapClass": "later_consultant_package"
+    },
+    {
+      "itemId": "steel.lintels",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "steel.portal-garage-frames",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EXPECTED IN LATER STRUCTURAL DESIGN IF REQUIRED. The 5 m garage openings may need engineered framing, but no portal frame is actually selected in the architectural set.",
+      "gapClass": "later_consultant_package"
+    },
+    {
+      "itemId": "steel.protective-coating",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Page 1 expressly requires corrosion protection suited to the site for built-in structural steel and sheet roofing. Member-specific coating schedules remain for engineering/specification.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "itemId": "framing.cathedral-raked",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. The building section shows flat ceiling lines below the pitched/trussed roofs; no raked/cathedral ceiling is selected."
+    },
+    {
+      "itemId": "framing.engineered-beams",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "framing.floor-joists",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "framing.hardware-bracing",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial / LATER STRUCTURAL PACKAGE. Page 1 requires tie-down; pages 10/12 state wall bracing and lintels refer to engineering.",
+      "gapClass": "later_consultant_package"
+    },
+    {
+      "itemId": "framing.party-walls",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "itemId": "framing.roof-trusses",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "framing.steel-framing",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "framing.stick-roof",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "framing.wall-frames",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not priceable. Stud sizes/spacings are scheduled, but bracing, lintels and engineered members remain referred to engineering.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.box-gutters",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not priceable. Minimum gutter dimensions/grades are shown, but page 6 expressly says sump, rainhead, downpipe and overflow sizing must be designed to AS/NZS 3500.3.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.downpipes",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.fascia-gutter",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.flashings",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.metal-roof",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "EVIDENCED - priceable can remain, but the citation must be corrected: the Shale Grey colour comes from the colour/material schedule, not the cited roof sheets alone.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.roof-ventilation",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial/conditional. The general details require climate-zone roof-space ventilation unless a listed exclusion applies. The current GAP finding is false.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ],
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "roofing.sarking-battens",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.skylights",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 3
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "itemId": "roofing.tile-roof",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "external-walls.blockwork",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "external-walls.brick-veneer",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "EVIDENCED - partial rather than priceable. Brick veneer construction and 230x110x76 mm brickwork are shown, but the \"Grade A Recycled Red\" selection is on page 14 and the current citation omits that source; supplier/product/tolerance remain open.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 9
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-walls.cavity-components",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "external-walls.control-joints",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine masonry/render coordination gap. No articulation/control-joint layout or spacing is identified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "external-walls.double-brick",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "external-walls.eaves-soffits",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine finish gap where eaves/overhangs occur. Fascia/gutter and roof geometry are shown, but soffit/eaves lining material and finish are not fixed.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "external-walls.fc-cladding",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "external-walls.feature-stone",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. The facade/material schedule is brick, Unitex render and metal roof/fence elements; no feature stone is shown."
+    },
+    {
+      "itemId": "external-walls.lightweight-panel",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true
+    },
+    {
+      "itemId": "external-walls.metal-cladding",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "external-walls.render-systems",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-walls.timber-composite-cladding",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "windows.aluminium-windows",
+      "coverage": "evidenced",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "itemId": "windows.bifold-corner-units",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "REMOVE / NOT EXPECTED. The cited drawings show sliding/special windows, not a bi-fold or corner-opening system. Ordinary sliding doors are already covered elsewhere."
+    },
+    {
+      "itemId": "windows.flyscreens",
+      "coverage": "not_expected",
+      "tier": "core",
+      "source": "audit",
+      "basis": "NOT EXPECTED unless expressly added. No flyscreen package is specified; do not turn a common option into a project gap."
+    },
+    {
+      "itemId": "windows.glazing-performance",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        }
+      ]
+    },
+    {
+      "itemId": "windows.safety-obscure-glass",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 3
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "itemId": "windows.timber-composite-windows",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "windows.window-furnishings",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as internal blinds/curtains/shutters. Page 11 specifies external shading devices, which are a different scope."
+    },
+    {
+      "itemId": "windows.window-reveals",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "external-doors.entry-door",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 7
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-doors.external-hardware",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine specification gap. External doors are shown, but locksets, handles, closers/seals and hardware schedule are not provided.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "external-doors.garage-door",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 9
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "external-doors.garage-motor",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine scope clarification. 5 m Roll-A-Doors are shown, but motor/operator, remotes and controls are not specified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "external-doors.hinged-french-doors",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. External openings shown are entry, sliding and garage doors; no additional French/hinged external-door package is identified."
+    },
+    {
+      "itemId": "external-doors.screen-doors",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED unless expressly added. No security/screen-door package is shown."
+    },
+    {
+      "itemId": "insulation.ceiling",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true
+    },
+    {
+      "itemId": "insulation.external-walls",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true
+    },
+    {
+      "itemId": "insulation.internal-acoustic",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not wholly absent. Unit 2 energy data requires R2.5 to powder/ensuite internal walls; however no broader sound-batt/acoustic-performance specification is provided.",
+      "priceable": false
+    },
+    {
+      "itemId": "insulation.party-wall-acoustic",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "itemId": "insulation.underfloor",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "insulation.wall-wrap",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true
+    },
+    {
+      "itemId": "lining.access-panels",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "itemId": "lining.bulkheads-features",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No bulkhead or special ceiling-feature scope is identified."
+    },
+    {
+      "itemId": "lining.ceiling-plasterboard",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "lining.cornice",
+      "coverage": "gap",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine ceiling-junction finish gap. Neither cornice nor square-set is selected; resolve one governing wall/ceiling finish system before tender.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "lining.square-set",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "REMOVE as a duplicate alternative gap. The actual omission is the ceiling/wall junction finish choice; keep one clarification under the cornice line rather than treating cornice and square-set as simultaneously missing scope.",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "lining.wall-plasterboard",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 10
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "itemId": "lining.wet-area-board",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Page 16 specifies compliant water-resistant substrate options, including fibre cement and water-resistant plasterboard; the selected board/product is still unresolved.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        }
+      ]
+    },
+    {
+      "itemId": "internal-doors.cavity-sliders",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. A generic cavity-slider construction note does not establish that any cavity sliding door is selected on this project."
+    },
+    {
+      "itemId": "internal-doors.door-hardware",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine specification gap. Internal door locations are shown, but hardware/lock/latch schedule is absent.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "internal-doors.feature-doors",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No feature/panelled internal-door type is shown."
+    },
+    {
+      "itemId": "internal-doors.flush-doors",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial at most. Internal door openings and leaf sizes are shown, but the drawings do not select \"flush\" as the leaf type. Reword as an internal-door leaf/type specification gap.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "itemId": "internal-doors.jambs-stops",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine fit-out gap. Door openings are shown, but jamb/stop material, profile and finish are not specified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "internal-doors.robe-doors",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine joinery/door gap. BIRs are shown, but robe door type, track, finish and mirror extent are not specified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "fixout.architraves",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "fixout.feature-trim",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No decorative mouldings or wall panelling are shown."
+    },
+    {
+      "itemId": "fixout.shelving",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 3
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "fixout.skirting",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine finish gap. No skirting profile, size or finish is scheduled.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "fixout.timber-sills-benches",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No window seat or timber bench feature is shown."
+    },
+    {
+      "itemId": "stairs.external-balustrade",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No external balcony/terrace or elevated external edge requiring a project balustrade is shown."
+    },
+    {
+      "itemId": "stairs.external-stairs",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No external stair flight is shown."
+    },
+    {
+      "itemId": "stairs.feature-screens",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No feature stair screen/batten system is shown."
+    },
+    {
+      "itemId": "stairs.internal-balustrade",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "stairs.internal-staircase",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 12
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "itemId": "stairs.residential-lift",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "joinery.benchtops",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine PC/specification gap. Kitchen/laundry/vanity benches are shown, but benchtop material, thickness, edge and allowance are not fixed.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "joinery.butlers-pantry",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "REMOVE / NOT EXPECTED as a butler's pantry/scullery. The floor plan shows a normal 'Pantry' only; retain pantry cabinetry/shelving under the standard kitchen scope."
+    },
+    {
+      "itemId": "joinery.custom-features",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "itemId": "joinery.entertainment-study",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No entertainment unit or study-joinery package is identified."
+    },
+    {
+      "itemId": "joinery.island-bench",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "joinery.kitchen-cabinetry",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "joinery.laundry-joinery",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "joinery.mirror-cabinets",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED unless specifically selected. Bathroom basins/vanities are shown, but no mirrored shaving cabinet is specified."
+    },
+    {
+      "itemId": "joinery.robe-fitouts",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "itemId": "joinery.vanities",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Vanity/basin units are graphically shown in the wet-area plans; joinery elevations, sizes, tops and finishes are not specified.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "itemId": "waterproofing.balconies",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. There is no project balcony/deck in the floor plans, elevations or perspectives; the generic balcony waterproofing note is conditional only."
+    },
+    {
+      "itemId": "waterproofing.certification",
+      "coverage": "evidenced",
+      "tier": "commercial",
+      "source": "audit",
+      "basis": "CORRECT BEFORE SENDING. Page 16 requires inspection and either DFT testing or a 24-hour controlled water test; it does not expressly require an applicator certificate. Treat certification as a compliance/handover obligation.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        }
+      ],
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "waterproofing.planter-tanking",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No built planter requiring tanking is shown."
+    },
+    {
+      "itemId": "waterproofing.shower-systems",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not priceable. Falls, waterproofing junctions and typical shower details are given, but project-specific hob/niche selections and finish interfaces are not fully scheduled.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "waterproofing.wet-areas",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, not priceable. AS3740/NCC wet-area requirements are detailed, but multiple substrate/membrane classes are permitted and no proprietary membrane/product schedule is fixed.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "tiling.features-niches",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "tiling.floor-laying",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. \"Tiled Shower\" areas and wet-area waterproofing/fall details establish some floor tiling; complete room extents, finish and set-out remain unresolved.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "tiling.floor-tiles-supply",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine PC/specification gap. Tiled shower/wet-area work is shown, but floor tile product/rate/selection is not supplied.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "tiling.screeds-prep",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        }
+      ]
+    },
+    {
+      "itemId": "tiling.trims-movement",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine tiling finish gap. No trim/profile, corner treatment or movement-joint specification is detailed.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "tiling.wall-laying",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "tiling.wall-tiles-supply",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine PC/specification gap. Wall tiling is required in shower/wet areas, but tile product/rate and full-height extents are not scheduled.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "flooring.carpet",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "CHANGE TO A GENERIC FLOOR-FINISH SCHEDULE GAP. No overall floor-covering schedule is supplied, but the documents do not specifically select carpet. Do not create simultaneous gaps for every possible floor finish.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "flooring.engineered-timber",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a selected finish. No floor-finish schedule chooses engineered/solid timber. The real omission is the overall floor-finish schedule."
+    },
+    {
+      "itemId": "flooring.laminate-hybrid",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a selected finish. No laminate/hybrid floor is specified."
+    },
+    {
+      "itemId": "flooring.levelling",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "CONTRACTOR FLOOR-PREPARATION OBLIGATION. Grinding/levelling depends on actual substrate tolerance and selected finishes; it is not a missing design item by itself.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "flooring.polished-concrete",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a selected finish. The slab is not nominated as polished/honed finished concrete."
+    },
+    {
+      "itemId": "painting.doors-trim",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine internal finish gap. Internal doors, skirtings/architraves and trim have no paint product/colour/coating schedule.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "painting.external-painting",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. The colour/material schedule fixes external render/metal/door/fascia colours, but paint/coating preparation, product system and coats are not scheduled.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "painting.internal-walls-ceilings",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine finish gap. No internal wall/ceiling paint system, colours, sheen or coat schedule is provided.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "painting.special-coatings",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No garage epoxy or other special coating is specified."
+    },
+    {
+      "itemId": "painting.timber-metal-finishes",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as clear/stain work. No exposed feature timber requiring stain/oil is identified; the deck premise used by the analysis is false."
+    },
+    {
+      "itemId": "plumbing.appliance-connections",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "plumbing.bathroom-accessories",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine fit-out gap. Towel rails, toilet-roll holders, hooks and similar accessories are not scheduled.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "plumbing.external-taps",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine external-services clarification. No external hose tap/water point locations or quantity are identified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "plumbing.fit-off",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR FIT-OFF OBLIGATION / EVIDENCED INTERFACES. Fixtures and tapware intent is shown elsewhere; fit-off itself should be included in the plumbing package rather than presented as missing design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "plumbing.floor-wastes",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 17
+        }
+      ]
+    },
+    {
+      "itemId": "plumbing.gas-lines",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "plumbing.hot-water",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 3
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "plumbing.rough-in",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR ROUGH-IN / SERVICES COORDINATION. Fixture locations define the need, but pipe routing is not an architectural design gap; include the rough-in in the plumbing scope and clarify any required hydraulic design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "plumbing.sanitary-fixtures",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 16
+        }
+      ]
+    },
+    {
+      "itemId": "plumbing.shower-screens",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine fit-out gap. Shower enclosures are implied by the wet-area layouts/details, but screen type, glass, hardware and mirror scope are not scheduled.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "plumbing.tapware",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "plumbing.water-filtration",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No water-filtration system is specified."
+    },
+    {
+      "itemId": "electrical.ceiling-fans",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. Ceiling-fan symbols and a ceiling-fan legend appear on the electrical drawings; make/model and full fixture schedule are not provided.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.data-tv",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.ev-charger",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.fit-off",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "CONTRACTOR FIT-OFF OBLIGATION. The electrical layouts define points and fixtures; final fit-off is part of the electrician lump sum, not a missing architectural drawing.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "electrical.home-automation",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a whole-home automation system. The drawings show video intercom and an HVAC control location only."
+    },
+    {
+      "itemId": "electrical.light-fittings",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.lighting-points",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.power-points",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.rough-in",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.security-intercom",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.separate-metering",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial. The site plan shows two MB and two WM locations, consistent with separate utility metering for the two dwellings; authority details remain unresolved.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.smoke-alarms",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": true,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.solar-pv",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, but correct the figures before issue. Each dwelling is labelled 2.5 kW while the same note specifies 8 x 330 W panels (= 2.64 kW). Preserve the two-dwelling basis and resolve the nominated capacity.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "electrical.switchboard",
+      "coverage": "gap",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Genuine electrical specification/authority gap. Meter locations are shown, but switchboard arrangement, safety-switch/circuit protection and capacity are not detailed.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "electrical.underfloor-heating",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No electric underfloor-heating system is shown."
+    },
+    {
+      "itemId": "hvac.ducted-system",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "REMOVE THE SYSTEM-TYPE ASSERTION. The drawings require reverse-cycle heating/cooling and contain generic ductwork rules, but do not select a ducted whole-home system. Record HVAC system type as unresolved.",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "hvac.ducted-vacuum",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No ducted-vacuum system is shown."
+    },
+    {
+      "itemId": "hvac.exhaust-fans",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "EVIDENCED - partial, but add the internal performance conflict. General/NCC notes require 25 L/s for bathroom/sanitary exhaust while the WC note on the electrical plans states 35 L/s.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 1
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "itemId": "hvac.fireplace",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "hvac.hydronic-gas-heating",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "hvac.split-systems",
+      "coverage": "not_expected",
+      "tier": "alternative",
+      "source": "audit",
+      "basis": "REMOVE THE SYSTEM-TYPE ASSERTION. Reverse-cycle heating/cooling is required, but no wall-mounted split-system package is actually selected. Record HVAC system type as unresolved.",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "hvac.ventilation-systems",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a whole-home HRV/supply system. Roof-space and local exhaust ventilation are separate documented requirements."
+    },
+    {
+      "itemId": "fire-services.detection-ewis",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "fire-services.extinguishers-signage",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "fire-services.fire-doors",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "REWORD. No fire-door package is shown. Any service penetration through the FRL 60/60/60 Partiwall must use a compliant tested detail, but that is a party-wall interface requirement, not evidence that fire doors are missing.",
+      "gapClass": "design_gap",
+      "reviewerConfirmation": "required"
+    },
+    {
+      "itemId": "fire-services.hydrants-hose-reels",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "fire-services.sprinklers",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED on the supplied approved architectural set. No sprinkler system is shown or referenced."
+    },
+    {
+      "itemId": "appliances.cooktop",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "appliances.dishwasher",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "appliances.laundry-appliances",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "Plans show washing-machine positions and power; nothing establishes who supplies the appliance. That is a provision-versus-supply question needing an allowance, not a row to delete.",
+      "gapClass": "commercial_allowance",
+      "responsibility": "provision_only",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "itemId": "appliances.microwave-provision",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "appliances.outdoor-kitchen",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No outdoor kitchen, BBQ or outdoor-fridge package is shown."
+    },
+    {
+      "itemId": "appliances.oven",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "appliances.rangehood",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 5
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.balcony-structures",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No project balcony or upper terrace appears on the plans/elevations."
+    },
+    {
+      "itemId": "external-works.deck",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "adjudicated",
+      "basis": "Page 21's six renders show no deck, balcony or platform of any kind, cross-checked against pp.4-9. The engine did not misread a render; it asserted content the cited page does not contain. This is a citation-entailment failure, and the canonical fabrication case.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 21
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.driveway",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.external-lighting",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.fencing",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 20
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.gates",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 20
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.letterbox-clothesline",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.paths-paving",
+      "coverage": "evidenced",
+      "tier": "core",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "itemId": "external-works.pergola-alfresco",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No project pergola/alfresco roof or lined alfresco ceiling is shown; neighbouring survey features do not create project scope."
+    },
+    {
+      "itemId": "external-works.privacy-screens",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "REMOVE / NOT EXPECTED as privacy screening. Page 11 specifies external solar-shading devices, not privacy/overlooking screens. Capture solar shading separately."
+    },
+    {
+      "itemId": "external-works.retaining-garden",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No garden edging/low retaining construction is shown."
+    },
+    {
+      "itemId": "landscaping.irrigation",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "REMOVE / NOT EXPECTED on current evidence. Page 11 says \"IF IRRIGATION IS REQUIRED\" use drip irrigation/mulch; that conditional rule does not establish an irrigation system."
+    },
+    {
+      "itemId": "landscaping.landscape-plan-compliance",
+      "coverage": "gap",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "EXPECTED IN A LATER LANDSCAPE / PLANNING PACKAGE or explicit tender allowance. The architectural ESD sheet requires 13% vegetation and gives species intent, but no planting/landscape plan is supplied.",
+      "gapClass": "later_consultant_package"
+    },
+    {
+      "itemId": "landscaping.planter-boxes",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No built planter boxes are shown."
+    },
+    {
+      "itemId": "landscaping.pool",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "landscaping.pool-fencing",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "landscaping.pool-plant",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current NOT EXPECTED classification is supported by the project drawings."
+    },
+    {
+      "itemId": "landscaping.soft-landscaping",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "landscaping.tree-protection",
+      "coverage": "evidenced",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "Auditor approved the engine's finding. Current finding/classification is sufficiently supported by the architectural set to proceed unchanged.",
+      "priceable": false,
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 2
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "itemId": "landscaping.turf",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED as a specified turf package. Vegetation/landscaping is required, but no turf/lawn product or extent is nominated."
+    },
+    {
+      "itemId": "landscaping.water-features",
+      "coverage": "not_expected",
+      "tier": "conditional",
+      "source": "audit",
+      "basis": "NOT EXPECTED. No water feature or pond is shown."
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "WAL-C1",
+      "summary": "Heating/cooling inferred as both ducted and split from generic reverse-cycle wording, then reported as a document conflict.",
+      "genuine": false,
+      "matchTerms": [
+        "ducted",
+        "split"
+      ],
+      "basis": "The drawings require reverse-cycle at minimum 3-star but select neither system. The engine reported a conflict between two of its own inferences, which is the unsupported-model-inference class.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 11
+        }
+      ],
+      "source": "audit"
+    },
+    {
+      "id": "WAL-C2",
+      "summary": "Roof pitch prints as both 2 degrees and 59 degrees.",
+      "genuine": true,
+      "matchTerms": [
+        "pitch",
+        "59"
+      ],
+      "basis": "OVERRIDES THE AUDIT. The auditor dismissed this as different roof planes. Reading page 6, the 59-degree note and the 2-degree notes annotate planes of the same building, the figure is anomalous against a flat parapet-and-box-gutter design with 3-degree capping falls, and it sits half under the permit stamp. It is a genuine document anomaly needing designer confirmation.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        }
+      ],
+      "source": "adjudicated"
+    },
+    {
+      "id": "WAL-C3",
+      "summary": "A timber deck or balcony asserted from a perspective render.",
+      "genuine": false,
+      "matchTerms": [
+        "deck"
+      ],
+      "basis": "Page 21 shows no deck in any of its six renders. Not a misread render: content asserted that the cited page does not contain.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 21
+        }
+      ],
+      "source": "adjudicated"
+    },
+    {
+      "id": "WAL-C4",
+      "summary": "Solar labelled 2.5 kW while the same note specifies 8 panels at 330 W, which is 2.64 kW.",
+      "genuine": true,
+      "matchTerms": [
+        "330"
+      ],
+      "basis": "Printed twice on page 6. A deterministic arithmetic identity the engine missed entirely, and the reason arithmetic must not be left to a language model.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 6
+        }
+      ],
+      "source": "audit"
+    },
+    {
+      "id": "WAL-C5",
+      "summary": "Sanitary exhaust requires 35 L/s where there is no window, while the NCC exhaust table on the same set specifies 25 L/s.",
+      "genuine": true,
+      "matchTerms": [
+        "35",
+        "25"
+      ],
+      "basis": "Real printed contradiction across pp.4-5/18-19 against p.15. Missed by the engine and by the audit's own conflict list.",
+      "citations": [
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 18
+        },
+        {
+          "file": "57 Wallace Street Brunswick West - Architectural.pdf",
+          "page": 15
+        }
+      ],
+      "source": "verification"
+    }
+  ],
+  "regressions": [
+    {
+      "id": "WAL-MOD-001",
+      "title": "Conditional language is not evidence",
+      "rationale": "Page 11 prints 'IF IRRIGATION IS REQUIRED, DRIP IRRIGATION AND MULCH IS TO BE USED'. The engine read a conditional as a selected system.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "landscaping.irrigation",
+          "notEquals": "evidenced"
+        }
+      ]
+    },
+    {
+      "id": "WAL-EVID-001",
+      "title": "No scope asserted from content a cited page does not contain",
+      "rationale": "The deck fabrication: asserted from page 21, which shows no deck.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "external-works.deck",
+          "notEquals": "evidenced"
+        },
+        {
+          "kind": "conflictAbsent",
+          "matchTerms": [
+            "deck"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WAL-CONF-001",
+      "title": "The roof-pitch anomaly is raised, not dismissed",
+      "rationale": "Corrects the audit. 2 and 59 degrees annotate the same building; the engine must keep asking, and the v2 blueprint's 'different locations, no conflict' test would have locked in the wrong answer.",
+      "assertions": [
+        {
+          "kind": "conflictPresent",
+          "matchTerms": [
+            "pitch",
+            "59"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WAL-CONF-002",
+      "title": "Two model inferences are not a document conflict",
+      "rationale": "Generic reverse-cycle wording became a ducted-versus-split contradiction.",
+      "assertions": [
+        {
+          "kind": "conflictAbsent",
+          "matchTerms": [
+            "ducted",
+            "split"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WAL-NUM-001",
+      "title": "Arithmetic identities are checked deterministically",
+      "rationale": "8 x 330 W = 2.64 kW against a printed 2.5 kW label.",
+      "assertions": [
+        {
+          "kind": "conflictPresent",
+          "matchTerms": [
+            "330"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WAL-APP-001",
+      "title": "Conditional items do not gap without an activation signal",
+      "rationale": "Flyscreens, outdoor kitchen, shaving cabinets, pool and lift were gapped from possibility. 'Fly screen' appears in the set exactly once, describing a rainwater-tank strainer.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "windows.flyscreens",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "appliances.outdoor-kitchen",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "joinery.mirror-cabinets",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "landscaping.pool",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "stairs.residential-lift",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "WAL-BAL-001",
+      "title": "An explicit N/A suppresses the item",
+      "rationale": "Page 1 records 'BAL Level : N/A'; the engine raised a bushfire-compliance gap.",
+      "assertions": [
+        {
+          "kind": "coverage",
+          "itemId": "approvals.bushfire-compliance",
+          "equals": "not_expected"
+        }
+      ]
+    },
+    {
+      "id": "WAL-PRELIM-001",
+      "title": "Preliminaries are contractor obligations, never design gaps",
+      "rationale": "Thirteen preliminaries lines were presented to the owner as missing documents. No drawing has ever shown scaffolding.",
+      "assertions": [
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.scaffolding",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.supervision",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.final-clean",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.site-amenities",
+          "equals": "contractor_obligation"
+        }
+      ]
+    },
+    {
+      "id": "WAL-DOC-001",
+      "title": "A referenced-but-unsupplied package is a dependency, not a design commission",
+      "rationale": "The set repeatedly refers slab, bracing and lintels to engineering. The owner must be told to obtain the package, not to commission a new design.",
+      "assertions": [
+        {
+          "kind": "gapClass",
+          "itemId": "approvals.engineering-design",
+          "equals": "later_consultant_package"
+        }
+      ]
+    },
+    {
+      "id": "WAL-PRICE-001",
+      "title": "Precise dimensions do not make a line priceable",
+      "rationale": "Wall framing schedules stud sizes and spacings while bracing and lintels remain 'refer engineering'; box gutters give minimum dimensions while sump and overflow sizing is left to AS/NZS 3500.3.",
+      "assertions": [
+        {
+          "kind": "priceable",
+          "itemId": "framing.wall-frames",
+          "equals": false
+        },
+        {
+          "kind": "priceable",
+          "itemId": "roofing.box-gutters",
+          "equals": false
+        }
+      ]
+    }
+  ],
+  "notes": "The sparse pole of the corpus: one architectural set, no consultant packages. Tests whether silence is judged against WHAT WAS SUPPLIED rather than against an idealised full pack. Labels derive from the independent verification, except where our own read of the drawings overturned it (source: adjudicated) — the roof-pitch conflict, sub-soil drainage, steel, and the deck. Rows the auditor's wording left ambiguous carry reviewerConfirmation: required and are excluded from metrics until ratified."
+}

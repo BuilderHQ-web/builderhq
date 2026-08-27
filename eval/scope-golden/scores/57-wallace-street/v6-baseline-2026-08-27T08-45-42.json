@@ -1,0 +1,319 @@
+{
+  "package": "57-wallace-street",
+  "label": "v6-baseline",
+  "scoredAt": "2026-08-27T08:45:42.066Z",
+  "standardVersion": "1.2.0",
+  "source": "/tmp/brunswick-run.json",
+  "score": {
+    "slug": "57-wallace-street",
+    "completeness": "sparse",
+    "unratified": 14,
+    "scoredLines": 227,
+    "evidenced": {
+      "truePositives": 85,
+      "falsePositives": 7,
+      "falseNegatives": 11,
+      "precision": 0.9239130434782609,
+      "recall": 0.8854166666666666,
+      "f1": 0.9042553191489361,
+      "missed": [
+        "electrical.ceiling-fans",
+        "electrical.separate-metering",
+        "insulation.internal-acoustic",
+        "internal-doors.flush-doors",
+        "joinery.vanities",
+        "lining.wet-area-board",
+        "painting.external-painting",
+        "site-services.power-connection",
+        "site-services.water-connection",
+        "steel.protective-coating",
+        "tiling.floor-laying"
+      ],
+      "invented": [
+        "appliances.laundry-appliances",
+        "external-works.deck",
+        "external-works.privacy-screens",
+        "joinery.butlers-pantry",
+        "landscaping.irrigation",
+        "preliminaries.temporary-fencing",
+        "windows.bifold-corner-units"
+      ]
+    },
+    "gaps": {
+      "truePositives": 49,
+      "falsePositives": 63,
+      "falseNegatives": 2,
+      "precision": 0.4375,
+      "recall": 0.9607843137254902,
+      "f1": 0.6012269938650306,
+      "missed": [
+        "appliances.laundry-appliances",
+        "preliminaries.temporary-fencing"
+      ],
+      "invented": [
+        "appliances.outdoor-kitchen",
+        "approvals.bushfire-compliance",
+        "demolition.asbestos-removal",
+        "demolition.full-demolition",
+        "demolition.service-disconnections",
+        "demolition.tree-removal",
+        "earthworks.bulk-excavation",
+        "earthworks.dewatering",
+        "earthworks.imported-fill",
+        "electrical.ceiling-fans",
+        "electrical.home-automation",
+        "electrical.separate-metering",
+        "electrical.underfloor-heating",
+        "external-doors.hinged-french-doors",
+        "external-doors.screen-doors",
+        "external-walls.feature-stone",
+        "external-works.balcony-structures",
+        "external-works.pergola-alfresco",
+        "external-works.retaining-garden",
+        "fire-services.sprinklers",
+        "fixout.feature-trim",
+        "fixout.timber-sills-benches",
+        "flooring.engineered-timber",
+        "flooring.laminate-hybrid",
+        "flooring.polished-concrete",
+        "footings-slab.piers-piles",
+        "footings-slab.slab-edge-insulation",
+        "footings-slab.suspended-slab",
+        "framing.cathedral-raked",
+        "hvac.ducted-vacuum",
+        "hvac.ventilation-systems",
+        "insulation.internal-acoustic",
+        "internal-doors.cavity-sliders",
+        "internal-doors.feature-doors",
+        "internal-doors.flush-doors",
+        "joinery.entertainment-study",
+        "joinery.mirror-cabinets",
+        "joinery.vanities",
+        "landscaping.planter-boxes",
+        "landscaping.turf",
+        "landscaping.water-features",
+        "lining.bulkheads-features",
+        "lining.wet-area-board",
+        "painting.external-painting",
+        "painting.special-coatings",
+        "painting.timber-metal-finishes",
+        "plumbing.water-filtration",
+        "retaining.engineered-concrete-block",
+        "retaining.shoring",
+        "retaining.timber-sleeper",
+        "site-services.onsite-detention",
+        "site-services.power-connection",
+        "site-services.sewer-pump",
+        "site-services.water-connection",
+        "stairs.external-balustrade",
+        "stairs.external-stairs",
+        "stairs.feature-screens",
+        "steel.protective-coating",
+        "tiling.floor-laying",
+        "waterproofing.balconies",
+        "waterproofing.planter-tanking",
+        "windows.flyscreens",
+        "windows.window-furnishings"
+      ]
+    },
+    "conflicts": {
+      "truePositives": 1,
+      "falsePositives": 2,
+      "falseNegatives": 2,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333,
+      "missed": [
+        "WAL-C4",
+        "WAL-C5"
+      ],
+      "invented": [
+        "WAL-C1",
+        "WAL-C3"
+      ]
+    },
+    "targets": [
+      {
+        "label": "False-gap rate",
+        "value": 0.5625,
+        "target": 0.05,
+        "direction": "max",
+        "passed": false,
+        "detail": "63/112 emitted gaps not labelled gap"
+      },
+      {
+        "label": "False not-expected rate",
+        "value": 0,
+        "target": 0.01,
+        "direction": "max",
+        "passed": true,
+        "detail": "0/23"
+      },
+      {
+        "label": "False not-expected on CORE",
+        "value": 0,
+        "target": 0,
+        "direction": "max",
+        "passed": true,
+        "detail": "none"
+      },
+      {
+        "label": "Priceable precision",
+        "value": 0.5,
+        "target": 0.98,
+        "direction": "min",
+        "passed": false,
+        "detail": "7 false of 14 claims"
+      },
+      {
+        "label": "Citation validity",
+        "value": 0.96045197740113,
+        "target": 0.98,
+        "direction": "min",
+        "passed": false,
+        "detail": "170/177"
+      },
+      {
+        "label": "Conflict precision",
+        "value": 0.3333333333333333,
+        "target": 0.97,
+        "direction": "min",
+        "passed": false,
+        "detail": "2 invented"
+      },
+      {
+        "label": "Conflict recall",
+        "value": 0.3333333333333333,
+        "target": 0.95,
+        "direction": "min",
+        "passed": false,
+        "detail": "2 missed"
+      },
+      {
+        "label": "Gap-class accuracy",
+        "value": 0,
+        "target": 0.95,
+        "direction": "min",
+        "passed": false,
+        "detail": "0/49"
+      },
+      {
+        "label": "Dwelling merge errors",
+        "value": 0,
+        "target": 0,
+        "direction": "max",
+        "passed": true
+      }
+    ],
+    "regressions": [
+      {
+        "id": "WAL-MOD-001",
+        "title": "Conditional language is not evidence",
+        "passed": false,
+        "failures": [
+          "landscaping.irrigation is evidenced, which is forbidden"
+        ]
+      },
+      {
+        "id": "WAL-EVID-001",
+        "title": "No scope asserted from content a cited page does not contain",
+        "passed": false,
+        "failures": [
+          "external-works.deck is evidenced, which is forbidden",
+          "forbidden conflict matching [deck]"
+        ]
+      },
+      {
+        "id": "WAL-CONF-001",
+        "title": "The roof-pitch anomaly is raised, not dismissed",
+        "passed": true,
+        "failures": []
+      },
+      {
+        "id": "WAL-CONF-002",
+        "title": "Two model inferences are not a document conflict",
+        "passed": false,
+        "failures": [
+          "forbidden conflict matching [ducted, split]"
+        ]
+      },
+      {
+        "id": "WAL-NUM-001",
+        "title": "Arithmetic identities are checked deterministically",
+        "passed": false,
+        "failures": [
+          "no conflict matching [330]"
+        ]
+      },
+      {
+        "id": "WAL-APP-001",
+        "title": "Conditional items do not gap without an activation signal",
+        "passed": false,
+        "failures": [
+          "windows.flyscreens is gap, which is forbidden",
+          "appliances.outdoor-kitchen is gap, which is forbidden",
+          "joinery.mirror-cabinets is gap, which is forbidden"
+        ]
+      },
+      {
+        "id": "WAL-BAL-001",
+        "title": "An explicit N/A suppresses the item",
+        "passed": false,
+        "failures": [
+          "approvals.bushfire-compliance is gap, expected not_expected"
+        ]
+      },
+      {
+        "id": "WAL-PRELIM-001",
+        "title": "Preliminaries are contractor obligations, never design gaps",
+        "passed": false,
+        "failures": [
+          "preliminaries.scaffolding gapClass null, expected contractor_obligation",
+          "preliminaries.supervision gapClass null, expected contractor_obligation",
+          "preliminaries.final-clean gapClass null, expected contractor_obligation",
+          "preliminaries.site-amenities gapClass null, expected contractor_obligation"
+        ]
+      },
+      {
+        "id": "WAL-DOC-001",
+        "title": "A referenced-but-unsupplied package is a dependency, not a design commission",
+        "passed": false,
+        "failures": [
+          "approvals.engineering-design gapClass null, expected later_consultant_package"
+        ]
+      },
+      {
+        "id": "WAL-PRICE-001",
+        "title": "Precise dimensions do not make a line priceable",
+        "passed": false,
+        "failures": [
+          "framing.wall-frames priceable=true, expected false",
+          "roofing.box-gutters priceable=true, expected false"
+        ]
+      }
+    ],
+    "passed": false
+  },
+  "aggregate": {
+    "packages": 1,
+    "evidenced": {
+      "precision": 0.9239130434782609,
+      "recall": 0.8854166666666666,
+      "f1": 0.9042553191489361
+    },
+    "gaps": {
+      "precision": 0.4375,
+      "recall": 0.9607843137254902,
+      "f1": 0.6012269938650306
+    },
+    "byCompleteness": {
+      "sparse": {
+        "packages": 1,
+        "falseGapRate": 0.5625
+      }
+    },
+    "regressionsPassed": 1,
+    "regressionsTotal": 10,
+    "passed": false
+  }
+}
