@@ -3276,7 +3276,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       headline: "How architects run a tender",
       headlineAccent: "has changed.",
       standfirst:
-        "Three builders. Three formats. Nothing lines up. Someone has to sort it out before the client can choose, and it is usually you.",
+        "Three builders. Three formats. Nothing lines up. Someone has to sort it out before the client can choose, and it is usually the architects.",
       paragraphs: [
         "BuilderHQ is built for that stage. You upload the drawings once. What comes back is one schedule of works, checked line by line against the documents you sent, so the job is written down the same way for everybody who prices it.",
         "Builders price that schedule. Same lines, same order, same questions on programme, insurance and aftercare. Nobody is answering a question you did not ask, and nobody is quietly leaving one out.",
