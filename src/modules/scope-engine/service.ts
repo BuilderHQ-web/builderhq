@@ -937,6 +937,10 @@ export async function processRunTick(
         // 'added' means ops typed the row by hand, which is false of a
         // synthesis-produced one.
         if (v.opsStatus === "removed" || v.opsStatus === "added") continue;
+        // 'pending' is the absence of a verdict, not a verdict. A row
+        // the desk REOPENED sits here, and carrying it would move the
+        // ops note from a judgement that was explicitly taken back.
+        if (v.opsStatus === "pending") continue;
         carriedVerdicts.set(v.itemId, {
           status: v.status,
           note: v.note,
@@ -2206,6 +2210,208 @@ export async function reviewConflict(
     { opsNote },
   );
   return ok({ ok: true });
+}
+
+
+/**
+ * Undo a desk verdict.
+ *
+ * WHY THIS EXISTS. Until now a verdict was permanent: confirm, edit or
+ * remove a line and there was no way back. Reviewers are people, packs
+ * are long, and a misclick on line 180 of 241 was unfixable — so the
+ * only remedy was to leave a wrong answer standing or re-read the whole
+ * project.
+ *
+ * WHAT IT DOES NOT DO. It does not rewrite history. The original
+ * verdict stays in `scope_review_events` and a new `item.reopened` row
+ * is appended beside it, because the log is the ledger the accuracy
+ * metrics read and a ledger you can erase is not a ledger. The reader
+ * scores each subject's FINAL first-hand state, so a reversed verdict
+ * simply stops counting; it is reported as a reversal rate instead,
+ * which is a fact about the desk rather than about the engine.
+ *
+ * CONTENT IS LEFT ALONE. Reopening returns the VERDICT to pending and
+ * does not restore the model's original wording over an edit. The row
+ * stands as it is and awaits a fresh judgement; anyone wanting the
+ * engine's first answer has it in the log. Restoring silently would be
+ * the surprising choice, and it has a failure mode this does not.
+ */
+export async function reopenItem(
+  actorId: string,
+  itemRowId: string,
+): Promise<Result<{ reopened: true; removed: boolean }>> {
+  const [row] = await db
+    .select()
+    .from(scopeRunItems)
+    .where(eq(scopeRunItems.id, itemRowId))
+    .limit(1);
+  if (!row) return fail("not_found", "Item not found.");
+
+  const [run] = await db
+    .select({ status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, row.runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "review") {
+    return fail(
+      "validation",
+      run.status === "approved"
+        ? "This pack is approved and builders may already be pricing it. Changing it now needs an addendum, not a reopened line."
+        : `A verdict can only be reopened while the run is in review (this run is ${run.status}).`,
+    );
+  }
+  if (row.opsStatus === "pending") {
+    return fail("validation", "That line is already awaiting a verdict.");
+  }
+
+  // An ADDED line has no prior state to return to: ops typed it, so
+  // undoing means the row should not exist. Deleting it is correct and
+  // the log keeps the whole story.
+  if (row.opsStatus === "added") {
+    await db.delete(scopeRunItems).where(eq(scopeRunItems.id, itemRowId));
+    await recordReview(
+      row.runId,
+      row.itemId,
+      "item.unadded",
+      actorId,
+      { status: row.status, note: row.note, opsStatus: row.opsStatus },
+      null,
+    );
+    return ok({ reopened: true, removed: true });
+  }
+
+  await db
+    .update(scopeRunItems)
+    .set({
+      opsStatus: "pending",
+      editedBy: actorId,
+      editedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(scopeRunItems.id, itemRowId));
+  await recordReview(
+    row.runId,
+    row.itemId,
+    "item.reopened",
+    actorId,
+    { status: row.status, note: row.note, opsStatus: row.opsStatus, opsNote: row.opsNote },
+    { opsStatus: "pending" },
+  );
+  return ok({ reopened: true, removed: false });
+}
+
+/** Undo a conflict verdict. Same rules as an item. */
+export async function reopenConflict(
+  actorId: string,
+  conflictId: string,
+): Promise<Result<{ reopened: true }>> {
+  const [row] = await db
+    .select()
+    .from(scopeRunConflicts)
+    .where(eq(scopeRunConflicts.id, conflictId))
+    .limit(1);
+  if (!row) return fail("not_found", "Conflict not found.");
+  if (row.opsStatus === "pending") {
+    return fail("validation", "That conflict is already awaiting a verdict.");
+  }
+  const [run] = await db
+    .select({ status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, row.runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "review") {
+    return fail("validation", "A conflict can only be reopened while the run is in review.");
+  }
+
+  await db
+    .update(scopeRunConflicts)
+    .set({ opsStatus: "pending", updatedAt: new Date() })
+    .where(eq(scopeRunConflicts.id, conflictId));
+  await recordReview(
+    row.runId,
+    `conflict:${row.id}`,
+    "conflict.reopened",
+    actorId,
+    { opsStatus: row.opsStatus, opsNote: row.opsNote },
+    { opsStatus: "pending" },
+  );
+  return ok({ reopened: true });
+}
+
+/**
+ * Undo a capture verdict.
+ *
+ * A dismissal is trivial to undo. A PROMOTION is not: it wrote two
+ * things, an evidenced line on this run AND a permanent entry in the
+ * living vocabulary that other projects may since have matched
+ * against. So the line comes off, and the extension is retired ONLY if
+ * no other run is using it. Retiring a key another project depends on
+ * would silently change that project's scope, which is exactly the
+ * class of failure this programme exists to end.
+ */
+export async function reopenCapture(
+  actorId: string,
+  captureId: string,
+): Promise<Result<{ reopened: true; extensionRetired: boolean; stillUsedBy: number }>> {
+  const [capture] = await db
+    .select()
+    .from(scopeRunCaptures)
+    .where(eq(scopeRunCaptures.id, captureId))
+    .limit(1);
+  if (!capture) return fail("not_found", "Capture not found.");
+  if (capture.opsStatus === "pending") {
+    return fail("validation", "That capture is already awaiting a verdict.");
+  }
+  const [run] = await db
+    .select({ status: scopeRuns.status })
+    .from(scopeRuns)
+    .where(eq(scopeRuns.id, capture.runId))
+    .limit(1);
+  if (!run) return fail("not_found", "Run not found.");
+  if (run.status !== "review") {
+    return fail("validation", "A capture can only be reopened while the run is in review.");
+  }
+
+  const wasPromoted = capture.opsStatus === "promoted";
+  const key = capture.promotedItemId;
+  let extensionRetired = false;
+  let stillUsedBy = 0;
+
+  if (wasPromoted && key) {
+    // Take the line off this run.
+    await db
+      .delete(scopeRunItems)
+      .where(and(eq(scopeRunItems.runId, capture.runId), eq(scopeRunItems.itemId, key)));
+
+    // Is any OTHER run relying on this vocabulary entry?
+    stillUsedBy = await db.$count(
+      scopeRunItems,
+      and(eq(scopeRunItems.itemId, key), ne(scopeRunItems.runId, capture.runId)),
+    );
+    if (stillUsedBy === 0) {
+      await db
+        .update(scopeVocabExtensions)
+        .set({ status: "retired", updatedAt: new Date() })
+        .where(eq(scopeVocabExtensions.key, key));
+      extensionRetired = true;
+    }
+  }
+
+  await db
+    .update(scopeRunCaptures)
+    .set({ opsStatus: "pending", promotedItemId: null, updatedAt: new Date() })
+    .where(eq(scopeRunCaptures.id, captureId));
+  await recordReview(
+    capture.runId,
+    key ?? capture.label,
+    "capture.reopened",
+    actorId,
+    { opsStatus: capture.opsStatus, promotedItemId: key },
+    { opsStatus: "pending", extensionRetired, stillUsedBy },
+  );
+  return ok({ reopened: true, extensionRetired, stillUsedBy });
 }
 
 /** Approve the run: every item must carry a verdict first. */

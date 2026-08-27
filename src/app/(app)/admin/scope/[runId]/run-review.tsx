@@ -22,6 +22,7 @@ import {
   Play,
   Plus,
   X,
+  Undo2,
 } from "lucide-react";
 
 import {
@@ -32,6 +33,7 @@ import {
   promoteCaptureAction,
   reviewScopeConflictAction,
   reviewScopeItemAction,
+  reopenScopeItemAction,
   retryFailedDocumentsAction,
   tickScopeRunAction,
 } from "@/app/(app)/_actions/scope";
@@ -646,6 +648,8 @@ function Selection({
 
   const apply = (updated: ItemRow) =>
     setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  /** An un-added line stops existing, so it leaves the list entirely. */
+  const drop = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id));
 
   return (
     <section>
@@ -720,6 +724,7 @@ function Selection({
                   docName={docName}
                   readOnly={readOnly}
                   onChanged={apply}
+                  onDropped={drop}
                 />
               ))}
             </ul>
@@ -846,11 +851,13 @@ function ItemLine({
   docName,
   readOnly,
   onChanged,
+  onDropped,
 }: {
   row: ItemRow;
   docName: Map<string, string>;
   readOnly: boolean;
   onChanged: (r: ItemRow) => void;
+  onDropped: (id: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -874,6 +881,31 @@ function ItemLine({
         note: extra?.note !== undefined ? extra.note : row.note,
       });
       setEditing(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Take a verdict back. The original stays in the review log; this
+   * only returns the line to pending so it can be judged again — and
+   * an ADDED line, which ops typed, stops existing rather than
+   * lingering as a row nobody can explain.
+   */
+  const reopen = async () => {
+    setBusy(true);
+    try {
+      const r = await reopenScopeItemAction(row.id);
+      if (!r.ok) {
+        toast.error("Could not reopen", r.error.message);
+        return;
+      }
+      if (r.value.removed) {
+        onDropped(row.id);
+        toast.success("Line removed", "The addition has been taken back.");
+        return;
+      }
+      onChanged({ ...row, opsStatus: "pending" });
     } finally {
       setBusy(false);
     }
@@ -981,19 +1013,34 @@ function ItemLine({
             </IconAction>
           </span>
         ) : (
-          <span
-            className={cn(
-              "shrink-0 text-[10px] uppercase tracking-[0.1em] font-ui font-semibold",
-              row.opsStatus === "confirmed" || row.opsStatus === "added"
-                ? "text-[#0a7d73]"
-                : row.opsStatus === "removed"
-                  ? "text-[#b2483f]"
-                  : row.opsStatus === "edited"
-                    ? "text-[#8a6414]"
-                    : "text-text-faint",
-            )}
-          >
-            {row.opsStatus}
+          <span className="shrink-0 flex items-center gap-1.5">
+            <span
+              className={cn(
+                "text-[10px] uppercase tracking-[0.1em] font-ui font-semibold",
+                row.opsStatus === "confirmed" || row.opsStatus === "added"
+                  ? "text-[#0a7d73]"
+                  : row.opsStatus === "removed"
+                    ? "text-[#b2483f]"
+                    : row.opsStatus === "edited"
+                      ? "text-[#8a6414]"
+                      : "text-text-faint",
+              )}
+            >
+              {row.opsStatus}
+            </span>
+            {!readOnly ? (
+              <IconAction
+                title={
+                  row.opsStatus === "added"
+                    ? "Undo: take this addition back"
+                    : "Reopen: take this verdict back"
+                }
+                disabled={busy}
+                onClick={reopen}
+              >
+                <Undo2 className="size-3.5" />
+              </IconAction>
+            ) : null}
           </span>
         )}
       </div>

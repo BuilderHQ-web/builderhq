@@ -16,6 +16,9 @@ import {
   retryFailedDocuments,
   TICK_BUDGET_MS,
   reviewItem,
+  reopenItem,
+  reopenConflict,
+  reopenCapture,
   addItem,
   promoteCapture,
   dismissCapture,
@@ -85,6 +88,38 @@ export async function reviewScopeItemAction(
   const a = await requireAdmin();
   if (!a.ok) return a;
   return reviewItem(a.value, itemRowId, verdict);
+}
+
+/**
+ * Undo a desk verdict, returning the line to pending.
+ *
+ * The original judgement is kept in the review log and a reversal is
+ * appended beside it — the accuracy metrics read final state per
+ * subject, so a taken-back verdict stops counting rather than
+ * disappearing.
+ */
+export async function reopenScopeItemAction(
+  itemRowId: string,
+): Promise<Result<{ reopened: true; removed: boolean }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return reopenItem(a.value, itemRowId);
+}
+
+export async function reopenScopeConflictAction(
+  conflictId: string,
+): Promise<Result<{ reopened: true }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return reopenConflict(a.value, conflictId);
+}
+
+export async function reopenCaptureAction(
+  captureId: string,
+): Promise<Result<{ reopened: true; extensionRetired: boolean; stillUsedBy: number }>> {
+  const a = await requireAdmin();
+  if (!a.ok) return a;
+  return reopenCapture(a.value, captureId);
 }
 
 export async function addScopeItemAction(

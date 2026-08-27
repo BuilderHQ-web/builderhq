@@ -69,7 +69,14 @@ const ITEM_VERDICTS = new Set([
  * handle it from the day it lands rather than being retrofitted, so
  * that the first reversal cannot silently corrupt a metric.
  */
-const REVERSALS = new Set(["item.reopened", "conflict.reopened", "capture.reopened"]);
+const REVERSALS = new Set([
+  "item.reopened",
+  "conflict.reopened",
+  "capture.reopened",
+  // Un-adding is the reversal of item.added: ops typed a line and then
+  // took it back, so it is not evidence the model missed anything.
+  "item.unadded",
+]);
 
 // ── outputs ─────────────────────────────────────────────────────────
 

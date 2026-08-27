@@ -38,6 +38,9 @@ export type { ScopeGapResolutionRow, ScopeAddendumRow } from "./schema";
 export { SCOPE_CONFIDENCE_FLOOR } from "./floor";
 export {
   startRun,
+  reopenItem,
+  reopenConflict,
+  reopenCapture,
   processRunTick,
   retryFailedDocuments,
   tickQueuedRuns,
