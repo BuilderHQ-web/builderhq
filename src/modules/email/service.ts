@@ -37,6 +37,7 @@ import {
   type PartnerNetwork,
 } from "@/emails/PartnerInterestConfirmationEmail";
 import { MetaLeadOpsEmail } from "@/emails/MetaLeadOpsEmail";
+import { MetaLeadUnretrievableEmail } from "@/emails/MetaLeadUnretrievableEmail";
 import { PartnerInterestOpsEmail } from "@/emails/PartnerInterestOpsEmail";
 import { introNeedsLabel } from "@/modules/leads/partner-roles";
 import { PartnerIntroOpsEmail } from "@/emails/PartnerIntroOpsEmail";
@@ -1031,6 +1032,67 @@ export async function sendMetaLeadOpsEmail(
   logger.info(
     { event: "email.meta_lead_ops.sent", leadId: input.leadId, resendId: data.id },
     "meta lead ops notification sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendMetaLeadUnretrievableEmailInput {
+  leadgenId: string;
+  formId: string | null;
+  pageId: string | null;
+  reason: string;
+  receivedAt: Date;
+}
+
+/**
+ * Raise the alarm for a lead Meta would not let us read.
+ *
+ * Separate from the ordinary notice on purpose. This one is not "here
+ * is a lead", it is "go and fetch a lead by hand", and blurring the two
+ * would train the reader to skim past the one that needs work.
+ */
+export async function sendMetaLeadUnretrievableEmail(
+  input: SendMetaLeadUnretrievableEmailInput,
+): Promise<Result<{ id: string }>> {
+  const props = { ...input };
+  const [html, text] = await Promise.all([
+    render(MetaLeadUnretrievableEmail(props)),
+    render(MetaLeadUnretrievableEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject: "ACTION: a Meta lead arrived that we could not read",
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "meta_unretrievable" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.meta_lead_unretrievable.failed",
+        leadgenId: input.leadgenId,
+        code: error.name,
+        message: error.message,
+      },
+      "meta unretrievable-lead alarm send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    {
+      event: "email.meta_lead_unretrievable.sent",
+      leadgenId: input.leadgenId,
+      resendId: data.id,
+    },
+    "meta unretrievable-lead alarm sent",
   );
   return ok({ id: data.id });
 }

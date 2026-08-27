@@ -40,6 +40,7 @@ export {
   sendOwnerAdvisoryConfirmationEmail,
   sendEstimateRequestOpsEmail,
   sendMetaLeadOpsEmail,
+  sendMetaLeadUnretrievableEmail,
   sendBookCallOpsEmail,
   sendArchitectTenderOpsEmail,
   sendArchitectTenderConfirmationEmail,
