@@ -272,7 +272,7 @@ function SegmentedNav({ active }: { active: Active }) {
                   "inline-flex h-9 grow basis-[28%] items-center justify-center whitespace-nowrap rounded-full px-4 text-[13px]",
                   // Scale rather than padding, so growing the active one
                   // never reflows the row underneath it.
-                  "origin-center transition-[transform,background-color,box-shadow,color] duration-200 ease-[var(--ease-out)]",
+                  "origin-center transition-[scale,background-color,box-shadow,color] duration-200 ease-[var(--ease-out)]",
                   "sm:grow-0 sm:basis-auto",
                   on
                     ? "scale-[1.06] bg-white/55 font-semibold text-text shadow-[0_2px_14px_rgba(16,24,32,0.10)] ring-1 ring-white/70 backdrop-blur-md"
