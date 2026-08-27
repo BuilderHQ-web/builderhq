@@ -25,7 +25,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { sendMetaLeadOpsEmail } from "@/modules/email";
+import { sendMetaLeadOpsEmail, sendMetaLeadUnretrievableEmail } from "@/modules/email";
 import { markLeadOpsNotified, recordExternalLead } from "@/modules/leads";
 import {
   fetchLead,
@@ -138,7 +138,31 @@ async function ingest(notification: LeadgenNotification): Promise<Outcome> {
     // A rejected token or a lead we are not permitted to read will fail
     // the same way on every retry, so only transport failures are worth
     // repeating. `forbidden` covers Meta's 4xx, which will not change.
-    return fetched.error.code === "forbidden" ? "done" : "retry";
+    if (fetched.error.code !== "forbidden") return "retry";
+
+    // Acknowledging it means Meta will never send it again, so this is
+    // the last moment anybody could learn the lead existed. Until the
+    // app passes App Review for lead retrieval this is what EVERY lead
+    // from a member of the public looks like, and without a notice it
+    // is a silent loss while the campaign keeps spending.
+    const alarm = await sendMetaLeadUnretrievableEmail({
+      leadgenId: notification.leadgenId,
+      formId: notification.formId,
+      pageId: notification.pageId,
+      reason: fetched.error.message.slice(0, 200),
+      receivedAt: notification.createdTime
+        ? new Date(notification.createdTime * 1000)
+        : new Date(),
+    });
+    if (!alarm.ok) {
+      // Now nobody knows by any route. Ask for the redelivery.
+      logger.error(
+        { event: "meta.leads.alarm_failed", leadgenId: notification.leadgenId },
+        "could not read the lead AND could not raise the alarm",
+      );
+      return "retry";
+    }
+    return "done";
   }
   const lead = fetched.value;
   const mapped = mapLeadFields(lead.fieldData);
