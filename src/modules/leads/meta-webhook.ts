@@ -162,7 +162,11 @@ export interface FetchedLead {
   raw: Record<string, unknown>;
 }
 
-const GRAPH_VERSION = "v21.0";
+// Meta retires a Graph version roughly two years after release, and a
+// retired version stops answering rather than warning. v26.0 is the
+// current one; probing v27.0 returns "unknown path components", which
+// is how Meta says a version does not exist yet.
+const GRAPH_VERSION = "v26.0";
 
 /**
  * Retrieve one lead's answers.
@@ -176,7 +180,10 @@ const GRAPH_VERSION = "v21.0";
 export async function fetchLead(
   leadgenId: string,
   pageAccessToken: string | undefined,
-  { fetchImpl = fetch }: { fetchImpl?: typeof fetch } = {},
+  {
+    appSecret,
+    fetchImpl = fetch,
+  }: { appSecret?: string; fetchImpl?: typeof fetch } = {},
 ): Promise<Result<FetchedLead>> {
   if (!pageAccessToken) return fail("internal", "Meta page access token is not configured.");
 
@@ -195,7 +202,19 @@ export async function fetchLead(
     "campaign_name",
     "form_id",
   ].join(",");
-  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(leadgenId)}?fields=${fields}`;
+  // `appsecret_proof` is required whenever the app has "Require App
+  // Secret" switched on in Advanced Settings, and is accepted, ignored,
+  // when it is off. Sending it always is the only way to be right under
+  // both settings, because the failure without it is a bare 400 that
+  // names no cause. It is an HMAC OF THE TOKEN, not the secret, and is
+  // useless to anyone who does not already hold the token, so unlike the
+  // token itself it is safe in a query string. Meta documents no header
+  // form for it.
+  const proof = appSecret
+    ? "&appsecret_proof=" +
+      createHmac("sha256", appSecret).update(pageAccessToken, "utf8").digest("hex")
+    : "";
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(leadgenId)}?fields=${fields}${proof}`;
   let res: Response;
   try {
     res = await fetchImpl(url, {
