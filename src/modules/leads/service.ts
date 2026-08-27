@@ -13,7 +13,7 @@
  */
 
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
@@ -158,6 +158,105 @@ export async function markLeadDeliveryFailed(
       .where(eq(leads.id, leadId));
   } catch {
     /* swallow */
+  }
+}
+
+/**
+ * Record a lead that arrived from an external advertising platform.
+ *
+ * IDEMPOTENT BY CONSTRUCTION. Meta retries any delivery it does not
+ * get a prompt 200 for and replays a backlog after an outage, so the
+ * same lead arrives more than once as a matter of routine. This does
+ * NOT read-then-write — two concurrent deliveries would both find
+ * nothing and both insert. It relies on the partial unique index over
+ * (external_source, external_id) from migration 0051, so the database
+ * settles the race and the loser is told it already exists.
+ *
+ * Returns `created: false` for a duplicate, which is a normal outcome
+ * and not an error: the caller still answers Meta with a 200.
+ */
+export async function recordExternalLead(input: {
+  kind: LeadKind;
+  externalSource: string;
+  externalId: string;
+  firstName: string;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  source?: string | null;
+  meta?: Record<string, unknown>;
+  createdAt?: Date | null;
+}): Promise<Result<{ lead: LeadRow | null; created: boolean }>> {
+  try {
+    const rows = await db
+      .insert(leads)
+      .values({
+        kind: input.kind,
+        externalSource: input.externalSource,
+        externalId: input.externalId,
+        firstName: input.firstName.slice(0, 80) || "Unknown",
+        lastName: input.lastName?.slice(0, 80) ?? null,
+        // The column is NOT NULL, and a lead whose email we could not
+        // find is still worth keeping — the phone number or the raw
+        // payload may be all somebody needs to make the call.
+        email: (input.email ?? "").toLowerCase().slice(0, 160),
+        phone: input.phone?.slice(0, 40) ?? null,
+        source: input.source ?? input.externalSource,
+        meta: (input.meta ?? {}) as object,
+        ...(input.createdAt ? { createdAt: input.createdAt } : {}),
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    const inserted = rows[0] ?? null;
+    if (!inserted) {
+      // The row already existed. Read it back rather than returning
+      // nothing: the caller needs to know whether ops was ever told
+      // about it, because the first delivery may have written the row
+      // and then failed to send the notification.
+      const existing = await db
+        .select()
+        .from(leads)
+        .where(
+          and(
+            eq(leads.externalSource, input.externalSource),
+            eq(leads.externalId, input.externalId),
+          ),
+        )
+        .limit(1);
+      logger.info(
+        {
+          event: "lead.external.duplicate",
+          externalSource: input.externalSource,
+          externalId: input.externalId,
+        },
+        "external lead already recorded; treating as replay",
+      );
+      return ok({ lead: existing[0] ?? null, created: false });
+    }
+    const lead = inserted;
+    logger.info(
+      {
+        event: "lead.external.created",
+        leadId: lead.id,
+        externalSource: input.externalSource,
+        externalId: input.externalId,
+      },
+      "external lead recorded",
+    );
+    return ok({ lead, created: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(
+      {
+        event: "lead.external.insert_failed",
+        externalSource: input.externalSource,
+        externalId: input.externalId,
+        msg,
+      },
+      "external lead insert threw",
+    );
+    return fail("internal", "Could not record the lead.");
   }
 }
 

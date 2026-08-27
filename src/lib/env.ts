@@ -77,6 +77,26 @@ const metaCapiSchema = {
   META_CAPI_ACCESS_TOKEN: z.string().optional(),
   META_DATASET_ID: z.string().optional(),
   META_TEST_EVENT_CODE: z.string().optional(),
+
+  /**
+   * Meta Lead Ads. Separate credentials from CAPI above, and all three
+   * are required together for the webhook to work at all:
+   *
+   *   META_APP_SECRET       proves a delivery came from Meta (HMAC over
+   *                         the raw body). Without it every POST is
+   *                         refused, which is the safe default.
+   *   META_LEAD_VERIFY_TOKEN  a string we invent, echoed during Meta's
+   *                         one-time subscription handshake so nobody
+   *                         else can point their app at our endpoint.
+   *   META_PAGE_ACCESS_TOKEN  a long-lived PAGE token carrying
+   *                         `leads_retrieval`. The webhook only sends a
+   *                         lead id; the answers are fetched with this.
+   *
+   * Server-side only, all three. None may ever become NEXT_PUBLIC_.
+   */
+  META_APP_SECRET: z.string().optional(),
+  META_LEAD_VERIFY_TOKEN: z.string().optional(),
+  META_PAGE_ACCESS_TOKEN: z.string().optional(),
 };
 
 const serverSchema = z.object({

@@ -36,6 +36,7 @@ import {
   PartnerInterestConfirmationEmail,
   type PartnerNetwork,
 } from "@/emails/PartnerInterestConfirmationEmail";
+import { MetaLeadOpsEmail } from "@/emails/MetaLeadOpsEmail";
 import { PartnerInterestOpsEmail } from "@/emails/PartnerInterestOpsEmail";
 import { introNeedsLabel } from "@/modules/leads/partner-roles";
 import { PartnerIntroOpsEmail } from "@/emails/PartnerIntroOpsEmail";
@@ -967,6 +968,72 @@ export async function sendArchitectTenderConfirmationEmail(
 }
 
 // ── Preferred Partner network interest (architect / finance) ───────────
+
+interface SendMetaLeadOpsEmailInput {
+  leadId: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  extras: Record<string, string>;
+  campaignName: string | null;
+  adName: string | null;
+  formLabel: string | null;
+  platform: string | null;
+  incomplete: boolean;
+  createdAt: Date;
+}
+
+/**
+ * Tell ops a Meta Instant Form lead has landed.
+ *
+ * Failure is never fatal to the webhook: the lead row exists whether or
+ * not this send succeeds, and a webhook that returns an error because an
+ * email bounced would have Meta redeliver a lead we already hold.
+ */
+export async function sendMetaLeadOpsEmail(
+  input: SendMetaLeadOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const who = input.fullName.trim() || input.phone || input.email || "an unnamed lead";
+  const subject = `ACTION: Meta lead from ${who}`;
+  const props = { ...input };
+
+  const [html, text] = await Promise.all([
+    render(MetaLeadOpsEmail(props)),
+    render(MetaLeadOpsEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+    tags: [
+      { name: "category", value: "ops_lead_capture" },
+      { name: "variant", value: "meta_instant_form" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      {
+        event: "email.meta_lead_ops.failed",
+        leadId: input.leadId,
+        code: error.name,
+        message: error.message,
+      },
+      "meta lead ops notification send failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+
+  logger.info(
+    { event: "email.meta_lead_ops.sent", leadId: input.leadId, resendId: data.id },
+    "meta lead ops notification sent",
+  );
+  return ok({ id: data.id });
+}
 
 interface SendPartnerInterestOpsEmailInput {
   leadId: string;

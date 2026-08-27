@@ -19,6 +19,7 @@ export {
 
 export {
   createLead,
+  recordExternalLead,
   markLeadDelivered,
   markLeadDeliveryFailed,
   markLeadOpsNotified,
