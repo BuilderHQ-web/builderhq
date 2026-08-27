@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 import {
   ARCHITECT_PARTNERS,
   BUILDER_PARTNERS,
@@ -243,14 +245,15 @@ export function PartnersRegister({ active }: { active: Active }) {
 
 function SegmentedNav({ active }: { active: Active }) {
   return (
-    // Five disciplines do not fit one phone row, so they wrap rather
-    // than scroll: a filter nobody can see is a filter nobody uses.
-    // Each pill takes a third and grows into whatever the last row
-    // leaves, giving three then two. Desktop stays a single capsule.
+    // No tray behind these: the buttons sit straight on the canvas. The
+    // one you are on is frosted glass and a touch larger, the rest are
+    // quiet outlines. Five do not fit one phone row, so they wrap rather
+    // than scroll, three then two, because a filter nobody can see is a
+    // filter nobody uses.
     <div className="w-full shrink-0 sm:w-auto">
       <nav
         aria-label="Filter partners"
-        className="flex w-full flex-wrap items-center gap-1 rounded-2xl border border-border-subtle bg-surface-2 p-1 sm:inline-flex sm:w-max sm:flex-nowrap sm:rounded-full"
+        className="flex w-full flex-wrap items-center gap-2 sm:inline-flex sm:w-max sm:flex-nowrap"
       >
         {SEGMENTS.filter((s) => s.key === "all" || (s.count ?? 0) > 0).map(
           (s) => {
@@ -259,17 +262,22 @@ function SegmentedNav({ active }: { active: Active }) {
               <Link
                 key={s.key}
                 href={s.href}
-                // Switching lens keeps the register in place — the three
-                // routes stay distinct for SEO/outreach, but toggling
-                // between them holds your scroll position instead of
-                // snapping back to the top.
+                // Switching lens keeps the register in place — the routes
+                // stay distinct for SEO/outreach, but toggling between
+                // them holds your scroll position instead of snapping
+                // back to the top.
                 scroll={false}
                 aria-current={on ? "page" : undefined}
-                className={
+                className={cn(
+                  "inline-flex h-9 grow basis-[28%] items-center justify-center whitespace-nowrap rounded-full px-4 text-[13px]",
+                  // Scale rather than padding, so growing the active one
+                  // never reflows the row underneath it.
+                  "origin-center transition-[transform,background-color,box-shadow,color] duration-200 ease-[var(--ease-out)]",
+                  "sm:grow-0 sm:basis-auto",
                   on
-                    ? "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap grow basis-[calc(33.333%-0.5rem)] justify-center sm:grow-0 sm:basis-auto bg-white card-elev text-[13px] font-semibold text-text"
-                    : "inline-flex items-center h-9 px-4 rounded-full whitespace-nowrap grow basis-[calc(33.333%-0.5rem)] justify-center sm:grow-0 sm:basis-auto text-[13px] font-medium text-text-muted hover:text-text transition-colors"
-                }
+                    ? "scale-[1.06] bg-white/55 font-semibold text-text shadow-[0_2px_14px_rgba(16,24,32,0.10)] ring-1 ring-white/70 backdrop-blur-md"
+                    : "font-medium text-text-muted ring-1 ring-[#101820]/[0.09] hover:text-text hover:ring-[#101820]/20",
+                )}
               >
                 {s.label}
               </Link>
