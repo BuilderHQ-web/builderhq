@@ -1,0 +1,288 @@
+{
+  "package": "108-dow-street",
+  "label": "v6-baseline",
+  "scoredAt": "2026-08-27T10:03:07.398Z",
+  "standardVersion": "1.2.0",
+  "source": "/tmp/dow-run.json",
+  "score": {
+    "slug": "108-dow-street",
+    "completeness": "full",
+    "unratified": 0,
+    "scoredLines": 54,
+    "evidenced": {
+      "truePositives": 2,
+      "falsePositives": 1,
+      "falseNegatives": 9,
+      "precision": 0.6666666666666666,
+      "recall": 0.18181818181818182,
+      "f1": 0.28571428571428575,
+      "missed": [
+        "external-works.retaining-garden",
+        "framing.cathedral-raked",
+        "landscaping.tree-protection",
+        "painting.special-coatings",
+        "plumbing.fit-off",
+        "preliminaries.site-establishment",
+        "retaining.subsoil-drainage",
+        "stairs.feature-screens",
+        "steel.portal-garage-frames"
+      ],
+      "invented": [
+        "landscaping.irrigation"
+      ]
+    },
+    "gaps": {
+      "truePositives": 19,
+      "falsePositives": 32,
+      "falseNegatives": 0,
+      "precision": 0.37254901960784315,
+      "recall": 1,
+      "f1": 0.5428571428571428,
+      "missed": [],
+      "invented": [
+        "appliances.laundry-appliances",
+        "appliances.outdoor-kitchen",
+        "approvals.acoustic-report",
+        "earthworks.rock-excavation",
+        "external-doors.screen-doors",
+        "external-walls.timber-composite-cladding",
+        "external-works.deck",
+        "external-works.pergola-alfresco",
+        "external-works.retaining-garden",
+        "fire-services.sprinklers",
+        "footings-slab.piers-piles",
+        "footings-slab.suspended-slab",
+        "framing.cathedral-raked",
+        "hvac.fireplace",
+        "internal-doors.cavity-sliders",
+        "joinery.entertainment-study",
+        "landscaping.tree-protection",
+        "landscaping.turf",
+        "landscaping.water-features",
+        "lining.cornice",
+        "painting.special-coatings",
+        "plumbing.fit-off",
+        "preliminaries.site-establishment",
+        "retaining.subsoil-drainage",
+        "retaining.timber-sleeper",
+        "roofing.roof-ventilation",
+        "roofing.skylights",
+        "site-services.sewer-pump",
+        "stairs.feature-screens",
+        "stairs.residential-lift",
+        "steel.portal-garage-frames",
+        "windows.flyscreens"
+      ]
+    },
+    "conflicts": {
+      "truePositives": 4,
+      "falsePositives": 6,
+      "falseNegatives": 6,
+      "precision": 0.4,
+      "recall": 0.4,
+      "f1": 0.4000000000000001,
+      "missed": [
+        "DOW-C3",
+        "DOW-C5",
+        "DOW-C7",
+        "DOW-C8",
+        "DOW-C11",
+        "DOW-C12"
+      ],
+      "invented": [
+        "DOW-C9",
+        "party/boundary firewall is offered as two alternative system",
+        "solar panels/inverter are drawn as builder-shown pv yet incl",
+        "footing design relies on effective drainage/de-watering 'by ",
+        "energy rating target conflicts within the inclusions list: o",
+        "solar pv capacity conflicts: sda/bess and architectural note"
+      ]
+    },
+    "targets": [
+      {
+        "label": "False-gap rate",
+        "value": 0.6274509803921569,
+        "target": 0.05,
+        "direction": "max",
+        "passed": false,
+        "detail": "32/51 emitted gaps not labelled gap"
+      },
+      {
+        "label": "False not-expected rate",
+        "value": 0,
+        "target": 0.01,
+        "direction": "max",
+        "passed": true,
+        "detail": "0/0"
+      },
+      {
+        "label": "False not-expected on CORE",
+        "value": 0,
+        "target": 0,
+        "direction": "max",
+        "passed": true,
+        "detail": "none"
+      },
+      {
+        "label": "Priceable precision",
+        "value": 0.5,
+        "target": 0.98,
+        "direction": "min",
+        "passed": false,
+        "detail": "1 false of 2 claims"
+      },
+      {
+        "label": "Citation validity",
+        "value": 1,
+        "target": 0.98,
+        "direction": "min",
+        "passed": true,
+        "detail": "5/5"
+      },
+      {
+        "label": "Conflict precision",
+        "value": 0.4,
+        "target": 0.97,
+        "direction": "min",
+        "passed": false,
+        "detail": "6 invented"
+      },
+      {
+        "label": "Conflict recall",
+        "value": 0.4,
+        "target": 0.95,
+        "direction": "min",
+        "passed": false,
+        "detail": "6 missed"
+      },
+      {
+        "label": "Gap-class accuracy",
+        "value": 0,
+        "target": 0.95,
+        "direction": "min",
+        "passed": false,
+        "detail": "0/19"
+      },
+      {
+        "label": "Dwelling merge errors",
+        "value": 0,
+        "target": 0,
+        "direction": "max",
+        "passed": true
+      }
+    ],
+    "regressions": [
+      {
+        "id": "DOW-NEG-001",
+        "title": "An explicit negation suppresses the item",
+        "passed": false,
+        "failures": [
+          "landscaping.irrigation is evidenced, which is forbidden"
+        ]
+      },
+      {
+        "id": "DOW-NEG-002",
+        "title": "A negation that selects its alternative",
+        "passed": false,
+        "failures": [
+          "lining.cornice is gap, expected not_expected"
+        ]
+      },
+      {
+        "id": "DOW-APP-001",
+        "title": "Conditional items need an activation signal",
+        "passed": false,
+        "failures": [
+          "stairs.residential-lift is gap, which is forbidden",
+          "hvac.fireplace is gap, which is forbidden",
+          "site-services.sewer-pump is gap, which is forbidden",
+          "fire-services.sprinklers is gap, which is forbidden",
+          "appliances.outdoor-kitchen is gap, which is forbidden"
+        ]
+      },
+      {
+        "id": "DOW-CONF-001",
+        "title": "A real engineering contradiction is detected",
+        "passed": false,
+        "failures": [
+          "no conflict matching [100, 120]"
+        ]
+      },
+      {
+        "id": "DOW-NUM-001",
+        "title": "Per-unit and project totals reconcile rather than conflict",
+        "passed": true,
+        "failures": []
+      },
+      {
+        "id": "DOW-EVID-001",
+        "title": "A quotation must exist in the source it cites",
+        "passed": false,
+        "failures": [
+          "forbidden conflict matching [balustrade, fixings]"
+        ]
+      },
+      {
+        "id": "DOW-FULL-001",
+        "title": "Conflicting governing regimes block a priceable claim",
+        "passed": false,
+        "failures": [
+          "steel.protective-coating priceable=true, expected false"
+        ]
+      },
+      {
+        "id": "DOW-PRELIM-001",
+        "title": "Preliminaries are contractor obligations on a rich pack too",
+        "passed": false,
+        "failures": [
+          "preliminaries.scaffolding gapClass null, expected contractor_obligation",
+          "preliminaries.supervision gapClass null, expected contractor_obligation",
+          "preliminaries.craneage gapClass null, expected contractor_obligation",
+          "preliminaries.traffic-management gapClass null, expected contractor_obligation"
+        ]
+      },
+      {
+        "id": "DOW-EVIDENCED-001",
+        "title": "Evidence present in a supplied document is not a gap",
+        "passed": false,
+        "failures": [
+          "framing.cathedral-raked is gap, which is forbidden",
+          "landscaping.tree-protection is gap, which is forbidden",
+          "external-works.retaining-garden is gap, which is forbidden",
+          "plumbing.fit-off is gap, which is forbidden"
+        ]
+      },
+      {
+        "id": "DOW-DOC-001",
+        "title": "Document status is read from the stamp",
+        "passed": false,
+        "failures": [
+          "no conflict matching [preliminary]"
+        ]
+      }
+    ],
+    "passed": false
+  },
+  "aggregate": {
+    "packages": 1,
+    "evidenced": {
+      "precision": 0.6666666666666666,
+      "recall": 0.18181818181818182,
+      "f1": 0.28571428571428575
+    },
+    "gaps": {
+      "precision": 0.37254901960784315,
+      "recall": 1,
+      "f1": 0.5428571428571428
+    },
+    "byCompleteness": {
+      "full": {
+        "packages": 1,
+        "falseGapRate": 0.6274509803921569
+      }
+    },
+    "regressionsPassed": 1,
+    "regressionsTotal": 10,
+    "passed": false
+  }
+}

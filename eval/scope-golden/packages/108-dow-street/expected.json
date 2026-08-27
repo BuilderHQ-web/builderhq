@@ -1,0 +1,840 @@
+{
+  "schemaVersion": 2,
+  "slug": "108-dow-street",
+  "title": "108 Dow Street, Port Melbourne — two-dwelling development",
+  "projectType": "multi_dwelling",
+  "labelledAgainst": "1.2.0",
+  "labelledBy": "Independent QS analysis of the 108 Dow scope run (Aug 2026), with two rules ratified from the Wallace precedent",
+  "labelledAt": "2026-08-27",
+  "packProfile": {
+    "suppliedKinds": [
+      "architectural",
+      "structural",
+      "soil",
+      "survey",
+      "specification",
+      "energy",
+      "planning"
+    ],
+    "completeness": "full"
+  },
+  "documents": [
+    {
+      "file": "DOW 108 WDs ISSUE 6.pdf",
+      "kind": "architectural",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "c518070e9131df3eccc5bf2150f1fa1df05368c9c439b06eaed87a2f5f89248e"
+    },
+    {
+      "file": "STRUCTURAL DRGs LATEST 108 Dow Street, Port Melbourne-Stru-A.pdf",
+      "kind": "structural",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "2c4789869b79e3fb817317a571076eb7fe8055094bb246eed9bae77c2459e965"
+    },
+    {
+      "file": "SOIL TEST 108 Dow Street, Port Melb.pdf",
+      "kind": "soil",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "763daa0eaa1e5947dd049f541f705d5fc9504e369692bb5d94ee18afc2bba2e3"
+    },
+    {
+      "file": "updated SURVEY 10779F&LevEMAIL.pdf",
+      "kind": "survey",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "38822c4821c07dbb28296b532cec51e92357d7d26622292bf602d6256edecbf0"
+    },
+    {
+      "file": "INCLUSIONS LIST 108 Dow St for HQ.pdf",
+      "kind": "specification",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "ae3e688d8da2ca9147f9ac11ba2b091e1b33419b4f8f46ce5168ad7abdac90f1"
+    },
+    {
+      "file": "2511067 Certificate Unit 1.pdf",
+      "kind": "energy",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "e8da58b2a08d1d45b447d6a7a81c3b1d867c448779dade85874d99e7f196a825"
+    },
+    {
+      "file": "2511067 Certificate Unit 2.pdf",
+      "kind": "energy",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "2bfbe92208c892ad559598003e30863aa90c4a9265e366bacbab8671083e69d2"
+    },
+    {
+      "file": "PDPD-00158-2025 - Endorsed plans - 108 Dow Street PORT MELBOURNE.pdf",
+      "kind": "planning",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "55c6f0e2b5fb7e5e09637c6cddb54637abff7676ec2d4ca09c53ce3e5832d9e2"
+    },
+    {
+      "file": "PDPD-00158-2025 - Endorsed landscape plan - 108 Dow Street PORT MELBOURNE.pdf",
+      "kind": "planning",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "9d07bc7e78455d2fdb20c1d0e10b02b11a3d662d6099e442459515f9a07aa104"
+    },
+    {
+      "file": "PDPD-00158-2025 - Endorsed SDA - 108 Dow Street PORT MELBOURNE.pdf",
+      "kind": "planning",
+      "revision": null,
+      "pages": null,
+      "page": null,
+      "sha256": "614eff14d3c1cbb55c301879222bfe8f537ac195abc760e48277343b7fcf9528"
+    }
+  ],
+  "lines": [
+    {
+      "itemId": "appliances.laundry-appliances",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No builder-supplied washer/dryer requirement is shown. Add explicit owner-supplied/excluded wording if desired."
+    },
+    {
+      "itemId": "appliances.outdoor-kitchen",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No outdoor kitchen/BBQ package is shown."
+    },
+    {
+      "itemId": "approvals.acoustic-report",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "adjudicated",
+      "basis": "RATIFIED, consistent with Wallace: party-wall and acoustic build-ups are documented and meet the minimum separation requirement, so no separate acoustic report is required. An apartment class or a high-noise location would trigger one; neither applies."
+    },
+    {
+      "itemId": "approvals.handover-documentation",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Require as a tender/contract deliverable rather than calling it a missing design item.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "approvals.occupancy-certificate",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "CONTRACTOR / APPROVAL: allocate who obtains final RBS/occupancy approval. Not an architectural design gap.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "earthworks.contaminated-soil",
+      "tier": "conditional",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "COMMERCIAL / LATENT CONDITION: no contamination is established. Define latent-condition treatment rather than inventing contaminated-soil scope.",
+      "gapClass": "commercial_allowance"
+    },
+    {
+      "itemId": "earthworks.rock-excavation",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "Geotechnical profile is silty sand/Class S; no rock excavation is indicated."
+    },
+    {
+      "itemId": "earthworks.spoil-removal",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Ordinary clean spoil from the documented works should be included; contamination remains separate.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "external-doors.external-hardware",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP: door types are identified, but external locking/hardware package needs selection/specification.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "external-doors.screen-doors",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No security screen door system is specified."
+    },
+    {
+      "itemId": "external-walls.timber-composite-cladding",
+      "tier": "alternative",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "Facade palette is brick/render/EPS/Scyon/metal/copper; no timber/composite cladding skin is shown."
+    },
+    {
+      "itemId": "external-works.deck",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "Balconies are pedestal-paver systems, not timber/composite decks."
+    },
+    {
+      "itemId": "external-works.pergola-alfresco",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No pergola/alfresco structure is shown; actual soffits/eaves are documented elsewhere."
+    },
+    {
+      "itemId": "external-works.retaining-garden",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - PARTIAL: landscape notes require garden beds to be edged with sustainably sourced material.",
+      "priceable": false
+    },
+    {
+      "itemId": "fire-services.sprinklers",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No residential sprinkler system is indicated in the supplied design."
+    },
+    {
+      "itemId": "flooring.levelling",
+      "tier": "conditional",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Treat as flooring/substrate workmanship allowance and product tolerance, not missing consultant design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "footings-slab.piers-piles",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NOT EXPECTED CURRENTLY: geotech says screw piles only if greater capacity/limited excavation is required; current structural design uses raft/beam/pad footing system."
+    },
+    {
+      "itemId": "footings-slab.suspended-slab",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "Upper levels are framed/joisted systems; no suspended reinforced-concrete upper slab is the current design."
+    },
+    {
+      "itemId": "framing.cathedral-raked",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - EVIDENCED: WD Issue 6 expressly calls up a 10-degree roof with feature raked ceiling fixed to raked rafters.",
+      "priceable": false
+    },
+    {
+      "itemId": "hvac.fireplace",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No fireplace package is shown."
+    },
+    {
+      "itemId": "internal-doors.cavity-sliders",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No cavity slider requirement has been identified in the supplied door information."
+    },
+    {
+      "itemId": "joinery.entertainment-study",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "A study room does not automatically create built-in entertainment/study joinery."
+    },
+    {
+      "itemId": "landscaping.tree-protection",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - EVIDENCED: WDs identify two street-tree TPZs and no-work controls.",
+      "priceable": false
+    },
+    {
+      "itemId": "landscaping.turf",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NOT EXPECTED / LANDSCAPE-SPECIFIC: generic landscape notes mention lawn or gravel, but no dedicated turf package should be created unless the endorsed plan labels turf."
+    },
+    {
+      "itemId": "landscaping.water-features",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No water feature is shown."
+    },
+    {
+      "itemId": "lining.access-panels",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP / COORDINATION: service-access locations and finish should be coordinated with HVAC/plumbing equipment.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "lining.cornice",
+      "tier": "alternative",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NEG-002, the half it got wrong: having evidenced square-set from that sentence, the engine still raised a cornice gap, asking a question its own answer had resolved. The same sentence that selects one sibling suppresses the other."
+    },
+    {
+      "itemId": "painting.doors-trim",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP / PARTIAL: window trim is matte black; door/trim paint system and full extent remain insufficiently specified.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "painting.internal-walls-ceilings",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP: internal paint system/colours/coats are not clearly scheduled even though painting is required.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "painting.special-coatings",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY: steel epoxy/coastal treatment is already captured elsewhere; garage floor painting is owner scope.",
+      "priceable": false
+    },
+    {
+      "itemId": "painting.timber-metal-finishes",
+      "tier": "conditional",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP: clarify finish/product where genuine timber slats or feature timber are used.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "plumbing.fit-off",
+      "tier": "core",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - PARTIAL: water points, external showers, hot water, bathroom accessories and sanitary intent are evidenced; final product schedule may still be needed.",
+      "priceable": false
+    },
+    {
+      "itemId": "preliminaries.craneage",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Means/methods and logistics allowance.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.dilapidation-report",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "CONTRACTOR / COMMERCIAL: add as a tender requirement because of boundary/adjoining works, not as a missing design element.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.insurances-warranty",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "CONTRACTOR / COMMERCIAL: commercial tender condition.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.scaffolding",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Construction methodology/preliminaries.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.site-establishment",
+      "tier": "commercial",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY / CONTRACTOR: inclusions already require temporary fence, site toilet and rubbish disposal; expand preliminaries if needed.",
+      "priceable": false
+    },
+    {
+      "itemId": "preliminaries.supervision",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Preliminaries/overheads, not consultant design.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.temporary-services",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "Preliminaries requirement.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "preliminaries.traffic-management",
+      "tier": "commercial",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "CONTRACTOR / COMMERCIAL: road opening, laneway and authority controls should be tender conditions.",
+      "gapClass": "contractor_obligation"
+    },
+    {
+      "itemId": "retaining.subsoil-drainage",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - PARTIAL: structural footing assumptions expressly require effective drainage/dewatering by others; responsibility remains unresolved.",
+      "priceable": false
+    },
+    {
+      "itemId": "retaining.timber-sleeper",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No sleeper retaining-wall system is shown."
+    },
+    {
+      "itemId": "roofing.roof-ventilation",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NOT EXPECTED / ENERGY-CHECK: no separate roof-vent system is documented; only create if the final energy/building design requires it."
+    },
+    {
+      "itemId": "roofing.skylights",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No skylights/roof windows are shown."
+    },
+    {
+      "itemId": "site-services.sewer-pump",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "No pump system is shown; do not infer one from a compact site."
+    },
+    {
+      "itemId": "stairs.feature-screens",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY - EVIDENCED: feature metal screens, timber slat walls/ceilings and balcony screens are documented.",
+      "priceable": false
+    },
+    {
+      "itemId": "stairs.residential-lift",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "Three storeys alone is not evidence of a lift requirement."
+    },
+    {
+      "itemId": "steel.portal-garage-frames",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "RECLASSIFY / STRUCTURAL: garage/door structural steel and a Unit 2 feature structural shroud are already designed within the structural/architectural steel package.",
+      "priceable": false
+    },
+    {
+      "itemId": "tiling.trims-movement",
+      "tier": "core",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP: profiles/colours/locations are not adequately scheduled.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "waterproofing.planter-tanking",
+      "tier": "conditional",
+      "coverage": "gap",
+      "source": "audit",
+      "basis": "KEEP GAP: planters are shown but waterproofing/drainage construction is not fully detailed.",
+      "gapClass": "design_gap"
+    },
+    {
+      "itemId": "windows.flyscreens",
+      "tier": "core",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NOT EXPECTED / EXPLICIT EXCLUSION: no flyscreen package is specified. Add an explicit exclusion if certainty is needed."
+    },
+    {
+      "itemId": "steel.protective-coating",
+      "tier": "conditional",
+      "coverage": "evidenced",
+      "priceable": false,
+      "source": "audit",
+      "basis": "The governing documents specify materially different coating regimes (hot-dip galvanising versus an epoxy/coastal treatment). Documented, but not priceable while the governing regime is unresolved. This is the FULL-001 case."
+    },
+    {
+      "itemId": "landscaping.irrigation",
+      "tier": "conditional",
+      "coverage": "not_expected",
+      "source": "audit",
+      "basis": "NEG-001. The inclusions list prints 'NO IRRIGATION'. The engine evidenced irrigation from that document at 0.32 confidence, reading a prohibition as a specification. It must never be evidenced."
+    },
+    {
+      "itemId": "lining.square-set",
+      "tier": "alternative",
+      "coverage": "evidenced",
+      "source": "audit",
+      "basis": "NEG-002, the half the engine got right: 'No cornice - square set finished ceilings' SELECTS square-set. A negation is not only a deletion. No priceability claim is labelled here; the audit does not adjudicate it."
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "DOW-C1",
+      "summary": "Different client/project names across title blocks",
+      "genuine": true,
+      "matchTerms": [
+        "mete",
+        "phillip",
+        "title block"
+      ],
+      "basis": "Audit verdict: partly_correct. Documents do use different labels (METE FAMILY, Paul Mete/structural client naming, address-based titles, City of Port Phillip material), but all clearly relate to 108 Dow Street. It is a document-control issue, not a technical scope conflict.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C2",
+      "summary": "Rainwater tank sizes disagree",
+      "genuine": true,
+      "matchTerms": [
+        "700",
+        "800",
+        "storm"
+      ],
+      "basis": "Audit verdict: confirmed. Endorsed planning material is internally inconsistent: Unit 2 described as 700 L in one line while STORM tables/management notes say 800 L. Working drawings also state 800 L each. Set one governing tank requirement per dwelling.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C3",
+      "summary": "Energy rating target conflicts (6 star vs 7 star)",
+      "genuine": true,
+      "matchTerms": [
+        "6 star",
+        "7 star",
+        "7.2"
+      ],
+      "basis": "Audit verdict: confirmed. Inclusions list says \"7 star energy rating\" but also \"Only a 6 star required here\"; later it says 7 star. Supplied NatHERS results are 7.0 star Unit 1 and 7.2 star Unit 2. Delete the 6-star wording and state a 7-star minimum per dwelling.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C4",
+      "summary": "2 kW per unit vs 4.0 kW BESS solar profile",
+      "genuine": false,
+      "matchTerms": [
+        "2 kw",
+        "4 kw",
+        "2.5 kw"
+      ],
+      "basis": "Audit verdict: incorrect. 2 kW per dwelling equals 4 kW across two dwellings, so the figures are consistent. The real later-design issue is that WD Issue 6 shows 2.5 kW roof-mounted PV per dwelling. Do not flag per-unit vs total as a conflict; compare basis instead.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C5",
+      "summary": "Party/boundary firewall has two alternative systems",
+      "genuine": true,
+      "matchTerms": [
+        "60/60/60",
+        "dincel",
+        "boundary wall"
+      ],
+      "basis": "Audit verdict: confirmed. Architectural/inclusions material allows alternative masonry/Dincel-type 60/60/60 boundary wall solutions. These are materially different in cost, structure and interfaces. Select the governing wall system before tender, or price a base plus alternate.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C6",
+      "summary": "Security/CCTV/intercom/LAN/home automation scope is inconsistent",
+      "genuine": true,
+      "matchTerms": [
+        "cctv",
+        "intercom",
+        "prewire"
+      ],
+      "basis": "Audit verdict: confirmed. Electrical drawings include provisions/connections while inclusions put CCTV, alarm, security entry, LAN and most home automation with the owner; cafe awnings, garage doors and two stair windows remain builder scope. The prewire/interface split is unclear.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C7",
+      "summary": "Solar and landscaping shown but excluded/owner scope",
+      "genuine": true,
+      "matchTerms": [
+        "landscaping",
+        "paul",
+        "inverter"
+      ],
+      "basis": "Audit verdict: partly_correct. Inclusions make the main responsibility fairly clear: landscaping by Paul; solar panels/inverter coordinated by owner and installed by a chosen installer. The remaining risk is builder interfaces (rough-ins, supports, penetrations, making-good), not the primary allocation.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C8",
+      "summary": "Footing design relies on drainage/de-watering by others",
+      "genuine": true,
+      "matchTerms": [
+        "de-watering",
+        "footing",
+        "subsoil"
+      ],
+      "basis": "Audit verdict: confirmed. The structural footing detail states effective drainage/de-watering is by others and is part of the footing design assumption. The responsible designer/installer is not clearly named in the tender allocation; assign design, install, discharge, maintenance and warranty.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C9",
+      "summary": "Balustrades noted \"BY OTHERS including all fixings\"",
+      "genuine": false,
+      "matchTerms": [
+        "balustrade",
+        "fixings",
+        "top-plate"
+      ],
+      "basis": "Audit verdict: unsupported. Balustrade support/top-plate details are visible in the structural set, but the quoted \"BY OTHERS including all fixings\" wording could not be verified in the supplied structural pages. The finding overstates the evidence; remove or reword it.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C10",
+      "summary": "EV charging shown on electrical plan but BESS says not provided",
+      "genuine": true,
+      "matchTerms": [
+        "ev charging",
+        "three-phase",
+        "ev infrastructure"
+      ],
+      "basis": "Audit verdict: partly_correct. WD Issue 6 shows two three-phase EV charging points while the earlier BESS assessment records EV infrastructure as \"No\". This is a document-stage mismatch, not automatically a tender contradiction; confirm which document governs.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C11",
+      "summary": "Geotechnical report allows 100 kPa bearing while the structural design assumes 120 kPa.",
+      "genuine": true,
+      "matchTerms": [
+        "100",
+        "120"
+      ],
+      "basis": "CRITICAL material finding. A real engineering contradiction between two supplied consultant documents, and the canonical case for what a true conflict looks like.",
+      "source": "audit"
+    },
+    {
+      "id": "DOW-C12",
+      "summary": "Working drawings are labelled PRELIMINARY, NOT FOR CONSTRUCTION while being issued as the tender basis.",
+      "genuine": true,
+      "matchTerms": [
+        "preliminary"
+      ],
+      "basis": "CRITICAL material finding. Document status must be read from the stamp; issuing a preliminary set as the tender basis is a document-status failure, not a scope gap.",
+      "source": "audit"
+    }
+  ],
+  "regressions": [
+    {
+      "id": "DOW-NEG-001",
+      "title": "An explicit negation suppresses the item",
+      "rationale": "The inclusions list prints 'NO IRRIGATION'. The engine evidenced irrigation from it — reading a prohibition as a specification.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "landscaping.irrigation",
+          "notEquals": "evidenced"
+        }
+      ]
+    },
+    {
+      "id": "DOW-NEG-002",
+      "title": "A negation that selects its alternative",
+      "rationale": "'No cornice - square set finished ceilings' both suppresses cornice AND selects square-set. A negation is not only a deletion.",
+      "assertions": [
+        {
+          "kind": "coverage",
+          "itemId": "lining.cornice",
+          "equals": "not_expected"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "lining.square-set",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "DOW-APP-001",
+      "title": "Conditional items need an activation signal",
+      "rationale": "Residential lift, fireplace, sewer pump, sprinklers and outdoor kitchen were gapped from possibility on a pack that shows none of them.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "stairs.residential-lift",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "hvac.fireplace",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "site-services.sewer-pump",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "fire-services.sprinklers",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "appliances.outdoor-kitchen",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "DOW-CONF-001",
+      "title": "A real engineering contradiction is detected",
+      "rationale": "100 kPa allowable bearing in the geotechnical report against 120 kPa assumed in the structural design. Two supplied documents disagreeing on a number that moves the footing design.",
+      "assertions": [
+        {
+          "kind": "conflictPresent",
+          "matchTerms": [
+            "100",
+            "120"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOW-NUM-001",
+      "title": "Per-unit and project totals reconcile rather than conflict",
+      "rationale": "2 kW per dwelling and 4 kW project total are the same fact stated two ways.",
+      "assertions": [
+        {
+          "kind": "conflictAbsent",
+          "matchTerms": [
+            "2 kw",
+            "4 kw"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOW-EVID-001",
+      "title": "A quotation must exist in the source it cites",
+      "rationale": "The engine quoted 'BY OTHERS including all fixings' for balustrades; the audit could not find that wording in the cited structural source. The Wallace deck is the same failure in a different costume.",
+      "assertions": [
+        {
+          "kind": "conflictAbsent",
+          "matchTerms": [
+            "balustrade",
+            "fixings"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOW-FULL-001",
+      "title": "Conflicting governing regimes block a priceable claim",
+      "rationale": "Protective coating was graded FULL while hot-dip galvanising and an epoxy/coastal treatment both governed. Documentation depth is not priceability.",
+      "assertions": [
+        {
+          "kind": "priceable",
+          "itemId": "steel.protective-coating",
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "DOW-PRELIM-001",
+      "title": "Preliminaries are contractor obligations on a rich pack too",
+      "rationale": "The same eight preliminaries lines were presented as design gaps here as on Wallace, despite ten documents being supplied. Pack richness never makes scaffolding a drawing.",
+      "assertions": [
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.scaffolding",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.supervision",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.craneage",
+          "equals": "contractor_obligation"
+        },
+        {
+          "kind": "gapClass",
+          "itemId": "preliminaries.traffic-management",
+          "equals": "contractor_obligation"
+        }
+      ]
+    },
+    {
+      "id": "DOW-EVIDENCED-001",
+      "title": "Evidence present in a supplied document is not a gap",
+      "rationale": "Ten of the 51 gaps were already evidenced somewhere in the pack — raked ceiling framing called up in WD Issue 6, tree protection zones on the drawings, garden edging in the landscape notes. On a ten-document pack this is a retrieval failure, not a judgement one.",
+      "assertions": [
+        {
+          "kind": "coverageNot",
+          "itemId": "framing.cathedral-raked",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "landscaping.tree-protection",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "external-works.retaining-garden",
+          "notEquals": "gap"
+        },
+        {
+          "kind": "coverageNot",
+          "itemId": "plumbing.fit-off",
+          "notEquals": "gap"
+        }
+      ]
+    },
+    {
+      "id": "DOW-DOC-001",
+      "title": "Document status is read from the stamp",
+      "rationale": "The working drawings are labelled PRELIMINARY, NOT FOR CONSTRUCTION while serving as the tender basis. The engine did not surface it.",
+      "assertions": [
+        {
+          "kind": "conflictPresent",
+          "matchTerms": [
+            "preliminary"
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": "The rich pole of the corpus: ten documents across seven disciplines. Labels the 51 gap rows the audit reclassified, all 10 conflicts it validated, and 2 material findings the engine missed entirely. Deliberately silent on the 179 evidenced rows the audit did not individually adjudicate — the scorer only scores labelled lines, so a partial package gives honest numbers on the settled part rather than invented numbers on the whole. Paired with 57-wallace-street, which is the same engine on one document."
+}
